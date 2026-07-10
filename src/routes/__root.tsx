@@ -79,14 +79,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Turn the Apple Watch or Galaxy Watch you already own into a 60 m dive computer. $149 early bird — 50% off for the first 30 Kickstarter backers.",
+          "Turn the Apple Watch or Galaxy Watch you already own into a 60 m dive computer. $149 early bird — 50% off at Kickstarter launch.",
       },
       { name: "author", content: "Watch Dive" },
       { property: "og:title", content: "Watch Dive — The world's most affordable dive computer" },
       {
         property: "og:description",
         content:
-          "Turn the Apple Watch or Galaxy Watch you already own into a 60 m dive computer. $149 early bird — 50% off for the first 30 Kickstarter backers.",
+          "Turn the Apple Watch or Galaxy Watch you already own into a 60 m dive computer. $149 early bird — 50% off at Kickstarter launch.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://watchdive.diveroid.com/" },

@@ -58,7 +58,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Turn the Apple Watch or Galaxy Watch you already own into a 60 m dive computer. $149 early bird — 50% off for the first 30 Kickstarter backers.",
+          "Turn the Apple Watch or Galaxy Watch you already own into a 60 m dive computer. $149 early bird — 50% off at Kickstarter launch.",
       },
       {
         property: "og:title",
@@ -67,7 +67,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Turn your Apple or Galaxy Watch into a 60 m dive computer. $149 early bird — 50% off for the first 30 Kickstarter backers.",
+          "Turn your Apple or Galaxy Watch into a 60 m dive computer. $149 early bird — 50% off at Kickstarter launch.",
       },
       { property: "og:image", content: "https://watchdive.diveroid.com/og-image.png" },
       { name: "twitter:image", content: "https://watchdive.diveroid.com/og-image.png" },
@@ -111,7 +111,7 @@ function LaunchBanner() {
         </div>
         <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:text-left">
           <span className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--color-cyan-glow)] sm:text-sm">
-            First 30 backers · 50% off
+            Early bird · 50% off
           </span>
           <a
             href="#offer-form"
@@ -468,7 +468,7 @@ function Hero() {
               },
               {
                 label: "$149",
-                desc: "50% off · first 30 backers",
+                desc: "50% off · early bird",
                 customIcon: null,
                 icon: (
                   <>
@@ -515,7 +515,7 @@ function Hero() {
               50% off
             </span>
             <span className="text-sm font-medium text-white/85">
-              for the first 30 Kickstarter backers
+              early bird at Kickstarter launch
             </span>
           </div>
 
@@ -1292,7 +1292,7 @@ function OfferSection() {
           className="mx-auto mb-8 aspect-video w-full max-w-3xl rounded-[2rem] border border-white/10 object-cover object-top shadow-[0_30px_90px_-35px_oklch(0.8_0.11_232/0.45)]"
         />
         <p className="text-sm uppercase tracking-[0.2em] text-[color:var(--color-cyan-glow)] font-semibold mb-4">
-          Kickstarter Early Bird · First 30 backers
+          Kickstarter Early Bird · 50% off
         </p>
         <h2 className="text-3xl sm:text-5xl font-bold leading-tight">
           <span className="text-white/45 line-through">$299</span>{" "}
@@ -1300,8 +1300,8 @@ function OfferSection() {
         </h2>
         <p className="mt-5 text-white/80">
           Sign up to be the <span className="font-semibold text-white">first to know</span> when
-          Watch Dive launches — the first 30 Kickstarter backers lock in the lowest price ever at
-          $149, before it goes to $299 at public release.
+          Watch Dive launches — early bird backers lock in the lowest price ever at $149, before it
+          goes to $299 at public release.
         </p>
         <div className="mt-6">
           <EmailForm id="offer" includePhone />
