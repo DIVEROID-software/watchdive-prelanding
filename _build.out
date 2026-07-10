@@ -1,0 +1,43 @@
+
+> build
+> vite build
+
+[@lovable.dev/vite-tanstack-config] No Lovable context detected — skipping nitro deploy plugin. Pass `nitro: true` (or `nitro: { ... }`) to force-enable.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+[@lovable.dev/vite-tanstack-config] No Lovable context detected — skipping nitro deploy plugin. Pass `nitro: true` (or `nitro: { ... }`) to force-enable.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+[@lovable.dev/vite-tanstack-config] No Lovable context detected — skipping nitro deploy plugin. Pass `nitro: true` (or `nitro: { ... }`) to force-enable.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+vite v8.1.0 building client environment for production...
+[2Ktransforming...✓ 197 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/client/assets/styles-SMSZjFzX.css   93.64 kB │ gzip:  15.33 kB
+dist/client/assets/terms-D2srxMJT.js      3.74 kB │ gzip:   1.60 kB
+dist/client/assets/privacy-khgddYe9.js    5.73 kB │ gzip:   2.01 kB
+dist/client/assets/routes-BzMrKyRy.js    31.22 kB │ gzip:   8.04 kB
+dist/client/assets/index-ctZTSJbC.js    581.26 kB │ gzip: 168.81 kB
+
+✓ built in 246ms
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+vite v8.1.0 building ssr environment for production...
+[2Ktransforming...✓ 66 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/server/assets/empty-plugin-adapters-D9UWiqvJ.js        0.22 kB │ gzip:  0.16 kB
+dist/server/assets/client-C59rXkx0.js                       0.76 kB │ gzip:  0.52 kB
+dist/server/assets/_tanstack-start-manifest_v-CExF2uvJ.js   0.95 kB │ gzip:  0.38 kB
+dist/server/assets/start-CRIDP7re.js                        1.07 kB │ gzip:  0.56 kB
+dist/server/assets/createStart-Dt05N14y.js                  1.65 kB │ gzip:  0.57 kB
+dist/server/server.js                                       3.27 kB │ gzip:  1.41 kB
+dist/server/assets/terms-DPXaKZ8a.js                        4.99 kB │ gzip:  1.80 kB
+dist/server/assets/privacy-DQE-MwRt.js                      7.90 kB │ gzip:  2.27 kB
+dist/server/assets/router-DOQDiCwx.js                       8.92 kB │ gzip:  2.56 kB
+dist/server/assets/routes-D4GNUiZ5.js                      41.31 kB │ gzip:  9.45 kB
+dist/server/assets/server-CTyHHRlx.js                      58.72 kB │ gzip: 15.11 kB
+
+✓ built in 123ms

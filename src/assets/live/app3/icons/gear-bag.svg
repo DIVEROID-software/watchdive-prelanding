@@ -1,0 +1,12 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M19.248 9V2" stroke="currentColor" stroke-width="1.5"/>
+<path d="M13 21H17.2482C18.3527 21 19.2482 20.1046 19.2482 19V17.5" stroke="currentColor" stroke-width="1.5"/>
+<mask id="mask0_4432_46882" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="4" y="4" width="16" height="4">
+<rect x="4" y="4" width="16" height="4" fill="#C4C4C4"/>
+</mask>
+<g mask="url(#mask0_4432_46882)">
+<path d="M7 4.75H17C18.2426 4.75 19.25 5.75736 19.25 7V9.25H4.75V7C4.75 5.75736 5.75736 4.75 7 4.75Z" stroke="currentColor" stroke-width="1.5"/>
+</g>
+<path d="M4 8.75H20C20.6904 8.75 21.25 9.30964 21.25 10V14.4688C21.25 16.1077 20.0296 17.4899 18.4033 17.6934L14.6729 18.1602C14.5601 18.1742 14.4524 18.1103 14.4102 18.0049L13.1602 14.8818C12.754 13.8672 11.3501 13.8356 10.8818 14.7871L10.8398 14.8818L9.58984 18.0049C9.54757 18.1103 9.43988 18.1742 9.32715 18.1602L5.59668 17.6934C3.97041 17.4899 2.75 16.1077 2.75 14.4688V10C2.75 9.30964 3.30964 8.75 4 8.75Z" stroke="currentColor" stroke-width="1.5"/>
+<path d="M11 20C11 19.4477 11.4477 19 12 19C12.5523 19 13 19.4477 13 20V22C13 22.5523 12.5523 23 12 23C11.4477 23 11 22.5523 11 22V20Z" fill="currentColor"/>
+</svg>

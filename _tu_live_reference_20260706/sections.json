@@ -1,0 +1,74 @@
+[
+ {
+  "tag": "HEADER",
+  "cls": "relative overflow-hidden text-white",
+  "heading": "Turn your Apple or Galaxy Watch into a 60 m dive computer.\nEarly bird from $149 on Kickstarter.",
+  "textLen": 764
+ },
+ {
+  "tag": "SECTION",
+  "cls": "mx-auto max-w-6xl px-5 py-20 sm:py-28",
+  "heading": "Why spend $1,000 on a dive computer if your smartwatch is already halfway there?",
+  "textLen": 704
+ },
+ {
+  "tag": "SECTION",
+  "cls": "bg-[color:var(--color-deep-2)] px-5 py-20 text-white sm:py-28",
+  "heading": "Track depth, dive time, temperature, safety stops, ascent rate, and NDL — in one system.",
+  "textLen": 271
+ },
+ {
+  "tag": "SECTION",
+  "cls": "px-5 py-20 sm:py-28 max-w-5xl mx-auto",
+  "heading": "Three steps. One dive computer solution.",
+  "textLen": 376
+ },
+ {
+  "tag": "SECTION",
+  "cls": "bg-gradient-to-b from-[color:var(--color-deep)] to-[color:var(--color-deep-2)] text-white px-5 py-20 sm:py-28",
+  "heading": "Your dive, saved automatically.",
+  "textLen": 351
+ },
+ {
+  "tag": "SECTION",
+  "cls": "px-5 py-20 sm:py-28",
+  "heading": "Works with Most Leading Smartwatches",
+  "textLen": 481
+ },
+ {
+  "tag": "SECTION",
+  "cls": "bg-card/60 border-y border-border px-5 py-14 sm:py-16",
+  "heading": "Pair with GoPro or Insta360",
+  "textLen": 157
+ },
+ {
+  "tag": "SECTION",
+  "cls": "relative overflow-hidden px-5 py-20 text-white sm:py-28",
+  "heading": "From $149 at launch.",
+  "textLen": 238
+ },
+ {
+  "tag": "SECTION",
+  "cls": "bg-card/60 border-y border-border px-5 py-14",
+  "heading": "NVIDIA Inception Program",
+  "textLen": 170
+ },
+ {
+  "tag": "SECTION",
+  "cls": "px-5 py-20 sm:py-28 max-w-3xl mx-auto",
+  "heading": "Good questions, short answers.",
+  "textLen": 217
+ },
+ {
+  "tag": "FOOTER",
+  "cls": "bg-[color:var(--color-deep-2)] text-white/70 px-5 py-10 text-center text-sm",
+  "heading": "",
+  "textLen": 264
+ },
+ {
+  "tag": "SECTION",
+  "cls": "",
+  "heading": "",
+  "textLen": 0
+ }
+]
