@@ -102,6 +102,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "twitter:image", content: "https://watchdive.diveroid.com/og-image.png" },
     ],
+    scripts: [
+      {
+        src: "https://web-production-2bc5f.up.railway.app/widget.js?v=20260712b&pos=left&label=Questions%3F",
+        defer: true,
+      },
+    ],
     links: [
       {
         rel: "stylesheet",

@@ -38,6 +38,7 @@ import clipPoster from "../assets/live/watchdive-clip-poster.jpg";
 import watchScreen from "../assets/live/watch-screen.png";
 import housingImage from "../assets/live/housing.png";
 import samsungFeature from "../assets/live/samsung-feature.jpg";
+import samsungLogo from "../assets/live/samsung-logo.svg";
 
 // Inlines an App 3.0 icon SVG (imported ?raw) so it inherits the current text
 // color via currentColor — real product icons match our accent, any size.
@@ -557,9 +558,7 @@ function Hero() {
                 Featured by
               </span>
               <span className="inline-flex h-8 items-center rounded-lg bg-white px-3 shadow-sm">
-                <span className="text-sm font-black tracking-tight" style={{ color: "#1428A0" }}>
-                  SAMSUNG
-                </span>
+                <img src={samsungLogo} alt="Samsung" className="h-3.5 w-auto" />
               </span>
             </div>
           </div>
@@ -1333,13 +1332,13 @@ function Credentials() {
                 className="max-h-full w-auto max-w-[78%]"
               />
             </div>
-            <div className="flex flex-1 flex-col items-center justify-center p-6">
+            <div className="flex flex-1 flex-col items-center justify-center px-7 pb-7 pt-6">
               <div className="flex min-h-[3.25rem] flex-col items-center justify-end">
-                <div className="text-base font-bold">
+                <div className="text-lg font-bold">
                   Member of <span style={{ color: "#76B900" }}>NVIDIA</span> Inception
                 </div>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-3.5 text-sm leading-relaxed text-muted-foreground">
                 NVIDIA's program for startups building with AI and accelerated computing.
               </p>
             </div>
@@ -1359,13 +1358,13 @@ function Credentials() {
                 className="max-h-full w-auto max-w-[72%]"
               />
             </div>
-            <div className="flex flex-1 flex-col items-center justify-center p-6">
+            <div className="flex flex-1 flex-col items-center justify-center px-7 pb-7 pt-6">
               <div className="flex min-h-[3.25rem] flex-col items-center justify-end">
-                <div className="text-base font-bold">
+                <div className="text-lg font-bold">
                   Powered by <span style={{ color: "#FF9900" }}>AWS</span>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-3.5 text-sm leading-relaxed text-muted-foreground">
                 Our app and dive data run on Amazon Web Services.
               </p>
             </div>
@@ -1382,19 +1381,14 @@ function Credentials() {
                 className="absolute inset-0 h-full w-full object-cover"
               />
             </div>
-            <div className="flex flex-1 flex-col items-center justify-center p-6">
+            <div className="flex flex-1 flex-col items-center justify-center px-7 pb-7 pt-6">
               <div className="flex min-h-[3.25rem] flex-col items-center justify-end">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                   As featured by
                 </span>
-                <span
-                  className="text-2xl font-black leading-none tracking-tight"
-                  style={{ color: "#1428A0" }}
-                >
-                  SAMSUNG
-                </span>
+                <img src={samsungLogo} alt="Samsung" className="mt-1.5 h-[18px] w-auto" />
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-3.5 text-sm leading-relaxed text-muted-foreground">
                 Our diving gear appeared in a Samsung smartphone advertisement.
               </p>
             </div>
