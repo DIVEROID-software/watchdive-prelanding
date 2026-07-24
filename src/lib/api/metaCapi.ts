@@ -27,7 +27,10 @@ export async function sendMetaLead(args: {
   // and both must hold the same dataset id anyway.
   const pixelId = process.env.META_PIXEL_ID ?? process.env.VITE_META_PIXEL_ID;
   const token = process.env.META_CAPI_ACCESS_TOKEN;
-  if (!pixelId || !token) return;
+  if (!pixelId || !token) {
+    console.log("[meta-capi] skipped: missing env (pixelId or token)");
+    return;
+  }
 
   const digitsOnlyPhone = args.phone?.replace(/[^0-9]/g, "");
   const body = {
@@ -66,6 +69,11 @@ export async function sendMetaLead(args: {
     if (!res.ok) {
       const detail = await res.text();
       console.error(`Meta CAPI Lead failed (${res.status}): ${detail.slice(0, 300)}`);
+    } else {
+      const json = (await res.json()) as { fbtrace_id?: string };
+      console.log(
+        `[meta-capi] Lead sent event_id=${args.eventId} fbtrace=${json.fbtrace_id ?? "?"}`,
+      );
     }
   } catch (err) {
     console.error("Meta CAPI Lead error", err);

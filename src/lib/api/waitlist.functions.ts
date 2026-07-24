@@ -216,6 +216,11 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // Meta CAPI Lead — only for genuinely new, non-suspect signups so ad
     // optimization never learns from bots or dupes. Duplicates returned above
     // never reach here. sendMetaLead swallows its own errors.
+    if (suspect || !data.eventId) {
+      console.log(
+        `[meta-capi] skipped: ${suspect ? `suspect(${flags.join(",")})` : "no eventId"}`,
+      );
+    }
     if (!suspect && data.eventId) {
       await sendMetaLead({
         eventId: data.eventId,
