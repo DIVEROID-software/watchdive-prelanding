@@ -54,6 +54,21 @@ export function trackMetaLead(eventId: string, source: string) {
   );
 }
 
+// Manual advanced matching: hand the raw email to the pixel right before the
+// Lead fires — fbevents normalizes and SHA-256 hashes it client-side before
+// anything leaves the browser. Raises event match quality, which directly
+// improves ad optimization.
+export function setMetaUserEmail(email: string) {
+  if (!PIXEL_ID || typeof window === "undefined" || !window.fbq) return;
+  window.fbq("init", PIXEL_ID, { em: email });
+}
+
+// Funnel micro-signal (reporting only — optimization stays on Lead).
+export function trackMetaCustom(name: string, params?: Record<string, unknown>) {
+  if (!PIXEL_ID || typeof window === "undefined" || !window.fbq) return;
+  window.fbq("trackCustom", name, params ?? {});
+}
+
 // _fbp/_fbc cookies are set by the pixel (_fbc only after an fbclid landing).
 // Passed to the server so the Conversions API event carries the same identifiers.
 export function getMetaCookies(): { fbp?: string; fbc?: string } {

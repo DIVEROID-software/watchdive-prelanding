@@ -6,7 +6,13 @@ import { toast } from "sonner";
 
 import { track } from "@vercel/analytics";
 import { joinWaitlist, getReferralCount } from "@/lib/api/waitlist.functions";
-import { getMetaCookies, newMetaEventId, trackMetaLead } from "@/lib/metaPixel";
+import {
+  getMetaCookies,
+  newMetaEventId,
+  setMetaUserEmail,
+  trackMetaCustom,
+  trackMetaLead,
+} from "@/lib/metaPixel";
 
 import heroBackground from "../assets/live/hero-background.png";
 import heroSideImage from "../assets/live/watchdive-image10.png";
@@ -315,6 +321,7 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
   const [phone, setPhone] = useState("");
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
+  const formStartSent = useRef(false); // FormStart once per form instance
 
   if (submitted) {
     return <ReferralSuccess refCode={refCode} />;
@@ -345,8 +352,12 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
           setSubmitted(true);
           // 전환 이벤트 — 광고 유입→가입 측정 (source=CTA 위치)
           track("waitlist_signup", { source: id, referred: !!getRef() });
-          // Meta Lead — 서버가 신규 가입으로 확정한 경우에만 발화 (중복 제외)
-          if (!res.duplicate) trackMetaLead(metaEventId, id);
+          // Meta Lead — 서버가 신규 가입으로 확정한 경우에만 발화 (중복 제외).
+          // 고급 매칭용 이메일을 먼저 픽셀에 넘긴다 (브라우저 안에서 해시됨).
+          if (!res.duplicate) {
+            setMetaUserEmail(email.trim().toLowerCase());
+            trackMetaLead(metaEventId, id);
+          }
         } catch {
           toast.error("Something went wrong. Please try again.");
         } finally {
@@ -374,6 +385,12 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          onFocus={() => {
+            if (!formStartSent.current) {
+              formStartSent.current = true;
+              trackMetaCustom("FormStart", { source: id });
+            }
+          }}
           placeholder="your@email.com"
           className="order-1 h-14 px-4 rounded-xl bg-gradient-to-b from-white to-[oklch(0.92_0.006_255)] text-[color:var(--color-deep-2)] placeholder:text-muted-foreground border border-white/50 shadow-[inset_0_1px_0_oklch(1_0_0/0.85),0_22px_48px_-8px_oklch(0.008_0.01_270/0.85),0_6px_16px_-3px_oklch(0.008_0.01_270/0.7)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)]"
         />
