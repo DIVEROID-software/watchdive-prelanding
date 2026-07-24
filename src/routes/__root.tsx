@@ -7,11 +7,12 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
+import { initMetaPixel } from "@/lib/metaPixel";
 
 function NotFoundComponent() {
   return (
@@ -151,6 +152,11 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // Meta Pixel base code — no-ops unless VITE_META_PIXEL_ID is configured.
+  useEffect(() => {
+    initMetaPixel();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { track } from "@vercel/analytics";
 import { joinWaitlist, getReferralCount } from "@/lib/api/waitlist.functions";
+import { getMetaCookies, newMetaEventId, trackMetaLead } from "@/lib/metaPixel";
 
 import heroBackground from "../assets/live/hero-background.png";
 import heroSideImage from "../assets/live/watchdive-image10.png";
@@ -326,6 +327,9 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
         if (loading) return;
         setLoading(true);
         try {
+          // Meta dedup: the browser pixel and the server CAPI event share this
+          // id so Meta counts the pair as one Lead.
+          const metaEventId = newMetaEventId();
           const res = await joinWaitlist({
             data: {
               email: email.trim().toLowerCase(),
@@ -333,12 +337,16 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
               source: id,
               referredBy: getRef(),
               honeypot: hp,
+              eventId: metaEventId,
+              ...getMetaCookies(),
             },
           });
           setRefCode(res.refCode ?? "");
           setSubmitted(true);
           // 전환 이벤트 — 광고 유입→가입 측정 (source=CTA 위치)
           track("waitlist_signup", { source: id, referred: !!getRef() });
+          // Meta Lead — 서버가 신규 가입으로 확정한 경우에만 발화 (중복 제외)
+          if (!res.duplicate) trackMetaLead(metaEventId, id);
         } catch {
           toast.error("Something went wrong. Please try again.");
         } finally {
