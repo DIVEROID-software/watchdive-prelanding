@@ -3,6 +3,7 @@ import { getRequestHeader } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse";
+import { sendMetaLead } from "./metaCapi";
 
 // Waitlist signups are stored directly in a Notion database — no Supabase.
 // Server-only: the Notion token never reaches the browser.
@@ -141,6 +142,11 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       referredBy: z.string().max(40).optional(),
       // Honeypot: a hidden field real users never see. Anything here = a bot.
       honeypot: z.string().max(200).optional(),
+      // Meta conversion tracking: shared browser/server event id for dedup,
+      // plus the pixel's _fbp/_fbc cookies for match quality.
+      eventId: z.string().max(64).optional(),
+      fbp: z.string().max(128).optional(),
+      fbc: z.string().max(512).optional(),
     }),
   )
   .handler(async ({ data }) => {
@@ -206,6 +212,22 @@ export const joinWaitlist = createServerFn({ method: "POST" })
         Suspect: { checkbox: suspect },
       },
     });
+
+    // Meta CAPI Lead — only for genuinely new, non-suspect signups so ad
+    // optimization never learns from bots or dupes. Duplicates returned above
+    // never reach here. sendMetaLead swallows its own errors.
+    if (!suspect && data.eventId) {
+      await sendMetaLead({
+        eventId: data.eventId,
+        email,
+        phone: data.phone,
+        ip,
+        ua,
+        fbp: data.fbp,
+        fbc: data.fbc,
+        source: data.source,
+      });
+    }
 
     // Always report success (even to suspects) so the anti-abuse logic isn't
     // advertised — they just quietly don't count.
