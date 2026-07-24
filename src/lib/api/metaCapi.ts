@@ -23,7 +23,9 @@ export async function sendMetaLead(args: {
   fbc?: string;
   source?: string;
 }) {
-  const pixelId = process.env.META_PIXEL_ID;
+  // VITE_META_PIXEL_ID fallback: on Vercel every env var reaches process.env,
+  // and both must hold the same dataset id anyway.
+  const pixelId = process.env.META_PIXEL_ID ?? process.env.VITE_META_PIXEL_ID;
   const token = process.env.META_CAPI_ACCESS_TOKEN;
   if (!pixelId || !token) return;
 
