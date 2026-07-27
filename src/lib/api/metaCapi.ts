@@ -9,9 +9,11 @@
 //   META_CAPI_TEST_EVENT_CODE  — optional; set temporarily to see events in Test Events
 //   META_CAPI_ENABLED           — must equal "true" before any event can be sent
 //   VITE_META_TRACKING_ENABLED  — browser and server measurement master gate
+import { createHash } from "node:crypto";
 
 const GRAPH_URL = "https://graph.facebook.com/v21.0";
 const META_REQUEST_TIMEOUT_MS = 5_000;
+const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 
 function metaCapiConfig(): { pixelId: string; token: string } | null {
   const capiEnabled = (process.env.META_CAPI_ENABLED ?? "").trim() === "true";
@@ -35,20 +37,25 @@ function metaCapiConfig(): { pixelId: string; token: string } | null {
 
 export async function sendMetaLead(args: {
   eventId: string;
-  hasPhone: boolean;
+  email: string;
+  phone?: string;
   ip?: string;
   ua?: string;
   fbp?: string;
   fbc?: string;
-}) {
+  source?: string;
+}): Promise<boolean> {
   const config = metaCapiConfig();
   if (!config) {
     console.log("[meta-capi] skipped: disabled or invalid/mismatched configuration");
-    return;
+    return false;
   }
 
   const eventTime = Math.floor(Date.now() / 1000);
+  const digitsOnlyPhone = args.phone?.replace(/[^0-9]/g, "");
   const userData = {
+    em: [sha256(args.email.trim().toLowerCase())],
+    ...(digitsOnlyPhone ? { ph: [sha256(digitsOnlyPhone)] } : {}),
     ...(args.ip ? { client_ip_address: args.ip } : {}),
     ...(args.ua ? { client_user_agent: args.ua } : {}),
     ...(args.fbp ? { fbp: args.fbp } : {}),
@@ -63,8 +70,12 @@ export async function sendMetaLead(args: {
         action_source: "website",
         event_source_url: "https://watchdive.diveroid.com/",
         user_data: userData,
+        custom_data: {
+          content_name: "watchdive_email_signup",
+          ...(args.source ? { content_category: args.source } : {}),
+        },
       },
-      ...(args.hasPhone
+      ...(digitsOnlyPhone
         ? [
             {
               event_name: "Contact",
@@ -73,6 +84,10 @@ export async function sendMetaLead(args: {
               action_source: "website",
               event_source_url: "https://watchdive.diveroid.com/",
               user_data: userData,
+              custom_data: {
+                content_name: "watchdive_phone_signup",
+                ...(args.source ? { content_category: args.source } : {}),
+              },
             },
           ]
         : []),
@@ -95,13 +110,23 @@ export async function sendMetaLead(args: {
     if (!res.ok) {
       const detail = await res.text();
       console.error(`Meta CAPI Lead failed (${res.status}): ${detail.slice(0, 300)}`);
+      return false;
     } else {
-      const json = (await res.json()) as { fbtrace_id?: string };
+      const json = (await res.json()) as { events_received?: number; fbtrace_id?: string };
+      const expectedEvents = digitsOnlyPhone ? 2 : 1;
+      if ((json.events_received ?? 0) < expectedEvents) {
+        console.error(
+          `[meta-capi] incomplete acknowledgement event_id=${args.eventId} expected=${expectedEvents} received=${json.events_received ?? 0}`,
+        );
+        return false;
+      }
       console.log(
-        `[meta-capi] Lead sent event_id=${args.eventId} fbtrace=${json.fbtrace_id ?? "?"}`,
+        `[meta-capi] Lead sent event_id=${args.eventId} events=${json.events_received} fbtrace=${json.fbtrace_id ?? "?"}`,
       );
+      return true;
     }
   } catch (err) {
     console.error("Meta CAPI Lead error", err);
+    return false;
   }
 }
