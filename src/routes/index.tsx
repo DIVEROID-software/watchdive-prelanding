@@ -8,10 +8,11 @@ import { track } from "@vercel/analytics";
 import { joinWaitlist, getReferralCount } from "@/lib/api/waitlist.functions";
 import {
   getMetaCookies,
+  hasMetaMeasurementConsent,
   newMetaEventId,
-  setMetaUserEmail,
   trackMetaCustom,
   trackMetaLead,
+  trackMetaPhoneLead,
 } from "@/lib/metaPixel";
 
 import heroBackground from "../assets/live/hero-background.png";
@@ -336,7 +337,8 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
         try {
           // Meta dedup: the browser pixel and the server CAPI event share this
           // id so Meta counts the pair as one Lead.
-          const metaEventId = newMetaEventId();
+          const measurementConsent = hasMetaMeasurementConsent();
+          const metaEventId = measurementConsent ? newMetaEventId() : undefined;
           const res = await joinWaitlist({
             data: {
               email: email.trim().toLowerCase(),
@@ -345,7 +347,8 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
               referredBy: getRef(),
               honeypot: hp,
               eventId: metaEventId,
-              ...getMetaCookies(),
+              measurementConsent,
+              ...(measurementConsent ? getMetaCookies() : {}),
             },
           });
           setRefCode(res.refCode ?? "");
@@ -353,10 +356,12 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
           // 전환 이벤트 — 광고 유입→가입 측정 (source=CTA 위치)
           track("waitlist_signup", { source: id, referred: !!getRef() });
           // Meta Lead — 서버가 신규 가입으로 확정한 경우에만 발화 (중복 제외).
-          // 고급 매칭용 이메일을 먼저 픽셀에 넘긴다 (브라우저 안에서 해시됨).
-          if (!res.duplicate) {
-            setMetaUserEmail(email.trim().toLowerCase());
-            trackMetaLead(metaEventId, id);
+          // 서버가 되돌려 준 동일 event id만 사용해 browser/CAPI 중복 제거를 유지한다.
+          if (!res.duplicate && res.metaEventId) {
+            trackMetaLead(res.metaEventId, id);
+            if (phone.trim()) {
+              trackMetaPhoneLead(`${res.metaEventId}:phone`, id);
+            }
           }
         } catch {
           toast.error("Something went wrong. Please try again.");

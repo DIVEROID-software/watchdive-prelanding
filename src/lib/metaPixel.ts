@@ -1,8 +1,15 @@
-// Meta Pixel — browser side. Loads only when VITE_META_PIXEL_ID is set, so dev
-// and preview builds without the env var stay pixel-free. The Lead event fires
-// with an eventID shared with the server (Conversions API) so Meta dedupes the
-// browser+server pair into a single conversion.
-const PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID as string | undefined;
+// Meta Pixel — browser side. Optional measurement remains completely off unless
+// the public production gate is explicitly enabled, the dataset id is valid,
+// and the visitor has granted the current v3 consent.
+const META_TRACKING_ENABLED =
+  (import.meta.env.VITE_META_TRACKING_ENABLED as string | undefined)?.trim() === "true";
+const META_PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID as string | undefined)?.trim() ?? "";
+const META_CONSENT_STORAGE_KEY = "watchdive.measurement-consent.v3";
+const META_PIXEL_SCRIPT_ID = "watchdive-meta-pixel";
+
+export type MetaMeasurementConsent = "granted" | "denied";
+
+let inMemoryConsent: MetaMeasurementConsent | null = null;
 
 type Fbq = ((...args: unknown[]) => void) & {
   callMethod?: (...args: unknown[]) => void;
@@ -16,36 +23,103 @@ declare global {
   interface Window {
     fbq?: Fbq;
     _fbq?: Fbq;
+    __watchDiveMetaPixelId?: string;
+    __watchDiveMetaPageViewSent?: boolean;
+  }
+}
+
+export function isMetaPixelConfigured(): boolean {
+  return META_TRACKING_ENABLED && /^\d{10,20}$/.test(META_PIXEL_ID);
+}
+
+export function getMetaMeasurementConsent(): MetaMeasurementConsent | null {
+  if (inMemoryConsent) return inMemoryConsent;
+  if (typeof window === "undefined") return null;
+
+  try {
+    const stored = window.localStorage.getItem(META_CONSENT_STORAGE_KEY);
+    if (stored === "granted" || stored === "denied") {
+      inMemoryConsent = stored;
+      return stored;
+    }
+  } catch {
+    // Storage can be unavailable in restricted browser contexts. In that case,
+    // consent applies only to the current page through the in-memory value.
+  }
+
+  return null;
+}
+
+export function hasMetaMeasurementConsent(): boolean {
+  return isMetaPixelConfigured() && getMetaMeasurementConsent() === "granted";
+}
+
+export function setMetaMeasurementConsent(choice: MetaMeasurementConsent): void {
+  inMemoryConsent = choice;
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(META_CONSENT_STORAGE_KEY, choice);
+  } catch {
+    // The in-memory choice still applies for this page load.
+  }
+
+  if (choice === "denied" && window.fbq) {
+    window.fbq("consent", "revoke");
   }
 }
 
 export function initMetaPixel() {
-  if (!PIXEL_ID || typeof window === "undefined" || window.fbq) return;
-  const fbq = function (this: unknown, ...args: unknown[]) {
-    if (fbq.callMethod) {
-      fbq.callMethod(...args);
-    } else {
-      fbq.queue.push(args);
-    }
-  } as Fbq;
-  fbq.queue = [];
-  fbq.push = fbq;
-  fbq.loaded = true;
-  fbq.version = "2.0";
-  window.fbq = fbq;
-  if (!window._fbq) window._fbq = fbq;
-  const script = document.createElement("script");
-  script.async = true;
-  script.src = "https://connect.facebook.net/en_US/fbevents.js";
-  document.head.appendChild(script);
-  window.fbq("init", PIXEL_ID);
-  window.fbq("track", "PageView");
+  if (typeof window === "undefined" || !hasMetaMeasurementConsent()) return;
+
+  if (!window.fbq) {
+    const fbq = function (this: unknown, ...args: unknown[]) {
+      if (fbq.callMethod) {
+        fbq.callMethod(...args);
+      } else {
+        fbq.queue.push(args);
+      }
+    } as Fbq;
+    fbq.queue = [];
+    fbq.push = fbq;
+    fbq.loaded = true;
+    fbq.version = "2.0";
+    window.fbq = fbq;
+    if (!window._fbq) window._fbq = fbq;
+  }
+
+  if (!document.getElementById(META_PIXEL_SCRIPT_ID)) {
+    const script = document.createElement("script");
+    script.id = META_PIXEL_SCRIPT_ID;
+    script.async = true;
+    script.src = "https://connect.facebook.net/en_US/fbevents.js";
+    document.head.appendChild(script);
+  }
+
+  window.fbq("consent", "grant");
+  if (window.__watchDiveMetaPixelId !== META_PIXEL_ID) {
+    window.fbq("init", META_PIXEL_ID);
+    window.__watchDiveMetaPixelId = META_PIXEL_ID;
+  }
+  if (!window.__watchDiveMetaPageViewSent) {
+    window.fbq("track", "PageView");
+    window.__watchDiveMetaPageViewSent = true;
+  }
 }
 
 // Fire only after the server confirms a NEW signup (never on button click, never
 // for duplicates) — otherwise ad optimization learns from junk conversions.
 export function trackMetaLead(eventId: string, source: string) {
-  if (!PIXEL_ID || typeof window === "undefined" || !window.fbq) return;
+  if (
+    typeof window === "undefined" ||
+    !hasMetaMeasurementConsent() ||
+    !window.fbq ||
+    window.__watchDiveMetaPixelId !== META_PIXEL_ID ||
+    !/^[A-Za-z0-9._:-]{8,64}$/.test(eventId)
+  ) {
+    return;
+  }
+
   window.fbq(
     "track",
     "Lead",
@@ -54,25 +128,44 @@ export function trackMetaLead(eventId: string, source: string) {
   );
 }
 
-// Manual advanced matching: hand the raw email to the pixel right before the
-// Lead fires — fbevents normalizes and SHA-256 hashes it client-side before
-// anything leaves the browser. Raises event match quality, which directly
-// improves ad optimization.
-export function setMetaUserEmail(email: string) {
-  if (!PIXEL_ID || typeof window === "undefined" || !window.fbq) return;
-  window.fbq("init", PIXEL_ID, { em: email });
+// A separate standard Contact conversion lets Ads Manager report phone-number
+// acquisition cost without ever sending the phone number itself to Meta.
+export function trackMetaPhoneLead(eventId: string, source: string) {
+  if (
+    typeof window === "undefined" ||
+    !hasMetaMeasurementConsent() ||
+    !window.fbq ||
+    window.__watchDiveMetaPixelId !== META_PIXEL_ID ||
+    !/^[A-Za-z0-9._:-]{8,64}$/.test(eventId)
+  ) {
+    return;
+  }
+
+  window.fbq(
+    "track",
+    "Contact",
+    { content_name: "watchdive_phone_signup", content_category: source },
+    { eventID: eventId },
+  );
 }
 
 // Funnel micro-signal (reporting only — optimization stays on Lead).
 export function trackMetaCustom(name: string, params?: Record<string, unknown>) {
-  if (!PIXEL_ID || typeof window === "undefined" || !window.fbq) return;
+  if (
+    typeof window === "undefined" ||
+    !hasMetaMeasurementConsent() ||
+    !window.fbq ||
+    window.__watchDiveMetaPixelId !== META_PIXEL_ID
+  ) {
+    return;
+  }
   window.fbq("trackCustom", name, params ?? {});
 }
 
 // _fbp/_fbc cookies are set by the pixel (_fbc only after an fbclid landing).
 // Passed to the server so the Conversions API event carries the same identifiers.
 export function getMetaCookies(): { fbp?: string; fbc?: string } {
-  if (typeof document === "undefined") return {};
+  if (typeof document === "undefined" || !hasMetaMeasurementConsent()) return {};
   const read = (name: string) =>
     document.cookie
       .split("; ")

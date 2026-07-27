@@ -7,12 +7,18 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
-import { initMetaPixel } from "@/lib/metaPixel";
+import {
+  getMetaMeasurementConsent,
+  initMetaPixel,
+  isMetaPixelConfigured,
+  setMetaMeasurementConsent,
+  type MetaMeasurementConsent,
+} from "@/lib/metaPixel";
 
 function NotFoundComponent() {
   return (
@@ -143,6 +149,7 @@ function RootShell({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
+        <MetaMeasurementConsentBanner />
         <Analytics />
         <Scripts />
       </body>
@@ -150,13 +157,61 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function MetaMeasurementConsentBanner() {
+  const [choice, setChoice] = useState<MetaMeasurementConsent | "unset" | "loading">("loading");
+
+  useEffect(() => {
+    if (!isMetaPixelConfigured()) {
+      setChoice("denied");
+      return;
+    }
+
+    const stored = getMetaMeasurementConsent();
+    setChoice(stored ?? "unset");
+    if (stored === "granted") initMetaPixel();
+  }, []);
+
+  if (choice !== "unset") return null;
+
+  const choose = (nextChoice: MetaMeasurementConsent) => {
+    setMetaMeasurementConsent(nextChoice);
+    setChoice(nextChoice);
+    if (nextChoice === "granted") initMetaPixel();
+  };
+
+  return (
+    <aside
+      aria-label="Optional measurement choices"
+      className="fixed inset-x-3 bottom-3 z-[80] mx-auto flex max-w-2xl flex-col gap-3 rounded-2xl border border-white/15 bg-[color:var(--color-deep-2)]/95 p-4 text-sm text-white shadow-[0_20px_60px_-24px_oklch(0.08_0.04_270/0.95)] backdrop-blur-xl sm:flex-row sm:items-center"
+    >
+      <p className="min-w-0 flex-1 leading-relaxed text-white/75">
+        Allow optional Meta measurement to help us understand sign-ups and ad performance.{" "}
+        <Link className="text-white underline underline-offset-4" to="/privacy">
+          Privacy Policy
+        </Link>
+      </p>
+      <div className="flex shrink-0 gap-2">
+        <button
+          type="button"
+          onClick={() => choose("denied")}
+          className="rounded-lg border border-white/20 px-3 py-2 font-semibold text-white/85 hover:bg-white/10"
+        >
+          No thanks
+        </button>
+        <button
+          type="button"
+          onClick={() => choose("granted")}
+          className="rounded-lg bg-[color:var(--color-cyan-glow)] px-3 py-2 font-semibold text-[color:var(--color-deep-2)] hover:brightness-105"
+        >
+          Allow
+        </button>
+      </div>
+    </aside>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
-  // Meta Pixel base code — no-ops unless VITE_META_PIXEL_ID is configured.
-  useEffect(() => {
-    initMetaPixel();
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

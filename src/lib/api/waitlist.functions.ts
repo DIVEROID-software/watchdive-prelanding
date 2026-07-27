@@ -144,7 +144,11 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       honeypot: z.string().max(200).optional(),
       // Meta conversion tracking: shared browser/server event id for dedup,
       // plus the pixel's _fbp/_fbc cookies for match quality.
-      eventId: z.string().max(64).optional(),
+      eventId: z
+        .string()
+        .regex(/^[A-Za-z0-9._:-]{8,64}$/)
+        .optional(),
+      measurementConsent: z.boolean().default(false),
       fbp: z.string().max(128).optional(),
       fbc: z.string().max(512).optional(),
     }),
@@ -173,7 +177,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     if (existing.results?.length > 0) {
       const props = existing.results[0].properties;
       const code = props["Ref code"]?.rich_text?.[0]?.plain_text ?? "";
-      return { ok: true, duplicate: true, refCode: code };
+      return { ok: true, duplicate: true, refCode: code, metaEventId: undefined };
     }
 
     // ---- Abuse signals (flag, don't lose the lead). Suspect rows are stored
@@ -216,25 +220,34 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // Meta CAPI Lead — only for genuinely new, non-suspect signups so ad
     // optimization never learns from bots or dupes. Duplicates returned above
     // never reach here. sendMetaLead swallows its own errors.
-    if (suspect || !data.eventId) {
+    if (suspect || !data.measurementConsent || !data.eventId) {
       console.log(
-        `[meta-capi] skipped: ${suspect ? `suspect(${flags.join(",")})` : "no eventId"}`,
+        `[meta-capi] skipped: ${
+          suspect
+            ? `suspect(${flags.join(",")})`
+            : !data.measurementConsent
+              ? "no measurement consent"
+              : "no eventId"
+        }`,
       );
     }
-    if (!suspect && data.eventId) {
+    if (!suspect && data.measurementConsent && data.eventId) {
       await sendMetaLead({
         eventId: data.eventId,
-        email,
-        phone: data.phone,
+        hasPhone: Boolean(data.phone?.trim()),
         ip,
         ua,
         fbp: data.fbp,
         fbc: data.fbc,
-        source: data.source,
       });
     }
 
     // Always report success (even to suspects) so the anti-abuse logic isn't
     // advertised — they just quietly don't count.
-    return { ok: true, duplicate: false, refCode };
+    return {
+      ok: true,
+      duplicate: false,
+      refCode,
+      metaEventId: !suspect && data.measurementConsent && data.eventId ? data.eventId : undefined,
+    };
   });
