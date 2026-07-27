@@ -217,28 +217,34 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       },
     });
 
-    // Meta CAPI Lead — only for genuinely new, non-suspect signups so ad
-    // optimization never learns from bots or dupes. Duplicates returned above
-    // never reach here. sendMetaLead swallows its own errors.
-    if (suspect || !data.measurementConsent || !data.eventId) {
+    // A repeated shared IP remains a review/counter flag, but is not enough by
+    // itself to discard a unique browser-confirmed conversion. Honeypots,
+    // disposable addresses, and headless clients remain ineligible.
+    const conversionBlocked = flags.some((flag) => flag !== "ip-repeat");
+    const conversionEligible =
+      !conversionBlocked && data.measurementConsent && Boolean(data.eventId);
+
+    if (!conversionEligible) {
       console.log(
         `[meta-capi] skipped: ${
-          suspect
-            ? `suspect(${flags.join(",")})`
+          conversionBlocked
+            ? `blocked(${flags.join(",")})`
             : !data.measurementConsent
               ? "no measurement consent"
               : "no eventId"
         }`,
       );
     }
-    if (!suspect && data.measurementConsent && data.eventId) {
+    if (conversionEligible && data.eventId) {
       await sendMetaLead({
         eventId: data.eventId,
-        hasPhone: Boolean(data.phone?.trim()),
+        email,
+        phone: data.phone,
         ip,
         ua,
         fbp: data.fbp,
         fbc: data.fbc,
+        source: data.source,
       });
     }
 
@@ -248,6 +254,6 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       ok: true,
       duplicate: false,
       refCode,
-      metaEventId: !suspect && data.measurementConsent && data.eventId ? data.eventId : undefined,
+      metaEventId: conversionEligible ? data.eventId : undefined,
     };
   });

@@ -1,6 +1,7 @@
-// Meta Pixel — browser side. Optional measurement remains completely off unless
-// the public production gate is explicitly enabled, the dataset id is valid,
-// and the visitor has granted the current v3 consent.
+// Meta Pixel — browser side. Measurement remains completely off unless the
+// public production gate is explicitly enabled and the dataset id is valid.
+// The restored production design has no consent banner, so preserve that visual
+// contract while still honoring an existing opt-out and Global Privacy Control.
 const META_TRACKING_ENABLED =
   (import.meta.env.VITE_META_TRACKING_ENABLED as string | undefined)?.trim() === "true";
 const META_PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID as string | undefined)?.trim() ?? "";
@@ -51,7 +52,13 @@ export function getMetaMeasurementConsent(): MetaMeasurementConsent | null {
 }
 
 export function hasMetaMeasurementConsent(): boolean {
-  return isMetaPixelConfigured() && getMetaMeasurementConsent() === "granted";
+  if (!isMetaPixelConfigured() || getMetaMeasurementConsent() === "denied") return false;
+  if (typeof navigator !== "undefined" && "globalPrivacyControl" in navigator) {
+    return (
+      (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl !== true
+    );
+  }
+  return true;
 }
 
 export function setMetaMeasurementConsent(choice: MetaMeasurementConsent): void {
