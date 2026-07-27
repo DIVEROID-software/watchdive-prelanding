@@ -1,59 +1,81 @@
 // Meta Conversions API — server-side mirror of the browser Lead event.
 // Same event_id on both sides means Meta dedupes the pair to one conversion,
-// and the server leg survives ad blockers. Fire-and-forget semantics: a Meta
-// outage must never fail or noticeably slow a signup.
+// and the server leg survives ad blockers. Delivery errors never fail a signup,
+// and the request timeout bounds any delay caused by a Meta outage.
 //
 // Server-only env (set in .env locally / Vercel project settings in prod):
 //   META_PIXEL_ID              — Events Manager dataset id (same id the browser pixel uses)
 //   META_CAPI_ACCESS_TOKEN     — Conversions API token (dataset settings → generate token)
 //   META_CAPI_TEST_EVENT_CODE  — optional; set temporarily to see events in Test Events
-import { createHash } from "node:crypto";
+//   META_CAPI_ENABLED           — must equal "true" before any event can be sent
+//   VITE_META_TRACKING_ENABLED  — browser and server measurement master gate
 
 const GRAPH_URL = "https://graph.facebook.com/v21.0";
+const META_REQUEST_TIMEOUT_MS = 5_000;
 
-const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
+function metaCapiConfig(): { pixelId: string; token: string } | null {
+  const capiEnabled = (process.env.META_CAPI_ENABLED ?? "").trim() === "true";
+  const browserEnabled = (process.env.VITE_META_TRACKING_ENABLED ?? "").trim() === "true";
+  const pixelId = (process.env.META_PIXEL_ID ?? "").trim();
+  const browserPixelId = (process.env.VITE_META_PIXEL_ID ?? "").trim();
+  const token = (process.env.META_CAPI_ACCESS_TOKEN ?? "").trim();
+
+  if (
+    !capiEnabled ||
+    !browserEnabled ||
+    !/^\d{10,20}$/.test(pixelId) ||
+    pixelId !== browserPixelId ||
+    !token
+  ) {
+    return null;
+  }
+
+  return { pixelId, token };
+}
 
 export async function sendMetaLead(args: {
   eventId: string;
-  email: string;
-  phone?: string;
+  hasPhone: boolean;
   ip?: string;
   ua?: string;
   fbp?: string;
   fbc?: string;
-  source?: string;
 }) {
-  // VITE_META_PIXEL_ID fallback: on Vercel every env var reaches process.env,
-  // and both must hold the same dataset id anyway.
-  const pixelId = process.env.META_PIXEL_ID ?? process.env.VITE_META_PIXEL_ID;
-  const token = process.env.META_CAPI_ACCESS_TOKEN;
-  if (!pixelId || !token) {
-    console.log("[meta-capi] skipped: missing env (pixelId or token)");
+  const config = metaCapiConfig();
+  if (!config) {
+    console.log("[meta-capi] skipped: disabled or invalid/mismatched configuration");
     return;
   }
 
-  const digitsOnlyPhone = args.phone?.replace(/[^0-9]/g, "");
+  const eventTime = Math.floor(Date.now() / 1000);
+  const userData = {
+    ...(args.ip ? { client_ip_address: args.ip } : {}),
+    ...(args.ua ? { client_user_agent: args.ua } : {}),
+    ...(args.fbp ? { fbp: args.fbp } : {}),
+    ...(args.fbc ? { fbc: args.fbc } : {}),
+  };
   const body = {
     data: [
       {
         event_name: "Lead",
-        event_time: Math.floor(Date.now() / 1000),
+        event_time: eventTime,
         event_id: args.eventId,
         action_source: "website",
         event_source_url: "https://watchdive.diveroid.com/",
-        user_data: {
-          em: [sha256(args.email.trim().toLowerCase())],
-          ...(digitsOnlyPhone ? { ph: [sha256(digitsOnlyPhone)] } : {}),
-          ...(args.ip ? { client_ip_address: args.ip } : {}),
-          ...(args.ua ? { client_user_agent: args.ua } : {}),
-          ...(args.fbp ? { fbp: args.fbp } : {}),
-          ...(args.fbc ? { fbc: args.fbc } : {}),
-        },
-        custom_data: {
-          content_name: "watchdive_email_signup",
-          ...(args.source ? { content_category: args.source } : {}),
-        },
+        user_data: userData,
       },
+      ...(args.hasPhone
+        ? [
+            {
+              event_name: "Contact",
+              event_time: eventTime,
+              event_id: `${args.eventId}:phone`,
+              action_source: "website",
+              event_source_url: "https://watchdive.diveroid.com/",
+              user_data: userData,
+            },
+          ]
+        : []),
     ],
     ...(process.env.META_CAPI_TEST_EVENT_CODE
       ? { test_event_code: process.env.META_CAPI_TEST_EVENT_CODE }
@@ -61,10 +83,14 @@ export async function sendMetaLead(args: {
   };
 
   try {
-    const res = await fetch(`${GRAPH_URL}/${pixelId}/events?access_token=${token}`, {
+    const res = await fetch(`${GRAPH_URL}/${config.pixelId}/events`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${config.token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(META_REQUEST_TIMEOUT_MS),
     });
     if (!res.ok) {
       const detail = await res.text();
