@@ -25,7 +25,7 @@ let nextReservationGeneration = 100;
 function metaSyncControlResponse(url: URL): Response | null {
   if (
     url.hostname === "measurement.supabase.co" &&
-    url.pathname.endsWith("/rpc/reserve_meta_insights_sync")
+    url.pathname.endsWith("/rpc/reserve_meta_insights_sync_v2")
   ) {
     const generation = nextReservationGeneration;
     nextReservationGeneration += 1;
@@ -279,10 +279,11 @@ test("reserves a canonical database generation with a bounded service RPC", asyn
   assert.deepEqual(reservation, {
     generation: 42,
     reservedAt: "2026-07-29T08:00:00.000Z",
+    state: "reserved",
   });
   assert.equal(
     request?.url,
-    "https://measurement.supabase.co/rest/v1/rpc/reserve_meta_insights_sync",
+    "https://measurement.supabase.co/rest/v1/rpc/reserve_meta_insights_sync_v2",
   );
   assert.deepEqual(request?.body, {
     p_account_id: "727396218766985",
@@ -291,6 +292,142 @@ test("reserves a canonical database generation with a bounded service RPC", asyn
     p_to: "2026-07-29",
   });
   assert.ok(request?.signal instanceof AbortSignal);
+});
+
+test("reuses a fresh database generation without calling Meta Graph", async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedUrls: string[] = [];
+
+  globalThis.fetch = (async (input) => {
+    const url = new URL(String(input));
+    requestedUrls.push(url.toString());
+    if (url.pathname.endsWith("/rpc/reserve_meta_insights_sync_v2")) {
+      return Response.json({
+        generation: 43,
+        reserved_at: "2026-07-29T08:01:00.000Z",
+        state: "ready",
+      });
+    }
+    throw new Error(`Unexpected request after a fresh reservation: ${url}`);
+  }) as typeof fetch;
+
+  try {
+    assert.deepEqual(await syncMetaInsights("2026-07-29", "2026-07-29"), {
+      configured: true,
+      ok: true,
+      rows: 0,
+      source: "cache",
+      generation: 43,
+    });
+    assert.equal(requestedUrls.length, 1);
+    assert.match(requestedUrls[0] ?? "", /reserve_meta_insights_sync_v2$/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("does not duplicate an in-progress cross-replica Meta refresh", async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedUrls: string[] = [];
+
+  globalThis.fetch = (async (input) => {
+    const url = new URL(String(input));
+    requestedUrls.push(url.toString());
+    if (url.pathname.endsWith("/rpc/reserve_meta_insights_sync_v2")) {
+      return Response.json({
+        generation: 44,
+        reserved_at: "2026-07-29T08:02:00.000Z",
+        state: "in_progress",
+      });
+    }
+    throw new Error(`Unexpected request during an active reservation: ${url}`);
+  }) as typeof fetch;
+
+  try {
+    assert.deepEqual(await syncMetaInsights("2026-07-30", "2026-07-30"), {
+      configured: true,
+      ok: false,
+      rows: 0,
+      reason: "sync_in_progress",
+      generation: 44,
+    });
+    assert.equal(requestedUrls.length, 1);
+    assert.match(requestedUrls[0] ?? "", /reserve_meta_insights_sync_v2$/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("an account-level in-progress reservation blocks a different-range Graph request", async () => {
+  const originalFetch = globalThis.fetch;
+  let releaseFirstAccount: (() => void) | undefined;
+  let signalFirstAccount: (() => void) | undefined;
+  let firstReservationActive = false;
+  let accountCalls = 0;
+  let insightCalls = 0;
+  const firstAccountReached = new Promise<void>((resolve) => {
+    signalFirstAccount = resolve;
+  });
+
+  globalThis.fetch = (async (input, init) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/rpc/reserve_meta_insights_sync_v2")) {
+      const body = JSON.parse(String(init?.body)) as { p_from?: string };
+      if (body.p_from === "2026-07-30") {
+        firstReservationActive = true;
+        return Response.json({
+          generation: 45,
+          reserved_at: "2026-07-29T08:03:00.000Z",
+          state: "reserved",
+        });
+      }
+      assert.equal(body.p_from, "2026-07-31");
+      assert.equal(firstReservationActive, true);
+      return Response.json({
+        generation: 45,
+        reserved_at: "2026-07-29T08:03:00.000Z",
+        state: "in_progress",
+      });
+    }
+    if (url.hostname === "graph.facebook.com" && url.pathname.endsWith("/act_727396218766985")) {
+      accountCalls += 1;
+      signalFirstAccount?.();
+      return new Promise<Response>((resolve) => {
+        releaseFirstAccount = () => resolve(Response.json({ currency: "EUR" }));
+      });
+    }
+    if (url.hostname === "graph.facebook.com" && url.pathname.endsWith("/insights")) {
+      insightCalls += 1;
+      return Response.json({ data: [] });
+    }
+    if (url.pathname.endsWith("/rpc/replace_meta_insights_range")) {
+      firstReservationActive = false;
+      return new Response(null, { status: 204 });
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  }) as typeof fetch;
+
+  try {
+    const first = syncMetaInsights("2026-07-30", "2026-07-30");
+    await firstAccountReached;
+    const second = await syncMetaInsights("2026-07-31", "2026-07-31");
+    assert.deepEqual(second, {
+      configured: true,
+      ok: false,
+      rows: 0,
+      reason: "sync_in_progress",
+      generation: 45,
+    });
+    assert.equal(accountCalls, 1);
+    assert.equal(insightCalls, 0);
+
+    releaseFirstAccount?.();
+    assert.equal((await first).ok, true);
+    assert.equal(insightCalls, 2);
+  } finally {
+    releaseFirstAccount?.();
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("empty Graph results atomically replace the complete requested range", async () => {
@@ -722,7 +859,7 @@ test("reserves the database generation before Graph and uses it for the atomic r
     const url = new URL(String(input));
     if (
       url.hostname === "measurement.supabase.co" &&
-      url.pathname.endsWith("/rpc/reserve_meta_insights_sync")
+      url.pathname.endsWith("/rpc/reserve_meta_insights_sync_v2")
     ) {
       order.push("reserve");
       reserveSignal = init?.signal;
@@ -772,7 +909,7 @@ test("reservation failure stops before Graph and does not publish a paid snapsho
   globalThis.fetch = (async (input) => {
     const url = new URL(String(input));
     requestedUrls.push(url.toString());
-    if (url.pathname.endsWith("/rpc/reserve_meta_insights_sync")) {
+    if (url.pathname.endsWith("/rpc/reserve_meta_insights_sync_v2")) {
       return new Response("temporarily unavailable", { status: 503 });
     }
     throw new Error(`Unexpected request after failed reservation: ${url}`);
@@ -786,7 +923,7 @@ test("reservation failure stops before Graph and does not publish a paid snapsho
       reason: "sync_failed",
     });
     assert.equal(requestedUrls.length, 1);
-    assert.match(requestedUrls[0] ?? "", /reserve_meta_insights_sync$/);
+    assert.match(requestedUrls[0] ?? "", /reserve_meta_insights_sync_v2$/);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -798,7 +935,7 @@ test("a post-reservation failure marks the same generation failed", async () => 
 
   globalThis.fetch = (async (input, init) => {
     const url = new URL(String(input));
-    if (url.pathname.endsWith("/rpc/reserve_meta_insights_sync")) {
+    if (url.pathname.endsWith("/rpc/reserve_meta_insights_sync_v2")) {
       return Response.json({
         generation: 812,
         reserved_at: "2026-07-29T08:12:00.000Z",

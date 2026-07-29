@@ -4,7 +4,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const CACHE_TTL_MS = 60_000;
 const DASHBOARD_RPC_TIMEOUT_MS = 10_000;
 const DIMENSIONS = [
   "path",
@@ -278,8 +277,6 @@ export type MetaScope = {
   campaignIds: string[];
   campaignIdSet: Set<string>;
 };
-
-const dashboardCache = new Map<string, { cachedAt: number; payload: DashboardPayload }>();
 
 function getSupabaseConfig(): SupabaseConfig | null {
   const url = process.env.SUPABASE_URL?.trim().replace(/\/+$/, "");
@@ -855,7 +852,7 @@ function storageErrorPayload(
   return payload;
 }
 
-async function buildDashboard(from: string, to: string): Promise<DashboardResponse> {
+export async function buildDashboard(from: string, to: string): Promise<DashboardResponse> {
   const metaTokenAvailable = metaTokenConfigured();
   const metaScope = configuredMetaScope();
   const websiteCampaignIds = [...metaIdSet(process.env.META_WEBSITE_CAMPAIGN_IDS)].sort();
@@ -865,22 +862,15 @@ async function buildDashboard(from: string, to: string): Promise<DashboardRespon
     process.env.META_WEBSITE_CAMPAIGN_IDS,
     process.env.META_INSTANT_FORM_CAMPAIGN_IDS,
   );
-  const cacheKey = `${from}:${to}:${metaScope?.accountId ?? "none"}:${
-    metaScope?.campaignIds.join(",") ?? "none"
-  }:${websiteCampaignIds.join(",")}:${instantFormCampaignIds.join(
-    ",",
-  )}:${metaScopeAvailable}:${metaTokenAvailable}`;
-  let cached = dashboardCache.get(cacheKey);
-
   const config = getSupabaseConfig();
-  if (!config) return emptyPayload(from, to, metaTokenAvailable, metaScopeAvailable);
+  if (!config) return { ok: false, reason: "aggregate_unavailable" };
 
   let insightSync: {
     configured: boolean;
     ok: boolean;
     rows: number;
     reason?: string;
-    source?: "refresh";
+    source?: "refresh" | "cache";
     generation?: number;
   } = { configured: false, ok: false, rows: 0, reason: "token_unconfigured" };
   let aggregate: DashboardAggregate | undefined;
@@ -889,23 +879,21 @@ async function buildDashboard(from: string, to: string): Promise<DashboardRespon
     for (let attempt = 0; attempt < 2; attempt += 1) {
       insightSync = await metaInsights.syncMetaInsights(from, to);
       if (!insightSync.ok) {
-        // Never serve or retain a cached paid snapshot after a failed refresh.
-        // A syncing/failed DB generation also prevents other replicas from
-        // treating an older snapshot as current.
-        dashboardCache.clear();
-        if (insightSync.reason === "generation_conflict" && attempt === 0) {
+        // A syncing/failed DB generation prevents every server replica from
+        // treating an older paid snapshot as current.
+        if (
+          (insightSync.reason === "generation_conflict" ||
+            insightSync.reason === "sync_in_progress") &&
+          attempt === 0
+        ) {
           // A second replica reserved a newer generation before this replica
-          // could commit. Retry the complete reservation→Graph→replace flow
-          // once; hard Graph/storage failures remain terminal.
+          // could commit, or is already refreshing the same exact scope.
+          // Retry once; hard Graph/storage failures remain terminal.
           await delay(1_000);
           continue;
         }
         return { ok: false, reason: "meta_sync_failed" };
       }
-
-      // Paid dashboards always refresh Meta before reading the aggregate.
-      dashboardCache.delete(cacheKey);
-      cached = undefined;
 
       try {
         aggregate = await readDashboardAggregate(
@@ -931,12 +919,8 @@ async function buildDashboard(from: string, to: string): Promise<DashboardRespon
       }
     }
     if (!aggregate) {
-      dashboardCache.clear();
       return { ok: false, reason: "meta_sync_failed" };
     }
-  }
-  if (!metaTokenAvailable && cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
-    return cached.payload;
   }
 
   if (!aggregate) {
@@ -1468,9 +1452,6 @@ async function buildDashboard(from: string, to: string): Promise<DashboardRespon
     ),
     health,
   };
-  if (!metaTokenAvailable) {
-    dashboardCache.set(cacheKey, { cachedAt: Date.now(), payload });
-  }
   return payload;
 }
 

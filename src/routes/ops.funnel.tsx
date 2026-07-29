@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   loadFunnelDashboard,
@@ -24,6 +24,11 @@ export const Route = createFileRoute("/ops/funnel")({
 });
 
 type BreakdownKey = keyof DashboardPayload["breakdowns"];
+type DashboardRequest = { token: string; from: string; to: string };
+type RefreshOrigin = "manual" | "automatic";
+
+const AUTO_REFRESH_INTERVAL_MS = 60_000;
+const AUTO_REFRESH_INTERVAL_SECONDS = AUTO_REFRESH_INTERVAL_MS / 1_000;
 
 const BREAKDOWN_LABELS: Record<BreakdownKey, string> = {
   path: "전환 경로",
@@ -87,49 +92,167 @@ function formatTimestamp(value: string | null): string {
   }).format(parsed);
 }
 
+function formatClockTimestamp(value: number | null): string {
+  if (value === null) return "—";
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
+}
+
+function formatCountdown(value: number): string {
+  const safeValue = Math.max(0, Math.ceil(value));
+  const minutes = Math.floor(safeValue / 60);
+  const seconds = safeValue % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function dashboardErrorMessage(reason: string, automatic: boolean): string {
+  const prefix = automatic ? "자동 갱신에 실패했습니다. 이전 값을 유지합니다. " : "";
+  if (reason === "dashboard_token_unconfigured") {
+    return `${prefix}서버에 FUNNEL_DASHBOARD_TOKEN이 아직 설정되지 않았습니다.`;
+  }
+  if (reason === "aggregate_unavailable") {
+    return `${prefix}정확 집계 쿼리를 실행하지 못했습니다. 부분 수치는 표시하지 않습니다. 서버 로그와 측정 migration을 확인해 주세요.`;
+  }
+  if (reason === "meta_sync_failed") {
+    return automatic
+      ? "자동 갱신에 실패했습니다. 이전 값을 유지합니다. Meta 토큰·권한·RPC 로그를 확인한 뒤 다시 시도해 주세요."
+      : "Meta 성과 동기화에 실패해 이전 광고 수치를 표시하지 않습니다. 토큰·권한·RPC 로그를 확인한 뒤 다시 시도해 주세요.";
+  }
+  return `${prefix}대시보드 토큰이 올바르지 않습니다.`;
+}
+
 function FunnelDashboardPage() {
   const [token, setToken] = useState("");
-  const [from, setFrom] = useState(() => kstDate(-6));
+  const [from, setFrom] = useState(() => kstDate());
   const [to, setTo] = useState(() => kstDate());
   const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeBreakdown, setActiveBreakdown] = useState<BreakdownKey>("path");
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [tabVisible, setTabVisible] = useState(true);
+  const [secondsUntilRefresh, setSecondsUntilRefresh] = useState(AUTO_REFRESH_INTERVAL_SECONDS);
+  const [lastReceivedAt, setLastReceivedAt] = useState<number | null>(null);
+  const activeRequestRef = useRef<DashboardRequest | null>(null);
+  const nextRefreshAtRef = useRef<number | null>(null);
+  const loadingRef = useRef(false);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (loading) return;
-    setLoading(true);
-    setError("");
+  const scheduleNextRefresh = useCallback(() => {
+    nextRefreshAtRef.current = Date.now() + AUTO_REFRESH_INTERVAL_MS;
+    setSecondsUntilRefresh(AUTO_REFRESH_INTERVAL_SECONDS);
+  }, []);
 
-    try {
-      const result = await loadFunnelDashboard({ data: { token, from, to } });
-      if (!result.ok) {
-        setDashboard(null);
+  const refreshDashboard = useCallback(
+    async (request: DashboardRequest, origin: RefreshOrigin) => {
+      if (loadingRef.current) return;
+      loadingRef.current = true;
+      const automatic = origin === "automatic";
+      if (!automatic) setError("");
+      setLoading(true);
+
+      try {
+        const result = await loadFunnelDashboard({ data: request });
+        if (!result.ok) {
+          if (!automatic) {
+            setDashboard(null);
+            activeRequestRef.current = null;
+            nextRefreshAtRef.current = null;
+          }
+          setError(dashboardErrorMessage(result.reason, automatic));
+          return;
+        }
+        activeRequestRef.current = request;
+        setDashboard(result);
+        setLastReceivedAt(Date.now());
+        setError("");
+        scheduleNextRefresh();
+      } catch {
+        if (!automatic) {
+          setDashboard(null);
+          activeRequestRef.current = null;
+          nextRefreshAtRef.current = null;
+        }
         setError(
-          result.reason === "dashboard_token_unconfigured"
-            ? "서버에 FUNNEL_DASHBOARD_TOKEN이 아직 설정되지 않았습니다."
-            : result.reason === "aggregate_unavailable"
-              ? "정확 집계 쿼리를 실행하지 못했습니다. 부분 수치는 표시하지 않습니다. 서버 로그와 측정 migration을 확인해 주세요."
-              : result.reason === "meta_sync_failed"
-                ? "Meta 성과 동기화에 실패해 이전 광고 수치를 표시하지 않습니다. 토큰·권한·RPC 로그를 확인한 뒤 다시 시도해 주세요."
-                : "대시보드 토큰이 올바르지 않습니다.",
+          automatic
+            ? "자동 갱신에 실패했습니다. 이전 값을 유지합니다. 서버 연결을 확인해 주세요."
+            : "대시보드를 불러오지 못했습니다. 날짜 범위와 서버 연결을 확인해 주세요.",
         );
-        return;
+      } finally {
+        loadingRef.current = false;
+        setLoading(false);
       }
-      setDashboard(result);
-    } catch {
-      setDashboard(null);
-      setError("대시보드를 불러오지 못했습니다. 날짜 범위와 서버 연결을 확인해 주세요.");
-    } finally {
-      setLoading(false);
+    },
+    [scheduleNextRefresh],
+  );
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void refreshDashboard({ token, from, to }, "manual");
+  }
+
+  useEffect(() => {
+    function updateVisibility() {
+      setTabVisible(document.visibilityState === "visible");
     }
+
+    updateVisibility();
+    document.addEventListener("visibilitychange", updateVisibility);
+    return () => document.removeEventListener("visibilitychange", updateVisibility);
+  }, []);
+
+  useEffect(() => {
+    if (!dashboard || !autoRefreshEnabled || !tabVisible) return;
+    if (nextRefreshAtRef.current === null) scheduleNextRefresh();
+
+    function tick() {
+      const nextRefreshAt = nextRefreshAtRef.current;
+      if (nextRefreshAt === null) return;
+      const remaining = Math.max(0, Math.ceil((nextRefreshAt - Date.now()) / 1_000));
+      setSecondsUntilRefresh(remaining);
+      if (remaining > 0 || loadingRef.current) return;
+
+      const request = activeRequestRef.current;
+      nextRefreshAtRef.current = Date.now() + AUTO_REFRESH_INTERVAL_MS;
+      setSecondsUntilRefresh(AUTO_REFRESH_INTERVAL_SECONDS);
+      if (request) void refreshDashboard(request, "automatic");
+    }
+
+    tick();
+    const interval = window.setInterval(tick, 1_000);
+    return () => window.clearInterval(interval);
+  }, [autoRefreshEnabled, dashboard, refreshDashboard, scheduleNextRefresh, tabVisible]);
+
+  function toggleAutoRefresh() {
+    if (autoRefreshEnabled) {
+      setAutoRefreshEnabled(false);
+      return;
+    }
+    nextRefreshAtRef.current = Date.now() + Math.max(1, secondsUntilRefresh) * 1_000;
+    setAutoRefreshEnabled(true);
   }
 
   function applyRange(days: number) {
     setFrom(kstDate(-(days - 1)));
     setTo(kstDate());
   }
+
+  const hasAutomaticRefreshError = Boolean(dashboard && error);
+  const liveStatus = !dashboard
+    ? "인증 후 퍼널은 60초, Meta는 최대 10분 간격으로 실제값을 갱신합니다."
+    : hasAutomaticRefreshError
+      ? "자동 갱신 오류 · 이전 실제값 유지"
+      : loading
+        ? "실제값 갱신 중…"
+        : !tabVisible
+          ? "탭 숨김 · 자동 갱신 대기"
+          : autoRefreshEnabled
+            ? `다음 퍼널 갱신 ${formatCountdown(secondsUntilRefresh)} · Meta 최대 10분`
+            : "자동 갱신 일시정지";
 
   return (
     <main className="wdops-shell">
@@ -182,11 +305,47 @@ function FunnelDashboardPage() {
             {loading ? "집계 중…" : dashboard ? "새로고침" : "대시보드 열기"}
           </button>
           <div className="wdops-ranges" aria-label="Quick date ranges">
-            {[7, 14, 30].map((days) => (
+            {[1, 7, 14, 30].map((days) => (
               <button key={days} type="button" onClick={() => applyRange(days)}>
                 {days}일
               </button>
             ))}
+          </div>
+          <div className="wdops-live-control">
+            <span
+              className={`wdops-live-dot${
+                dashboard && autoRefreshEnabled && tabVisible && !hasAutomaticRefreshError
+                  ? " is-live"
+                  : ""
+              }${hasAutomaticRefreshError ? " is-error" : ""}`}
+              aria-hidden="true"
+            />
+            <span className="wdops-live-status" aria-live="polite">
+              {liveStatus}
+            </span>
+            {lastReceivedAt !== null ? (
+              <span className="wdops-live-freshness">
+                화면·1P 수신 {formatClockTimestamp(lastReceivedAt)} KST
+              </span>
+            ) : null}
+            {dashboard ? (
+              <span className="wdops-live-freshness">
+                Meta 집계{" "}
+                {dashboard.integrations.metaLastSyncedAt
+                  ? `${formatTimestamp(dashboard.integrations.metaLastSyncedAt)} KST`
+                  : "미수신"}
+              </span>
+            ) : null}
+            {dashboard ? (
+              <button
+                type="button"
+                className="wdops-live-toggle"
+                aria-pressed={!autoRefreshEnabled}
+                onClick={toggleAutoRefresh}
+              >
+                {autoRefreshEnabled ? "일시정지" : "계속"}
+              </button>
+            ) : null}
           </div>
         </form>
 
@@ -805,6 +964,14 @@ function DashboardStyles() {
       .wdops-ranges { grid-column: 1 / -1; display: flex; gap: 7px; }
       .wdops-ranges button, .wdops-tabs button { border: 1px solid var(--ops-line); border-radius: 999px; padding: 6px 10px; color: var(--ops-muted); background: transparent; font-size: .72rem; cursor: pointer; }
       .wdops-ranges button:hover, .wdops-tabs button:hover { color: var(--ops-ink); border-color: rgba(232, 241, 236, .3); }
+      .wdops-live-control { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; min-height: 28px; color: var(--ops-muted); font-size: .7rem; }
+      .wdops-live-dot { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: var(--ops-muted); opacity: .6; }
+      .wdops-live-dot.is-live { background: var(--ops-acid); opacity: 1; box-shadow: 0 0 0 4px rgba(189, 245, 65, .09); }
+      .wdops-live-dot.is-error { background: var(--ops-red); opacity: 1; box-shadow: 0 0 0 4px rgba(255, 116, 108, .09); }
+      .wdops-live-status { color: var(--ops-ink); font-weight: 650; }
+      .wdops-live-freshness { font: .65rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .wdops-live-toggle { margin-left: auto; border: 1px solid var(--ops-line); border-radius: 999px; padding: 5px 10px; color: var(--ops-muted); background: transparent; font-size: .68rem; cursor: pointer; }
+      .wdops-live-toggle:hover { color: var(--ops-ink); border-color: rgba(232, 241, 236, .3); }
       .wdops-alert { margin-top: 16px; padding: 12px 14px; border-radius: 12px; font-size: .85rem; }
       .wdops-alert--critical { border: 1px solid rgba(255, 116, 108, .4); color: #ffaaa5; background: rgba(255, 116, 108, .08); }
       .wdops-locked { display: grid; place-items: center; min-height: 440px; margin-top: 20px; border: 1px solid var(--ops-line); border-radius: 22px; padding: 50px 24px; text-align: center; background: linear-gradient(150deg, rgba(23, 32, 28, .9), rgba(13, 18, 16, .72)); }
@@ -894,6 +1061,9 @@ function DashboardStyles() {
         .wdops-lock { white-space: normal; }
         .wdops-controls { grid-template-columns: 1fr; }
         .wdops-controls label, .wdops-primary { grid-column: 1; }
+        .wdops-live-control { flex-wrap: wrap; }
+        .wdops-live-freshness { width: calc(100% - 20px); margin-left: 15px; }
+        .wdops-live-toggle { margin-left: auto; }
         .wdops-kpis { grid-template-columns: 1fr; }
         .wdops-definition-grid, .wdops-method-grid { grid-template-columns: 1fr; }
         .wdops-status-time { width: 100%; margin-left: 0; }

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  buildDashboard,
   creativeJoinKey,
   hasCompleteConversionLocationScope,
   isCampaignInScope,
@@ -14,6 +15,25 @@ import {
   normalizedInsight,
   validatedMetaGraphVersion,
 } from "../src/lib/api/metaInsights.server.ts";
+
+test("missing aggregate storage fails closed instead of returning an empty dashboard", async () => {
+  const originalUrl = process.env.SUPABASE_URL;
+  const originalServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  delete process.env.SUPABASE_URL;
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  try {
+    assert.deepEqual(await buildDashboard("2026-07-29", "2026-07-29"), {
+      ok: false,
+      reason: "aggregate_unavailable",
+    });
+  } finally {
+    if (originalUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = originalUrl;
+    if (originalServiceRoleKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    else process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceRoleKey;
+  }
+});
 
 test("Meta scope requires one valid account and at least one campaign", () => {
   assert.equal(resolveMetaScope(undefined, "120251217895480717"), null);
@@ -455,6 +475,10 @@ test("database generation state makes Meta refreshes cross-replica and fail-clos
     new URL("../supabase/migrations/20260729090000_funnel_measurement.sql", import.meta.url),
     "utf8",
   ).toLowerCase();
+  const throttleMigration = readFileSync(
+    new URL("../supabase/migrations/20260729120000_meta_insights_refresh_ttl.sql", import.meta.url),
+    "utf8",
+  ).toLowerCase();
   const metaSource = readFileSync(
     new URL("../src/lib/api/metaInsights.server.ts", import.meta.url),
     "utf8",
@@ -503,11 +527,50 @@ test("database generation state makes Meta refreshes cross-replica and fail-clos
     migration,
     /coalesce\(max\(synced_at\), \(select synced_at from meta_range\)\) as latest_meta_sync/,
   );
+  assert.match(throttleMigration, /pg_advisory_xact_lock/);
+  assert.match(
+    throttleMigration,
+    /create or replace function public\.reserve_meta_insights_sync_v2/,
+  );
+  assert.doesNotMatch(
+    throttleMigration,
+    /create or replace function public\.reserve_meta_insights_sync\(/,
+  );
+  assert.match(throttleMigration, /s\.status = 'ready'/);
+  assert.match(throttleMigration, /s\.completed_at >= v_now - interval '10 minutes'/);
+  assert.match(throttleMigration, /r\.synced_at >= v_now - interval '10 minutes'/);
+  assert.match(throttleMigration, /r\.sync_generation = s\.generation/);
+  assert.match(throttleMigration, /s\.range_from = p_from[\s\S]*s\.range_to = p_to/);
+  assert.match(
+    throttleMigration,
+    /s\.campaign_ids @> v_campaign_ids[\s\S]*s\.campaign_ids <@ v_campaign_ids[\s\S]*cardinality\(s\.campaign_ids\) = cardinality\(v_campaign_ids\)/,
+  );
+  assert.match(throttleMigration, /'state', 'ready'/);
+  assert.match(throttleMigration, /s\.status = 'syncing'/);
+  assert.match(throttleMigration, /s\.reserved_at >= v_now - interval '5 minutes'/);
+  assert.match(throttleMigration, /'state', 'in_progress'/);
+  assert.match(throttleMigration, /'state', 'reserved'/);
+  const inProgressGuard =
+    throttleMigration.match(
+      /-- a generation is account-wide[\s\S]*?select s\.generation, s\.reserved_at([\s\S]*?)if found then/,
+    )?.[1] ?? "";
+  assert.match(inProgressGuard, /s\.account_id = p_account_id/);
+  assert.doesNotMatch(inProgressGuard, /s\.range_from|s\.range_to|s\.campaign_ids|v_campaign_ids/);
+  assert.ok(
+    throttleMigration.indexOf("pg_advisory_xact_lock") <
+      throttleMigration.indexOf("s.status = 'ready'"),
+  );
 
   const reserveCall = metaSource.indexOf("reservation = await reserveMetaInsightsSync");
   const firstGraphCall = metaSource.indexOf("await assertEuroAccount", reserveCall);
   assert.ok(reserveCall >= 0);
   assert.ok(firstGraphCall > reserveCall);
+  assert.match(metaSource, /reservation\.state === "ready"/);
+  assert.match(metaSource, /reserve_meta_insights_sync_v2/);
+  assert.doesNotMatch(metaSource, /"reserve_meta_insights_sync"/);
+  assert.match(metaSource, /source: "cache"/);
+  assert.match(metaSource, /reservation\.state === "in_progress"/);
+  assert.match(metaSource, /reason: "sync_in_progress"/);
   assert.match(metaSource, /const SUPABASE_RPC_TIMEOUT_MS = 10_000/);
   assert.equal(
     (metaSource.match(/signal: AbortSignal\.timeout\(SUPABASE_RPC_TIMEOUT_MS\)/g) ?? []).length,
@@ -522,7 +585,7 @@ test("database generation state makes Meta refreshes cross-replica and fail-clos
   assert.match(dashboardSource, /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/);
   assert.match(
     dashboardSource,
-    /insightSync\.reason === "generation_conflict" && attempt === 0[\s\S]*await delay\(1_000\);[\s\S]*continue;/,
+    /insightSync\.reason === "generation_conflict"[\s\S]*insightSync\.reason === "sync_in_progress"[\s\S]*attempt === 0[\s\S]*await delay\(1_000\);[\s\S]*continue;/,
   );
   assert.match(dashboardSource, /await delay\(1_000\)/);
   assert.match(dashboardSource, /isCurrentMetaAggregate\(aggregate\.meta_sync/);
@@ -532,9 +595,22 @@ test("database generation state makes Meta refreshes cross-replica and fail-clos
   );
   assert.match(dashboardRouteSource, /dashboard\.integrations\.meta === "ready"/);
   assert.doesNotMatch(dashboardRouteSource, /metaRowsRead > 0/);
+  assert.match(dashboardRouteSource, /화면·1P 수신/);
+  assert.match(dashboardRouteSource, /Meta 집계/);
+  assert.match(dashboardRouteSource, /dashboard\.integrations\.metaLastSyncedAt/);
+  assert.match(dashboardRouteSource, /hasAutomaticRefreshError/);
+  assert.match(
+    dashboardRouteSource,
+    /autoRefreshEnabled && tabVisible && !hasAutomaticRefreshError/,
+  );
+  assert.match(dashboardRouteSource, /wdops-live-dot\.is-error/);
+  assert.match(
+    dashboardRouteSource,
+    /if \(!result\.ok\) \{[\s\S]*if \(!automatic\) \{[\s\S]*setDashboard\(null\)/,
+  );
 });
 
-test("dashboard refuses stale paid metrics when Meta synchronization fails", () => {
+test("dashboard refreshes first-party aggregates and refuses stale paid metrics", () => {
   const dashboardSource = readFileSync(
     new URL("../src/lib/api/dashboard.functions.ts", import.meta.url),
     "utf8",
@@ -543,29 +619,19 @@ test("dashboard refuses stale paid metrics when Meta synchronization fails", () 
     "insightSync = await metaInsights.syncMetaInsights(from, to)",
   );
   const failureCheck = dashboardSource.indexOf("if (!insightSync.ok)", syncCall);
-  const cacheDelete = dashboardSource.indexOf("dashboardCache.clear()", failureCheck);
   const failureReturn = dashboardSource.indexOf(
     'return { ok: false, reason: "meta_sync_failed" }',
     failureCheck,
   );
-  const cachedReturn = dashboardSource.indexOf("Date.now() - cached.cachedAt < CACHE_TTL_MS");
 
   assert.ok(syncCall >= 0);
   assert.ok(failureCheck > syncCall);
-  assert.ok(cacheDelete > failureCheck);
-  assert.ok(failureReturn > cacheDelete);
-  assert.ok(cachedReturn > failureReturn);
-  assert.match(
-    dashboardSource,
-    /dashboardCache\.delete\(cacheKey\);[\s\S]*cached = undefined;[\s\S]*!metaTokenAvailable[\s\S]*cached\.cachedAt/,
-  );
-  assert.match(
-    dashboardSource,
-    /if \(!metaTokenAvailable\) \{[\s\S]*dashboardCache\.set\(cacheKey/,
-  );
+  assert.ok(failureReturn > failureCheck);
+  assert.doesNotMatch(dashboardSource, /dashboardCache|CACHE_TTL_MS/);
+  assert.match(dashboardSource, /aggregate = await readDashboardAggregate/);
+  assert.match(dashboardSource, /if \(!tokenMatches\(data\.token\)\)/);
   assert.doesNotMatch(dashboardSource, /isMetaSyncGenerationCurrent/);
   assert.match(dashboardSource, /isCurrentMetaAggregate/);
-  assert.match(dashboardSource, /\$\{metaScopeAvailable\}:\$\{metaTokenAvailable\}/);
   assert.match(
     dashboardSource,
     /metaTokenAvailable &&[\s\S]*insightSync\.ok &&[\s\S]*metaScopeAvailable &&[\s\S]*isCurrentMetaAggregate/,

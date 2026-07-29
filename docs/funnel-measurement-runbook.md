@@ -20,7 +20,16 @@
 
 ```text
 supabase/migrations/20260729090000_funnel_measurement.sql
+supabase/migrations/20260729120000_meta_insights_refresh_ttl.sql
 ```
+
+두 migration을 위 순서로 적용한 뒤 애플리케이션을 배포한다. 두 번째 migration은
+기존 `reserve_meta_insights_sync`를 변경하지 않고
+`reserve_meta_insights_sync_v2`를 추가한다. 따라서 rolling deployment 중 이전
+애플리케이션은 기존 RPC 계약을 계속 사용하고, 새 애플리케이션만 v2를 사용한다.
+새 애플리케이션을 migration보다 먼저 배포하면 v1으로 자동 fallback하지 않고
+Meta 동기화를 fail-closed 처리한다. 이전 코드와 새 TTL 계약이 섞여 세대를
+잘못 재사용하는 상황을 막기 위한 의도된 동작이다.
 
 적용 후 다음 항목이 생성됐는지 확인한다.
 
@@ -31,7 +40,8 @@ supabase/migrations/20260729090000_funnel_measurement.sql
 - `meta_insights_sync_state`
 - `signup_rate_limit_buckets`
 - 대시보드 집계 RPC `get_funnel_dashboard_aggregate_v1`
-- Meta 세대 예약/실패 RPC `reserve_meta_insights_sync`, `fail_meta_insights_sync`
+- Meta 세대 예약 RPC `reserve_meta_insights_sync`,
+  TTL 예약 RPC `reserve_meta_insights_sync_v2`, 실패 RPC `fail_meta_insights_sync`
 - Meta 성과 원자 교체 RPC `replace_meta_insights_range`
 - 가입 rate-limit RPC
 - 모든 측정 테이블의 RLS 및 `service_role` 전용 권한
@@ -214,6 +224,12 @@ Meta form lead는 CRM 저장·품질 판정 전까지 `valid lead`로 부르지 
 7. 교체 직후 다른 replica가 새 generation을 예약해 aggregate와 불일치하면
    전체 동기화를 1초 뒤 한 번만 재시도하고, 다시 불일치하면 오류로 종료한다.
 8. Supabase의 예약·교체·실패 RPC는 각각 10초 timeout으로 제한한다.
+9. v2 예약 RPC는 동일 account·campaign·날짜 범위의 `ready` generation과
+   exact-range marker가 모두 10분 이내일 때만 Meta Graph 호출을 생략한다.
+   첫 번째 퍼널 이벤트·리드 집계는 화면의 60초 poll마다 다시 읽는다.
+10. account generation은 하나이므로 5분 lease 안의 `syncing` 예약은 요청 날짜가
+    달라도 새 예약을 차단한다. 기존 요청이 완료된 뒤 다음 poll에서 다른 범위를
+    새로 예약한다.
 
 ## 개인정보·동의 규칙
 

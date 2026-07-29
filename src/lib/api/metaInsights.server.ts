@@ -6,7 +6,7 @@ const PAGE_LIMIT = 500;
 const MAX_SYNC_DAYS = 90;
 const MAX_SLICE_ROWS = 10_000;
 const MAX_RANGE_ROWS = 250_000;
-const META_INSIGHTS_RESERVE_RPC = "reserve_meta_insights_sync";
+const META_INSIGHTS_RESERVE_RPC = "reserve_meta_insights_sync_v2";
 const META_INSIGHTS_FAIL_RPC = "fail_meta_insights_sync";
 const META_INSIGHTS_RANGE_REPLACE_RPC = "replace_meta_insights_range";
 
@@ -79,7 +79,7 @@ export type SyncResult = {
   rows: number;
   exactRange?: MetaExactRangeInsight;
   reason?: string;
-  source?: "refresh";
+  source?: "refresh" | "cache";
   generation?: number;
 };
 
@@ -501,6 +501,7 @@ export type MetaInsightRangeSnapshot = {
 export type MetaSyncReservation = {
   generation: number;
   reservedAt: string;
+  state: "reserved" | "ready" | "in_progress";
 };
 
 function supabaseConfig(): { url: string; serviceRoleKey: string } {
@@ -734,14 +735,22 @@ export async function reserveMetaInsightsSync(
   const value = (await response.json()) as {
     generation?: unknown;
     reserved_at?: unknown;
+    state?: unknown;
+    reused?: unknown;
   };
   const generation = Number(value.generation);
   const reservedAt = typeof value.reserved_at === "string" ? value.reserved_at : "";
+  const state =
+    value.state === "ready" || value.state === "in_progress" || value.state === "reserved"
+      ? value.state
+      : value.reused === true
+        ? "ready"
+        : "reserved";
   assertPositiveSafeInteger(generation, "Meta insight reservation generation");
   if (!Number.isFinite(Date.parse(reservedAt))) {
     throw new Error("Invalid Meta insight reservation time");
   }
-  return { generation, reservedAt };
+  return { generation, reservedAt, state };
 }
 
 async function failMetaInsightsSync(
@@ -841,6 +850,24 @@ export async function syncMetaInsights(from: string, to: string): Promise<SyncRe
     try {
       const dates = enumerateInsightDates(from, to);
       reservation = await reserveMetaInsightsSync(accountId, campaignIds, from, to);
+      if (reservation.state === "ready") {
+        return {
+          configured: true,
+          ok: true,
+          rows: 0,
+          source: "cache",
+          generation: reservation.generation,
+        };
+      }
+      if (reservation.state === "in_progress") {
+        return {
+          configured: true,
+          ok: false,
+          rows: 0,
+          reason: "sync_in_progress",
+          generation: reservation.generation,
+        };
+      }
       await assertEuroAccount(accountId, token, graphVersion);
       const rawRows = await fetchInsights(accountId, campaignIds, token, from, to, graphVersion);
       const exactRange = await fetchExactRangeInsight(
