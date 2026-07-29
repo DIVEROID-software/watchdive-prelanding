@@ -4,6 +4,11 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse";
 import { sendMetaLead } from "./metaCapi";
+import {
+  canonicalEmailFilters,
+  canonicalEmailProperties,
+  withCanonicalEmailShape,
+} from "./notionCanonicalEmail";
 
 // Waitlist signups are stored directly in a Notion database — no Supabase.
 // Server-only: the Notion token never reaches the browser.
@@ -13,7 +18,8 @@ import { sendMetaLead } from "./metaCapi";
 // The database needs these properties:
 //   Email (title) · Phone (rich_text) · Source (select) · Signed up (date)
 //   Ref code (rich_text) · Referred by (rich_text)
-//   Canonical email (rich_text) · IP (rich_text) · User agent (rich_text)
+//   Canonical email (email, historically rich_text) · IP (rich_text)
+//   User agent (rich_text)
 //   Flags (multi_select) · Suspect (checkbox)
 
 const NOTION_VERSION = "2022-06-28";
@@ -165,15 +171,17 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // fallback for any legacy rows created before Canonical email existed. Same
     // person twice is still a "success" — hand back their existing ref code so
     // the share link stays stable.
-    const existing = await notionFetch(`databases/${dbId}/query`, {
-      filter: {
-        or: [
-          { property: "Canonical email", rich_text: { equals: canonical } },
-          { property: "Email", title: { equals: email } },
-        ],
-      },
-      page_size: 1,
-    });
+    const existing = await withCanonicalEmailShape(() =>
+      notionFetch(`databases/${dbId}/query`, {
+        filter: {
+          or: [
+            ...canonicalEmailFilters(canonical),
+            { property: "Email", title: { equals: email } },
+          ],
+        },
+        page_size: 1,
+      }),
+    );
     if (existing.results?.length > 0) {
       const props = existing.results[0].properties;
       const code = props["Ref code"]?.rich_text?.[0]?.plain_text ?? "";
@@ -200,22 +208,24 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     const refCode = newRefCode();
     const referredBy = sanitizeRef(data.referredBy);
 
-    await notionFetch("pages", {
-      parent: { database_id: dbId },
-      properties: {
-        Email: { title: [{ text: { content: email } }] },
-        "Canonical email": textProp(canonical),
-        ...(data.phone?.trim() ? { Phone: textProp(data.phone.trim()) } : {}),
-        Source: { select: { name: data.source } },
-        "Signed up": { date: { start: new Date().toISOString() } },
-        "Ref code": textProp(refCode),
-        ...(referredBy && referredBy !== refCode ? { "Referred by": textProp(referredBy) } : {}),
-        ...(ip ? { IP: textProp(ip) } : {}),
-        ...(ua ? { "User agent": textProp(ua) } : {}),
-        ...(flags.length ? { Flags: { multi_select: flags.map((name) => ({ name })) } } : {}),
-        Suspect: { checkbox: suspect },
-      },
-    });
+    await withCanonicalEmailShape(() =>
+      notionFetch("pages", {
+        parent: { database_id: dbId },
+        properties: {
+          Email: { title: [{ text: { content: email } }] },
+          ...canonicalEmailProperties(canonical),
+          ...(data.phone?.trim() ? { Phone: textProp(data.phone.trim()) } : {}),
+          Source: { select: { name: data.source } },
+          "Signed up": { date: { start: new Date().toISOString() } },
+          "Ref code": textProp(refCode),
+          ...(referredBy && referredBy !== refCode ? { "Referred by": textProp(referredBy) } : {}),
+          ...(ip ? { IP: textProp(ip) } : {}),
+          ...(ua ? { "User agent": textProp(ua) } : {}),
+          ...(flags.length ? { Flags: { multi_select: flags.map((name) => ({ name })) } } : {}),
+          Suspect: { checkbox: suspect },
+        },
+      }),
+    );
 
     // A repeated shared IP remains a review/counter flag, but is not enough by
     // itself to discard a unique browser-confirmed conversion. Honeypots,
