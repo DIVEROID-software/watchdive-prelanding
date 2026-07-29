@@ -6,6 +6,21 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+import { assertVerificationEnv } from "./src/lib/verification/envPreflight";
+
+// Fails a Vercel build whose verification environment is incomplete, before the
+// deployment exists to take traffic. Off-Vercel builds only warn: a local
+// checkout has no business holding the production sending key.
+function verificationEnvPreflight() {
+  return {
+    name: "watchdive-verification-env-preflight",
+    apply: "build" as const,
+    buildStart() {
+      assertVerificationEnv(process.env);
+    },
+  };
+}
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
@@ -16,4 +31,7 @@ export default defineConfig({
   // cloudflare-module; on Vercel's build (non-sandbox) this makes nitro emit
   // the Vercel output structure so SSR + server functions are served correctly.
   nitro: { preset: "vercel" },
+  vite: {
+    plugins: [verificationEnvPreflight()],
+  },
 });

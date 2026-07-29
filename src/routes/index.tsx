@@ -5,11 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { track } from "@vercel/analytics";
-import { joinWaitlist, getReferralCount } from "@/lib/api/waitlist.functions";
+import { joinWaitlist, pollVerification, getReferralCount } from "@/lib/api/waitlist.functions";
+import { nextPollDelayMs, VERIFY_POLL_MAX_ATTEMPTS } from "@/lib/verifyPolling";
 import {
-  getMetaCookies,
   hasMetaMeasurementConsent,
-  newMetaEventId,
   trackMetaCustom,
   trackMetaLead,
   trackMetaPhoneLead,
@@ -78,9 +77,22 @@ export const Route = createFileRoute("/")({
         content:
           "Turn your Apple or Galaxy Watch into a 60 m dive computer. $149 early bird — 50% off at Kickstarter launch.",
       },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://watchdive.diveroid.com/" },
       { property: "og:image", content: "https://watchdive.diveroid.com/og-image.png" },
-      { name: "twitter:image", content: "https://watchdive.diveroid.com/og-image.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
       { name: "twitter:card", content: "summary_large_image" },
+      {
+        name: "twitter:title",
+        content: "Watch Dive — The world's most affordable dive computer",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Turn your Apple or Galaxy Watch into a 60 m dive computer. $149 early bird on Kickstarter.",
+      },
+      { name: "twitter:image", content: "https://watchdive.diveroid.com/og-image.png" },
     ],
   }),
   component: Index,
@@ -315,17 +327,126 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
   );
 }
 
-function EmailForm({ id, includePhone = false }: { id: string; includePhone?: boolean }) {
-  const [submitted, setSubmitted] = useState(false);
+// Shown from submit until the mailed link is confirmed. The copy is conditional
+// because several accepted paths send nothing at all, and the page must not
+// claim a delivery it cannot know about.
+function CheckInboxCard({ message }: { message: string }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="rounded-2xl bg-white/10 backdrop-blur p-5 text-white"
+    >
+      <div className="text-base font-semibold">One more step — confirm your email 📬</div>
+      <p className="mt-1 text-sm text-white/80">{message}</p>
+      <p className="mt-3 text-xs text-white/60">
+        Open the email and press{" "}
+        <span className="font-semibold text-white/85">Confirm my email</span>. The link lasts 24
+        hours. This page updates on its own once you confirm.
+      </p>
+    </div>
+  );
+}
+
+// The two placements the server accepts as a Source. Keeping the union here
+// means a new placement is a type error rather than a rejected submit.
+type FormPlacement = "hero" | "offer";
+
+function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePhone?: boolean }) {
+  const [pending, setPending] = useState<string | null>(null);
+  const [handle, setHandle] = useState("");
   const [refCode, setRefCode] = useState("");
+  const [verified, setVerified] = useState(false);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
   const formStartSent = useRef(false); // FormStart once per form instance
 
-  if (submitted) {
+  // Waits for the confirmation, which may never arrive in this tab — the link
+  // can be opened on another device entirely. So the wait is deliberately
+  // cheap: twelve polls on a jittered backoff over about five minutes, paused
+  // whenever the tab is hidden, and never more than one request in flight. The
+  // lead is confirmed server-side either way; this only drives the live
+  // hand-off and the pixel leg, which fires here rather than at submit because
+  // an unconfirmed address is not a conversion.
+  useEffect(() => {
+    if (!handle || verified) return;
+
+    let alive = true;
+    let attempts = 0;
+    let inFlight = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const stop = () => {
+      alive = false;
+      if (timer) clearTimeout(timer);
+      timer = undefined;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+
+    const schedule = () => {
+      if (!alive || timer || attempts >= VERIFY_POLL_MAX_ATTEMPTS) return;
+      // A backgrounded tab is not watching, so it should not be polling. The
+      // visibility listener starts the schedule again when it comes back.
+      if (document.visibilityState === "hidden") return;
+      timer = setTimeout(poll, nextPollDelayMs(attempts + 1));
+    };
+
+    const poll = async () => {
+      timer = undefined;
+      if (!alive || inFlight) return;
+      if (document.visibilityState === "hidden") return;
+      if (attempts >= VERIFY_POLL_MAX_ATTEMPTS) return;
+
+      inFlight = true;
+      attempts += 1;
+      try {
+        const res = await pollVerification({ data: { handle } });
+        if (!alive) return;
+        if (res.status === "verified") {
+          setRefCode(res.refCode ?? "");
+          setVerified(true);
+          track("waitlist_verified", { source: id });
+          if (res.browserLead) {
+            trackMetaLead(res.browserLead.eventId, res.browserLead.source);
+            if (res.browserLead.hasPhone) {
+              trackMetaPhoneLead(`${res.browserLead.eventId}:phone`, res.browserLead.source);
+            }
+          }
+          stop();
+          return;
+        }
+        // An expired handle will not become valid again; only pending is worth
+        // another look.
+        if (res.status !== "pending") {
+          stop();
+          return;
+        }
+      } catch {
+        // A dropped poll is not a failed signup. It still counts against the
+        // budget, so a server that is down cannot be retried indefinitely.
+      } finally {
+        inFlight = false;
+      }
+      schedule();
+    };
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") schedule();
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    schedule();
+    return stop;
+  }, [handle, verified, id]);
+
+  if (verified) {
     return <ReferralSuccess refCode={refCode} />;
+  }
+
+  if (pending) {
+    return <CheckInboxCard message={pending} />;
   }
 
   return (
@@ -335,10 +456,9 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
         if (loading) return;
         setLoading(true);
         try {
-          // Meta dedup: the browser pixel and the server CAPI event share this
-          // id so Meta counts the pair as one Lead.
-          const measurementConsent = hasMetaMeasurementConsent();
-          const metaEventId = measurementConsent ? newMetaEventId() : undefined;
+          // Captured here, in the browser that actually chose it, and carried
+          // signed from now on: the browser that opens the confirmation link
+          // must not be able to widen it.
           const res = await joinWaitlist({
             data: {
               email: email.trim().toLowerCase(),
@@ -346,23 +466,14 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
               source: id,
               referredBy: getRef(),
               honeypot: hp,
-              eventId: metaEventId,
-              measurementConsent,
-              ...(measurementConsent ? getMetaCookies() : {}),
+              measurementConsent: hasMetaMeasurementConsent(),
             },
           });
-          setRefCode(res.refCode ?? "");
-          setSubmitted(true);
-          // 전환 이벤트 — 광고 유입→가입 측정 (source=CTA 위치)
-          track("waitlist_signup", { source: id, referred: !!getRef() });
-          // Meta Lead — 서버가 신규 가입으로 확정한 경우에만 발화 (중복 제외).
-          // 서버가 되돌려 준 동일 event id만 사용해 browser/CAPI 중복 제거를 유지한다.
-          if (!res.duplicate && res.metaEventId) {
-            trackMetaLead(res.metaEventId, id);
-            if (phone.trim()) {
-              trackMetaPhoneLead(`${res.metaEventId}:phone`, id);
-            }
-          }
+          setHandle(res.handle);
+          setPending(res.message);
+          // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.
+          track("waitlist_pending", { source: id, referred: !!getRef() });
+          trackMetaCustom("SignupPending", { source: id });
         } catch {
           toast.error("Something went wrong. Please try again.");
         } finally {

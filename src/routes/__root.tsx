@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -13,6 +14,7 @@ import { Analytics } from "@vercel/analytics/react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { initMetaPixel } from "@/lib/metaPixel";
+import { allowsThirdPartyScripts, SUPPORT_WIDGET_SRC } from "@/lib/thirdPartyScripts";
 
 function NotFoundComponent() {
   return (
@@ -76,38 +78,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Watch Dive — The world's most affordable dive computer" },
-      {
-        name: "description",
-        content:
-          "Turn the Apple Watch or Galaxy Watch you already own into a 60 m dive computer. $149 early bird — 50% off at Kickstarter launch.",
-      },
       { name: "author", content: "Watch Dive" },
-      { property: "og:title", content: "Watch Dive — The world's most affordable dive computer" },
-      {
-        property: "og:description",
-        content:
-          "Turn the Apple Watch or Galaxy Watch you already own into a 60 m dive computer. $149 early bird — 50% off at Kickstarter launch.",
-      },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://watchdive.diveroid.com/" },
-      { property: "og:image", content: "https://watchdive.diveroid.com/og-image.png" },
-      { property: "og:image:width", content: "1200" },
-      { property: "og:image:height", content: "630" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Watch Dive — The world's most affordable dive computer" },
-      {
-        name: "twitter:description",
-        content:
-          "Turn your Apple or Galaxy Watch into a 60 m dive computer. $149 early bird on Kickstarter.",
-      },
-      { name: "twitter:image", content: "https://watchdive.diveroid.com/og-image.png" },
-    ],
-    scripts: [
-      {
-        src: "https://web-production-2bc5f.up.railway.app/widget.js?v=20260712b&pos=left&label=Questions%3F",
-        defer: true,
-      },
     ],
     links: [
       {
@@ -142,6 +113,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const thirdParty = allowsThirdPartyScripts(pathname);
+
   return (
     <html lang="en">
       <head>
@@ -149,7 +123,8 @@ function RootShell({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
-        <Analytics />
+        {thirdParty && <Analytics />}
+        {thirdParty && <script src={SUPPORT_WIDGET_SRC} defer />}
         <Scripts />
       </body>
     </html>
@@ -158,10 +133,12 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   useEffect(() => {
+    if (!allowsThirdPartyScripts(pathname)) return;
     initMetaPixel();
-  }, []);
+  }, [pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>

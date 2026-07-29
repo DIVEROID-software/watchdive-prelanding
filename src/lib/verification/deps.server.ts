@@ -1,0 +1,40 @@
+// Server-only assembly of the verification dependencies.
+//
+// Named `.server.ts` and imported solely from server functions, so the Resend
+// and Notion credentials have no path into a client bundle.
+import { sendMetaLead } from "@/lib/api/metaCapi";
+import type { PollResponse } from "./contracts.ts";
+import { createNotionLeadStore, createNotionRequest } from "./notionLead.ts";
+import { createPollGate } from "./pollGate.ts";
+import { createResendMailer } from "./resend.ts";
+import type { ServiceDependencies } from "./service.ts";
+
+// One gate per server process, shared by every poll. A handle that is replayed
+// in a burst is answered from memory, and no handle can ever cost the CRM more
+// than its lifetime read ceiling.
+const pollGate = createPollGate<PollResponse>();
+
+export function createServiceDependencies(): ServiceDependencies {
+  const databaseId = process.env.NOTION_WAITLIST_DB_ID;
+  if (!databaseId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
+  return {
+    store: createNotionLeadStore(createNotionRequest(), databaseId),
+    mailer: createResendMailer(),
+    pollGate,
+    dispatchVerifiedLead: async (input) => {
+      await sendMetaLead(input);
+    },
+  };
+}
+
+/**
+ * Nothing a caller sends may come back out. A Notion or Resend error can carry
+ * the recipient address or a request body; a token can only ever have come from
+ * the caller. Server functions therefore surface one opaque failure and the
+ * detail stays in the server log.
+ */
+export function sanitizeServerError(scope: string, error: unknown): Error {
+  const detail = error instanceof Error ? error.name : "unknown";
+  console.error(`[${scope}] failed (${detail})`);
+  return new Error("Request failed");
+}

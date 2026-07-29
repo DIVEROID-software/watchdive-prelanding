@@ -1,60 +1,60 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
-import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse";
-import { sendMetaLead } from "./metaCapi";
+import { createServiceDependencies, sanitizeServerError } from "@/lib/verification/deps.server";
+import { COUNTABLE_STATUS_FILTER, createNotionRequest } from "@/lib/verification/notionLead";
+import { createNetworkGate } from "@/lib/verification/networkGate";
+import { networkKey, requireSecret } from "@/lib/verification/token";
 import {
-  canonicalEmailFilters,
-  canonicalEmailProperties,
-  withCanonicalEmailShape,
-} from "./notionCanonicalEmail";
+  confirmVerificationService,
+  pollVerificationService,
+  requestVerificationService,
+} from "@/lib/verification/service";
 
 // Waitlist signups are stored directly in a Notion database — no Supabase.
-// Server-only: the Notion token never reaches the browser.
+// Server-only: the Notion, Resend and signing secrets never reach the browser.
+//
+// Submitting the form does not join the waitlist. It arms a verification
+// attempt and sends one transactional confirmation mail; the lead only counts,
+// earns a referral link, or produces a conversion once the link is confirmed.
+//
 // Required env vars (set in .env locally / Vercel project settings in prod):
 //   NOTION_API_KEY        — internal integration token (shared with the DB)
 //   NOTION_WAITLIST_DB_ID — target database id
+//   RESEND_API_KEY        — transactional sending key
+//   WATCHDIVE_EMAIL_FROM  — verified sender address
+//   WATCHDIVE_EMAIL_REPLY_TO      — optional reply-to
+//   WATCHDIVE_PUBLIC_ORIGIN       — fixed https origin used to build the link
+//   WATCHDIVE_VERIFICATION_SECRET — >= 32 bytes; signs tokens and handles
 // The database needs these properties:
 //   Email (title) · Phone (rich_text) · Source (select) · Signed up (date)
 //   Ref code (rich_text) · Referred by (rich_text)
-//   Canonical email (email, historically rich_text) · IP (rich_text)
-//   User agent (rich_text)
+//   Canonical email (email, historically rich_text)
 //   Flags (multi_select) · Suspect (checkbox)
+// The legacy IP and User agent columns are deliberately not part of this flow:
+// they are neither read nor written, not even as a digest.
+//   Verification status (select) · Verification sent (date)
+//   Verification expires (date) · Email verified (checkbox)
+//   Verified at (date) · Verification sends (number)
+//   Lead ID (rich_text) · Meta Event ID (rich_text)
 
-const NOTION_VERSION = "2022-06-28";
+// Repeat-submit counters for one server process. The keyed digest of a client
+// address is used as a map key here and nowhere else — it is never written to
+// Notion, never logged, and never leaves memory.
+const networkGate = createNetworkGate();
 
-// How many signups from one IP before we treat further ones as suspect. Set
-// above a typical shared household/office (a few genuine people behind one NAT).
-const IP_SUSPECT_THRESHOLD = 4;
+type NotionQueryPage = {
+  results?: unknown[];
+  has_more?: boolean;
+  next_cursor?: string | null;
+};
 
-async function notionFetch(path: string, body: unknown) {
-  const key = process.env.NOTION_API_KEY;
-  if (!key) throw new Error("NOTION_API_KEY is not set");
-  const res = await fetch(`https://api.notion.com/v1/${path}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Notion-Version": NOTION_VERSION,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`Notion ${path} failed (${res.status}): ${detail.slice(0, 300)}`);
-  }
-  return res.json();
-}
-
-function newRefCode() {
-  // Exactly 8 lowercase alphanumerics, e.g. "a3f9k2qp". Extra random bytes make
-  // sure we still have >= 8 usable chars after dropping base64url's - and _.
-  return randomBytes(12)
-    .toString("base64url")
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .toLowerCase()
-    .slice(0, 8);
+async function notionFetch(path: string, body: unknown): Promise<NotionQueryPage> {
+  // Reuse the verification store's bounded, redacted Notion client. In
+  // particular, response bodies can echo rejected property values and must
+  // never be surfaced by the public count endpoints.
+  return (await createNotionRequest()("POST", path, body)) as NotionQueryPage;
 }
 
 // Ref codes are 8 lowercase alphanumerics. Share targets sometimes glue the
@@ -66,10 +66,6 @@ function sanitizeRef(v: string | undefined | null) {
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "")
     .slice(0, 8);
-}
-
-function textProp(value: string) {
-  return { rich_text: [{ text: { content: value.slice(0, 1900) } }] };
 }
 
 // Reads request metadata (IP, UA) inside a server fn. Header access can throw if
@@ -87,6 +83,10 @@ function requestMeta(): { ip: string; ua: string } {
 // Real (non-suspect) rows only — the number the counters and social proof show.
 const NOT_SUSPECT = { property: "Suspect", checkbox: { equals: false } } as const;
 
+// An unconfirmed address is not on the waitlist yet. Public numbers see
+// confirmed rows plus legacy single opt-in rows, never pending or unsubscribed.
+const COUNTABLE = { and: [NOT_SUSPECT, COUNTABLE_STATUS_FILTER] } as const;
+
 // How many people signed up through a given referral code (Referred by == code).
 // Powers the "N friends joined · $N off so far" progress in the success card.
 // Suspect rows are excluded so a farmer can't inflate their own discount.
@@ -101,7 +101,9 @@ export const getReferralCount = createServerFn({ method: "POST" })
     let hasMore = true;
     while (hasMore) {
       const res = await notionFetch(`databases/${dbId}/query`, {
-        filter: { and: [{ property: "Referred by", rich_text: { equals: code } }, NOT_SUSPECT] },
+        filter: {
+          and: [{ property: "Referred by", rich_text: { equals: code } }, ...COUNTABLE.and],
+        },
         page_size: 100,
         ...(cursor ? { start_cursor: cursor } : {}),
       });
@@ -127,7 +129,7 @@ export const getWaitlistCount = createServerFn({ method: "GET" }).handler(async 
   let hasMore = true;
   while (hasMore) {
     const res = await notionFetch(`databases/${dbId}/query`, {
-      filter: NOT_SUSPECT,
+      filter: COUNTABLE,
       page_size: 100,
       ...(cursor ? { start_cursor: cursor } : {}),
     });
@@ -139,24 +141,23 @@ export const getWaitlistCount = createServerFn({ method: "GET" }).handler(async 
   return { count };
 });
 
+// Submitting arms a verification attempt and sends one transactional mail. The
+// response is identical for a new address, one already pending, one already
+// confirmed, and a provider failure, so the form is not an existence oracle.
 export const joinWaitlist = createServerFn({ method: "POST" })
   .validator(
     z.object({
       email: z.string().email().max(320),
       phone: z.string().max(40).optional(),
-      source: z.string().max(60),
+      // The two form placements that exist. An open string would let a caller
+      // invent Source values and pollute the CRM's select options.
+      source: z.enum(["hero", "offer"]),
       referredBy: z.string().max(40).optional(),
       // Honeypot: a hidden field real users never see. Anything here = a bot.
       honeypot: z.string().max(200).optional(),
-      // Meta conversion tracking: shared browser/server event id for dedup,
-      // plus the pixel's _fbp/_fbc cookies for match quality.
-      eventId: z
-        .string()
-        .regex(/^[A-Za-z0-9._:-]{8,64}$/)
-        .optional(),
+      // The browser's measurement choice, captured now and carried signed
+      // through the token so the confirming browser cannot widen it.
       measurementConsent: z.boolean().default(false),
-      fbp: z.string().max(128).optional(),
-      fbc: z.string().max(512).optional(),
     }),
   )
   .handler(async ({ data }) => {
@@ -167,26 +168,10 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     const canonical = canonicalEmail(email);
     const { ip, ua } = requestMeta();
 
-    // ---- Dedupe by canonical email (catches gmail dots/+tags), with an exact
-    // fallback for any legacy rows created before Canonical email existed. Same
-    // person twice is still a "success" — hand back their existing ref code so
-    // the share link stays stable.
-    const existing = await withCanonicalEmailShape(() =>
-      notionFetch(`databases/${dbId}/query`, {
-        filter: {
-          or: [
-            ...canonicalEmailFilters(canonical),
-            { property: "Email", title: { equals: email } },
-          ],
-        },
-        page_size: 1,
-      }),
-    );
-    if (existing.results?.length > 0) {
-      const props = existing.results[0].properties;
-      const code = props["Ref code"]?.rich_text?.[0]?.plain_text ?? "";
-      return { ok: true, duplicate: true, refCode: code, metaEventId: undefined };
-    }
+    // The network address and user agent are read, used, and dropped inside
+    // this handler. Neither reaches Notion, and neither is logged. Only a keyed
+    // network digest survives in process memory; the user agent becomes a flag.
+    const verdict = networkGate.record(networkKey(ip, requireSecret(process.env)));
 
     // ---- Abuse signals (flag, don't lose the lead). Suspect rows are stored
     // for review but excluded from the public counters.
@@ -194,76 +179,51 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     if (data.honeypot && data.honeypot.trim()) flags.push("honeypot");
     if (isDisposableEmail(email)) flags.push("disposable");
     if (isHeadlessUA(ua)) flags.push("headless");
+    // Kept as a review flag only. A shared office is not grounds to drop a real
+    // lead — the counters already exclude suspect rows.
+    if (verdict.repeat) flags.push("ip-repeat");
 
-    if (ip) {
-      const sameIp = await notionFetch(`databases/${dbId}/query`, {
-        filter: { property: "IP", rich_text: { equals: ip } },
-        page_size: 100,
-      });
-      if ((sameIp.results?.length ?? 0) >= IP_SUSPECT_THRESHOLD) flags.push("ip-repeat");
-    }
-
-    const suspect = flags.length > 0;
-
-    const refCode = newRefCode();
-    const referredBy = sanitizeRef(data.referredBy);
-
-    await withCanonicalEmailShape(() =>
-      notionFetch("pages", {
-        parent: { database_id: dbId },
-        properties: {
-          Email: { title: [{ text: { content: email } }] },
-          ...canonicalEmailProperties(canonical),
-          ...(data.phone?.trim() ? { Phone: textProp(data.phone.trim()) } : {}),
-          Source: { select: { name: data.source } },
-          "Signed up": { date: { start: new Date().toISOString() } },
-          "Ref code": textProp(refCode),
-          ...(referredBy && referredBy !== refCode ? { "Referred by": textProp(referredBy) } : {}),
-          ...(ip ? { IP: textProp(ip) } : {}),
-          ...(ua ? { "User agent": textProp(ua) } : {}),
-          ...(flags.length ? { Flags: { multi_select: flags.map((name) => ({ name })) } } : {}),
-          Suspect: { checkbox: suspect },
+    try {
+      return await requestVerificationService(
+        {
+          email,
+          canonical,
+          ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
+          source: data.source,
+          ...(sanitizeRef(data.referredBy) ? { referredBy: sanitizeRef(data.referredBy) } : {}),
+          flags,
+          suspect: flags.length > 0,
+          measurementConsent: data.measurementConsent,
+          networkSendBlocked: verdict.blocked,
         },
-      }),
-    );
-
-    // A repeated shared IP remains a review/counter flag, but is not enough by
-    // itself to discard a unique browser-confirmed conversion. Honeypots,
-    // disposable addresses, and headless clients remain ineligible.
-    const conversionBlocked = flags.some((flag) => flag !== "ip-repeat");
-    const conversionEligible =
-      !conversionBlocked && data.measurementConsent && Boolean(data.eventId);
-
-    if (!conversionEligible) {
-      console.log(
-        `[meta-capi] skipped: ${
-          conversionBlocked
-            ? `blocked(${flags.join(",")})`
-            : !data.measurementConsent
-              ? "no measurement consent"
-              : "no eventId"
-        }`,
+        createServiceDependencies(),
       );
+    } catch (error) {
+      throw sanitizeServerError("verification-request", error);
     }
-    if (conversionEligible && data.eventId) {
-      await sendMetaLead({
-        eventId: data.eventId,
-        email,
-        phone: data.phone,
-        ip,
-        ua,
-        fbp: data.fbp,
-        fbc: data.fbc,
-        source: data.source,
-      });
-    }
+  });
 
-    // Always report success (even to suspects) so the anti-abuse logic isn't
-    // advertised — they just quietly don't count.
-    return {
-      ok: true,
-      duplicate: false,
-      refCode,
-      metaEventId: conversionEligible ? data.eventId : undefined,
-    };
+// The confirmation POST. The token reaches the server only here — it travelled
+// in the mail link's fragment, which the browser never sends on a navigation,
+// and the page hands it over from memory on a same-origin request the CSRF
+// middleware has already validated.
+export const confirmVerification = createServerFn({ method: "POST" })
+  .validator(z.object({ token: z.string().min(16).max(400) }))
+  .handler(async ({ data }) => {
+    try {
+      return await confirmVerificationService(data.token, createServiceDependencies());
+    } catch (error) {
+      throw sanitizeServerError("verification-confirm", error);
+    }
+  });
+
+// The original tab waits here. The handle names an attempt, never a person.
+export const pollVerification = createServerFn({ method: "POST" })
+  .validator(z.object({ handle: z.string().min(16).max(400) }))
+  .handler(async ({ data }) => {
+    try {
+      return await pollVerificationService(data.handle, createServiceDependencies());
+    } catch (error) {
+      throw sanitizeServerError("verification-poll", error);
+    }
   });
