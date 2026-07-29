@@ -3,6 +3,7 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
+  useLocation,
   useRouter,
   HeadContent,
   Scripts,
@@ -152,10 +153,13 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
 
   useEffect(() => {
-    initMetaPixel();
-  }, []);
+    // Keep operational, legal, and error routes out of paid-media PageView
+    // counts. Only the campaign landing page is part of this funnel.
+    if (location.pathname === "/") initMetaPixel();
+  }, [location.pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>

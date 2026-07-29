@@ -9,11 +9,22 @@ import { joinWaitlist, getReferralCount } from "@/lib/api/waitlist.functions";
 import {
   getMetaCookies,
   hasMetaMeasurementConsent,
-  newMetaEventId,
+  initMetaPixel,
+  metaEventIdForSubmissionAttempt,
+  setMetaMeasurementConsent,
   trackMetaCustom,
   trackMetaLead,
   trackMetaPhoneLead,
 } from "@/lib/metaPixel";
+import {
+  getFunnelClientContext,
+  initLandingFunnel,
+  observeFunnelCtaView,
+  trackFunnelEvent,
+  trackFunnelVideoComplete,
+  trackFunnelVideoPlay,
+  trackFunnelVideoProgress,
+} from "@/lib/funnel/client";
 
 import heroBackground from "../assets/live/hero-background.png";
 import heroSideImage from "../assets/live/watchdive-image10.png";
@@ -87,6 +98,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  useEffect(() => {
+    initLandingFunnel();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <StickyLaunchBanner />
@@ -109,8 +124,19 @@ function Index() {
 const CTA_LABEL = "Claim My $149 Early Bird";
 
 function LaunchBanner() {
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const banner = bannerRef.current;
+    if (!banner) return;
+    return observeFunnelCtaView("launch_banner", banner);
+  }, []);
+
   return (
-    <div className="relative z-20 border-b border-white/10 bg-[color:var(--color-deep-2)]/85 backdrop-blur">
+    <div
+      ref={bannerRef}
+      className="relative z-20 border-b border-white/10 bg-[color:var(--color-deep-2)]/85 backdrop-blur"
+    >
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 py-3 text-white sm:flex-row sm:justify-between sm:gap-6">
         <div className="flex items-center gap-2">
           <span className="size-1.5 rounded-full bg-[color:var(--color-cyan-glow)] animate-pulse" />
@@ -124,6 +150,7 @@ function LaunchBanner() {
           </span>
           <a
             href="#offer-form"
+            onClick={() => trackFunnelEvent("cta_click", { source: "launch_banner" })}
             className="rounded-full bg-gradient-to-r from-[color:var(--color-cyan-glow)] to-[color:var(--color-cyan)] px-4 py-2 text-xs font-semibold text-[color:var(--color-deep-2)] shadow-[0_8px_24px_-12px_oklch(0.696_0.129_235/0.7)] hover:brightness-105"
           >
             Join the waitlist
@@ -149,9 +176,19 @@ function SectionImage({
 }
 
 function StickyLaunchBanner() {
+  const bannerRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const banner = bannerRef.current;
+    if (!banner) return;
+    return observeFunnelCtaView("sticky_banner", banner);
+  }, []);
+
   return (
     <a
+      ref={bannerRef}
       href="#offer-form"
+      onClick={() => trackFunnelEvent("cta_click", { source: "sticky_banner" })}
       className="fixed bottom-3 right-3 z-50 flex max-w-[320px] items-center gap-3 rounded-2xl border border-white/15 bg-[color:var(--color-deep-2)]/92 px-4 py-3 text-white shadow-[0_20px_60px_-25px_oklch(0.13_0.065_287/0.95)] backdrop-blur-xl transition hover:-translate-y-0.5 sm:bottom-5 sm:right-5"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-cyan-glow)] text-[color:var(--color-deep-2)] shadow-[0_0_24px_oklch(0.8_0.11_232/0.55)]">
@@ -315,7 +352,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
   );
 }
 
-function EmailForm({ id, includePhone = false }: { id: string; includePhone?: boolean }) {
+function EmailForm({ id, includePhone = false }: { id: "hero" | "offer"; includePhone?: boolean }) {
   const [submitted, setSubmitted] = useState(false);
   const [refCode, setRefCode] = useState("");
   const [email, setEmail] = useState("");
@@ -323,6 +360,30 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
   const formStartSent = useRef(false); // FormStart once per form instance
+  const formViewSent = useRef(false);
+  const pendingMetaEventId = useRef<string | undefined>(undefined);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          !formViewSent.current &&
+          entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.5)
+        ) {
+          formViewSent.current = true;
+          trackFunnelEvent("form_view", { source: id });
+          trackFunnelEvent("cta_view", { source: id });
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 },
+    );
+    observer.observe(form);
+    return () => observer.disconnect();
+  }, [id]);
 
   if (submitted) {
     return <ReferralSuccess refCode={refCode} />;
@@ -330,15 +391,27 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
 
   return (
     <form
+      ref={formRef}
       onSubmit={async (e) => {
         e.preventDefault();
         if (loading) return;
         setLoading(true);
+        // The privacy contract defines form submission as the explicit consent
+        // action. Meta remains entirely off before this point.
+        setMetaMeasurementConsent("granted");
+        initMetaPixel();
+        trackFunnelEvent("form_submit_attempt", { source: id });
         try {
           // Meta dedup: the browser pixel and the server CAPI event share this
-          // id so Meta counts the pair as one Lead.
+          // id so Meta counts the pair as one Lead. Failed submissions retain
+          // the same id until the server confirms success.
           const measurementConsent = hasMetaMeasurementConsent();
-          const metaEventId = measurementConsent ? newMetaEventId() : undefined;
+          const metaEventId = metaEventIdForSubmissionAttempt(
+            pendingMetaEventId.current,
+            measurementConsent,
+          );
+          pendingMetaEventId.current = metaEventId;
+          const funnelContext = getFunnelClientContext();
           const res = await joinWaitlist({
             data: {
               email: email.trim().toLowerCase(),
@@ -348,22 +421,38 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
               honeypot: hp,
               eventId: metaEventId,
               measurementConsent,
+              sessionId: funnelContext?.sessionId,
+              visitorId: funnelContext?.visitorId,
+              landingPath: funnelContext?.pagePath,
+              browserLanguage: typeof navigator === "undefined" ? undefined : navigator.language,
+              attribution: funnelContext?.attribution,
               ...(measurementConsent ? getMetaCookies() : {}),
             },
           });
+          pendingMetaEventId.current = undefined;
           setRefCode(res.refCode ?? "");
           setSubmitted(true);
           // 전환 이벤트 — 광고 유입→가입 측정 (source=CTA 위치)
           track("waitlist_signup", { source: id, referred: !!getRef() });
+          trackFunnelEvent("form_submit_success", {
+            source: id,
+            properties: { duplicate: res.duplicate },
+          });
           // Meta Lead — 서버가 신규 가입으로 확정한 경우에만 발화 (중복 제외).
           // 서버가 되돌려 준 동일 event id만 사용해 browser/CAPI 중복 제거를 유지한다.
           if (!res.duplicate && res.metaEventId) {
-            trackMetaLead(res.metaEventId, id);
-            if (phone.trim()) {
-              trackMetaPhoneLead(`${res.metaEventId}:phone`, id);
+            if (trackMetaLead(res.metaEventId, id)) {
+              trackFunnelEvent("meta_browser_lead_dispatched", { source: id });
+            }
+            if (res.metaPhoneEventId && trackMetaPhoneLead(res.metaPhoneEventId, id)) {
+              trackFunnelEvent("meta_browser_contact_dispatched", { source: id });
             }
           }
         } catch {
+          trackFunnelEvent("form_submit_error", {
+            source: id,
+            properties: { error_code: "join_waitlist_failed" },
+          });
           toast.error("Something went wrong. Please try again.");
         } finally {
           setLoading(false);
@@ -394,6 +483,7 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
             if (!formStartSent.current) {
               formStartSent.current = true;
               trackMetaCustom("FormStart", { source: id });
+              trackFunnelEvent("form_start", { source: id });
             }
           }}
           placeholder="your@email.com"
@@ -411,6 +501,7 @@ function EmailForm({ id, includePhone = false }: { id: string; includePhone?: bo
         <button
           type="submit"
           disabled={loading}
+          onClick={() => trackFunnelEvent("cta_click", { source: id })}
           className="order-3 h-14 px-5 rounded-xl font-semibold text-[color:var(--color-deep-2)] bg-gradient-to-r from-[color:var(--color-cyan-glow)] to-[color:var(--color-cyan)] shadow-[0_10px_30px_-10px_oklch(0.696_0.129_235/0.6)] hover:brightness-105 active:scale-[0.99] transition sm:order-2"
         >
           {loading ? "Saving…" : CTA_LABEL}
@@ -817,6 +908,9 @@ function FunctionsSection() {
             playsInline
             preload="metadata"
             aria-label="Watch Dive functions in action"
+            onPlay={(event) => trackFunnelVideoPlay("functions", event.currentTarget)}
+            onTimeUpdate={(event) => trackFunnelVideoProgress("functions", event.currentTarget)}
+            onEnded={(event) => trackFunnelVideoComplete("functions", event.currentTarget)}
             className="aspect-video w-full object-cover"
           />
         </div>
@@ -1127,6 +1221,11 @@ function Compatibility() {
               loop
               playsInline
               preload="metadata"
+              onPlay={(event) => trackFunnelVideoPlay("compatibility", event.currentTarget)}
+              onTimeUpdate={(event) =>
+                trackFunnelVideoProgress("compatibility", event.currentTarget)
+              }
+              onEnded={(event) => trackFunnelVideoComplete("compatibility", event.currentTarget)}
               className="absolute inset-0 h-full w-full object-cover"
             />
           </div>
@@ -1232,6 +1331,9 @@ function ActionCameras() {
             playsInline
             preload="metadata"
             aria-label="Action camera pairing and auto dive log in the connected app"
+            onPlay={(event) => trackFunnelVideoPlay("connected_app", event.currentTarget)}
+            onTimeUpdate={(event) => trackFunnelVideoProgress("connected_app", event.currentTarget)}
+            onEnded={(event) => trackFunnelVideoComplete("connected_app", event.currentTarget)}
             className="aspect-video w-full object-cover"
           />
         </div>

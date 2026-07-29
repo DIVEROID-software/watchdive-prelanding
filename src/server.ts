@@ -2,6 +2,8 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { handleLeadStatusWebhook } from "./lib/api/leadStatusWebhook.server";
+import { handleMetaLeadgenWebhook } from "./lib/api/metaLeadgenWebhook.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -40,6 +42,11 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const metaLeadgenResponse = await handleMetaLeadgenWebhook(request);
+      if (metaLeadgenResponse) return metaLeadgenResponse;
+      const leadStatusResponse = await handleLeadStatusWebhook(request);
+      if (leadStatusResponse) return leadStatusResponse;
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

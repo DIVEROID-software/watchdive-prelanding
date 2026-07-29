@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { afterEach, test } from "node:test";
 
-import { sendMetaLead } from "../src/lib/api/metaCapi.ts";
+import { sanitizeMetaEventSourceUrl, sendMetaLead } from "../src/lib/api/metaCapi.ts";
 
 const META_ENV_KEYS = [
   "META_CAPI_ENABLED",
@@ -43,12 +43,13 @@ test("fails closed when browser and server dataset ids differ", async () => {
     throw new Error("fetch should not run");
   };
 
-  const sent = await sendMetaLead({
+  const result = await sendMetaLead({
     eventId: "wd-test-mismatch-1234",
     email: "Diver@Example.com",
   });
 
-  assert.equal(sent, false);
+  assert.equal(result.sent, false);
+  assert.equal(result.state, "skipped");
   assert.equal(called, false);
 });
 
@@ -65,7 +66,7 @@ test("sends hashed lead and phone data with matching browser/server event ids", 
     });
   };
 
-  const sent = await sendMetaLead({
+  const result = await sendMetaLead({
     eventId: "wd-test-dedup-1234",
     email: "Diver@Example.com",
     phone: "+1 (415) 555-0100",
@@ -76,7 +77,9 @@ test("sends hashed lead and phone data with matching browser/server event ids", 
     source: "hero",
   });
 
-  assert.equal(sent, true);
+  assert.equal(result.sent, true);
+  assert.equal(result.state, "sent");
+  assert.equal(result.phoneEventId, "wd-test-dedup-1234:phone");
   assert.equal(requestUrl, "https://graph.facebook.com/v21.0/1028181916616055/events");
   assert.equal(new Headers(requestInit?.headers).get("Authorization"), "Bearer test-token");
 
@@ -103,10 +106,46 @@ test("does not report success when Meta acknowledges fewer events than sent", as
       headers: { "Content-Type": "application/json" },
     });
 
-  const sent = await sendMetaLead({
+  const result = await sendMetaLead({
     eventId: "wd-test-ack-1234",
     email: "diver@example.com",
   });
 
-  assert.equal(sent, false);
+  assert.equal(result.sent, false);
+  assert.equal(result.state, "failed");
+});
+
+test("uses a sanitized same-origin event source URL and ignores invalid phone input", async () => {
+  configureMeta();
+  let requestInit: RequestInit | undefined;
+  globalThis.fetch = async (_input, init) => {
+    requestInit = init;
+    return new Response(JSON.stringify({ events_received: 1, fbtrace_id: "trace-3" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  const result = await sendMetaLead({
+    eventId: "wd-test-source-1234",
+    email: "diver@example.com",
+    phone: "call-me",
+    eventSourceUrl: "https://evil.example/steal?email=diver@example.com",
+  });
+
+  assert.equal(result.sent, true);
+  assert.equal(result.expectedEvents, 1);
+  assert.equal(result.phoneEventId, undefined);
+
+  const body = JSON.parse(String(requestInit?.body));
+  assert.equal(body.data.length, 1);
+  assert.equal(body.data[0].event_source_url, "https://watchdive.diveroid.com/");
+});
+
+test("keeps only the same-origin landing path in the event source URL", () => {
+  assert.equal(
+    sanitizeMetaEventSourceUrl("https://watchdive.diveroid.com/offer?email=private@example.com"),
+    "https://watchdive.diveroid.com/offer",
+  );
+  assert.equal(sanitizeMetaEventSourceUrl("/?utm_source=meta"), "https://watchdive.diveroid.com/");
 });
