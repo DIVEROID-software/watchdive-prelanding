@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+  <title>WatchDive</title>
+  <rect width="64" height="64" rx="14" fill="#061d2a" />
+  <path
+    d="M11 17 19 45 32 25 45 45 53 17"
+    fill="none"
+    stroke="#f7fbff"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="6"
+  />
+  <path
+    d="M14 51c6-4 12-4 18 0s12 4 18 0"
+    fill="none"
+    stroke="#38d6ec"
+    stroke-linecap="round"
+    stroke-width="5"
+  />
+</svg>

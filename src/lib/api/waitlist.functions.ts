@@ -5,6 +5,12 @@ import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abus
 import { metaPhoneEventIdForInput, sendMetaLead } from "./metaCapi";
 import { recordLeadOutcome, recordServerFunnelEvent } from "./funnel.functions";
 import {
+  CANONICAL_EMAIL_PROPERTY,
+  canonicalEmailFilters,
+  canonicalEmailProperties,
+  withCanonicalEmailShape,
+} from "./notionCanonicalEmail";
+import {
   persistDuplicateWebsiteLeadDurably,
   persistNewWebsiteLeadDurably,
 } from "./websiteLeadPersistence";
@@ -23,7 +29,7 @@ import {
 // The database needs these properties:
 //   Email (title) · Phone (rich_text) · Source (select) · Signed up (date)
 //   Ref code (rich_text) · Referred by (rich_text)
-//   Canonical email (rich_text)
+//   Canonical email (email, historically rich_text)
 //   Flags (multi_select) · Suspect (checkbox)
 //   UTM fields · Meta IDs · Session ID · acquisition/quality status fields
 
@@ -43,7 +49,25 @@ async function notionFetch(path: string, body: unknown) {
   });
   if (!res.ok) {
     // Notion validation responses can echo submitted property values. Never
-    // propagate the response body into application errors or server logs.
+    // propagate the response body into application errors or server logs. The
+    // one schema-retry signal we need is reduced to a fixed, PII-free sentinel.
+    if (res.status === 400) {
+      let canonicalEmailShapeMismatch = false;
+      try {
+        const response = (await res.json()) as { code?: unknown; message?: unknown };
+        canonicalEmailShapeMismatch =
+          response.code === "validation_error" &&
+          typeof response.message === "string" &&
+          response.message.includes(CANONICAL_EMAIL_PROPERTY);
+      } catch {
+        canonicalEmailShapeMismatch = false;
+      }
+      if (canonicalEmailShapeMismatch) {
+        throw new Error(
+          `Notion ${path} failed (400): validation_error ${CANONICAL_EMAIL_PROPERTY}`,
+        );
+      }
+    }
     throw new Error(`Notion ${path} failed (${res.status})`);
   }
   return res.json();
@@ -426,15 +450,14 @@ export async function ingestInstantFormLead(
     return { ok: true, status, notionPageId: page.id };
   }
 
-  const existingCanonical = (await notionFetch(`databases/${dbId}/query`, {
-    filter: {
-      or: [
-        { property: "Canonical email", email: { equals: canonical } },
-        { property: "Email", title: { equals: email } },
-      ],
-    },
-    page_size: 1,
-  })) as { results?: NotionPageResult[] };
+  const existingCanonical = (await withCanonicalEmailShape(() =>
+    notionFetch(`databases/${dbId}/query`, {
+      filter: {
+        or: [...canonicalEmailFilters(canonical), { property: "Email", title: { equals: email } }],
+      },
+      page_size: 1,
+    }),
+  )) as { results?: NotionPageResult[] };
 
   if (existingCanonical.results?.length) {
     const page = existingCanonical.results[0];
@@ -472,50 +495,52 @@ export async function ingestInstantFormLead(
   const status = suspect ? "suspect" : "new";
   const refCode = newRefCode();
 
-  const createdPage = (await notionFetch("pages", {
-    parent: { database_id: dbId },
-    properties: {
-      Email: { title: [{ text: { content: email } }] },
-      "Canonical email": { email: canonical },
-      ...(data.phone ? { Phone: textProp(data.phone) } : {}),
-      ...(data.fullName ? { "Full name": textProp(data.fullName) } : {}),
-      Source: { select: { name: "instant-form" } },
-      "Signed up": { date: { start: signedUpAt } },
-      "Ref code": textProp(refCode),
-      "Lead ID": textProp(data.platformLeadId),
-      "Acquisition path": { select: { name: "instant_form" } },
-      "Measurement consent": textProp("meta_instant_form_terms"),
-      "Verification status": { select: { name: "pending" } },
-      "Email verified": { checkbox: false },
-      "Phone verified": { checkbox: false },
-      "Attribution status": { select: { name: instantFormAttributionStatus(data) } },
-      "Source schema version": textProp(FUNNEL_SCHEMA_VERSION),
-      "Source coverage": { select: { name: instantFormSourceCoverage(data) } },
-      "Qualification rule version": textProp("2026-07-29.v1"),
-      Environment: { select: { name: runtimeEnvironment() } },
-      Counted: { checkbox: !suspect },
-      Duplicate: { checkbox: false },
-      "Meta eligible": { checkbox: false },
-      "Meta CAPI state": { select: { name: "skipped" } },
-      "Meta Platform Lead ID": textProp(data.platformLeadId),
-      ...(data.formId ? { "Meta Form ID": textProp(data.formId) } : {}),
-      ...(data.pageId ? { "Meta Page ID": textProp(data.pageId) } : {}),
-      ...(data.campaignId ? { "Meta Campaign ID": textProp(data.campaignId) } : {}),
-      ...(data.adSetId ? { "Meta Ad Set ID": textProp(data.adSetId) } : {}),
-      ...(data.adId ? { "Meta Ad ID": textProp(data.adId) } : {}),
-      "Publisher platform": textProp(data.publisherPlatform ?? "meta"),
-      Placement: textProp("instant_form"),
-      ...(data.country ? { Country: textProp(data.country) } : {}),
-      ...(process.env.VERCEL_DEPLOYMENT_ID
-        ? { "Deployment ID": textProp(process.env.VERCEL_DEPLOYMENT_ID) }
-        : {}),
-      ...(process.env.VERCEL_GIT_COMMIT_SHA
-        ? { "Landing page version": textProp(process.env.VERCEL_GIT_COMMIT_SHA) }
-        : {}),
-      ...(flags.length ? { Flags: { multi_select: flags.map((name) => ({ name })) } } : {}),
-      Suspect: { checkbox: suspect },
-    },
-  })) as NotionPageResult;
+  const createdPage = (await withCanonicalEmailShape(() =>
+    notionFetch("pages", {
+      parent: { database_id: dbId },
+      properties: {
+        Email: { title: [{ text: { content: email } }] },
+        ...canonicalEmailProperties(canonical),
+        ...(data.phone ? { Phone: textProp(data.phone) } : {}),
+        ...(data.fullName ? { "Full name": textProp(data.fullName) } : {}),
+        Source: { select: { name: "instant-form" } },
+        "Signed up": { date: { start: signedUpAt } },
+        "Ref code": textProp(refCode),
+        "Lead ID": textProp(data.platformLeadId),
+        "Acquisition path": { select: { name: "instant_form" } },
+        "Measurement consent": textProp("meta_instant_form_terms"),
+        "Verification status": { select: { name: "pending" } },
+        "Email verified": { checkbox: false },
+        "Phone verified": { checkbox: false },
+        "Attribution status": { select: { name: instantFormAttributionStatus(data) } },
+        "Source schema version": textProp(FUNNEL_SCHEMA_VERSION),
+        "Source coverage": { select: { name: instantFormSourceCoverage(data) } },
+        "Qualification rule version": textProp("2026-07-29.v1"),
+        Environment: { select: { name: runtimeEnvironment() } },
+        Counted: { checkbox: !suspect },
+        Duplicate: { checkbox: false },
+        "Meta eligible": { checkbox: false },
+        "Meta CAPI state": { select: { name: "skipped" } },
+        "Meta Platform Lead ID": textProp(data.platformLeadId),
+        ...(data.formId ? { "Meta Form ID": textProp(data.formId) } : {}),
+        ...(data.pageId ? { "Meta Page ID": textProp(data.pageId) } : {}),
+        ...(data.campaignId ? { "Meta Campaign ID": textProp(data.campaignId) } : {}),
+        ...(data.adSetId ? { "Meta Ad Set ID": textProp(data.adSetId) } : {}),
+        ...(data.adId ? { "Meta Ad ID": textProp(data.adId) } : {}),
+        "Publisher platform": textProp(data.publisherPlatform ?? "meta"),
+        Placement: textProp("instant_form"),
+        ...(data.country ? { Country: textProp(data.country) } : {}),
+        ...(process.env.VERCEL_DEPLOYMENT_ID
+          ? { "Deployment ID": textProp(process.env.VERCEL_DEPLOYMENT_ID) }
+          : {}),
+        ...(process.env.VERCEL_GIT_COMMIT_SHA
+          ? { "Landing page version": textProp(process.env.VERCEL_GIT_COMMIT_SHA) }
+          : {}),
+        ...(flags.length ? { Flags: { multi_select: flags.map((name) => ({ name })) } } : {}),
+        Suspect: { checkbox: suspect },
+      },
+    }),
+  )) as NotionPageResult;
 
   if (!createdPage.id) {
     throw new Error("Notion did not return an Instant Form lead page id");
@@ -646,15 +671,17 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // fallback for any legacy rows created before Canonical email existed. Same
     // person twice is still a "success" — hand back their existing ref code so
     // the share link stays stable.
-    const existing = (await notionFetch(`databases/${dbId}/query`, {
-      filter: {
-        or: [
-          { property: "Canonical email", email: { equals: canonical } },
-          { property: "Email", title: { equals: email } },
-        ],
-      },
-      page_size: 1,
-    })) as { results?: NotionPageResult[] };
+    const existing = (await withCanonicalEmailShape(() =>
+      notionFetch(`databases/${dbId}/query`, {
+        filter: {
+          or: [
+            ...canonicalEmailFilters(canonical),
+            { property: "Email", title: { equals: email } },
+          ],
+        },
+        page_size: 1,
+      }),
+    )) as { results?: NotionPageResult[] };
     const existingPage = existing.results?.[0];
     const existingProperties = existingPage?.properties;
     const existingLeadId = notionTextValue(existingProperties?.["Lead ID"]);
@@ -778,73 +805,77 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       writeNotionAndMeta: async () => {
         const persistedPage =
           existingPage ??
-          ((await notionFetch("pages", {
-            parent: { database_id: dbId },
-            properties: {
-              Email: { title: [{ text: { content: email } }] },
-              "Canonical email": { email: canonical },
-              ...(data.phone?.trim() ? { Phone: textProp(data.phone.trim()) } : {}),
-              Source: { select: { name: data.source } },
-              "Signed up": { date: { start: signedUpAt } },
-              "Ref code": textProp(refCode),
-              "Lead ID": textProp(leadId),
-              "Acquisition path": { select: { name: "website" } },
-              "Measurement consent": textProp(
-                data.measurementConsent ? "form_submit_granted" : "denied",
-              ),
-              "Verification status": { select: { name: "pending" } },
-              "Email verified": { checkbox: false },
-              "Phone verified": { checkbox: false },
-              "Attribution status": { select: { name: attributionCompleteness(attribution) } },
-              "Source schema version": textProp(FUNNEL_SCHEMA_VERSION),
-              "Source coverage": { select: { name: sourceCoverage(data) } },
-              "Qualification rule version": textProp("2026-07-29.v1"),
-              Environment: { select: { name: runtimeEnvironment() } },
-              Counted: { checkbox: !suspect },
-              Duplicate: { checkbox: false },
-              "Meta eligible": { checkbox: conversionEligible },
-              "Meta CAPI state": { select: { name: "skipped" } },
-              ...(data.eventId ? { "Meta Event ID": textProp(data.eventId) } : {}),
-              ...(data.sessionId ? { "Session ID": textProp(data.sessionId) } : {}),
-              ...(data.visitorId ? { "Visitor ID": textProp(data.visitorId) } : {}),
-              ...(data.landingPath ? { "Landing path": textProp(data.landingPath) } : {}),
-              ...(data.browserLanguage
-                ? { "Browser language": textProp(data.browserLanguage) }
-                : {}),
-              ...(country ? { Country: textProp(country) } : {}),
-              ...(process.env.VERCEL_DEPLOYMENT_ID
-                ? { "Deployment ID": textProp(process.env.VERCEL_DEPLOYMENT_ID) }
-                : {}),
-              ...(process.env.VERCEL_GIT_COMMIT_SHA
-                ? { "Landing page version": textProp(process.env.VERCEL_GIT_COMMIT_SHA) }
-                : {}),
-              ...(attribution.utmSource ? { "UTM Source": textProp(attribution.utmSource) } : {}),
-              ...(attribution.utmMedium ? { "UTM Medium": textProp(attribution.utmMedium) } : {}),
-              ...(attribution.utmCampaign
-                ? { "UTM Campaign": textProp(attribution.utmCampaign) }
-                : {}),
-              ...(attribution.utmContent
-                ? { "UTM Content": textProp(attribution.utmContent) }
-                : {}),
-              ...(attribution.utmTerm ? { "UTM Term": textProp(attribution.utmTerm) } : {}),
-              ...(attribution.metaCampaignId
-                ? { "Meta Campaign ID": textProp(attribution.metaCampaignId) }
-                : {}),
-              ...(attribution.metaAdSetId
-                ? { "Meta Ad Set ID": textProp(attribution.metaAdSetId) }
-                : {}),
-              ...(attribution.metaAdId ? { "Meta Ad ID": textProp(attribution.metaAdId) } : {}),
-              ...(attribution.publisherPlatform
-                ? { "Publisher platform": textProp(attribution.publisherPlatform) }
-                : {}),
-              ...(attribution.placement ? { Placement: textProp(attribution.placement) } : {}),
-              ...(referredBy && referredBy !== refCode
-                ? { "Referred by": textProp(referredBy) }
-                : {}),
-              ...(flags.length ? { Flags: { multi_select: flags.map((name) => ({ name })) } } : {}),
-              Suspect: { checkbox: suspect },
-            },
-          })) as NotionPageResult);
+          ((await withCanonicalEmailShape(() =>
+            notionFetch("pages", {
+              parent: { database_id: dbId },
+              properties: {
+                Email: { title: [{ text: { content: email } }] },
+                ...canonicalEmailProperties(canonical),
+                ...(data.phone?.trim() ? { Phone: textProp(data.phone.trim()) } : {}),
+                Source: { select: { name: data.source } },
+                "Signed up": { date: { start: signedUpAt } },
+                "Ref code": textProp(refCode),
+                "Lead ID": textProp(leadId),
+                "Acquisition path": { select: { name: "website" } },
+                "Measurement consent": textProp(
+                  data.measurementConsent ? "form_submit_granted" : "denied",
+                ),
+                "Verification status": { select: { name: "pending" } },
+                "Email verified": { checkbox: false },
+                "Phone verified": { checkbox: false },
+                "Attribution status": { select: { name: attributionCompleteness(attribution) } },
+                "Source schema version": textProp(FUNNEL_SCHEMA_VERSION),
+                "Source coverage": { select: { name: sourceCoverage(data) } },
+                "Qualification rule version": textProp("2026-07-29.v1"),
+                Environment: { select: { name: runtimeEnvironment() } },
+                Counted: { checkbox: !suspect },
+                Duplicate: { checkbox: false },
+                "Meta eligible": { checkbox: conversionEligible },
+                "Meta CAPI state": { select: { name: "skipped" } },
+                ...(data.eventId ? { "Meta Event ID": textProp(data.eventId) } : {}),
+                ...(data.sessionId ? { "Session ID": textProp(data.sessionId) } : {}),
+                ...(data.visitorId ? { "Visitor ID": textProp(data.visitorId) } : {}),
+                ...(data.landingPath ? { "Landing path": textProp(data.landingPath) } : {}),
+                ...(data.browserLanguage
+                  ? { "Browser language": textProp(data.browserLanguage) }
+                  : {}),
+                ...(country ? { Country: textProp(country) } : {}),
+                ...(process.env.VERCEL_DEPLOYMENT_ID
+                  ? { "Deployment ID": textProp(process.env.VERCEL_DEPLOYMENT_ID) }
+                  : {}),
+                ...(process.env.VERCEL_GIT_COMMIT_SHA
+                  ? { "Landing page version": textProp(process.env.VERCEL_GIT_COMMIT_SHA) }
+                  : {}),
+                ...(attribution.utmSource ? { "UTM Source": textProp(attribution.utmSource) } : {}),
+                ...(attribution.utmMedium ? { "UTM Medium": textProp(attribution.utmMedium) } : {}),
+                ...(attribution.utmCampaign
+                  ? { "UTM Campaign": textProp(attribution.utmCampaign) }
+                  : {}),
+                ...(attribution.utmContent
+                  ? { "UTM Content": textProp(attribution.utmContent) }
+                  : {}),
+                ...(attribution.utmTerm ? { "UTM Term": textProp(attribution.utmTerm) } : {}),
+                ...(attribution.metaCampaignId
+                  ? { "Meta Campaign ID": textProp(attribution.metaCampaignId) }
+                  : {}),
+                ...(attribution.metaAdSetId
+                  ? { "Meta Ad Set ID": textProp(attribution.metaAdSetId) }
+                  : {}),
+                ...(attribution.metaAdId ? { "Meta Ad ID": textProp(attribution.metaAdId) } : {}),
+                ...(attribution.publisherPlatform
+                  ? { "Publisher platform": textProp(attribution.publisherPlatform) }
+                  : {}),
+                ...(attribution.placement ? { Placement: textProp(attribution.placement) } : {}),
+                ...(referredBy && referredBy !== refCode
+                  ? { "Referred by": textProp(referredBy) }
+                  : {}),
+                ...(flags.length
+                  ? { Flags: { multi_select: flags.map((name) => ({ name })) } }
+                  : {}),
+                Suspect: { checkbox: suspect },
+              },
+            }),
+          )) as NotionPageResult);
         const notionPageId = persistedPage.id;
         if (!notionPageId) throw new Error("Notion waitlist page id is missing");
 

@@ -211,7 +211,7 @@ test("waitlist wiring consumes the bucket before the first CRM lookup", async ()
     handlerStart,
   );
   const limiterCall = source.indexOf("consumeSignupRateLimit({ ip })", handlerStart);
-  const firstCrmLookup = source.indexOf("const existing = (await notionFetch", handlerStart);
+  const firstCrmLookup = source.indexOf("notionFetch(`databases/${dbId}/query`", handlerStart);
 
   assert.notEqual(handlerStart, -1);
   assert.notEqual(originGuard, -1);
