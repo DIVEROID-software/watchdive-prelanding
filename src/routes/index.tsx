@@ -6,6 +6,9 @@ import { toast } from "sonner";
 
 import { track } from "@vercel/analytics";
 import { joinWaitlist, pollVerification, getReferralCount } from "@/lib/api/waitlist.functions";
+import { LaunchCountdown } from "@/components/launch-countdown";
+import { ReviewTicker } from "@/components/review-ticker";
+import { WaitlistProgress } from "@/components/waitlist-progress";
 import { nextPollDelayMs, VERIFY_POLL_MAX_ATTEMPTS } from "@/lib/verifyPolling";
 import {
   hasMetaMeasurementConsent,
@@ -107,6 +110,7 @@ function Index() {
       <FunctionsSection />
       <HowItWorks />
       <AppEcosystem />
+      <ReviewTicker />
       <Compatibility />
       <ActionCameras />
       <SafetySection />
@@ -671,6 +675,12 @@ function Hero() {
           </div>
 
           <ReferralWelcome />
+
+          <div className="max-w-xl rounded-2xl border border-white/12 bg-white/[0.06] p-5 backdrop-blur">
+            <LaunchCountdown />
+            <div className="my-5 h-px bg-white/10" />
+            <WaitlistProgress />
+          </div>
 
           <div className="max-w-xl">
             <EmailForm id="hero" includePhone />
@@ -1443,6 +1453,12 @@ function OfferSection() {
           Watch Dive launches — early bird backers lock in the lowest price ever at $149, before it
           goes to $299 at public release.
         </p>
+        <div className="mt-7 rounded-2xl border border-white/12 bg-white/[0.06] p-5 text-left backdrop-blur">
+          <LaunchCountdown />
+          <div className="my-5 h-px bg-white/10" />
+          <WaitlistProgress />
+        </div>
+
         <div className="mt-6">
           <EmailForm id="offer" includePhone />
         </div>

@@ -167,3 +167,10 @@
   from { transform: translateX(0); }
   to   { transform: translateX(-25%); }
 }
+
+/* Review ticker. Each lane renders its cards twice, so translating by exactly
+   half the track returns to an identical frame and the loop has no seam. */
+@keyframes wd-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
