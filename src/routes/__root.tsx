@@ -112,6 +112,40 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+/**
+ * The Meta pixel bootstrap, inline in the document head.
+ *
+ * It used to run from a React effect, which meant `PageView` waited on ~154 KB
+ * of JavaScript to download, parse and hydrate. Meta only counts a landing page
+ * view once that event fires, so on a phone webview a real visitor could arrive,
+ * give up and leave without ever being counted — the arrival metric was firing
+ * after the bounce it was supposed to measure.
+ *
+ * Deliberately a copy of the guards in `metaPixel.ts` rather than an import: an
+ * import is the bundle this exists to get ahead of. The shared window flags mean
+ * `initMetaPixel()` later finds the work already done and does not repeat it.
+ */
+function metaPixelBootstrap(pixelId: string): string {
+  return `(function(){try{
+  if(window.__watchDiveMetaPageViewSent)return;
+  if(localStorage.getItem("watchdive.measurement-consent.v3")==="denied")return;
+  if(navigator.globalPrivacyControl===true)return;
+  var f=window.fbq;if(!f){f=window.fbq=function(){f.callMethod?f.callMethod.apply(f,arguments):f.queue.push(arguments)};
+  f.queue=[];f.push=f;f.loaded=!0;f.version="2.0";if(!window._fbq)window._fbq=f;}
+  if(!document.getElementById("watchdive-meta-pixel")){var s=document.createElement("script");
+  s.id="watchdive-meta-pixel";s.async=!0;s.src="https://connect.facebook.net/en_US/fbevents.js";
+  document.head.appendChild(s);}
+  f("consent","grant");
+  if(window.__watchDiveMetaPixelId!==${JSON.stringify(pixelId)}){f("init",${JSON.stringify(pixelId)});window.__watchDiveMetaPixelId=${JSON.stringify(pixelId)};}
+  f("track","PageView");window.__watchDiveMetaPageViewSent=!0;
+}catch(e){}})();`;
+}
+
+const META_PIXEL_ID = ((import.meta.env.VITE_META_PIXEL_ID as string | undefined) ?? "").trim();
+const META_PIXEL_READY =
+  String(import.meta.env.VITE_META_TRACKING_ENABLED ?? "").toLowerCase() === "true" &&
+  /^\d{10,20}$/.test(META_PIXEL_ID);
+
 function RootShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const thirdParty = allowsThirdPartyScripts(pathname);
@@ -120,6 +154,9 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {thirdParty && META_PIXEL_READY && (
+          <script dangerouslySetInnerHTML={{ __html: metaPixelBootstrap(META_PIXEL_ID) }} />
+        )}
       </head>
       <body>
         {children}

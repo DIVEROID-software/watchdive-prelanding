@@ -18,12 +18,12 @@ import {
   trackMetaPhoneLead,
 } from "@/lib/metaPixel";
 
-import heroBackground from "../assets/live/hero-background.png";
-import heroSideImage from "../assets/live/watchdive-image10.png";
-import whyImage from "../assets/live/watchdive-why-new.png";
-import step1Image from "../assets/live/watchdive-step1.png";
-import step2Image from "../assets/live/watchdive-step2.png";
-import syncImage from "../assets/live/watchdive-sync.png";
+import heroBackground from "../assets/live/hero-background.webp";
+import heroSideImage from "../assets/live/watchdive-image10.webp";
+import whyImage from "../assets/live/watchdive-why-new.webp";
+import step1Image from "../assets/live/watchdive-step1.webp";
+import step2Image from "../assets/live/watchdive-step2.webp";
+import syncImage from "../assets/live/watchdive-sync.webp";
 import app3_1 from "../assets/live/app3/app3-1.jpg";
 import app3_4 from "../assets/live/app3/app3-4.jpg";
 import app3_6 from "../assets/live/app3/app3-6.jpg";
@@ -41,14 +41,14 @@ import connectedAppVideo from "../assets/live/connected-app.mp4";
 import connectedAppPoster from "../assets/live/connected-app-poster.jpg";
 import functionsVideo from "../assets/live/watchdive-functions.mp4";
 import functionsPoster from "../assets/live/watchdive-functions-poster.jpg";
-import kickstarterImage from "../assets/live/kickstarter-crop.png";
+import kickstarterImage from "../assets/live/kickstarter-crop.webp";
 import nvidiaInceptionBadge from "../assets/live/nvidia-inception.svg";
 import awsLogo from "../assets/live/aws-logo.png";
 import watchdiveClip from "../assets/live/watchdive-clip.mp4";
-import clipPoster from "../assets/live/watchdive-clip-poster.jpg";
+import clipPoster from "../assets/live/watchdive-clip-poster.webp";
 import watchScreen from "../assets/live/watch-screen.png";
-import housingImage from "../assets/live/housing.png";
-import samsungFeature from "../assets/live/samsung-feature.jpg";
+import housingImage from "../assets/live/housing.webp";
+import samsungFeature from "../assets/live/samsung-feature.webp";
 import samsungLogo from "../assets/live/samsung-logo.svg";
 
 // Inlines an App 3.0 icon SVG (imported ?raw) so it inherits the current text
@@ -165,22 +165,50 @@ function SectionImage({
   return <img src={src} alt={alt} loading={priority ? "eager" : "lazy"} className={className} />;
 }
 
+/**
+ * The persistent CTA.
+ *
+ * It is `fixed` and nearly full-width on a 360px phone, so left alone it covers
+ * the very form it points at, sits over the footer, and on Android rides above
+ * the keyboard onto the email field. It hides whenever a signup form is on
+ * screen or focused — at that point it is pure obstruction.
+ */
 function StickyLaunchBanner() {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    const forms = [...document.querySelectorAll("form")];
+    const onFocus = (event: FocusEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("form")) setHidden(true);
+    };
+    document.addEventListener("focusin", onFocus);
+
+    let observer: IntersectionObserver | undefined;
+    if (forms.length && typeof IntersectionObserver !== "undefined") {
+      observer = new IntersectionObserver(
+        (entries) => setHidden(entries.some((entry) => entry.isIntersecting)),
+        { rootMargin: "-10% 0px -10% 0px" },
+      );
+      forms.forEach((form) => observer!.observe(form));
+    }
+    return () => {
+      document.removeEventListener("focusin", onFocus);
+      observer?.disconnect();
+    };
+  }, []);
+
+  if (hidden) return null;
+
   return (
     <a
       href="#offer-form"
-      className="fixed bottom-3 right-3 z-50 flex max-w-[320px] items-center gap-3 rounded-2xl border border-white/15 bg-[color:var(--color-deep-2)]/92 px-4 py-3 text-white shadow-[0_20px_60px_-25px_oklch(0.13_0.065_287/0.95)] backdrop-blur-xl transition hover:-translate-y-0.5 sm:bottom-5 sm:right-5"
+      className="fixed bottom-3 right-3 z-50 flex max-w-[280px] items-center gap-2.5 rounded-full border border-white/15 bg-[color:var(--color-deep-2)]/92 py-2.5 pl-3 pr-4 text-white shadow-[0_20px_60px_-25px_oklch(0.13_0.065_287/0.95)] backdrop-blur-xl transition hover:-translate-y-0.5 sm:bottom-5 sm:right-5"
     >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-cyan-glow)] text-[color:var(--color-deep-2)] shadow-[0_0_24px_oklch(0.8_0.11_232/0.55)]">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-cyan-glow)] text-[color:var(--color-deep-2)]">
         ↓
       </span>
-      <span className="min-w-0">
-        <span className="block text-[10px] uppercase tracking-[0.22em] text-white/55">
-          Kickstarter early bird
-        </span>
-        <span className="block text-sm font-semibold leading-tight">{CTA_LABEL}</span>
-        <span className="mt-0.5 block text-[11px] text-white/60">Kickstarter opens 10 August</span>
-      </span>
+      <span className="min-w-0 text-sm font-semibold leading-tight">{CTA_LABEL}</span>
     </a>
   );
 }
@@ -338,6 +366,18 @@ function webmailFor(email: string) {
   return WEBMAIL.find((provider) => provider.match.test(email.trim()));
 }
 
+/**
+ * Facebook and Instagram open links inside their own webview, which carries no
+ * Google or Microsoft session — so a "Open Gmail" button there lands on a login
+ * wall at the most fragile step in the funnel. 87% of this page's traffic comes
+ * from exactly those apps, so the link is replaced with instructions rather
+ * than offered and broken.
+ */
+function isInAppBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /FBAN|FBAV|FB_IAB|Instagram|Line\/|KAKAOTALK|NAVER\(inapp/i.test(navigator.userAgent);
+}
+
 function CheckInboxCard({
   message,
   email,
@@ -360,6 +400,9 @@ function CheckInboxCard({
   }, []);
 
   const webmail = webmailFor(email);
+  // Read after mount: the server has no user agent to inspect.
+  const [inApp, setInApp] = useState(false);
+  useEffect(() => setInApp(isInAppBrowser()), []);
 
   return (
     <div
@@ -380,12 +423,12 @@ function CheckInboxCard({
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        {webmail && (
+        {webmail && !inApp && (
           <a
             href={webmail.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg bg-white px-3.5 py-2 text-xs font-semibold text-[color:var(--color-deep-2)]"
+            className="inline-flex min-h-11 items-center rounded-lg bg-white px-4 text-sm font-semibold text-[color:var(--color-deep-2)]"
           >
             {webmail.label}
           </a>
@@ -394,18 +437,24 @@ function CheckInboxCard({
           type="button"
           onClick={onResend}
           disabled={!canResend || resending}
-          className="rounded-lg border border-white/25 px-3.5 py-2 text-xs font-semibold text-white disabled:opacity-45"
+          className="inline-flex min-h-11 items-center rounded-lg border border-white/25 px-4 text-sm font-semibold text-white disabled:opacity-45"
         >
           {resending ? "Sending…" : canResend ? "Didn't get it? Resend" : "Resend in a moment"}
         </button>
         <button
           type="button"
           onClick={onStartOver}
-          className="text-xs font-semibold text-white/60 underline underline-offset-2"
+          className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-white/65 underline underline-offset-2"
         >
           Wrong address?
         </button>
       </div>
+
+      {inApp && (
+        <p className="mt-3 text-xs leading-relaxed text-white/55">
+          Open your mail app and search for <span className="text-white/80">Watch Dive</span>.
+        </p>
+      )}
     </div>
   );
 }
@@ -733,7 +782,7 @@ function Hero() {
               <span className="bg-gradient-to-r from-[color:var(--color-cyan-glow)] via-white to-[color:var(--color-cyan)] bg-clip-text text-transparent">
                 already own
               </span>{" "}
-              <span className="whitespace-nowrap">into a dive computer.</span>
+              into a dive computer.
             </h1>
 
             <p className="max-w-xl text-lg font-bold leading-snug text-white sm:text-2xl">
