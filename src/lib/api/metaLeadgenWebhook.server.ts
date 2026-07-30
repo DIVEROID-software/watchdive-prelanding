@@ -7,7 +7,7 @@ const WEBHOOK_PATH = "/api/meta/leadgen";
 const MAX_WEBHOOK_BYTES = 1_000_000;
 const MAX_LEADS_PER_DELIVERY = 50;
 const GRAPH_REQUEST_TIMEOUT_MS = 8_000;
-const DEFAULT_GRAPH_API_VERSION = "v21.0";
+const DEFAULT_GRAPH_API_VERSION = "v26.0";
 
 type MetaLeadReference = {
   platformLeadId: string;
@@ -205,7 +205,7 @@ export function extractMetaLeadReferences(payload: unknown): MetaLeadReference[]
   if (!Array.isArray(entries)) return [];
 
   const references: MetaLeadReference[] = [];
-  const seen = new Set<string>();
+  const referencesByLeadId = new Map<string, MetaLeadReference>();
 
   for (const entry of entries) {
     if (!entry || typeof entry !== "object") continue;
@@ -224,10 +224,8 @@ export function extractMetaLeadReferences(payload: unknown): MetaLeadReference[]
       if (!platformLeadId || !/^[A-Za-z0-9._:-]{1,128}$/.test(platformLeadId)) {
         throw new Error("Malformed Meta leadgen change");
       }
-      if (seen.has(platformLeadId)) continue;
-      seen.add(platformLeadId);
 
-      references.push({
+      const incomingReference: MetaLeadReference = {
         platformLeadId,
         createdTime: isoTime(value.created_time),
         formId: boundedString(value.form_id, 128),
@@ -235,7 +233,31 @@ export function extractMetaLeadReferences(payload: unknown): MetaLeadReference[]
         campaignId: boundedString(value.campaign_id, 128),
         adSetId: boundedString(value.adset_id, 128) ?? boundedString(value.adgroup_id, 128),
         adId: boundedString(value.ad_id, 128),
-      });
+      };
+      const existingReference = referencesByLeadId.get(platformLeadId);
+      if (!existingReference) {
+        referencesByLeadId.set(platformLeadId, incomingReference);
+        references.push(incomingReference);
+        continue;
+      }
+
+      if (
+        (existingReference.pageId &&
+          incomingReference.pageId &&
+          existingReference.pageId !== incomingReference.pageId) ||
+        (existingReference.formId &&
+          incomingReference.formId &&
+          existingReference.formId !== incomingReference.formId)
+      ) {
+        throw new Error("Conflicting Meta leadgen scope");
+      }
+
+      existingReference.createdTime ??= incomingReference.createdTime;
+      existingReference.formId ??= incomingReference.formId;
+      existingReference.pageId ??= incomingReference.pageId;
+      existingReference.campaignId ??= incomingReference.campaignId;
+      existingReference.adSetId ??= incomingReference.adSetId;
+      existingReference.adId ??= incomingReference.adId;
     }
   }
 

@@ -193,8 +193,10 @@ test("website and Instant Form query/create paths use the schema-safe wrapper", 
     "utf8",
   );
 
-  assert.equal((source.match(/withCanonicalEmailShape\(\(\) =>/g) ?? []).length, 4);
-  assert.equal((source.match(/canonicalEmailFilters\(canonical\)/g) ?? []).length, 2);
+  // Instant Form has separate unique and cross-channel duplicate create paths;
+  // both share the same canonical filter/property builders.
+  assert.equal((source.match(/withCanonicalEmailShape\(\(\) =>/g) ?? []).length, 5);
+  assert.equal((source.match(/canonicalEmailFilters\(canonical\)/g) ?? []).length, 1);
   assert.equal((source.match(/canonicalEmailProperties\(canonical\)/g) ?? []).length, 2);
   assert.doesNotMatch(source, /"Canonical email": \{ email: canonical \}/);
   assert.match(source, /response\.code === "validation_error"/);

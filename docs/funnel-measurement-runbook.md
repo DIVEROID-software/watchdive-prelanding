@@ -123,6 +123,12 @@ https://watchdive.diveroid.com/api/meta/leadgen
 - `META_PAGE_ID`와 `META_LEADGEN_FORM_IDS` allowlist는 필수다.
 - `META_LEADGEN_CAMPAIGN_IDS`를 설정하면 Graph에서 조회한 campaign도 한 번 더 제한한다.
 - 해당 Page의 다른 양식 리드는 WatchDive CRM에 들어오면 안 된다.
+- 배포 전에 `20260729090000_funnel_measurement.sql`,
+  `20260729120000_meta_insights_refresh_ttl.sql`,
+  `20260730130000_meta_lead_ingestion_state.sql`을 순서대로 적용한다.
+- 마지막 migration의 Platform Lead ID 예약·완료 RPC가 동시 webhook에서 Notion
+  생성자를 하나로 제한한다. 처리 중인 동일 리드에는 성공 응답을 보내지 않고
+  Meta 재시도를 유지한다.
 
 ### 4. Website 광고 URL 파라미터
 

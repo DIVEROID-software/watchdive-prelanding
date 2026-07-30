@@ -143,6 +143,87 @@ test("deduplicates repeated lead ids within one webhook delivery", () => {
   });
 });
 
+test("merges complete scope and attribution into an earlier incomplete reference", () => {
+  const payload = leadgenPayload();
+  const entry = (payload.entry as Array<{ changes: unknown[] }>)[0];
+  entry.changes.reverse();
+
+  const references = extractMetaLeadReferences(payload);
+
+  assert.deepEqual(references, [
+    {
+      platformLeadId: "lead-123",
+      createdTime: "2026-07-29T09:00:00.000Z",
+      formId: "form-123",
+      pageId: "page-123",
+      campaignId: "campaign-123",
+      adSetId: "adset-123",
+      adId: "ad-123",
+    },
+  ]);
+});
+
+test("rejects conflicting Page or Form references for the same lead id before Graph access", async () => {
+  const conflictingPayloads = [
+    {
+      object: "page",
+      entry: [
+        {
+          id: "page-123",
+          changes: [
+            {
+              field: "leadgen",
+              value: { leadgen_id: "lead-123", form_id: "form-123" },
+            },
+            {
+              field: "leadgen",
+              value: {
+                leadgen_id: "lead-123",
+                page_id: "other-page",
+                form_id: "form-123",
+              },
+            },
+          ],
+        },
+      ],
+    },
+    {
+      object: "page",
+      entry: [
+        {
+          id: "page-123",
+          changes: [
+            {
+              field: "leadgen",
+              value: { leadgen_id: "lead-123", form_id: "form-123" },
+            },
+            {
+              field: "leadgen",
+              value: { leadgen_id: "lead-123", form_id: "other-form" },
+            },
+          ],
+        },
+      ],
+    },
+  ];
+  let graphCalls = 0;
+
+  for (const payload of conflictingPayloads) {
+    const response = await handleMetaLeadgenWebhook(signedRequest(JSON.stringify(payload)), {
+      fetchImpl: async () => {
+        graphCalls += 1;
+        return Response.json({});
+      },
+    });
+
+    assert.ok(response);
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: "invalid_leadgen_payload" });
+  }
+
+  assert.equal(graphCalls, 0);
+});
+
 test("normalizes Graph field_data without changing the platform lead id", () => {
   const normalized = normalizeMetaGraphLead(
     {
