@@ -56,8 +56,11 @@ export function WaitlistProgress({
         aria-label="Pre-launch waitlist places taken"
       >
         <div
-          className="h-full rounded-full bg-gradient-to-r from-[color:var(--color-cyan)] to-[color:var(--color-cyan-glow)] transition-[width] duration-700 ease-out"
-          style={{ width: `${progress.percent}%` }}
+          // scaleX rather than width: animating width relayouts and repaints
+          // every frame, which is the cost this page just spent a day removing.
+          // A transform stays on the compositor.
+          className="h-full w-full origin-left rounded-full bg-gradient-to-r from-[color:var(--color-cyan)] to-[color:var(--color-cyan-glow)] transition-transform duration-700 ease-out"
+          style={{ transform: `scaleX(${progress.percent / 100})` }}
         />
       </div>
 

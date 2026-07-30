@@ -48,7 +48,15 @@ function Card({ review }: { review: BetaReview }) {
   );
 }
 
-function Lane({ reviews, reverse }: { reviews: BetaReview[]; reverse: boolean }) {
+function Lane({
+  reviews,
+  reverse,
+  running,
+}: {
+  reviews: BetaReview[];
+  reverse: boolean;
+  running: boolean;
+}) {
   // Duration scales with the number of cards so lanes of different lengths move
   // at the same apparent speed rather than the same lap time.
   const seconds = reviews.length * 9;
@@ -61,6 +69,10 @@ function Lane({ reviews, reverse }: { reviews: BetaReview[]; reverse: boolean })
           {
             "--wd-marquee-duration": `${seconds}s`,
             animationDirection: reverse ? "reverse" : "normal",
+            // Each lane is a composited layer many screens wide. Left running
+            // off-screen it costs GPU and battery on a mid-range phone for
+            // something nobody is looking at, so it holds its position instead.
+            animationPlayState: running ? "running" : "paused",
           } as React.CSSProperties
         }
       >
@@ -82,6 +94,7 @@ function Lane({ reviews, reverse }: { reviews: BetaReview[]; reverse: boolean })
  */
 export function ReviewTicker() {
   const [showAll, setShowAll] = useState(false);
+  const [onScreen, setOnScreen] = useState(false);
   const section = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -91,20 +104,20 @@ export function ReviewTicker() {
     // the full set — degrading to the previous behaviour, never to less.
     if (typeof IntersectionObserver === "undefined") {
       setShowAll(true);
+      setOnScreen(true);
       return;
     }
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setShowAll(true);
-          observer.disconnect();
-        }
+        const visible = entries.some((entry) => entry.isIntersecting);
+        setOnScreen(visible);
+        if (visible) setShowAll(true);
       },
       { rootMargin: "600px" },
     );
     observer.observe(element);
     return () => observer.disconnect();
-  }, [showAll]);
+  }, []);
 
   const lanes = useMemo(() => {
     const source = showAll
@@ -148,7 +161,7 @@ export function ReviewTicker() {
 
       <div className="mt-10 flex flex-col gap-4">
         {lanes.map((lane, index) => (
-          <Lane key={index} reviews={lane} reverse={index % 2 === 1} />
+          <Lane key={index} reviews={lane} reverse={index % 2 === 1} running={onScreen} />
         ))}
       </div>
 

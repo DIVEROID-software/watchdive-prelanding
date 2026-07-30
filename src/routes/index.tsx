@@ -130,7 +130,7 @@ function LaunchBanner() {
     <div className="relative z-20 border-b border-white/10 bg-[color:var(--color-deep-2)]/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 py-3 text-white sm:flex-row sm:justify-between sm:gap-6">
         <div className="flex items-center gap-2">
-          <span className="size-1.5 rounded-full bg-[color:var(--color-cyan-glow)] animate-pulse" />
+          <span className="size-1.5 rounded-full bg-[color:var(--color-cyan-glow)]" />
           <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-cyan-glow)]">
             Launching soon on Kickstarter
           </span>
@@ -769,7 +769,7 @@ function Hero() {
       <div className="relative z-10 mx-auto grid min-h-[100svh] max-w-6xl gap-10 px-5 pb-16 pt-10 sm:pt-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.95fr)] lg:items-center lg:gap-14">
         <div className="flex flex-col gap-7 lg:py-10">
           <div className="inline-flex self-start items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur border border-white/15">
-            <span className="size-1.5 rounded-full bg-[color:var(--color-cyan-glow)] animate-pulse" />
+            <span className="size-1.5 rounded-full bg-[color:var(--color-cyan-glow)]" />
             Launching soon on Kickstarter
           </div>
 
@@ -794,6 +794,20 @@ function Hero() {
               Early bird from <span className="font-semibold text-white">$149</span> on Kickstarter
               &mdash; a fraction of the price of a traditional dive computer.
             </p>
+          </div>
+
+          {/* The product is the whole idea, and it has to be seen before the ask.
+              Desktop shows it in the right-hand column; on a phone that column
+              sits below everything, so a shorter crop goes here instead. Capped
+              in vh so it introduces the product without pushing the form off a
+              second screen. */}
+          <div className="relative overflow-hidden rounded-[1.5rem] border border-white/12 bg-white/8 p-2 lg:hidden">
+            <SectionImage
+              src={heroSideImage}
+              alt="Watch Dive underwater hero product shot"
+              priority
+              className="max-h-[38vh] w-full rounded-[1.1rem] object-cover"
+            />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
@@ -931,7 +945,7 @@ function Hero() {
           </div>
         </div>
 
-        <div className="relative lg:order-none">
+        <div className="relative hidden lg:order-none lg:block">
           <div className="absolute -right-2 bottom-10 rounded-2xl border border-white/12 bg-white/10 px-4 py-3 text-sm text-white/90 shadow-2xl backdrop-blur md:px-5">
             <div className="text-[10px] uppercase tracking-[0.2em] text-white/55">
               The Watch Dive promise
