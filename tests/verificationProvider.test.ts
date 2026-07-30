@@ -137,7 +137,23 @@ test("the confirmation URL keeps the token out of the query string", () => {
   const url = new URL(verificationUrl(TEST_ORIGIN, TOKEN));
   assert.equal(url.search, "");
   assert.equal(url.pathname, "/verify");
-  assert.equal(url.hash, `#token=${TOKEN}`);
+  assert.equal(url.hash, `#${TOKEN}`);
+  // A literal `=` in the fragment is destroyed by quoted-printable mail encoding.
+  assert.ok(!url.hash.includes("="));
+});
+
+// A mail body is transferred as quoted-printable, where `=` starts an escape.
+// An unescaped `=` in the link is decoded away together with the two characters
+// after it, which silently truncated the token and made every confirmation link
+// dead. Decoding the URL the way a mail client does must be a no-op.
+test("the confirmation URL survives quoted-printable decoding", () => {
+  const url = verificationUrl(TEST_ORIGIN, TOKEN);
+  const decoded = url.replace(/=([0-9A-Fa-f]{2})/g, (_, hex) =>
+    String.fromCharCode(parseInt(hex, 16)),
+  );
+  assert.equal(decoded, url);
+  assert.ok(!url.includes("="));
+  assert.ok(url.endsWith(`#${TOKEN}`));
 });
 
 // ---------------------------------------------------------------------------

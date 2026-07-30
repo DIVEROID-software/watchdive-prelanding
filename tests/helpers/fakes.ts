@@ -143,6 +143,6 @@ export class FakeMailer implements VerificationMailer {
   get lastUrl(): string | undefined {
     const last = this.sent[this.sent.length - 1];
     if (!last) return undefined;
-    return `${last.publicOrigin}/verify#token=${last.token}`;
+    return `${last.publicOrigin}/verify#${last.token}`;
   }
 }

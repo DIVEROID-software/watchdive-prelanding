@@ -103,7 +103,8 @@ test("the mailed link carries the token in the fragment and nothing in the query
     assert.equal(url.origin, TEST_ORIGIN);
     assert.equal(url.pathname, "/verify");
     assert.equal(url.search, "");
-    assert.match(url.hash, /^#token=/);
+    assert.match(url.hash, /^#[0-9a-f-]{36}\./i);
+    assert.ok(!url.hash.includes("="));
   });
 });
 

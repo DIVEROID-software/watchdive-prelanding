@@ -225,10 +225,18 @@ export function networkKey(ip: string, secret: string): string | undefined {
  * The token rides in the fragment. A fragment is never sent to a server, never
  * lands in an access log, and is not forwarded in a Referer — so outside the
  * mail itself the raw token exists only in the confirming tab's memory.
+ *
+ * The fragment carries the bare token, not a `key=value` pair. A literal `=`
+ * here does not survive mail: bodies are transferred as quoted-printable, where
+ * `=` introduces an escape, so an unescaped `token=32ab…` is decoded as
+ * `token` + byte 0x32 + `ab…` and the first two characters of the token are
+ * silently destroyed. Every character the token can contain — hex, base64url,
+ * `.`, `-` — passes quoted-printable untouched, so dropping the `=` makes the
+ * link independent of the transfer encoding.
  */
 export function verificationUrl(publicOrigin: string, token: string): string {
   if (!isVerificationTokenShape(token)) throw new Error("Invalid verification token");
   const url = new URL("/verify", publicOrigin);
-  url.hash = `token=${token}`;
+  url.hash = token;
   return url.toString();
 }

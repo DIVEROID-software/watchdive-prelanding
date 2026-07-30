@@ -42,8 +42,19 @@ function isUserPresent(): boolean {
 const TOKEN_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.\d{1,11}\.[01]\.[A-Za-z0-9_-]{43}$/i;
 
+// The mail puts the bare token in the fragment: a literal `=` is eaten by the
+// quoted-printable transfer encoding mail bodies use. The legacy `token=` form
+// is still accepted so any link already in an inbox keeps working.
 function tokenFromFragment(hash: string): string | undefined {
-  const token = new URLSearchParams(hash.replace(/^#/, "")).get("token") ?? "";
+  const encoded = hash.replace(/^#/, "");
+  // A hand-mangled fragment can be invalid percent-encoding, which throws.
+  let raw: string;
+  try {
+    raw = decodeURIComponent(encoded);
+  } catch {
+    raw = encoded;
+  }
+  const token = raw.startsWith("token=") ? raw.slice("token=".length) : raw;
   return TOKEN_PATTERN.test(token) ? token : undefined;
 }
 
