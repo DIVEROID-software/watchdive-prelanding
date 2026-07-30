@@ -9,6 +9,7 @@ import { joinWaitlist, pollVerification, getReferralCount } from "@/lib/api/wait
 import { LaunchCountdown } from "@/components/launch-countdown";
 import { ReviewTicker } from "@/components/review-ticker";
 import { WaitlistProgress } from "@/components/waitlist-progress";
+import { PUBLISHABLE_REVIEWS } from "@/data/beta-reviews";
 import { nextPollDelayMs, VERIFY_POLL_MAX_ATTEMPTS } from "@/lib/verifyPolling";
 import {
   hasMetaMeasurementConsent,
@@ -65,7 +66,7 @@ function AppIcon({ svg, className }: { svg: string; className?: string }) {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Watch Dive — The world's most affordable dive computer" },
+      { title: "Watch Dive — Turn the watch you already own into a dive computer" },
       {
         name: "description",
         content:
@@ -73,7 +74,7 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:title",
-        content: "Watch Dive — The world's most affordable dive computer",
+        content: "Watch Dive — Turn the watch you already own into a dive computer",
       },
       {
         property: "og:description",
@@ -88,7 +89,7 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
       {
         name: "twitter:title",
-        content: "Watch Dive — The world's most affordable dive computer",
+        content: "Watch Dive — Turn the watch you already own into a dive computer",
       },
       {
         name: "twitter:description",
@@ -122,7 +123,7 @@ function Index() {
   );
 }
 
-const CTA_LABEL = "Claim My $149 Early Bird";
+const CTA_LABEL = "Get My $149 Early-Bird Invite";
 
 function LaunchBanner() {
   return (
@@ -177,9 +178,8 @@ function StickyLaunchBanner() {
         <span className="block text-[10px] uppercase tracking-[0.22em] text-white/55">
           Kickstarter early bird
         </span>
-        <span className="block text-sm font-semibold leading-tight">
-          Reserve the launch price before it’s gone
-        </span>
+        <span className="block text-sm font-semibold leading-tight">{CTA_LABEL}</span>
+        <span className="mt-0.5 block text-[11px] text-white/60">Kickstarter opens 10 August</span>
       </span>
     </a>
   );
@@ -222,14 +222,13 @@ function ReferralWelcome() {
     <div className="mb-5 inline-flex max-w-xl items-center gap-2 self-start rounded-xl border border-[color:var(--color-cyan-glow)]/30 bg-[color:var(--color-cyan-glow)]/10 px-4 py-2.5 text-sm text-white/90">
       <span className="text-base">🎉</span>
       <span>
-        A friend invited you — <span className="font-semibold text-white">you both get $5 off</span>{" "}
-        at launch.
+        A friend invited you —{" "}
+        <span className="font-semibold text-white">you&apos;re on their list</span>. Confirm your
+        email to join them.
       </span>
     </div>
   );
 }
-
-const REFERRAL_FREE_AT = 30; // 30 friends × $5 ≈ the full $149 → yours is free
 
 function ReferralSuccess({ refCode }: { refCode: string }) {
   const [copied, setCopied] = useState(false);
@@ -248,8 +247,6 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
     };
   }, [refCode]);
 
-  const pct = count === null ? 0 : Math.min(100, (count / REFERRAL_FREE_AT) * 100);
-
   return (
     <div className="rounded-2xl bg-white/10 backdrop-blur p-5 text-white">
       <div className="text-base font-semibold">You're on the list. 🎉</div>
@@ -260,36 +257,20 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
       {shareUrl && (
         <div className="mt-4 rounded-xl border border-white/15 bg-[color:var(--color-deep-2)]/50 p-4">
           <div className="text-sm font-semibold text-[color:var(--color-cyan-glow)]">
-            Give $5, get $5 — for every friend who joins
+            Bring a buddy
           </div>
           <p className="mt-1 text-xs text-white/70">
-            Share your link: your friend gets $5 off, and so do you — stackable, no limit.{" "}
-            <span className="font-semibold text-white/90">
-              Invite 30 friends and yours is free.
-            </span>{" "}
-            We'll email your discount code when Watch Dive launches on Kickstarter.
+            Share your link with divers who&apos;d want this. We count everyone who joins through
+            it, and we&apos;ll email you the Kickstarter link the moment the campaign opens.
           </p>
 
           {count !== null && (
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-white/85">
-                  {count} friend{count === 1 ? "" : "s"} joined ·{" "}
-                  <span className="font-semibold text-[color:var(--color-cyan-glow)]">
-                    ${count * 5} off so far
-                  </span>
+                  <span className="font-semibold text-[color:var(--color-cyan-glow)]">{count}</span>{" "}
+                  diver{count === 1 ? "" : "s"} joined through your link
                 </span>
-                <span className="text-white/50">
-                  {count >= REFERRAL_FREE_AT
-                    ? "It's on us 🎉"
-                    : `${REFERRAL_FREE_AT - count} more until it's free`}
-                </span>
-              </div>
-              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/15">
-                <div
-                  className="h-full rounded-full bg-[color:var(--color-cyan-glow)] transition-all"
-                  style={{ width: `${pct}%` }}
-                />
               </div>
             </div>
           )}
@@ -308,7 +289,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
                   if (navigator.share) {
                     await navigator.share({
                       title: "Watch Dive",
-                      text: "I'm turning my Apple/Galaxy Watch into a $149 dive computer with Watch Dive 🤿 Join with my link and we both get $5 off.",
+                      text: "I'm turning my Apple/Galaxy Watch into a dive computer with Watch Dive 🤿 Early bird is $149 on Kickstarter — join the list with my link.",
                       url: shareUrl,
                     });
                     return;
@@ -334,7 +315,52 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
 // Shown from submit until the mailed link is confirmed. The copy is conditional
 // because several accepted paths send nothing at all, and the page must not
 // claim a delivery it cannot know about.
-function CheckInboxCard({ message }: { message: string }) {
+// The confirmation click is where a double opt-in funnel leaks. Sending people
+// straight to a pre-filtered inbox search is the cheapest known fix, so the
+// handful of providers that cover most consumer mail get a direct link.
+const WEBMAIL: { match: RegExp; label: string; url: string }[] = [
+  {
+    match: /@(gmail|googlemail)\.com$/i,
+    label: "Open Gmail",
+    url: "https://mail.google.com/mail/u/0/#search/watch+dive",
+  },
+  {
+    match: /@(outlook|hotmail|live|msn)\./i,
+    label: "Open Outlook",
+    url: "https://outlook.live.com/mail/0/inbox",
+  },
+  { match: /@yahoo\./i, label: "Open Yahoo Mail", url: "https://mail.yahoo.com/" },
+  { match: /@naver\.com$/i, label: "네이버 메일 열기", url: "https://mail.naver.com/" },
+  { match: /@(daum|hanmail)\.net$/i, label: "다음 메일 열기", url: "https://mail.daum.net/" },
+];
+
+function webmailFor(email: string) {
+  return WEBMAIL.find((provider) => provider.match.test(email.trim()));
+}
+
+function CheckInboxCard({
+  message,
+  email,
+  onResend,
+  onStartOver,
+  resending,
+}: {
+  message: string;
+  email: string;
+  onResend: () => void;
+  onStartOver: () => void;
+  resending: boolean;
+}) {
+  // A resend offered instantly invites double-sends; the server enforces a
+  // sixty-second cooldown anyway, so the button appears when it would work.
+  const [canResend, setCanResend] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setCanResend(true), 60_000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const webmail = webmailFor(email);
+
   return (
     <div
       role="status"
@@ -344,10 +370,42 @@ function CheckInboxCard({ message }: { message: string }) {
       <div className="text-base font-semibold">One more step — confirm your email 📬</div>
       <p className="mt-1 text-sm text-white/80">{message}</p>
       <p className="mt-3 text-xs text-white/60">
-        Open the email and press{" "}
-        <span className="font-semibold text-white/85">Confirm my email</span>. The link lasts 24
-        hours. This page updates on its own once you confirm.
+        Look for the subject{" "}
+        <span className="font-semibold text-white/85">
+          &ldquo;Confirm your Watch Dive waitlist email&rdquo;
+        </span>{" "}
+        and press <span className="font-semibold text-white/85">Confirm my email</span>. Check spam
+        or promotions if it is not there within a minute. The link lasts 24 hours and this page
+        updates on its own.
       </p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        {webmail && (
+          <a
+            href={webmail.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg bg-white px-3.5 py-2 text-xs font-semibold text-[color:var(--color-deep-2)]"
+          >
+            {webmail.label}
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={onResend}
+          disabled={!canResend || resending}
+          className="rounded-lg border border-white/25 px-3.5 py-2 text-xs font-semibold text-white disabled:opacity-45"
+        >
+          {resending ? "Sending…" : canResend ? "Didn't get it? Resend" : "Resend in a moment"}
+        </button>
+        <button
+          type="button"
+          onClick={onStartOver}
+          className="text-xs font-semibold text-white/60 underline underline-offset-2"
+        >
+          Wrong address?
+        </button>
+      </div>
     </div>
   );
 }
@@ -358,11 +416,13 @@ type FormPlacement = "hero" | "offer";
 
 function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePhone?: boolean }) {
   const [pending, setPending] = useState<string | null>(null);
+  const [closed, setClosed] = useState<string | null>(null);
   const [handle, setHandle] = useState("");
   const [refCode, setRefCode] = useState("");
   const [verified, setVerified] = useState(false);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [smsConsent, setSmsConsent] = useState(false);
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
   const formStartSent = useRef(false); // FormStart once per form instance
@@ -449,8 +509,68 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     return <ReferralSuccess refCode={refCode} />;
   }
 
+  // The server treats a repeat submit of the same address as a resend, under
+  // its own cooldown and send ceiling. Reusing that path means the button
+  // cannot invent a second code path to keep correct.
+  const submit = async () => {
+    const res = await joinWaitlist({
+      data: {
+        email: email.trim().toLowerCase(),
+        // A number is only ever sent with its own explicit consent.
+        phone: phone.trim() && smsConsent ? phone.trim() : undefined,
+        source: id,
+        referredBy: getRef(),
+        honeypot: hp,
+        measurementConsent: hasMetaMeasurementConsent(),
+      },
+    });
+    if (res.status === "closed") {
+      setClosed(res.message);
+      return res;
+    }
+    setHandle(res.handle);
+    setPending(res.message);
+    return res;
+  };
+
+  if (closed) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-2xl bg-white/10 p-5 text-white backdrop-blur"
+      >
+        <div className="text-base font-semibold">The list is full</div>
+        <p className="mt-1 text-sm text-white/80">{closed}</p>
+      </div>
+    );
+  }
+
   if (pending) {
-    return <CheckInboxCard message={pending} />;
+    return (
+      <CheckInboxCard
+        message={pending}
+        email={email}
+        resending={loading}
+        onResend={async () => {
+          if (loading) return;
+          setLoading(true);
+          try {
+            await submit();
+            toast.success("Sent again — check your inbox.");
+          } catch {
+            toast.error("Something went wrong. Please try again.");
+          } finally {
+            setLoading(false);
+          }
+        }}
+        onStartOver={() => {
+          // A typo is otherwise unrecoverable without a page reload.
+          setPending(null);
+          setHandle("");
+        }}
+      />
+    );
   }
 
   return (
@@ -463,18 +583,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // Captured here, in the browser that actually chose it, and carried
           // signed from now on: the browser that opens the confirmation link
           // must not be able to widen it.
-          const res = await joinWaitlist({
-            data: {
-              email: email.trim().toLowerCase(),
-              phone: phone.trim() || undefined,
-              source: id,
-              referredBy: getRef(),
-              honeypot: hp,
-              measurementConsent: hasMetaMeasurementConsent(),
-            },
-          });
-          setHandle(res.handle);
-          setPending(res.message);
+          await submit();
           // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });
@@ -519,7 +628,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="Phone (optional) — text you 1 hour early + priority access"
+            placeholder="Phone (optional) — for a launch-day text"
             className="order-2 h-14 w-full px-4 rounded-xl bg-gradient-to-b from-white to-[oklch(0.92_0.006_255)] text-[color:var(--color-deep-2)] placeholder:text-muted-foreground border border-white/50 shadow-[inset_0_1px_0_oklch(1_0_0/0.85),0_22px_48px_-8px_oklch(0.008_0.01_270/0.85),0_6px_16px_-3px_oklch(0.008_0.01_270/0.7)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)] sm:order-3 sm:col-span-2"
           />
         )}
@@ -531,7 +640,65 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           {loading ? "Saving…" : CTA_LABEL}
         </button>
       </div>
+
+      {/* Never pre-ticked, and separate from the email signup: WD-SMS-CONSENT-V1. */}
+      {includePhone && phone.trim() && (
+        <label className="mt-3 flex items-start gap-2.5 text-xs leading-relaxed text-white/70">
+          <input
+            type="checkbox"
+            checked={smsConsent}
+            onChange={(event) => setSmsConsent(event.target.checked)}
+            className="mt-0.5 size-4 shrink-0 accent-[color:var(--color-cyan-glow)]"
+          />
+          <span>
+            Text me about the Watch Dive Kickstarter launch. Optional — your email signup works
+            without this.
+          </span>
+        </label>
+      )}
+
+      <p className="mt-3 text-xs leading-relaxed text-white/55">
+        <span className="font-semibold text-white/75">1.</span> Enter your email{" "}
+        <span className="text-white/30">·</span>{" "}
+        <span className="font-semibold text-white/75">2.</span> Click the confirm link we send you{" "}
+        <span className="text-white/30">·</span>{" "}
+        <span className="font-semibold text-white/75">3.</span> You&apos;re on the list
+      </p>
     </form>
+  );
+}
+
+// A Meta click needs proof within the first screen and a half, not after the
+// app carousel. Three real cards, then a jump to the full set.
+function HeroProof() {
+  const picks = PUBLISHABLE_REVIEWS.slice(0, 3);
+  return (
+    <div className="max-w-xl">
+      <div className="grid gap-2.5 sm:grid-cols-3">
+        {picks.map((review) => (
+          <figure
+            key={review.id}
+            className="rounded-xl border border-white/12 bg-white/[0.06] p-3.5 backdrop-blur"
+          >
+            <span className="text-[11px] tracking-[0.12em] text-[color:var(--color-cyan-glow)]">
+              {"★".repeat(review.rating)}
+            </span>
+            <blockquote className="mt-1.5 line-clamp-3 text-xs leading-relaxed text-white/80">
+              {review.en}
+            </blockquote>
+            <figcaption className="mt-2 text-[11px] text-white/45">
+              {review.name} · {review.city}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+      <a
+        href="#beta-reviews"
+        className="mt-2.5 inline-block text-xs font-semibold text-white/60 underline underline-offset-2"
+      >
+        Read all {PUBLISHABLE_REVIEWS.length} beta reviews ↓
+      </a>
+    </div>
   );
 }
 
@@ -562,11 +729,11 @@ function Hero() {
               className="max-w-3xl text-4xl font-extrabold leading-[1.04] sm:text-5xl lg:text-6xl"
               style={{ wordBreak: "keep-all", textWrap: "balance", overflowWrap: "normal" }}
             >
-              The world&apos;s{" "}
+              Turn the watch you{" "}
               <span className="bg-gradient-to-r from-[color:var(--color-cyan-glow)] via-white to-[color:var(--color-cyan)] bg-clip-text text-transparent">
-                most affordable
+                already own
               </span>{" "}
-              <span className="whitespace-nowrap">dive computer.</span>
+              <span className="whitespace-nowrap">into a dive computer.</span>
             </h1>
 
             <p className="max-w-xl text-lg font-bold leading-snug text-white sm:text-2xl">
@@ -668,9 +835,7 @@ function Hero() {
           <div className="flex max-w-xl items-start gap-2.5 text-sm text-white/85">
             <span className="flex h-5 shrink-0 items-center text-base leading-none">🎁</span>
             <span>
-              Then share your link —{" "}
-              <span className="font-semibold text-white">you and each friend both get $5 off</span>.
-              Invite 30 friends and yours is free.
+              Then share your link with the divers you&apos;d actually go in the water with.
             </span>
           </div>
 
@@ -683,8 +848,10 @@ function Hero() {
           </div>
 
           <div className="max-w-xl">
-            <EmailForm id="hero" includePhone />
+            <EmailForm id="hero" />
           </div>
+
+          <HeroProof />
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-white/65">
             <span>Sign up to hear first and lock in the lowest launch price.</span>
@@ -715,7 +882,7 @@ function Hero() {
           </div>
         </div>
 
-        <div className="relative order-first lg:order-none">
+        <div className="relative lg:order-none">
           <div className="absolute -right-2 bottom-10 rounded-2xl border border-white/12 bg-white/10 px-4 py-3 text-sm text-white/90 shadow-2xl backdrop-blur md:px-5">
             <div className="text-[10px] uppercase tracking-[0.2em] text-white/55">
               The Watch Dive promise
@@ -1576,7 +1743,7 @@ function FAQ() {
     },
     {
       q: "When does it launch?",
-      a: "Watch Dive is launching soon on Kickstarter. Join the list to get early access.",
+      a: "The Kickstarter campaign opens on 10 August. Join the waitlist and we email you the link the moment it is live.",
     },
   ];
   return (
@@ -1610,8 +1777,8 @@ function Footer() {
       <div className="max-w-3xl mx-auto">
         <div className="font-semibold text-white">Watch Dive</div>
         <p className="mt-2">
-          © {new Date().getFullYear()} Watch Dive, a product of OceanWick Inc. Launching soon on
-          Kickstarter.
+          © {new Date().getFullYear()} Watch Dive, operated by DIVEROID LTD (company no. 16343651,
+          registered in England). Launching soon on Kickstarter.
         </p>
         <nav className="mt-4 flex justify-center gap-6 text-white/80">
           <Link to="/terms" className="hover:text-white underline-offset-4 hover:underline">

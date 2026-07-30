@@ -167,6 +167,19 @@ export type PendingResponse = {
   handle: string;
 };
 
+/**
+ * The list is full. A cap the page draws but never enforces is invented
+ * scarcity, so this is a real outcome the form has to be able to receive.
+ */
+export type ClosedResponse = {
+  ok: true;
+  status: "closed";
+  message: string;
+};
+
+export const WAITLIST_CLOSED_MESSAGE =
+  "The pre-launch list is full. Watch Dive opens to everyone on Kickstarter on 10 August.";
+
 export type ConfirmStatus = "verified" | "expired" | "already_verified" | "invalid";
 
 /**

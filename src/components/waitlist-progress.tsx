@@ -62,7 +62,7 @@ export function WaitlistProgress({
       </div>
 
       <p className="mt-2 text-[11px] leading-relaxed text-white/45">
-        Pre-launch notifications are capped at {formatCount(progress.cap)} divers.
+        The waitlist is capped at {formatCount(progress.cap)} divers and closes when it is full.
       </p>
     </div>
   );

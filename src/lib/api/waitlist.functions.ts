@@ -4,6 +4,8 @@ import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse";
 import { createServiceDependencies, sanitizeServerError } from "@/lib/verification/deps.server";
 import { COUNTABLE_STATUS_FILTER, createNotionRequest } from "@/lib/verification/notionLead";
+import { WAITLIST_CLOSED_MESSAGE } from "@/lib/verification/contracts";
+import { waitlistClosed } from "@/lib/waitlistProgress";
 import { createNetworkGate } from "@/lib/verification/networkGate";
 import { networkKey, requireSecret } from "@/lib/verification/token";
 import {
@@ -118,11 +120,12 @@ export const getReferralCount = createServerFn({ method: "POST" })
 // scarcity counter. Excludes suspect rows so abuse can't fake urgency. Cached
 // 10s so ad traffic doesn't hammer the Notion API (rate limits).
 let _waitlistCountCache: { at: number; count: number } | null = null;
-export const getWaitlistCount = createServerFn({ method: "GET" }).handler(async () => {
-  const dbId = process.env.NOTION_WAITLIST_DB_ID;
-  if (!dbId) return { count: 0 };
+
+// One counter, shared by the bar the visitor reads and the gate the submit
+// passes through, so the drawn number and the enforced cap cannot disagree.
+async function countableRows(dbId: string): Promise<number> {
   if (_waitlistCountCache && Date.now() - _waitlistCountCache.at < 10_000) {
-    return { count: _waitlistCountCache.count };
+    return _waitlistCountCache.count;
   }
   let count = 0;
   let cursor: string | undefined = undefined;
@@ -138,7 +141,13 @@ export const getWaitlistCount = createServerFn({ method: "GET" }).handler(async 
     cursor = res.next_cursor ?? undefined;
   }
   _waitlistCountCache = { at: Date.now(), count };
-  return { count };
+  return count;
+}
+
+export const getWaitlistCount = createServerFn({ method: "GET" }).handler(async () => {
+  const dbId = process.env.NOTION_WAITLIST_DB_ID;
+  if (!dbId) return { count: 0 };
+  return { count: await countableRows(dbId) };
 });
 
 // Submitting arms a verification attempt and sends one transactional mail. The
@@ -163,6 +172,12 @@ export const joinWaitlist = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const dbId = process.env.NOTION_WAITLIST_DB_ID;
     if (!dbId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
+
+    // The page advertises a cap, so the cap has to bind. Checked before any row
+    // is written or any mail is produced.
+    if (waitlistClosed(await countableRows(dbId))) {
+      return { ok: true, status: "closed", message: WAITLIST_CLOSED_MESSAGE } as const;
+    }
 
     const email = data.email.trim().toLowerCase();
     const canonical = canonicalEmail(email);

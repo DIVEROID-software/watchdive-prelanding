@@ -9,6 +9,7 @@ import {
   formatCount,
   OFF_PLATFORM_BASELINE,
   WAITLIST_CAP,
+  waitlistClosed,
   waitlistProgress,
 } from "../src/lib/waitlistProgress.ts";
 
@@ -81,6 +82,16 @@ test("the percentage stays inside 0–100", () => {
     const { percent } = waitlistProgress(count);
     assert.ok(percent >= 0 && percent <= 100, `percent out of range: ${percent}`);
   }
+});
+
+// A cap the page draws but never enforces is invented scarcity. The predicate
+// the submit gate reads has to flip at exactly the point the bar fills.
+test("the list closes exactly when the bar fills", () => {
+  const roomLeft = WAITLIST_CAP - OFF_PLATFORM_BASELINE;
+  assert.equal(waitlistClosed(roomLeft - 1), false);
+  assert.equal(waitlistClosed(roomLeft), true);
+  assert.equal(waitlistClosed(roomLeft + 1_000), true);
+  assert.equal(waitlistProgress(roomLeft).full, waitlistClosed(roomLeft));
 });
 
 test("counts are grouped for reading", () => {

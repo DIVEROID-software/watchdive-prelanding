@@ -53,6 +53,22 @@ export function waitlistProgress(
   return { total, cap, remaining, percent, full: remaining === 0 };
 }
 
+/**
+ * Whether the list must stop accepting.
+ *
+ * A cap that is only ever drawn is invented scarcity: the page says places run
+ * out, so places have to actually run out. This is the predicate the form and
+ * the server both read, so the drawn bar and the accepted signup can never
+ * disagree.
+ */
+export function waitlistClosed(
+  liveCount: number | null | undefined,
+  baseline: number = OFF_PLATFORM_BASELINE,
+  cap: number = WAITLIST_CAP,
+): boolean {
+  return waitlistProgress(liveCount, baseline, cap).full;
+}
+
 /** `26,321` — grouped for readability, in the page's own locale-free form. */
 export function formatCount(value: number): string {
   return Math.max(0, Math.floor(value)).toLocaleString("en-US");

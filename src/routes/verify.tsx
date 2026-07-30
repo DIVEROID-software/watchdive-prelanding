@@ -78,9 +78,13 @@ function Card({
 
 function VerifyPage() {
   const [state, setState] = useState<ViewState>("reading");
-  // Held only so a confirmed state can be told apart from an empty one; this
-  // route deliberately makes no referral claim.
-  const [, setRefCode] = useState("");
+  // The share link is offered here because most people confirm on the phone
+  // they signed up on, leaving the polling tab unseen.
+  const [refCode, setRefCode] = useState("");
+  // Built from the origin actually serving this page, so no external URL is
+  // written into a route that must not reference one.
+  const shareUrl =
+    typeof window !== "undefined" && refCode ? `${window.location.origin}/r/${refCode}` : "";
   const token = useRef<string | undefined>(undefined);
   const started = useRef(false);
 
@@ -179,12 +183,33 @@ function VerifyPage() {
           <Card>
             <h1 className="text-2xl font-bold sm:text-3xl">Your waitlist email is confirmed</h1>
             <p className="mt-3 text-sm leading-relaxed text-white/75">
-              Thanks — this address is confirmed for Watch Dive pre-launch updates. You can close
-              this tab, or head back to the page you signed up from.
+              You&apos;re on the list. We&apos;ll email you the Kickstarter link the moment the
+              campaign opens on 10 August.
             </p>
+
+            {/* Most people confirm on the phone they signed up on, so the tab
+                that was polling is often never seen again. The share link has
+                to be offered here or it is effectively never offered. */}
+            {refCode && (
+              <div className="mt-5 rounded-xl border border-white/15 bg-white/[0.06] p-4">
+                <div className="text-sm font-semibold text-[color:var(--color-cyan-glow)]">
+                  Bring a buddy
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-white/70">
+                  Share your link with divers who&apos;d want this.
+                </p>
+                <input
+                  readOnly
+                  value={shareUrl}
+                  onFocus={(event) => event.currentTarget.select()}
+                  className="mt-3 h-11 w-full rounded-lg bg-white/95 px-3 text-xs text-[color:var(--color-deep-2)] outline-none"
+                />
+              </div>
+            )}
+
             <a
               href="/"
-              className="mt-6 block w-full rounded-xl border border-white/25 px-5 py-3 text-center font-semibold text-white"
+              className="mt-5 block w-full rounded-xl border border-white/25 px-5 py-3 text-center font-semibold text-white"
             >
               Back to Watch Dive
             </a>

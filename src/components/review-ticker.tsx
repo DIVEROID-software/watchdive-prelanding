@@ -1,6 +1,11 @@
 import { useMemo } from "react";
 
-import { COUNTRY_LABEL, PUBLISHABLE_REVIEWS, type BetaReview } from "@/data/beta-reviews";
+import {
+  BETA_REVIEWS,
+  COUNTRY_LABEL,
+  PUBLISHABLE_REVIEWS,
+  type BetaReview,
+} from "@/data/beta-reviews";
 
 // Two lanes drifting in opposite directions read as motion rather than as one
 // long list scrolling past. Each lane renders its reviews twice and translates
@@ -90,6 +95,12 @@ export function ReviewTicker() {
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-sm leading-relaxed text-white/60">
           Reviews from the beta programme, translated from each tester&rsquo;s own language.
+        </p>
+        {/* Saying what is missing is what makes the rest believable, and keeps
+            the set honestly representative rather than curated for praise. */}
+        <p className="mx-auto mt-2 max-w-xl text-center text-xs leading-relaxed text-white/40">
+          Showing {PUBLISHABLE_REVIEWS.length} of {BETA_REVIEWS.length}. The rest mention product
+          details we have not finished verifying, so we are holding them back until we have.
         </p>
       </div>
 
