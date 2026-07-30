@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { BETA_REVIEWS, PUBLISHABLE_REVIEWS } from "../src/data/beta-reviews.ts";
+import { BETA_REVIEWS_KO } from "../src/data/beta-reviews.ko.ts";
 import { countdownFrom, KICKSTARTER_LAUNCH_MS, pad2 } from "../src/lib/launch.ts";
 import {
   formatCount,
@@ -106,8 +107,21 @@ test("every review carries an attributable identity and both languages", () => {
     assert.ok(review.name.trim().length > 0, `review ${review.id} has no name`);
     assert.ok(review.city.trim().length > 0, `review ${review.id} has no city`);
     assert.ok(review.en.trim().length > 0, `review ${review.id} has no English text`);
-    assert.ok(review.ko.trim().length > 0, `review ${review.id} has no Korean text`);
+    assert.ok(
+      (BETA_REVIEWS_KO[review.id] ?? "").trim().length > 0,
+      `review ${review.id} has no Korean copy`,
+    );
     assert.ok(review.rating === 4 || review.rating === 5, `review ${review.id} rating`);
+  }
+});
+
+// The Korean copy is a separate module so the English page never ships it.
+// That only holds if the two stay joinable on id.
+test("every review has Korean copy, and the Korean module carries nothing else", () => {
+  assert.equal(Object.keys(BETA_REVIEWS_KO).length, BETA_REVIEWS.length);
+  const ids = new Set(BETA_REVIEWS.map((review) => review.id));
+  for (const key of Object.keys(BETA_REVIEWS_KO)) {
+    assert.ok(ids.has(Number(key)), `Korean copy ${key} matches no review`);
   }
 });
 

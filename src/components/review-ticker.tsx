@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   BETA_REVIEWS,
@@ -11,6 +11,19 @@ import {
 // long list scrolling past. Each lane renders its reviews twice and translates
 // by exactly half the track, so the loop closes with no visible seam.
 const LANES = 2;
+
+/**
+ * How many cards each lane renders before the section is anywhere near the
+ * viewport.
+ *
+ * Every card is server-rendered HTML on a page paid traffic lands on, and the
+ * loop needs each lane duplicated, so the full set was tripling the document
+ * for a section most visitors never scroll to. Meta only counts a landing page
+ * view once the page actually loads, so that weight was being paid for in the
+ * exact metric this section exists to improve. Enough to fill a wide lane, then
+ * the rest arrives on approach.
+ */
+const SEED_PER_LANE = 6;
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -68,17 +81,46 @@ function Lane({ reviews, reverse }: { reviews: BetaReview[]; reverse: boolean })
  * so a screen reader gets the list rather than an animation.
  */
 export function ReviewTicker() {
+  const [showAll, setShowAll] = useState(false);
+  const section = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const element = section.current;
+    if (!element || showAll) return;
+    // No IntersectionObserver (or an immediate hit) simply means everyone gets
+    // the full set — degrading to the previous behaviour, never to less.
+    if (typeof IntersectionObserver === "undefined") {
+      setShowAll(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShowAll(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "600px" },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [showAll]);
+
   const lanes = useMemo(() => {
-    const size = Math.ceil(PUBLISHABLE_REVIEWS.length / LANES);
+    const source = showAll
+      ? PUBLISHABLE_REVIEWS
+      : PUBLISHABLE_REVIEWS.slice(0, SEED_PER_LANE * LANES);
+    const size = Math.ceil(source.length / LANES);
     return Array.from({ length: LANES }, (_, lane) =>
-      PUBLISHABLE_REVIEWS.slice(lane * size, (lane + 1) * size),
+      source.slice(lane * size, (lane + 1) * size),
     ).filter((lane) => lane.length > 0);
-  }, []);
+  }, [showAll]);
 
   if (lanes.length === 0) return null;
 
   return (
     <section
+      ref={section}
       id="beta-reviews"
       className="relative overflow-hidden bg-[color:var(--color-deep-2)] py-16 sm:py-20"
       aria-labelledby="beta-reviews-heading"
