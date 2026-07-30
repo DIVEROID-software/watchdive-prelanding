@@ -1,12 +1,14 @@
 // Meta Pixel — browser side. Measurement remains completely off unless the
-// public production gate is explicitly enabled and the dataset id is valid.
-// The restored production design has no consent banner, so preserve that visual
-// contract while still honoring an existing opt-out and Global Privacy Control.
+// public production gate is explicitly enabled, the dataset id is valid, and
+// the visitor has explicitly submitted a waitlist form. Form submission is the
+// consent action described by the existing privacy contract; no visual consent
+// surface is added to the locked production design.
 const META_TRACKING_ENABLED =
-  (import.meta.env.VITE_META_TRACKING_ENABLED as string | undefined)?.trim() === "true";
-const META_PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID as string | undefined)?.trim() ?? "";
+  (import.meta.env?.VITE_META_TRACKING_ENABLED as string | undefined)?.trim() === "true";
+const META_PIXEL_ID = (import.meta.env?.VITE_META_PIXEL_ID as string | undefined)?.trim() ?? "";
 const META_CONSENT_STORAGE_KEY = "watchdive.measurement-consent.v3";
 const META_PIXEL_SCRIPT_ID = "watchdive-meta-pixel";
+const dispatchedStandardEvents = new Set<string>();
 
 export type MetaMeasurementConsent = "granted" | "denied";
 
@@ -33,6 +35,14 @@ export function isMetaPixelConfigured(): boolean {
   return META_TRACKING_ENABLED && /^\d{10,20}$/.test(META_PIXEL_ID);
 }
 
+export function isMetaMeasurementAllowed(args: {
+  configured: boolean;
+  consent: MetaMeasurementConsent | null;
+  globalPrivacyControl: boolean;
+}): boolean {
+  return args.configured && args.consent === "granted" && !args.globalPrivacyControl;
+}
+
 export function getMetaMeasurementConsent(): MetaMeasurementConsent | null {
   if (inMemoryConsent) return inMemoryConsent;
   if (typeof window === "undefined") return null;
@@ -52,13 +62,15 @@ export function getMetaMeasurementConsent(): MetaMeasurementConsent | null {
 }
 
 export function hasMetaMeasurementConsent(): boolean {
-  if (!isMetaPixelConfigured() || getMetaMeasurementConsent() === "denied") return false;
-  if (typeof navigator !== "undefined" && "globalPrivacyControl" in navigator) {
-    return (
-      (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl !== true
-    );
-  }
-  return true;
+  const globalPrivacyControl =
+    typeof navigator !== "undefined" &&
+    "globalPrivacyControl" in navigator &&
+    (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true;
+  return isMetaMeasurementAllowed({
+    configured: isMetaPixelConfigured(),
+    consent: getMetaMeasurementConsent(),
+    globalPrivacyControl,
+  });
 }
 
 export function setMetaMeasurementConsent(choice: MetaMeasurementConsent): void {
@@ -116,7 +128,29 @@ export function initMetaPixel() {
 
 // Fire only after the server confirms a NEW signup (never on button click, never
 // for duplicates) — otherwise ad optimization learns from junk conversions.
-export function trackMetaLead(eventId: string, source: string) {
+export function enqueueMetaStandardEvent(args: {
+  fbq?: (...args: unknown[]) => void;
+  eventName: "Lead" | "Contact";
+  eventId: string;
+  source: string;
+  contentName: "watchdive_email_signup" | "watchdive_phone_signup";
+}): boolean {
+  if (!args.fbq || !/^[A-Za-z0-9._:-]{8,64}$/.test(args.eventId)) return false;
+
+  try {
+    args.fbq(
+      "track",
+      args.eventName,
+      { content_name: args.contentName, content_category: args.source },
+      { eventID: args.eventId },
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function trackMetaLead(eventId: string, source: string): boolean {
   if (
     typeof window === "undefined" ||
     !hasMetaMeasurementConsent() ||
@@ -124,20 +158,25 @@ export function trackMetaLead(eventId: string, source: string) {
     window.__watchDiveMetaPixelId !== META_PIXEL_ID ||
     !/^[A-Za-z0-9._:-]{8,64}$/.test(eventId)
   ) {
-    return;
+    return false;
   }
 
-  window.fbq(
-    "track",
-    "Lead",
-    { content_name: "watchdive_email_signup", content_category: source },
-    { eventID: eventId },
-  );
+  const dispatchKey = `Lead:${eventId}`;
+  if (dispatchedStandardEvents.has(dispatchKey)) return false;
+  const enqueued = enqueueMetaStandardEvent({
+    fbq: window.fbq,
+    eventName: "Lead",
+    eventId,
+    source,
+    contentName: "watchdive_email_signup",
+  });
+  if (enqueued) dispatchedStandardEvents.add(dispatchKey);
+  return enqueued;
 }
 
 // A separate standard Contact conversion lets Ads Manager report phone-number
 // acquisition cost without ever sending the phone number itself to Meta.
-export function trackMetaPhoneLead(eventId: string, source: string) {
+export function trackMetaPhoneLead(eventId: string, source: string): boolean {
   if (
     typeof window === "undefined" ||
     !hasMetaMeasurementConsent() ||
@@ -145,15 +184,20 @@ export function trackMetaPhoneLead(eventId: string, source: string) {
     window.__watchDiveMetaPixelId !== META_PIXEL_ID ||
     !/^[A-Za-z0-9._:-]{8,64}$/.test(eventId)
   ) {
-    return;
+    return false;
   }
 
-  window.fbq(
-    "track",
-    "Contact",
-    { content_name: "watchdive_phone_signup", content_category: source },
-    { eventID: eventId },
-  );
+  const dispatchKey = `Contact:${eventId}`;
+  if (dispatchedStandardEvents.has(dispatchKey)) return false;
+  const enqueued = enqueueMetaStandardEvent({
+    fbq: window.fbq,
+    eventName: "Contact",
+    eventId,
+    source,
+    contentName: "watchdive_phone_signup",
+  });
+  if (enqueued) dispatchedStandardEvents.add(dispatchKey);
+  return enqueued;
 }
 
 // Funnel micro-signal (reporting only — optimization stays on Lead).
@@ -186,4 +230,12 @@ export function getMetaCookies(): { fbp?: string; fbc?: string } {
 export function newMetaEventId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return `wd-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function metaEventIdForSubmissionAttempt(
+  pendingEventId: string | undefined,
+  measurementConsent: boolean,
+): string | undefined {
+  if (!measurementConsent) return undefined;
+  return pendingEventId ?? newMetaEventId();
 }
