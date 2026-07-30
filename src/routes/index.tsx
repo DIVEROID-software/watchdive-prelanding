@@ -203,7 +203,7 @@ function StickyLaunchBanner() {
   return (
     <a
       href="#offer-form"
-      className="fixed bottom-3 right-3 z-50 flex max-w-[280px] items-center gap-2.5 rounded-full border border-white/15 bg-[color:var(--color-deep-2)]/92 py-2.5 pl-3 pr-4 text-white shadow-[0_20px_60px_-25px_oklch(0.13_0.065_287/0.95)] backdrop-blur-xl transition hover:-translate-y-0.5 sm:bottom-5 sm:right-5"
+      className="fixed bottom-3 right-3 z-50 flex max-w-[280px] items-center gap-2.5 rounded-full motion-safe:animate-[wd-rise-in_240ms_cubic-bezier(0.22,1,0.36,1)_both] border border-white/15 bg-[color:var(--color-deep-2)]/92 py-2.5 pl-3 pr-4 text-white shadow-[0_20px_60px_-25px_oklch(0.13_0.065_287/0.95)] backdrop-blur-xl transition hover:-translate-y-0.5 sm:bottom-5 sm:right-5"
     >
       <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-cyan-glow)] text-[color:var(--color-deep-2)]">
         ↓
@@ -475,6 +475,30 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
   const formStartSent = useRef(false); // FormStart once per form instance
+  // A ring that expands once, the first time the form is actually on screen.
+  // It points at the next action after an anchor jump; it never repeats, so it
+  // guides rather than nags.
+  const formRef = useRef<HTMLFormElement>(null);
+  const [ring, setRing] = useState(false);
+  const ringShown = useRef(false);
+
+  useEffect(() => {
+    const element = formRef.current;
+    if (!element || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (ringShown.current) return;
+        if (!entries.some((entry) => entry.intersectionRatio >= 0.55)) return;
+        ringShown.current = true;
+        observer.disconnect();
+        setRing(true);
+        window.setTimeout(() => setRing(false), 700);
+      },
+      { threshold: [0.55] },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   // Waits for the confirmation, which may never arrive in this tab — the link
   // can be opened on another device entirely. So the wait is deliberately
@@ -624,6 +648,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
 
   return (
     <form
+      ref={formRef}
       onSubmit={async (e) => {
         e.preventDefault();
         if (loading) return;
@@ -642,7 +667,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           setLoading(false);
         }
       }}
-      className="flex flex-col gap-3 w-full"
+      className="relative flex flex-col gap-3 w-full"
     >
       {/* Honeypot: off-screen field. Real users never see or fill it; bots that
           auto-fill every input trip it and get flagged server-side. */}
@@ -656,6 +681,13 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         onChange={(e) => setHp(e.target.value)}
         className="absolute left-[-9999px] top-[-9999px] h-0 w-0 opacity-0"
       />
+      {ring && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -inset-1.5 rounded-2xl border-2 border-[color:var(--color-cyan-glow)] motion-safe:animate-[wd-focus-ring_650ms_cubic-bezier(0.2,0.8,0.2,1)_forwards] motion-reduce:hidden"
+        />
+      )}
+
       <div className="grid w-full gap-2 sm:grid-cols-[1fr_auto]">
         <input
           id={`${id}-email`}

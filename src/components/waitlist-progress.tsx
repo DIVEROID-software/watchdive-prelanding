@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 
 import { getWaitlistCount } from "@/lib/api/waitlist.functions";
 import { formatCount, LOW_REMAINING_THRESHOLD, waitlistProgress } from "@/lib/waitlistProgress";
@@ -29,6 +30,17 @@ export function WaitlistProgress({
   });
 
   const progress = waitlistProgress((data?.count ?? 0) + justJoined);
+
+  // The bar fills once, on arrival, so the number reads as something that grew
+  // rather than as decoration. Every later refresh just moves it a little, and
+  // the transition on the element handles that without a second reveal.
+  const [revealed, setRevealed] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (revealed) return;
+    timer.current = window.setTimeout(() => setRevealed(true), 120);
+    return () => window.clearTimeout(timer.current);
+  }, [revealed]);
   const scarce = progress.remaining <= LOW_REMAINING_THRESHOLD;
 
   return (
@@ -60,7 +72,7 @@ export function WaitlistProgress({
           // every frame, which is the cost this page just spent a day removing.
           // A transform stays on the compositor.
           className="h-full w-full origin-left rounded-full bg-gradient-to-r from-[color:var(--color-cyan)] to-[color:var(--color-cyan-glow)] transition-transform duration-700 ease-out"
-          style={{ transform: `scaleX(${progress.percent / 100})` }}
+          style={{ transform: `scaleX(${revealed ? progress.percent / 100 : 0})` }}
         />
       </div>
 
