@@ -5,9 +5,14 @@ import type {
   LeadStore,
   MarkSentInput,
   MarkVerifiedInput,
+  MarkWelcomeInput,
   StartAttemptInput,
 } from "../../src/lib/verification/contracts.ts";
-import type { VerificationMail, VerificationMailer } from "../../src/lib/verification/resend.ts";
+import type {
+  VerificationMail,
+  VerificationMailer,
+  WelcomeMail,
+} from "../../src/lib/verification/resend.ts";
 
 export const TEST_SECRET = "test-verification-secret-at-least-32b";
 export const TEST_ORIGIN = "https://watchdive.diveroid.com";
@@ -39,6 +44,7 @@ export class FakeLeadStore implements LeadStore {
   markVerifiedCalls = 0;
   startAttemptCalls = 0;
   markSentCalls = 0;
+  markWelcomeCalls = 0;
   /** Lets a test simulate a racing confirmation landing between write and read. */
   onMarkVerified?: (pageId: string, input: MarkVerifiedInput) => void;
 
@@ -59,6 +65,7 @@ export class FakeLeadStore implements LeadStore {
       ...(record.sentAt ? { sentAt: record.sentAt } : {}),
       ...(record.expiresAt ? { expiresAt: record.expiresAt } : {}),
       ...(record.verifiedAt ? { verifiedAt: record.verifiedAt } : {}),
+      ...(record.welcomeAt ? { welcomeAt: record.welcomeAt } : {}),
     };
     this.rows.set(row.pageId, row);
     this.byCanonical.set(record.canonical, row.pageId);
@@ -125,6 +132,12 @@ export class FakeLeadStore implements LeadStore {
     this.onMarkVerified?.(pageId, input);
   }
 
+  async markWelcomeScheduled(pageId: string, input: MarkWelcomeInput): Promise<void> {
+    this.markWelcomeCalls += 1;
+    const row = this.rows.get(pageId);
+    if (row) this.rows.set(pageId, { ...row, welcomeAt: input.scheduledAt });
+  }
+
   async reread(pageId: string): Promise<LeadRecord | undefined> {
     return this.rows.get(pageId);
   }
@@ -132,11 +145,18 @@ export class FakeLeadStore implements LeadStore {
 
 export class FakeMailer implements VerificationMailer {
   sent: VerificationMail[] = [];
+  welcomes: WelcomeMail[] = [];
   fail = false;
+  failWelcome = false;
 
   async send(input: VerificationMail): Promise<void> {
     if (this.fail) throw new Error("Resend delivery failed (503)");
     this.sent.push(input);
+  }
+
+  async sendWelcome(input: WelcomeMail): Promise<void> {
+    if (this.failWelcome) throw new Error("Resend delivery failed (503)");
+    this.welcomes.push(input);
   }
 
   /** Fails every send until cleared, for provider-outage paths. */

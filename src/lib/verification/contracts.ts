@@ -22,6 +22,13 @@ export const VERIFICATION_RESEND_COOLDOWN_MS = 60 * 1000;
 /** Hard ceiling on confirmation mails per lead, counted in `Verification sends`. */
 export const VERIFICATION_MAX_SENDS = 5;
 
+/**
+ * How long after a confirmation the welcome mail carrying the invite link goes
+ * out. Resend holds the message itself, so this needs no scheduler of ours and
+ * the delay survives a redeploy.
+ */
+export const WELCOME_DELAY_MS = 24 * 60 * 60 * 1000;
+
 /** A poll handle outlives the link it belongs to by nothing. */
 export const POLL_HANDLE_TTL_MS = VERIFICATION_TTL_MS;
 
@@ -73,6 +80,7 @@ export const FIELD_VERIFIED_AT = "Verified at";
 export const FIELD_VERIFICATION_SENDS = "Verification sends";
 export const FIELD_LEAD_ID = "Lead ID";
 export const FIELD_META_EVENT_ID = "Meta Event ID";
+export const FIELD_WELCOME_EMAIL = "Welcome email";
 
 export const STATUS_PENDING = "pending";
 export const STATUS_VERIFIED = "verified";
@@ -101,6 +109,8 @@ export type LeadRecord = {
   sentAt?: string;
   expiresAt?: string;
   verifiedAt?: string;
+  /** Set once the welcome mail has been accepted by the provider. */
+  welcomeAt?: string;
 };
 
 export type CreatePendingInput = {
@@ -128,6 +138,11 @@ export type MarkSentInput = {
   sentAt: string;
 };
 
+/** When the welcome mail was handed to the provider, not when it will arrive. */
+export type MarkWelcomeInput = {
+  scheduledAt: string;
+};
+
 export type MarkVerifiedInput = {
   verifiedAt: string;
   metaEventId: string;
@@ -140,6 +155,7 @@ export interface LeadStore {
   startAttempt(pageId: string, input: StartAttemptInput): Promise<void>;
   markSent(pageId: string, input: MarkSentInput): Promise<void>;
   markVerified(pageId: string, input: MarkVerifiedInput): Promise<void>;
+  markWelcomeScheduled(pageId: string, input: MarkWelcomeInput): Promise<void>;
   reread(pageId: string): Promise<LeadRecord | undefined>;
 }
 

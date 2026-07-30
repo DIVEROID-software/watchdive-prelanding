@@ -29,6 +29,7 @@ import {
   FIELD_EMAIL_VERIFIED,
   FIELD_LEAD_ID,
   FIELD_META_EVENT_ID,
+  FIELD_WELCOME_EMAIL,
   FIELD_VERIFICATION_EXPIRES,
   FIELD_VERIFICATION_SENDS,
   FIELD_VERIFICATION_SENT,
@@ -136,6 +137,7 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
   const sentAt = readDate(properties[FIELD_VERIFICATION_SENT]);
   const expiresAt = readDate(properties[FIELD_VERIFICATION_EXPIRES]);
   const verifiedAt = readDate(properties[FIELD_VERIFIED_AT]);
+  const welcomeAt = readDate(properties[FIELD_WELCOME_EMAIL]);
 
   return {
     pageId,
@@ -159,6 +161,7 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     ...(sentAt ? { sentAt } : {}),
     ...(expiresAt ? { expiresAt } : {}),
     ...(verifiedAt ? { verifiedAt } : {}),
+    ...(welcomeAt ? { welcomeAt } : {}),
   };
 }
 
@@ -265,6 +268,12 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
           [FIELD_VERIFIED_AT]: { date: { start: input.verifiedAt } },
           [FIELD_META_EVENT_ID]: textProp(input.metaEventId),
         },
+      });
+    },
+
+    async markWelcomeScheduled(pageId: string, input) {
+      await request("PATCH", `pages/${pageId}`, {
+        properties: { [FIELD_WELCOME_EMAIL]: { date: { start: input.scheduledAt } } },
       });
     },
 

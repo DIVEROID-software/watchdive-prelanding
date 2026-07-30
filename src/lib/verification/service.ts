@@ -20,6 +20,7 @@ import {
   MIN_RESPONSE_MS,
   POLL_HANDLE_TTL_MS,
   VERIFICATION_MAX_SENDS,
+  WELCOME_DELAY_MS,
   VERIFICATION_RESEND_COOLDOWN_MS,
   VERIFICATION_TTL_MS,
 } from "./contracts.ts";
@@ -237,6 +238,47 @@ export async function requestVerificationService(
   return floor(pendingResponse(handle));
 }
 
+/**
+ * Hands the invite-link mail to the provider with a 24-hour hold. Resend keeps
+ * the message until then, so the delay needs no scheduler of ours and survives
+ * a redeploy.
+ *
+ * Keyed on the lead inside the mailer, so two racing confirmations and a later
+ * click of the same link all converge on one scheduled message. A failure never
+ * un-confirms a confirmed address: `Welcome email` simply stays empty and the
+ * next confirmation of the same link tries again.
+ */
+async function scheduleWelcome(
+  record: LeadRecord,
+  dependencies: ServiceDependencies,
+  now: Date,
+): Promise<void> {
+  // Already handed over, no link to give, or the same abuse signals that
+  // disqualify a conversion — an invite link is exactly what a farmer wants.
+  if (record.welcomeAt || !record.refCode || conversionBlocked(record.flags)) return;
+
+  let publicOrigin: string;
+  try {
+    publicOrigin = requirePublicOrigin(dependencies.env ?? process.env);
+  } catch {
+    return;
+  }
+
+  const scheduledAt = new Date(now.getTime() + WELCOME_DELAY_MS).toISOString();
+  try {
+    await dependencies.mailer.sendWelcome({
+      to: record.email,
+      refCode: record.refCode,
+      leadId: record.leadId,
+      publicOrigin,
+      scheduledAt,
+    });
+    await dependencies.store.markWelcomeScheduled(record.pageId, { scheduledAt });
+  } catch {
+    // Best effort by design. The confirmation already succeeded.
+  }
+}
+
 export async function confirmVerificationService(
   rawToken: string,
   dependencies: ServiceDependencies,
@@ -266,6 +308,7 @@ export async function confirmVerificationService(
     // id is derived from the attempt, so a duplicate collapses into the same
     // conversion instead of inflating it.
     await dispatchIfPermitted(record, metaEventId, parsed.measurementConsent, dependencies);
+    await scheduleWelcome(record, dependencies, now);
     return {
       ok: true,
       status: "already_verified",
@@ -290,6 +333,7 @@ export async function confirmVerificationService(
   // Gating on a re-read would not add exactly-once — it would only risk
   // dropping the single dispatch when the read comes back stale.
   await dispatchIfPermitted(record, metaEventId, parsed.measurementConsent, dependencies);
+  await scheduleWelcome(record, dependencies, now);
 
   return {
     ok: true,
