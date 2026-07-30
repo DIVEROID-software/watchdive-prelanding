@@ -205,7 +205,7 @@ test("waitlist wiring consumes the bucket before the first CRM lookup", async ()
     new URL("../src/lib/api/waitlist.functions.ts", import.meta.url),
     "utf8",
   );
-  const handlerStart = source.indexOf("export const joinWaitlist");
+  const handlerStart = source.indexOf("export const handleJoinWaitlist");
   const originGuard = source.indexOf(
     "isSignupRequestOriginAllowed({ origin, host })",
     handlerStart,

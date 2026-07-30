@@ -19,7 +19,7 @@ export type MetaLeadIngestionReservation =
       state: "complete";
       generation: number;
       outcome: MetaLeadIngestionOutcome;
-      notionPageId?: string;
+      notionPageId: string;
     };
 
 type MetaLeadIngestionScope = {
@@ -124,17 +124,14 @@ export async function reserveMetaLeadIngestion(
       throw new Error("Meta lead ingestion reservation returned an invalid outcome");
     }
     const storedPageId = notionPageId(record.notion_page_id);
-    if (
-      (outcome === "invalid" && record.notion_page_id != null) ||
-      (outcome !== "invalid" && !storedPageId)
-    ) {
+    if (!storedPageId) {
       throw new Error("Meta lead ingestion reservation returned an invalid CRM reference");
     }
     return {
       state: "complete",
       generation,
       outcome,
-      ...(storedPageId ? { notionPageId: storedPageId } : {}),
+      notionPageId: storedPageId,
     };
   }
   throw new Error("Meta lead ingestion reservation returned an invalid state");
@@ -153,10 +150,7 @@ export async function completeMetaLeadIngestion(
     throw new Error("Invalid Meta lead ingestion completion");
   }
   const normalizedPageId = notionPageId(args.notionPageId);
-  if (
-    (args.outcome === "invalid" && args.notionPageId != null) ||
-    (args.outcome !== "invalid" && !normalizedPageId)
-  ) {
+  if (!normalizedPageId) {
     throw new Error("Invalid Meta lead ingestion CRM reference");
   }
   const response = await callRpc(
@@ -166,7 +160,7 @@ export async function completeMetaLeadIngestion(
       p_platform_lead_id: args.platformLeadId,
       p_generation: args.generation,
       p_outcome: args.outcome,
-      p_notion_page_id: normalizedPageId ?? null,
+      p_notion_page_id: normalizedPageId,
     },
     fetchImpl,
   );

@@ -8,6 +8,8 @@ import {
   normalizeMetaGraphLead,
   verifyMetaWebhookSignature,
 } from "../src/lib/api/metaLeadgenWebhook.server.ts";
+import type { InstantFormLeadInput } from "../src/lib/api/waitlist.functions.ts";
+import type { FunnelPropertyValue } from "../src/lib/funnel/types.ts";
 
 const ORIGINAL_ENV = {
   META_APP_SECRET: process.env.META_APP_SECRET,
@@ -302,6 +304,7 @@ test("fetches Graph data with a bearer header and completes only after both stor
   assert.deepEqual(recordedEvents[0]?.properties, {
     metaFormId: "form-123",
     metaPageId: "page-123",
+    campaignScopeStatus: "verified",
   });
   assert.equal(
     (recordedEvents[0]?.attribution as { publisherPlatform?: string } | undefined)
@@ -344,7 +347,38 @@ test("accepts an allowed Page+Form when campaign_id is absent from the webhook",
   assert.equal(ingested, 1);
 });
 
-test("allows an allowed Page+Form when Graph has no campaign to validate", async () => {
+test("preserves a dedicated Page+Form lead when Campaign attribution is unavailable", async () => {
+  const body = JSON.stringify(leadgenPayload({ includeCampaignId: false }));
+  let ingestedLead: InstantFormLeadInput | undefined;
+  let webhookProperties: Record<string, FunnelPropertyValue> | undefined;
+
+  const response = await handleMetaLeadgenWebhook(signedRequest(body), {
+    fetchImpl: async () =>
+      Response.json({
+        id: "lead-123",
+        created_time: "2026-07-29T09:00:00+0000",
+        field_data: [{ name: "email", values: ["diver@example.com"] }],
+        form_id: "form-123",
+      }),
+    recordWebhookEvent: async (event) => {
+      webhookProperties = event.properties;
+      return true;
+    },
+    ingestLead: async (lead) => {
+      ingestedLead = lead;
+      return { ok: true, status: "new" };
+    },
+  });
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { received: 1 });
+  assert.equal(ingestedLead?.campaignScopeStatus, "unverified");
+  assert.equal(webhookProperties?.campaignScopeStatus, "unverified");
+});
+
+test("uses the dedicated Page+Form scope when no Campaign allowlist is configured", async () => {
+  process.env.META_LEADGEN_CAMPAIGN_IDS = "";
   const body = JSON.stringify(leadgenPayload({ includeCampaignId: false }));
   let ingested = 0;
 

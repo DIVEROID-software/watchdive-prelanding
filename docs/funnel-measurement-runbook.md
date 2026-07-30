@@ -21,15 +21,20 @@
 ```text
 supabase/migrations/20260729090000_funnel_measurement.sql
 supabase/migrations/20260729120000_meta_insights_refresh_ttl.sql
+supabase/migrations/20260730130000_meta_lead_ingestion_state.sql
 ```
 
-두 migration을 위 순서로 적용한 뒤 애플리케이션을 배포한다. 두 번째 migration은
+세 migration을 위 순서로 적용한 뒤 애플리케이션을 배포한다. 두 번째 migration은
 기존 `reserve_meta_insights_sync`를 변경하지 않고
 `reserve_meta_insights_sync_v2`를 추가한다. 따라서 rolling deployment 중 이전
 애플리케이션은 기존 RPC 계약을 계속 사용하고, 새 애플리케이션만 v2를 사용한다.
 새 애플리케이션을 migration보다 먼저 배포하면 v1으로 자동 fallback하지 않고
 Meta 동기화를 fail-closed 처리한다. 이전 코드와 새 TTL 계약이 섞여 세대를
 잘못 재사용하는 상황을 막기 위한 의도된 동작이다.
+세 번째 migration은 Instant Form 리드의 Notion 저장을 단일 생성자로 직렬화하는
+예약·완료 RPC와, 웹사이트·Instant Form 사이의 canonical 리드 소유권을 원자적으로
+결정하는 해시 기반 claim RPC를 추가한다. 이 migration보다 애플리케이션 코드를
+먼저 배포하면 리드 수집은 fail-closed 처리된다.
 
 적용 후 다음 항목이 생성됐는지 확인한다.
 
@@ -38,10 +43,15 @@ Meta 동기화를 fail-closed 처리한다. 이전 코드와 새 TTL 계약이 �
 - `meta_daily_insights`
 - `meta_range_insights`
 - `meta_insights_sync_state`
+- `meta_lead_ingestion_state`
+- `canonical_lead_claims`
 - `signup_rate_limit_buckets`
 - 대시보드 집계 RPC `get_funnel_dashboard_aggregate_v1`
 - Meta 세대 예약 RPC `reserve_meta_insights_sync`,
   TTL 예약 RPC `reserve_meta_insights_sync_v2`, 실패 RPC `fail_meta_insights_sync`
+- Instant Form 예약 RPC `reserve_meta_lead_ingestion_v1`,
+  완료 RPC `complete_meta_lead_ingestion_v1`, 실패 RPC `fail_meta_lead_ingestion_v1`
+- cross-channel canonical 소유권 RPC `claim_canonical_lead_v1`
 - Meta 성과 원자 교체 RPC `replace_meta_insights_range`
 - 가입 rate-limit RPC
 - 모든 측정 테이블의 RLS 및 `service_role` 전용 권한
@@ -95,6 +105,10 @@ LEAD_STATUS_WEBHOOK_SECRET
 
 - `SUPABASE_SERVICE_ROLE_KEY`, Meta 토큰, webhook secret은 서버 전용이다.
 - `FUNNEL_DASHBOARD_TOKEN`, `SIGNUP_RATE_LIMIT_HMAC_SECRET`, `LEAD_STATUS_WEBHOOK_SECRET`은 각각 독립적인 고엔트로피 값으로 만든다.
+- `SIGNUP_RATE_LIMIT_HMAC_SECRET`은 시간창 rate-limit과 PII-free canonical lead
+  claim에 domain-separated 방식으로 사용한다. 이 값을 단순 교체하면 기존
+  canonical claim을 다시 찾지 못해 중복 집계될 수 있으므로, rotation은
+  dual-key 조회 또는 claim 재키잉 migration과 함께 수행한다.
 - Production에서는 가입 rate-limit 설정이 누락되면 요청을 통과시키지 않는다.
 - Pixel ID와 CAPI dataset ID가 다르면 CAPI를 보내지 않는다.
 
@@ -122,6 +136,13 @@ https://watchdive.diveroid.com/api/meta/leadgen
 - Marketing API token 권한: `ads_read`
 - `META_PAGE_ID`와 `META_LEADGEN_FORM_IDS` allowlist는 필수다.
 - `META_LEADGEN_CAMPAIGN_IDS`를 설정하면 Graph에서 조회한 campaign도 한 번 더 제한한다.
+- campaign ID가 allowlist와 명시적으로 다르면 거부한다. 전용 Page+Form은 일치하지만
+  Graph가 campaign ID를 생략한 리드는 버리지 않고 Notion에 저장하되
+  `campaign-unverified` Flag, `Suspect=true`, `Counted=false`로 격리한다.
+- 이메일이 없거나 형식이 잘못된 리드도 전화·이름·Meta attribution을 Notion에
+  보존하고 `invalid-email` Flag, `Suspect=true`, `Counted=false`로 격리한다.
+- 모든 Instant Form 행은 `Source=instant-form`,
+  `Acquisition path=instant_form`으로 Website 유입과 구분한다.
 - 해당 Page의 다른 양식 리드는 WatchDive CRM에 들어오면 안 된다.
 - 배포 전에 `20260729090000_funnel_measurement.sql`,
   `20260729120000_meta_insights_refresh_ttl.sql`,

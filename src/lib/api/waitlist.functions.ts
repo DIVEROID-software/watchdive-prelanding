@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse.ts";
@@ -10,10 +10,7 @@ import {
   canonicalEmailProperties,
   withCanonicalEmailShape,
 } from "./notionCanonicalEmail.ts";
-import {
-  persistDuplicateWebsiteLeadDurably,
-  persistNewWebsiteLeadDurably,
-} from "./websiteLeadPersistence.ts";
+import { persistNewWebsiteLeadDurably } from "./websiteLeadPersistence.ts";
 import {
   FUNNEL_SCHEMA_VERSION,
   attributionCompleteness,
@@ -227,6 +224,7 @@ export type InstantFormLeadInput = {
   adSetName?: string;
   adId?: string;
   adName?: string;
+  campaignScopeStatus?: "verified" | "unverified";
 };
 
 export type InstantFormLeadResult = {
@@ -289,20 +287,31 @@ function instantFormAttributionStatus(data: InstantFormLeadInput): "complete" | 
   return data.campaignId || data.adSetId || data.adId ? "partial" : "none";
 }
 
-function instantFormAttributionProperties(data: InstantFormLeadInput): Record<string, unknown> {
+function instantFormAttributionProperties(
+  data: InstantFormLeadInput,
+  mode: "create" | "enrich" = "create",
+): Record<string, unknown> {
+  const attributionStatus = instantFormAttributionStatus(data);
+  const coverage = instantFormSourceCoverage(data);
   return {
     Source: { select: { name: "instant-form" } },
     "Lead ID": textProp(data.platformLeadId),
     "Acquisition path": { select: { name: "instant_form" } },
-    "Attribution status": { select: { name: instantFormAttributionStatus(data) } },
-    "Source coverage": { select: { name: instantFormSourceCoverage(data) } },
+    ...(mode === "create" || attributionStatus === "complete"
+      ? { "Attribution status": { select: { name: attributionStatus } } }
+      : {}),
+    ...(mode === "create" || coverage === "complete"
+      ? { "Source coverage": { select: { name: coverage } } }
+      : {}),
     "Meta Platform Lead ID": textProp(data.platformLeadId),
     ...(data.formId ? { "Meta Form ID": textProp(data.formId) } : {}),
     ...(data.pageId ? { "Meta Page ID": textProp(data.pageId) } : {}),
     ...(data.campaignId ? { "Meta Campaign ID": textProp(data.campaignId) } : {}),
     ...(data.adSetId ? { "Meta Ad Set ID": textProp(data.adSetId) } : {}),
     ...(data.adId ? { "Meta Ad ID": textProp(data.adId) } : {}),
-    "Publisher platform": textProp(data.publisherPlatform ?? "meta"),
+    ...(mode === "create" || data.publisherPlatform
+      ? { "Publisher platform": textProp(data.publisherPlatform ?? "meta") }
+      : {}),
     Placement: textProp("instant_form"),
     ...(data.country ? { Country: textProp(data.country) } : {}),
   };
@@ -349,6 +358,41 @@ export function buildInstantFormNotionProperties(args: {
   };
 }
 
+function buildInvalidInstantFormNotionProperties(args: {
+  data: InstantFormLeadInput;
+  signedUpAt: string;
+  flags: string[];
+}): Record<string, unknown> {
+  const { data, signedUpAt, flags } = args;
+  const title = data.email || `Email missing · Meta lead ${data.platformLeadId}`;
+  return {
+    Email: { title: [{ text: { content: title } }] },
+    ...(data.phone ? { Phone: textProp(data.phone) } : {}),
+    ...(data.fullName ? { "Full name": textProp(data.fullName) } : {}),
+    ...instantFormAttributionProperties(data),
+    "Signed up": { date: { start: signedUpAt } },
+    "Measurement consent": textProp("meta_instant_form_terms"),
+    "Verification status": { select: { name: "pending" } },
+    "Email verified": { checkbox: false },
+    "Phone verified": { checkbox: false },
+    "Source schema version": textProp(FUNNEL_SCHEMA_VERSION),
+    "Qualification rule version": textProp("2026-07-29.v1"),
+    Environment: { select: { name: runtimeEnvironment() } },
+    Counted: { checkbox: false },
+    Duplicate: { checkbox: false },
+    "Meta eligible": { checkbox: false },
+    "Meta CAPI state": { select: { name: "skipped" } },
+    ...(process.env.VERCEL_DEPLOYMENT_ID
+      ? { "Deployment ID": textProp(process.env.VERCEL_DEPLOYMENT_ID) }
+      : {}),
+    ...(process.env.VERCEL_GIT_COMMIT_SHA
+      ? { "Landing page version": textProp(process.env.VERCEL_GIT_COMMIT_SHA) }
+      : {}),
+    Flags: { multi_select: flags.map((name) => ({ name })) },
+    Suspect: { checkbox: true },
+  };
+}
+
 function canonicalMasterFilter(canonical: string, email: string): Record<string, unknown> {
   return {
     and: [
@@ -367,32 +411,36 @@ async function persistInstantFormFunnelState(args: {
   signedUpAt: string;
   notionPageId?: string;
   flags?: string[];
+  preserveExistingLead?: boolean;
 }): Promise<void> {
   const attribution = instantFormAttribution(args.data);
-  const leadStored = await recordLeadOutcome({
-    leadId: args.data.platformLeadId,
-    acquisitionPath: "instant_form",
-    source: "instant-form",
-    country: args.data.country,
-    status: args.status,
-    valid: args.valid,
-    hasEmail: z.string().email().safeParse(args.data.email).success,
-    hasPhone: Boolean(
-      args.data.phone &&
-      args.data.phone.replace(/[^0-9]/g, "").length >= 7 &&
-      args.data.phone.replace(/[^0-9]/g, "").length <= 15,
-    ),
-    // A native lead was intentionally submitted under Meta's form terms. It
-    // stays excluded from the website CAPI mirror.
-    measurementConsent: true,
-    metaEligible: false,
-    metaCapiState: "skipped",
-    notionPageId: args.notionPageId,
-    attribution,
-    signedUpAt: args.signedUpAt,
-    flags: args.flags ?? [],
-    schemaVersion: FUNNEL_SCHEMA_VERSION,
-  });
+  const leadStored = await recordLeadOutcome(
+    {
+      leadId: args.data.platformLeadId,
+      acquisitionPath: "instant_form",
+      source: "instant-form",
+      country: args.data.country,
+      status: args.status,
+      valid: args.valid,
+      hasEmail: z.string().email().safeParse(args.data.email).success,
+      hasPhone: Boolean(
+        args.data.phone &&
+        args.data.phone.replace(/[^0-9]/g, "").length >= 7 &&
+        args.data.phone.replace(/[^0-9]/g, "").length <= 15,
+      ),
+      // A native lead was intentionally submitted under Meta's form terms. It
+      // stays excluded from the website CAPI mirror.
+      measurementConsent: true,
+      metaEligible: false,
+      metaCapiState: "skipped",
+      notionPageId: args.notionPageId,
+      attribution,
+      signedUpAt: args.signedUpAt,
+      flags: args.flags ?? [],
+      schemaVersion: FUNNEL_SCHEMA_VERSION,
+    },
+    args.preserveExistingLead ? "ignore-duplicates" : "merge-duplicates",
+  );
   if (!leadStored) {
     throw new Error("Instant Form lead outcome storage is unavailable");
   }
@@ -413,7 +461,7 @@ async function persistInstantFormFunnelState(args: {
     throw new Error("Instant Form validation event storage is unavailable");
   }
 
-  if (args.status !== "invalid") {
+  if (args.notionPageId) {
     const crmStored = await recordServerFunnelEvent({
       idempotencyKey: `meta-leadgen:${args.data.platformLeadId}:crm`,
       eventName: "instant_form_crm_saved",
@@ -458,6 +506,10 @@ export async function ingestInstantFormLead(
       input.publisherPlatform === "facebook" || input.publisherPlatform === "instagram"
         ? input.publisherPlatform
         : undefined,
+    campaignScopeStatus:
+      input.campaignScopeStatus === "verified" || input.campaignScopeStatus === "unverified"
+        ? input.campaignScopeStatus
+        : undefined,
     country:
       input.country && /^[A-Za-z]{2}$/.test(input.country.trim())
         ? input.country.trim().toUpperCase()
@@ -487,7 +539,7 @@ export async function ingestInstantFormLead(
     // enters either Notion creation branch.
     if (reservation.notionPageId) {
       await notionPatch(`pages/${reservation.notionPageId}`, {
-        properties: instantFormAttributionProperties(data),
+        properties: instantFormAttributionProperties(data, "enrich"),
       });
     }
     const completedResult: InstantFormLeadResult = {
@@ -495,12 +547,14 @@ export async function ingestInstantFormLead(
       status: reservation.outcome,
       ...(reservation.notionPageId ? { notionPageId: reservation.notionPageId } : {}),
     };
-    const completedFlags =
-      reservation.outcome === "invalid"
-        ? ["invalid-email"]
-        : data.email && isDisposableEmail(data.email)
-          ? ["disposable"]
-          : [];
+    const completedFlags: string[] = [];
+    if (reservation.outcome === "invalid") completedFlags.push("invalid-email");
+    if (reservation.outcome !== "invalid" && data.email && isDisposableEmail(data.email)) {
+      completedFlags.push("disposable");
+    }
+    if (data.campaignScopeStatus === "unverified") {
+      completedFlags.push("campaign-unverified");
+    }
     await persistInstantFormFunnelState({
       data,
       status: reservation.outcome,
@@ -508,6 +562,7 @@ export async function ingestInstantFormLead(
       signedUpAt,
       notionPageId: reservation.notionPageId,
       flags: completedFlags,
+      preserveExistingLead: true,
     });
     return completedResult;
   }
@@ -517,6 +572,16 @@ export async function ingestInstantFormLead(
     // five-minute lease can be recovered by a new generation.
     throw new Error("Meta lead ingestion is already in progress");
   }
+
+  let notionCreateStarted = false;
+  const createInstantFormNotionPage = (body: unknown) => {
+    // Once a create request is dispatched, a timeout or lost response cannot
+    // prove whether Notion committed the row. Keep the lease so an immediate
+    // retry cannot race the still-ambiguous write. The next generation will
+    // query by Platform Lead ID before it considers another create.
+    notionCreateStarted = true;
+    return notionFetch("pages", body);
+  };
 
   const completeReservationAndPersist = async (
     result: InstantFormLeadResult,
@@ -543,16 +608,6 @@ export async function ingestInstantFormLead(
   };
 
   try {
-    const parsedEmail = z.string().email().max(320).safeParse(data.email);
-    if (!parsedEmail.success) {
-      return await completeReservationAndPersist({ ok: true, status: "invalid" }, [
-        "invalid-email",
-      ]);
-    }
-
-    const email = parsedEmail.data.toLowerCase();
-    const canonical = canonicalEmail(email);
-
     const existingPlatformLead = (await notionFetch(`databases/${dbId}/query`, {
       filter: {
         and: [
@@ -581,21 +636,51 @@ export async function ingestInstantFormLead(
       const page = existingPlatformLead.results[0];
       if (page.id) {
         await notionPatch(`pages/${page.id}`, {
-          properties: instantFormAttributionProperties(data),
+          properties: instantFormAttributionProperties(data, "enrich"),
         });
       }
-      const suspect = Boolean(page.properties?.Suspect?.checkbox);
-      const duplicate = page.properties?.Duplicate?.checkbox === true;
-      const status = duplicate ? "duplicate" : suspect ? "suspect" : "new";
       const flags =
         page.properties?.Flags?.multi_select
           ?.map((item) => (typeof item.name === "string" ? item.name : undefined))
           .filter((name: unknown): name is string => typeof name === "string") ?? [];
+      const suspect = Boolean(page.properties?.Suspect?.checkbox);
+      const duplicate = page.properties?.Duplicate?.checkbox === true;
+      const status = flags.includes("invalid-email")
+        ? "invalid"
+        : duplicate
+          ? "duplicate"
+          : suspect
+            ? "suspect"
+            : "new";
       return await completeReservationAndPersist(
         { ok: true, status, notionPageId: page.id },
         flags,
       );
     }
+
+    const parsedEmail = z.string().email().max(320).safeParse(data.email);
+    if (!parsedEmail.success) {
+      const flags = ["invalid-email"];
+      if (data.campaignScopeStatus === "unverified") flags.push("campaign-unverified");
+      const invalidPage = (await createInstantFormNotionPage({
+        parent: { database_id: dbId },
+        properties: buildInvalidInstantFormNotionProperties({
+          data,
+          signedUpAt,
+          flags,
+        }),
+      })) as NotionPageResult;
+      if (!invalidPage.id) {
+        throw new Error("Notion did not return an invalid Instant Form lead page id");
+      }
+      return await completeReservationAndPersist(
+        { ok: true, status: "invalid", notionPageId: invalidPage.id },
+        flags,
+      );
+    }
+
+    const email = parsedEmail.data.toLowerCase();
+    const canonical = canonicalEmail(email);
 
     const existingCanonical = (await withCanonicalEmailShape(() =>
       notionFetch(`databases/${dbId}/query`, {
@@ -604,57 +689,39 @@ export async function ingestInstantFormLead(
       }),
     )) as { results?: NotionPageResult[] };
 
-    if (existingCanonical.results?.length) {
-      const flags: string[] = [];
-      if (isDisposableEmail(email)) flags.push("disposable");
-      const suspect = flags.length > 0;
-      const duplicatePage = (await withCanonicalEmailShape(() =>
-        notionFetch("pages", {
-          parent: { database_id: dbId },
-          properties: buildInstantFormNotionProperties({
-            data,
-            email,
-            canonical,
-            signedUpAt,
-            refCode: newRefCode(),
-            flags,
-            suspect,
-            duplicate: true,
-          }),
-        }),
-      )) as NotionPageResult;
-      if (!duplicatePage.id) {
-        throw new Error("Notion did not return a duplicate Instant Form lead page id");
-      }
-
-      return await completeReservationAndPersist(
-        {
-          ok: true,
-          status: "duplicate",
-          notionPageId: duplicatePage.id,
-        },
-        flags,
-      );
-    }
-
     const flags: string[] = [];
     if (isDisposableEmail(email)) flags.push("disposable");
+    if (data.campaignScopeStatus === "unverified") flags.push("campaign-unverified");
     const suspect = flags.length > 0;
-    const status = suspect ? "suspect" : "new";
-    const refCode = newRefCode();
+    const existingCanonicalPage = existingCanonical.results?.[0];
+    const existingMasterRefCode = sanitizeRef(
+      notionTextValue(existingCanonicalPage?.properties?.["Ref code"]),
+    );
+    const { claimCanonicalLead } = await import("./canonicalLeadClaim.server.ts");
+    const canonicalClaim = await claimCanonicalLead({
+      environment,
+      canonicalEmail: canonical,
+      acquisitionPath: "instant_form",
+      submissionId: data.platformLeadId,
+      candidateRefCode: newRefCode(),
+      existingMaster: Boolean(existingCanonicalPage),
+      ...(existingMasterRefCode.length === 8 ? { existingMasterRefCode } : {}),
+    });
+    const duplicate = !canonicalClaim.owner;
+    const status = duplicate ? "duplicate" : suspect ? "suspect" : "new";
 
     const createdPage = (await withCanonicalEmailShape(() =>
-      notionFetch("pages", {
+      createInstantFormNotionPage({
         parent: { database_id: dbId },
         properties: buildInstantFormNotionProperties({
           data,
           email,
           canonical,
           signedUpAt,
-          refCode,
+          refCode: canonicalClaim.refCode,
           flags,
           suspect,
-          duplicate: false,
+          duplicate,
         }),
       }),
     )) as NotionPageResult;
@@ -673,15 +740,17 @@ export async function ingestInstantFormLead(
       flags,
     );
   } catch (error) {
-    try {
-      await failMetaLeadIngestion({
-        ...reservationScope,
-        generation: reservation.generation,
-      });
-    } catch {
-      // The original error remains authoritative. A lost failure-release
-      // response is recovered by the bounded lease.
-      console.error("[meta-lead-ingestion] failed to release reservation");
+    if (!notionCreateStarted) {
+      try {
+        await failMetaLeadIngestion({
+          ...reservationScope,
+          generation: reservation.generation,
+        });
+      } catch {
+        // The original error remains authoritative. A lost failure-release
+        // response is recovered by the bounded lease.
+        console.error("[meta-lead-ingestion] failed to release reservation");
+      }
     }
     throw error;
   }
@@ -752,36 +821,35 @@ export const getWaitlistCount = createServerFn({ method: "GET" }).handler(async 
   return { count };
 });
 
-export const joinWaitlist = createServerFn({ method: "POST" })
-  .validator(
-    z.object({
-      email: z.string().email().max(320),
-      phone: z.string().max(40).optional(),
-      source: z.enum(["hero", "offer"]),
-      referredBy: z.string().max(40).optional(),
-      // Honeypot: a hidden field real users never see. Anything here = a bot.
-      honeypot: z.string().max(200).optional(),
-      // Meta conversion tracking: shared browser/server event id for dedup,
-      // plus the pixel's _fbp/_fbc cookies for match quality.
-      eventId: z
-        .string()
-        .regex(/^[A-Za-z0-9._:-]{8,64}$/)
-        .optional(),
-      measurementConsent: z.boolean().default(false),
-      fbp: z.string().max(128).optional(),
-      fbc: z.string().max(512).optional(),
-      sessionId: z.string().uuid().optional(),
-      visitorId: z.string().uuid().optional(),
-      landingPath: z
-        .string()
-        .max(500)
-        .regex(/^\/[^\s?#]*$/)
-        .optional(),
-      browserLanguage: z.string().max(80).optional(),
-      attribution: attributionValidator.optional(),
-    }),
-  )
-  .handler(async ({ data }) => {
+const joinWaitlistInput = z.object({
+  email: z.string().email().max(320),
+  phone: z.string().max(40).optional(),
+  source: z.enum(["hero", "offer"]),
+  referredBy: z.string().max(40).optional(),
+  // Honeypot: a hidden field real users never see. Anything here = a bot.
+  honeypot: z.string().max(200).optional(),
+  // Meta conversion tracking: shared browser/server event id for dedup,
+  // plus the pixel's _fbp/_fbc cookies for match quality.
+  eventId: z
+    .string()
+    .regex(/^[A-Za-z0-9._:-]{8,64}$/)
+    .optional(),
+  measurementConsent: z.boolean().default(false),
+  fbp: z.string().max(128).optional(),
+  fbc: z.string().max(512).optional(),
+  sessionId: z.string().uuid().optional(),
+  visitorId: z.string().uuid().optional(),
+  landingPath: z
+    .string()
+    .max(500)
+    .regex(/^\/[^\s?#]*$/)
+    .optional(),
+  browserLanguage: z.string().max(80).optional(),
+  attribution: attributionValidator.optional(),
+});
+
+export const handleJoinWaitlist = createServerOnlyFn(
+  async ({ data }: { data: z.infer<typeof joinWaitlistInput> }) => {
     const dbId = process.env.NOTION_WAITLIST_DB_ID;
     if (!dbId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
 
@@ -789,7 +857,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     const canonical = canonicalEmail(email);
     const { ip, ua, country, origin, host } = requestMeta();
     const { consumeSignupRateLimit, isSignupRequestOriginAllowed } =
-      await import("./signupRateLimit.server");
+      await import("./signupRateLimit.server.ts");
     if (!isSignupRequestOriginAllowed({ origin, host })) {
       throw new Error("Signup request origin is not allowed");
     }
@@ -805,59 +873,51 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     const leadId =
       data.eventId ?? (data.sessionId ? `${data.sessionId}:${data.source}` : crypto.randomUUID());
 
-    // ---- Dedupe by canonical email (catches gmail dots/+tags), with an exact
-    // fallback for any legacy rows created before Canonical email existed. Same
-    // person twice is still a "success" — hand back their existing ref code so
-    // the share link stays stable.
-    const existing = (await withCanonicalEmailShape(() =>
-      notionFetch(`databases/${dbId}/query`, {
-        filter: canonicalMasterFilter(canonical, email),
-        page_size: 1,
-      }),
-    )) as { results?: NotionPageResult[] };
-    const existingPage = existing.results?.[0];
+    // Find the exact website touchpoint before the canonical master. This keeps
+    // response-loss retries idempotent even when the original touchpoint was a
+    // duplicate row, while a cross-channel master remains a distinct record.
+    const existingSubmission = (await notionFetch(`databases/${dbId}/query`, {
+      filter: {
+        and: [
+          { property: "Lead ID", rich_text: { equals: leadId } },
+          {
+            or: [
+              { property: "Acquisition path", select: { equals: "website" } },
+              { property: "Source", select: { equals: "hero" } },
+              { property: "Source", select: { equals: "offer" } },
+            ],
+          },
+        ],
+      },
+      page_size: 1,
+    })) as { results?: NotionPageResult[] };
+    const existingSubmissionPage = existingSubmission.results?.[0];
+    const existingCanonical = existingSubmissionPage
+      ? undefined
+      : ((await withCanonicalEmailShape(() =>
+          notionFetch(`databases/${dbId}/query`, {
+            filter: canonicalMasterFilter(canonical, email),
+            page_size: 1,
+          }),
+        )) as { results?: NotionPageResult[] });
+    const existingPage = existingSubmissionPage ?? existingCanonical?.results?.[0];
     const existingProperties = existingPage?.properties;
-    const existingLeadId = notionTextValue(existingProperties?.["Lead ID"]);
-    // A retry after an external-write or response failure uses the same Meta
-    // event id. Treat its Notion row as the same submission, not a duplicate.
-    const sameSubmission = Boolean(existingLeadId && existingLeadId === leadId);
+    const sameSubmission = Boolean(existingSubmissionPage);
     const signedUpAt =
       (sameSubmission && notionDateValue(existingProperties?.["Signed up"])) || receivedAt;
-
-    if (existingPage && !sameSubmission) {
-      const code = notionTextValue(existingProperties?.["Ref code"]);
-      await persistDuplicateWebsiteLeadDurably({
-        writeOutcome: () =>
-          recordLeadOutcome({
-            leadId,
-            eventId: data.eventId,
-            sessionId: data.sessionId,
-            visitorId: data.visitorId,
-            acquisitionPath: "website",
-            source: data.source,
-            pagePath: data.landingPath,
-            country,
-            status: "duplicate",
-            valid: false,
-            hasEmail: true,
-            hasPhone: Boolean(data.phone?.trim()),
-            measurementConsent: data.measurementConsent,
-            metaEligible: false,
-            metaCapiState: "skipped",
-            notionPageId: existingPage.id,
-            attribution: data.attribution,
-            signedUpAt,
-            schemaVersion: FUNNEL_SCHEMA_VERSION,
-          }),
-      });
-      return {
-        ok: true,
-        duplicate: true,
-        refCode: code,
-        metaEventId: undefined,
-        metaPhoneEventId: undefined,
-      };
-    }
+    const storedRefCode = sanitizeRef(notionTextValue(existingProperties?.["Ref code"]));
+    const { claimCanonicalLead } = await import("./canonicalLeadClaim.server.ts");
+    const canonicalClaim = await claimCanonicalLead({
+      environment: runtimeEnvironment(),
+      canonicalEmail: canonical,
+      acquisitionPath: "website",
+      submissionId: leadId,
+      candidateRefCode: newRefCode(),
+      existingMaster: Boolean(existingPage && !sameSubmission),
+      ...(storedRefCode.length === 8 ? { existingMasterRefCode: storedRefCode } : {}),
+    });
+    const storedDuplicate = existingProperties?.Duplicate?.checkbox === true;
+    const duplicate = sameSubmission ? storedDuplicate : !canonicalClaim.owner;
 
     // ---- Abuse signals (flag, don't lose the lead). A same-id retry preserves
     // the original Notion classification instead of reclassifying by a later
@@ -874,20 +934,22 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     const suspect =
       sameSubmission && typeof storedSuspect === "boolean" ? storedSuspect : flags.length > 0;
 
-    const refCode = sameSubmission
-      ? notionTextValue(existingProperties?.["Ref code"])
-      : newRefCode();
+    const refCode =
+      sameSubmission && storedRefCode.length === 8 ? storedRefCode : canonicalClaim.refCode;
     const referredBy = sanitizeRef(data.referredBy);
-    const conversionEligible = !suspect && data.measurementConsent && Boolean(data.eventId);
+    const conversionEligible =
+      !duplicate && !suspect && data.measurementConsent && Boolean(data.eventId);
     const attribution = data.attribution ?? {};
     if (!conversionEligible) {
       console.log(
         `[meta-capi] skipped: ${
-          suspect
-            ? `blocked(${flags.join(",")})`
-            : !data.measurementConsent
-              ? "no measurement consent"
-              : "no eventId"
+          duplicate
+            ? "duplicate"
+            : suspect
+              ? `blocked(${flags.join(",")})`
+              : !data.measurementConsent
+                ? "no measurement consent"
+                : "no eventId"
         }`,
       );
     }
@@ -905,8 +967,8 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       source: data.source,
       pagePath: data.landingPath,
       country,
-      status: suspect ? "suspect" : "new",
-      valid: !suspect,
+      status: duplicate ? "duplicate" : suspect ? "suspect" : "new",
+      valid: !duplicate && !suspect,
       hasEmail: true,
       hasPhone: Boolean(metaPhoneEventIdForInput(leadId, data.phone)),
       measurementConsent: data.measurementConsent,
@@ -931,13 +993,13 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           source: data.source,
           attribution,
           properties: {
-            valid: !suspect,
-            status: suspect ? "suspect" : "new",
+            valid: !duplicate && !suspect,
+            status: duplicate ? "duplicate" : suspect ? "suspect" : "new",
           },
         }),
       writeNotionAndMeta: async () => {
         const persistedPage =
-          existingPage ??
+          (sameSubmission ? existingPage : undefined) ??
           ((await withCanonicalEmailShape(() =>
             notionFetch("pages", {
               parent: { database_id: dbId },
@@ -961,8 +1023,8 @@ export const joinWaitlist = createServerFn({ method: "POST" })
                 "Source coverage": { select: { name: sourceCoverage(data) } },
                 "Qualification rule version": textProp("2026-07-29.v1"),
                 Environment: { select: { name: runtimeEnvironment() } },
-                Counted: { checkbox: !suspect },
-                Duplicate: { checkbox: false },
+                Counted: { checkbox: !duplicate && !suspect },
+                Duplicate: { checkbox: duplicate },
                 "Meta eligible": { checkbox: conversionEligible },
                 "Meta CAPI state": { select: { name: "skipped" } },
                 ...(data.eventId ? { "Meta Event ID": textProp(data.eventId) } : {}),
@@ -1064,9 +1126,14 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // advertised — they just quietly don't count.
     return {
       ok: true,
-      duplicate: false,
+      duplicate,
       refCode,
       metaEventId: metaLeadEventId,
       metaPhoneEventId,
     };
-  });
+  },
+);
+
+export const joinWaitlist = createServerFn({ method: "POST" })
+  .validator(joinWaitlistInput)
+  .handler(handleJoinWaitlist);

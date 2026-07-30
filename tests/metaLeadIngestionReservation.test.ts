@@ -200,6 +200,43 @@ test("a lost completion response is recovered by reading the durable complete st
   });
 });
 
+test("invalid-email completion still requires and returns its quarantined CRM row", async () => {
+  const coordinator = coordinatorFetch();
+  const reservation = await reserveMetaLeadIngestion(SCOPE, coordinator.fetchImpl);
+  assert.equal(reservation.state, "reserved");
+
+  await assert.rejects(
+    completeMetaLeadIngestion(
+      {
+        ...SCOPE,
+        generation: reservation.generation,
+        outcome: "invalid",
+      },
+      coordinator.fetchImpl,
+    ),
+    /Invalid Meta lead ingestion CRM reference/,
+  );
+
+  assert.equal(
+    await completeMetaLeadIngestion(
+      {
+        ...SCOPE,
+        generation: reservation.generation,
+        outcome: "invalid",
+        notionPageId: "44444444-4444-4444-4444-444444444444",
+      },
+      coordinator.fetchImpl,
+    ),
+    true,
+  );
+  assert.deepEqual(await reserveMetaLeadIngestion(SCOPE, coordinator.fetchImpl), {
+    state: "complete",
+    generation: 1,
+    outcome: "invalid",
+    notionPageId: "44444444-4444-4444-4444-444444444444",
+  });
+});
+
 test("migration provides a private five-minute fenced lease through service-role RPCs", async () => {
   const migration = await readFile(
     new URL("../supabase/migrations/20260730130000_meta_lead_ingestion_state.sql", import.meta.url),
@@ -225,6 +262,9 @@ test("migration provides a private five-minute fenced lease through service-role
     /revoke all on public\.meta_lead_ingestion_state from public, anon, authenticated;/,
   );
   assert.match(migration, /interval '5 minutes'/);
+  assert.match(tableBlock, /status = 'complete'[\s\S]*?notion_page_id is not null/);
+  assert.match(migration, /if p_notion_page_id is null then/);
+  assert.doesNotMatch(migration, /invalid leads cannot reference a CRM row/);
   assert.ok((migration.match(/pg_advisory_xact_lock/g) ?? []).length >= 3);
 
   for (const rpc of [

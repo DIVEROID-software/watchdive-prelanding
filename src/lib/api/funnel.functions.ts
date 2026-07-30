@@ -230,7 +230,10 @@ export const recordFunnelEvents = createServerFn({ method: "POST" })
     return { ok: inserted, configured: Boolean(getSupabaseConfig()), accepted: data.events.length };
   });
 
-export async function recordLeadOutcome(outcome: FunnelLeadOutcome): Promise<boolean> {
+export async function recordLeadOutcome(
+  outcome: FunnelLeadOutcome,
+  resolution: "ignore-duplicates" | "merge-duplicates" = "merge-duplicates",
+): Promise<boolean> {
   const attribution = outcome.attribution ?? {};
   return postgrestInsert(
     "funnel_leads",
@@ -280,7 +283,7 @@ export async function recordLeadOutcome(outcome: FunnelLeadOutcome): Promise<boo
         landing_page_version: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
       },
     ],
-    "merge-duplicates",
+    resolution,
   );
 }
 

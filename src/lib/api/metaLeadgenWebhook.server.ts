@@ -138,10 +138,17 @@ function referencePageAndFormAllowed(
   return Boolean(reference.formId && scope.formIds.has(reference.formId));
 }
 
-function graphCampaignAllowed(lead: InstantFormLeadInput, scope: MetaLeadgenScope): boolean {
-  // Missing campaign data is not evidence that a Page+Form verified lead is
-  // out of scope. When Graph does return a campaign, enforce the optional list.
-  return !scope.campaignIds.size || !lead.campaignId || scope.campaignIds.has(lead.campaignId);
+function graphCampaignDisposition(
+  lead: InstantFormLeadInput,
+  scope: MetaLeadgenScope,
+): "allowed" | "unverified" | "rejected" {
+  if (!scope.campaignIds.size) return "allowed";
+  // Page+Form is the durable routing boundary for a dedicated Instant Form.
+  // A known mismatched Campaign remains out of scope. When Graph omits the
+  // Campaign ID, preserve the lead in CRM but quarantine it from experiment
+  // counts until attribution can be reconciled.
+  if (!lead.campaignId) return "unverified";
+  return scope.campaignIds.has(lead.campaignId) ? "allowed" : "rejected";
 }
 
 async function readRequestBodyWithLimit(
@@ -462,37 +469,47 @@ export async function handleMetaLeadgenWebhook(
   try {
     for (const reference of allowedReferences) {
       const lead = await fetchMetaGraphLead(reference, pageAccessToken, fetchImpl);
-      if (!graphCampaignAllowed(lead, scope)) {
+      const campaignDisposition = graphCampaignDisposition(lead, scope);
+      if (campaignDisposition === "rejected") {
         ignored += 1;
         continue;
       }
+      const scopedLead: InstantFormLeadInput = {
+        ...lead,
+        ...(scope.campaignIds.size
+          ? {
+              campaignScopeStatus: campaignDisposition === "unverified" ? "unverified" : "verified",
+            }
+          : {}),
+      };
       const attribution = {
-        metaCampaignId: lead.campaignId,
-        metaAdSetId: lead.adSetId,
-        metaAdId: lead.adId,
-        metaCampaignName: lead.campaignName,
-        metaAdSetName: lead.adSetName,
-        metaAdName: lead.adName,
-        publisherPlatform: lead.publisherPlatform ?? "meta",
+        metaCampaignId: scopedLead.campaignId,
+        metaAdSetId: scopedLead.adSetId,
+        metaAdId: scopedLead.adId,
+        metaCampaignName: scopedLead.campaignName,
+        metaAdSetName: scopedLead.adSetName,
+        metaAdName: scopedLead.adName,
+        publisherPlatform: scopedLead.publisherPlatform ?? "meta",
         placement: "instant_form",
       };
       const webhookStored = await recordWebhookEvent({
-        idempotencyKey: `meta-leadgen:${lead.platformLeadId}:webhook`,
+        idempotencyKey: `meta-leadgen:${scopedLead.platformLeadId}:webhook`,
         eventName: "instant_form_webhook",
-        occurredAt: lead.createdTime,
+        occurredAt: scopedLead.createdTime,
         acquisitionPath: "instant_form",
         source: "instant-form",
         attribution,
         properties: {
-          metaFormId: lead.formId ?? null,
-          metaPageId: lead.pageId ?? null,
+          metaFormId: scopedLead.formId ?? null,
+          metaPageId: scopedLead.pageId ?? null,
+          campaignScopeStatus: scopedLead.campaignScopeStatus ?? "not_configured",
         },
       });
       if (!webhookStored) {
         throw new Error("Instant Form webhook event storage is unavailable");
       }
 
-      const result = await ingestLead(lead);
+      const result = await ingestLead(scopedLead);
       if (!result.ok) {
         throw new Error("Instant Form CRM ingestion did not complete");
       }

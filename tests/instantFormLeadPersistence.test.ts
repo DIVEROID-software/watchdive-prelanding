@@ -15,6 +15,7 @@ const ORIGINAL_ENV = {
   NOTION_WAITLIST_DB_ID: process.env.NOTION_WAITLIST_DB_ID,
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  SIGNUP_RATE_LIMIT_HMAC_SECRET: process.env.SIGNUP_RATE_LIMIT_HMAC_SECRET,
   VERCEL_ENV: process.env.VERCEL_ENV,
   VERCEL_DEPLOYMENT_ID: process.env.VERCEL_DEPLOYMENT_ID,
   VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
@@ -50,6 +51,8 @@ type FetchScenario = {
     path: string;
     body: Record<string, unknown>;
   }>;
+  leadWritePreferences: string[];
+  expireReservation: () => void;
 };
 
 function responsePage(id: string, properties: Record<string, unknown>): Record<string, unknown> {
@@ -60,6 +63,7 @@ function mockPersistence(args: {
   platformResults?: Array<Record<string, unknown>>;
   canonicalResults?: Array<Record<string, unknown>>;
   createdPageId?: string;
+  failFirstPlatformQuery?: boolean;
   failFirstNotionCreate?: boolean;
   loseFirstNotionCreateResponse?: boolean;
   failFirstFunnelLeadWrite?: boolean;
@@ -69,14 +73,23 @@ function mockPersistence(args: {
   const leadRows: FetchScenario["leadRows"] = [];
   const eventRows: FetchScenario["eventRows"] = [];
   const rpcCalls: FetchScenario["rpcCalls"] = [];
+  const leadWritePreferences: string[] = [];
   let generation = 0;
   let reservationStatus: "absent" | "processing" | "complete" | "failed" = "absent";
   let completedOutcome: string | undefined;
   let completedPageId: string | undefined;
   let recoveredPlatformPage: Record<string, unknown> | undefined;
+  let platformQueryAttempts = 0;
   let notionCreateAttempts = 0;
   let funnelLeadWriteAttempts = 0;
   let loseCompletionResponse = args.loseFirstCompletionResponse ?? false;
+  let canonicalClaim:
+    | {
+        claimantHash: string;
+        acquisitionPath: string;
+        refCode: string;
+      }
+    | undefined;
 
   globalThis.fetch = (async (input, init) => {
     const url = new URL(input instanceof Request ? input.url : String(input));
@@ -91,6 +104,12 @@ function mockPersistence(args: {
       if (url.pathname.endsWith("/databases/waitlist-db/query")) {
         const filter = body.filter;
         const filterJson = JSON.stringify(filter ?? {});
+        if (filterJson.includes('"Meta Platform Lead ID"')) {
+          platformQueryAttempts += 1;
+          if (args.failFirstPlatformQuery && platformQueryAttempts === 1) {
+            return Response.json({}, { status: 503 });
+          }
+        }
         return Response.json({
           results: filterJson.includes('"Meta Platform Lead ID"')
             ? (args.platformResults ?? (recoveredPlatformPage ? [recoveredPlatformPage] : []))
@@ -156,11 +175,24 @@ function mockPersistence(args: {
           if (fenced) reservationStatus = "failed";
           return Response.json(fenced);
         }
+        if (url.pathname.endsWith("/claim_canonical_lead_v1")) {
+          canonicalClaim ??= {
+            claimantHash: String(body.p_claimant_hash),
+            acquisitionPath: String(body.p_acquisition_path),
+            refCode: String(body.p_ref_code),
+          };
+          return Response.json({
+            owner: canonicalClaim.claimantHash === body.p_claimant_hash,
+            acquisition_path: canonicalClaim.acquisitionPath,
+            ref_code: canonicalClaim.refCode,
+          });
+        }
         return Response.json({}, { status: 404 });
       }
       const rows = Array.isArray(body) ? body : [];
       if (url.pathname.endsWith("/funnel_leads")) {
         leadRows.push(...(rows as Array<Record<string, unknown>>));
+        leadWritePreferences.push(new Headers(init?.headers).get("Prefer") ?? "");
         funnelLeadWriteAttempts += 1;
         if (args.failFirstFunnelLeadWrite && funnelLeadWriteAttempts === 1) {
           return Response.json({}, { status: 503 });
@@ -174,7 +206,16 @@ function mockPersistence(args: {
     throw new Error(`Unexpected test request: ${url.toString()}`);
   }) as typeof fetch;
 
-  return { notionCalls, leadRows, eventRows, rpcCalls };
+  return {
+    notionCalls,
+    leadRows,
+    eventRows,
+    rpcCalls,
+    leadWritePreferences,
+    expireReservation: () => {
+      if (reservationStatus === "processing") reservationStatus = "failed";
+    },
+  };
 }
 
 function createdProperties(scenario: FetchScenario): Record<string, unknown> {
@@ -190,6 +231,7 @@ beforeEach(() => {
   process.env.NOTION_WAITLIST_DB_ID = "waitlist-db";
   process.env.SUPABASE_URL = "https://supabase.test";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "supabase-key-for-test";
+  process.env.SIGNUP_RATE_LIMIT_HMAC_SECRET = "instant-form-canonical-claim-test-secret-32-plus";
   process.env.VERCEL_ENV = "production";
   process.env.VERCEL_DEPLOYMENT_ID = "deployment-123";
   process.env.VERCEL_GIT_COMMIT_SHA = "commit-123";
@@ -252,6 +294,171 @@ test("a unique Instant Form lead creates one countable native-form row with sour
   assert.equal(scenario.leadRows[0]?.source, "instant-form");
   assert.equal(scenario.leadRows[0]?.status, "new");
   assert.equal(scenario.leadRows[0]?.valid, true);
+});
+
+test("missing and invalid emails are preserved as quarantined Notion rows", async () => {
+  for (const [suffix, email] of [
+    ["missing", undefined],
+    ["malformed", "not-an-email"],
+  ] as const) {
+    const platformLeadId = `lead-${suffix}`;
+    const scenario = mockPersistence({ createdPageId: `instant-${suffix}` });
+    const result = await ingestInstantFormLead({
+      ...INSTANT_LEAD,
+      platformLeadId,
+      email,
+    });
+
+    assert.deepEqual(result, {
+      ok: true,
+      status: "invalid",
+      notionPageId: `instant-${suffix}`,
+    });
+    const properties = createdProperties(scenario);
+    assert.deepEqual(properties.Email, {
+      title: [
+        {
+          text: {
+            content: email ?? `Email missing · Meta lead ${platformLeadId}`,
+          },
+        },
+      ],
+    });
+    assert.equal(Object.hasOwn(properties, "Canonical email"), false);
+    assert.equal(Object.hasOwn(properties, "Ref code"), false);
+    assert.deepEqual(properties.Phone, {
+      rich_text: [{ text: { content: "+1 202 555 0100" } }],
+    });
+    assert.deepEqual(properties["Full name"], {
+      rich_text: [{ text: { content: "Ocean Diver" } }],
+    });
+    assert.deepEqual(properties.Counted, { checkbox: false });
+    assert.deepEqual(properties.Suspect, { checkbox: true });
+    assert.deepEqual(properties.Flags, {
+      multi_select: [{ name: "invalid-email" }],
+    });
+    assert.equal(
+      scenario.notionCalls.filter((call) => call.path.endsWith("/query")).length,
+      1,
+      "recovery must query Platform Lead ID before creating an invalid row",
+    );
+    const completion = scenario.rpcCalls.find((call) =>
+      call.path.endsWith("/complete_meta_lead_ingestion_v1"),
+    );
+    assert.equal(completion?.body.p_outcome, "invalid");
+    assert.equal(completion?.body.p_notion_page_id, `instant-${suffix}`);
+    assert.equal(scenario.leadRows[0]?.status, "invalid");
+    assert.equal(scenario.leadRows[0]?.valid, false);
+    assert.equal(scenario.leadRows[0]?.has_email, false);
+    assert.equal(scenario.leadRows[0]?.notion_page_id, `instant-${suffix}`);
+    assert.ok(
+      scenario.eventRows.some((row) => row.event_name === "instant_form_crm_saved"),
+      "the quarantined CRM save must be measurable",
+    );
+  }
+});
+
+test("an invalid-email Notion response loss recovers by Platform Lead ID without duplication", async () => {
+  const scenario = mockPersistence({
+    createdPageId: "instant-invalid-response-loss",
+    loseFirstNotionCreateResponse: true,
+  });
+  const invalidLead = {
+    ...INSTANT_LEAD,
+    platformLeadId: "lead-invalid-response-loss",
+    email: undefined,
+  };
+
+  await assert.rejects(ingestInstantFormLead(invalidLead), /simulated Notion create response loss/);
+  await assert.rejects(
+    ingestInstantFormLead(invalidLead),
+    /Meta lead ingestion is already in progress/,
+  );
+  scenario.expireReservation();
+
+  assert.deepEqual(await ingestInstantFormLead(invalidLead), {
+    ok: true,
+    status: "invalid",
+    notionPageId: "instant-invalid-response-loss",
+  });
+  assert.equal(
+    scenario.notionCalls.filter((call) => call.path.endsWith("/pages") && call.method === "POST")
+      .length,
+    1,
+  );
+  const completion = scenario.rpcCalls.find((call) =>
+    call.path.endsWith("/complete_meta_lead_ingestion_v1"),
+  );
+  assert.equal(completion?.body.p_outcome, "invalid");
+  assert.equal(completion?.body.p_notion_page_id, "instant-invalid-response-loss");
+});
+
+test("Campaign-unverified dedicated-form leads are stored but excluded from counts", async () => {
+  const scenario = mockPersistence({ createdPageId: "instant-campaign-unverified" });
+
+  const result = await ingestInstantFormLead({
+    ...INSTANT_LEAD,
+    campaignId: undefined,
+    campaignName: undefined,
+    campaignScopeStatus: "unverified",
+  });
+
+  assert.deepEqual(result, {
+    ok: true,
+    status: "suspect",
+    notionPageId: "instant-campaign-unverified",
+  });
+  const properties = createdProperties(scenario);
+  assert.deepEqual(properties.Counted, { checkbox: false });
+  assert.deepEqual(properties.Suspect, { checkbox: true });
+  assert.deepEqual(properties.Flags, {
+    multi_select: [{ name: "campaign-unverified" }],
+  });
+  assert.deepEqual(properties["Attribution status"], { select: { name: "partial" } });
+  assert.equal(scenario.leadRows[0]?.status, "suspect");
+  assert.equal(scenario.leadRows[0]?.valid, false);
+});
+
+test("a partial completed retry only enriches Notion and preserves the funnel lead", async () => {
+  const scenario = mockPersistence({ createdPageId: "instant-monotonic" });
+  await ingestInstantFormLead(INSTANT_LEAD);
+
+  const retried = await ingestInstantFormLead({
+    platformLeadId: INSTANT_LEAD.platformLeadId,
+    createdTime: INSTANT_LEAD.createdTime,
+    email: INSTANT_LEAD.email,
+  });
+
+  assert.deepEqual(retried, {
+    ok: true,
+    status: "new",
+    notionPageId: "instant-monotonic",
+  });
+  const patch = scenario.notionCalls.find(
+    (call) => call.path.endsWith("/pages/instant-monotonic") && call.method === "PATCH",
+  );
+  assert.ok(patch);
+  const properties = patch.body.properties as Record<string, unknown>;
+  for (const protectedProperty of [
+    "Attribution status",
+    "Source coverage",
+    "Publisher platform",
+    "Meta Form ID",
+    "Meta Page ID",
+    "Meta Campaign ID",
+    "Meta Ad Set ID",
+    "Meta Ad ID",
+  ]) {
+    assert.equal(
+      Object.hasOwn(properties, protectedProperty),
+      false,
+      `partial retry must not downgrade ${protectedProperty}`,
+    );
+  }
+  assert.deepEqual(scenario.leadWritePreferences, [
+    "resolution=merge-duplicates,return=minimal",
+    "resolution=ignore-duplicates,return=minimal",
+  ]);
 });
 
 test("a website canonical lead stays unchanged while a full Instant Form duplicate row is added", async () => {
@@ -454,13 +661,50 @@ test("concurrent deliveries allow only one Instant Form Notion creator", async (
   );
 });
 
-test("a failed creator releases its fenced generation for an immediate retry", async () => {
+test("a failure before Notion creation releases its fenced generation immediately", async () => {
+  const scenario = mockPersistence({
+    createdPageId: "instant-pre-create-recovery",
+    failFirstPlatformQuery: true,
+  });
+
+  await assert.rejects(
+    ingestInstantFormLead(INSTANT_LEAD),
+    /Notion databases\/waitlist-db\/query failed \(503\)/,
+  );
+  const recovered = await ingestInstantFormLead(INSTANT_LEAD);
+
+  assert.deepEqual(recovered, {
+    ok: true,
+    status: "new",
+    notionPageId: "instant-pre-create-recovery",
+  });
+  assert.equal(
+    scenario.rpcCalls.filter((call) => call.path.endsWith("/fail_meta_lead_ingestion_v1")).length,
+    1,
+  );
+  const completeCall = scenario.rpcCalls.find((call) =>
+    call.path.endsWith("/complete_meta_lead_ingestion_v1"),
+  );
+  assert.equal(completeCall?.body.p_generation, 2);
+});
+
+test("a started Notion creator keeps its lease until expiry before retrying", async () => {
   const scenario = mockPersistence({
     createdPageId: "instant-recovered",
     failFirstNotionCreate: true,
   });
 
   await assert.rejects(ingestInstantFormLead(INSTANT_LEAD), /Notion pages failed \(503\)/);
+  await assert.rejects(
+    ingestInstantFormLead(INSTANT_LEAD),
+    /Meta lead ingestion is already in progress/,
+  );
+  assert.equal(
+    scenario.rpcCalls.filter((call) => call.path.endsWith("/fail_meta_lead_ingestion_v1")).length,
+    0,
+  );
+
+  scenario.expireReservation();
   const recovered = await ingestInstantFormLead(INSTANT_LEAD);
 
   assert.deepEqual(recovered, {
@@ -471,11 +715,7 @@ test("a failed creator releases its fenced generation for an immediate retry", a
   const reserveCalls = scenario.rpcCalls.filter((call) =>
     call.path.endsWith("/reserve_meta_lead_ingestion_v1"),
   );
-  assert.equal(reserveCalls.length, 2);
-  assert.equal(
-    scenario.rpcCalls.filter((call) => call.path.endsWith("/fail_meta_lead_ingestion_v1")).length,
-    1,
-  );
+  assert.equal(reserveCalls.length, 3);
   const completeCall = scenario.rpcCalls.find((call) =>
     call.path.endsWith("/complete_meta_lead_ingestion_v1"),
   );
@@ -492,6 +732,16 @@ test("a lost Notion create response is recovered by query-first retry without an
     ingestInstantFormLead(INSTANT_LEAD),
     /simulated Notion create response loss/,
   );
+  await assert.rejects(
+    ingestInstantFormLead(INSTANT_LEAD),
+    /Meta lead ingestion is already in progress/,
+  );
+  assert.equal(
+    scenario.rpcCalls.filter((call) => call.path.endsWith("/fail_meta_lead_ingestion_v1")).length,
+    0,
+  );
+
+  scenario.expireReservation();
   const recovered = await ingestInstantFormLead(INSTANT_LEAD);
 
   assert.deepEqual(recovered, {
