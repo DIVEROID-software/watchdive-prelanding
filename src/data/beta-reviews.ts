@@ -20,6 +20,16 @@ export type BetaReview = {
   country: "US" | "UK" | "KR" | "SG";
   en: string;
   unverifiedClaim?: true;
+  /**
+   * This tester sent us a photo of themselves and agreed to it being published,
+   * and the file is at `public/reviewers/<id>.webp`.
+   *
+   * Set it only for a real photo of the actual person. The circle beside a name
+   * says "this is who wrote it", so a stock face, a stand-in or a generated one
+   * would make a true review into a false endorsement. Everyone without this
+   * flag gets their initials, which claims nothing.
+   */
+  hasPhoto?: true;
 };
 
 /** Publishing an unverified product claim is a compliance decision, not a UI one. */

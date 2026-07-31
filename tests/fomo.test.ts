@@ -1,11 +1,19 @@
 // The countdown, the progress bar and the review set. All three make a public
 // factual claim, so the arithmetic behind them is tested rather than trusted.
 import assert from "node:assert/strict";
+import { existsSync, readdirSync } from "node:fs";
 import { test } from "node:test";
 
 import { BETA_REVIEWS, PUBLISHABLE_REVIEWS } from "../src/data/beta-reviews.ts";
 import { BETA_REVIEWS_KO } from "../src/data/beta-reviews.ko.ts";
 import { countdownFrom, KICKSTARTER_LAUNCH_MS, pad2 } from "../src/lib/launch.ts";
+import {
+  AVATAR_DIR,
+  AVATAR_TONES,
+  avatarSrc,
+  avatarTone,
+  initials,
+} from "../src/lib/reviewAvatar.ts";
 import {
   formatCount,
   OFF_PLATFORM_BASELINE,
@@ -144,4 +152,69 @@ test("reviews asserting unverified product claims are withheld by default", () =
     );
   }
   assert.equal(PUBLISHABLE_REVIEWS.length, BETA_REVIEWS.length - withheld.length);
+});
+
+// --- reviewer avatars ------------------------------------------------------
+//
+// The circle beside a name asserts "this is who wrote it". A photo may only
+// appear for a tester who actually sent one, so these tests guard the join
+// rather than the styling.
+
+test("initials come from the first and last word of a name", () => {
+  assert.equal(initials("Joshua Brown"), "JB");
+  assert.equal(initials("Christian Moore"), "CM");
+  // A hyphenated given name is one word, not two.
+  assert.equal(initials("Jun-ho Jeong"), "JJ");
+  assert.equal(initials("Nicholas Ng"), "NN");
+  // Middle names do not get a letter; the surname keeps its place.
+  assert.equal(initials("Mary Jane Watson"), "MW");
+});
+
+test("initials survive a name a person could actually have", () => {
+  assert.equal(initials("madonna"), "M");
+  assert.equal(initials("  Holly   James  "), "HJ");
+  assert.equal(initials(""), "?");
+  assert.equal(initials("   "), "?");
+});
+
+test("a name always resolves to the same tone from the palette", () => {
+  for (const review of BETA_REVIEWS) {
+    const tone = avatarTone(review.name);
+    assert.ok(AVATAR_TONES.includes(tone), `${review.name} got an off-palette tone`);
+    // Each lane renders its reviews twice, so both copies must match.
+    assert.equal(tone, avatarTone(review.name));
+  }
+});
+
+// A photo is opt-in per review and joins on the id, so a renamed or duplicated
+// tester can never inherit someone else's face.
+test("only reviews flagged as having a photo resolve to an image", () => {
+  for (const review of BETA_REVIEWS) {
+    const src = avatarSrc(review);
+    if (!review.hasPhoto) {
+      assert.equal(src, undefined, `review ${review.id} has no photo but resolved to ${src}`);
+      continue;
+    }
+    assert.equal(src, `${AVATAR_DIR}/${review.id}.webp`);
+  }
+});
+
+// The worst outcome this feature has is a real person's name over a face that
+// is not theirs. A declared photo that is not on disk would ship a broken
+// circle; a photo on disk for a review that never claimed one is a face we
+// cannot account for. Both are caught here rather than in production.
+test("every declared reviewer photo exists, and every stored photo is declared", () => {
+  const root = new URL("../public" + AVATAR_DIR + "/", import.meta.url);
+
+  const declared = new Set(
+    BETA_REVIEWS.filter((review) => review.hasPhoto).map((review) => `${review.id}.webp`),
+  );
+  for (const file of declared) {
+    assert.ok(existsSync(new URL(file, root)), `review photo ${file} is declared but missing`);
+  }
+
+  const stored = existsSync(root) ? readdirSync(root).filter((file) => !file.startsWith(".")) : [];
+  for (const file of stored) {
+    assert.ok(declared.has(file), `${file} is in ${AVATAR_DIR} but no review claims it`);
+  }
 });

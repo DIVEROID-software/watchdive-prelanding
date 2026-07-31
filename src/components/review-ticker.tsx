@@ -6,6 +6,7 @@ import {
   PUBLISHABLE_REVIEWS,
   type BetaReview,
 } from "@/data/beta-reviews";
+import { AVATAR_PX, avatarSrc, avatarTone, initials } from "@/lib/reviewAvatar";
 
 // Two lanes drifting in opposite directions read as motion rather than as one
 // long list scrolling past. Each lane renders its reviews twice and translates
@@ -34,15 +35,51 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
+/**
+ * The circle beside the name. Decorative in both forms: the name it belongs to
+ * is the next thing in the caption, so `alt=""` keeps a screen reader from
+ * reading every reviewer twice.
+ */
+function Avatar({ review }: { review: BetaReview }) {
+  const src = avatarSrc(review);
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        width={AVATAR_PX}
+        height={AVATAR_PX}
+        loading="lazy"
+        decoding="async"
+        className="size-7 shrink-0 rounded-full object-cover ring-1 ring-white/15"
+      />
+    );
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className="flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold tracking-[0.02em] text-white/85 ring-1 ring-white/15"
+      style={{ backgroundColor: avatarTone(review.name) }}
+    >
+      {initials(review.name)}
+    </span>
+  );
+}
+
 function Card({ review }: { review: BetaReview }) {
   return (
     <figure className="flex w-[19rem] shrink-0 flex-col gap-3 rounded-2xl border border-white/12 bg-white/[0.06] p-5 backdrop-blur sm:w-[22rem]">
       <Stars rating={review.rating} />
       <blockquote className="text-sm leading-relaxed text-white/85">{review.en}</blockquote>
-      <figcaption className="mt-auto text-xs text-white/50">
-        <span className="font-semibold text-white/75">{review.name}</span>
-        {" · "}
-        {review.city}, {COUNTRY_LABEL[review.country]}
+      <figcaption className="mt-auto flex items-center gap-2.5 text-xs text-white/50">
+        <Avatar review={review} />
+        <span className="min-w-0">
+          <span className="font-semibold text-white/75">{review.name}</span>
+          {" · "}
+          {review.city}, {COUNTRY_LABEL[review.country]}
+        </span>
       </figcaption>
     </figure>
   );
