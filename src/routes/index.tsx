@@ -342,7 +342,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
               }}
               className="h-11 rounded-lg bg-gradient-to-r from-[color:var(--color-cyan-glow)] to-[color:var(--color-cyan)] px-4 text-sm font-semibold text-[color:var(--color-deep-2)] hover:brightness-105"
             >
-              {copied ? "Copied!" : "Share & get yours free"}
+              {copied ? "Copied!" : "Send to your dive buddy"}
             </button>
           </div>
         </div>
