@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { track } from "@vercel/analytics";
 import { joinWaitlist, pollVerification, getReferralCount } from "@/lib/api/waitlist.functions";
 import { LaunchCountdown } from "@/components/launch-countdown";
+import { ReviewAvatar } from "@/components/review-avatar";
 import { ReviewTicker } from "@/components/review-ticker";
 import { WaitlistProgress } from "@/components/waitlist-progress";
 import { PUBLISHABLE_REVIEWS } from "@/data/beta-reviews";
@@ -794,8 +795,11 @@ function HeroProof() {
             <blockquote className="mt-1.5 line-clamp-3 text-xs leading-relaxed text-white/80">
               {review.en}
             </blockquote>
-            <figcaption className="mt-2 text-[11px] text-white/45">
-              {review.name} · {review.city}
+            <figcaption className="mt-2 flex items-center gap-1.5 text-[11px] text-white/45">
+              <ReviewAvatar review={review} px={20} />
+              <span className="min-w-0">
+                {review.name} · {review.city}
+              </span>
             </figcaption>
           </figure>
         ))}
