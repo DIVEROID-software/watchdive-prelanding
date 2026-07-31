@@ -13,6 +13,7 @@ import type {
   VerificationMailer,
   WelcomeMail,
 } from "../../src/lib/verification/resend.ts";
+import { verificationUrl } from "../../src/lib/verification/token.ts";
 
 export const TEST_SECRET = "test-verification-secret-at-least-32b";
 export const TEST_ORIGIN = "https://watchdive.diveroid.com";
@@ -166,6 +167,6 @@ export class FakeMailer implements VerificationMailer {
   get lastUrl(): string | undefined {
     const last = this.sent[this.sent.length - 1];
     if (!last) return undefined;
-    return `${last.publicOrigin}/verify#${last.token}`;
+    return verificationUrl(last.publicOrigin, last.token);
   }
 }

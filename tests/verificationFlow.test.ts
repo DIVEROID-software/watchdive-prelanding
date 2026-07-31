@@ -15,6 +15,7 @@ import {
 import {
   createVerificationToken,
   deterministicMetaEventId,
+  parseVerificationToken,
 } from "../src/lib/verification/token.ts";
 import {
   FakeLeadStore,
@@ -103,9 +104,23 @@ test("the mailed link carries the token in the fragment and nothing in the query
     assert.equal(url.origin, TEST_ORIGIN);
     assert.equal(url.pathname, "/verify");
     assert.equal(url.search, "");
-    assert.match(url.hash, /^#[0-9a-f-]{36}\./i);
+    assert.match(url.hash, /^#v2\.[0-9a-f-]{36}\./i);
     assert.ok(!url.hash.includes("="));
   });
+});
+
+test("the selected locale is signed into the link and reaches both messages", async () => {
+  await requestVerificationService(submit({ locale: "ko" }), deps());
+  const sent = mailer.sent[0];
+  const url = new URL(mailer.lastUrl!);
+
+  assert.equal(sent.locale, "ko");
+  assert.equal(url.pathname, "/ko/verify");
+  assert.equal(parseVerificationToken(sent.token, TEST_SECRET, clock.getTime())?.locale, "ko");
+
+  clock = new Date(clock.getTime() + 120_000);
+  await confirmVerificationService(sent.token, deps());
+  assert.equal(mailer.welcomes[0]?.locale, "ko");
 });
 
 test("submitting is not yet a conversion", async () => {
@@ -120,7 +135,7 @@ test("neither the token nor the address is persisted", async () => {
   const persisted = JSON.stringify(row);
 
   assert.ok(!persisted.includes(token), "token reached the CRM row");
-  assert.ok(!persisted.includes(token.split(".")[3]), "token signature reached the CRM row");
+  assert.ok(!persisted.includes(token.split(".").at(-1)!), "token signature reached the CRM row");
   assert.ok(!persisted.includes(EMAIL.split("@")[0]) || persisted.includes(EMAIL));
   // Only the opaque attempt id, which is a bare uuid.
   assert.match(row!.leadId, /^[0-9a-f-]{36}$/);
@@ -321,12 +336,15 @@ test("Notion remains the authority on the attempt window", async () => {
 
 test("a tampered token is refused without touching the store", async () => {
   await requestVerificationService(submit(), deps());
-  const [leadId, exp, mac] = mailer.sent[0].token.split(".");
+  const parts = mailer.sent[0].token.split(".");
+  const forged = (index: number, value: string) =>
+    parts.map((part, partIndex) => (partIndex === index ? value : part)).join(".");
 
   const forgeries = [
-    `${leadId}.${exp}.${"A".repeat(mac.length)}`, // forged signature
-    `${leadId}.${Number(exp) + 86_400}.${mac}`, // extended expiry
-    `aaaaaaaa-bbbb-4ccc-8ddd-000000000099.${exp}.${mac}`, // swapped attempt
+    forged(5, "A".repeat(parts[5].length)), // forged signature
+    forged(2, String(Number(parts[2]) + 86_400)), // extended expiry
+    forged(1, "aaaaaaaa-bbbb-4ccc-8ddd-000000000099"), // swapped attempt
+    forged(4, "ko"), // changed presentation/welcome locale
     "not-a-token",
     "",
   ];

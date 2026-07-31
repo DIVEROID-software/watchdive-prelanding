@@ -22,6 +22,10 @@ import {
   trackMetaSubmitApplication,
 } from "@/lib/metaPixel";
 import { getAttribution } from "@/lib/attribution";
+import { landingHead } from "@/lib/i18n/seo";
+import { privacyPath, termsPath } from "@/lib/i18n/locale";
+import { isI18nReviewEnabled } from "@/lib/i18n/review-gate";
+import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 
 import heroBackground from "../assets/live/hero-background.webp";
 import heroSideImage from "../assets/live/watchdive-image10.webp";
@@ -69,45 +73,11 @@ function AppIcon({ svg, className }: { svg: string; className?: string }) {
 }
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Watch Dive — Turn the watch you already own into a dive computer" },
-      {
-        name: "description",
-        content:
-          "Turn the Apple Watch or Galaxy Watch you already own into a 60 m dive computer. $149 early bird — 50% off at Kickstarter launch.",
-      },
-      {
-        property: "og:title",
-        content: "Watch Dive — Turn the watch you already own into a dive computer",
-      },
-      {
-        property: "og:description",
-        content:
-          "Turn your Apple or Galaxy Watch into a 60 m dive computer. $149 early bird — 50% off at Kickstarter launch.",
-      },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://watchdive.diveroid.com/" },
-      { property: "og:image", content: "https://watchdive.diveroid.com/og-image.png" },
-      { property: "og:image:width", content: "1200" },
-      { property: "og:image:height", content: "630" },
-      { name: "twitter:card", content: "summary_large_image" },
-      {
-        name: "twitter:title",
-        content: "Watch Dive — Turn the watch you already own into a dive computer",
-      },
-      {
-        name: "twitter:description",
-        content:
-          "Turn your Apple or Galaxy Watch into a 60 m dive computer. $149 early bird on Kickstarter.",
-      },
-      { name: "twitter:image", content: "https://watchdive.diveroid.com/og-image.png" },
-    ],
-  }),
-  component: Index,
+  head: () => landingHead("en"),
+  component: DesignFrozenLanding,
 });
 
-function Index() {
+export function DesignFrozenLanding() {
   // The campaign is recorded on arrival rather than at submit. A visitor who
   // lands tagged and then navigates before signing up leaves no query behind,
   // and by the time the form runs the URL that paid for them is gone.
@@ -135,27 +105,58 @@ function Index() {
   );
 }
 
-const CTA_LABEL = "Get My $149 Early-Bird Invite";
+function formatMessage(
+  template: string,
+  values: Readonly<Record<string, string | number>>,
+): string {
+  return template.replace(/\{([^}]+)\}/g, (token, key: string) =>
+    Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : token,
+  );
+}
+
+function splitHighlightedCopy(value: string, highlight: string): [string, string, string] {
+  const index = value.indexOf(highlight);
+  if (index < 0) return [value, "", ""];
+  return [value.slice(0, index), highlight, value.slice(index + highlight.length)];
+}
+
+function splitTwoHighlights(
+  value: string,
+  first: string,
+  second: string,
+): [string, string, string, string, string] {
+  const firstIndex = value.indexOf(first);
+  const secondIndex = value.indexOf(second, firstIndex + first.length);
+  if (firstIndex < 0 || secondIndex < 0) return [value, "", "", "", ""];
+  return [
+    value.slice(0, firstIndex),
+    first,
+    value.slice(firstIndex + first.length, secondIndex),
+    second,
+    value.slice(secondIndex + second.length),
+  ];
+}
 
 function LaunchBanner() {
+  const m = useFrozenLandingMessages();
   return (
     <div className="relative z-20 border-b border-white/10 bg-[color:var(--color-deep-2)]/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 py-3 text-white sm:flex-row sm:justify-between sm:gap-6">
         <div className="flex items-center gap-2">
           <span className="size-1.5 rounded-full bg-[color:var(--color-cyan-glow)]" />
           <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-cyan-glow)]">
-            Launching soon on Kickstarter
+            {m.banner.kicker}
           </span>
         </div>
         <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:text-left">
           <span className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--color-cyan-glow)] sm:text-sm">
-            Early bird · 50% off
+            {m.banner.offer}
           </span>
           <a
             href="#offer-form"
             className="rounded-full bg-gradient-to-r from-[color:var(--color-cyan-glow)] to-[color:var(--color-cyan)] px-4 py-2 text-xs font-semibold text-[color:var(--color-deep-2)] shadow-[0_8px_24px_-12px_oklch(0.696_0.129_235/0.7)] hover:brightness-105"
           >
-            Join the waitlist
+            {m.banner.joinCta}
           </a>
         </div>
       </div>
@@ -186,6 +187,7 @@ function SectionImage({
  * screen or focused — at that point it is pure obstruction.
  */
 function StickyLaunchBanner() {
+  const m = useFrozenLandingMessages();
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
@@ -220,7 +222,7 @@ function StickyLaunchBanner() {
       <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-cyan-glow)] text-[color:var(--color-deep-2)]">
         ↓
       </span>
-      <span className="min-w-0 text-sm font-semibold leading-tight">{CTA_LABEL}</span>
+      <span className="min-w-0 text-sm font-semibold leading-tight">{m.cta.label}</span>
     </a>
   );
 }
@@ -255,24 +257,32 @@ function getRef(): string | undefined {
 
 // Client-only welcome banner shown when a visitor arrives via a friend's link.
 function ReferralWelcome() {
+  const m = useFrozenLandingMessages();
   const [ref, setRef] = useState<string | undefined>(undefined);
+  const [before, highlight, after] = splitHighlightedCopy(
+    m.referral.welcome,
+    m.referral.welcomeHighlight,
+  );
   useEffect(() => setRef(getRef()), []);
   if (!ref) return null;
   return (
     <div className="mb-5 inline-flex max-w-xl items-center gap-2 self-start rounded-xl border border-[color:var(--color-cyan-glow)]/30 bg-[color:var(--color-cyan-glow)]/10 px-4 py-2.5 text-sm text-white/90">
       <span className="text-base">🎉</span>
       <span>
-        A friend invited you —{" "}
-        <span className="font-semibold text-white">you&apos;re on their list</span>. Confirm your
-        email to join them.
+        {before}
+        <span className="font-semibold text-white">{highlight}</span>
+        {after}
       </span>
     </div>
   );
 }
 
 function ReferralSuccess({ refCode }: { refCode: string }) {
+  const m = useFrozenLandingMessages();
   const [copied, setCopied] = useState(false);
   const [count, setCount] = useState<number | null>(null);
+  const joinedTemplate = count === 1 ? m.referral.joinedOne : m.referral.joinedOther;
+  const [joinedBefore, , joinedAfter] = splitHighlightedCopy(joinedTemplate, "{count}");
   const shareUrl =
     typeof window !== "undefined" && refCode ? `${window.location.origin}/?ref=${refCode}` : "";
 
@@ -289,27 +299,23 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
 
   return (
     <div className="rounded-2xl bg-white/10 backdrop-blur p-5 text-white">
-      <div className="text-base font-semibold">You're on the list. 🎉</div>
-      <p className="mt-1 text-sm text-white/80">
-        We'll email you the moment Watch Dive goes live on Kickstarter.
-      </p>
+      <div className="text-base font-semibold">{m.referral.successTitle}</div>
+      <p className="mt-1 text-sm text-white/80">{m.referral.successBody}</p>
 
       {shareUrl && (
         <div className="mt-4 rounded-xl border border-white/15 bg-[color:var(--color-deep-2)]/50 p-4">
           <div className="text-sm font-semibold text-[color:var(--color-cyan-glow)]">
-            Bring a buddy
+            {m.referral.buddyTitle}
           </div>
-          <p className="mt-1 text-xs text-white/70">
-            Share your link with divers who&apos;d want this. We count everyone who joins through
-            it, and we&apos;ll email you the Kickstarter link the moment the campaign opens.
-          </p>
+          <p className="mt-1 text-xs text-white/70">{m.referral.buddyBody}</p>
 
           {count !== null && (
             <div className="mt-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-white/85">
-                  <span className="font-semibold text-[color:var(--color-cyan-glow)]">{count}</span>{" "}
-                  diver{count === 1 ? "" : "s"} joined through your link
+                  {joinedBefore}
+                  <span className="font-semibold text-[color:var(--color-cyan-glow)]">{count}</span>
+                  {joinedAfter}
                 </span>
               </div>
             </div>
@@ -329,7 +335,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
                   if (navigator.share) {
                     await navigator.share({
                       title: "Watch Dive",
-                      text: "I'm turning my Apple/Galaxy Watch into a dive computer with Watch Dive 🤿 Early bird is $149 on Kickstarter — join the list with my link.",
+                      text: m.referral.shareText,
                       url: shareUrl,
                     });
                     return;
@@ -343,7 +349,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
               }}
               className="h-11 rounded-lg bg-gradient-to-r from-[color:var(--color-cyan-glow)] to-[color:var(--color-cyan)] px-4 text-sm font-semibold text-[color:var(--color-deep-2)] hover:brightness-105"
             >
-              {copied ? "Copied!" : "Send to your dive buddy"}
+              {copied ? m.referral.copied : m.referral.shareButton}
             </button>
           </div>
         </div>
@@ -358,20 +364,22 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
 // The confirmation click is where a double opt-in funnel leaks. Sending people
 // straight to a pre-filtered inbox search is the cheapest known fix, so the
 // handful of providers that cover most consumer mail get a direct link.
-const WEBMAIL: { match: RegExp; label: string; url: string }[] = [
+type WebmailLabel = "openGmail" | "openOutlook" | "openYahoo" | "openNaver" | "openDaum";
+
+const WEBMAIL: { match: RegExp; label: WebmailLabel; url: string }[] = [
   {
     match: /@(gmail|googlemail)\.com$/i,
-    label: "Open Gmail",
+    label: "openGmail",
     url: "https://mail.google.com/mail/u/0/#search/watch+dive",
   },
   {
     match: /@(outlook|hotmail|live|msn)\./i,
-    label: "Open Outlook",
+    label: "openOutlook",
     url: "https://outlook.live.com/mail/0/inbox",
   },
-  { match: /@yahoo\./i, label: "Open Yahoo Mail", url: "https://mail.yahoo.com/" },
-  { match: /@naver\.com$/i, label: "네이버 메일 열기", url: "https://mail.naver.com/" },
-  { match: /@(daum|hanmail)\.net$/i, label: "다음 메일 열기", url: "https://mail.daum.net/" },
+  { match: /@yahoo\./i, label: "openYahoo", url: "https://mail.yahoo.com/" },
+  { match: /@naver\.com$/i, label: "openNaver", url: "https://mail.naver.com/" },
+  { match: /@(daum|hanmail)\.net$/i, label: "openDaum", url: "https://mail.daum.net/" },
 ];
 
 function webmailFor(email: string) {
@@ -403,6 +411,7 @@ function CheckInboxCard({
   onStartOver: () => void;
   resending: boolean;
 }) {
+  const m = useFrozenLandingMessages();
   // A resend offered instantly invites double-sends; the server enforces a
   // sixty-second cooldown anyway, so the button appears when it would work.
   const [canResend, setCanResend] = useState(false);
@@ -415,6 +424,11 @@ function CheckInboxCard({
   // Read after mount: the server has no user agent to inspect.
   const [inApp, setInApp] = useState(false);
   useEffect(() => setInApp(isInAppBrowser()), []);
+  const [noteBefore, noteSubject, noteMiddle, noteButton, noteAfter] = splitTwoHighlights(
+    m.inbox.note,
+    m.inbox.noteSubject,
+    m.inbox.noteButton,
+  );
 
   return (
     <div
@@ -422,16 +436,14 @@ function CheckInboxCard({
       aria-live="polite"
       className="rounded-2xl bg-white/10 backdrop-blur p-5 text-white"
     >
-      <div className="text-base font-semibold">One more step — confirm your email 📬</div>
+      <div className="text-base font-semibold">{m.inbox.title}</div>
       <p className="mt-1 text-sm text-white/80">{message}</p>
       <p className="mt-3 text-xs text-white/60">
-        Look for the subject{" "}
-        <span className="font-semibold text-white/85">
-          &ldquo;Confirm your Watch Dive waitlist email&rdquo;
-        </span>{" "}
-        and press <span className="font-semibold text-white/85">Confirm my email</span>. Check spam
-        or promotions if it is not there within a minute. The link lasts 24 hours and this page
-        updates on its own.
+        {noteBefore}
+        <span className="font-semibold text-white/85">{noteSubject}</span>
+        {noteMiddle}
+        <span className="font-semibold text-white/85">{noteButton}</span>
+        {noteAfter}
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -442,7 +454,7 @@ function CheckInboxCard({
             rel="noopener noreferrer"
             className="inline-flex min-h-11 items-center rounded-lg bg-white px-4 text-sm font-semibold text-[color:var(--color-deep-2)]"
           >
-            {webmail.label}
+            {m.inbox[webmail.label]}
           </a>
         )}
         <button
@@ -451,20 +463,22 @@ function CheckInboxCard({
           disabled={!canResend || resending}
           className="inline-flex min-h-11 items-center rounded-lg border border-white/25 px-4 text-sm font-semibold text-white disabled:opacity-45"
         >
-          {resending ? "Sending…" : canResend ? "Didn't get it? Resend" : "Resend in a moment"}
+          {resending ? m.inbox.resendBusy : canResend ? m.inbox.resendIdle : m.inbox.resendWait}
         </button>
         <button
           type="button"
           onClick={onStartOver}
           className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-white/65 underline underline-offset-2"
         >
-          Wrong address?
+          {m.inbox.wrongAddress}
         </button>
       </div>
 
       {inApp && (
         <p className="mt-3 text-xs leading-relaxed text-white/55">
-          Open your mail app and search for <span className="text-white/80">Watch Dive</span>.
+          {splitHighlightedCopy(m.inbox.inAppHint, m.inbox.inAppHintHighlight)[0]}
+          <span className="text-white/80">{m.inbox.inAppHintHighlight}</span>
+          {splitHighlightedCopy(m.inbox.inAppHint, m.inbox.inAppHintHighlight)[2]}
         </p>
       )}
     </div>
@@ -476,6 +490,8 @@ function CheckInboxCard({
 type FormPlacement = "hero" | "offer";
 
 function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePhone?: boolean }) {
+  const locale = useCurrentLocale();
+  const m = useFrozenLandingMessages();
   const [pending, setPending] = useState<string | null>(null);
   const [closed, setClosed] = useState<string | null>(null);
   const [handle, setHandle] = useState("");
@@ -613,6 +629,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         attribution: getAttribution(),
         honeypot: hp,
         measurementConsent: hasMetaMeasurementConsent(),
+        locale,
         ...(submitEventId ? { submitEventId } : {}),
         ...getMetaCookies(),
       },
@@ -633,7 +650,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         aria-live="polite"
         className="rounded-2xl bg-white/10 p-5 text-white backdrop-blur"
       >
-        <div className="text-base font-semibold">The list is full</div>
+        <div className="text-base font-semibold">{m.closed.title}</div>
         <p className="mt-1 text-sm text-white/80">{closed}</p>
       </div>
     );
@@ -650,9 +667,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           setLoading(true);
           try {
             await submit();
-            toast.success("Sent again — check your inbox.");
+            toast.success(m.toasts.resent);
           } catch {
-            toast.error("Something went wrong. Please try again.");
+            toast.error(m.toasts.error);
           } finally {
             setLoading(false);
           }
@@ -690,7 +707,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
             trackMetaSubmitApplication(submitEventId, id);
           }
         } catch {
-          toast.error("Something went wrong. Please try again.");
+          toast.error(m.toasts.error);
         } finally {
           setLoading(false);
         }
@@ -729,7 +746,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
               trackMetaCustom("FormStart", { source: id });
             }
           }}
-          placeholder="your@email.com"
+          placeholder={m.form.emailPlaceholder}
           className="order-1 h-14 px-4 rounded-xl bg-gradient-to-b from-white to-[oklch(0.92_0.006_255)] text-[color:var(--color-deep-2)] placeholder:text-muted-foreground border border-white/50 shadow-[inset_0_1px_0_oklch(1_0_0/0.85),0_22px_48px_-8px_oklch(0.008_0.01_270/0.85),0_6px_16px_-3px_oklch(0.008_0.01_270/0.7)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)]"
         />
         {includePhone && (
@@ -737,7 +754,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="Phone (optional) — for a launch-day text"
+            placeholder={m.form.phonePlaceholder}
             className="order-2 h-14 w-full px-4 rounded-xl bg-gradient-to-b from-white to-[oklch(0.92_0.006_255)] text-[color:var(--color-deep-2)] placeholder:text-muted-foreground border border-white/50 shadow-[inset_0_1px_0_oklch(1_0_0/0.85),0_22px_48px_-8px_oklch(0.008_0.01_270/0.85),0_6px_16px_-3px_oklch(0.008_0.01_270/0.7)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)] sm:order-3 sm:col-span-2"
           />
         )}
@@ -746,7 +763,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           disabled={loading}
           className="order-3 h-14 px-5 rounded-xl font-semibold text-[color:var(--color-deep-2)] bg-gradient-to-r from-[color:var(--color-cyan-glow)] to-[color:var(--color-cyan)] shadow-[0_10px_30px_-10px_oklch(0.696_0.129_235/0.6)] hover:brightness-105 active:scale-[0.99] transition sm:order-2"
         >
-          {loading ? "Saving…" : CTA_LABEL}
+          {loading ? m.form.saving : m.cta.label}
         </button>
       </div>
 
@@ -759,19 +776,16 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
             onChange={(event) => setSmsConsent(event.target.checked)}
             className="mt-0.5 size-4 shrink-0 accent-[color:var(--color-cyan-glow)]"
           />
-          <span>
-            Text me about the Watch Dive Kickstarter launch. Optional — your email signup works
-            without this.
-          </span>
+          <span>{m.form.smsConsent}</span>
         </label>
       )}
 
       <p className="mt-3 text-xs leading-relaxed text-white/55">
-        <span className="font-semibold text-white/75">1.</span> Enter your email{" "}
+        <span className="font-semibold text-white/75">1.</span> {m.form.step1}{" "}
         <span className="text-white/30">·</span>{" "}
-        <span className="font-semibold text-white/75">2.</span> Click the confirm link we send you{" "}
+        <span className="font-semibold text-white/75">2.</span> {m.form.step2}{" "}
         <span className="text-white/30">·</span>{" "}
-        <span className="font-semibold text-white/75">3.</span> You&apos;re on the list
+        <span className="font-semibold text-white/75">3.</span> {m.form.step3}
       </p>
     </form>
   );
@@ -780,6 +794,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
 // A Meta click needs proof within the first screen and a half, not after the
 // app carousel. Three real cards, then a jump to the full set.
 function HeroProof() {
+  const m = useFrozenLandingMessages();
   const picks = PUBLISHABLE_REVIEWS.slice(0, 3);
   return (
     <div className="max-w-xl">
@@ -808,18 +823,22 @@ function HeroProof() {
         href="#beta-reviews"
         className="mt-2.5 inline-block text-xs font-semibold text-white/60 underline underline-offset-2"
       >
-        Read all {PUBLISHABLE_REVIEWS.length} beta reviews ↓
+        {formatMessage(m.heroProof.readAll, { count: PUBLISHABLE_REVIEWS.length })}
       </a>
     </div>
   );
 }
 
 function Hero() {
+  const m = useFrozenLandingMessages();
+  const [h1Before, h1Highlight, h1After] = splitHighlightedCopy(m.hero.h1, m.hero.h1Highlight);
+  const [subBefore, subDepth, subAfter] = splitHighlightedCopy(m.hero.sub, "60 m");
+  const [priceBefore, price, priceAfter] = splitHighlightedCopy(m.hero.priceLine, "$149");
   return (
     <header className="relative overflow-hidden text-white">
       <SectionImage
         src={heroBackground}
-        alt="Scuba diver exploring a vibrant coral reef"
+        alt={m.hero.backgroundAlt}
         priority
         className="absolute inset-0 h-full w-full object-cover"
       />
@@ -833,7 +852,7 @@ function Hero() {
         <div className="flex flex-col gap-7 lg:py-10">
           <div className="inline-flex self-start items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur border border-white/15">
             <span className="size-1.5 rounded-full bg-[color:var(--color-cyan-glow)]" />
-            Launching soon on Kickstarter
+            {m.hero.badge}
           </div>
 
           <div className="space-y-4">
@@ -841,21 +860,23 @@ function Hero() {
               className="max-w-3xl text-4xl font-extrabold leading-[1.04] sm:text-5xl lg:text-6xl"
               style={{ wordBreak: "keep-all", textWrap: "balance", overflowWrap: "normal" }}
             >
-              Turn the watch you{" "}
+              {h1Before}
               <span className="bg-gradient-to-r from-[color:var(--color-cyan-glow)] via-white to-[color:var(--color-cyan)] bg-clip-text text-transparent">
-                already own
-              </span>{" "}
-              into a dive computer.
+                {h1Highlight}
+              </span>
+              {h1After}
             </h1>
 
             <p className="max-w-xl text-lg font-bold leading-snug text-white sm:text-2xl">
-              Turn the Apple or Galaxy Watch you already own into a{" "}
-              <span className="whitespace-nowrap">60 m</span> dive computer.
+              {subBefore}
+              <span className="whitespace-nowrap">{subDepth}</span>
+              {subAfter}
             </p>
 
             <p className="max-w-xl text-base text-white/75 sm:text-lg">
-              Early bird from <span className="font-semibold text-white">$149</span> on Kickstarter
-              &mdash; a fraction of the price of a traditional dive computer.
+              {priceBefore}
+              <span className="font-semibold text-white">{price}</span>
+              {priceAfter}
             </p>
           </div>
 
@@ -867,7 +888,7 @@ function Hero() {
           <div className="relative overflow-hidden rounded-[1.5rem] border border-white/12 bg-white/8 p-2 lg:hidden">
             <SectionImage
               src={heroSideImage}
-              alt="Watch Dive underwater hero product shot"
+              alt={m.hero.sideImageAlt}
               priority
               className="max-h-[38vh] w-full rounded-[1.1rem] object-cover"
             />
@@ -876,8 +897,8 @@ function Hero() {
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               {
-                label: "60 m",
-                desc: "Rated housing",
+                label: m.hero.stat1Label,
+                desc: m.hero.stat1Desc,
                 customIcon: null,
                 // real App 3.0 Max Depth icon (ic_l_MaxDepth) — water surface + limit line + descent arrow
                 icon: (
@@ -894,8 +915,8 @@ function Hero() {
                 ),
               },
               {
-                label: "Scuba + Freedive",
-                desc: "Dual modes",
+                label: m.hero.stat2Label,
+                desc: m.hero.stat2Desc,
                 // real App 3.0 mode icons (scuba diver + freediver), tinted cyan to match
                 customIcon: (
                   <span className="flex size-9 shrink-0 items-center justify-center gap-0.5 rounded-lg bg-[color:var(--color-cyan-glow)]/15 text-[color:var(--color-cyan-glow)]">
@@ -906,8 +927,8 @@ function Hero() {
                 icon: null,
               },
               {
-                label: "$149",
-                desc: "50% off · early bird",
+                label: m.hero.stat3Label,
+                desc: m.hero.stat3Desc,
                 customIcon: null,
                 icon: (
                   <>
@@ -948,21 +969,17 @@ function Hero() {
           </div>
 
           <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-[color:var(--color-cyan-glow)]/30 bg-[color:var(--color-cyan-glow)]/10 px-4 py-3">
-            <span className="text-base text-white/55 line-through">$299</span>
-            <span className="text-2xl font-extrabold text-white">$149</span>
+            <span className="text-base text-white/55 line-through">{m.hero.wasPrice}</span>
+            <span className="text-2xl font-extrabold text-white">{m.hero.nowPrice}</span>
             <span className="rounded-full bg-[color:var(--color-cyan-glow)] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[color:var(--color-deep-2)]">
-              50% off
+              {m.hero.offBadge}
             </span>
-            <span className="text-sm font-medium text-white/85">
-              early bird at Kickstarter launch
-            </span>
+            <span className="text-sm font-medium text-white/85">{m.hero.offNote}</span>
           </div>
 
           <div className="flex max-w-xl items-start gap-2.5 text-sm text-white/85">
             <span className="flex h-5 shrink-0 items-center text-base leading-none">🎁</span>
-            <span>
-              Then share your link with the divers you&apos;d actually go in the water with.
-            </span>
+            <span>{m.hero.gift}</span>
           </div>
 
           <ReferralWelcome />
@@ -980,29 +997,29 @@ function Hero() {
           <HeroProof />
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-white/65">
-            <span>Sign up to hear first and lock in the lowest launch price.</span>
+            <span>{m.hero.trust1}</span>
             <span className="h-1 w-1 rounded-full bg-white/35" />
-            <span>No spam — one email when we go live.</span>
+            <span>{m.hero.trust2}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
             <div className="flex items-center gap-2.5">
               <span className="text-[11px] uppercase tracking-[0.2em] text-white/50">
-                Backed by
+                {m.hero.backedBy}
               </span>
               <span className="inline-flex h-8 items-center rounded-lg bg-white px-2.5 shadow-sm">
-                <img src={nvidiaInceptionBadge} alt="NVIDIA Inception" className="h-4 w-auto" />
+                <img src={nvidiaInceptionBadge} alt={m.hero.nvidiaAlt} className="h-4 w-auto" />
               </span>
               <span className="inline-flex h-8 items-center rounded-lg bg-white px-2.5 shadow-sm">
-                <img src={awsLogo} alt="Amazon Web Services" className="h-5 w-auto" />
+                <img src={awsLogo} alt={m.hero.awsAlt} className="h-5 w-auto" />
               </span>
             </div>
             <div className="flex items-center gap-2.5">
               <span className="text-[11px] uppercase tracking-[0.2em] text-white/50">
-                Featured by
+                {m.hero.featuredBy}
               </span>
               <span className="inline-flex h-8 items-center rounded-lg bg-white px-3 shadow-sm">
-                <img src={samsungLogo} alt="Samsung" className="h-3.5 w-auto" />
+                <img src={samsungLogo} alt={m.hero.samsungAlt} className="h-3.5 w-auto" />
               </span>
             </div>
           </div>
@@ -1011,17 +1028,15 @@ function Hero() {
         <div className="relative hidden lg:order-none lg:block">
           <div className="absolute -right-2 bottom-10 rounded-2xl border border-white/12 bg-white/10 px-4 py-3 text-sm text-white/90 shadow-2xl backdrop-blur md:px-5">
             <div className="text-[10px] uppercase tracking-[0.2em] text-white/55">
-              The Watch Dive promise
+              {m.hero.promiseKicker}
             </div>
-            <div className="mt-1 font-semibold">
-              A real dive computer feel for a fraction of the price
-            </div>
+            <div className="mt-1 font-semibold">{m.hero.promiseText}</div>
           </div>
 
           <div className="relative overflow-hidden rounded-[2rem] border border-white/12 bg-white/8 p-3 shadow-[0_30px_90px_-35px_oklch(0.8_0.11_232/0.45)] backdrop-blur-sm sm:p-4">
             <SectionImage
               src={heroSideImage}
-              alt="Watch Dive underwater hero product shot"
+              alt={m.hero.sideImageAlt}
               priority
               className="aspect-[5/6] w-full rounded-[1.5rem] object-cover"
             />
@@ -1030,16 +1045,16 @@ function Hero() {
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
-                    Kickstarter promise
+                    {m.hero.cardKicker}
                   </div>
-                  <div className="mt-2 text-2xl font-bold">Depth. Safety. No-Deco.</div>
+                  <div className="mt-2 text-2xl font-bold">{m.hero.cardHeadline}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
-                    From
+                    {m.hero.cardFrom}
                   </div>
                   <div className="mt-2 text-3xl font-extrabold text-[color:var(--color-cyan-glow)]">
-                    $149
+                    {m.hero.cardPrice}
                   </div>
                 </div>
               </div>
@@ -1052,52 +1067,44 @@ function Hero() {
 }
 
 function ValueSection() {
+  const m = useFrozenLandingMessages();
   return (
     <section className="mx-auto max-w-6xl px-5 py-20 sm:py-28">
       <div className="lg:hidden">
         <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-          Why Watch Dive
+          {m.value.kicker}
         </p>
-        <h2 className="text-3xl font-bold leading-tight sm:text-5xl">
-          Why spend $1,000 on a dive computer if your smartwatch is already halfway there?
-        </h2>
+        <h2 className="text-3xl font-bold leading-tight sm:text-5xl">{m.value.h2}</h2>
       </div>
       <div className="mt-8 grid gap-10 lg:mt-0 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-center">
         <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
           <SectionImage
             src={whyImage}
-            alt="Watch Dive housings displayed on a boat deck"
+            alt={m.value.imageAlt}
             className="aspect-[4/5] w-full object-cover"
           />
           <div className="absolute inset-x-5 bottom-5 rounded-2xl border border-white/15 bg-[color:var(--color-deep-2)]/82 p-4 text-white backdrop-blur-md">
             <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
-              Why divers love it
+              {m.value.overlayKicker}
             </div>
-            <div className="mt-2 text-lg font-semibold">
-              Premium dive gear feel, without the premium price.
-            </div>
+            <div className="mt-2 text-lg font-semibold">{m.value.overlayText}</div>
           </div>
         </div>
 
         <div>
           <div className="hidden lg:block">
             <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-              Why Watch Dive
+              {m.value.kicker}
             </p>
-            <h2 className="text-3xl font-bold leading-tight sm:text-5xl">
-              Why spend $1,000 on a dive computer if your smartwatch is already halfway there?
-            </h2>
+            <h2 className="text-3xl font-bold leading-tight sm:text-5xl">{m.value.h2}</h2>
           </div>
-          <p className="mt-6 text-lg text-muted-foreground lg:mt-6">
-            Watch Dive helps new and recreational divers unlock the core dive-computer experience
-            with the watch they already own — at a price that finally makes sense.
-          </p>
+          <p className="mt-6 text-lg text-muted-foreground lg:mt-6">{m.value.lead}</p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {[
               {
-                title: "Use what you own",
-                copy: "Built around the Apple Watch and Galaxy Watch you already wear — no second device to buy.",
+                title: m.value.card1Title,
+                copy: m.value.card1Copy,
                 icon: (
                   <>
                     <circle cx="12" cy="12" r="6" />
@@ -1108,8 +1115,8 @@ function ValueSection() {
                 ),
               },
               {
-                title: "Premium build",
-                copy: "Clear housing, bold on-screen UI, and refined black and white variants.",
+                title: m.value.card2Title,
+                copy: m.value.card2Copy,
                 icon: (
                   <>
                     <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
@@ -1118,8 +1125,8 @@ function ValueSection() {
                 ),
               },
               {
-                title: "Real dive value",
-                copy: "Key scuba metrics without forcing a $1,000 dive-computer purchase.",
+                title: m.value.card3Title,
+                copy: m.value.card3Copy,
                 icon: (
                   <>
                     <path d="m12 14 4-4" />
@@ -1128,8 +1135,8 @@ function ValueSection() {
                 ),
               },
               {
-                title: "Shareable dives",
-                copy: "Connected app and striking visuals make every dive easy to remember and share.",
+                title: m.value.card4Title,
+                copy: m.value.card4Copy,
                 icon: (
                   <>
                     <circle cx="18" cy="5" r="3" />
@@ -1171,10 +1178,11 @@ function ValueSection() {
 }
 
 function FunctionsSection() {
+  const m = useFrozenLandingMessages();
   const items = [
     {
-      t: "Ascent-Rate Alert",
-      d: "The safe ascent rate is 9–18 m/min. Watch Dive monitors every meter of your ascent and alerts you before you cross the line — no buttons, no menus.",
+      t: m.functions.item1Title,
+      d: m.functions.item1Body,
       iconSrc: null,
       icon: (
         <>
@@ -1184,22 +1192,22 @@ function FunctionsSection() {
       ),
     },
     {
-      t: "No-Deco / NDL",
-      d: "Watch Dive is 60 m waterproof and calculates your NDL in real time. Never guess how much bottom time you have left.",
+      t: m.functions.item2Title,
+      d: m.functions.item2Body,
       // real App 3.0 Dive Time (stopwatch) icon — NDL is a real-time countdown
       iconSrc: diveTimeIcon,
       icon: null,
     },
     {
-      t: "Depth, Time & Temperature",
-      d: "Real-time depth, elapsed dive time, and water temperature — all logged automatically and synced to your Diveroid App logbook via Bluetooth after every dive.",
+      t: m.functions.item3Title,
+      d: m.functions.item3Body,
       // real App 3.0 water-temperature icon
       iconSrc: temperatureIcon,
       icon: null,
     },
     {
-      t: "Scuba + Freediving",
-      d: "Watch Dive supports both scuba and freediving — switch modes in seconds. All of it, from $149.",
+      t: m.functions.item4Title,
+      d: m.functions.item4Body,
       // real App 3.0 scuba diver icon
       iconSrc: scubaFigureIcon,
       icon: null,
@@ -1211,14 +1219,10 @@ function FunctionsSection() {
       <div className="mx-auto max-w-6xl">
         <div className="max-w-2xl">
           <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--color-cyan-glow)]">
-            Built for real recreational diving
+            {m.functions.kicker}
           </p>
-          <h2 className="text-3xl font-bold leading-tight sm:text-5xl">
-            Track depth, dive time, temperature, safety stops, ascent rate, and NDL — in one system.
-          </h2>
-          <p className="mt-5 text-white/70">
-            60&nbsp;m waterproof. Scuba and freediving modes both supported.
-          </p>
+          <h2 className="text-3xl font-bold leading-tight sm:text-5xl">{m.functions.h2}</h2>
+          <p className="mt-5 text-white/70">{m.functions.sub}</p>
         </div>
 
         <div className="mt-12 relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
@@ -1230,7 +1234,7 @@ function FunctionsSection() {
             loop
             playsInline
             preload="metadata"
-            aria-label="Watch Dive functions in action"
+            aria-label={m.functions.videoAria}
             className="aspect-video w-full object-cover"
           />
         </div>
@@ -1275,29 +1279,30 @@ function FunctionsSection() {
 }
 
 function HowItWorks() {
+  const m = useFrozenLandingMessages();
   const steps = [
     {
       n: "01",
-      t: "Place your smartwatch inside Watch Dive",
-      d: "Slide your Apple Watch or Galaxy Watch into the waterproof housing.",
+      t: m.how.step1Title,
+      d: m.how.step1Body,
       image: step1Image,
-      alt: "Hands placing a smartwatch into the Watch Dive housing",
+      alt: m.how.step1Alt,
       iconSvg: gearBagIcon,
     },
     {
       n: "02",
-      t: "Dive with real-time guidance",
-      d: "Depth, dive time, temperature, ascent rate, and safety stops on your wrist.",
+      t: m.how.step2Title,
+      d: m.how.step2Body,
       image: step2Image,
-      alt: "Freediver wearing Watch Dive at the pool edge",
+      alt: m.how.step2Alt,
       iconSvg: scubaFigureIcon,
     },
     {
       n: "03",
-      t: "Sync your dive log after surfacing",
-      d: "Review profile, logbook, and memories in the connected app.",
+      t: m.how.step3Title,
+      d: m.how.step3Body,
       image: syncImage,
-      alt: "Diver reviewing dive log in the connected app poolside",
+      alt: m.how.step3Alt,
       iconSvg: autoSyncIcon,
     },
   ];
@@ -1305,11 +1310,9 @@ function HowItWorks() {
     <section className="px-5 py-20 sm:py-28 max-w-5xl mx-auto">
       <div className="text-center max-w-2xl mx-auto mb-14">
         <p className="text-sm uppercase tracking-[0.2em] text-primary font-semibold mb-4">
-          How it works
+          {m.how.kicker}
         </p>
-        <h2 className="text-3xl sm:text-5xl font-bold leading-tight">
-          Three steps. One dive computer solution.
-        </h2>
+        <h2 className="text-3xl sm:text-5xl font-bold leading-tight">{m.how.h2}</h2>
       </div>
       <div className="grid md:grid-cols-3 gap-5 items-stretch">
         {steps.map((s) => (
@@ -1339,34 +1342,34 @@ function HowItWorks() {
   );
 }
 
-const APP3_SCREENS = [
-  {
-    src: app3_1,
-    tab: "Auto",
-    tabDesc: "Logbook & gallery",
-    title: "Auto logbook & gallery",
-    desc: "Every dive auto-logged with depth profile, stats, and your photos.",
-    iconSvg: logbookIcon,
-  },
-  {
-    src: app3_6,
-    tab: "Share",
-    tabDesc: "Data-overlay clips",
-    title: "Share with dive data",
-    desc: "Overlay depth, time, and location right onto your shots.",
-    iconSvg: shareIcon,
-  },
-  {
-    src: app3_4,
-    tab: "Sites",
-    tabDesc: "Discover & review",
-    title: "Dive sites near you",
-    desc: "Discover spots, live conditions, and top-rated sites nearby.",
-    iconSvg: locationPinIcon,
-  },
-];
-
 function App3Carousel() {
+  const m = useFrozenLandingMessages();
+  const APP3_SCREENS = [
+    {
+      src: app3_1,
+      tab: m.app.tab1,
+      tabDesc: m.app.tab1Desc,
+      title: m.app.screen1Title,
+      desc: m.app.screen1Body,
+      iconSvg: logbookIcon,
+    },
+    {
+      src: app3_6,
+      tab: m.app.tab2,
+      tabDesc: m.app.tab2Desc,
+      title: m.app.screen2Title,
+      desc: m.app.screen2Body,
+      iconSvg: shareIcon,
+    },
+    {
+      src: app3_4,
+      tab: m.app.tab3,
+      tabDesc: m.app.tab3Desc,
+      title: m.app.screen3Title,
+      desc: m.app.screen3Body,
+      iconSvg: locationPinIcon,
+    },
+  ];
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
 
@@ -1411,7 +1414,7 @@ function App3Carousel() {
               key={s.tab}
               type="button"
               onClick={() => goTo(i)}
-              aria-label={`Show ${s.title}`}
+              aria-label={formatMessage(m.app.showAria, { title: s.title })}
               className={`rounded-2xl border px-4 py-4 text-center backdrop-blur transition shadow-[0_20px_44px_-12px_oklch(0.02_0.02_270/0.9),0_8px_26px_-6px_oklch(0.8_0.11_232/0.55),inset_0_1px_0_oklch(1_0_0/0.12)] sm:border-white/10 sm:bg-white/[0.07] ${
                 on
                   ? "border-[color:var(--color-cyan-glow)]/60 bg-[color:var(--color-cyan-glow)]/12"
@@ -1469,7 +1472,7 @@ function App3Carousel() {
       <div className="mt-6 flex items-center justify-center gap-5 sm:hidden">
         <button
           type="button"
-          aria-label="Previous"
+          aria-label={m.app.prevAria}
           onClick={() => goTo(active - 1)}
           disabled={active === 0}
           className="flex size-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 disabled:opacity-30"
@@ -1481,7 +1484,7 @@ function App3Carousel() {
             <button
               key={s.title}
               type="button"
-              aria-label={`Go to ${s.title}`}
+              aria-label={formatMessage(m.app.gotoAria, { title: s.title })}
               onClick={() => goTo(i)}
               className={`h-1.5 rounded-full transition-all ${
                 i === active ? "w-6 bg-[color:var(--color-cyan-glow)]" : "w-1.5 bg-white/30"
@@ -1491,7 +1494,7 @@ function App3Carousel() {
         </div>
         <button
           type="button"
-          aria-label="Next"
+          aria-label={m.app.nextAria}
           onClick={() => goTo(active + 1)}
           disabled={active === APP3_SCREENS.length - 1}
           className="flex size-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 disabled:opacity-30"
@@ -1504,20 +1507,23 @@ function App3Carousel() {
 }
 
 function AppEcosystem() {
+  const m = useFrozenLandingMessages();
+  const [leadBefore, leadHighlight, leadAfter] = splitHighlightedCopy(
+    m.app.lead,
+    m.app.leadHighlight,
+  );
   return (
     <section className="bg-gradient-to-b from-[color:var(--color-deep)] to-[color:var(--color-deep-2)] text-white px-5 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-3xl text-center">
           <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--color-cyan-glow)]">
-            Connected app · Diveroid 3.0
+            {m.app.kicker}
           </p>
-          <h2 className="text-3xl font-bold leading-tight sm:text-5xl">
-            Your dive, saved automatically.
-          </h2>
+          <h2 className="text-3xl font-bold leading-tight sm:text-5xl">{m.app.h2}</h2>
           <p className="mt-5 text-base text-white/75 sm:text-lg">
-            The moment you surface, Watch Dive syncs to the{" "}
-            <span className="font-semibold text-white">DIVEROID App 3.0</span> — auto-log every
-            dive, share your footage with live dive data, and discover new sites nearby.
+            {leadBefore}
+            <span className="font-semibold text-white">{leadHighlight}</span>
+            {leadAfter}
           </p>
         </div>
 
@@ -1528,6 +1534,7 @@ function AppEcosystem() {
 }
 
 function Compatibility() {
+  const m = useFrozenLandingMessages();
   return (
     <section className="px-5 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl">
@@ -1548,15 +1555,10 @@ function Compatibility() {
 
         <div className="mt-12 max-w-3xl">
           <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-            Compatibility
+            {m.compat.kicker}
           </p>
-          <h2 className="text-3xl font-bold leading-tight sm:text-5xl">
-            Works with Most Leading Smartwatches
-          </h2>
-          <p className="mt-5 text-muted-foreground">
-            Only a handful of watches ship with a depth sensor. The Watch Dive housing adds one, so
-            the watch already on your wrist works as a dive computer either way.
-          </p>
+          <h2 className="text-3xl font-bold leading-tight sm:text-5xl">{m.compat.h2}</h2>
+          <p className="mt-5 text-muted-foreground">{m.compat.lead}</p>
         </div>
 
         {/* The housing is the path almost everyone arriving here is on: a depth
@@ -1567,22 +1569,17 @@ function Compatibility() {
           <div className="flex items-start gap-5 rounded-2xl border-2 border-primary/35 bg-card p-6 shadow-[0_16px_40px_-12px_oklch(0.2_0.03_260/0.28)] sm:col-span-3">
             <div className="flex-1">
               <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-                Fits almost any watch
+                {m.compat.housingBadge}
               </span>
-              <div className="mt-3 text-lg font-bold sm:text-xl">Housing + App</div>
-              <p className="mt-1 font-semibold text-foreground">
-                No depth sensor? The housing brings its own.
-              </p>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                Your watch does not need a sensor of its own. It goes in the Watch Dive housing, and
-                the app reads depth from the housing.
-              </p>
+              <div className="mt-3 text-lg font-bold sm:text-xl">{m.compat.housingTitle}</div>
+              <p className="mt-1 font-semibold text-foreground">{m.compat.housingLead}</p>
+              <p className="mt-1.5 text-sm text-muted-foreground">{m.compat.housingBody}</p>
               <ul className="mt-4 space-y-1.5 text-sm font-medium text-foreground/80">
                 {[
-                  "All other Apple Watch models",
-                  "All Samsung Galaxy Watch models",
-                  "Google Pixel Watch",
-                  "Other Wear OS watches",
+                  m.compat.housingModel1,
+                  m.compat.housingModel2,
+                  m.compat.housingModel3,
+                  m.compat.housingModel4,
                 ].map((model) => (
                   <li key={model} className="flex items-center gap-2">
                     <span className="size-1.5 rounded-full bg-primary" />
@@ -1593,19 +1590,17 @@ function Compatibility() {
             </div>
             <SectionImage
               src={housingImage}
-              alt="Watch Dive waterproof housing"
+              alt={m.compat.housingAlt}
               className="size-28 shrink-0 self-center rounded-xl object-cover sm:size-40"
             />
           </div>
 
           <div className="flex items-start gap-4 rounded-2xl border border-border bg-muted/30 p-5 sm:col-span-2">
             <div className="flex-1">
-              <div className="font-semibold text-muted-foreground">App Only</div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                For the few watches with a depth sensor already built in.
-              </p>
+              <div className="font-semibold text-muted-foreground">{m.compat.appOnlyTitle}</div>
+              <p className="mt-1 text-sm text-muted-foreground">{m.compat.appOnlyBody}</p>
               <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                {["Apple Watch Ultra 1", "Apple Watch Ultra 2", "Apple Watch Ultra 3"].map(
+                {[m.compat.appOnlyModel1, m.compat.appOnlyModel2, m.compat.appOnlyModel3].map(
                   (model) => (
                     <li key={model} className="flex items-center gap-2">
                       <span className="size-1 rounded-full bg-muted-foreground/50" />
@@ -1617,35 +1612,29 @@ function Compatibility() {
             </div>
             <SectionImage
               src={watchScreen}
-              alt="Watch Dive app running on a smartwatch"
+              alt={m.compat.watchScreenAlt}
               className="size-20 shrink-0 self-center rounded-xl object-cover sm:size-24"
             />
           </div>
         </div>
-        <p className="mt-4 text-xs text-muted-foreground">
-          More models are being verified — join the waitlist to get the final list at launch.
-        </p>
+        <p className="mt-4 text-xs text-muted-foreground">{m.compat.footnote}</p>
       </div>
     </section>
   );
 }
 
 function ActionCameras() {
+  const m = useFrozenLandingMessages();
   return (
     <section className="bg-card/60 border-y border-border px-5 py-14 sm:py-16">
       <div className="mx-auto max-w-5xl text-center">
         <p className="text-sm uppercase tracking-[0.2em] text-primary font-semibold mb-3">
-          Works with action cameras
+          {m.cameras.kicker}
         </p>
-        <h3 className="text-2xl sm:text-3xl font-bold leading-tight">
-          Pairs with your action camera
-        </h3>
-        <p className="mt-4 text-muted-foreground">
-          Works with GoPro, Insta360, Canon, and more — unified dive log + media in one app. Sync
-          your footage with every dive automatically.
-        </p>
+        <h3 className="text-2xl sm:text-3xl font-bold leading-tight">{m.cameras.h3}</h3>
+        <p className="mt-4 text-muted-foreground">{m.cameras.lead}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          {["GoPro", "Insta360", "Canon", "& more"].map((name) => (
+          {["GoPro", "Insta360", "Canon", m.cameras.chipMore].map((name) => (
             <span
               key={name}
               className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium shadow-[0_4px_14px_-4px_oklch(0.2_0.03_260/0.18)]"
@@ -1663,7 +1652,7 @@ function ActionCameras() {
             loop
             playsInline
             preload="metadata"
-            aria-label="Action camera pairing and auto dive log in the connected app"
+            aria-label={m.cameras.videoAria}
             className="aspect-video w-full object-cover"
           />
         </div>
@@ -1673,20 +1662,21 @@ function ActionCameras() {
 }
 
 function SafetySection() {
+  const m = useFrozenLandingMessages();
   const points = [
     {
-      t: "Built & rated for 60 m",
-      d: "Sealed housing engineered and pressure‑checked for real depth.",
+      t: m.safety.point1Title,
+      d: m.safety.point1Body,
       iconSvg: maxDepthIcon,
     },
     {
-      t: "Validated in real ocean dives",
-      d: "Tested in the water by real divers — not just on a bench.",
+      t: m.safety.point2Title,
+      d: m.safety.point2Body,
       iconSvg: scubaFigureIcon,
     },
     {
-      t: "Core safety functions",
-      d: "No‑decompression limit, ascent‑rate alert, and safety‑stop guidance on your wrist.",
+      t: m.safety.point3Title,
+      d: m.safety.point3Body,
       iconSvg: null,
     },
   ];
@@ -1695,11 +1685,9 @@ function SafetySection() {
       <div className="mx-auto max-w-5xl">
         <div className="max-w-3xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-            Built for real diving
+            {m.safety.kicker}
           </p>
-          <h2 className="text-3xl font-bold leading-tight sm:text-4xl">
-            Serious safety, at an entry‑level price.
-          </h2>
+          <h2 className="text-3xl font-bold leading-tight sm:text-4xl">{m.safety.h2}</h2>
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {points.map((p) => (
@@ -1731,17 +1719,20 @@ function SafetySection() {
             </div>
           ))}
         </div>
-        <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
-          Watch Dive is a dive aid, not a replacement for proper training. Always dive within your
-          certification and limits, follow standard safety procedures, and keep a backup dive
-          computer.
-        </p>
+        <p className="mt-6 text-xs leading-relaxed text-muted-foreground">{m.safety.disclaimer}</p>
       </div>
     </section>
   );
 }
 
 function OfferSection() {
+  const m = useFrozenLandingMessages();
+  const [headlineBefore, headlineStrike, headlineMiddle, headlineNew, headlineAfter] =
+    splitTwoHighlights(m.offer.headline, m.offer.headlineStrike, m.offer.headlineNew);
+  const [leadBefore, leadHighlight, leadAfter] = splitHighlightedCopy(
+    m.offer.lead,
+    m.offer.leadHighlight,
+  );
   return (
     <section id="offer-form" className="relative overflow-hidden px-5 py-20 text-white sm:py-28">
       <div className="absolute inset-0 bg-[color:var(--color-deep-2)]" />
@@ -1749,20 +1740,23 @@ function OfferSection() {
       <div className="relative z-10 mx-auto max-w-4xl text-center">
         <SectionImage
           src={kickstarterImage}
-          alt="Watch Dive Kickstarter launch banner"
+          alt={m.offer.imageAlt}
           className="mx-auto mb-8 aspect-video w-full max-w-3xl rounded-[2rem] border border-white/10 object-cover object-top shadow-[0_30px_90px_-35px_oklch(0.8_0.11_232/0.45)]"
         />
         <p className="text-sm uppercase tracking-[0.2em] text-[color:var(--color-cyan-glow)] font-semibold mb-4">
-          Kickstarter Early Bird · 50% off
+          {m.offer.kicker}
         </p>
         <h2 className="text-3xl sm:text-5xl font-bold leading-tight">
-          <span className="text-white/45 line-through">$299</span>{" "}
-          <span className="text-[color:var(--color-cyan-glow)]">$149</span> — 50% off.
+          {headlineBefore}
+          <span className="text-white/45 line-through">{headlineStrike}</span>
+          {headlineMiddle}
+          <span className="text-[color:var(--color-cyan-glow)]">{headlineNew}</span>
+          {headlineAfter}
         </h2>
         <p className="mt-5 text-white/80">
-          Sign up to be the <span className="font-semibold text-white">first to know</span> when
-          Watch Dive launches — early bird backers lock in the lowest price ever at $149, before it
-          goes to $299 at public release.
+          {leadBefore}
+          <span className="font-semibold text-white">{leadHighlight}</span>
+          {leadAfter}
         </p>
         <div className="mt-7 rounded-2xl border border-white/12 bg-white/[0.06] p-5 text-left backdrop-blur">
           <LaunchCountdown />
@@ -1779,11 +1773,14 @@ function OfferSection() {
 }
 
 function Credentials() {
+  const m = useFrozenLandingMessages();
+  const [nvidiaBefore, , nvidiaAfter] = splitHighlightedCopy(m.creds.nvidiaTitle, "NVIDIA");
+  const [awsBefore, , awsAfter] = splitHighlightedCopy(m.creds.awsTitle, "AWS");
   return (
     <section className="px-5 py-16 sm:py-20">
       <div className="mx-auto max-w-5xl">
         <p className="text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
-          Built by a proven team
+          {m.creds.heading}
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {/* NVIDIA — big Inception badge in tinted panel + brand green accent */}
@@ -1795,7 +1792,7 @@ function Credentials() {
             >
               <img
                 src={nvidiaInceptionBadge}
-                alt="NVIDIA Inception Program member badge"
+                alt={m.creds.nvidiaAlt}
                 loading="lazy"
                 className="max-h-full w-auto max-w-[78%]"
               />
@@ -1803,11 +1800,13 @@ function Credentials() {
             <div className="flex flex-1 flex-col items-center justify-center px-7 pb-7 pt-6">
               <div className="flex min-h-[3.25rem] flex-col items-center justify-end">
                 <div className="text-lg font-bold">
-                  Member of <span style={{ color: "#76B900" }}>NVIDIA</span> Inception
+                  {nvidiaBefore}
+                  <span style={{ color: "#76B900" }}>NVIDIA</span>
+                  {nvidiaAfter}
                 </div>
               </div>
               <p className="mt-3.5 text-sm leading-relaxed text-muted-foreground">
-                NVIDIA's program for startups building with AI and accelerated computing.
+                {m.creds.nvidiaBody}
               </p>
             </div>
           </div>
@@ -1821,7 +1820,7 @@ function Credentials() {
             >
               <img
                 src={awsLogo}
-                alt="Amazon Web Services logo"
+                alt={m.creds.awsAlt}
                 loading="lazy"
                 className="max-h-full w-auto max-w-[72%]"
               />
@@ -1829,11 +1828,13 @@ function Credentials() {
             <div className="flex flex-1 flex-col items-center justify-center px-7 pb-7 pt-6">
               <div className="flex min-h-[3.25rem] flex-col items-center justify-end">
                 <div className="text-lg font-bold">
-                  Powered by <span style={{ color: "#FF9900" }}>AWS</span>
+                  {awsBefore}
+                  <span style={{ color: "#FF9900" }}>AWS</span>
+                  {awsAfter}
                 </div>
               </div>
               <p className="mt-3.5 text-sm leading-relaxed text-muted-foreground">
-                Our app and dive data run on Amazon Web Services.
+                {m.creds.awsBody}
               </p>
             </div>
           </div>
@@ -1844,7 +1845,7 @@ function Credentials() {
             <div className="relative aspect-video w-full overflow-hidden">
               <img
                 src={samsungFeature}
-                alt="DIVEROID diving gear featured in a Samsung campaign"
+                alt={m.creds.samsungAlt}
                 loading="lazy"
                 className="absolute inset-0 h-full w-full object-cover"
               />
@@ -1852,12 +1853,16 @@ function Credentials() {
             <div className="flex flex-1 flex-col items-center justify-center px-7 pb-7 pt-6">
               <div className="flex min-h-[3.25rem] flex-col items-center justify-end">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                  As featured by
+                  {m.creds.samsungFeatured}
                 </span>
-                <img src={samsungLogo} alt="Samsung" className="mt-1.5 h-[18px] w-auto" />
+                <img
+                  src={samsungLogo}
+                  alt={m.creds.samsungLogoAlt}
+                  className="mt-1.5 h-[18px] w-auto"
+                />
               </div>
               <p className="mt-3.5 text-sm leading-relaxed text-muted-foreground">
-                Our diving gear appeared in a Samsung smartphone advertisement.
+                {m.creds.samsungBody}
               </p>
             </div>
           </div>
@@ -1868,35 +1873,42 @@ function Credentials() {
 }
 
 function FAQ() {
+  const m = useFrozenLandingMessages();
+  const approvalGatedFaqs = [
+    { q: m.faq.q6, a: m.faq.a6 },
+    { q: m.faq.q7, a: m.faq.a7 },
+    { q: m.faq.q8, a: m.faq.a8 },
+  ];
   const faqs = [
     {
-      q: "Is Watch Dive a standalone dive computer?",
-      a: "No. Watch Dive turns your compatible smartwatch into a dive computer solution using the housing, sensor, and connected app.",
+      q: m.faq.q1,
+      a: m.faq.a1,
     },
     {
-      q: "How deep can I use it?",
-      a: "Watch Dive is rated to 60 m, with a recommended recreational operating depth of 40 m.",
+      q: m.faq.q2,
+      a: m.faq.a2,
     },
     {
-      q: "Does it support safety stop and no-decompression limits?",
-      a: "Yes. It supports key recreational dive functions including safety stop, ascent-rate alert, depth, dive time, temperature, and no-decompression guidance.",
+      q: m.faq.q3,
+      a: m.faq.a3,
     },
     {
-      q: "Does it work for freediving?",
-      a: "Yes. Watch Dive supports both scuba diving and freediving.",
+      q: m.faq.q4,
+      a: m.faq.a4,
     },
     {
-      q: "When does it launch?",
-      a: "The Kickstarter campaign opens on 10 August. Join the waitlist and we email you the link the moment it is live.",
+      q: m.faq.q5,
+      a: m.faq.a5,
     },
+    ...(isI18nReviewEnabled(import.meta.env.VITE_WATCHDIVE_I18N_REVIEW) ? approvalGatedFaqs : []),
   ];
   return (
     <section className="px-5 py-20 sm:py-28 max-w-3xl mx-auto">
       <div className="text-center mb-10">
-        <p className="text-sm uppercase tracking-[0.2em] text-primary font-semibold mb-4">FAQ</p>
-        <h2 className="text-3xl sm:text-5xl font-bold leading-tight">
-          Good questions, short answers.
-        </h2>
+        <p className="text-sm uppercase tracking-[0.2em] text-primary font-semibold mb-4">
+          {m.faq.kicker}
+        </p>
+        <h2 className="text-3xl sm:text-5xl font-bold leading-tight">{m.faq.h2}</h2>
       </div>
       <div className="divide-y divide-border rounded-2xl border border-border bg-card">
         {faqs.map((f) => (
@@ -1916,25 +1928,30 @@ function FAQ() {
 }
 
 function Footer() {
+  const locale = useCurrentLocale();
+  const m = useFrozenLandingMessages();
+  const year = new Date().getFullYear();
   return (
     <footer className="bg-[color:var(--color-deep-2)] text-white/70 px-5 py-10 text-center text-sm">
       <div className="max-w-3xl mx-auto">
-        <div className="font-semibold text-white">Watch Dive</div>
-        <p className="mt-2">
-          © {new Date().getFullYear()} Watch Dive, operated by DIVEROID LTD (company no. 16343651,
-          registered in England). Launching soon on Kickstarter.
-        </p>
+        <div className="font-semibold text-white">{m.footer.brand}</div>
+        <p className="mt-2">{formatMessage(m.footer.legal, { year })}</p>
         <nav className="mt-4 flex justify-center gap-6 text-white/80">
-          <Link to="/terms" className="hover:text-white underline-offset-4 hover:underline">
-            Terms
+          <Link
+            to={termsPath(locale)}
+            className="hover:text-white underline-offset-4 hover:underline"
+          >
+            {m.footer.terms}
           </Link>
-          <Link to="/privacy" className="hover:text-white underline-offset-4 hover:underline">
-            Privacy Policy
+          <Link
+            to={privacyPath(locale)}
+            className="hover:text-white underline-offset-4 hover:underline"
+          >
+            {m.footer.privacy}
           </Link>
         </nav>
         <p className="mx-auto mt-6 max-w-2xl text-xs text-white/45">
-          © {new Date().getFullYear()} NVIDIA, the NVIDIA logo, and NVIDIA Inception are trademarks
-          and/or registered trademarks of NVIDIA Corporation in the U.S. and other countries.
+          {formatMessage(m.footer.nvidiaTrademark, { year })}
         </p>
       </div>
     </footer>

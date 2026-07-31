@@ -27,6 +27,7 @@ import {
 } from "./contracts.ts";
 import type { PollGate } from "./pollGate.ts";
 import type { VerificationMailer } from "./resend.ts";
+import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
 import type { TokenEnvironment } from "./token.ts";
 import {
   createVerificationToken,
@@ -63,6 +64,8 @@ export type RequestVerificationInput = {
   attribution?: LeadAttribution;
   /** The browser's measurement choice at submit time. */
   measurementConsent: boolean;
+  /** Language selected on the page. Defaults to English for legacy callers. */
+  locale?: Locale;
   /** True when this network has produced too many recent signups to keep mailing. */
   networkSendBlocked: boolean;
 };
@@ -227,10 +230,17 @@ export async function requestVerificationService(
     now.getTime() + VERIFICATION_TTL_MS,
     input.measurementConsent,
     secret,
+    input.locale ?? DEFAULT_LOCALE,
   );
 
   try {
-    await dependencies.mailer.send({ to: input.email, token, leadId, publicOrigin });
+    await dependencies.mailer.send({
+      to: input.email,
+      token,
+      leadId,
+      publicOrigin,
+      locale: input.locale ?? DEFAULT_LOCALE,
+    });
   } catch {
     // The attempt stays armed. Nothing about the failure reaches the response.
     return floor(pendingResponse(handle));
@@ -261,6 +271,7 @@ async function scheduleWelcome(
   record: LeadRecord,
   dependencies: ServiceDependencies,
   now: Date,
+  locale: Locale,
 ): Promise<void> {
   // Already handed over, no link to give, or the same abuse signals that
   // disqualify a conversion — an invite link is exactly what a farmer wants.
@@ -281,6 +292,7 @@ async function scheduleWelcome(
       leadId: record.leadId,
       publicOrigin,
       scheduledAt,
+      locale,
     });
     await dependencies.store.markWelcomeScheduled(record.pageId, { scheduledAt });
   } catch {
@@ -317,7 +329,7 @@ export async function confirmVerificationService(
     // id is derived from the attempt, so a duplicate collapses into the same
     // conversion instead of inflating it.
     await dispatchIfPermitted(record, metaEventId, parsed.measurementConsent, dependencies);
-    await scheduleWelcome(record, dependencies, now);
+    await scheduleWelcome(record, dependencies, now, parsed.locale);
     return {
       ok: true,
       status: "already_verified",
@@ -342,7 +354,7 @@ export async function confirmVerificationService(
   // Gating on a re-read would not add exactly-once — it would only risk
   // dropping the single dispatch when the read comes back stale.
   await dispatchIfPermitted(record, metaEventId, parsed.measurementConsent, dependencies);
-  await scheduleWelcome(record, dependencies, now);
+  await scheduleWelcome(record, dependencies, now, parsed.locale);
 
   return {
     ok: true,

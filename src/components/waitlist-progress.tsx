@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
 import { getWaitlistCount } from "@/lib/api/waitlist.functions";
+import { useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 import { formatCount, LOW_REMAINING_THRESHOLD, waitlistProgress } from "@/lib/waitlistProgress";
 
 /**
@@ -19,6 +20,7 @@ export function WaitlistProgress({
   justJoined?: number;
   className?: string;
 }) {
+  const messages = useFrozenLandingMessages().progress;
   const { data } = useQuery({
     queryKey: ["waitlist-count"],
     queryFn: () => getWaitlistCount(),
@@ -42,20 +44,25 @@ export function WaitlistProgress({
     return () => window.clearTimeout(timer.current);
   }, [revealed]);
   const scarce = progress.remaining <= LOW_REMAINING_THRESHOLD;
+  const countLineTail = messages.countLine
+    .replace("{total}", "")
+    .replace("{cap}", formatCount(progress.cap));
 
   return (
     <div className={className}>
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-sm font-semibold text-white">
           <span className="text-[color:var(--color-cyan-glow)]">{formatCount(progress.total)}</span>
-          <span className="text-white/60"> / {formatCount(progress.cap)} divers</span>
+          <span className="text-white/60">{countLineTail}</span>
         </p>
         <p
           className={`text-xs font-semibold ${
             scarce ? "text-[color:var(--color-cyan-glow)]" : "text-white/55"
           }`}
         >
-          {progress.full ? "List closed" : `${formatCount(progress.remaining)} spots left`}
+          {progress.full
+            ? messages.closedLabel
+            : messages.spotsLeft.replace("{remaining}", formatCount(progress.remaining))}
         </p>
       </div>
 
@@ -65,7 +72,7 @@ export function WaitlistProgress({
         aria-valuemin={0}
         aria-valuemax={progress.cap}
         aria-valuenow={progress.total}
-        aria-label="Pre-launch waitlist places taken"
+        aria-label={messages.aria}
       >
         <div
           // scaleX rather than width: animating width relayouts and repaints
@@ -77,7 +84,7 @@ export function WaitlistProgress({
       </div>
 
       <p className="mt-2 text-[11px] leading-relaxed text-white/45">
-        The waitlist is capped at {formatCount(progress.cap)} divers and closes when it is full.
+        {messages.capNote.replace("{cap}", formatCount(progress.cap))}
       </p>
     </div>
   );

@@ -1,182 +1,195 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
+import { homePath } from "@/lib/i18n/locale";
+import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
+
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — Watch Dive" },
+      { title: EN_FROZEN_LANDING_MESSAGES.privacy.metaTitle },
       {
         name: "description",
-        content:
-          "How OceanWick Inc. handles your information when you sign up for Watch Dive pre-launch updates.",
+        content: EN_FROZEN_LANDING_MESSAGES.privacy.metaDescription,
       },
     ],
   }),
   component: PrivacyPage,
 });
 
-function PrivacyPage() {
+export function PrivacyPage() {
+  const locale = useCurrentLocale();
+  const copy = useFrozenLandingMessages().privacy;
+  const company = splitLabel(copy.s1Company);
+  const representative = splitLabel(copy.s1Rep);
+  const address = splitLabel(copy.s1Addr);
+  const registration = splitLabel(copy.s1Reg);
+  const privacyContact = splitLabel(copy.s1Contact);
+  const email = splitLead(copy.s2Email);
+  const phone = splitLead(copy.s2Phone);
+  const security = splitLead(copy.s2Security);
+  const usage = splitLead(copy.s2Usage);
+  const rightsContact = splitAroundEmail(copy.s7Outro);
+  const contact = splitAroundEmail(copy.s10Body);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <article className="mx-auto max-w-3xl px-5 py-16 sm:py-24">
-        <Link to="/" className="text-sm text-primary underline-offset-4 hover:underline">
-          ← Back to home
+        <Link
+          to={homePath(locale)}
+          className="text-sm text-primary underline-offset-4 hover:underline"
+        >
+          {copy.back}
         </Link>
-        <h1 className="mt-6 text-4xl font-bold sm:text-5xl">
-          Privacy Policy — Watch Dive Pre-Launch
-        </h1>
+        <h1 className="mt-6 text-4xl font-bold sm:text-5xl">{copy.h1}</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          <strong>Effective date:</strong> July 30, 2026
+          <strong>{copy.effectiveLabel}</strong> {copy.effectiveDate}
         </p>
 
         <div className="mt-10 space-y-6 text-base leading-relaxed text-foreground/90">
-          <p>
-            This Privacy Policy explains how OceanWick Inc. ("we", "us", "DIVEROID") handles your
-            information when you sign up on the Watch Dive pre-launch page to receive updates about
-            our upcoming Kickstarter campaign.
-          </p>
-          <p>
-            This page is for collecting launch interest only. It is not a store and does not process
-            any payment.
-          </p>
+          <p>{copy.intro1}</p>
+          <p>{copy.intro2}</p>
 
-          <Section title="1. Who we are">
+          <Section title={copy.s1Title}>
             <ul className="list-disc space-y-1 pl-6">
               <li>
-                <strong>Company:</strong> OceanWick Inc. (오션윅 주식회사)
+                <strong>{company[0]}</strong>
+                {company[1]}
               </li>
               <li>
-                <strong>Representative:</strong> Jay Kim
+                <strong>{representative[0]}</strong>
+                {representative[1]}
               </li>
               <li>
-                <strong>Address:</strong> 1114, 145 Dosan-daero, Gangnam-gu, Seoul 06036, Republic
-                of Korea
+                <strong>{address[0]}</strong>
+                {address[1]}
               </li>
               <li>
-                <strong>Business registration no.:</strong> 716-81-03722
+                <strong>{registration[0]}</strong>
+                {registration[1]}
               </li>
               <li>
-                <strong>Privacy contact:</strong> help@diveroid.com
+                <strong>{privacyContact[0]}</strong>
+                {privacyContact[1]}
               </li>
             </ul>
           </Section>
 
-          <Section title="2. What we collect">
+          <Section title={copy.s2Title}>
             <ul className="list-disc space-y-1 pl-6">
               <li>
-                <strong>Email address</strong> (required) — to send the confirmation you request
-                and, after you confirm, Watch Dive launch updates.
+                <strong>{email[0]}</strong>
+                {email[1]}
               </li>
               <li>
-                <strong>Phone number</strong> (optional) — only if you choose to receive a VIP SMS
-                launch alert.
+                <strong>{phone[0]}</strong>
+                {phone[1]}
               </li>
               <li>
-                <strong>Security signals</strong> — abuse flags and a short-lived, keyed network
-                bucket used in server memory to limit automated or repeated requests. We do not
-                retain the raw IP address, the network bucket, or the full browser user-agent in the
-                lead record.
+                <strong>{security[0]}</strong>
+                {security[1]}
               </li>
               <li>
-                <strong>Basic usage data</strong> — page visits and device type collected through
-                standard web analytics tools where measurement is enabled.
+                <strong>{usage[0]}</strong>
+                {usage[1]}
               </li>
             </ul>
-            <p>We do not collect payment details on this page.</p>
+            <p>{copy.s2NoPayment}</p>
           </Section>
 
-          <Section title="3. Why we use it">
-            <p>We use the information you provide to:</p>
+          <Section title={copy.s3Title}>
+            <p>{copy.s3Intro}</p>
             <ul className="list-disc space-y-1 pl-6">
-              <li>send a one-time link to confirm that you control the email address;</li>
-              <li>send you a notification when Watch Dive launches on Kickstarter;</li>
-              <li>share early-bird pricing and launch-related updates;</li>
-              <li>protect the form and our email delivery service from abuse;</li>
-              <li>understand how the page performs so we can improve it.</li>
+              <li>{copy.s3Item1}</li>
+              <li>{copy.s3Item2}</li>
+              <li>{copy.s3Item3}</li>
+              <li>{copy.s3Item4}</li>
+              <li>{copy.s3Item5}</li>
             </ul>
-            <p>We will not use your information for unrelated purposes.</p>
+            <p>{copy.s3Outro}</p>
           </Section>
 
-          <Section title="4. Legal basis">
-            <p>
-              Submitting the form requests an operational confirmation email. Your waitlist
-              registration and consent to launch updates are completed only after you use the
-              confirmation link. You can withdraw your consent at any time (see Section 7).
-            </p>
+          <Section title={copy.s4Title}>
+            <p>{copy.s4Body}</p>
           </Section>
 
-          <Section title="5. Sharing and international transfer">
-            <p>
-              We use trusted service providers to operate this page and send confirmations or
-              updates — for example transactional email and SMS delivery services, web hosting, and
-              analytics providers. These providers may store data on servers located outside Korea,
-              including in the United States. We only share what is necessary for them to provide
-              their service, and we never sell your personal information.
-            </p>
+          <Section title={copy.s5Title}>
+            <p>{copy.s5Body}</p>
           </Section>
 
-          <Section title="6. How long we keep it">
-            <p>
-              We keep your information until the Watch Dive launch campaign ends or until you ask us
-              to delete it or unsubscribe — whichever comes first. After that, we delete it without
-              undue delay.
-            </p>
+          <Section title={copy.s6Title}>
+            <p>{copy.s6Body}</p>
           </Section>
 
-          <Section title="7. Your rights">
-            <p>You can at any time:</p>
+          <Section title={copy.s7Title}>
+            <p>{copy.s7Intro}</p>
             <ul className="list-disc space-y-1 pl-6">
-              <li>ask what information we hold about you;</li>
-              <li>ask us to correct or delete it;</li>
-              <li>unsubscribe from emails (via the link in any email we send) or SMS;</li>
-              <li>withdraw your consent.</li>
+              <li>{copy.s7Item1}</li>
+              <li>{copy.s7Item2}</li>
+              <li>{copy.s7Item3}</li>
+              <li>{copy.s7Item4}</li>
             </ul>
             <p>
-              To exercise any of these rights, email{" "}
+              {rightsContact[0]}
               <a
                 className="text-primary underline underline-offset-4"
                 href="mailto:help@diveroid.com"
               >
                 help@diveroid.com
               </a>
-              .
+              {rightsContact[1]}
             </p>
           </Section>
 
-          <Section title="8. Children">
-            <p>
-              This page is not intended for children under 14, and we do not knowingly collect
-              information from them.
-            </p>
+          <Section title={copy.s8Title}>
+            <p>{copy.s8Body}</p>
           </Section>
 
-          <Section title="9. Changes to this policy">
-            <p>
-              We may update this Privacy Policy from time to time. The latest version will always be
-              available on this page, with the effective date shown at the top.
-            </p>
+          <Section title={copy.s9Title}>
+            <p>{copy.s9Body}</p>
           </Section>
 
-          <Section title="10. Contact">
+          <Section title={copy.s10Title}>
             <p>
-              Questions about your privacy? Email{" "}
+              {contact[0]}
               <a
                 className="text-primary underline underline-offset-4"
                 href="mailto:help@diveroid.com"
               >
                 help@diveroid.com
               </a>
-              .
+              {contact[1]}
             </p>
           </Section>
 
           <hr className="border-border" />
-          <p className="text-sm italic text-muted-foreground">
-            OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seoul, Republic of Korea
-          </p>
+          <p className="text-sm italic text-muted-foreground">{copy.footerLine}</p>
         </div>
       </article>
     </div>
   );
+}
+
+function splitLabel(value: string): readonly [string, string] {
+  const delimiterIndex = value.search(/[:：]/);
+  if (delimiterIndex < 0) return [value, ""];
+  return [value.slice(0, delimiterIndex + 1), value.slice(delimiterIndex + 1)];
+}
+
+function splitLead(value: string): readonly [string, string] {
+  const markerIndexes = [value.indexOf(" ("), value.indexOf("（"), value.indexOf(" —")].filter(
+    (index) => index >= 0,
+  );
+  if (markerIndexes.length === 0) return [value, ""];
+  const markerIndex = Math.min(...markerIndexes);
+  return [value.slice(0, markerIndex), value.slice(markerIndex)];
+}
+
+function splitAroundEmail(value: string): readonly [string, string] {
+  const email = "help@diveroid.com";
+  const emailIndex = value.indexOf(email);
+  if (emailIndex < 0) return [value, ""];
+  return [value.slice(0, emailIndex), value.slice(emailIndex + email.length)];
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

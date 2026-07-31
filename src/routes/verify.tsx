@@ -2,6 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { confirmVerification } from "@/lib/api/waitlist.functions";
+import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
+import { homePath, privacyPath, referralPath, termsPath } from "@/lib/i18n/locale";
+import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 
 // Deliberately no analytics, pixel or widget import. This route carries the
 // token in its fragment, and the root gates every third-party script off it —
@@ -10,8 +13,11 @@ import { confirmVerification } from "@/lib/api/waitlist.functions";
 export const Route = createFileRoute("/verify")({
   head: () => ({
     meta: [
-      { title: "Confirm your email — Watch Dive" },
-      { name: "description", content: "Confirm your Watch Dive waitlist email." },
+      { title: EN_FROZEN_LANDING_MESSAGES.verify.metaTitle },
+      {
+        name: "description",
+        content: EN_FROZEN_LANDING_MESSAGES.verify.metaDescription,
+      },
       // The token lives in the fragment, which is never sent on a navigation.
       // no-referrer keeps it out of any onward request this page makes too.
       { name: "referrer", content: "no-referrer" },
@@ -76,7 +82,9 @@ function Card({
   );
 }
 
-function VerifyPage() {
+export function VerifyPage() {
+  const locale = useCurrentLocale();
+  const copy = useFrozenLandingMessages().verify;
   const [state, setState] = useState<ViewState>("reading");
   // The share link is offered here because most people confirm on the phone
   // they signed up on, leaving the polling tab unseen.
@@ -84,7 +92,9 @@ function VerifyPage() {
   // Built from the origin actually serving this page, so no external URL is
   // written into a route that must not reference one.
   const shareUrl =
-    typeof window !== "undefined" && refCode ? `${window.location.origin}/r/${refCode}` : "";
+    typeof window !== "undefined" && refCode
+      ? `${window.location.origin}${referralPath(locale, refCode)}`
+      : "";
   const token = useRef<string | undefined>(undefined);
   const started = useRef(false);
 
@@ -150,42 +160,35 @@ function VerifyPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[color:var(--color-deep-2)] px-5 py-14">
       <div className="w-full max-w-xl">
-        <Link to="/" className="mb-5 inline-block text-sm text-white/70 underline">
-          ← Watch Dive
+        <Link to={homePath(locale)} className="mb-5 inline-block text-sm text-white/70 underline">
+          {copy.back}
         </Link>
 
         {(state === "reading" || state === "confirming") && (
           <Card>
-            <h1 className="text-2xl font-bold sm:text-3xl">Confirming your email…</h1>
-            <p className="mt-3 text-sm leading-relaxed text-white/75">
-              One moment while we confirm this address.
-            </p>
+            <h1 className="text-2xl font-bold sm:text-3xl">{copy.confirmingTitle}</h1>
+            <p className="mt-3 text-sm leading-relaxed text-white/75">{copy.confirmingBody}</p>
           </Card>
         )}
 
         {state === "waiting" && (
           <Card>
-            <h1 className="text-2xl font-bold sm:text-3xl">Confirm your email</h1>
-            <p className="mt-3 text-sm leading-relaxed text-white/75">
-              Nothing has been confirmed yet. Press the button to finish.
-            </p>
+            <h1 className="text-2xl font-bold sm:text-3xl">{copy.waitingTitle}</h1>
+            <p className="mt-3 text-sm leading-relaxed text-white/75">{copy.waitingBody}</p>
             <button
               type="button"
               onClick={confirm}
               className="mt-6 w-full rounded-xl border border-white/30 px-5 py-3 font-semibold text-white"
             >
-              Confirm my email
+              {copy.confirmButton}
             </button>
           </Card>
         )}
 
         {state === "verified" && (
           <Card>
-            <h1 className="text-2xl font-bold sm:text-3xl">Your waitlist email is confirmed</h1>
-            <p className="mt-3 text-sm leading-relaxed text-white/75">
-              You&apos;re on the list. We&apos;ll email you the Kickstarter link the moment the
-              campaign opens on 10 August.
-            </p>
+            <h1 className="text-2xl font-bold sm:text-3xl">{copy.verifiedTitle}</h1>
+            <p className="mt-3 text-sm leading-relaxed text-white/75">{copy.verifiedBody}</p>
 
             {/* Most people confirm on the phone they signed up on, so the tab
                 that was polling is often never seen again. The share link has
@@ -193,11 +196,9 @@ function VerifyPage() {
             {refCode && (
               <div className="mt-5 rounded-xl border border-white/15 bg-white/[0.06] p-4">
                 <div className="text-sm font-semibold text-[color:var(--color-cyan-glow)]">
-                  Bring a buddy
+                  {copy.buddyTitle}
                 </div>
-                <p className="mt-1 text-xs leading-relaxed text-white/70">
-                  Share your link with divers who&apos;d want this.
-                </p>
+                <p className="mt-1 text-xs leading-relaxed text-white/70">{copy.buddyBody}</p>
                 <input
                   readOnly
                   value={shareUrl}
@@ -208,57 +209,49 @@ function VerifyPage() {
             )}
 
             <a
-              href="/"
+              href={homePath(locale)}
               className="mt-5 block w-full rounded-xl border border-white/25 px-5 py-3 text-center font-semibold text-white"
             >
-              Back to Watch Dive
+              {copy.backHome}
             </a>
           </Card>
         )}
 
         {state === "expired" && (
           <Card role="alert">
-            <h1 className="text-2xl font-bold">This link has expired</h1>
-            <p className="mt-3 text-sm text-white/75">
-              Confirmation links last 24 hours. Head back to the Watch Dive page and submit the form
-              again to get a fresh one.
-            </p>
+            <h1 className="text-2xl font-bold">{copy.expiredTitle}</h1>
+            <p className="mt-3 text-sm text-white/75">{copy.expiredBody}</p>
           </Card>
         )}
 
         {state === "invalid" && (
           <Card role="alert">
-            <h1 className="text-2xl font-bold">This link is not valid</h1>
-            <p className="mt-3 text-sm text-white/75">
-              It may already have been replaced by a newer confirmation email. Head back to the
-              Watch Dive page and submit the form again.
-            </p>
+            <h1 className="text-2xl font-bold">{copy.invalidTitle}</h1>
+            <p className="mt-3 text-sm text-white/75">{copy.invalidBody}</p>
           </Card>
         )}
 
         {state === "error" && (
           <Card role="alert">
-            <h1 className="text-2xl font-bold">We could not confirm just now</h1>
-            <p className="mt-3 text-sm text-white/75">
-              Your link has not been used up. Please try again.
-            </p>
+            <h1 className="text-2xl font-bold">{copy.errorTitle}</h1>
+            <p className="mt-3 text-sm text-white/75">{copy.errorBody}</p>
             <button
               type="button"
               onClick={confirm}
               className="mt-6 w-full rounded-xl border border-white/30 px-5 py-3 font-semibold text-white"
             >
-              Try again
+              {copy.tryAgain}
             </button>
           </Card>
         )}
 
         <footer className="mt-8 text-center text-xs text-white/55">
           <nav className="flex justify-center gap-4">
-            <Link to="/privacy" className="underline">
-              Privacy
+            <Link to={privacyPath(locale)} className="underline">
+              {copy.footerPrivacy}
             </Link>
-            <Link to="/terms" className="underline">
-              Terms
+            <Link to={termsPath(locale)} className="underline">
+              {copy.footerTerms}
             </Link>
           </nav>
         </footer>

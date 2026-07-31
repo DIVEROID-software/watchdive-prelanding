@@ -11,40 +11,86 @@ import { allowsThirdPartyScripts } from "../src/lib/thirdPartyScripts.ts";
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
+const VERIFY_CLIENT_SOURCES = ["src/routes/verify.tsx", "src/routes/$locale.verify.tsx"] as const;
+
+const CLIENT_ROUTE_SOURCES = [
+  "src/routes/index.tsx",
+  "src/routes/verify.tsx",
+  "src/routes/$locale.tsx",
+  "src/routes/$locale.index.tsx",
+  "src/routes/$locale.verify.tsx",
+  "src/routes/__root.tsx",
+  "src/routes/privacy.tsx",
+  "src/routes/terms.tsx",
+  "src/routes/$locale.privacy.tsx",
+  "src/routes/$locale.terms.tsx",
+  "src/routes/r.$code.tsx",
+  "src/routes/$locale.r.$code.tsx",
+] as const;
+
 // ---------------------------------------------------------------------------
 // /verify carries a token in its fragment, so nothing third-party may run there
 // ---------------------------------------------------------------------------
 
-test("the route gate names /verify and nothing else", () => {
-  assert.equal(allowsThirdPartyScripts("/verify"), false);
-  assert.equal(allowsThirdPartyScripts("/verify/"), false);
+test("the route gate isolates /verify in every supported locale", () => {
+  for (const path of [
+    "/verify",
+    "/en/verify",
+    "/ko/verify",
+    "/zh-cn/verify",
+    "/zh-tw/verify",
+    "/ja/verify",
+    "/es/verify",
+    "/fr/verify",
+    "/de/verify",
+    "/pt-br/verify",
+  ]) {
+    assert.equal(allowsThirdPartyScripts(path), false, `${path} allowed third-party scripts`);
+    assert.equal(
+      allowsThirdPartyScripts(`${path}/`),
+      false,
+      `${path}/ allowed third-party scripts`,
+    );
+  }
   assert.equal(allowsThirdPartyScripts("/"), true);
   assert.equal(allowsThirdPartyScripts("/privacy"), true);
   assert.equal(allowsThirdPartyScripts("/terms"), true);
 });
 
-test("the verify route imports no analytics, pixel or widget", () => {
-  const source = read("src/routes/verify.tsx");
-  for (const forbidden of ["@vercel/analytics", "metaPixel", "widget.js", "connect.facebook.net"]) {
-    assert.ok(!source.includes(forbidden), `/verify imports ${forbidden}`);
+test("the verify surface imports no analytics, pixel or widget", () => {
+  for (const path of VERIFY_CLIENT_SOURCES) {
+    const source = read(path);
+    for (const forbidden of [
+      "@vercel/analytics",
+      "metaPixel",
+      "widget.js",
+      "connect.facebook.net",
+    ]) {
+      assert.ok(!source.includes(forbidden), `${path} imports ${forbidden}`);
+    }
   }
 });
 
-test("the verify route emits no external script or frame URL of its own", () => {
-  const source = read("src/routes/verify.tsx");
-  const externals = source.match(/https?:\/\/[^\s"'`)]+/g) ?? [];
-  assert.deepEqual(externals, [], `/verify references external URLs: ${externals.join(", ")}`);
+test("the verify surface emits no external script or frame URL of its own", () => {
+  for (const path of VERIFY_CLIENT_SOURCES) {
+    const source = read(path);
+    const externals = source.match(/https?:\/\/[^\s"'`)]+/g) ?? [];
+    assert.deepEqual(externals, [], `${path} references external URLs: ${externals.join(", ")}`);
+  }
 });
 
 test("the route gate module names the widget, so no route hardcodes it", () => {
   const gate = read("src/lib/thirdPartyScripts.ts");
-  assert.ok(gate.includes("SUPPORT_WIDGET_SRC"));
+  assert.ok(gate.includes("export const SUPPORT_WIDGET_SRC"));
   assert.ok(gate.includes('TOKEN_BEARING_ROUTES = new Set(["/verify"])'));
+  assert.ok(gate.includes("stripLocalePrefix(pathname)"));
 });
 
 test("the root mounts every third-party script behind the route gate", () => {
   const source = read("src/routes/__root.tsx");
   // Nothing third-party may sit in the always-rendered path.
+  assert.ok(source.includes("const thirdParty = allowsThirdPartyScripts(pathname)"));
+  assert.ok(source.includes("{thirdParty && META_PIXEL_READY && ("));
   assert.ok(source.includes("{thirdParty && <Analytics />}"));
   assert.ok(source.includes("{thirdParty && <script src={SUPPORT_WIDGET_SRC} defer />}"));
   assert.ok(source.includes("if (!allowsThirdPartyScripts(pathname)) return;"));
@@ -52,25 +98,88 @@ test("the root mounts every third-party script behind the route gate", () => {
   assert.ok(!/scripts:\s*\[/.test(source), "root still declares static head scripts");
 });
 
-test("the verification page cannot inherit homepage marketing claims", () => {
+test("the restored no-banner design keeps Meta fail-closed and honors privacy signals", () => {
+  const root = read("src/routes/__root.tsx");
+  const pixel = read("src/lib/metaPixel.ts");
+
+  assert.ok(root.includes('VITE_META_TRACKING_ENABLED ?? "").toLowerCase() === "true"'));
+  assert.ok(root.includes("/^\\d{10,20}$/.test(META_PIXEL_ID)"));
+  const storedDenial = root.indexOf(
+    'localStorage.getItem("watchdive.measurement-consent.v3")==="denied"',
+  );
+  const globalPrivacyControl = root.indexOf("navigator.globalPrivacyControl===true");
+  const injectPixel = root.indexOf('s.src="https://connect.facebook.net/en_US/fbevents.js"');
+  assert.ok(storedDenial > 0 && storedDenial < injectPixel, "stored opt-out runs after pixel load");
+  assert.ok(
+    globalPrivacyControl > 0 && globalPrivacyControl < injectPixel,
+    "Global Privacy Control runs after pixel load",
+  );
+
+  assert.ok(
+    pixel.includes('if (typeof window === "undefined" || !hasMetaMeasurementConsent()) return;'),
+  );
+  assert.ok(pixel.includes('getMetaMeasurementConsent() === "denied"'));
+  assert.ok(pixel.includes("globalPrivacyControl") && pixel.includes("!== true"));
+  assert.ok(pixel.includes('window.fbq("consent", "revoke")'));
+});
+
+test("homepage metadata stays route-scoped and unverified claims stay out of shared surfaces", () => {
   const root = read("src/routes/__root.tsx");
   const index = read("src/routes/index.tsx");
-  const verify = read("src/routes/verify.tsx");
+  const localizedIndex = read("src/routes/$locale.index.tsx");
+  const seo = read("src/lib/i18n/seo.ts");
+  const loader = read("src/lib/i18n/frozen-landing-loader.ts");
 
-  // Homepage metadata belongs to the homepage route, not the root shared by
-  // privacy, terms, and the new verification surface.
-  for (const claim of ["$149 early bird", "60 m dive computer"]) {
-    assert.ok(!root.includes(claim), `shared root still carries marketing claim: ${claim}`);
-    assert.ok(!verify.includes(claim), `/verify carries marketing claim: ${claim}`);
-    assert.ok(index.includes(claim), `homepage metadata lost while moving claim: ${claim}`);
+  assert.ok(index.includes('landingHead("en")'));
+  assert.ok(localizedIndex.includes("landingHead(locale, match.context.messages)"));
+  assert.ok(!root.includes("landingHead"), "shared root still owns homepage metadata");
+
+  // These product and offer claims are not verified in Product Truth. They
+  // must not be restored by shared metadata or by a token-bearing page.
+  for (const path of ["src/routes/__root.tsx", "src/lib/i18n/seo.ts", ...VERIFY_CLIENT_SOURCES]) {
+    const source = read(path).toLowerCase();
+    for (const claim of ["$149 early bird", "60 m dive computer"]) {
+      assert.ok(!source.includes(claim), `${path} carries unverified claim: ${claim}`);
+    }
+  }
+
+  assert.ok(seo.includes("const copy = messages.meta"));
+  assert.ok(loader.includes('await import("./frozen-landing-messages")'));
+  for (const clientSource of [root, index, localizedIndex, seo]) {
+    assert.ok(
+      !clientSource.includes('from "@/lib/i18n/frozen-landing-messages"') &&
+        !clientSource.includes('from "./frozen-landing-messages"'),
+      "a canonical client surface statically imports every locale catalog",
+    );
   }
 });
 
 test("the fragment is stripped before the confirmation POST is awaited", () => {
   const source = read("src/routes/verify.tsx");
+  const readFragment = source.indexOf(
+    "const fragmentToken = tokenFromFragment(window.location.hash)",
+  );
   const strip = source.indexOf("window.history.replaceState");
   const post = source.indexOf("void confirm()");
-  assert.ok(strip > 0 && post > strip, "the token is POSTed before the fragment is stripped");
+  assert.ok(readFragment > 0, "the implementation no longer reads a fragment token");
+  assert.ok(
+    readFragment < strip && post > strip,
+    "the fragment is not read, stripped, then POSTed in that order",
+  );
+});
+
+test("both verify routes preserve no-referrer, noindex and one isolated implementation", () => {
+  const canonical = read("src/routes/verify.tsx");
+  const localized = read("src/routes/$locale.verify.tsx");
+
+  for (const source of [canonical, localized]) {
+    assert.ok(source.includes('{ name: "referrer", content: "no-referrer" }'));
+    assert.ok(source.includes('{ name: "robots", content: "noindex, nofollow, noarchive" }'));
+  }
+
+  assert.ok(canonical.includes("component: VerifyPage"));
+  assert.ok(localized.includes('import { VerifyPage } from "@/routes/verify"'));
+  assert.ok(localized.includes("component: VerifyPage"));
 });
 
 // ---------------------------------------------------------------------------
@@ -78,25 +187,26 @@ test("the fragment is stripped before the confirmation POST is awaited", () => {
 // ---------------------------------------------------------------------------
 
 test("no client route imports the provider, the store or the secrets", () => {
-  for (const route of [
-    "src/routes/index.tsx",
-    "src/routes/verify.tsx",
-    "src/routes/__root.tsx",
-    "src/routes/privacy.tsx",
-    "src/routes/terms.tsx",
-  ]) {
+  for (const route of CLIENT_ROUTE_SOURCES) {
     const source = read(route);
     for (const forbidden of [
       "verification/resend",
       "verification/notionLead",
       "verification/deps.server",
-      "verification/token",
       "RESEND_API_KEY",
       "NOTION_API_KEY",
       "WATCHDIVE_VERIFICATION_SECRET",
     ]) {
       assert.ok(!source.includes(forbidden), `${route} reaches server-only material: ${forbidden}`);
     }
+
+    // tokenShape is deliberately client-safe; only the HMAC token module is
+    // forbidden from a route or component bundle.
+    assert.doesNotMatch(
+      source,
+      /["'](?:@\/|\.\.\/|\.\/)*lib\/verification\/token(?:\.ts)?["']/,
+      `${route} imports the server-only signing token module`,
+    );
   }
 });
 
@@ -136,8 +246,10 @@ test("the confirmation is a POST server function, never a GET route", () => {
   assert.ok(fns.includes('export const confirmVerification = createServerFn({ method: "POST" })'));
   assert.ok(fns.includes('export const pollVerification = createServerFn({ method: "POST" })'));
   // A GET handler on /verify would be a state change a link preview could trip.
-  const route = read("src/routes/verify.tsx");
-  assert.ok(!route.includes("server:"), "/verify declares a server handler");
+  for (const path of VERIFY_CLIENT_SOURCES) {
+    const source = read(path);
+    assert.ok(!source.includes("server:"), `${path} declares a server handler`);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -240,11 +352,12 @@ test("the canonical-email dual-shape hotfix is untouched and still in the path",
 });
 
 test("the Claim form still submits through joinWaitlist with its honeypot", () => {
-  const index = read("src/routes/index.tsx");
-  assert.ok(index.includes("const res = await joinWaitlist({"));
-  assert.ok(index.includes("honeypot: hp,"));
-  assert.ok(index.includes('name="company"'));
-  assert.ok(index.includes("measurementConsent: hasMetaMeasurementConsent(),"));
+  const form = read("src/routes/index.tsx");
+  assert.ok(form.includes("const res = await joinWaitlist({"));
+  assert.ok(form.includes("honeypot: hp,"));
+  assert.ok(form.includes('name="company"'));
+  assert.ok(form.includes("measurementConsent: hasMetaMeasurementConsent(),"));
+  assert.ok(form.includes("locale,"), "the verification email can lose the selected locale");
 });
 
 test("the favicon is still declared and still present", () => {

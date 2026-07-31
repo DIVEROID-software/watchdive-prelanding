@@ -12,6 +12,7 @@ import {
 import { createServiceDependencies, sanitizeServerError } from "@/lib/verification/deps.server";
 import { COUNTABLE_STATUS_FILTER, createNotionRequest } from "@/lib/verification/notionLead";
 import { conversionBlocked, WAITLIST_CLOSED_MESSAGE } from "@/lib/verification/contracts";
+import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { waitlistClosed } from "@/lib/waitlistProgress";
 import { createNetworkGate } from "@/lib/verification/networkGate";
 import { networkKey, requireSecret } from "@/lib/verification/token";
@@ -186,6 +187,10 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       // The browser's measurement choice, captured now and carried signed
       // through the token so the confirming browser cannot widen it.
       measurementConsent: z.boolean().default(false),
+      // Email and confirmation-page language. It is signed into the
+      // verification token rather than added to the CRM schema. Defaulting to
+      // English keeps older clients and already-open tabs compatible.
+      locale: z.enum(SUPPORTED_LOCALES).default("en"),
       // The first touch this browser recorded. Every field is attacker-supplied
       // and ends up in a CRM cell, so the length ceiling here is only the outer
       // bound — the values are re-sanitised below rather than trusted as sent.
@@ -260,6 +265,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           flags,
           suspect: flags.length > 0,
           measurementConsent: data.measurementConsent,
+          locale: data.locale,
           networkSendBlocked: verdict.blocked,
         },
         createServiceDependencies(),

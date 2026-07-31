@@ -47,7 +47,13 @@ function fakeFetch(responses: { status: number; body?: unknown }[]) {
 const noSleep = async () => {};
 
 function mail() {
-  return { to: "diver@example.com", token: TOKEN, leadId: LEAD_ID, publicOrigin: TEST_ORIGIN };
+  return {
+    to: "diver@example.com",
+    token: TOKEN,
+    leadId: LEAD_ID,
+    publicOrigin: TEST_ORIGIN,
+    locale: "en" as const,
+  };
 }
 
 // ---------------------------------------------------------------------------

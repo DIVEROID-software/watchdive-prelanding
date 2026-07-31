@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 import { countdownFrom, KICKSTARTER_LAUNCH_MS, pad2, type Countdown } from "@/lib/launch";
 
 // The server and the browser would disagree about "now", so nothing time-based
@@ -42,13 +43,14 @@ function Separator() {
  */
 export function LaunchCountdown({ className = "" }: { className?: string }) {
   const countdown = useCountdown();
+  const messages = useFrozenLandingMessages().countdown;
   const pending = countdown === undefined;
 
   if (countdown?.launched) {
     return (
       <div className={`text-center ${className}`}>
         <p className="text-sm font-semibold text-[color:var(--color-cyan-glow)]">
-          The Kickstarter campaign is opening now.
+          {messages.launched}
         </p>
       </div>
     );
@@ -57,7 +59,7 @@ export function LaunchCountdown({ className = "" }: { className?: string }) {
   return (
     <div className={className}>
       <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-cyan-glow)]">
-        Kickstarter opens 10 August
+        {messages.opens}
       </p>
       <div
         className="mt-3 flex items-start justify-center gap-2 sm:gap-3"
@@ -65,17 +67,21 @@ export function LaunchCountdown({ className = "" }: { className?: string }) {
         aria-live="off"
         aria-label={
           pending
-            ? "Time until the Kickstarter launch"
-            : `${countdown.days} days, ${countdown.hours} hours, ${countdown.minutes} minutes and ${countdown.seconds} seconds until the Kickstarter launch`
+            ? messages.ariaPending
+            : messages.ariaLive
+                .replace("{days}", String(countdown.days))
+                .replace("{hours}", String(countdown.hours))
+                .replace("{minutes}", String(countdown.minutes))
+                .replace("{seconds}", String(countdown.seconds))
         }
       >
-        <Unit value={pending ? "--" : pad2(countdown.days)} label="Days" />
+        <Unit value={pending ? "--" : pad2(countdown.days)} label={messages.days} />
         <Separator />
-        <Unit value={pending ? "--" : pad2(countdown.hours)} label="Hrs" />
+        <Unit value={pending ? "--" : pad2(countdown.hours)} label={messages.hrs} />
         <Separator />
-        <Unit value={pending ? "--" : pad2(countdown.minutes)} label="Min" />
+        <Unit value={pending ? "--" : pad2(countdown.minutes)} label={messages.min} />
         <Separator />
-        <Unit value={pending ? "--" : pad2(countdown.seconds)} label="Sec" />
+        <Unit value={pending ? "--" : pad2(countdown.seconds)} label={messages.sec} />
       </div>
     </div>
   );

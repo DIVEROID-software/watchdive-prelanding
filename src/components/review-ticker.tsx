@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import {
-  BETA_REVIEWS,
-  COUNTRY_LABEL,
-  PUBLISHABLE_REVIEWS,
-  type BetaReview,
-} from "@/data/beta-reviews";
+import { BETA_REVIEWS, PUBLISHABLE_REVIEWS, type BetaReview } from "@/data/beta-reviews";
 import { ReviewAvatar } from "@/components/review-avatar";
+import { useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 
 // Two lanes drifting in opposite directions read as motion rather than as one
 // long list scrolling past. Each lane renders its reviews twice and translates
@@ -26,6 +22,8 @@ const LANES = 2;
  */
 const SEED_PER_LANE = 6;
 
+type CountryLabels = Record<BetaReview["country"], string>;
+
 function Stars({ rating }: { rating: number }) {
   return (
     <span className="text-xs tracking-[0.12em] text-[color:var(--color-cyan-glow)]">
@@ -35,7 +33,7 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-function Card({ review }: { review: BetaReview }) {
+function Card({ review, countryLabels }: { review: BetaReview; countryLabels: CountryLabels }) {
   return (
     <figure className="flex w-[19rem] shrink-0 flex-col gap-3 rounded-2xl border border-white/12 bg-white/[0.06] p-5 backdrop-blur sm:w-[22rem]">
       <Stars rating={review.rating} />
@@ -45,7 +43,7 @@ function Card({ review }: { review: BetaReview }) {
         <span className="min-w-0">
           <span className="font-semibold text-white/75">{review.name}</span>
           {" · "}
-          {review.city}, {COUNTRY_LABEL[review.country]}
+          {review.city}, {countryLabels[review.country]}
         </span>
       </figcaption>
     </figure>
@@ -56,10 +54,12 @@ function Lane({
   reviews,
   reverse,
   running,
+  countryLabels,
 }: {
   reviews: BetaReview[];
   reverse: boolean;
   running: boolean;
+  countryLabels: CountryLabels;
 }) {
   // Duration scales with the number of cards so lanes of different lengths move
   // at the same apparent speed rather than the same lap time.
@@ -81,7 +81,7 @@ function Lane({
         }
       >
         {[...reviews, ...reviews].map((review, index) => (
-          <Card key={`${review.id}-${index}`} review={review} />
+          <Card key={`${review.id}-${index}`} review={review} countryLabels={countryLabels} />
         ))}
       </div>
     </div>
@@ -97,9 +97,19 @@ function Lane({
  * so a screen reader gets the list rather than an animation.
  */
 export function ReviewTicker() {
+  const messages = useFrozenLandingMessages().reviews;
   const [showAll, setShowAll] = useState(false);
   const [onScreen, setOnScreen] = useState(false);
   const section = useRef<HTMLElement>(null);
+  const countryLabels = useMemo<CountryLabels>(
+    () => ({
+      US: messages.countryUS,
+      UK: messages.countryUK,
+      KR: messages.countryKR,
+      SG: messages.countrySG,
+    }),
+    [messages],
+  );
 
   useEffect(() => {
     const element = section.current;
@@ -144,28 +154,35 @@ export function ReviewTicker() {
     >
       <div className="mx-auto max-w-6xl px-5">
         <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-cyan-glow)]">
-          From our beta testers
+          {messages.kicker}
         </p>
         <h2
           id="beta-reviews-heading"
           className="mt-3 text-center text-2xl font-bold text-white sm:text-3xl"
         >
-          {PUBLISHABLE_REVIEWS.length} divers have already been in the water with it
+          {messages.h2.replace("{count}", String(PUBLISHABLE_REVIEWS.length))}
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-sm leading-relaxed text-white/60">
-          Reviews from the beta programme, translated from each tester&rsquo;s own language.
+          {messages.sub}
         </p>
         {/* Saying what is missing is what makes the rest believable, and keeps
             the set honestly representative rather than curated for praise. */}
         <p className="mx-auto mt-2 max-w-xl text-center text-xs leading-relaxed text-white/40">
-          Showing {PUBLISHABLE_REVIEWS.length} of {BETA_REVIEWS.length}. The rest mention product
-          details we have not finished verifying, so we are holding them back until we have.
+          {messages.disclosure
+            .replace("{published}", String(PUBLISHABLE_REVIEWS.length))
+            .replace("{total}", String(BETA_REVIEWS.length))}
         </p>
       </div>
 
       <div className="mt-10 flex flex-col gap-4">
         {lanes.map((lane, index) => (
-          <Lane key={index} reviews={lane} reverse={index % 2 === 1} running={onScreen} />
+          <Lane
+            key={index}
+            reviews={lane}
+            reverse={index % 2 === 1}
+            running={onScreen}
+            countryLabels={countryLabels}
+          />
         ))}
       </div>
 

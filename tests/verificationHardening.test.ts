@@ -138,7 +138,11 @@ test("the waiting tab pauses while hidden and never overlaps a request", () => {
     source.includes('document.removeEventListener("visibilitychange", onVisibilityChange)'),
   );
   // One request at a time, and a hard ceiling on how many there can be.
+  assert.ok(source.includes("let inFlight = false;"));
   assert.ok(source.includes("if (!alive || inFlight) return;"));
+  assert.ok(source.includes('if (document.visibilityState === "hidden") return;'));
+  assert.ok(source.includes("inFlight = true;"));
+  assert.ok(source.includes("inFlight = false;"));
   assert.ok(source.includes("attempts >= VERIFY_POLL_MAX_ATTEMPTS"));
   assert.ok(source.includes("nextPollDelayMs(attempts + 1)"));
 });
@@ -566,9 +570,9 @@ test("the submit source is constrained to the placements that exist", () => {
   const fns = read("src/lib/api/waitlist.functions.ts");
   assert.ok(fns.includes('source: z.enum(["hero", "offer"])'));
 
-  const index = read("src/routes/index.tsx");
-  assert.ok(index.includes('type FormPlacement = "hero" | "offer"'));
-  assert.ok(index.includes("id: FormPlacement"));
+  const form = read("src/routes/index.tsx");
+  assert.ok(form.includes('type FormPlacement = "hero" | "offer"'));
+  assert.ok(form.includes("id: FormPlacement"));
 });
 
 test("a mail that went out is never reported as a failure", async () => {
@@ -613,7 +617,10 @@ test("the confirmation page does not auto-confirm for a prerender or a hidden ta
   // A manual button, so a tab that is never brought to the front is not a
   // dead end.
   const waitingCard = route.slice(route.indexOf('state === "waiting"'));
-  assert.match(waitingCard.slice(0, 700), /Confirm my email\s*<\/button>/);
+  assert.match(
+    waitingCard.slice(0, 1_000),
+    /onClick=\{confirm\}[\s\S]*(?:\{(?:copy|m\.verify)\.confirmButton\}|Confirm my email)/,
+  );
   // And it still strips the fragment first, regardless of presence — the
   // presence check happens after, at the call site inside the effect.
   const strip = route.indexOf("window.history.replaceState");

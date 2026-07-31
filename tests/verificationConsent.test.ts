@@ -111,8 +111,9 @@ test("the confirming browser cannot widen a denial", async () => {
 
   // Flip the consent segment by hand, exactly as a tampering client would.
   const parts = denied.split(".");
-  assert.equal(parts[2], "0");
-  const forged = `${parts[0]}.${parts[1]}.1.${parts[3]}`;
+  assert.equal(parts[3], "0");
+  parts[3] = "1";
+  const forged = parts.join(".");
 
   assert.equal(parseVerificationToken(forged, TEST_SECRET, clock.getTime()), undefined);
   clock = new Date(clock.getTime() + 120_000);
@@ -152,14 +153,16 @@ test("the signed bit round-trips both ways", () => {
   }
 });
 
-test("the consent bit is the only thing carried, and it is not an identifier", () => {
+test("the token carries only attempt terms, locale and no personal identifier", () => {
   const token = createVerificationToken(LEAD_ID, clock.getTime() + 86_400_000, true, TEST_SECRET);
   const parts = token.split(".");
 
-  assert.equal(parts.length, 4);
-  assert.equal(parts[0], LEAD_ID);
-  assert.match(parts[1], /^\d+$/);
-  assert.equal(parts[2], "1");
+  assert.equal(parts.length, 6);
+  assert.equal(parts[0], "v2");
+  assert.equal(parts[1], LEAD_ID);
+  assert.match(parts[2], /^\d+$/);
+  assert.equal(parts[3], "1");
+  assert.equal(parts[4], "en");
   assert.ok(!token.includes("diver"));
   assert.ok(!token.includes("example.com"));
 });
