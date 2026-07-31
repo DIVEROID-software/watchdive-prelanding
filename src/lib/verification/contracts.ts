@@ -82,6 +82,14 @@ export const FIELD_LEAD_ID = "Lead ID";
 export const FIELD_META_EVENT_ID = "Meta Event ID";
 export const FIELD_WELCOME_EMAIL = "Welcome email";
 
+// Attribution columns, already provisioned on the live database as text.
+export const FIELD_UTM_SOURCE = "UTM Source";
+export const FIELD_UTM_MEDIUM = "UTM Medium";
+export const FIELD_UTM_CAMPAIGN = "UTM Campaign";
+export const FIELD_UTM_CONTENT = "UTM Content";
+export const FIELD_UTM_TERM = "UTM Term";
+export const FIELD_LANDING_PATH = "Landing path";
+
 export const STATUS_PENDING = "pending";
 export const STATUS_VERIFIED = "verified";
 export const STATUS_UNSUBSCRIBED = "unsubscribed";
@@ -113,6 +121,26 @@ export type LeadRecord = {
   welcomeAt?: string;
 };
 
+/**
+ * The campaign that produced a lead, as the CRM stores it.
+ *
+ * Written once, when the row is created. A resend of the same address goes
+ * through `startAttempt`, which never touches these columns, so the campaign
+ * frozen by the first accepted submit is the one that survives.
+ *
+ * `fbclid` is deliberately not here. It names a click rather than a campaign,
+ * and its only use is strengthening the Meta match — so it stops at the server
+ * and never becomes a column.
+ */
+export type LeadAttribution = {
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  utmTerm?: string;
+  landingPath?: string;
+};
+
 export type CreatePendingInput = {
   email: string;
   canonical: string;
@@ -125,6 +153,7 @@ export type CreatePendingInput = {
   signedUpAt: string;
   leadId: string;
   expiresAt: string;
+  attribution?: LeadAttribution;
 };
 
 /** Written when a new attempt is minted — this is what kills the previous link. */

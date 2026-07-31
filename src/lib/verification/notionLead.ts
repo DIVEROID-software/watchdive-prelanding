@@ -18,6 +18,7 @@ import {
 } from "../api/notionCanonicalEmail.ts";
 import type {
   CreatePendingInput,
+  LeadAttribution,
   LeadRecord,
   LeadStore,
   MarkSentInput,
@@ -27,8 +28,14 @@ import type {
 } from "./contracts.ts";
 import {
   FIELD_EMAIL_VERIFIED,
+  FIELD_LANDING_PATH,
   FIELD_LEAD_ID,
   FIELD_META_EVENT_ID,
+  FIELD_UTM_CAMPAIGN,
+  FIELD_UTM_CONTENT,
+  FIELD_UTM_MEDIUM,
+  FIELD_UTM_SOURCE,
+  FIELD_UTM_TERM,
   FIELD_WELCOME_EMAIL,
   FIELD_VERIFICATION_EXPIRES,
   FIELD_VERIFICATION_SENDS,
@@ -170,6 +177,30 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
  * legacy single opt-in rows that have no status at all. Pending and
  * unsubscribed never count.
  */
+/**
+ * Attribution over the six live columns. Only values that exist become
+ * properties, so a partly-tagged URL leaves the rest of the row's cells empty
+ * rather than filling them with blanks that read as "measured, and it was none".
+ */
+export function attributionProperties(
+  attribution: LeadAttribution | undefined,
+): Record<string, ReturnType<typeof textProp>> {
+  if (!attribution) return {};
+  const pairs: [string, string | undefined][] = [
+    [FIELD_UTM_SOURCE, attribution.utmSource],
+    [FIELD_UTM_MEDIUM, attribution.utmMedium],
+    [FIELD_UTM_CAMPAIGN, attribution.utmCampaign],
+    [FIELD_UTM_CONTENT, attribution.utmContent],
+    [FIELD_UTM_TERM, attribution.utmTerm],
+    [FIELD_LANDING_PATH, attribution.landingPath],
+  ];
+  return Object.fromEntries(
+    pairs
+      .filter((pair): pair is [string, string] => Boolean(pair[1]?.trim()))
+      .map(([name, value]) => [name, textProp(value)]),
+  );
+}
+
 export const COUNTABLE_STATUS_FILTER = {
   or: [
     { property: FIELD_VERIFICATION_STATUS, select: { equals: STATUS_VERIFIED } },
@@ -224,6 +255,7 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
               ? { Flags: { multi_select: input.flags.map((name) => ({ name })) } }
               : {}),
             Suspect: { checkbox: input.suspect },
+            ...attributionProperties(input.attribution),
             [FIELD_VERIFICATION_STATUS]: { select: { name: STATUS_PENDING } },
             [FIELD_EMAIL_VERIFIED]: { checkbox: false },
             [FIELD_LEAD_ID]: textProp(input.leadId),

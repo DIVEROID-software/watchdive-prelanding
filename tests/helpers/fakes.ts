@@ -41,6 +41,8 @@ export function leadIdFactory(prefix = 0): () => string {
 export class FakeLeadStore implements LeadStore {
   rows = new Map<string, LeadRecord>();
   byCanonical = new Map<string, string>();
+  /** Attribution is written once and never read back, so the call is the record. */
+  createPendingInputs: CreatePendingInput[] = [];
   markVerifiedCalls = 0;
   startAttemptCalls = 0;
   markSentCalls = 0;
@@ -84,6 +86,7 @@ export class FakeLeadStore implements LeadStore {
   }
 
   async createPending(input: CreatePendingInput): Promise<LeadRecord> {
+    this.createPendingInputs.push(input);
     return this.seed({
       email: input.email,
       canonical: input.canonical,

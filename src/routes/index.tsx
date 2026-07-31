@@ -12,11 +12,15 @@ import { WaitlistProgress } from "@/components/waitlist-progress";
 import { PUBLISHABLE_REVIEWS } from "@/data/beta-reviews";
 import { nextPollDelayMs, VERIFY_POLL_MAX_ATTEMPTS } from "@/lib/verifyPolling";
 import {
+  getMetaCookies,
   hasMetaMeasurementConsent,
+  newMetaEventId,
   trackMetaCustom,
   trackMetaLead,
   trackMetaPhoneLead,
+  trackMetaSubmitApplication,
 } from "@/lib/metaPixel";
+import { getAttribution } from "@/lib/attribution";
 
 import heroBackground from "../assets/live/hero-background.webp";
 import heroSideImage from "../assets/live/watchdive-image10.webp";
@@ -103,6 +107,13 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  // The campaign is recorded on arrival rather than at submit. A visitor who
+  // lands tagged and then navigates before signing up leaves no query behind,
+  // and by the time the form runs the URL that paid for them is gone.
+  useEffect(() => {
+    getAttribution();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <StickyLaunchBanner />
@@ -585,7 +596,10 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // The server treats a repeat submit of the same address as a resend, under
   // its own cooldown and send ceiling. Reusing that path means the button
   // cannot invent a second code path to keep correct.
-  const submit = async () => {
+  // `submitEventId` is passed only by the first submit, never by a resend: the
+  // server mirrors the browser's optimisation event under that id, and one
+  // person asking for their mail again is not a second application.
+  const submit = async (submitEventId?: string) => {
     const res = await joinWaitlist({
       data: {
         email: email.trim().toLowerCase(),
@@ -593,8 +607,13 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         phone: phone.trim() && smsConsent ? phone.trim() : undefined,
         source: id,
         referredBy: getRef(),
+        // First touch, not this click: the URL here is whatever the visitor
+        // last navigated to, which for a scrolled page is nothing at all.
+        attribution: getAttribution(),
         honeypot: hp,
         measurementConsent: hasMetaMeasurementConsent(),
+        ...(submitEventId ? { submitEventId } : {}),
+        ...getMetaCookies(),
       },
     });
     if (res.status === "closed") {
@@ -657,10 +676,18 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // Captured here, in the browser that actually chose it, and carried
           // signed from now on: the browser that opens the confirmation link
           // must not be able to widen it.
-          await submit();
+          const submitEventId = newMetaEventId();
+          const res = await submit(submitEventId);
           // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });
+          // Volume for delivery to optimise on, which one confirmation a week
+          // cannot provide. `Lead` still fires only after the address is
+          // confirmed, so the truth metric is unchanged. A tripped honeypot is
+          // knowable right here, and a bot is not something to optimise for.
+          if (res.status === "pending" && !hp.trim()) {
+            trackMetaSubmitApplication(submitEventId, id);
+          }
         } catch {
           toast.error("Something went wrong. Please try again.");
         } finally {

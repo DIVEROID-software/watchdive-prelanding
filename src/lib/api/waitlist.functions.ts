@@ -2,9 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse";
+import { sendMetaSubmitApplication } from "./metaCapi";
+import {
+  ATTRIBUTION_VALUE_MAX,
+  FBCLID_MAX,
+  sanitizeAttribution,
+  toLeadAttribution,
+} from "@/lib/attribution";
 import { createServiceDependencies, sanitizeServerError } from "@/lib/verification/deps.server";
 import { COUNTABLE_STATUS_FILTER, createNotionRequest } from "@/lib/verification/notionLead";
-import { WAITLIST_CLOSED_MESSAGE } from "@/lib/verification/contracts";
+import { conversionBlocked, WAITLIST_CLOSED_MESSAGE } from "@/lib/verification/contracts";
 import { waitlistClosed } from "@/lib/waitlistProgress";
 import { createNetworkGate } from "@/lib/verification/networkGate";
 import { networkKey, requireSecret } from "@/lib/verification/token";
@@ -40,6 +47,8 @@ import {
 //   Verification expires (date) · Email verified (checkbox)
 //   Verified at (date) · Verification sends (number)
 //   Lead ID (rich_text) · Meta Event ID (rich_text)
+//   UTM Source · UTM Medium · UTM Campaign · UTM Content · UTM Term (rich_text)
+//   Landing path (rich_text)
 
 // Repeat-submit counters for one server process. The keyed digest of a client
 // address is used as a map key here and nowhere else — it is never written to
@@ -68,6 +77,16 @@ function sanitizeRef(v: string | undefined | null) {
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "")
     .slice(0, 8);
+}
+
+// Comfortably past `fb.1.<13-digit time>.<click id>`, which is the longest
+// shape either cookie takes.
+const META_COOKIE_MAX = FBCLID_MAX + 32;
+
+// Pixel cookie values are forwarded to Meta verbatim, so they are held to the
+// characters their documented `fb.1.<time>.<id>` shape uses.
+function sanitizeMetaCookie(value: string | undefined | null): string {
+  return (value ?? "").replace(/[^A-Za-z0-9._-]/g, "").slice(0, META_COOKIE_MAX);
 }
 
 // Reads request metadata (IP, UA) inside a server fn. Header access can throw if
@@ -167,6 +186,31 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       // The browser's measurement choice, captured now and carried signed
       // through the token so the confirming browser cannot widen it.
       measurementConsent: z.boolean().default(false),
+      // The first touch this browser recorded. Every field is attacker-supplied
+      // and ends up in a CRM cell, so the length ceiling here is only the outer
+      // bound — the values are re-sanitised below rather than trusted as sent.
+      attribution: z
+        .object({
+          utmSource: z.string().max(ATTRIBUTION_VALUE_MAX).optional(),
+          utmMedium: z.string().max(ATTRIBUTION_VALUE_MAX).optional(),
+          utmCampaign: z.string().max(ATTRIBUTION_VALUE_MAX).optional(),
+          utmContent: z.string().max(ATTRIBUTION_VALUE_MAX).optional(),
+          utmTerm: z.string().max(ATTRIBUTION_VALUE_MAX).optional(),
+          landingPath: z.string().max(ATTRIBUTION_VALUE_MAX).optional(),
+          fbclid: z.string().max(FBCLID_MAX).optional(),
+          capturedAt: z.number().int().positive().optional(),
+        })
+        .optional(),
+      // Present only when the browser fired its own SubmitApplication, so the
+      // two legs carry one id and Meta counts one event.
+      submitEventId: z
+        .string()
+        .regex(/^[A-Za-z0-9._:-]{8,64}$/)
+        .optional(),
+      // Pixel cookies, forwarded so the server leg matches as well as the
+      // browser one. Never stored — they go to Meta and nowhere else.
+      fbp: z.string().max(META_COOKIE_MAX).optional(),
+      fbc: z.string().max(META_COOKIE_MAX).optional(),
     }),
   )
   .handler(async ({ data }) => {
@@ -198,14 +242,21 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // lead — the counters already exclude suspect rows.
     if (verdict.repeat) flags.push("ip-repeat");
 
+    // Re-derived from the payload rather than taken from it: the client-side
+    // capture applies the same bounds, but nothing stops a caller posting
+    // straight to this function with whatever it likes.
+    const attribution = sanitizeAttribution(data.attribution);
+
+    let result;
     try {
-      return await requestVerificationService(
+      result = await requestVerificationService(
         {
           email,
           canonical,
           ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
           source: data.source,
           ...(sanitizeRef(data.referredBy) ? { referredBy: sanitizeRef(data.referredBy) } : {}),
+          attribution: toLeadAttribution(attribution),
           flags,
           suspect: flags.length > 0,
           measurementConsent: data.measurementConsent,
@@ -216,6 +267,37 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     } catch (error) {
       throw sanitizeServerError("verification-request", error);
     }
+
+    // The optimisation event's server leg. Sent for every accepted submit that
+    // carries consent and no abuse signal — a brand-new address, one already
+    // pending, one already confirmed alike — so the latency it adds cannot say
+    // which of those happened. That uniformity is the property the response
+    // floor inside the service exists to protect, and this must not undo it.
+    if (data.submitEventId && data.measurementConsent && !conversionBlocked(flags)) {
+      const fbp = sanitizeMetaCookie(data.fbp);
+      // The pixel derives `_fbc` from an `fbclid` landing, but only if it ran at
+      // all. When an ad blocker stopped it, the click id kept from that same
+      // landing rebuilds the value in Meta's documented shape — which is the
+      // difference between a matched click and an unattributed one.
+      const fbc =
+        sanitizeMetaCookie(data.fbc) ||
+        (attribution.fbclid && attribution.capturedAt
+          ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
+          : "");
+
+      await sendMetaSubmitApplication({
+        eventId: data.submitEventId,
+        email,
+        ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
+        ...(ip ? { ip } : {}),
+        ...(ua ? { ua } : {}),
+        ...(fbp ? { fbp } : {}),
+        ...(fbc ? { fbc } : {}),
+        source: data.source,
+      });
+    }
+
+    return result;
   });
 
 // The confirmation POST. The token reaches the server only here — it travelled

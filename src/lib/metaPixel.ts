@@ -114,20 +114,24 @@ export function initMetaPixel() {
   }
 }
 
+// Every deduplicated standard event has to clear the same bar: consent, an
+// initialized pixel for this dataset, and an event id the server leg can match.
+function canTrackStandardEvent(eventId: string): boolean {
+  return (
+    typeof window !== "undefined" &&
+    hasMetaMeasurementConsent() &&
+    Boolean(window.fbq) &&
+    window.__watchDiveMetaPixelId === META_PIXEL_ID &&
+    /^[A-Za-z0-9._:-]{8,64}$/.test(eventId)
+  );
+}
+
 // Fire only after the server confirms a NEW signup (never on button click, never
 // for duplicates) — otherwise ad optimization learns from junk conversions.
 export function trackMetaLead(eventId: string, source: string) {
-  if (
-    typeof window === "undefined" ||
-    !hasMetaMeasurementConsent() ||
-    !window.fbq ||
-    window.__watchDiveMetaPixelId !== META_PIXEL_ID ||
-    !/^[A-Za-z0-9._:-]{8,64}$/.test(eventId)
-  ) {
-    return;
-  }
+  if (!canTrackStandardEvent(eventId)) return;
 
-  window.fbq(
+  window.fbq!(
     "track",
     "Lead",
     { content_name: "watchdive_email_signup", content_category: source },
@@ -138,20 +142,28 @@ export function trackMetaLead(eventId: string, source: string) {
 // A separate standard Contact conversion lets Ads Manager report phone-number
 // acquisition cost without ever sending the phone number itself to Meta.
 export function trackMetaPhoneLead(eventId: string, source: string) {
-  if (
-    typeof window === "undefined" ||
-    !hasMetaMeasurementConsent() ||
-    !window.fbq ||
-    window.__watchDiveMetaPixelId !== META_PIXEL_ID ||
-    !/^[A-Za-z0-9._:-]{8,64}$/.test(eventId)
-  ) {
-    return;
-  }
+  if (!canTrackStandardEvent(eventId)) return;
 
-  window.fbq(
+  window.fbq!(
     "track",
     "Contact",
     { content_name: "watchdive_phone_signup", content_category: source },
+    { eventID: eventId },
+  );
+}
+
+// Fired when the server accepts a submit, which is roughly an order of magnitude
+// more often than a confirmation arrives. Delivery cannot learn from about one
+// conversion a week, so this carries the volume — and it is a distinct standard
+// event precisely so `Lead` keeps meaning a confirmed address and stays the
+// number the team reads as truth.
+export function trackMetaSubmitApplication(eventId: string, source: string) {
+  if (!canTrackStandardEvent(eventId)) return;
+
+  window.fbq!(
+    "track",
+    "SubmitApplication",
+    { content_name: "watchdive_email_submit", content_category: source },
     { eventID: eventId },
   );
 }

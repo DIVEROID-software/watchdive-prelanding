@@ -573,3 +573,42 @@ test("a shared-network flag alone still mails and still converts", async () => {
 test("the exact live Lead ID column is the one that names an attempt", () => {
   assert.equal(FIELD_LEAD_ID, "Lead ID");
 });
+
+// ---------------------------------------------------------------------------
+// Attribution
+// ---------------------------------------------------------------------------
+
+const META_TOUCH = { utmSource: "meta", utmCampaign: "202607_en_wd", landingPath: "/" };
+
+test("the first accepted submit writes the campaign onto the row", async () => {
+  await requestVerificationService(submit({ attribution: META_TOUCH }), deps());
+
+  assert.equal(store.createPendingInputs.length, 1);
+  assert.deepEqual(store.createPendingInputs[0].attribution, META_TOUCH);
+});
+
+test("a resend cannot rewrite the campaign of a lead already attributed", async () => {
+  await requestVerificationService(submit({ attribution: META_TOUCH }), deps());
+  // Past the cooldown, so this is a real resend rather than a skipped send.
+  clock = new Date(clock.getTime() + 120_000);
+
+  await requestVerificationService(
+    submit({ attribution: { utmSource: "newsletter", landingPath: "/privacy" } }),
+    deps(),
+  );
+
+  // The resend goes through `startAttempt`, which touches no attribution column.
+  assert.equal(store.startAttemptCalls, 1);
+  assert.equal(store.createPendingInputs.length, 1);
+  assert.deepEqual(store.createPendingInputs[0].attribution, META_TOUCH);
+});
+
+test("a suppressed submit still records where it came from", async () => {
+  await requestVerificationService(
+    submit({ flags: ["honeypot"], suspect: true, attribution: META_TOUCH }),
+    deps(),
+  );
+
+  assert.equal(mailer.sent.length, 0);
+  assert.deepEqual(store.createPendingInputs[0].attribution, META_TOUCH);
+});

@@ -9,6 +9,7 @@
 import type {
   BrowserLead,
   ConfirmResponse,
+  LeadAttribution,
   LeadRecord,
   LeadStore,
   PendingResponse,
@@ -54,6 +55,12 @@ export type RequestVerificationInput = {
   referredBy?: string;
   flags: string[];
   suspect: boolean;
+  /**
+   * The first touch this browser recorded. Reaches the row only through
+   * `createPending`, so a resend cannot rewrite the campaign of a lead that has
+   * already been attributed.
+   */
+  attribution?: LeadAttribution;
   /** The browser's measurement choice at submit time. */
   measurementConsent: boolean;
   /** True when this network has produced too many recent signups to keep mailing. */
@@ -181,6 +188,7 @@ export async function requestVerificationService(
         source: input.source,
         refCode: (dependencies.refCode ?? defaultRefCode)(),
         ...(input.referredBy ? { referredBy: input.referredBy } : {}),
+        ...(input.attribution ? { attribution: input.attribution } : {}),
         flags: input.flags,
         suspect: input.suspect,
         signedUpAt: now.toISOString(),
@@ -205,6 +213,7 @@ export async function requestVerificationService(
       source: input.source,
       refCode: (dependencies.refCode ?? defaultRefCode)(),
       ...(input.referredBy ? { referredBy: input.referredBy } : {}),
+      ...(input.attribution ? { attribution: input.attribution } : {}),
       flags: input.flags,
       suspect: input.suspect,
       signedUpAt: now.toISOString(),
