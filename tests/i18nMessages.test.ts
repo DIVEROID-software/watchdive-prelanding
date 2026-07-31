@@ -9,7 +9,8 @@ import {
   FROZEN_LANDING_MESSAGES,
 } from "../src/lib/i18n/frozen-landing-messages.ts";
 import { SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
-import { isI18nReviewEnabled } from "../src/lib/i18n/review-gate.ts";
+import { isI18nReviewEnabled, isProductClaimsReviewEnabled } from "../src/lib/i18n/review-gate.ts";
+import { verificationEmailUiCopy } from "../src/lib/verification/resend.ts";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -164,8 +165,34 @@ test("transactional email copy contains no unapproved hard claims", () => {
   }
 });
 
+test("every inbox instruction names the exact localized verification email", () => {
+  for (const locale of SUPPORTED_LOCALES) {
+    const { subject, button } = verificationEmailUiCopy(locale);
+    const inbox = FROZEN_LANDING_MESSAGES[locale].inbox;
+    assert.ok(inbox.note.includes(subject), `${locale}: inbox omits the actual email subject`);
+    assert.ok(inbox.noteSubject.includes(subject), `${locale}: subject highlight drift`);
+    assert.ok(inbox.note.includes(button), `${locale}: inbox omits the actual email button`);
+    assert.equal(inbox.noteButton, button, `${locale}: button highlight drift`);
+  }
+});
+
+test("rated copy is never strengthened into a product certification", () => {
+  for (const locale of ["es", "fr", "de", "pt-BR"] as const) {
+    const messages = FROZEN_LANDING_MESSAGES[locale];
+    const ratedCopy = [messages.hero.stat1Desc, messages.safety.point1Title, messages.faq.a2].join(
+      " ",
+    );
+    assert.doesNotMatch(
+      ratedCopy,
+      /certificad[oa]|certifié|zertifiziert|certificado/iu,
+      `${locale}: translated rating became a certification`,
+    );
+  }
+});
+
 test("the translated frozen catalog is fail-closed behind the exact internal-review flag", () => {
   assert.equal(isI18nReviewEnabled("true"), true);
+  assert.equal(isProductClaimsReviewEnabled("true"), true);
   for (const disabled of [
     undefined,
     null,
@@ -183,6 +210,11 @@ test("the translated frozen catalog is fail-closed behind the exact internal-rev
       isI18nReviewEnabled(disabled),
       false,
       `${JSON.stringify(disabled)} unexpectedly enabled translated claims`,
+    );
+    assert.equal(
+      isProductClaimsReviewEnabled(disabled),
+      false,
+      `${JSON.stringify(disabled)} unexpectedly enabled product claims`,
     );
   }
 
@@ -222,7 +254,7 @@ test("the translated frozen catalog is fail-closed behind the exact internal-rev
   assert.match(landing, /const approvalGatedFaqs = \[/);
   assert.match(
     landing,
-    /isI18nReviewEnabled\(import\.meta\.env\.VITE_WATCHDIVE_I18N_REVIEW\)[\s\S]*?\? approvalGatedFaqs[\s\S]*?: \[\]/,
+    /isProductClaimsReviewEnabled\(import\.meta\.env\.VITE_WATCHDIVE_PRODUCT_CLAIMS_REVIEW\)[\s\S]*?\? approvalGatedFaqs[\s\S]*?: \[\]/,
   );
   assert.ok(
     landing.indexOf("m.faq.q6") < landing.indexOf("? approvalGatedFaqs"),

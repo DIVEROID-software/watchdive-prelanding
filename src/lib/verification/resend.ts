@@ -348,6 +348,15 @@ const EMAIL_COPY = {
   },
 } as const satisfies Record<Locale, EmailCopy>;
 
+/** Safe page/email alignment contract: no address, token, provider key or body. */
+export function verificationEmailUiCopy(locale: Locale): {
+  subject: string;
+  button: string;
+} {
+  const { subject, button } = EMAIL_COPY[locale].verification;
+  return { subject, button };
+}
+
 function body(url: string, locale: Locale): { subject: string; text: string; html: string } {
   const safeUrl = escapeHtml(url);
   const copy = EMAIL_COPY[locale].verification;

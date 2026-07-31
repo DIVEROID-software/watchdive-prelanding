@@ -42,7 +42,7 @@ export const ERROR_MESSAGES = {
     notFoundBody: "お探しのページは存在しないか、移動しました。",
     goHome: "ホームへ",
     errorTitle: "ページを読み込めませんでした",
-    errorBody: "こちら側の問題です。再読み込みするか、ホームに戻ってください。",
+    errorBody: "一時的な問題が発生しました。再読み込みするか、ホームに戻ってください。",
     tryAgain: "もう一度試す",
   },
   es: {

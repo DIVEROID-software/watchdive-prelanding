@@ -6,3 +6,12 @@
 export function isI18nReviewEnabled(value: unknown): boolean {
   return value === "true";
 }
+
+/**
+ * The three new product-detail FAQs have a different approval boundary from
+ * localization itself. Keeping a separate exact opt-in prevents enabling
+ * locale routes from also publishing compatibility, sensor or warranty claims.
+ */
+export function isProductClaimsReviewEnabled(value: unknown): boolean {
+  return value === "true";
+}

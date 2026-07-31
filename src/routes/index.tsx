@@ -24,7 +24,7 @@ import {
 import { getAttribution } from "@/lib/attribution";
 import { landingHead } from "@/lib/i18n/seo";
 import { privacyPath, termsPath } from "@/lib/i18n/locale";
-import { isI18nReviewEnabled } from "@/lib/i18n/review-gate";
+import { isProductClaimsReviewEnabled } from "@/lib/i18n/review-gate";
 import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 
 import heroBackground from "../assets/live/hero-background.webp";
@@ -1900,7 +1900,9 @@ function FAQ() {
       q: m.faq.q5,
       a: m.faq.a5,
     },
-    ...(isI18nReviewEnabled(import.meta.env.VITE_WATCHDIVE_I18N_REVIEW) ? approvalGatedFaqs : []),
+    ...(isProductClaimsReviewEnabled(import.meta.env.VITE_WATCHDIVE_PRODUCT_CLAIMS_REVIEW)
+      ? approvalGatedFaqs
+      : []),
   ];
   return (
     <section className="px-5 py-20 sm:py-28 max-w-3xl mx-auto">
