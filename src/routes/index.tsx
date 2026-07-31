@@ -1554,55 +1554,73 @@ function Compatibility() {
             Works with Most Leading Smartwatches
           </h2>
           <p className="mt-5 text-muted-foreground">
-            Two ways to dive with Watch Dive — depending on the watch you already own.
+            Only a handful of watches ship with a depth sensor. The Watch Dive housing adds one, so
+            the watch already on your wrist works as a dive computer either way.
           </p>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          {[
-            {
-              mode: "App Only",
-              note: "Uses your watch's built-in pressure sensor",
-              models: ["Apple Watch Ultra 1", "Apple Watch Ultra 2", "Apple Watch Ultra 3"],
-              image: watchScreen,
-              alt: "Watch Dive app running on a smartwatch",
-            },
-            {
-              mode: "Housing + App",
-              note: "Watch Dive housing adds the dive sensor",
-              models: [
-                "All other Apple Watch models",
-                "All Samsung Galaxy Watch models",
-                "Google Pixel Watch",
-                "Other Wear OS watches",
-              ],
-              image: housingImage,
-              alt: "Watch Dive waterproof housing",
-            },
-          ].map(({ mode, note, models, image, alt }) => (
-            <div
-              key={mode}
-              className="flex items-start gap-5 rounded-2xl border border-border bg-card p-5 shadow-[0_10px_28px_-10px_oklch(0.2_0.03_260/0.18)]"
-            >
-              <div className="flex-1">
-                <div className="font-semibold">{mode}</div>
-                <p className="mt-1 text-sm text-muted-foreground">{note}</p>
-                <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                  {models.map((m) => (
-                    <li key={m} className="flex items-center gap-2">
-                      <span className="size-1 rounded-full bg-primary/70" />
-                      {m}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <SectionImage
-                src={image}
-                alt={alt}
-                className="size-24 shrink-0 self-center rounded-xl object-cover sm:size-32"
-              />
+        {/* The housing is the path almost everyone arriving here is on: a depth
+            sensor is rare, and a visitor whose watch has none is the person this
+            section has to answer first. Sizing the two cards equally sent the
+            opposite message — that the Ultra route was the main one. */}
+        <div className="mt-8 grid gap-4 sm:grid-cols-5">
+          <div className="flex items-start gap-5 rounded-2xl border-2 border-primary/35 bg-card p-6 shadow-[0_16px_40px_-12px_oklch(0.2_0.03_260/0.28)] sm:col-span-3">
+            <div className="flex-1">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                Fits almost any watch
+              </span>
+              <div className="mt-3 text-lg font-bold sm:text-xl">Housing + App</div>
+              <p className="mt-1 font-semibold text-foreground">
+                No depth sensor? The housing brings its own.
+              </p>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Your watch does not need a sensor of its own. It goes in the Watch Dive housing, and
+                the app reads depth from the housing.
+              </p>
+              <ul className="mt-4 space-y-1.5 text-sm font-medium text-foreground/80">
+                {[
+                  "All other Apple Watch models",
+                  "All Samsung Galaxy Watch models",
+                  "Google Pixel Watch",
+                  "Other Wear OS watches",
+                ].map((model) => (
+                  <li key={model} className="flex items-center gap-2">
+                    <span className="size-1.5 rounded-full bg-primary" />
+                    {model}
+                  </li>
+                ))}
+              </ul>
             </div>
-          ))}
+            <SectionImage
+              src={housingImage}
+              alt="Watch Dive waterproof housing"
+              className="size-28 shrink-0 self-center rounded-xl object-cover sm:size-40"
+            />
+          </div>
+
+          <div className="flex items-start gap-4 rounded-2xl border border-border bg-muted/30 p-5 sm:col-span-2">
+            <div className="flex-1">
+              <div className="font-semibold text-muted-foreground">App Only</div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                For the few watches with a depth sensor already built in.
+              </p>
+              <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+                {["Apple Watch Ultra 1", "Apple Watch Ultra 2", "Apple Watch Ultra 3"].map(
+                  (model) => (
+                    <li key={model} className="flex items-center gap-2">
+                      <span className="size-1 rounded-full bg-muted-foreground/50" />
+                      {model}
+                    </li>
+                  ),
+                )}
+              </ul>
+            </div>
+            <SectionImage
+              src={watchScreen}
+              alt="Watch Dive app running on a smartwatch"
+              className="size-20 shrink-0 self-center rounded-xl object-cover sm:size-24"
+            />
+          </div>
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
           More models are being verified — join the waitlist to get the final list at launch.
