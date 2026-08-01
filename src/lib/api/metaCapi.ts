@@ -208,3 +208,80 @@ export async function sendMetaSubmitApplication(args: MetaEventArgs): Promise<bo
     return false;
   }
 }
+
+/**
+ * The CRM leg of Meta's Conversion Leads ("qualified leads") integration.
+ *
+ * Where `sendMetaLead` mirrors a browser event, this one reports a CRM stage
+ * transition: the lead record in Notion moving to its verified stage. Meta's
+ * integration contract requires `action_source: "system_generated"` and the
+ * `event_source: "crm"` / `lead_event_source` custom fields, and matches the
+ * person by hashed email. The event id is derived from the attempt id with a
+ * distinct suffix so this event never dedupes against the website `Lead` pair —
+ * they are different funnel facts, not two halves of one conversion.
+ */
+export async function sendMetaCrmQualifiedLead(args: MetaEventArgs): Promise<boolean> {
+  const config = metaCapiConfig();
+  if (!config) {
+    console.log("[meta-capi] skipped: disabled or invalid/mismatched configuration");
+    return false;
+  }
+
+  const digitsOnlyPhone = args.phone?.replace(/[^0-9]/g, "");
+  // No browser context on purpose: a CRM stage change has no client IP, user
+  // agent or click cookie of its own, and borrowing the signup's would claim a
+  // provenance the event does not have.
+  const body = {
+    data: [
+      {
+        event_name: "LeadVerified",
+        event_time: Math.floor(Date.now() / 1000),
+        event_id: `${args.eventId}:crm`,
+        action_source: "system_generated",
+        user_data: {
+          em: [sha256(args.email.trim().toLowerCase())],
+          ...(digitsOnlyPhone ? { ph: [sha256(digitsOnlyPhone)] } : {}),
+        },
+        custom_data: {
+          event_source: "crm",
+          lead_event_source: "Notion",
+          ...(args.source ? { content_category: args.source } : {}),
+        },
+      },
+    ],
+    ...(process.env.META_CAPI_TEST_EVENT_CODE
+      ? { test_event_code: process.env.META_CAPI_TEST_EVENT_CODE }
+      : {}),
+  };
+
+  try {
+    const res = await fetch(`${GRAPH_URL}/${config.pixelId}/events`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(META_REQUEST_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      const detail = await res.text();
+      console.error(`Meta CAPI LeadVerified failed (${res.status}): ${detail.slice(0, 300)}`);
+      return false;
+    }
+    const json = (await res.json()) as { events_received?: number; fbtrace_id?: string };
+    if ((json.events_received ?? 0) < 1) {
+      console.error(
+        `[meta-capi] incomplete acknowledgement event_id=${args.eventId}:crm expected=1 received=${json.events_received ?? 0}`,
+      );
+      return false;
+    }
+    console.log(
+      `[meta-capi] LeadVerified sent event_id=${args.eventId}:crm events=${json.events_received} fbtrace=${json.fbtrace_id ?? "?"}`,
+    );
+    return true;
+  } catch (err) {
+    console.error("Meta CAPI LeadVerified error", err);
+    return false;
+  }
+}
