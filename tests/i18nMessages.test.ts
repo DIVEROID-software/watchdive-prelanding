@@ -9,7 +9,7 @@ import {
   FROZEN_LANDING_MESSAGES,
 } from "../src/lib/i18n/frozen-landing-messages.ts";
 import { SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
-import { isI18nReviewEnabled, isProductClaimsReviewEnabled } from "../src/lib/i18n/review-gate.ts";
+import { isI18nReviewEnabled } from "../src/lib/i18n/review-gate.ts";
 import { verificationEmailUiCopy } from "../src/lib/verification/resend.ts";
 
 type UnknownRecord = Record<string, unknown>;
@@ -190,9 +190,91 @@ test("rated copy is never strengthened into a product certification", () => {
   }
 });
 
+test("the approved product FAQs are complete in every locale", () => {
+  const galaxyModels = [
+    "Galaxy Watch4",
+    "Galaxy Watch4 Classic",
+    "Galaxy Watch5",
+    "Galaxy Watch5 Pro",
+    "Galaxy Watch6",
+    "Galaxy Watch6 Classic",
+    "Galaxy Watch FE",
+    "Galaxy Watch7",
+    "Galaxy Watch Ultra",
+    "Galaxy Watch8",
+    "Galaxy Watch8 Classic",
+    "Galaxy Watch9",
+    "Galaxy Watch Ultra2",
+  ] as const;
+  const allAppleCopy: Record<Locale, RegExp> = {
+    en: /all Apple Watch models/,
+    ko: /모든 Apple Watch 모델/,
+    "zh-CN": /所有 Apple Watch 型号/,
+    "zh-TW": /所有 Apple Watch 型號/,
+    ja: /すべてのApple Watchモデル/,
+    es: /todos los modelos de Apple Watch/,
+    fr: /tous les modèles d'Apple Watch/,
+    de: /alle Apple Watch-Modelle/,
+    "pt-BR": /todos os modelos de Apple Watch/,
+  };
+  const twoYearTerm: Record<Locale, RegExp> = {
+    en: /two years/,
+    ko: /2년/,
+    "zh-CN": /两年/,
+    "zh-TW": /兩年/,
+    ja: /2年/,
+    es: /dos años/,
+    fr: /deux ans/,
+    de: /zwei Jahre/,
+    "pt-BR": /dois anos/,
+  };
+  const pressure = /pressure|수압|水压|水壓|水圧|presión|pression|Druck|pressão/iu;
+  const waterTemperature =
+    /water-temperature|water temperature|수온|水温|水溫|temperatura del agua|température de l'eau|Wassertemperatur|temperatura da água/iu;
+  const serviceCenter =
+    /service center|서비스 센터|服务中心|服務中心|サービスセンター|centro de servicio|centre de service|Servicecenter|centro de serviço/iu;
+  const paid =
+    /for a fee|유상|付费|付費|有償|coste adicional|moyennant des frais|gegen Gebühr|mediante taxa/iu;
+
+  for (const locale of SUPPORTED_LOCALES) {
+    const faq = FROZEN_LANDING_MESSAGES[locale].faq;
+    assert.match(faq.a6, allAppleCopy[locale], `${locale}: all-Apple-Watch support missing`);
+    for (const model of galaxyModels) {
+      assert.ok(faq.a6.includes(model), `${locale}: ${model} missing from compatibility FAQ`);
+    }
+    for (const appOnlyModel of [
+      "Apple Watch Ultra",
+      "Apple Watch Ultra 2",
+      "Apple Watch Ultra 3",
+      "Galaxy Watch Ultra2",
+    ]) {
+      assert.ok(
+        faq.a6.includes(appOnlyModel),
+        `${locale}: ${appOnlyModel} app-only exception missing`,
+      );
+    }
+    assert.match(faq.a6, pressure, `${locale}: app-only sensor reason omits pressure/depth`);
+    assert.match(
+      faq.a6,
+      waterTemperature,
+      `${locale}: app-only sensor reason omits water temperature`,
+    );
+    assert.match(faq.a7, pressure, `${locale}: housing FAQ omits pressure sensing`);
+    assert.match(
+      faq.a7,
+      waterTemperature,
+      `${locale}: housing FAQ omits water temperature sensing`,
+    );
+    assert.match(faq.a7, /Bluetooth/, `${locale}: housing FAQ omits Bluetooth`);
+    assert.match(faq.a8, twoYearTerm[locale], `${locale}: battery FAQ omits two-year term`);
+    assert.match(faq.a8, /1(?:[ ,.])?000/, `${locale}: battery FAQ omits 1,000 dives`);
+    assert.match(faq.a8, serviceCenter, `${locale}: battery FAQ omits authorized service`);
+    assert.match(faq.a8, paid, `${locale}: battery FAQ omits paid replacement`);
+  }
+});
+
 test("the translated frozen catalog is fail-closed behind the exact internal-review flag", () => {
   assert.equal(isI18nReviewEnabled("true"), true);
-  assert.equal(isProductClaimsReviewEnabled("true"), true);
   for (const disabled of [
     undefined,
     null,
@@ -210,11 +292,6 @@ test("the translated frozen catalog is fail-closed behind the exact internal-rev
       isI18nReviewEnabled(disabled),
       false,
       `${JSON.stringify(disabled)} unexpectedly enabled translated claims`,
-    );
-    assert.equal(
-      isProductClaimsReviewEnabled(disabled),
-      false,
-      `${JSON.stringify(disabled)} unexpectedly enabled product claims`,
     );
   }
 
@@ -251,15 +328,9 @@ test("the translated frozen catalog is fail-closed behind the exact internal-rev
   );
 
   const landing = readFileSync(new URL("../src/routes/index.tsx", import.meta.url), "utf8");
-  assert.match(landing, /const approvalGatedFaqs = \[/);
-  assert.match(
-    landing,
-    /isProductClaimsReviewEnabled\(import\.meta\.env\.VITE_WATCHDIVE_PRODUCT_CLAIMS_REVIEW\)[\s\S]*?\? approvalGatedFaqs[\s\S]*?: \[\]/,
-  );
-  assert.ok(
-    landing.indexOf("m.faq.q6") < landing.indexOf("? approvalGatedFaqs"),
-    "approval-gated FAQ claims escaped their review branch",
-  );
+  assert.match(landing, /const productFaqs = \[/);
+  assert.match(landing, /\.\.\.productFaqs/);
+  assert.doesNotMatch(landing, /VITE_WATCHDIVE_PRODUCT_CLAIMS_REVIEW/);
 });
 
 const LEGAL_ESSENTIALS = {

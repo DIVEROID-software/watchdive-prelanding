@@ -24,7 +24,6 @@ import {
 import { getAttribution } from "@/lib/attribution";
 import { landingHead } from "@/lib/i18n/seo";
 import { privacyPath, termsPath } from "@/lib/i18n/locale";
-import { isProductClaimsReviewEnabled } from "@/lib/i18n/review-gate";
 import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 
 import heroBackground from "../assets/live/hero-background.webp";
@@ -1874,7 +1873,7 @@ function Credentials() {
 
 function FAQ() {
   const m = useFrozenLandingMessages();
-  const approvalGatedFaqs = [
+  const productFaqs = [
     { q: m.faq.q6, a: m.faq.a6 },
     { q: m.faq.q7, a: m.faq.a7 },
     { q: m.faq.q8, a: m.faq.a8 },
@@ -1900,9 +1899,7 @@ function FAQ() {
       q: m.faq.q5,
       a: m.faq.a5,
     },
-    ...(isProductClaimsReviewEnabled(import.meta.env.VITE_WATCHDIVE_PRODUCT_CLAIMS_REVIEW)
-      ? approvalGatedFaqs
-      : []),
+    ...productFaqs,
   ];
   return (
     <section className="px-5 py-20 sm:py-28 max-w-3xl mx-auto">
