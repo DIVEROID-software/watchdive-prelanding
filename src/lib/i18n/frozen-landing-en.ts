@@ -25,7 +25,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   },
   // Shared CTA — the floating launch pill AND both form submit buttons.
   cta: {
-    label: "Get My $149 Early-Bird Invite",
+    label: "Get the $149 early-bird invite",
   },
   referral: {
     welcome: "A friend invited you — you're on their list. Confirm your email to join them.",
@@ -109,7 +109,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     offBadge: "50% off",
     offNote: "early bird at Kickstarter launch",
     gift: "Then share your link with the divers you'd actually go in the water with.",
-    trust1: "Sign up to hear first and lock in the lowest launch price.",
+    trust1: "Sign up to hear first about launch and early-bird details.",
     trust2: "No spam — one email when we go live.",
     // NVIDIA/AWS backing — membership evidence pending internal confirmation.
     backedBy: "Backed by",
@@ -126,18 +126,18 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   },
   value: {
     kicker: "Why Watch Dive",
-    h2: "Why spend $1,000 on a dive computer if your smartwatch is already halfway there?",
+    h2: "Why spend $1,000 on a separate dive computer when you already own a compatible smartwatch?",
     imageAlt: "Watch Dive housings displayed on a boat deck",
     overlayKicker: "Why divers love it",
     overlayText: "Premium dive gear feel, without the premium price.",
-    lead: "Watch Dive helps new and recreational divers unlock the core dive-computer experience with the watch they already own — at a price that finally makes sense.",
+    lead: "Watch Dive lets new and recreational divers use key dive-computer functions on the watch they already own — at a price that makes sense.",
     card1Title: "Use what you own",
     card1Copy:
       "Built around the Apple Watch and Galaxy Watch you already wear — no second device to buy.",
     card2Title: "Premium build",
     card2Copy: "Clear housing, bold on-screen UI, and refined black and white variants.",
     card3Title: "Real dive value",
-    card3Copy: "Key scuba metrics without forcing a $1,000 dive-computer purchase.",
+    card3Copy: "The scuba numbers that matter — without a $1,000 dive computer.",
     card4Title: "Shareable dives",
     card4Copy: "Connected app and striking visuals make every dive easy to remember and share.",
   },
@@ -150,10 +150,10 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     // "9–18 m/min" — industry convention, no internal source document cited.
     item1Title: "Ascent-Rate Alert",
     item1Body:
-      "The safe ascent rate is 9–18 m/min. Watch Dive monitors every meter of your ascent and alerts you before you cross the line — no buttons, no menus.",
+      "Watch Dive monitors ascent rate and provides alerts in the 9–18 m/min range — no buttons, no menus.",
     item2Title: "No-Deco / NDL",
     item2Body:
-      "Watch Dive is 60 m waterproof and calculates your NDL in real time. Never guess how much bottom time you have left.",
+      "Watch Dive is 60 m waterproof and calculates your NDL in real time to help you track remaining bottom time.",
     item3Title: "Depth, Time & Temperature",
     item3Body:
       "Real-time depth, elapsed dive time, and water temperature — all logged automatically and synced to your Diveroid App logbook via Bluetooth after every dive.",
@@ -202,7 +202,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     h2: "{count} divers have already been in the water with it",
     sub: "Reviews from the beta programme, translated from each tester’s own language.",
     disclosure:
-      "Showing {published} of {total}. The rest mention product details we have not finished verifying, so we are holding them back until we have.",
+      "Showing {published} of {total}. The rest mention product details we haven't finished verifying, so we're holding them back until we have.",
     countryUS: "United States",
     countryUK: "United Kingdom",
     countryKR: "South Korea",
@@ -211,23 +211,24 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   compat: {
     kicker: "Compatibility",
     // Final per-model compatibility matrix pending (unverified claim).
-    h2: "Works with Most Leading Smartwatches",
+    h2: "Compatible with supported Apple Watch and Galaxy Watch models",
     lead: "Only a handful of watches ship with a depth sensor. The Watch Dive housing adds one, so the watch already on your wrist works as a dive computer either way.",
-    housingBadge: "Fits almost any watch",
+    housingBadge: "For supported models",
     housingTitle: "Housing + App",
     housingLead: "No depth sensor? The housing brings its own.",
     housingBody:
       "Your watch does not need a sensor of its own. It goes in the Watch Dive housing, and the app reads depth from the housing.",
     housingModel1: "All other Apple Watch models",
-    housingModel2: "All Samsung Galaxy Watch models",
-    housingModel3: "Google Pixel Watch",
-    housingModel4: "Other Wear OS watches",
+    housingModel2: "Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro",
+    housingModel3:
+      "Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra",
+    housingModel4: "Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9",
     housingAlt: "Watch Dive waterproof housing",
     appOnlyTitle: "App Only",
     appOnlyBody: "For the few watches with a depth sensor already built in.",
-    appOnlyModel1: "Apple Watch Ultra 1",
-    appOnlyModel2: "Apple Watch Ultra 2",
-    appOnlyModel3: "Apple Watch Ultra 3",
+    appOnlyModel1: "Apple Watch Ultra",
+    appOnlyModel2: "Apple Watch Ultra 2, Apple Watch Ultra 3",
+    appOnlyModel3: "Galaxy Watch Ultra2",
     watchScreenAlt: "Watch Dive app running on a smartwatch",
     footnote: "More models are being verified — join the waitlist to get the final list at launch.",
   },
@@ -243,11 +244,12 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     // ‑ = the source's non-breaking hyphens.
     h2: "Serious safety, at an entry‑level price.",
     // 60 m rating / pressure test — certificate pending (unverified claim).
-    point1Title: "Built & rated for 60 m",
-    point1Body: "Sealed housing engineered and pressure‑checked for real depth.",
+    point1Title: "60 m rating under verification",
+    point1Body:
+      "We are verifying the housing's 60 m rating before publishing the supporting test evidence.",
     // Ocean-dive validation — test evidence pending (unverified claim).
-    point2Title: "Validated in real ocean dives",
-    point2Body: "Tested in the water by real divers — not just on a bench.",
+    point2Title: "Ocean-dive evidence under review",
+    point2Body: "We are reviewing the dive records before publishing this validation claim.",
     point3Title: "Core safety functions",
     point3Body:
       "No‑decompression limit, ascent‑rate alert, and safety‑stop guidance on your wrist.",
@@ -260,8 +262,8 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     headline: "$299 $149 — 50% off.",
     headlineStrike: "$299",
     headlineNew: "$149",
-    lead: "Sign up to be the first to know when Watch Dive launches — early bird backers lock in the lowest price ever at $149, before it goes to $299 at public release.",
-    leadHighlight: "first to know",
+    lead: "Sign up to hear first when Watch Dive launches and receive details of the $149 early-bird offer before the $299 public price.",
+    leadHighlight: "hear first",
   },
   creds: {
     heading: "Built by a proven team",
@@ -350,7 +352,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     invalidBody:
       "It may already have been replaced by a newer confirmation email. Head back to the Watch Dive page and submit the form again.",
     errorTitle: "We could not confirm just now",
-    errorBody: "Your link has not been used up. Please try again.",
+    errorBody: "Your link is still valid. Please try again.",
     tryAgain: "Try again",
     footerPrivacy: "Privacy",
     footerTerms: "Terms",

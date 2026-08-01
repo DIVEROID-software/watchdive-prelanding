@@ -1,10 +1,13 @@
 /**
  * Frozen-landing message catalog — nine locales.
  *
- * Source of truth: the immutable production-design baseline at commit 92e3855
- * ("Lead the compatibility section with the housing, not the Ultra").
- * English values reproduce, byte for byte, the visible strings (plus relevant
- * alt / aria / toast / server-message text) rendered by:
+ * Structural source of truth: the immutable production-design baseline at
+ * commit 92e3855 ("Lead the compatibility section with the housing, not the
+ * Ultra"). Customer-facing landing copy and locale typography received a
+ * native-language review on 2026-08-01; DOM, component order, media, forms,
+ * colors, spacing, and product behavior remain on the frozen baseline. This
+ * catalog includes the visible strings plus relevant alt / aria / toast /
+ * server-message text rendered by:
  *
  *   src/routes/index.tsx        (all landing sections and both forms)
  *   src/components/launch-countdown.tsx
@@ -58,13 +61,13 @@
  *
  * UNVERIFIED-CLAIM FLAGS (translated faithfully, never strengthened; see
  * docs/01-product-truth.md — verification still pending for):
- * - "60 m" rating / "pressure‑checked" / "rated housing" — pressure-test
- *   certificate not yet on file.
- * - "Validated in real ocean dives" / "Tested in the water by real divers" —
- *   test evidence not yet on file.
+ * - "60 m" rating / pressure-test evidence — certificate not yet on file;
+ *   safety copy explicitly says that verification is still in progress.
+ * - Ocean-dive validation — test evidence not yet on file; safety copy
+ *   explicitly says that records are still under review.
  * - "$149" / "$299" / "50% off" — cost, quantity and conditions unconfirmed.
- * - Compatibility model lists — final per-model matrix pending (page already
- *   hedges with "More models are being verified").
+ * - Compatibility model lists — owner-approved FAQ matrix is mirrored in the
+ *   compatibility cards; additional models remain under verification.
  * - NVIDIA Inception membership, Samsung campaign appearance, AWS usage —
  *   membership/rights evidence pending internal confirmation.
  * - "Kickstarter opens 10 August" — founder-fixed date (2026-07-30), hedged
@@ -75,8 +78,8 @@
  *   claim; individual reviews are gated by the unverifiedClaim flag.
  * - FAQ compatibility, sensor/Bluetooth architecture and battery warranty /
  *   paid-replacement terms were approved by the product owner on 2026-08-01.
- * - "The safe ascent rate is 9–18 m/min" — industry convention; no internal
- *   source document cited.
+ * - Ascent-rate alerts in the 9–18 m/min range — industry convention; no
+ *   internal source document cited.
  * - NOTE (not fixed here): the landing footer names "DIVEROID LTD … England"
  *   as operator while Privacy/Terms name "OceanWick Inc." (Korea). Reproduced
  *   as-is in every locale.
@@ -122,11 +125,11 @@ const ko: FrozenLandingMessages = {
     joinCta: "대기명단 참여하기",
   },
   cta: {
-    label: "$149 얼리버드 초대장 받기",
+    label: "$149 얼리버드 초대 받기",
   },
   referral: {
-    welcome: "친구가 초대했어요 — 친구의 명단에 올라 있어요. 이메일을 인증하면 함께 참여됩니다.",
-    welcomeHighlight: "친구의 명단에 올라 있어요",
+    welcome: "친구가 초대했어요. 이메일을 인증하면 친구와 함께 대기명단에 등록됩니다.",
+    welcomeHighlight: "친구가 초대했어요",
     successTitle: "명단에 등록되었습니다. 🎉",
     successBody: "Watch Dive가 Kickstarter에 오픈되는 순간 이메일로 알려 드릴게요.",
     buddyTitle: "버디 데려오기",
@@ -161,7 +164,7 @@ const ko: FrozenLandingMessages = {
   },
   server: {
     pending:
-      "이 주소로 메일을 받을 수 있다면 인증 링크가 발송되고 있습니다. 링크를 열어 인증을 완료해 주세요.",
+      "메일을 받을 수 있는 주소라면 인증 링크가 곧 도착합니다. 링크를 열어 인증을 마쳐 주세요.",
     closed:
       "프리런칭 대기명단이 가득 찼습니다. Watch Dive는 8월 10일 Kickstarter에서 모두에게 공개됩니다.",
   },
@@ -201,7 +204,7 @@ const ko: FrozenLandingMessages = {
     offBadge: "50% 할인",
     offNote: "Kickstarter 런칭 얼리버드",
     gift: "그다음, 실제로 함께 물에 들어갈 다이버들에게 링크를 공유하세요.",
-    trust1: "가장 먼저 소식을 받고 최저 런칭가를 확보하세요.",
+    trust1: "얼리버드 소식을 가장 먼저 받아 보세요.",
     trust2: "스팸 없음 — 오픈 시 딱 한 통만 보냅니다.",
     backedBy: "지원",
     featuredBy: "소개",
@@ -217,17 +220,18 @@ const ko: FrozenLandingMessages = {
   },
   value: {
     kicker: "왜 Watch Dive인가",
-    h2: "스마트워치가 이미 절반은 해내는데, 다이브 컴퓨터에 $1,000를 써야 할까요?",
+    h2: "이미 호환 스마트워치가 있는데, 별도 다이브 컴퓨터에 $1,000를 써야 할까요?",
     imageAlt: "보트 데크에 진열된 Watch Dive 하우징",
     overlayKicker: "다이버들이 좋아하는 이유",
     overlayText: "프리미엄 다이빙 기어의 감성을, 프리미엄 가격 없이.",
-    lead: "Watch Dive는 입문·레크리에이션 다이버가 이미 가진 워치로 다이브 컴퓨터의 핵심 경험을 누리도록 돕습니다 — 드디어 납득되는 가격으로.",
+    lead: "Watch Dive를 사용하면 입문·레크리에이션 다이버도 이미 가진 워치에서 다이브 컴퓨터의 핵심 기능을 이용할 수 있습니다 — 부담을 낮춘 가격으로.",
     card1Title: "가진 워치 그대로",
     card1Copy: "이미 착용 중인 Apple Watch·Galaxy Watch 기반 — 새 기기를 살 필요가 없습니다.",
-    card2Title: "프리미엄 빌드",
+    card2Title: "프리미엄 만듦새",
     card2Copy: "투명 하우징, 선명한 화면 UI, 그리고 정제된 블랙·화이트 두 가지 컬러.",
     card3Title: "진짜 다이빙 가치",
-    card3Copy: "$1,000짜리 다이브 컴퓨터를 강요하지 않는 핵심 스쿠버 데이터.",
+    card3Copy:
+      "$1,000짜리 별도 다이브 컴퓨터를 사지 않아도 핵심 스쿠버 데이터를 확인할 수 있습니다.",
     card4Title: "공유하고 싶은 다이빙",
     card4Copy: "연동 앱과 감각적인 비주얼로 모든 다이빙을 쉽게 기록하고 공유합니다.",
   },
@@ -238,10 +242,10 @@ const ko: FrozenLandingMessages = {
     videoAria: "작동 중인 Watch Dive 기능",
     item1Title: "상승 속도 경보",
     item1Body:
-      "안전 상승 속도는 9–18 m/min입니다. Watch Dive가 상승하는 매 미터를 지켜보다가 한계를 넘기 전에 알려 줍니다 — 버튼도 메뉴도 필요 없습니다.",
+      "Watch Dive는 9–18 m/min 범위에서 상승 속도를 모니터링하고 경고합니다. 버튼이나 메뉴를 조작할 필요가 없습니다.",
     item2Title: "무감압 한계 / NDL",
     item2Body:
-      "Watch Dive는 60 m 방수이며 NDL을 실시간으로 계산합니다. 남은 바텀 타임을 더는 짐작하지 마세요.",
+      "Watch Dive는 60 m 방수이며 NDL을 실시간으로 계산해 남은 바텀 타임을 확인하는 데 도움을 줍니다.",
     item3Title: "수심·시간·수온",
     item3Body:
       "실시간 수심, 경과 다이브 타임, 수온 — 모두 자동 기록되어 매 다이빙 후 Bluetooth로 Diveroid 앱 로그북에 동기화됩니다.",
@@ -251,9 +255,9 @@ const ko: FrozenLandingMessages = {
   },
   how: {
     kicker: "사용 방법",
-    h2: "세 단계. 하나의 다이브 컴퓨터 솔루션.",
+    h2: "세 단계로, 내 워치를 다이브 컴퓨터로.",
     step1Title: "스마트워치를 Watch Dive에 넣으세요",
-    step1Body: "Apple Watch나 Galaxy Watch를 방수 하우징에 밀어 넣습니다.",
+    step1Body: "Apple Watch나 Galaxy Watch를 방수 하우징에 넣기만 하면 됩니다.",
     step1Alt: "스마트워치를 Watch Dive 하우징에 넣는 손",
     step2Title: "실시간 가이드와 함께 다이빙",
     step2Body: "수심, 다이브 타임, 수온, 상승 속도, 세이프티 스톱을 손목에서 확인합니다.",
@@ -286,8 +290,8 @@ const ko: FrozenLandingMessages = {
   },
   reviews: {
     kicker: "베타 테스터의 후기",
-    h2: "{count}명의 다이버가 이미 함께 물속에 다녀왔습니다",
-    sub: "베타 프로그램 참가자들의 후기로, 각 테스터의 언어에서 번역했습니다.",
+    h2: "{count}명의 다이버가 이미 Watch Dive와 함께 물속에 다녀왔습니다",
+    sub: "베타 프로그램 참가자들의 후기이며, 각자 자기 언어로 남긴 원문을 번역했습니다.",
     disclosure:
       "{total}개 중 {published}개를 표시하고 있습니다. 나머지는 아직 검증을 마치지 못한 제품 세부 내용을 언급하고 있어, 검증이 끝날 때까지 보류합니다.",
     countryUS: "미국",
@@ -297,23 +301,24 @@ const ko: FrozenLandingMessages = {
   },
   compat: {
     kicker: "호환성",
-    h2: "주요 스마트워치 대부분과 호환",
-    lead: "수심 센서를 탑재한 워치는 극소수입니다. Watch Dive 하우징이 센서를 더해 주므로, 어느 쪽이든 지금 손목의 워치가 다이브 컴퓨터가 됩니다.",
-    housingBadge: "거의 모든 워치에 맞음",
+    h2: "지원되는 Apple Watch·Galaxy Watch 모델과 호환",
+    lead: "수심 센서가 내장된 워치는 일부에 불과합니다. Watch Dive 하우징에는 센서가 들어 있어, 지금 쓰는 호환 워치도 다이브 컴퓨터로 사용할 수 있습니다.",
+    housingBadge: "지원 모델용",
     housingTitle: "하우징 + 앱",
-    housingLead: "수심 센서가 없나요? 하우징이 직접 가져옵니다.",
+    housingLead: "수심 센서가 없어도 됩니다. 하우징에 센서가 내장되어 있습니다.",
     housingBody:
       "워치에 센서가 없어도 됩니다. Watch Dive 하우징에 넣으면 앱이 하우징에서 수심을 읽습니다.",
     housingModel1: "그 외 모든 Apple Watch 모델",
-    housingModel2: "모든 Samsung Galaxy Watch 모델",
-    housingModel3: "Google Pixel Watch",
-    housingModel4: "기타 Wear OS 워치",
+    housingModel2: "Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro",
+    housingModel3:
+      "Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra",
+    housingModel4: "Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9",
     housingAlt: "Watch Dive 방수 하우징",
     appOnlyTitle: "앱 단독",
-    appOnlyBody: "수심 센서가 이미 내장된 소수의 워치용.",
-    appOnlyModel1: "Apple Watch Ultra 1",
-    appOnlyModel2: "Apple Watch Ultra 2",
-    appOnlyModel3: "Apple Watch Ultra 3",
+    appOnlyBody: "수심 센서를 이미 내장한 일부 워치를 위한 방식입니다.",
+    appOnlyModel1: "Apple Watch Ultra",
+    appOnlyModel2: "Apple Watch Ultra 2, Apple Watch Ultra 3",
+    appOnlyModel3: "Galaxy Watch Ultra2",
     watchScreenAlt: "스마트워치에서 실행 중인 Watch Dive 앱",
     footnote:
       "더 많은 모델을 검증하는 중입니다 — 대기명단에 참여하면 런칭 시 최종 목록을 보내 드립니다.",
@@ -327,11 +332,11 @@ const ko: FrozenLandingMessages = {
   },
   safety: {
     kicker: "진짜 다이빙을 위해",
-    h2: "진지한 안전을, 입문 가격에.",
-    point1Title: "60 m 설계·등급",
-    point1Body: "실제 수심을 위해 설계하고 압력 시험을 거친 밀폐 하우징.",
-    point2Title: "실제 바다 다이빙으로 검증",
-    point2Body: "벤치 위가 아니라 실제 다이버들이 물속에서 테스트했습니다.",
+    h2: "안전은 제대로, 가격은 입문용으로.",
+    point1Title: "60 m 등급 검증 중",
+    point1Body: "근거 시험 자료를 공개하기에 앞서 하우징의 60 m 등급을 검증하고 있습니다.",
+    point2Title: "해양 다이빙 근거 검토 중",
+    point2Body: "검증 문구를 공개하기에 앞서 다이빙 기록을 검토하고 있습니다.",
     point3Title: "핵심 안전 기능",
     point3Body: "무감압 한계, 상승 속도 경보, 세이프티 스톱 안내를 손목에서.",
     disclaimer:
@@ -343,7 +348,7 @@ const ko: FrozenLandingMessages = {
     headline: "$299 $149 — 50% 할인.",
     headlineStrike: "$299",
     headlineNew: "$149",
-    lead: "Watch Dive 런칭 소식을 가장 먼저 받아 보세요 — 얼리버드 후원자는 공개가가 $299가 되기 전, 역대 최저가 $149를 확보합니다.",
+    lead: "Watch Dive 런칭 소식을 가장 먼저 받아 보세요 — 정식 출시 가격이 $299로 오르기 전에 얼리버드 $149 안내를 보내 드립니다.",
     leadHighlight: "가장 먼저",
   },
   creds: {
@@ -361,7 +366,7 @@ const ko: FrozenLandingMessages = {
   },
   faq: {
     kicker: "FAQ",
-    h2: "좋은 질문, 짧은 답.",
+    h2: "궁금한 점을 짧고 정확하게 답했습니다.",
     q1: "Watch Dive는 단독형 다이브 컴퓨터인가요?",
     a1: "아니요. Watch Dive는 하우징, 센서, 연동 앱으로 호환 스마트워치를 다이브 컴퓨터 솔루션으로 바꿉니다.",
     q2: "얼마나 깊이 사용할 수 있나요?",
@@ -425,9 +430,9 @@ const ko: FrozenLandingMessages = {
       "인증 링크는 24시간 유효합니다. Watch Dive 페이지로 돌아가 폼을 다시 제출하면 새 링크를 받을 수 있습니다.",
     invalidTitle: "유효하지 않은 링크입니다",
     invalidBody:
-      "더 새로운 인증 메일로 이미 대체되었을 수 있습니다. Watch Dive 페이지로 돌아가 폼을 다시 제출해 주세요.",
-    errorTitle: "지금은 인증할 수 없었습니다",
-    errorBody: "링크는 아직 사용되지 않았습니다. 다시 시도해 주세요.",
+      "새 인증 메일을 받았다면 이전 링크는 더 이상 사용할 수 없습니다. Watch Dive 페이지로 돌아가 폼을 다시 제출해 주세요.",
+    errorTitle: "지금은 이메일을 인증할 수 없습니다",
+    errorBody: "인증 링크는 아직 유효합니다. 다시 시도해 주세요.",
     tryAgain: "다시 시도",
     footerPrivacy: "개인정보",
     footerTerms: "약관",
@@ -554,11 +559,11 @@ const zhCN: FrozenLandingMessages = {
     joinCta: "加入候补名单",
   },
   cta: {
-    label: "领取 $149 早鸟邀请",
+    label: "获取 $149 早鸟邀请",
   },
   referral: {
-    welcome: "朋友邀请了你 — 你已在 TA 的名单上。确认邮箱即可一起加入。",
-    welcomeHighlight: "你已在 TA 的名单上",
+    welcome: "朋友邀请你加入候补名单。确认邮箱后，你们就能一起等待上线。",
+    welcomeHighlight: "朋友邀请你加入候补名单",
     successTitle: "你已加入名单。🎉",
     successBody: "Watch Dive 在 Kickstarter 上线的那一刻，我们会第一时间邮件通知你。",
     buddyTitle: "带上潜伴",
@@ -592,7 +597,7 @@ const zhCN: FrozenLandingMessages = {
     title: "名单已满",
   },
   server: {
-    pending: "如果这个地址可以收信，确认链接正在路上。打开它即可完成确认。",
+    pending: "如果该地址可以正常收信，确认链接很快就会送达。打开链接即可完成确认。",
     closed: "上线前候补名单已满。8 月 10 日 Watch Dive 将在 Kickstarter 面向所有人开放。",
   },
   toasts: {
@@ -620,7 +625,7 @@ const zhCN: FrozenLandingMessages = {
     backgroundAlt: "在缤纷珊瑚礁间探索的水肺潜水员",
     sideImageAlt: "Watch Dive 水下主视觉产品图",
     stat1Label: "60 m",
-    stat1Desc: "防水等级壳体",
+    stat1Desc: "壳体防水等级",
     stat2Label: "水肺 + 自由潜",
     stat2Desc: "双模式",
     stat3Label: "$149",
@@ -630,7 +635,7 @@ const zhCN: FrozenLandingMessages = {
     offBadge: "5 折",
     offNote: "Kickstarter 上线早鸟价",
     gift: "然后，把链接分享给真正会和你一起下水的潜伴。",
-    trust1: "抢先获知消息，锁定最低首发价。",
+    trust1: "抢先收到上线与早鸟价通知。",
     trust2: "不发垃圾邮件 — 上线时只发一封。",
     backedBy: "支持方",
     featuredBy: "曾亮相于",
@@ -646,17 +651,17 @@ const zhCN: FrozenLandingMessages = {
   },
   value: {
     kicker: "为什么选 Watch Dive",
-    h2: "智能手表已经完成了一半，为什么还要花 $1,000 买潜水电脑？",
+    h2: "已经有兼容的智能手表，为什么还要花 $1,000 另买潜水电脑？",
     imageAlt: "陈列在船甲板上的 Watch Dive 壳体",
     overlayKicker: "潜水员喜欢它的理由",
     overlayText: "高端潜水装备的质感，没有高端的价格。",
-    lead: "Watch Dive 帮助新手与休闲潜水员用已有的手表解锁潜水电脑的核心体验 — 价格终于合理。",
-    card1Title: "用你已有的",
+    lead: "Watch Dive 让新手和休闲潜水员直接用手上的智能手表查看潜水电脑的核心数据，价格也更容易接受。",
+    card1Title: "就用你手上的表",
     card1Copy: "围绕你每天佩戴的 Apple Watch 和 Galaxy Watch 打造 — 无需再买第二台设备。",
     card2Title: "高端做工",
     card2Copy: "透明壳体、醒目的屏幕 UI，以及精致的黑白两色。",
     card3Title: "真实潜水价值",
-    card3Copy: "核心水肺数据，无需被迫花 $1,000 买潜水电脑。",
+    card3Copy: "无需另买 $1,000 的潜水电脑，也能查看核心水肺数据。",
     card4Title: "值得分享的潜水",
     card4Copy: "互联 App 与出色的视觉，让每次潜水都易于记录与分享。",
   },
@@ -667,9 +672,9 @@ const zhCN: FrozenLandingMessages = {
     videoAria: "Watch Dive 功能实拍",
     item1Title: "上升速度警报",
     item1Body:
-      "安全上升速度为 9–18 m/min。Watch Dive 监测你上升的每一米，在越线之前提醒你 — 无需按键，无需菜单。",
+      "Watch Dive 会监测上升速度，并在 9–18 m/min 范围内提供警报，全程无需操作按钮或菜单。",
     item2Title: "免减压 / NDL",
-    item2Body: "Watch Dive 具备 60 m 防水并实时计算 NDL。剩余免减压时间，不用再靠猜。",
+    item2Body: "Watch Dive 具备 60 m 防水能力，并实时计算 NDL，帮助你查看剩余免减压时间。",
     item3Title: "深度、时间与水温",
     item3Body:
       "实时深度、已用潜水时间与水温 — 全部自动记录，每次潜水后经蓝牙同步到你的 Diveroid App 潜水日志。",
@@ -678,7 +683,7 @@ const zhCN: FrozenLandingMessages = {
   },
   how: {
     kicker: "如何使用",
-    h2: "三步，就是一套潜水电脑方案。",
+    h2: "三步，把手上的表变成潜水电脑。",
     step1Title: "把智能手表放进 Watch Dive",
     step1Body: "将 Apple Watch 或 Galaxy Watch 滑入防水壳体。",
     step1Alt: "把智能手表放入 Watch Dive 壳体的双手",
@@ -724,22 +729,23 @@ const zhCN: FrozenLandingMessages = {
   },
   compat: {
     kicker: "兼容性",
-    h2: "兼容多数主流智能手表",
-    lead: "自带深度传感器的手表寥寥无几。Watch Dive 壳体补上这颗传感器，所以无论哪种情况，你腕上的手表都能当潜水电脑用。",
-    housingBadge: "几乎适配所有手表",
+    h2: "兼容受支持的 Apple Watch 和 Galaxy Watch 机型",
+    lead: "只有少数手表自带深度传感器。Watch Dive 壳体内置传感器，因此兼容手表即使没有传感器，也能作为潜水电脑使用。",
+    housingBadge: "适用于受支持的机型",
     housingTitle: "壳体 + App",
-    housingLead: "没有深度传感器？壳体自带。",
+    housingLead: "手表没有深度传感器也没关系，壳体已经内置。",
     housingBody: "你的手表不需要自带传感器。放进 Watch Dive 壳体后，App 从壳体读取深度。",
     housingModel1: "其他所有 Apple Watch 机型",
-    housingModel2: "所有 Samsung Galaxy Watch 机型",
-    housingModel3: "Google Pixel Watch",
-    housingModel4: "其他 Wear OS 手表",
+    housingModel2: "Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro",
+    housingModel3:
+      "Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra",
+    housingModel4: "Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9",
     housingAlt: "Watch Dive 防水壳体",
     appOnlyTitle: "仅 App",
     appOnlyBody: "适用于少数已内置深度传感器的手表。",
-    appOnlyModel1: "Apple Watch Ultra 1",
-    appOnlyModel2: "Apple Watch Ultra 2",
-    appOnlyModel3: "Apple Watch Ultra 3",
+    appOnlyModel1: "Apple Watch Ultra",
+    appOnlyModel2: "Apple Watch Ultra 2, Apple Watch Ultra 3",
+    appOnlyModel3: "Galaxy Watch Ultra2",
     watchScreenAlt: "在智能手表上运行的 Watch Dive App",
     footnote: "更多机型正在验证中 — 加入候补名单，上线时获取最终列表。",
   },
@@ -747,16 +753,16 @@ const zhCN: FrozenLandingMessages = {
     kicker: "支持运动相机",
     h3: "与你的运动相机配对",
     lead: "支持 GoPro、Insta360、Canon 等 — 潜水日志与影像在一个 App 中统一。素材自动匹配到每一次潜水。",
-    chipMore: "等更多",
+    chipMore: "以及更多",
     videoAria: "互联 App 中的运动相机配对与自动潜水日志",
   },
   safety: {
     kicker: "为真实潜水打造",
-    h2: "认真的安全，入门的价格。",
-    point1Title: "按 60 m 设计与定级",
-    point1Body: "为真实深度而设计、经压力测试的密封壳体。",
-    point2Title: "经真实海潜验证",
-    point2Body: "由真正的潜水员在水中测试 — 而不只是在台架上。",
+    h2: "休闲潜水所需的核心安全功能，入门级价格。",
+    point1Title: "60 m 等级验证中",
+    point1Body: "我们正在验证壳体的 60 m 等级，待支持性测试证据确认后再公开。",
+    point2Title: "海洋潜水证据审核中",
+    point2Body: "我们正在审核潜水记录，确认后再公开相关验证结论。",
     point3Title: "核心安全功能",
     point3Body: "免减压极限、上升速度警报与安全停留引导，尽在腕上。",
     disclaimer:
@@ -768,11 +774,11 @@ const zhCN: FrozenLandingMessages = {
     headline: "$299 $149 — 5 折。",
     headlineStrike: "$299",
     headlineNew: "$149",
-    lead: "报名即可第一时间获知 Watch Dive 上线 — 早鸟支持者以史上最低的 $149 锁定价格，之后公开发售将升至 $299。",
-    leadHighlight: "第一时间获知",
+    lead: "加入候补名单，即可在 Watch Dive 上线时收到通知，并了解 $149 早鸟价；公开发售价格为 $299。",
+    leadHighlight: "收到通知",
   },
   creds: {
-    heading: "由经过验证的团队打造",
+    heading: "由经验丰富的团队打造",
     nvidiaAlt: "NVIDIA Inception 计划成员徽章",
     nvidiaTitle: "NVIDIA Inception 成员",
     nvidiaBody: "NVIDIA 面向以 AI 与加速计算开发的初创公司的扶持计划。",
@@ -780,17 +786,17 @@ const zhCN: FrozenLandingMessages = {
     awsTitle: "由 AWS 提供支持",
     awsBody: "我们的 App 与潜水数据运行在 Amazon Web Services 上。",
     samsungAlt: "出现在 Samsung 广告中的 DIVEROID 潜水装备",
-    samsungFeatured: "曾获报道",
+    samsungFeatured: "曾亮相于",
     samsungLogoAlt: "Samsung",
     samsungBody: "我们的潜水装备曾出现在 Samsung 智能手机广告中。",
   },
   faq: {
     kicker: "FAQ",
-    h2: "好问题，短回答。",
+    h2: "常见问题，简明解答。",
     q1: "Watch Dive 是独立潜水电脑吗？",
     a1: "不是。Watch Dive 通过壳体、传感器与互联 App，把兼容的智能手表变成潜水电脑方案。",
     q2: "最深能用到多少？",
-    a2: "Watch Dive 定级 60 m，建议休闲潜水使用深度为 40 m。",
+    a2: "Watch Dive 的防水等级为 60 m，建议休闲潜水使用深度为 40 m。",
     q3: "支持安全停留与免减压极限吗？",
     a3: "支持。它涵盖安全停留、上升速度警报、深度、潜水时间、水温与免减压引导等核心休闲潜水功能。",
     q4: "自由潜能用吗？",
@@ -848,9 +854,9 @@ const zhCN: FrozenLandingMessages = {
     expiredTitle: "链接已过期",
     expiredBody: "确认链接 24 小时内有效。请回到 Watch Dive 页面重新提交表单获取新链接。",
     invalidTitle: "链接无效",
-    invalidBody: "它可能已被更新的确认邮件替代。请回到 Watch Dive 页面重新提交表单。",
+    invalidBody: "此链接可能已被新确认邮件中的链接取代。请回到 Watch Dive 页面重新提交表单。",
     errorTitle: "暂时无法完成确认",
-    errorBody: "你的链接尚未被使用。请重试。",
+    errorBody: "链接仍然有效，请再试一次。",
     tryAgain: "重试",
     footerPrivacy: "隐私",
     footerTerms: "条款",
@@ -972,11 +978,11 @@ const zhTW: FrozenLandingMessages = {
     joinCta: "加入候補名單",
   },
   cta: {
-    label: "領取 $149 早鳥邀請",
+    label: "取得 $149 早鳥邀請",
   },
   referral: {
-    welcome: "朋友邀請了你 — 你已在他的名單上。確認信箱即可一起加入。",
-    welcomeHighlight: "你已在他的名單上",
+    welcome: "朋友邀請你加入候補名單。確認信箱後，你們就能一起等待上線。",
+    welcomeHighlight: "朋友邀請你加入候補名單",
     successTitle: "你已加入名單。🎉",
     successBody: "Watch Dive 在 Kickstarter 上線的那一刻，我們會第一時間寄信通知你。",
     buddyTitle: "帶上潛伴",
@@ -1010,7 +1016,7 @@ const zhTW: FrozenLandingMessages = {
     title: "名單已滿",
   },
   server: {
-    pending: "如果這個地址可以收信，確認連結正在路上。打開它即可完成確認。",
+    pending: "如果該地址可以正常收信，確認連結很快就會送達。打開連結即可完成確認。",
     closed: "上線前等候名單已滿。8 月 10 日 Watch Dive 將在 Kickstarter 對所有人開放。",
   },
   toasts: {
@@ -1038,7 +1044,7 @@ const zhTW: FrozenLandingMessages = {
     backgroundAlt: "在繽紛珊瑚礁間探索的水肺潛水員",
     sideImageAlt: "Watch Dive 水下主視覺產品照",
     stat1Label: "60 m",
-    stat1Desc: "防水等級外殼",
+    stat1Desc: "外殼防水等級",
     stat2Label: "水肺 + 自由潛",
     stat2Desc: "雙模式",
     stat3Label: "$149",
@@ -1048,7 +1054,7 @@ const zhTW: FrozenLandingMessages = {
     offBadge: "5 折",
     offNote: "Kickstarter 上線早鳥價",
     gift: "接著，把連結分享給真正會和你一起下水的潛伴。",
-    trust1: "搶先得知消息，鎖定最低首發價。",
+    trust1: "搶先收到上線與早鳥價通知。",
     trust2: "不寄垃圾信 — 上線時只寄一封。",
     backedBy: "支持方",
     featuredBy: "曾亮相於",
@@ -1064,17 +1070,17 @@ const zhTW: FrozenLandingMessages = {
   },
   value: {
     kicker: "為什麼選 Watch Dive",
-    h2: "智慧手錶已經完成了一半，為什麼還要花 $1,000 買潛水電腦？",
+    h2: "已經有相容的智慧手錶，為什麼還要花 $1,000 另買潛水電腦？",
     imageAlt: "陳列在船甲板上的 Watch Dive 外殼",
     overlayKicker: "潛水員喜歡它的理由",
     overlayText: "高級潛水裝備的質感，沒有高級的價格。",
-    lead: "Watch Dive 幫助新手與休閒潛水員用已有的手錶解鎖潛水電腦的核心體驗 — 價格終於合理。",
-    card1Title: "用你已有的",
+    lead: "Watch Dive 讓新手和休閒潛水員直接用手上的智慧手錶查看潛水電腦的核心數據，價格也更容易入手。",
+    card1Title: "就用你手上的錶",
     card1Copy: "圍繞你每天配戴的 Apple Watch 與 Galaxy Watch 打造 — 不必再買第二台裝置。",
     card2Title: "高級作工",
     card2Copy: "透明外殼、醒目的螢幕 UI，以及精緻的黑白兩色。",
     card3Title: "真實潛水價值",
-    card3Copy: "核心水肺數據，不必被迫花 $1,000 買潛水電腦。",
+    card3Copy: "不必另買 $1,000 的潛水電腦，也能查看核心水肺數據。",
     card4Title: "值得分享的潛水",
     card4Copy: "連動 App 與出色的視覺，讓每次潛水都容易記錄與分享。",
   },
@@ -1085,9 +1091,9 @@ const zhTW: FrozenLandingMessages = {
     videoAria: "Watch Dive 功能實拍",
     item1Title: "上升速度警報",
     item1Body:
-      "安全上升速度為 9–18 m/min。Watch Dive 監測你上升的每一公尺，在越線之前提醒你 — 不用按鍵，不用選單。",
+      "Watch Dive 會監測上升速度，並在 9–18 m/min 範圍內提供警報，全程不必操作按鍵或選單。",
     item2Title: "免減壓 / NDL",
-    item2Body: "Watch Dive 具備 60 m 防水並即時計算 NDL。剩餘的免減壓時間，不必再用猜的。",
+    item2Body: "Watch Dive 具備 60 m 防水能力，並即時計算 NDL，協助你查看剩餘免減壓時間。",
     item3Title: "深度、時間與水溫",
     item3Body:
       "即時深度、已潛時間與水溫 — 全部自動記錄，每次潛水後經藍牙同步到你的 Diveroid App 潛水日誌。",
@@ -1096,7 +1102,7 @@ const zhTW: FrozenLandingMessages = {
   },
   how: {
     kicker: "如何使用",
-    h2: "三步驟，一套潛水電腦方案。",
+    h2: "三步，把手上的錶變成潛水電腦。",
     step1Title: "把智慧手錶放進 Watch Dive",
     step1Body: "將 Apple Watch 或 Galaxy Watch 滑入防水外殼。",
     step1Alt: "把智慧手錶放入 Watch Dive 外殼的雙手",
@@ -1142,22 +1148,23 @@ const zhTW: FrozenLandingMessages = {
   },
   compat: {
     kicker: "相容性",
-    h2: "相容多數主流智慧手錶",
-    lead: "內建深度感測器的手錶寥寥可數。Watch Dive 外殼補上這顆感測器，所以無論哪種情況，你腕上的手錶都能當潛水電腦用。",
-    housingBadge: "幾乎適用所有手錶",
+    h2: "相容於支援的 Apple Watch 與 Galaxy Watch 型號",
+    lead: "只有少數手錶內建深度感測器。Watch Dive 外殼內建感測器，因此相容手錶即使沒有感測器，也能作為潛水電腦使用。",
+    housingBadge: "適用於支援的型號",
     housingTitle: "外殼 + App",
-    housingLead: "沒有深度感測器？外殼自己帶。",
+    housingLead: "手錶沒有深度感測器也沒關係，外殼已經內建。",
     housingBody: "你的手錶不需要內建感測器。放進 Watch Dive 外殼後，App 會從外殼讀取深度。",
     housingModel1: "其他所有 Apple Watch 型號",
-    housingModel2: "所有 Samsung Galaxy Watch 型號",
-    housingModel3: "Google Pixel Watch",
-    housingModel4: "其他 Wear OS 手錶",
+    housingModel2: "Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro",
+    housingModel3:
+      "Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra",
+    housingModel4: "Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9",
     housingAlt: "Watch Dive 防水外殼",
     appOnlyTitle: "僅 App",
     appOnlyBody: "適用於少數已內建深度感測器的手錶。",
-    appOnlyModel1: "Apple Watch Ultra 1",
-    appOnlyModel2: "Apple Watch Ultra 2",
-    appOnlyModel3: "Apple Watch Ultra 3",
+    appOnlyModel1: "Apple Watch Ultra",
+    appOnlyModel2: "Apple Watch Ultra 2, Apple Watch Ultra 3",
+    appOnlyModel3: "Galaxy Watch Ultra2",
     watchScreenAlt: "在智慧手錶上執行的 Watch Dive App",
     footnote: "更多型號驗證中 — 加入候補名單，上線時取得最終清單。",
   },
@@ -1165,16 +1172,16 @@ const zhTW: FrozenLandingMessages = {
     kicker: "支援運動相機",
     h3: "與你的運動相機配對",
     lead: "支援 GoPro、Insta360、Canon 等 — 潛水日誌與媒體在一個 App 中整合。素材自動對應到每一次潛水。",
-    chipMore: "等更多",
+    chipMore: "以及更多",
     videoAria: "連動 App 中的運動相機配對與自動潛水日誌",
   },
   safety: {
     kicker: "為真實潛水打造",
-    h2: "認真的安全，入門的價格。",
-    point1Title: "按 60 m 設計與定級",
-    point1Body: "為真實深度而設計、通過壓力測試的密封外殼。",
-    point2Title: "經真實海潛驗證",
-    point2Body: "由真正的潛水員在水中測試 — 而不只是實驗台上。",
+    h2: "休閒潛水所需的核心安全功能，入門級價格。",
+    point1Title: "60 m 等級驗證中",
+    point1Body: "我們正在驗證外殼的 60 m 等級，待相關測試證據確認後再公開。",
+    point2Title: "海洋潛水證據審核中",
+    point2Body: "我們正在審核潛水記錄，確認後再公開相關驗證結論。",
     point3Title: "核心安全功能",
     point3Body: "免減壓極限、上升速度警報與安全停留引導，盡在腕上。",
     disclaimer:
@@ -1186,11 +1193,11 @@ const zhTW: FrozenLandingMessages = {
     headline: "$299 $149 — 5 折。",
     headlineStrike: "$299",
     headlineNew: "$149",
-    lead: "報名即可第一時間得知 Watch Dive 上線 — 早鳥贊助者以史上最低的 $149 鎖定價格，之後公開發售將升至 $299。",
-    leadHighlight: "第一時間得知",
+    lead: "加入候補名單，即可在 Watch Dive 上線時收到通知，並了解 $149 早鳥價；公開發售價格為 $299。",
+    leadHighlight: "收到通知",
   },
   creds: {
-    heading: "由經過驗證的團隊打造",
+    heading: "由經驗豐富的團隊打造",
     nvidiaAlt: "NVIDIA Inception 計畫成員徽章",
     nvidiaTitle: "NVIDIA Inception 成員",
     nvidiaBody: "NVIDIA 為以 AI 與加速運算開發的新創公司設立的扶持計畫。",
@@ -1198,17 +1205,17 @@ const zhTW: FrozenLandingMessages = {
     awsTitle: "由 AWS 提供支援",
     awsBody: "我們的 App 與潛水資料運行在 Amazon Web Services 上。",
     samsungAlt: "出現在 Samsung 廣告中的 DIVEROID 潛水裝備",
-    samsungFeatured: "曾獲報導",
+    samsungFeatured: "曾亮相於",
     samsungLogoAlt: "Samsung",
     samsungBody: "我們的潛水裝備曾出現在 Samsung 智慧型手機廣告中。",
   },
   faq: {
     kicker: "FAQ",
-    h2: "好問題，短回答。",
+    h2: "常見問題，簡明解答。",
     q1: "Watch Dive 是獨立潛水電腦嗎？",
     a1: "不是。Watch Dive 透過外殼、感測器與連動 App，把相容的智慧手錶變成潛水電腦方案。",
     q2: "最深能用到多少？",
-    a2: "Watch Dive 定級 60 m，建議休閒潛水使用深度為 40 m。",
+    a2: "Watch Dive 的防水等級為 60 m，建議休閒潛水使用深度為 40 m。",
     q3: "支援安全停留與免減壓極限嗎？",
     a3: "支援。它涵蓋安全停留、上升速度警報、深度、潛水時間、水溫與免減壓引導等核心休閒潛水功能。",
     q4: "自由潛能用嗎？",
@@ -1266,9 +1273,9 @@ const zhTW: FrozenLandingMessages = {
     expiredTitle: "連結已過期",
     expiredBody: "確認連結 24 小時內有效。請回到 Watch Dive 頁面重新送出表單，取得新的連結。",
     invalidTitle: "連結無效",
-    invalidBody: "它可能已被較新的確認信取代。請回到 Watch Dive 頁面重新送出表單。",
+    invalidBody: "此連結可能已被新確認信中的連結取代。請回到 Watch Dive 頁面重新送出表單。",
     errorTitle: "目前無法完成確認",
-    errorBody: "你的連結尚未被使用。請再試一次。",
+    errorBody: "連結仍然有效，請再試一次。",
     tryAgain: "再試一次",
     footerPrivacy: "隱私權",
     footerTerms: "條款",
@@ -1390,12 +1397,11 @@ const ja: FrozenLandingMessages = {
     joinCta: "ウェイトリストに参加",
   },
   cta: {
-    label: "$149 早割の招待を受け取る",
+    label: "$149 早割の案内を受け取る",
   },
   referral: {
-    welcome:
-      "友だちから招待されました — その人のリストに載っています。メールを確認して一緒に参加しましょう。",
-    welcomeHighlight: "その人のリストに載っています",
+    welcome: "友だちから招待されました。メールを確認すれば、同じウェイトリストに参加できます。",
+    welcomeHighlight: "友だちから招待されました",
     successTitle: "リストに登録されました。🎉",
     successBody: "Watch Dive が Kickstarter で公開されたその瞬間に、メールでお知らせします。",
     buddyTitle: "バディを誘おう",
@@ -1430,7 +1436,7 @@ const ja: FrozenLandingMessages = {
   },
   server: {
     pending:
-      "このアドレスでメールを受け取れる場合、確認リンクが送信されています。開いて確認を完了してください。",
+      "このアドレスでメールを受け取れる場合、確認リンクがまもなく届きます。リンクを開いて確認を完了してください。",
     closed:
       "事前登録リストは満員です。Watch Dive は 8 月 10 日、Kickstarter で誰でも参加できるようになります。",
   },
@@ -1453,10 +1459,10 @@ const ja: FrozenLandingMessages = {
   },
   hero: {
     badge: "まもなく Kickstarter に登場",
-    h1: "そのウォッチを、ダイコンに。",
-    h1Highlight: "そのウォッチ",
+    h1: "いま持っているウォッチを、ダイブコンピューターに。",
+    h1Highlight: "いま持っているウォッチ",
     sub: "手持ちの Apple Watch / Galaxy Watch を 60 m 対応のダイブコンピューターに。",
-    priceLine: "Kickstarter 早割 $149 から — 従来のダイブコンピューターのほんの一部の価格で。",
+    priceLine: "Kickstarter 早割 $149 から — 従来のダイブコンピューターの数分の一の価格で。",
     backgroundAlt: "色鮮やかなサンゴ礁を探索するスキューバダイバー",
     sideImageAlt: "Watch Dive 水中ヒーロー製品ショット",
     stat1Label: "60 m",
@@ -1470,7 +1476,7 @@ const ja: FrozenLandingMessages = {
     offBadge: "50% オフ",
     offNote: "Kickstarter 開始時の早割",
     gift: "そのあとは、実際に一緒に潜るダイバーたちにリンクをシェアしましょう。",
-    trust1: "いち早く情報を受け取って、最安のローンチ価格を確保。",
+    trust1: "ローンチと早割の案内をいち早く受け取れます。",
     trust2: "スパムなし — 公開時に 1 通だけお送りします。",
     backedBy: "支援",
     featuredBy: "掲載",
@@ -1478,26 +1484,27 @@ const ja: FrozenLandingMessages = {
     awsAlt: "Amazon Web Services",
     samsungAlt: "Samsung",
     promiseKicker: "Watch Dive の約束",
-    promiseText: "本物のダイブコンピューターの感覚を、ほんの一部の価格で",
+    promiseText: "本格的なダイブコンピューターの使い心地を、数分の一の価格で",
     cardKicker: "Kickstarter の約束",
     cardHeadline: "水深。安全。無減圧。",
-    cardFrom: "最低",
+    cardFrom: "早割",
     cardPrice: "$149",
   },
   value: {
     kicker: "Watch Dive を選ぶ理由",
-    h2: "スマートウォッチがすでに半分やってくれるのに、$1,000 のダイブコンピューターは必要？",
+    h2: "対応するスマートウォッチを持っているのに、別のダイブコンピューターに $1,000 もかける必要はありますか？",
     imageAlt: "ボートのデッキに並んだ Watch Dive ハウジング",
     overlayKicker: "ダイバーに愛される理由",
-    overlayText: "プレミアムなダイビングギアの質感を、プレミアム価格なしで。",
-    lead: "Watch Dive は、ビギナーやレクリエーションダイバーが手持ちのウォッチでダイブコンピューターの核心体験を手に入れる手助けをします — ようやく納得できる価格で。",
-    card1Title: "持っているものを活かす",
+    overlayText: "プレミアムなダイビングギアの質感を、手の届きやすい価格で。",
+    lead: "Watch Dive なら、ビギナーやレクリエーションダイバーも、手持ちのウォッチでダイブコンピューターの主要機能を使えます。しかも、納得できる価格で。",
+    card1Title: "手持ちのウォッチを活用",
     card1Copy:
       "いつも着けている Apple Watch / Galaxy Watch を軸に設計 — 2 台目のデバイスを買う必要はありません。",
     card2Title: "プレミアムな作り",
     card2Copy: "クリアなハウジング、視認性の高い画面 UI、洗練されたブラックとホワイトの 2 色。",
     card3Title: "本物のダイビング価値",
-    card3Copy: "$1,000 のダイブコンピューターを買わずに、スキューバの主要データを。",
+    card3Copy:
+      "$1,000 のダイブコンピューターを別に買わなくても、主要なスキューバデータを確認できます。",
     card4Title: "シェアしたくなるダイビング",
     card4Copy: "連携アプリと印象的なビジュアルで、どのダイビングも簡単に記録・共有。",
   },
@@ -1508,10 +1515,10 @@ const ja: FrozenLandingMessages = {
     videoAria: "動作中の Watch Dive の機能",
     item1Title: "浮上速度アラート",
     item1Body:
-      "安全な浮上速度は 9–18 m/min。Watch Dive は浮上の 1 メートルごとを監視し、超える前に知らせます — ボタンもメニューも不要。",
+      "Watch Dive は浮上速度を監視し、9–18 m/min の範囲でアラートを表示します。ボタンやメニューの操作は不要です。",
     item2Title: "無減圧 / NDL",
     item2Body:
-      "Watch Dive は 60 m 防水で、NDL をリアルタイムに計算。残りのボトムタイムを推測する必要はもうありません。",
+      "Watch Dive は 60 m 防水で、NDL をリアルタイムに計算し、残りのボトムタイムの確認をサポートします。",
     item3Title: "水深・時間・水温",
     item3Body:
       "リアルタイムの水深、経過潜水時間、水温 — すべて自動記録され、毎回のダイビング後に Bluetooth で Diveroid アプリのログブックに同期されます。",
@@ -1521,9 +1528,9 @@ const ja: FrozenLandingMessages = {
   },
   how: {
     kicker: "使い方",
-    h2: "3 ステップ。ひとつのダイブコンピューターソリューション。",
+    h2: "3 ステップで、手持ちのウォッチがダイブコンピューターに。",
     step1Title: "スマートウォッチを Watch Dive にセット",
-    step1Body: "Apple Watch / Galaxy Watch を防水ハウジングに差し込みます。",
+    step1Body: "Apple Watch / Galaxy Watch を防水ハウジングに入れるだけです。",
     step1Alt: "スマートウォッチを Watch Dive ハウジングに入れる手",
     step2Title: "リアルタイムのガイドとともに潜る",
     step2Body: "水深、潜水時間、水温、浮上速度、安全停止を手首で。",
@@ -1542,7 +1549,7 @@ const ja: FrozenLandingMessages = {
     screen1Title: "自動ログ & ギャラリー",
     screen1Body: "深度プロファイル、統計、写真とともに毎回のダイビングを自動記録。",
     tab2: "共有",
-    tab2Desc: "データ重ね動画",
+    tab2Desc: "データオーバーレイ動画",
     screen2Title: "ダイブデータ付きで共有",
     screen2Body: "水深・時間・位置を撮った映像にそのままオーバーレイ。",
     tab3: "ポイント",
@@ -1556,7 +1563,7 @@ const ja: FrozenLandingMessages = {
   },
   reviews: {
     kicker: "ベータテスターの声",
-    h2: "すでに {count} 人のダイバーがこれと一緒に潜りました",
+    h2: "すでに {count} 人のダイバーが Watch Dive と一緒に潜りました",
     sub: "ベータプログラム参加者のレビューを、各テスターの母語から翻訳しています。",
     disclosure:
       "全 {total} 件のうち {published} 件を表示中。残りは検証が終わっていない製品詳細に触れているため、検証完了まで保留しています。",
@@ -1567,23 +1574,24 @@ const ja: FrozenLandingMessages = {
   },
   compat: {
     kicker: "互換性",
-    h2: "主要スマートウォッチの多くに対応",
-    lead: "深度センサーを搭載したウォッチはごくわずか。Watch Dive のハウジングがセンサーを補うので、どちらの場合でも、いま手首にあるウォッチがダイブコンピューターとして機能します。",
-    housingBadge: "ほぼどのウォッチにも対応",
+    h2: "対応する Apple Watch / Galaxy Watch モデルで使用可能",
+    lead: "深度センサーを内蔵するウォッチはごく一部です。Watch Dive のハウジングにはセンサーがあるため、対応ウォッチなら本体にセンサーがなくてもダイブコンピューターとして使えます。",
+    housingBadge: "対応モデル向け",
     housingTitle: "ハウジング + アプリ",
-    housingLead: "深度センサーがなくても、ハウジングが補います。",
+    housingLead: "深度センサーがなくても大丈夫。ハウジングに内蔵されています。",
     housingBody:
       "ウォッチ自体にセンサーは不要。Watch Dive のハウジングに入れれば、アプリがハウジングから水深を読み取ります。",
     housingModel1: "その他すべての Apple Watch モデル",
-    housingModel2: "すべての Samsung Galaxy Watch モデル",
-    housingModel3: "Google Pixel Watch",
-    housingModel4: "その他の Wear OS ウォッチ",
+    housingModel2: "Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro",
+    housingModel3:
+      "Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra",
+    housingModel4: "Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9",
     housingAlt: "Watch Dive 防水ハウジング",
     appOnlyTitle: "アプリのみ",
-    appOnlyBody: "深度センサーを内蔵する少数のウォッチ向け。",
-    appOnlyModel1: "Apple Watch Ultra 1",
-    appOnlyModel2: "Apple Watch Ultra 2",
-    appOnlyModel3: "Apple Watch Ultra 3",
+    appOnlyBody: "深度センサーを内蔵する一部のウォッチ向けです。",
+    appOnlyModel1: "Apple Watch Ultra",
+    appOnlyModel2: "Apple Watch Ultra 2, Apple Watch Ultra 3",
+    appOnlyModel3: "Galaxy Watch Ultra2",
     watchScreenAlt: "スマートウォッチで動作する Watch Dive アプリ",
     footnote:
       "さらに多くのモデルを検証中 — ウェイトリストに参加すると、ローンチ時に最終リストが届きます。",
@@ -1597,11 +1605,11 @@ const ja: FrozenLandingMessages = {
   },
   safety: {
     kicker: "リアルなダイビングのために",
-    h2: "本気の安全を、エントリー価格で。",
-    point1Title: "60 m 設計・定格",
-    point1Body: "実際の深度のために設計し、耐圧チェックを行った密閉ハウジング。",
-    point2Title: "実際の海洋ダイビングで検証",
-    point2Body: "ベンチの上だけでなく、実際のダイバーが水中でテスト。",
+    h2: "レクリエーションダイビングに必要な安全機能を、エントリー価格で。",
+    point1Title: "60 m 等級を検証中",
+    point1Body: "根拠となる試験結果の公開に向けて、ハウジングの 60 m 等級を検証しています。",
+    point2Title: "海洋ダイビングの記録を確認中",
+    point2Body: "検証結果の公開に向けて、ダイビング記録を確認しています。",
     point3Title: "コアの安全機能",
     point3Body: "無減圧限界、浮上速度アラート、安全停止ガイドを手首に。",
     disclaimer:
@@ -1613,8 +1621,8 @@ const ja: FrozenLandingMessages = {
     headline: "$299 $149 — 50% オフ。",
     headlineStrike: "$299",
     headlineNew: "$149",
-    lead: "登録して Watch Dive のローンチをいち早く知る — 早割の支援者は一般発売で $299 になる前に、史上最安の $149 を確保できます。",
-    leadHighlight: "いち早く知る",
+    lead: "ウェイトリストに登録すると、Watch Dive のローンチと $149 の早割をいち早くお知らせします。一般発売価格は $299 です。",
+    leadHighlight: "いち早くお知らせ",
   },
   creds: {
     heading: "実績あるチームが開発",
@@ -1632,11 +1640,11 @@ const ja: FrozenLandingMessages = {
   },
   faq: {
     kicker: "FAQ",
-    h2: "良い質問に、短い答えを。",
+    h2: "よくある質問に、簡潔にお答えします。",
     q1: "Watch Dive は単体のダイブコンピューターですか？",
     a1: "いいえ。Watch Dive はハウジング、センサー、連携アプリで、対応スマートウォッチをダイブコンピューターソリューションに変えます。",
     q2: "どのくらいの深さまで使えますか？",
-    a2: "Watch Dive の定格は 60 m、推奨レクリエーション運用水深は 40 m です。",
+    a2: "Watch Dive は 60 m 防水仕様で、レクリエーションダイビングでの推奨使用水深は 40 m です。",
     q3: "安全停止や無減圧限界に対応していますか？",
     a3: "はい。安全停止、浮上速度アラート、水深、潜水時間、水温、無減圧ガイドなど、レクリエーションダイビングの主要機能に対応しています。",
     q4: "フリーダイビングでも使えますか？",
@@ -1696,9 +1704,9 @@ const ja: FrozenLandingMessages = {
       "確認リンクの有効期限は 24 時間です。Watch Dive のページに戻り、フォームをもう一度送信して新しいリンクを受け取ってください。",
     invalidTitle: "このリンクは無効です",
     invalidBody:
-      "より新しい確認メールに置き換えられた可能性があります。Watch Dive のページに戻り、フォームをもう一度送信してください。",
-    errorTitle: "いまは確認できませんでした",
-    errorBody: "リンクはまだ使われていません。もう一度お試しください。",
+      "新しい確認メールを受け取った場合、以前のリンクは使えません。Watch Dive のページに戻り、フォームをもう一度送信してください。",
+    errorTitle: "現在、メールを確認できません",
+    errorBody: "リンクはまだ有効です。もう一度お試しください。",
     tryAgain: "もう一度試す",
     footerPrivacy: "プライバシー",
     footerTerms: "規約",
@@ -1826,11 +1834,11 @@ const es: FrozenLandingMessages = {
     joinCta: "Únete a la lista",
   },
   cta: {
-    label: "Quiero mi early bird de $149",
+    label: "Recibir mi invitación early bird de $149",
   },
   referral: {
-    welcome: "Te invitó un amigo — ya estás en su lista. Confirma tu email para unirte a la lista.",
-    welcomeHighlight: "ya estás en su lista",
+    welcome: "Te ha invitado un amigo. Confirma tu email para unirte a su lista.",
+    welcomeHighlight: "Te ha invitado un amigo",
     successTitle: "Ya estás en la lista. 🎉",
     successBody: "Te escribiremos en cuanto Watch Dive salga en Kickstarter.",
     buddyTitle: "Trae a tu compañero",
@@ -1865,7 +1873,7 @@ const es: FrozenLandingMessages = {
   },
   server: {
     pending:
-      "Si esta dirección puede recibir correo, un enlace de confirmación va en camino. Ábrelo para confirmar.",
+      "Si esta dirección puede recibir correo, el enlace de confirmación llegará en breve. Ábrelo para confirmar.",
     closed:
       "La lista de prelanzamiento está llena. Watch Dive se abre para todos en Kickstarter el 10 de agosto.",
   },
@@ -1896,8 +1904,8 @@ const es: FrozenLandingMessages = {
     backgroundAlt: "Buceador explorando un arrecife de coral lleno de vida",
     sideImageAlt: "Foto submarina del producto Watch Dive",
     stat1Label: "60 m",
-    stat1Desc: "Clasificación de la carcasa",
-    stat2Label: "Scuba + Apnea",
+    stat1Desc: "Profundidad de la carcasa",
+    stat2Label: "Buceo + Apnea",
     stat2Desc: "Dos modos",
     stat3Label: "$149",
     stat3Desc: "50% dto. · early bird",
@@ -1906,7 +1914,7 @@ const es: FrozenLandingMessages = {
     offBadge: "50% dto.",
     offNote: "early bird al lanzar en Kickstarter",
     gift: "Después, comparte tu enlace con los buceadores con los que de verdad te meterías al agua.",
-    trust1: "Regístrate para enterarte primero y asegurar el precio de lanzamiento más bajo.",
+    trust1: "Regístrate para recibir primero las novedades del lanzamiento y del early bird.",
     trust2: "Sin spam — un solo email cuando salgamos.",
     backedBy: "Con el apoyo de",
     featuredBy: "Aparecido en",
@@ -1922,11 +1930,11 @@ const es: FrozenLandingMessages = {
   },
   value: {
     kicker: "Por qué Watch Dive",
-    h2: "¿Por qué gastar $1,000 en un ordenador de buceo si tu smartwatch ya hace la mitad del camino?",
+    h2: "Si ya tienes un smartwatch compatible, ¿por qué gastar $1,000 en otro ordenador de buceo?",
     imageAlt: "Carcasas Watch Dive expuestas en la cubierta de un barco",
     overlayKicker: "Por qué encanta a los buceadores",
-    overlayText: "Sensación de equipo de buceo premium, sin el precio premium.",
-    lead: "Watch Dive ayuda a buceadores nuevos y recreativos a desbloquear la experiencia esencial de un ordenador de buceo con el reloj que ya tienen — a un precio que por fin tiene sentido.",
+    overlayText: "Acabado de equipo de buceo premium, sin el precio premium.",
+    lead: "Watch Dive permite a quienes empiezan y a los buceadores recreativos usar las funciones esenciales de un ordenador de buceo en el reloj que ya tienen — a un precio razonable.",
     card1Title: "Usa lo que ya tienes",
     card1Copy:
       "Construido alrededor del Apple Watch y el Galaxy Watch que ya llevas — sin comprar un segundo dispositivo.",
@@ -1934,7 +1942,7 @@ const es: FrozenLandingMessages = {
     card2Copy:
       "Carcasa transparente, interfaz clara en pantalla y elegantes variantes en negro y blanco.",
     card3Title: "Valor de buceo real",
-    card3Copy: "Las métricas clave de scuba sin obligarte a comprar un ordenador de $1,000.",
+    card3Copy: "Los datos de buceo esenciales, sin tener que comprar un ordenador de $1,000.",
     card4Title: "Inmersiones para compartir",
     card4Copy:
       "La app conectada y sus visuales impactantes hacen que cada inmersión sea fácil de recordar y compartir.",
@@ -1942,24 +1950,24 @@ const es: FrozenLandingMessages = {
   functions: {
     kicker: "Hecho para el buceo recreativo real",
     h2: "Profundidad, tiempo de inmersión, temperatura, paradas de seguridad, velocidad de ascenso y NDL — en un solo sistema.",
-    sub: "Sumergible a 60 m. Modos de scuba y apnea, ambos incluidos.",
+    sub: "Sumergible a 60 m. Modo botella y modo apnea, los dos incluidos.",
     videoAria: "Funciones de Watch Dive en acción",
     item1Title: "Alerta de velocidad de ascenso",
     item1Body:
-      "La velocidad de ascenso segura es de 9–18 m/min. Watch Dive vigila cada metro de tu ascenso y te avisa antes de cruzar el límite — sin botones, sin menús.",
+      "Watch Dive controla la velocidad de ascenso y emite alertas dentro del intervalo de 9–18 m/min, sin botones ni menús.",
     item2Title: "Sin deco / NDL",
     item2Body:
-      "Watch Dive es sumergible a 60 m y calcula tu NDL en tiempo real. No vuelvas a adivinar cuánto tiempo de fondo te queda.",
+      "Watch Dive es sumergible a 60 m y calcula tu NDL en tiempo real para ayudarte a controlar el tiempo de fondo restante.",
     item3Title: "Profundidad, tiempo y temperatura",
     item3Body:
       "Profundidad en tiempo real, tiempo de inmersión y temperatura del agua — todo registrado automáticamente y sincronizado por Bluetooth con tu bitácora de la app Diveroid tras cada inmersión.",
-    item4Title: "Scuba + Apnea",
+    item4Title: "Buceo + Apnea",
     item4Body:
-      "Watch Dive es compatible con scuba y apnea — cambia de modo en segundos. Todo, desde $149.",
+      "Watch Dive incluye buceo con botella y apnea — cambia de modo en segundos. Todo, desde $149.",
   },
   how: {
     kicker: "Cómo funciona",
-    h2: "Tres pasos. Una solución de ordenador de buceo.",
+    h2: "Tres pasos para convertir tu reloj en un ordenador de buceo.",
     step1Title: "Coloca tu smartwatch dentro de Watch Dive",
     step1Body: "Desliza tu Apple Watch o Galaxy Watch dentro de la carcasa estanca.",
     step1Alt: "Manos colocando un smartwatch en la carcasa Watch Dive",
@@ -1981,7 +1989,7 @@ const es: FrozenLandingMessages = {
     screen1Title: "Bitácora y galería automáticas",
     screen1Body: "Cada inmersión registrada con perfil de profundidad, estadísticas y tus fotos.",
     tab2: "Vídeos",
-    tab2Desc: "Con datos",
+    tab2Desc: "Vídeos con datos",
     screen2Title: "Comparte con datos de buceo",
     screen2Body: "Superpón profundidad, tiempo y ubicación directamente sobre tus tomas.",
     tab3: "Sitios",
@@ -2006,23 +2014,24 @@ const es: FrozenLandingMessages = {
   },
   compat: {
     kicker: "Compatibilidad",
-    h2: "Funciona con la mayoría de los smartwatches líderes",
-    lead: "Solo unos pocos relojes traen sensor de profundidad. La carcasa Watch Dive añade uno, así que el reloj que ya llevas en la muñeca funciona como ordenador de buceo en cualquier caso.",
-    housingBadge: "Sirve para casi cualquier reloj",
+    h2: "Compatible con los modelos Apple Watch y Galaxy Watch admitidos",
+    lead: "Solo algunos relojes llevan sensor de profundidad. La carcasa Watch Dive incorpora uno, así que un reloj compatible puede funcionar como ordenador de buceo aunque no tenga sensor propio.",
+    housingBadge: "Para modelos compatibles",
     housingTitle: "Carcasa + App",
     housingLead: "¿Sin sensor de profundidad? La carcasa trae el suyo.",
     housingBody:
       "Tu reloj no necesita sensor propio. Va dentro de la carcasa Watch Dive y la app lee la profundidad desde la carcasa.",
     housingModel1: "Todos los demás modelos de Apple Watch",
-    housingModel2: "Todos los modelos de Samsung Galaxy Watch",
-    housingModel3: "Google Pixel Watch",
-    housingModel4: "Otros relojes Wear OS",
+    housingModel2: "Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro",
+    housingModel3:
+      "Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra",
+    housingModel4: "Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9",
     housingAlt: "Carcasa estanca Watch Dive",
     appOnlyTitle: "Solo App",
     appOnlyBody: "Para los pocos relojes que ya llevan sensor de profundidad integrado.",
-    appOnlyModel1: "Apple Watch Ultra 1",
-    appOnlyModel2: "Apple Watch Ultra 2",
-    appOnlyModel3: "Apple Watch Ultra 3",
+    appOnlyModel1: "Apple Watch Ultra",
+    appOnlyModel2: "Apple Watch Ultra 2, Apple Watch Ultra 3",
+    appOnlyModel3: "Galaxy Watch Ultra2",
     watchScreenAlt: "App Watch Dive funcionando en un smartwatch",
     footnote:
       "Estamos verificando más modelos — únete a la lista para recibir la lista definitiva en el lanzamiento.",
@@ -2036,11 +2045,12 @@ const es: FrozenLandingMessages = {
   },
   safety: {
     kicker: "Hecho para el buceo real",
-    h2: "Seguridad seria, a precio de entrada.",
-    point1Title: "Diseñado para 60 m",
-    point1Body: "Carcasa sellada, diseñada y probada a presión para profundidad real.",
-    point2Title: "Validado en inmersiones reales en el mar",
-    point2Body: "Probado en el agua por buceadores reales — no solo en un banco de pruebas.",
+    h2: "Funciones de seguridad esenciales para el buceo recreativo, a un precio accesible.",
+    point1Title: "Clasificación de 60 m en verificación",
+    point1Body:
+      "Estamos verificando la clasificación de 60 m de la carcasa antes de publicar las pruebas que la respaldan.",
+    point2Title: "Evidencia de inmersiones en el mar en revisión",
+    point2Body: "Estamos revisando los registros de inmersión antes de publicar esta validación.",
     point3Title: "Funciones de seguridad esenciales",
     point3Body:
       "Límite sin descompresión, alerta de velocidad de ascenso y guía de parada de seguridad en tu muñeca.",
@@ -2053,8 +2063,8 @@ const es: FrozenLandingMessages = {
     headline: "$299 $149 — 50% de descuento.",
     headlineStrike: "$299",
     headlineNew: "$149",
-    lead: "Regístrate para ser el primero en saberlo cuando Watch Dive se lance — los early birds aseguran el precio más bajo de la historia, $149, antes de que suba a $299 en la venta pública.",
-    leadHighlight: "el primero en saberlo",
+    lead: "Regístrate para enterarte primero del lanzamiento de Watch Dive y recibir la información del early bird de $149 antes de que el precio público pase a $299.",
+    leadHighlight: "enterarte primero",
   },
   creds: {
     heading: "Creado por un equipo con trayectoria",
@@ -2072,7 +2082,7 @@ const es: FrozenLandingMessages = {
   },
   faq: {
     kicker: "FAQ",
-    h2: "Buenas preguntas, respuestas cortas.",
+    h2: "Preguntas frecuentes, respuestas claras.",
     q1: "¿Watch Dive es un ordenador de buceo independiente?",
     a1: "No. Watch Dive convierte tu smartwatch compatible en una solución de ordenador de buceo mediante la carcasa, el sensor y la app conectada.",
     q2: "¿A qué profundidad puedo usarlo?",
@@ -2139,7 +2149,7 @@ const es: FrozenLandingMessages = {
     invalidBody:
       "Puede que ya haya sido reemplazado por un correo de confirmación más reciente. Vuelve a la página de Watch Dive y envía el formulario otra vez.",
     errorTitle: "No pudimos confirmar en este momento",
-    errorBody: "El enlace no se ha utilizado. Inténtalo de nuevo.",
+    errorBody: "El enlace sigue siendo válido. Inténtalo de nuevo.",
     tryAgain: "Reintentar",
     footerPrivacy: "Privacidad",
     footerTerms: "Términos",
@@ -2148,7 +2158,7 @@ const es: FrozenLandingMessages = {
     notFoundHeading: "Página no encontrada",
     notFoundBody: "La página que buscas no existe o se ha movido.",
     goHome: "Ir al inicio",
-    errorTitle: "Esta página no cargó",
+    errorTitle: "Esta página no se ha cargado",
     errorBody: "Algo salió mal de nuestro lado. Puedes actualizar o volver al inicio.",
     tryAgain: "Reintentar",
   },
@@ -2271,15 +2281,14 @@ const fr: FrozenLandingMessages = {
     joinCta: "Rejoindre la liste d'attente",
   },
   cta: {
-    label: "Mon invitation early bird à $149",
+    label: "Recevoir mon invitation early bird à $149",
   },
   referral: {
-    welcome:
-      "Un ami vous a invité — vous êtes sur sa liste. Confirmez votre e-mail pour le rejoindre.",
-    welcomeHighlight: "vous êtes sur sa liste",
+    welcome: "Un ami vous a invité. Confirmez votre e-mail pour le rejoindre sur la liste.",
+    welcomeHighlight: "Un ami vous a invité",
     successTitle: "Vous êtes sur la liste. 🎉",
     successBody: "Nous vous écrirons dès que Watch Dive sera en ligne sur Kickstarter.",
-    buddyTitle: "Amenez un binôme",
+    buddyTitle: "Invitez votre binôme",
     buddyBody:
       "Partagez votre lien avec les plongeurs que ça intéresserait. Nous comptons chaque inscription passée par votre lien, et nous vous enverrons le lien Kickstarter dès l'ouverture de la campagne.",
     joinedOne: "{count} plongeur a rejoint via votre lien",
@@ -2311,7 +2320,7 @@ const fr: FrozenLandingMessages = {
   },
   server: {
     pending:
-      "Si cette adresse peut recevoir des e-mails, un lien de confirmation est en route. Ouvrez-le pour confirmer.",
+      "Si cette adresse peut recevoir des e-mails, le lien de confirmation arrivera sous peu. Ouvrez-le pour confirmer.",
     closed:
       "La liste de prélancement est complète. Watch Dive s'ouvre à tous sur Kickstarter le 10 août.",
   },
@@ -2342,7 +2351,7 @@ const fr: FrozenLandingMessages = {
     backgroundAlt: "Plongeur explorant un récif corallien éclatant",
     sideImageAlt: "Visuel produit sous-marin de Watch Dive",
     stat1Label: "60 m",
-    stat1Desc: "Profondeur nominale du caisson",
+    stat1Desc: "Profondeur du caisson",
     stat2Label: "Plongée bouteille + apnée",
     stat2Desc: "Deux modes",
     stat3Label: "$149",
@@ -2351,9 +2360,9 @@ const fr: FrozenLandingMessages = {
     nowPrice: "$149",
     offBadge: "−50 %",
     offNote: "early bird au lancement Kickstarter",
-    gift: "Ensuite, partagez votre lien avec les plongeurs avec qui vous iriez vraiment dans l'eau.",
+    gift: "Ensuite, partagez votre lien avec les plongeurs qui vous accompagnent vraiment sous l'eau.",
     trust1:
-      "Inscrivez-vous pour être informé en premier et verrouiller le prix de lancement le plus bas.",
+      "Inscrivez-vous pour recevoir en premier les actualités du lancement et de l'early bird.",
     trust2: "Pas de spam — un seul e-mail à la mise en ligne.",
     backedBy: "Soutenu par",
     featuredBy: "Vu chez",
@@ -2369,11 +2378,11 @@ const fr: FrozenLandingMessages = {
   },
   value: {
     kicker: "Pourquoi Watch Dive",
-    h2: "Pourquoi mettre $1,000 dans un ordinateur de plongée si votre montre connectée fait déjà la moitié du chemin ?",
+    h2: "Pourquoi dépenser $1,000 dans un autre ordinateur de plongée quand vous avez déjà une montre compatible ?",
     imageAlt: "Caissons Watch Dive exposés sur le pont d'un bateau",
     overlayKicker: "Pourquoi les plongeurs l'adorent",
     overlayText: "La sensation d'un équipement haut de gamme, sans le prix haut de gamme.",
-    lead: "Watch Dive aide les plongeurs débutants et loisir à débloquer l'essentiel de l'expérience d'un ordinateur de plongée avec la montre qu'ils possèdent déjà — à un prix enfin raisonnable.",
+    lead: "Avec Watch Dive, les débutants et les plongeurs de loisir accèdent aux fonctions essentielles d'un ordinateur de plongée sur la montre qu'ils possèdent déjà — à un prix enfin raisonnable.",
     card1Title: "Utilisez ce que vous avez",
     card1Copy:
       "Conçu autour de l'Apple Watch et de la Galaxy Watch que vous portez déjà — aucun deuxième appareil à acheter.",
@@ -2382,7 +2391,7 @@ const fr: FrozenLandingMessages = {
       "Caisson transparent, interface écran lisible et déclinaisons noir et blanc raffinées.",
     card3Title: "Une vraie valeur plongée",
     card3Copy:
-      "Les données scaphandre essentielles, sans vous imposer un ordinateur de plongée à $1,000.",
+      "Les données de plongée essentielles, sans devoir acheter un ordinateur de plongée à $1,000.",
     card4Title: "Des plongées à partager",
     card4Copy:
       "L'appli connectée et des visuels marquants rendent chaque plongée facile à retenir et à partager.",
@@ -2390,24 +2399,24 @@ const fr: FrozenLandingMessages = {
   functions: {
     kicker: "Conçu pour la vraie plongée loisir",
     h2: "Profondeur, temps de plongée, température, paliers de sécurité, vitesse de remontée et NDL — dans un seul système.",
-    sub: "Étanche à 60 m. Modes scaphandre et apnée tous deux pris en charge.",
+    sub: "Étanche à 60 m. Deux modes : plongée bouteille et apnée.",
     videoAria: "Les fonctions Watch Dive en action",
     item1Title: "Alerte de vitesse de remontée",
     item1Body:
-      "La vitesse de remontée sûre est de 9–18 m/min. Watch Dive surveille chaque mètre de votre remontée et vous alerte avant de franchir la limite — sans bouton, sans menu.",
+      "Watch Dive surveille la vitesse de remontée et émet des alertes dans la plage de 9–18 m/min, sans bouton ni menu.",
     item2Title: "No-déco / NDL",
     item2Body:
-      "Watch Dive est étanche à 60 m et calcule votre NDL en temps réel. Ne devinez plus jamais le temps de fond qu'il vous reste.",
+      "Watch Dive est étanche à 60 m et calcule votre NDL en temps réel pour vous aider à suivre le temps de fond restant.",
     item3Title: "Profondeur, temps et température",
     item3Body:
       "Profondeur en temps réel, temps de plongée écoulé et température de l'eau — le tout enregistré automatiquement et synchronisé en Bluetooth avec votre carnet de l'appli Diveroid après chaque plongée.",
     item4Title: "Plongée bouteille + apnée",
     item4Body:
-      "Watch Dive prend en charge le scaphandre comme l'apnée — changez de mode en quelques secondes. Le tout, dès $149.",
+      "Watch Dive prend en charge la plongée bouteille comme l'apnée — changez de mode en quelques secondes. Le tout, dès $149.",
   },
   how: {
     kicker: "Comment ça marche",
-    h2: "Trois étapes. Une solution d'ordinateur de plongée.",
+    h2: "Trois étapes pour transformer votre montre en ordinateur de plongée.",
     step1Title: "Placez votre montre connectée dans Watch Dive",
     step1Body: "Glissez votre Apple Watch ou Galaxy Watch dans le caisson étanche.",
     step1Alt: "Mains plaçant une montre connectée dans le caisson Watch Dive",
@@ -2430,7 +2439,7 @@ const fr: FrozenLandingMessages = {
     screen1Body:
       "Chaque plongée enregistrée automatiquement avec profil de profondeur, stats et vos photos.",
     tab2: "Vidéos",
-    tab2Desc: "Avec données",
+    tab2Desc: "Vidéos avec données",
     screen2Title: "Partagez avec les données de plongée",
     screen2Body: "Incrustez profondeur, temps et lieu directement sur vos images.",
     tab3: "Spots",
@@ -2456,23 +2465,24 @@ const fr: FrozenLandingMessages = {
   },
   compat: {
     kicker: "Compatibilité",
-    h2: "Compatible avec la plupart des grandes montres connectées",
-    lead: "Rares sont les montres livrées avec un capteur de profondeur. Le caisson Watch Dive en ajoute un : dans tous les cas, la montre déjà à votre poignet fait office d'ordinateur de plongée.",
-    housingBadge: "Convient à presque toutes les montres",
+    h2: "Compatible avec les modèles Apple Watch et Galaxy Watch pris en charge",
+    lead: "Peu de montres intègrent un capteur de profondeur. Le caisson Watch Dive en possède un : une montre compatible peut donc servir d'ordinateur de plongée même sans capteur intégré.",
+    housingBadge: "Pour les modèles pris en charge",
     housingTitle: "Caisson + Appli",
     housingLead: "Pas de capteur de profondeur ? Le caisson apporte le sien.",
     housingBody:
       "Votre montre n'a pas besoin de son propre capteur. Elle se place dans le caisson Watch Dive, et l'appli lit la profondeur depuis le caisson.",
     housingModel1: "Tous les autres modèles d'Apple Watch",
-    housingModel2: "Tous les modèles de Samsung Galaxy Watch",
-    housingModel3: "Google Pixel Watch",
-    housingModel4: "Autres montres Wear OS",
+    housingModel2: "Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro",
+    housingModel3:
+      "Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra",
+    housingModel4: "Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9",
     housingAlt: "Caisson étanche Watch Dive",
     appOnlyTitle: "Appli seule",
     appOnlyBody: "Pour les rares montres déjà équipées d'un capteur de profondeur.",
-    appOnlyModel1: "Apple Watch Ultra 1",
-    appOnlyModel2: "Apple Watch Ultra 2",
-    appOnlyModel3: "Apple Watch Ultra 3",
+    appOnlyModel1: "Apple Watch Ultra",
+    appOnlyModel2: "Apple Watch Ultra 2, Apple Watch Ultra 3",
+    appOnlyModel3: "Galaxy Watch Ultra2",
     watchScreenAlt: "L'appli Watch Dive sur une montre connectée",
     footnote:
       "D'autres modèles sont en cours de vérification — rejoignez la liste pour recevoir la liste définitive au lancement.",
@@ -2486,11 +2496,12 @@ const fr: FrozenLandingMessages = {
   },
   safety: {
     kicker: "Conçu pour la vraie plongée",
-    h2: "Une sécurité sérieuse, à prix d'entrée de gamme.",
-    point1Title: "Conçu pour 60 m",
-    point1Body: "Caisson scellé, conçu et testé en pression pour la vraie profondeur.",
-    point2Title: "Validé en vraies plongées en mer",
-    point2Body: "Testé dans l'eau par de vrais plongeurs — pas seulement sur un banc d'essai.",
+    h2: "Les fonctions de sécurité essentielles à la plongée loisir, à un prix accessible.",
+    point1Title: "Profondeur de 60 m en cours de vérification",
+    point1Body:
+      "Nous vérifions la profondeur annoncée de 60 m du caisson avant de publier les essais correspondants.",
+    point2Title: "Données de plongées en mer en cours d'examen",
+    point2Body: "Nous examinons les carnets de plongée avant de publier cette validation.",
     point3Title: "Fonctions de sécurité essentielles",
     point3Body:
       "Limite de non-décompression, alerte de vitesse de remontée et guidage de palier de sécurité à votre poignet.",
@@ -2503,8 +2514,8 @@ const fr: FrozenLandingMessages = {
     headline: "$299 $149 — 50 % de réduction.",
     headlineStrike: "$299",
     headlineNew: "$149",
-    lead: "Inscrivez-vous pour être informé en premier du lancement de Watch Dive — les early birds verrouillent le prix le plus bas jamais proposé, $149, avant le passage à $299 à la sortie publique.",
-    leadHighlight: "informé en premier",
+    lead: "Inscrivez-vous pour être parmi les premiers informés du lancement de Watch Dive et recevoir les détails de l'early bird à $149 avant le tarif public de $299.",
+    leadHighlight: "parmi les premiers informés",
   },
   creds: {
     heading: "Conçu par une équipe qui a fait ses preuves",
@@ -2516,14 +2527,14 @@ const fr: FrozenLandingMessages = {
     awsTitle: "Propulsé par AWS",
     awsBody: "Notre appli et les données de plongée tournent sur Amazon Web Services.",
     samsungAlt: "Équipement de plongée DIVEROID apparu dans une campagne Samsung",
-    samsungFeatured: "Vu chez",
+    samsungFeatured: "Dans une campagne de",
     samsungLogoAlt: "Samsung",
     samsungBody:
       "Notre équipement de plongée est apparu dans une publicité Samsung pour smartphone.",
   },
   faq: {
     kicker: "FAQ",
-    h2: "Bonnes questions, réponses courtes.",
+    h2: "Questions fréquentes, réponses claires.",
     q1: "Watch Dive est-il un ordinateur de plongée autonome ?",
     a1: "Non. Watch Dive transforme votre montre connectée compatible en solution d'ordinateur de plongée grâce au caisson, au capteur et à l'appli connectée.",
     q2: "Jusqu'à quelle profondeur puis-je l'utiliser ?",
@@ -2580,7 +2591,7 @@ const fr: FrozenLandingMessages = {
     verifiedTitle: "L'e-mail de votre liste d'attente est confirmé",
     verifiedBody:
       "Vous êtes sur la liste. Nous vous enverrons le lien Kickstarter dès l'ouverture de la campagne le 10 août.",
-    buddyTitle: "Amenez un binôme",
+    buddyTitle: "Invitez votre binôme",
     buddyBody: "Partagez votre lien avec les plongeurs que ça intéresserait.",
     backHome: "Retour à Watch Dive",
     expiredTitle: "Ce lien a expiré",
@@ -2590,7 +2601,7 @@ const fr: FrozenLandingMessages = {
     invalidBody:
       "Il a peut-être déjà été remplacé par un e-mail de confirmation plus récent. Retournez sur la page Watch Dive et renvoyez le formulaire.",
     errorTitle: "Impossible de confirmer pour le moment",
-    errorBody: "Votre lien n’a pas été utilisé. Veuillez réessayer.",
+    errorBody: "Votre lien est toujours valable. Veuillez réessayer.",
     tryAgain: "Réessayer",
     footerPrivacy: "Confidentialité",
     footerTerms: "Conditions",
@@ -2599,7 +2610,7 @@ const fr: FrozenLandingMessages = {
     notFoundHeading: "Page introuvable",
     notFoundBody: "La page que vous cherchez n'existe pas ou a été déplacée.",
     goHome: "Retour à l'accueil",
-    errorTitle: "Cette page n'a pas chargé",
+    errorTitle: "Cette page ne s'est pas chargée",
     errorBody: "Un problème est survenu de notre côté. Actualisez la page ou revenez à l'accueil.",
     tryAgain: "Réessayer",
   },
@@ -2707,13 +2718,13 @@ const de: FrozenLandingMessages = {
   meta: {
     title: "Watch Dive — Mach die Uhr, die du schon hast, zum Tauchcomputer",
     description:
-      "Mach aus deiner Apple Watch oder Galaxy Watch einen 60-m-Tauchcomputer. Early Bird für $149 — 50 % Rabatt zum Kickstarter-Start.",
+      "Mach aus deiner Apple Watch oder Galaxy Watch einen Tauchcomputer für 60 m. Early Bird für $149 — 50 % Rabatt zum Kickstarter-Start.",
     ogTitle: "Watch Dive — Mach die Uhr, die du schon hast, zum Tauchcomputer",
     ogDescription:
-      "Mach aus deiner Apple Watch oder Galaxy Watch einen 60-m-Tauchcomputer. Early Bird für $149 — 50 % Rabatt zum Kickstarter-Start.",
+      "Mach aus deiner Apple Watch oder Galaxy Watch einen Tauchcomputer für 60 m. Early Bird für $149 — 50 % Rabatt zum Kickstarter-Start.",
     twitterTitle: "Watch Dive — Mach die Uhr, die du schon hast, zum Tauchcomputer",
     twitterDescription:
-      "Mach aus deiner Apple Watch oder Galaxy Watch einen 60-m-Tauchcomputer. Early Bird für $149 auf Kickstarter.",
+      "Mach aus deiner Apple Watch oder Galaxy Watch einen Tauchcomputer für 60 m. Early Bird für $149 auf Kickstarter.",
   },
   banner: {
     kicker: "Bald auf Kickstarter",
@@ -2721,12 +2732,12 @@ const de: FrozenLandingMessages = {
     joinCta: "Auf die Warteliste",
   },
   cta: {
-    label: "Meine $149-Early-Bird-Einladung",
+    label: "Einladung zum Early Bird für $149 erhalten",
   },
   referral: {
     welcome:
-      "Ein Freund hat dich eingeladen — du stehst auf seiner Liste. Bestätige deine E-Mail, um dabei zu sein.",
-    welcomeHighlight: "du stehst auf seiner Liste",
+      "Du wurdest von einem Tauchbuddy eingeladen. Bestätige deine E-Mail, um dabei zu sein.",
+    welcomeHighlight: "Du wurdest von einem Tauchbuddy eingeladen",
     successTitle: "Du bist auf der Liste. 🎉",
     successBody: "Wir schreiben dir, sobald Watch Dive auf Kickstarter live geht.",
     buddyTitle: "Bring deinen Buddy mit",
@@ -2761,7 +2772,7 @@ const de: FrozenLandingMessages = {
   },
   server: {
     pending:
-      "Wenn diese Adresse E-Mails empfangen kann, ist ein Bestätigungslink unterwegs. Öffne ihn zum Bestätigen.",
+      "Wenn diese Adresse E-Mails empfangen kann, kommt der Bestätigungslink in Kürze an. Öffne ihn, um die Anmeldung zu bestätigen.",
     closed:
       "Die Vorstart-Liste ist voll. Watch Dive öffnet am 10. August auf Kickstarter für alle.",
   },
@@ -2786,13 +2797,13 @@ const de: FrozenLandingMessages = {
     badge: "Bald auf Kickstarter",
     h1: "Mach die Uhr, die du schon hast, zum Tauchcomputer.",
     h1Highlight: "die du schon hast",
-    sub: "Mach aus deiner Apple Watch oder Galaxy Watch einen 60-m-Tauchcomputer.",
+    sub: "Mach aus deiner Apple Watch oder Galaxy Watch einen Tauchcomputer für 60 m.",
     priceLine:
       "Early Bird ab $149 auf Kickstarter — ein Bruchteil des Preises eines klassischen Tauchcomputers.",
     backgroundAlt: "Taucher erkundet ein farbenprächtiges Korallenriff",
     sideImageAlt: "Watch Dive Unterwasser-Produktaufnahme",
     stat1Label: "60 m",
-    stat1Desc: "Gehäuse-Auslegung",
+    stat1Desc: "Gehäuse-Tauchtiefe",
     stat2Label: "Scuba + Apnoe",
     stat2Desc: "Zwei Modi",
     stat3Label: "$149",
@@ -2802,14 +2813,14 @@ const de: FrozenLandingMessages = {
     offBadge: "50 % Rabatt",
     offNote: "Early Bird zum Kickstarter-Start",
     gift: "Und dann teile deinen Link mit den Tauchern, mit denen du wirklich ins Wasser gehen würdest.",
-    trust1: "Melde dich an, erfahre es zuerst und sichere dir den niedrigsten Startpreis.",
+    trust1: "Melde dich an und erhalte zuerst die Neuigkeiten zum Start und Early Bird.",
     trust2: "Kein Spam — genau eine E-Mail, wenn wir live gehen.",
     backedBy: "Unterstützt von",
     featuredBy: "Bekannt aus",
     nvidiaAlt: "NVIDIA Inception",
     awsAlt: "Amazon Web Services",
     samsungAlt: "Samsung",
-    promiseKicker: "Das Watch-Dive-Versprechen",
+    promiseKicker: "Das Versprechen von Watch Dive",
     promiseText: "Echtes Tauchcomputer-Gefühl für einen Bruchteil des Preises",
     cardKicker: "Kickstarter-Versprechen",
     cardHeadline: "Tiefe. Sicherheit. No-Deco.",
@@ -2818,11 +2829,11 @@ const de: FrozenLandingMessages = {
   },
   value: {
     kicker: "Warum Watch Dive",
-    h2: "Warum $1,000 für einen Tauchcomputer ausgeben, wenn deine Smartwatch schon die halbe Strecke schafft?",
-    imageAlt: "Watch-Dive-Gehäuse auf einem Bootsdeck",
+    h2: "Warum $1,000 für einen separaten Tauchcomputer ausgeben, wenn du bereits eine kompatible Smartwatch hast?",
+    imageAlt: "Gehäuse von Watch Dive auf einem Bootsdeck",
     overlayKicker: "Warum Taucher es lieben",
-    overlayText: "Premium-Tauchausrüstungs-Gefühl, ohne den Premium-Preis.",
-    lead: "Watch Dive hilft neuen und Freizeittauchern, das Kern-Erlebnis eines Tauchcomputers mit der Uhr freizuschalten, die sie schon besitzen — zu einem Preis, der endlich Sinn ergibt.",
+    overlayText: "Das Gefühl von Premium-Tauchausrüstung, ohne den Premium-Preis.",
+    lead: "Mit Watch Dive nutzen Einsteiger und Freizeittaucher die wichtigsten Tauchcomputer-Funktionen auf der Uhr, die sie ohnehin tragen — zu einem vernünftigen Preis.",
     card1Title: "Nutze, was du hast",
     card1Copy:
       "Gebaut um die Apple Watch und Galaxy Watch, die du schon trägst — kein zweites Gerät nötig.",
@@ -2830,7 +2841,7 @@ const de: FrozenLandingMessages = {
     card2Copy:
       "Klares Gehäuse, kontrastreiche Bildschirm-UI und edle Varianten in Schwarz und Weiß.",
     card3Title: "Echter Tauchwert",
-    card3Copy: "Die wichtigsten Scuba-Daten, ohne dass du einen $1,000-Tauchcomputer kaufen musst.",
+    card3Copy: "Die wichtigsten Tauchdaten, ohne einen Tauchcomputer für $1,000 kaufen zu müssen.",
     card4Title: "Tauchgänge zum Teilen",
     card4Copy:
       "Die vernetzte App und starke Visuals machen jeden Tauchgang leicht festzuhalten und zu teilen.",
@@ -2839,13 +2850,13 @@ const de: FrozenLandingMessages = {
     kicker: "Gebaut für echtes Sporttauchen",
     h2: "Tiefe, Tauchzeit, Temperatur, Sicherheitsstopps, Aufstiegsrate und NDL — in einem System.",
     sub: "Wasserdicht bis 60 m. Scuba- und Apnoe-Modus, beides an Bord.",
-    videoAria: "Watch-Dive-Funktionen in Aktion",
-    item1Title: "Aufstiegs-Alarm",
+    videoAria: "Funktionen von Watch Dive in Aktion",
+    item1Title: "Aufstiegsalarm",
     item1Body:
-      "Die sichere Aufstiegsrate liegt bei 9–18 m/min. Watch Dive überwacht jeden Meter deines Aufstiegs und warnt dich, bevor du die Grenze überschreitest — ohne Tasten, ohne Menüs.",
+      "Watch Dive überwacht die Aufstiegsrate und gibt im Bereich von 9–18 m/min Warnungen aus — ohne Tasten oder Menüs.",
     item2Title: "No-Deco / NDL",
     item2Body:
-      "Watch Dive ist bis 60 m wasserdicht und berechnet deine NDL in Echtzeit. Nie wieder raten, wie viel Grundzeit dir bleibt.",
+      "Watch Dive ist bis 60 m wasserdicht und berechnet deine NDL in Echtzeit, damit du die verbleibende Grundzeit besser im Blick behältst.",
     item3Title: "Tiefe, Zeit & Temperatur",
     item3Body:
       "Echtzeit-Tiefe, verstrichene Tauchzeit und Wassertemperatur — alles automatisch protokolliert und nach jedem Tauchgang per Bluetooth mit deinem Diveroid-App-Logbuch synchronisiert.",
@@ -2855,10 +2866,10 @@ const de: FrozenLandingMessages = {
   },
   how: {
     kicker: "So funktioniert's",
-    h2: "Drei Schritte. Eine Tauchcomputer-Lösung.",
+    h2: "In drei Schritten wird deine Uhr zum Tauchcomputer.",
     step1Title: "Leg deine Smartwatch in Watch Dive",
     step1Body: "Schieb deine Apple Watch oder Galaxy Watch in das wasserdichte Gehäuse.",
-    step1Alt: "Hände legen eine Smartwatch in das Watch-Dive-Gehäuse",
+    step1Alt: "Hände legen eine Smartwatch in das Gehäuse von Watch Dive",
     step2Title: "Tauche mit Echtzeit-Führung",
     step2Body: "Tiefe, Tauchzeit, Temperatur, Aufstiegsrate und Sicherheitsstopps am Handgelenk.",
     step2Alt: "Apnoetaucherin mit Watch Dive am Beckenrand",
@@ -2902,24 +2913,25 @@ const de: FrozenLandingMessages = {
   },
   compat: {
     kicker: "Kompatibilität",
-    h2: "Funktioniert mit den meisten führenden Smartwatches",
-    lead: "Nur eine Handvoll Uhren hat einen Tiefensensor ab Werk. Das Watch-Dive-Gehäuse bringt einen mit — so wird die Uhr an deinem Handgelenk so oder so zum Tauchcomputer.",
-    housingBadge: "Passt für fast jede Uhr",
+    h2: "Kompatibel mit unterstützten Apple Watch- und Galaxy Watch-Modellen",
+    lead: "Nur wenige Uhren haben ab Werk einen Tiefensensor. Das Gehäuse von Watch Dive bringt einen eigenen mit — so wird eine kompatible Uhr auch ohne eingebauten Sensor zum Tauchcomputer.",
+    housingBadge: "Für unterstützte Modelle",
     housingTitle: "Gehäuse + App",
-    housingLead: "Kein Tiefensensor? Das Gehäuse bringt seinen eigenen mit.",
+    housingLead: "Kein Tiefensensor? Im Gehäuse ist bereits einer eingebaut.",
     housingBody:
-      "Deine Uhr braucht keinen eigenen Sensor. Sie kommt ins Watch-Dive-Gehäuse, und die App liest die Tiefe aus dem Gehäuse.",
+      "Deine Uhr braucht keinen eigenen Sensor. Sie kommt in das Gehäuse von Watch Dive, und die App liest die Tiefe aus dem Gehäuse.",
     housingModel1: "Alle anderen Apple-Watch-Modelle",
-    housingModel2: "Alle Samsung-Galaxy-Watch-Modelle",
-    housingModel3: "Google Pixel Watch",
-    housingModel4: "Andere Wear-OS-Uhren",
-    housingAlt: "Wasserdichtes Watch-Dive-Gehäuse",
+    housingModel2: "Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro",
+    housingModel3:
+      "Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra",
+    housingModel4: "Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9",
+    housingAlt: "Wasserdichtes Gehäuse von Watch Dive",
     appOnlyTitle: "Nur App",
     appOnlyBody: "Für die wenigen Uhren mit bereits eingebautem Tiefensensor.",
-    appOnlyModel1: "Apple Watch Ultra 1",
-    appOnlyModel2: "Apple Watch Ultra 2",
-    appOnlyModel3: "Apple Watch Ultra 3",
-    watchScreenAlt: "Watch-Dive-App auf einer Smartwatch",
+    appOnlyModel1: "Apple Watch Ultra",
+    appOnlyModel2: "Apple Watch Ultra 2, Apple Watch Ultra 3",
+    appOnlyModel3: "Galaxy Watch Ultra2",
+    watchScreenAlt: "Watch Dive App auf einer Smartwatch",
     footnote:
       "Weitere Modelle werden gerade geprüft — komm auf die Warteliste und erhalte zum Start die endgültige Liste.",
   },
@@ -2933,13 +2945,13 @@ const de: FrozenLandingMessages = {
   safety: {
     kicker: "Gebaut für echtes Tauchen",
     h2: "Ernsthafte Sicherheit zum Einsteigerpreis.",
-    point1Title: "Für 60 m ausgelegt",
-    point1Body: "Versiegeltes Gehäuse, konstruiert und druckgeprüft für echte Tiefe.",
-    point2Title: "In echten Meerestauchgängen validiert",
-    point2Body: "Im Wasser getestet von echten Tauchern — nicht nur auf dem Prüfstand.",
+    point1Title: "Angabe zu 60 m wird geprüft",
+    point1Body:
+      "Wir prüfen die Angabe von 60 m für das Gehäuse, bevor wir die zugrunde liegenden Testergebnisse veröffentlichen.",
+    point2Title: "Nachweise aus Meerestauchgängen in Prüfung",
+    point2Body: "Wir prüfen die Tauchprotokolle, bevor wir diese Validierung veröffentlichen.",
     point3Title: "Zentrale Sicherheitsfunktionen",
-    point3Body:
-      "Nullzeitgrenze, Aufstiegs-Alarm und Sicherheitsstopp-Führung an deinem Handgelenk.",
+    point3Body: "Nullzeitgrenze, Aufstiegsalarm und Sicherheitsstopp-Führung an deinem Handgelenk.",
     disclaimer:
       "Watch Dive ist eine Tauchhilfe, kein Ersatz für eine ordentliche Ausbildung. Tauche immer innerhalb deiner Zertifizierung und Grenzen, befolge die üblichen Sicherheitsverfahren und führe einen Backup-Tauchcomputer mit.",
   },
@@ -2949,8 +2961,8 @@ const de: FrozenLandingMessages = {
     headline: "$299 $149 — 50 % Rabatt.",
     headlineStrike: "$299",
     headlineNew: "$149",
-    lead: "Melde dich an und erfahre als Erster, wenn Watch Dive startet — Early-Bird-Unterstützer sichern sich mit $149 den niedrigsten Preis aller Zeiten, bevor er zum öffentlichen Verkauf auf $299 steigt.",
-    leadHighlight: "als Erster",
+    lead: "Melde dich an und erfahre als Erstes vom Start von Watch Dive und den Details zum Early Bird für $149, bevor der öffentliche Preis auf $299 steigt.",
+    leadHighlight: "als Erstes",
   },
   creds: {
     heading: "Gebaut von einem erprobten Team",
@@ -2974,7 +2986,7 @@ const de: FrozenLandingMessages = {
     q2: "Wie tief kann ich damit tauchen?",
     a2: "Watch Dive ist für 60 m ausgelegt, die empfohlene Einsatztiefe für Sporttauchen liegt bei 40 m.",
     q3: "Unterstützt es Sicherheitsstopp und Nullzeitgrenzen?",
-    a3: "Ja. Es unterstützt die wichtigsten Sporttauch-Funktionen: Sicherheitsstopp, Aufstiegs-Alarm, Tiefe, Tauchzeit, Temperatur und Nullzeit-Führung.",
+    a3: "Ja. Es unterstützt die wichtigsten Sporttauch-Funktionen: Sicherheitsstopp, Aufstiegsalarm, Tiefe, Tauchzeit, Temperatur und Nullzeit-Führung.",
     q4: "Funktioniert es beim Apnoetauchen?",
     a4: "Ja. Watch Dive unterstützt sowohl Gerätetauchen als auch Apnoe.",
     q5: "Wann startet es?",
@@ -3035,7 +3047,7 @@ const de: FrozenLandingMessages = {
     invalidBody:
       "Er wurde womöglich schon durch eine neuere Bestätigungsmail ersetzt. Geh zurück zur Watch-Dive-Seite und schick das Formular erneut ab.",
     errorTitle: "Bestätigung gerade nicht möglich",
-    errorBody: "Dein Link wurde nicht verwendet. Bitte versuch es erneut.",
+    errorBody: "Dein Link ist weiterhin gültig. Bitte versuch es erneut.",
     tryAgain: "Erneut versuchen",
     footerPrivacy: "Datenschutz",
     footerTerms: "AGB",
@@ -3044,7 +3056,7 @@ const de: FrozenLandingMessages = {
     notFoundHeading: "Seite nicht gefunden",
     notFoundBody: "Die gesuchte Seite existiert nicht oder wurde verschoben.",
     goHome: "Zur Startseite",
-    errorTitle: "Diese Seite hat nicht geladen",
+    errorTitle: "Diese Seite konnte nicht geladen werden",
     errorBody: "Bei uns ist etwas schiefgelaufen. Lade neu oder geh zurück zur Startseite.",
     tryAgain: "Erneut versuchen",
   },
@@ -3165,21 +3177,20 @@ const ptBR: FrozenLandingMessages = {
     joinCta: "Entrar na lista de espera",
   },
   cta: {
-    label: "Garantir meu early bird de $149",
+    label: "Receber meu convite para o early bird de $149",
   },
   referral: {
-    welcome:
-      "Um amigo convidou você — você está na lista dele. Confirme seu e-mail para entrar junto.",
-    welcomeHighlight: "você está na lista dele",
+    welcome: "Você recebeu um convite de um amigo. Confirme seu e-mail para entrar na lista.",
+    welcomeHighlight: "Você recebeu um convite de um amigo",
     successTitle: "Você está na lista. 🎉",
     successBody: "Vamos te avisar por e-mail assim que o Watch Dive entrar no ar no Kickstarter.",
-    buddyTitle: "Traga sua dupla",
+    buddyTitle: "Convide seu parceiro de mergulho",
     buddyBody:
       "Compartilhe seu link com mergulhadores que iam querer isso. Contamos todo mundo que entrar por ele, e enviamos o link do Kickstarter por e-mail no momento em que a campanha abrir.",
     joinedOne: "{count} mergulhador entrou pelo seu link",
     joinedOther: "{count} mergulhadores entraram pelo seu link",
     copied: "Copiado!",
-    shareButton: "Mandar para sua dupla de mergulho",
+    shareButton: "Mandar para seu parceiro de mergulho",
     shareText:
       "Estou transformando meu Apple/Galaxy Watch em um computador de mergulho com o Watch Dive 🤿 O early bird custa $149 no Kickstarter — entre na lista pelo meu link.",
   },
@@ -3205,7 +3216,7 @@ const ptBR: FrozenLandingMessages = {
   },
   server: {
     pending:
-      "Se este endereço puder receber e-mail, um link de confirmação está a caminho. Abra-o para confirmar.",
+      "Se este endereço puder receber e-mail, o link de confirmação chegará em instantes. Abra-o para confirmar.",
     closed:
       "A lista de pré-lançamento está cheia. O Watch Dive abre para todo mundo no Kickstarter em 10 de agosto.",
   },
@@ -3236,7 +3247,7 @@ const ptBR: FrozenLandingMessages = {
     backgroundAlt: "Mergulhador explorando um recife de coral vibrante",
     sideImageAlt: "Foto subaquática do produto Watch Dive",
     stat1Label: "60 m",
-    stat1Desc: "Classificação da caixa",
+    stat1Desc: "Profundidade da caixa",
     stat2Label: "Scuba + Apneia",
     stat2Desc: "Dois modos",
     stat3Label: "$149",
@@ -3246,7 +3257,7 @@ const ptBR: FrozenLandingMessages = {
     offBadge: "50% off",
     offNote: "early bird no lançamento no Kickstarter",
     gift: "Depois, compartilhe seu link com os mergulhadores com quem você realmente entraria na água.",
-    trust1: "Cadastre-se para saber primeiro e garantir o menor preço de lançamento.",
+    trust1: "Cadastre-se para receber primeiro as novidades do lançamento e do early bird.",
     trust2: "Sem spam — um único e-mail quando entrarmos no ar.",
     backedBy: "Apoiado por",
     featuredBy: "Destaque em",
@@ -3262,11 +3273,11 @@ const ptBR: FrozenLandingMessages = {
   },
   value: {
     kicker: "Por que Watch Dive",
-    h2: "Por que gastar $1,000 em um computador de mergulho se o seu smartwatch já faz metade do caminho?",
+    h2: "Se você já tem um smartwatch compatível, por que gastar $1,000 em outro computador de mergulho?",
     imageAlt: "Caixas Watch Dive expostas no convés de um barco",
     overlayKicker: "Por que os mergulhadores amam",
-    overlayText: "Sensação de equipamento de mergulho premium, sem o preço premium.",
-    lead: "O Watch Dive ajuda mergulhadores novos e recreativos a destravar a experiência essencial de um computador de mergulho com o relógio que já têm — por um preço que finalmente faz sentido.",
+    overlayText: "Visual de equipamento de mergulho premium, sem o preço premium.",
+    lead: "Com o Watch Dive, mergulhadores iniciantes e recreativos usam os recursos essenciais de um computador de mergulho no relógio que já têm — por um preço que faz sentido.",
     card1Title: "Use o que você já tem",
     card1Copy:
       "Construído em torno do Apple Watch e do Galaxy Watch que você já usa — sem comprar um segundo aparelho.",
@@ -3274,7 +3285,7 @@ const ptBR: FrozenLandingMessages = {
     card2Copy:
       "Caixa transparente, interface nítida na tela e variações refinadas em preto e branco.",
     card3Title: "Valor de mergulho de verdade",
-    card3Copy: "As métricas essenciais de scuba sem te obrigar a comprar um computador de $1,000.",
+    card3Copy: "Os dados essenciais do mergulho sem precisar comprar um computador de $1,000.",
     card4Title: "Mergulhos para compartilhar",
     card4Copy:
       "O app conectado e visuais marcantes tornam cada mergulho fácil de lembrar e compartilhar.",
@@ -3282,14 +3293,14 @@ const ptBR: FrozenLandingMessages = {
   functions: {
     kicker: "Feito para o mergulho recreativo de verdade",
     h2: "Profundidade, tempo de mergulho, temperatura, paradas de segurança, velocidade de subida e NDL — em um único sistema.",
-    sub: "À prova d'água até 60 m. Modos scuba e mergulho livre, ambos incluídos.",
+    sub: "À prova d'água até 60 m. Dois modos: scuba e mergulho livre.",
     videoAria: "Funções do Watch Dive em ação",
     item1Title: "Alerta de velocidade de subida",
     item1Body:
-      "A velocidade de subida segura é de 9–18 m/min. O Watch Dive monitora cada metro da sua subida e avisa antes de você passar do limite — sem botões, sem menus.",
+      "O Watch Dive monitora a velocidade de subida e emite alertas na faixa de 9–18 m/min, sem botões nem menus.",
     item2Title: "No-deco / NDL",
     item2Body:
-      "O Watch Dive é à prova d'água até 60 m e calcula seu NDL em tempo real. Nunca mais chute quanto tempo de fundo ainda resta.",
+      "O Watch Dive é à prova d'água até 60 m e calcula seu NDL em tempo real para ajudar você a acompanhar o tempo de fundo restante.",
     item3Title: "Profundidade, tempo e temperatura",
     item3Body:
       "Profundidade em tempo real, tempo de mergulho decorrido e temperatura da água — tudo registrado automaticamente e sincronizado por Bluetooth com o logbook do app Diveroid depois de cada mergulho.",
@@ -3299,7 +3310,7 @@ const ptBR: FrozenLandingMessages = {
   },
   how: {
     kicker: "Como funciona",
-    h2: "Três passos. Uma solução de computador de mergulho.",
+    h2: "Três passos para transformar seu relógio em um computador de mergulho.",
     step1Title: "Coloque seu smartwatch dentro do Watch Dive",
     step1Body: "Encaixe seu Apple Watch ou Galaxy Watch na caixa à prova d'água.",
     step1Alt: "Mãos colocando um smartwatch na caixa Watch Dive",
@@ -3307,7 +3318,7 @@ const ptBR: FrozenLandingMessages = {
     step2Body:
       "Profundidade, tempo de mergulho, temperatura, velocidade de subida e paradas de segurança no seu pulso.",
     step2Alt: "Mergulhadora livre usando o Watch Dive na beira da piscina",
-    step3Title: "Sincronize seu log depois de subir",
+    step3Title: "Sincronize seu logbook ao voltar à superfície",
     step3Body: "Reveja perfil, logbook e memórias no app conectado.",
     step3Alt: "Mergulhador revendo o log de mergulho no app conectado à beira da piscina",
   },
@@ -3321,7 +3332,7 @@ const ptBR: FrozenLandingMessages = {
     screen1Title: "Logbook e galeria automáticos",
     screen1Body: "Cada mergulho registrado com perfil de profundidade, estatísticas e suas fotos.",
     tab2: "Vídeo",
-    tab2Desc: "Com dados",
+    tab2Desc: "Vídeos com dados",
     screen2Title: "Compartilhe com dados de mergulho",
     screen2Body: "Sobreponha profundidade, tempo e localização direto nas suas imagens.",
     tab3: "Pontos",
@@ -3335,7 +3346,7 @@ const ptBR: FrozenLandingMessages = {
   },
   reviews: {
     kicker: "Dos nossos testadores beta",
-    h2: "{count} mergulhadores já entraram na água com ele",
+    h2: "{count} mergulhadores já entraram na água com o Watch Dive",
     sub: "Avaliações do programa beta, traduzidas do idioma de cada testador.",
     disclosure:
       "Mostrando {published} de {total}. As demais mencionam detalhes do produto que ainda não terminamos de verificar, então as seguramos até concluir.",
@@ -3346,23 +3357,24 @@ const ptBR: FrozenLandingMessages = {
   },
   compat: {
     kicker: "Compatibilidade",
-    h2: "Funciona com a maioria dos principais smartwatches",
-    lead: "Só um punhado de relógios vem com sensor de profundidade. A caixa Watch Dive adiciona um, então o relógio que já está no seu pulso funciona como computador de mergulho de qualquer jeito.",
-    housingBadge: "Serve em quase qualquer relógio",
+    h2: "Compatível com os modelos Apple Watch e Galaxy Watch indicados",
+    lead: "Poucos relógios vêm com sensor de profundidade. A caixa Watch Dive tem um sensor próprio, então um relógio compatível funciona como computador de mergulho mesmo sem sensor integrado.",
+    housingBadge: "Para modelos compatíveis",
     housingTitle: "Caixa + App",
     housingLead: "Sem sensor de profundidade? A caixa traz o dela.",
     housingBody:
       "Seu relógio não precisa de sensor próprio. Ele entra na caixa Watch Dive, e o app lê a profundidade a partir da caixa.",
     housingModel1: "Todos os outros modelos de Apple Watch",
-    housingModel2: "Todos os modelos de Samsung Galaxy Watch",
-    housingModel3: "Google Pixel Watch",
-    housingModel4: "Outros relógios Wear OS",
+    housingModel2: "Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro",
+    housingModel3:
+      "Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra",
+    housingModel4: "Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9",
     housingAlt: "Caixa à prova d'água Watch Dive",
     appOnlyTitle: "Só o App",
     appOnlyBody: "Para os poucos relógios que já vêm com sensor de profundidade embutido.",
-    appOnlyModel1: "Apple Watch Ultra 1",
-    appOnlyModel2: "Apple Watch Ultra 2",
-    appOnlyModel3: "Apple Watch Ultra 3",
+    appOnlyModel1: "Apple Watch Ultra",
+    appOnlyModel2: "Apple Watch Ultra 2, Apple Watch Ultra 3",
+    appOnlyModel3: "Galaxy Watch Ultra2",
     watchScreenAlt: "App Watch Dive rodando em um smartwatch",
     footnote:
       "Mais modelos estão sendo verificados — entre na lista para receber a relação final no lançamento.",
@@ -3376,11 +3388,12 @@ const ptBR: FrozenLandingMessages = {
   },
   safety: {
     kicker: "Feito para o mergulho de verdade",
-    h2: "Segurança séria, por preço de entrada.",
-    point1Title: "Projetado para 60 m",
-    point1Body: "Caixa selada, projetada e testada sob pressão para profundidade real.",
-    point2Title: "Validado em mergulhos reais no mar",
-    point2Body: "Testado na água por mergulhadores de verdade — não só em bancada.",
+    h2: "Recursos essenciais de segurança para mergulho recreativo, a preço de entrada.",
+    point1Title: "Classificação de 60 m em verificação",
+    point1Body:
+      "Estamos verificando a classificação de 60 m da caixa antes de publicar os testes que a sustentam.",
+    point2Title: "Evidências de mergulhos no mar em análise",
+    point2Body: "Estamos analisando os registros de mergulho antes de publicar essa validação.",
     point3Title: "Funções essenciais de segurança",
     point3Body:
       "Limite de não descompressão, alerta de velocidade de subida e orientação de parada de segurança no seu pulso.",
@@ -3393,11 +3406,11 @@ const ptBR: FrozenLandingMessages = {
     headline: "$299 $149 — 50% off.",
     headlineStrike: "$299",
     headlineNew: "$149",
-    lead: "Cadastre-se para ser o primeiro a saber quando o Watch Dive lançar — apoiadores early bird garantem o menor preço da história, $149, antes de subir para $299 na venda pública.",
-    leadHighlight: "o primeiro a saber",
+    lead: "Cadastre-se para receber primeiro as novidades do lançamento do Watch Dive e os detalhes do early bird de $149 antes do preço público de $299.",
+    leadHighlight: "receber primeiro",
   },
   creds: {
-    heading: "Criado por um time comprovado",
+    heading: "Criado por um time experiente",
     nvidiaAlt: "Selo de membro do programa NVIDIA Inception",
     nvidiaTitle: "Membro do NVIDIA Inception",
     nvidiaBody: "O programa da NVIDIA para startups que constroem com IA e computação acelerada.",
@@ -3405,13 +3418,13 @@ const ptBR: FrozenLandingMessages = {
     awsTitle: "Com tecnologia AWS",
     awsBody: "Nosso app e os dados de mergulho rodam na Amazon Web Services.",
     samsungAlt: "Equipamento de mergulho DIVEROID em uma campanha da Samsung",
-    samsungFeatured: "Destaque em",
+    samsungFeatured: "Em uma campanha da",
     samsungLogoAlt: "Samsung",
     samsungBody: "Nosso equipamento de mergulho apareceu em um anúncio de smartphone da Samsung.",
   },
   faq: {
     kicker: "FAQ",
-    h2: "Boas perguntas, respostas curtas.",
+    h2: "Perguntas frequentes, respostas claras.",
     q1: "O Watch Dive é um computador de mergulho independente?",
     a1: "Não. O Watch Dive transforma seu smartwatch compatível em uma solução de computador de mergulho usando a caixa, o sensor e o app conectado.",
     q2: "Até que profundidade posso usar?",
@@ -3468,7 +3481,7 @@ const ptBR: FrozenLandingMessages = {
     verifiedTitle: "O e-mail da sua lista de espera está confirmado",
     verifiedBody:
       "Você está na lista. Enviaremos o link do Kickstarter por e-mail no momento em que a campanha abrir, em 10 de agosto.",
-    buddyTitle: "Traga sua dupla",
+    buddyTitle: "Convide seu parceiro de mergulho",
     buddyBody: "Compartilhe seu link com mergulhadores que iam querer isso.",
     backHome: "Voltar ao Watch Dive",
     expiredTitle: "Este link expirou",
@@ -3478,7 +3491,7 @@ const ptBR: FrozenLandingMessages = {
     invalidBody:
       "Ele pode já ter sido substituído por um e-mail de confirmação mais recente. Volte à página do Watch Dive e envie o formulário de novo.",
     errorTitle: "Não conseguimos confirmar agora",
-    errorBody: "Seu link não foi usado. Tente novamente.",
+    errorBody: "Seu link continua válido. Tente novamente.",
     tryAgain: "Tentar de novo",
     footerPrivacy: "Privacidade",
     footerTerms: "Termos",
@@ -3487,7 +3500,7 @@ const ptBR: FrozenLandingMessages = {
     notFoundHeading: "Página não encontrada",
     notFoundBody: "A página que você procura não existe ou foi movida.",
     goHome: "Ir para o início",
-    errorTitle: "Esta página não carregou",
+    errorTitle: "Não foi possível carregar esta página",
     errorBody: "Algo deu errado do nosso lado. Você pode atualizar ou voltar ao início.",
     tryAgain: "Tentar de novo",
   },

@@ -94,10 +94,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   assert.match(source, /href="#offer-form"/);
 });
 
-test("production stylesheet remains byte-identical", () => {
+test("production stylesheet stays at the approved locale-typography baseline", () => {
   assert.equal(
     sha256(read("src/styles.css")),
-    "d8da710239c5532679c5ca3ab17cbde77998847aeba9b62350e36abc57b7d27f",
+    "f9a558623d37232f6e83854d59564e8417eccd6c6d322858fca3983cfb64bc51",
   );
 });
 

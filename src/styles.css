@@ -157,9 +157,126 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-sans);
     letter-spacing: -0.02em;
+  }
+
+  /* Locale-aware type rhythm. Layout, color, media, and component geometry
+     stay untouched; only glyph spacing and natural line-breaking change. */
+  :is(html:lang(en), html:lang(es)) {
+    --wd-kicker-tracking: 0.14em;
+    --wd-heading-tracking: -0.02em;
+  }
+
+  :is(html:lang(fr), html:lang(de), html:lang(pt-BR)) {
+    --wd-kicker-tracking: 0.1em;
+    --wd-heading-tracking: -0.015em;
+  }
+
+  html:lang(ko) {
+    --wd-kicker-tracking: 0.02em;
+    --wd-heading-tracking: -0.025em;
+  }
+
+  :is(html:lang(zh-CN), html:lang(zh-TW)) {
+    --wd-kicker-tracking: 0.04em;
+    --wd-heading-tracking: 0;
+  }
+
+  html:lang(ja) {
+    --wd-kicker-tracking: 0.04em;
+    --wd-heading-tracking: 0.01em;
+  }
+
+  html:lang(ko) body {
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", var(--font-sans);
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  html:lang(zh-CN) body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", var(--font-sans);
+  }
+
+  html:lang(zh-TW) body {
+    font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", var(--font-sans);
+  }
+
+  html:lang(ja) body {
+    font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", var(--font-sans);
+  }
+
+  :is(html:lang(zh-CN), html:lang(zh-TW), html:lang(ja)) body {
+    line-break: strict;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  :is(html:lang(zh-CN), html:lang(zh-TW), html:lang(ja)) h1 {
+    word-break: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  :is(
+      html:lang(en),
+      html:lang(es),
+      html:lang(fr),
+      html:lang(de),
+      html:lang(pt-BR),
+      html:lang(ko),
+      html:lang(zh-CN),
+      html:lang(zh-TW),
+      html:lang(ja)
+    )
+    :is(h1, h2, h3, h4) {
+    letter-spacing: var(--wd-heading-tracking);
+    text-wrap: balance;
+  }
+
+  :is(
+      html:lang(en),
+      html:lang(es),
+      html:lang(fr),
+      html:lang(de),
+      html:lang(pt-BR),
+      html:lang(ko),
+      html:lang(zh-CN),
+      html:lang(zh-TW),
+      html:lang(ja)
+    )
+    .uppercase[class*="tracking-["] {
+    letter-spacing: var(--wd-kicker-tracking);
+  }
+
+  :is(html:lang(ko), html:lang(zh-CN), html:lang(zh-TW), html:lang(ja)) .tracking-wide {
+    letter-spacing: var(--wd-kicker-tracking);
+  }
+
+  :is(html:lang(ko), html:lang(zh-CN), html:lang(zh-TW), html:lang(ja)) .uppercase {
+    text-transform: none;
+  }
+
+  form button,
+  a[href="#offer-form"] {
+    letter-spacing: 0;
+    line-height: 1.25;
+  }
+
+  :is(html:lang(es), html:lang(fr), html:lang(de), html:lang(pt-BR)) form button {
+    padding-inline: 1rem;
+    font-size: 0.875rem;
+  }
+
+  details > summary {
+    line-height: 1.4;
+  }
+
+  details > summary > span:last-child {
+    flex-shrink: 0;
   }
 }
 

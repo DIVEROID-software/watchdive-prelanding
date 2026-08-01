@@ -190,6 +190,118 @@ test("rated copy is never strengthened into a product certification", () => {
   }
 });
 
+test("native-reviewed landing copy does not regress to known literal translations", () => {
+  const literalArtifacts: Partial<Record<Locale, RegExp>> = {
+    ko: /프리미엄 빌드|하우징이 직접 가져옵니다|진지한 안전/,
+    "zh-CN": /已经完成了一半|解锁潜水电脑的核心体验|认真的安全/,
+    "zh-TW": /已經完成了一半|解鎖潛水電腦的核心體驗|認真的安全/,
+    ja: /核心体験|そのウォッチを、ダイコンに|ほんの一部の価格/,
+    es: /hace la mitad del camino|desbloquear la experiencia esencial|Seguridad seria/,
+    fr: /fait déjà la moitié du chemin|débloquer l'essentiel|verrouill(?:er|ent)/,
+    de: /schon die halbe Strecke|Kern-Erlebnis|60-m-Tauchcomputer|Aufstiegs-Alarm/,
+    "pt-BR": /faz metade do caminho|destravar a experiência essencial|Segurança séria/,
+  };
+
+  for (const locale of SUPPORTED_LOCALES) {
+    const messages = FROZEN_LANDING_MESSAGES[locale];
+    const conversionCopy = flattenedText([
+      messages.cta,
+      messages.hero,
+      messages.value,
+      messages.functions,
+      messages.how,
+      messages.app,
+      messages.reviews,
+      messages.compat,
+      messages.cameras,
+      messages.safety,
+      messages.offer,
+      messages.creds,
+      messages.faq,
+      messages.verify,
+      messages.errors,
+    ]);
+    const artifact = literalArtifacts[locale];
+    if (artifact) {
+      assert.doesNotMatch(conversionCopy, artifact, `${locale}: literal translation regressed`);
+    }
+  }
+});
+
+test("localized CTA copy asks for an invitation instead of claiming a purchase or price lock", () => {
+  const purchaseGuarantee =
+    /lock in|secure|guarantee|확보|보장|锁定|保证|鎖定|保證|確保|asegurar|garantizar|verrouiller|garantir|sichern/iu;
+
+  for (const locale of SUPPORTED_LOCALES) {
+    assert.doesNotMatch(
+      FROZEN_LANDING_MESSAGES[locale].cta.label,
+      purchaseGuarantee,
+      `${locale}: CTA implies a purchase or guaranteed price`,
+    );
+  }
+});
+
+test("compatibility cards mirror the owner-approved Apple and Galaxy model matrix", () => {
+  const housingModels = [
+    "Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro",
+    "Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra",
+    "Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9",
+  ] as const;
+  const appOnlyModels = [
+    "Apple Watch Ultra",
+    "Apple Watch Ultra 2, Apple Watch Ultra 3",
+    "Galaxy Watch Ultra2",
+  ] as const;
+
+  for (const locale of SUPPORTED_LOCALES) {
+    const compat = FROZEN_LANDING_MESSAGES[locale].compat;
+    assert.deepEqual(
+      [compat.housingModel2, compat.housingModel3, compat.housingModel4],
+      housingModels,
+      `${locale}: housing compatibility card drift`,
+    );
+    assert.deepEqual(
+      [compat.appOnlyModel1, compat.appOnlyModel2, compat.appOnlyModel3],
+      appOnlyModels,
+      `${locale}: app-only compatibility card drift`,
+    );
+    assert.doesNotMatch(
+      flattenedText(compat),
+      /Google Pixel Watch|Wear OS|Apple Watch Ultra 1\b/,
+      `${locale}: unapproved compatibility model returned`,
+    );
+  }
+});
+
+test("unverified safety evidence remains explicitly framed as work in progress", () => {
+  const reviewLanguage: Record<Locale, RegExp> = {
+    en: /verification|review/,
+    ko: /검증|검토/,
+    "zh-CN": /验证|审核/,
+    "zh-TW": /驗證|審核/,
+    ja: /検証|確認/,
+    es: /verificación|revisión/,
+    fr: /vérification|examen/,
+    de: /geprüft|Prüfung/,
+    "pt-BR": /verificação|análise/,
+  };
+
+  for (const locale of SUPPORTED_LOCALES) {
+    const { point1Title, point1Body, point2Title, point2Body } =
+      FROZEN_LANDING_MESSAGES[locale].safety;
+    assert.match(
+      `${point1Title} ${point1Body}`,
+      reviewLanguage[locale],
+      `${locale}: 60 m evidence is presented as complete`,
+    );
+    assert.match(
+      `${point2Title} ${point2Body}`,
+      reviewLanguage[locale],
+      `${locale}: ocean-dive evidence is presented as complete`,
+    );
+  }
+});
+
 test("the approved product FAQs are complete in every locale", () => {
   const galaxyModels = [
     "Galaxy Watch4",
