@@ -82,7 +82,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
       "Text me about the Watch Dive Kickstarter launch. Optional — your email signup works without this.",
     step1: "Enter your email",
     step2: "Click the confirm link we send you",
-    step3: "You're on the list",
+    step3: "Reminders 1 day & 1 hour before launch",
   },
   heroProof: {
     readAll: "Read all {count} beta reviews (some translated) ↓",
@@ -107,10 +107,11 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     wasPrice: "$299",
     nowPrice: "$149",
     offBadge: "50% off",
-    offNote: "early bird at Kickstarter launch",
+    offNote: "first 100 backers only at launch",
     gift: "Then share your link with the divers you'd actually go in the water with.",
     trust1: "Sign up to hear first about launch and early-bird details.",
-    trust2: "No spam — one email when we go live.",
+    trust2:
+      "Leave your email and we'll remind you 1 day and 1 hour before launch — so you can be in the first 100.",
     // NVIDIA/AWS backing — membership evidence pending internal confirmation.
     backedBy: "Backed by",
     featuredBy: "Featured by",
@@ -142,15 +143,15 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     card4Copy: "Connected app and striking visuals make every dive easy to remember and share.",
   },
   functions: {
-    kicker: "Built for real recreational diving",
+    kicker: "Everything a dedicated dive computer does",
     h2: "Track depth, dive time, temperature, safety stops, ascent rate, and NDL — in one system.",
     // `\u005cu00a0` = the source's 60&nbsp;m.
-    sub: "60\u00a0m waterproof. Scuba and freediving modes both supported.",
+    sub: "Bühlmann decompression algorithm with Gradient Factors (GF), real-time NDL and safety-stop guidance — no different from a dedicated dive computer. 60\u00a0m waterproof, scuba and freediving modes.",
     videoAria: "Watch Dive functions in action",
-    // "9–18 m/min" — industry convention, no internal source document cited.
+    // 33 ft/min (10 m/min) alert threshold — founder-stated product spec (2026-08-01).
     item1Title: "Ascent-Rate Alert",
     item1Body:
-      "Watch Dive monitors ascent rate and provides alerts in the 9–18 m/min range — no buttons, no menus.",
+      "Watch Dive monitors ascent rate and alerts you when you exceed 33 ft/min — no buttons, no menus.",
     item2Title: "No-Deco / NDL",
     item2Body:
       "Watch Dive is 60 m waterproof and calculates your NDL in real time to help you track remaining bottom time.",

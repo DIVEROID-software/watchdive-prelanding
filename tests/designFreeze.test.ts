@@ -66,8 +66,11 @@ function jsxStructure(sourceText: string, hostElementsOnly = false): string {
 
 test("production landing DOM and Tailwind skeleton remain frozen", () => {
   const source = read("src/routes/index.tsx");
+  // Baseline advanced 2026-08-01 on the founder's direct instructions: larger
+  // 50%-off badge, hero gift line and footer operator line removed, and a
+  // language switcher added to the launch banner.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "fa7a87e9f35ed75b71fbaeb59156202dfbc86e91c313ca8881c7e0520f87beea");
+  assert.equal(digest, "1f803abd147035d0b8959fe35a34637c33b92cb601045815c1a07e732770afb4");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -103,7 +106,7 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
 test("production stylesheet stays at the approved locale-typography baseline", () => {
   assert.equal(
     sha256(read("src/styles.css")),
-    "f9a558623d37232f6e83854d59564e8417eccd6c6d322858fca3983cfb64bc51",
+    "d86b7c11f0cc24ac09d9e45de205bf0923cd9d75d5faae5f49dc8e853b9639d4",
   );
 });
 

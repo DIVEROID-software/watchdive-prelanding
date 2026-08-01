@@ -304,3 +304,21 @@
   from { opacity: 0.55; transform: scale(1.025); }
   to   { opacity: 0; transform: scale(1); }
 }
+
+/* The support widget injects #dc-btn with inline layout styles only, so the
+   attention pulse lives here. Founder-requested (2026-08-01): the chat entry
+   should read as a live channel. Skipped for reduced-motion users. */
+@keyframes wd-chat-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.8 0.11 232 / 0.75);
+  }
+  70% {
+    box-shadow: 0 0 0 12px oklch(0.8 0.11 232 / 0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #dc-btn {
+    animation: wd-chat-pulse 2s ease-out infinite;
+  }
+}

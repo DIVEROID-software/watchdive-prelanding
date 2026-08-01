@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { track } from "@vercel/analytics";
 import { joinWaitlist, pollVerification, getReferralCount } from "@/lib/api/waitlist.functions";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { LaunchCountdown } from "@/components/launch-countdown";
 import { ReviewAvatar } from "@/components/review-avatar";
 import { ReviewTicker } from "@/components/review-ticker";
@@ -162,6 +163,7 @@ function LaunchBanner() {
           >
             {m.banner.joinCta}
           </a>
+          <LanguageSwitcher />
         </div>
       </div>
     </div>
@@ -976,15 +978,10 @@ function Hero() {
           <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-[color:var(--color-cyan-glow)]/30 bg-[color:var(--color-cyan-glow)]/10 px-4 py-3">
             <span className="text-base text-white/55 line-through">{m.hero.wasPrice}</span>
             <span className="text-2xl font-extrabold text-white">{m.hero.nowPrice}</span>
-            <span className="rounded-full bg-[color:var(--color-cyan-glow)] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[color:var(--color-deep-2)]">
+            <span className="rounded-full bg-[color:var(--color-cyan-glow)] px-4 py-1.5 text-base font-extrabold uppercase tracking-wide text-[color:var(--color-deep-2)] shadow-[0_0_18px_-2px_oklch(0.8_0.11_232/0.9)]">
               {m.hero.offBadge}
             </span>
             <span className="text-sm font-medium text-white/85">{m.hero.offNote}</span>
-          </div>
-
-          <div className="flex max-w-xl items-start gap-2.5 text-sm text-white/85">
-            <span className="flex h-5 shrink-0 items-center text-base leading-none">🎁</span>
-            <span>{m.hero.gift}</span>
           </div>
 
           <ReferralWelcome />
@@ -1940,7 +1937,6 @@ function Footer() {
     <footer className="bg-[color:var(--color-deep-2)] text-white/70 px-5 py-10 text-center text-sm">
       <div className="max-w-3xl mx-auto">
         <div className="font-semibold text-white">{m.footer.brand}</div>
-        <p className="mt-2">{formatMessage(m.footer.legal, { year })}</p>
         <nav className="mt-4 flex justify-center gap-6 text-white/80">
           <Link
             to={termsPath(locale)}

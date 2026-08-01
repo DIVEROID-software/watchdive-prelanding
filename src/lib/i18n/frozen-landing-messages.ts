@@ -36,7 +36,7 @@
  *   right single quote (’) in reviews.sub, curly quotes (“”) in
  *   inbox.noteSubject, non-breaking space (`\u005cu00a0`) in functions.sub, and
  *   non-breaking hyphen (‑) throughout the safety section.
- * - Prices ($149, $299, $1,000), depth figures (60 m, 40 m, 9–18 m/min),
+ * - Prices ($149, $299, $1,000), depth figures (60 m, 40 m, 10 m/min / 33 ft/min),
  *   brand names (Watch Dive, DIVEROID, Kickstarter, Apple Watch, Galaxy
  *   Watch, GoPro, Insta360, Canon, NVIDIA, AWS, Samsung) and dates are
  *   preserved unchanged in every locale. No locale adds or strengthens any
@@ -81,7 +81,7 @@
  *   individual reviews use the Product Truth publication allowlist.
  * - FAQ compatibility, sensor/Bluetooth architecture and battery warranty /
  *   paid-replacement terms were approved by the product owner on 2026-08-01.
- * - Ascent-rate alerts in the 9–18 m/min range — industry convention; no
+ * - Ascent-rate alert threshold 10 m/min (33 ft/min in English) — founder-stated spec (2026-08-01); no
  *   internal source document cited.
  * - NOTE (not fixed here): the landing footer names "DIVEROID LTD … England"
  *   as operator while Privacy/Terms name "OceanWick Inc." (Korea). Reproduced
@@ -183,15 +183,15 @@ const ko: FrozenLandingMessages = {
       "Watch Dive Kickstarter 런칭 소식을 문자로 받아볼게요. 선택 사항 — 체크하지 않아도 이메일 신청은 그대로 완료됩니다.",
     step1: "이메일 입력",
     step2: "전송된 인증 링크 클릭",
-    step3: "등록 완료",
+    step3: "런칭 하루 전·1시간 전 알림 받기",
   },
   heroProof: {
     readAll: "베타 후기 {count}개 모두 보기 (일부 번역) ↓",
   },
   hero: {
     badge: "Kickstarter 런칭 임박",
-    h1: "이미 가진 워치를 다이브 컴퓨터로.",
-    h1Highlight: "이미 가진",
+    h1: "내 스마트워치를 다이빙 컴퓨터로.",
+    h1Highlight: "내 스마트워치",
     sub: "이미 가지고 있는 Apple Watch·Galaxy Watch를 60 m 다이브 컴퓨터로 바꿔 보세요.",
     priceLine: "Kickstarter 얼리버드 $149부터 — 기존 다이브 컴퓨터 가격의 몇 분의 일 수준입니다.",
     backgroundAlt: "화려한 산호초를 탐험하는 스쿠버 다이버",
@@ -205,10 +205,11 @@ const ko: FrozenLandingMessages = {
     wasPrice: "$299",
     nowPrice: "$149",
     offBadge: "50% 할인",
-    offNote: "Kickstarter 런칭 얼리버드",
+    offNote: "런칭 선착순 100명 한정 50% 할인",
     gift: "그다음, 실제로 함께 물에 들어갈 다이버들에게 링크를 공유하세요.",
     trust1: "얼리버드 소식을 가장 먼저 받아 보세요.",
-    trust2: "스팸 없음 — 오픈 시 딱 한 통만 보냅니다.",
+    trust2:
+      "이메일을 남기면 런칭 하루 전과 1시간 전에 알림을 보내 — 선착순 100명 안에 들도록 도와드립니다.",
     backedBy: "지원",
     featuredBy: "소개",
     nvidiaAlt: "NVIDIA Inception",
@@ -228,7 +229,7 @@ const ko: FrozenLandingMessages = {
     overlayKicker: "다이버들이 좋아하는 이유",
     overlayText: "프리미엄 다이빙 기어의 감성을, 프리미엄 가격 없이.",
     lead: "Watch Dive를 사용하면 입문·레크리에이션 다이버도 이미 가진 워치에서 다이브 컴퓨터의 핵심 기능을 이용할 수 있습니다 — 부담을 낮춘 가격으로.",
-    card1Title: "가진 워치 그대로",
+    card1Title: "내 스마트워치(애플워치/갤럭시워치등)를 그대로 사용",
     card1Copy: "이미 착용 중인 Apple Watch·Galaxy Watch 기반 — 새 기기를 살 필요가 없습니다.",
     card2Title: "프리미엄 만듦새",
     card2Copy: "투명 하우징, 선명한 화면 UI, 그리고 정제된 블랙·화이트 두 가지 컬러.",
@@ -239,16 +240,16 @@ const ko: FrozenLandingMessages = {
     card4Copy: "연동 앱과 감각적인 비주얼로 모든 다이빙을 쉽게 기록하고 공유합니다.",
   },
   functions: {
-    kicker: "진짜 레크리에이션 다이빙을 위해",
+    kicker: "전용 다이브 컴퓨터가 하는 일, 전부",
     h2: "수심, 다이브 타임, 수온, 세이프티 스톱, 상승 속도, NDL — 하나의 시스템에서.",
-    sub: "60 m 방수. 스쿠버·프리다이빙 모드 모두 지원.",
+    sub: "뷸만(Bühlmann) 감압 알고리즘 · Gradient Factor(GF) 기반 실시간 NDL · 안전정지 안내 — 전용 다이브 컴퓨터와 다르지 않습니다. 60 m 방수, 스쿠버·프리다이빙 모드 지원.",
     videoAria: "작동 중인 Watch Dive 기능",
     item1Title: "상승 속도 경보",
     item1Body:
-      "Watch Dive는 9–18 m/min 범위에서 상승 속도를 모니터링하고 경고합니다. 버튼이나 메뉴를 조작할 필요가 없습니다.",
+      "Watch Dive는 상승 속도를 모니터링해 10 m/min을 넘으면 경고합니다. 버튼이나 메뉴를 조작할 필요가 없습니다.",
     item2Title: "무감압 한계 / NDL",
     item2Body:
-      "Watch Dive는 60 m 방수이며 NDL을 실시간으로 계산해 남은 바텀 타임을 확인하는 데 도움을 줍니다.",
+      "뷸만 알고리즘과 GF(Gradient Factor)로 NDL을 실시간 계산합니다 — 전용 다이브 컴퓨터와 같은 방식입니다. 남은 바텀 타임을 짐작할 필요가 없습니다.",
     item3Title: "수심·시간·수온",
     item3Body:
       "실시간 수심, 경과 다이브 타임, 수온 — 모두 자동 기록되어 매 다이빙 후 Bluetooth로 Diveroid 앱 로그북에 동기화됩니다.",
@@ -614,7 +615,7 @@ const zhCN: FrozenLandingMessages = {
     smsConsent: "通过短信向我推送 Watch Dive Kickstarter 上线消息。可选 — 不勾选也不影响邮箱报名。",
     step1: "输入邮箱",
     step2: "点击我们发送的确认链接",
-    step3: "加入名单完成",
+    step3: "上线前 1 天和 1 小时收到提醒",
   },
   heroProof: {
     readAll: "查看全部 {count} 条内测评价（部分为译文）↓",
@@ -636,10 +637,10 @@ const zhCN: FrozenLandingMessages = {
     wasPrice: "$299",
     nowPrice: "$149",
     offBadge: "5 折",
-    offNote: "Kickstarter 上线早鸟价",
+    offNote: "上线后仅限前 100 名享 5 折",
     gift: "然后，把链接分享给真正会和你一起下水的潜伴。",
     trust1: "抢先收到上线与早鸟价通知。",
-    trust2: "不发垃圾邮件 — 上线时只发一封。",
+    trust2: "留下邮箱，我们会在上线前 1 天和 1 小时提醒你 — 帮你挤进前 100 名。",
     backedBy: "支持方",
     featuredBy: "曾亮相于",
     nvidiaAlt: "NVIDIA Inception",
@@ -669,15 +670,15 @@ const zhCN: FrozenLandingMessages = {
     card4Copy: "互联 App 与出色的视觉，让每次潜水都易于记录与分享。",
   },
   functions: {
-    kicker: "为真实的休闲潜水打造",
+    kicker: "专业潜水电脑的功能，一个不少",
     h2: "深度、潜水时间、水温、安全停留、上升速度与 NDL — 一套系统全搞定。",
-    sub: "60 m 防水。水肺与自由潜模式均支持。",
+    sub: "Bühlmann 减压算法与 Gradient Factor（GF）实时计算 NDL，并提供安全停留引导 — 与专业潜水电脑并无不同。60 m 防水，支持水肺与自由潜模式。",
     videoAria: "Watch Dive 功能实拍",
     item1Title: "上升速度警报",
-    item1Body:
-      "Watch Dive 会监测上升速度，并在 9–18 m/min 范围内提供警报，全程无需操作按钮或菜单。",
+    item1Body: "Watch Dive 会监测上升速度，超过 10 m/min 即发出警报，全程无需操作按钮或菜单。",
     item2Title: "免减压 / NDL",
-    item2Body: "Watch Dive 具备 60 m 防水能力，并实时计算 NDL，帮助你查看剩余免减压时间。",
+    item2Body:
+      "基于 Bühlmann 算法与 GF（Gradient Factor）实时计算 NDL — 与专业潜水电脑相同的算法。剩余免减压时间一目了然。",
     item3Title: "深度、时间与水温",
     item3Body:
       "实时深度、已用潜水时间与水温 — 全部自动记录，每次潜水后经蓝牙同步到你的 Diveroid App 潜水日志。",
@@ -1033,7 +1034,7 @@ const zhTW: FrozenLandingMessages = {
     smsConsent: "以簡訊通知我 Watch Dive Kickstarter 上線消息。選填 — 不勾選也不影響信箱報名。",
     step1: "輸入信箱",
     step2: "點擊我們寄出的確認連結",
-    step3: "加入名單完成",
+    step3: "上線前 1 天與 1 小時收到提醒",
   },
   heroProof: {
     readAll: "閱讀全部 {count} 則 Beta 心得（部分為譯文）↓",
@@ -1055,10 +1056,10 @@ const zhTW: FrozenLandingMessages = {
     wasPrice: "$299",
     nowPrice: "$149",
     offBadge: "5 折",
-    offNote: "Kickstarter 上線早鳥價",
+    offNote: "上線後僅限前 100 名享 5 折",
     gift: "接著，把連結分享給真正會和你一起下水的潛伴。",
     trust1: "搶先收到上線與早鳥價通知。",
-    trust2: "不寄垃圾信 — 上線時只寄一封。",
+    trust2: "留下信箱，我們會在上線前 1 天與 1 小時提醒你 — 幫你搶進前 100 名。",
     backedBy: "支持方",
     featuredBy: "曾亮相於",
     nvidiaAlt: "NVIDIA Inception",
@@ -1088,15 +1089,15 @@ const zhTW: FrozenLandingMessages = {
     card4Copy: "連動 App 與出色的視覺，讓每次潛水都容易記錄與分享。",
   },
   functions: {
-    kicker: "為真實的休閒潛水打造",
+    kicker: "專業潛水電腦的功能，一項不缺",
     h2: "深度、潛水時間、水溫、安全停留、上升速度與 NDL — 一套系統全包辦。",
-    sub: "60 m 防水。水肺與自由潛模式皆支援。",
+    sub: "Bühlmann 減壓演算法與 Gradient Factor（GF）即時計算 NDL，並提供安全停留引導 — 與專業潛水電腦並無不同。60 m 防水，支援水肺與自由潛模式。",
     videoAria: "Watch Dive 功能實拍",
     item1Title: "上升速度警報",
-    item1Body:
-      "Watch Dive 會監測上升速度，並在 9–18 m/min 範圍內提供警報，全程不必操作按鍵或選單。",
+    item1Body: "Watch Dive 會監測上升速度，超過 10 m/min 即發出警報，全程不必操作按鍵或選單。",
     item2Title: "免減壓 / NDL",
-    item2Body: "Watch Dive 具備 60 m 防水能力，並即時計算 NDL，協助你查看剩餘免減壓時間。",
+    item2Body:
+      "以 Bühlmann 演算法與 GF（Gradient Factor）即時計算 NDL — 與專業潛水電腦相同的演算法。剩餘免減壓時間一目了然。",
     item3Title: "深度、時間與水溫",
     item3Body:
       "即時深度、已潛時間與水溫 — 全部自動記錄，每次潛水後經藍牙同步到你的 Diveroid App 潛水日誌。",
@@ -1455,7 +1456,7 @@ const ja: FrozenLandingMessages = {
       "Watch Dive の Kickstarter 開始を SMS で受け取ります。任意 — チェックしなくてもメール登録はそのまま有効です。",
     step1: "メールアドレスを入力",
     step2: "届いた確認リンクをクリック",
-    step3: "登録完了",
+    step3: "ローンチ前日と 1 時間前にリマインド",
   },
   heroProof: {
     readAll: "ベータレビュー全 {count} 件を読む（一部翻訳）↓",
@@ -1477,10 +1478,11 @@ const ja: FrozenLandingMessages = {
     wasPrice: "$299",
     nowPrice: "$149",
     offBadge: "50% オフ",
-    offNote: "Kickstarter 開始時の早割",
+    offNote: "ローンチ先着 100 名限定の 50% オフ",
     gift: "そのあとは、実際に一緒に潜るダイバーたちにリンクをシェアしましょう。",
     trust1: "ローンチと早割の案内をいち早く受け取れます。",
-    trust2: "スパムなし — 公開時に 1 通だけお送りします。",
+    trust2:
+      "メールを残せば、ローンチ前日と 1 時間前にリマインドをお送りします — 先着 100 名に入るお手伝いです。",
     backedBy: "支援",
     featuredBy: "掲載",
     nvidiaAlt: "NVIDIA Inception",
@@ -1512,16 +1514,16 @@ const ja: FrozenLandingMessages = {
     card4Copy: "連携アプリと印象的なビジュアルで、どのダイビングも簡単に記録・共有。",
   },
   functions: {
-    kicker: "リアルなレクリエーションダイビングのために",
+    kicker: "専用ダイブコンピューターと同じ機能を、そのまま",
     h2: "水深、潜水時間、水温、安全停止、浮上速度、NDL — ひとつのシステムで。",
-    sub: "60 m 防水。スキューバとフリーダイビングの両モードに対応。",
+    sub: "ビュールマン（Bühlmann）減圧アルゴリズムと Gradient Factor（GF）によるリアルタイム NDL、安全停止ガイド — 専用ダイブコンピューターと変わりません。60 m 防水、スキューバ／フリーダイビング両対応。",
     videoAria: "動作中の Watch Dive の機能",
     item1Title: "浮上速度アラート",
     item1Body:
-      "Watch Dive は浮上速度を監視し、9–18 m/min の範囲でアラートを表示します。ボタンやメニューの操作は不要です。",
+      "Watch Dive は浮上速度を監視し、10 m/min を超えるとアラートを表示します。ボタンやメニューの操作は不要です。",
     item2Title: "無減圧 / NDL",
     item2Body:
-      "Watch Dive は 60 m 防水で、NDL をリアルタイムに計算し、残りのボトムタイムの確認をサポートします。",
+      "ビュールマンアルゴリズムと GF（Gradient Factor）で NDL をリアルタイムに計算 — 専用ダイブコンピューターと同じ方式です。残りのボトムタイムを推測する必要はありません。",
     item3Title: "水深・時間・水温",
     item3Body:
       "リアルタイムの水深、経過潜水時間、水温 — すべて自動記録され、毎回のダイビング後に Bluetooth で Diveroid アプリのログブックに同期されます。",
@@ -1892,7 +1894,7 @@ const es: FrozenLandingMessages = {
       "Envíame un SMS sobre el lanzamiento de Watch Dive en Kickstarter. Opcional — tu registro por email funciona sin esto.",
     step1: "Escribe tu email",
     step2: "Haz clic en el enlace de confirmación que te enviamos",
-    step3: "Ya estás en la lista",
+    step3: "Recordatorios 1 día y 1 hora antes",
   },
   heroProof: {
     readAll: "Lee las {count} reseñas beta (algunas traducidas) ↓",
@@ -1915,10 +1917,11 @@ const es: FrozenLandingMessages = {
     wasPrice: "$299",
     nowPrice: "$149",
     offBadge: "50% dto.",
-    offNote: "early bird al lanzar en Kickstarter",
+    offNote: "solo los primeros 100 en el lanzamiento",
     gift: "Después, comparte tu enlace con los buceadores con los que de verdad te meterías al agua.",
     trust1: "Regístrate para recibir primero las novedades del lanzamiento y del early bird.",
-    trust2: "Sin spam — un solo email cuando salgamos.",
+    trust2:
+      "Deja tu email y te avisaremos 1 día y 1 hora antes del lanzamiento — para ayudarte a entrar entre los 100 primeros.",
     backedBy: "Con el apoyo de",
     featuredBy: "Aparecido en",
     nvidiaAlt: "NVIDIA Inception",
@@ -1951,16 +1954,16 @@ const es: FrozenLandingMessages = {
       "La app conectada y sus visuales impactantes hacen que cada inmersión sea fácil de recordar y compartir.",
   },
   functions: {
-    kicker: "Hecho para el buceo recreativo real",
+    kicker: "Todo lo que hace un ordenador de buceo dedicado",
     h2: "Profundidad, tiempo de inmersión, temperatura, paradas de seguridad, velocidad de ascenso y NDL — en un solo sistema.",
-    sub: "Sumergible a 60 m. Modo botella y modo apnea, los dos incluidos.",
+    sub: "Algoritmo de descompresión Bühlmann con Gradient Factors (GF), NDL en tiempo real y guía de parada de seguridad — igual que un ordenador de buceo dedicado. Sumergible a 60 m, modos botella y apnea.",
     videoAria: "Funciones de Watch Dive en acción",
     item1Title: "Alerta de velocidad de ascenso",
     item1Body:
-      "Watch Dive controla la velocidad de ascenso y emite alertas dentro del intervalo de 9–18 m/min, sin botones ni menús.",
+      "Watch Dive controla la velocidad de ascenso y emite alertas al superar los 10 m/min, sin botones ni menús.",
     item2Title: "Sin deco / NDL",
     item2Body:
-      "Watch Dive es sumergible a 60 m y calcula tu NDL en tiempo real para ayudarte a controlar el tiempo de fondo restante.",
+      "Calcula tu NDL en tiempo real con el algoritmo Bühlmann y GF (Gradient Factors) — el mismo cálculo que un ordenador de buceo dedicado. Sin adivinar el tiempo de fondo restante.",
     item3Title: "Profundidad, tiempo y temperatura",
     item3Body:
       "Profundidad en tiempo real, tiempo de inmersión y temperatura del agua — todo registrado automáticamente y sincronizado por Bluetooth con tu bitácora de la app Diveroid tras cada inmersión.",
@@ -2339,7 +2342,7 @@ const fr: FrozenLandingMessages = {
       "Prévenez-moi par SMS du lancement Kickstarter de Watch Dive. Facultatif — votre inscription par e-mail fonctionne sans.",
     step1: "Saisissez votre e-mail",
     step2: "Cliquez sur le lien de confirmation que nous vous envoyons",
-    step3: "Vous êtes sur la liste",
+    step3: "Rappels 1 jour et 1 heure avant",
   },
   heroProof: {
     readAll: "Lire les {count} avis bêta (dont certains traduits) ↓",
@@ -2362,11 +2365,12 @@ const fr: FrozenLandingMessages = {
     wasPrice: "$299",
     nowPrice: "$149",
     offBadge: "−50 %",
-    offNote: "early bird au lancement Kickstarter",
+    offNote: "réservé aux 100 premiers au lancement",
     gift: "Ensuite, partagez votre lien avec les plongeurs qui vous accompagnent vraiment sous l'eau.",
     trust1:
       "Inscrivez-vous pour recevoir en premier les actualités du lancement et de l'early bird.",
-    trust2: "Pas de spam — un seul e-mail à la mise en ligne.",
+    trust2:
+      "Laissez votre e-mail : rappels 1 jour et 1 heure avant le lancement — pour vous aider à être dans les 100 premiers.",
     backedBy: "Soutenu par",
     featuredBy: "Vu chez",
     nvidiaAlt: "NVIDIA Inception",
@@ -2400,16 +2404,16 @@ const fr: FrozenLandingMessages = {
       "L'appli connectée et des visuels marquants rendent chaque plongée facile à retenir et à partager.",
   },
   functions: {
-    kicker: "Conçu pour la vraie plongée loisir",
+    kicker: "Tout ce que fait un ordinateur de plongée dédié",
     h2: "Profondeur, temps de plongée, température, paliers de sécurité, vitesse de remontée et NDL — dans un seul système.",
-    sub: "Étanche à 60 m. Deux modes : plongée bouteille et apnée.",
+    sub: "Algorithme de décompression Bühlmann avec Gradient Factors (GF), NDL en temps réel et guidage de palier de sécurité — comme un ordinateur de plongée dédié. Étanche à 60 m, modes bouteille et apnée.",
     videoAria: "Les fonctions Watch Dive en action",
     item1Title: "Alerte de vitesse de remontée",
     item1Body:
-      "Watch Dive surveille la vitesse de remontée et émet des alertes dans la plage de 9–18 m/min, sans bouton ni menu.",
+      "Watch Dive surveille la vitesse de remontée et émet une alerte au-delà de 10 m/min, sans bouton ni menu.",
     item2Title: "No-déco / NDL",
     item2Body:
-      "Watch Dive est étanche à 60 m et calcule votre NDL en temps réel pour vous aider à suivre le temps de fond restant.",
+      "Le NDL est calculé en temps réel avec l’algorithme Bühlmann et les Gradient Factors (GF) — le même calcul qu’un ordinateur de plongée dédié. Plus besoin de deviner le temps de fond restant.",
     item3Title: "Profondeur, temps et température",
     item3Body:
       "Profondeur en temps réel, temps de plongée écoulé et température de l'eau — le tout enregistré automatiquement et synchronisé en Bluetooth avec votre carnet de l'appli Diveroid après chaque plongée.",
@@ -2791,7 +2795,7 @@ const de: FrozenLandingMessages = {
       "Schick mir zum Kickstarter-Start von Watch Dive eine SMS. Optional — deine E-Mail-Anmeldung funktioniert auch ohne.",
     step1: "E-Mail eingeben",
     step2: "Auf den zugesandten Bestätigungslink klicken",
-    step3: "Du bist auf der Liste",
+    step3: "Erinnerung 1 Tag und 1 Stunde vorher",
   },
   heroProof: {
     readAll: "Alle {count} Beta-Bewertungen lesen (teilweise übersetzt) ↓",
@@ -2814,10 +2818,11 @@ const de: FrozenLandingMessages = {
     wasPrice: "$299",
     nowPrice: "$149",
     offBadge: "50 % Rabatt",
-    offNote: "Early Bird zum Kickstarter-Start",
+    offNote: "nur für die ersten 100 beim Start",
     gift: "Und dann teile deinen Link mit den Tauchern, mit denen du wirklich ins Wasser gehen würdest.",
     trust1: "Melde dich an und erhalte zuerst die Neuigkeiten zum Start und Early Bird.",
-    trust2: "Kein Spam — genau eine E-Mail, wenn wir live gehen.",
+    trust2:
+      "Hinterlass deine E-Mail: Erinnerungen 1 Tag und 1 Stunde vor dem Start — damit du unter die ersten 100 kommst.",
     backedBy: "Unterstützt von",
     featuredBy: "Bekannt aus",
     nvidiaAlt: "NVIDIA Inception",
@@ -2850,16 +2855,16 @@ const de: FrozenLandingMessages = {
       "Die vernetzte App und starke Visuals machen jeden Tauchgang leicht festzuhalten und zu teilen.",
   },
   functions: {
-    kicker: "Gebaut für echtes Sporttauchen",
+    kicker: "Alles, was ein dedizierter Tauchcomputer kann",
     h2: "Tiefe, Tauchzeit, Temperatur, Sicherheitsstopps, Aufstiegsrate und NDL — in einem System.",
-    sub: "Wasserdicht bis 60 m. Scuba- und Apnoe-Modus, beides an Bord.",
+    sub: "Bühlmann-Dekompressionsalgorithmus mit Gradient Factors (GF), Echtzeit-NDL und Sicherheitsstopp-Führung — wie bei einem dedizierten Tauchcomputer. Wasserdicht bis 60 m, Scuba- und Apnoe-Modus.",
     videoAria: "Funktionen von Watch Dive in Aktion",
     item1Title: "Aufstiegsalarm",
     item1Body:
-      "Watch Dive überwacht die Aufstiegsrate und gibt im Bereich von 9–18 m/min Warnungen aus — ohne Tasten oder Menüs.",
+      "Watch Dive überwacht die Aufstiegsrate und warnt ab 10 m/min — ohne Tasten oder Menüs.",
     item2Title: "No-Deco / NDL",
     item2Body:
-      "Watch Dive ist bis 60 m wasserdicht und berechnet deine NDL in Echtzeit, damit du die verbleibende Grundzeit besser im Blick behältst.",
+      "Die NDL wird in Echtzeit mit dem Bühlmann-Algorithmus und GF (Gradient Factors) berechnet — dieselbe Rechnung wie in einem dedizierten Tauchcomputer. Nie wieder die Grundzeit schätzen.",
     item3Title: "Tiefe, Zeit & Temperatur",
     item3Body:
       "Echtzeit-Tiefe, verstrichene Tauchzeit und Wassertemperatur — alles automatisch protokolliert und nach jedem Tauchgang per Bluetooth mit deinem Diveroid-App-Logbuch synchronisiert.",
@@ -3235,7 +3240,7 @@ const ptBR: FrozenLandingMessages = {
       "Quero receber SMS sobre o lançamento do Watch Dive no Kickstarter. Opcional — seu cadastro por e-mail funciona sem isso.",
     step1: "Digite seu e-mail",
     step2: "Clique no link de confirmação que enviamos",
-    step3: "Você está na lista",
+    step3: "Lembretes 1 dia e 1 hora antes",
   },
   heroProof: {
     readAll: "Leia as {count} avaliações beta (algumas traduzidas) ↓",
@@ -3258,10 +3263,11 @@ const ptBR: FrozenLandingMessages = {
     wasPrice: "$299",
     nowPrice: "$149",
     offBadge: "50% off",
-    offNote: "early bird no lançamento no Kickstarter",
+    offNote: "só para os 100 primeiros no lançamento",
     gift: "Depois, compartilhe seu link com os mergulhadores com quem você realmente entraria na água.",
     trust1: "Cadastre-se para receber primeiro as novidades do lançamento e do early bird.",
-    trust2: "Sem spam — um único e-mail quando entrarmos no ar.",
+    trust2:
+      "Deixe seu e-mail: avisamos 1 dia e 1 hora antes do lançamento — para ajudar você a ficar entre os 100 primeiros.",
     backedBy: "Apoiado por",
     featuredBy: "Destaque em",
     nvidiaAlt: "NVIDIA Inception",
@@ -3294,16 +3300,16 @@ const ptBR: FrozenLandingMessages = {
       "O app conectado e visuais marcantes tornam cada mergulho fácil de lembrar e compartilhar.",
   },
   functions: {
-    kicker: "Feito para o mergulho recreativo de verdade",
+    kicker: "Tudo o que um computador de mergulho dedicado faz",
     h2: "Profundidade, tempo de mergulho, temperatura, paradas de segurança, velocidade de subida e NDL — em um único sistema.",
-    sub: "À prova d'água até 60 m. Dois modos: scuba e mergulho livre.",
+    sub: "Algoritmo de descompressão Bühlmann com Gradient Factors (GF), NDL em tempo real e orientação de parada de segurança — igual a um computador de mergulho dedicado. À prova d'água até 60 m, modos scuba e livre.",
     videoAria: "Funções do Watch Dive em ação",
     item1Title: "Alerta de velocidade de subida",
     item1Body:
-      "O Watch Dive monitora a velocidade de subida e emite alertas na faixa de 9–18 m/min, sem botões nem menus.",
+      "O Watch Dive monitora a velocidade de subida e emite alertas ao ultrapassar 10 m/min, sem botões nem menus.",
     item2Title: "No-deco / NDL",
     item2Body:
-      "O Watch Dive é à prova d'água até 60 m e calcula seu NDL em tempo real para ajudar você a acompanhar o tempo de fundo restante.",
+      "O NDL é calculado em tempo real com o algoritmo Bühlmann e GF (Gradient Factors) — o mesmo cálculo de um computador de mergulho dedicado. Sem chutar o tempo de fundo restante.",
     item3Title: "Profundidade, tempo e temperatura",
     item3Body:
       "Profundidade em tempo real, tempo de mergulho decorrido e temperatura da água — tudo registrado automaticamente e sincronizado por Bluetooth com o logbook do app Diveroid depois de cada mergulho.",
