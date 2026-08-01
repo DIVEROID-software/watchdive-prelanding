@@ -2,15 +2,13 @@
 //
 // Source: the founder's "베타테스터 리뷰" sheet, exported 2026-07-30. The
 // originals were collected in each tester's own language; this file carries the
-// English rendering. The Korean copy lives in `beta-reviews.ko.ts` so it is not
-// shipped to a visitor who will never read it — importing it is what a Korean
-// page will do, and nothing else pays for it.
+// English rendering. Localized renderings live in one module per locale and are
+// loaded only for that route, so a visitor never downloads every translation.
 //
-// `unverifiedClaim` marks a review that asserts something `docs/01-product-truth.md`
-// still lists as unconfirmed — a specific price, a named decompression
-// algorithm, an accuracy comparison against another brand, or a safety feature
-// that has no evidence file yet. A testimonial we publish is our own
-// advertising claim, so those are held back by default.
+// `unverifiedClaim` is the original narrow flag for explicit price, algorithm,
+// accuracy and safety assertions. The publication allowlist at the end of this
+// file is stricter and authoritative: a testimonial selected by the advertiser
+// adopts its objective claims, so anything outside Product Truth is held back.
 
 export type BetaReview = {
   id: number;
@@ -1033,10 +1031,19 @@ export const BETA_REVIEWS: BetaReview[] = [
   },
 ];
 
-/** What the page may actually show, after the claims gate. */
+/**
+ * Product-Truth review completed 2026-08-01. These eight contain subjective
+ * impressions or an explicitly framed opinion, without adopting an unverified
+ * feature, safety, depth, price, durability or comparison claim.
+ */
+export const PUBLICATION_APPROVED_REVIEW_IDS = [7, 35, 45, 63, 72, 88, 100, 120] as const;
+
+const PUBLICATION_APPROVED_REVIEW_ID_SET = new Set<number>(PUBLICATION_APPROVED_REVIEW_IDS);
+
+/** What the page may actually show, after the exhaustive claims gate. */
 export const PUBLISHABLE_REVIEWS: BetaReview[] = INCLUDE_UNVERIFIED_CLAIMS
   ? BETA_REVIEWS
-  : BETA_REVIEWS.filter((review) => !review.unverifiedClaim);
+  : BETA_REVIEWS.filter((review) => PUBLICATION_APPROVED_REVIEW_ID_SET.has(review.id));
 
 export const COUNTRY_LABEL: Record<BetaReview["country"], string> = {
   US: "United States",

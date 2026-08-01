@@ -11,6 +11,7 @@ import { ReviewAvatar } from "@/components/review-avatar";
 import { ReviewTicker } from "@/components/review-ticker";
 import { WaitlistProgress } from "@/components/waitlist-progress";
 import { PUBLISHABLE_REVIEWS } from "@/data/beta-reviews";
+import { betaReviewBody } from "@/data/beta-reviews.loader";
 import { nextPollDelayMs, VERIFY_POLL_MAX_ATTEMPTS } from "@/lib/verifyPolling";
 import {
   getMetaCookies,
@@ -24,7 +25,11 @@ import {
 import { getAttribution } from "@/lib/attribution";
 import { landingHead } from "@/lib/i18n/seo";
 import { privacyPath, termsPath } from "@/lib/i18n/locale";
-import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
+import {
+  useCurrentLocale,
+  useFrozenLandingMessages,
+  useLocalizedBetaReviewBodies,
+} from "@/lib/i18n/use-current-locale";
 
 import heroBackground from "../assets/live/hero-background.webp";
 import heroSideImage from "../assets/live/watchdive-image10.webp";
@@ -794,6 +799,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
 // app carousel. Three real cards, then a jump to the full set.
 function HeroProof() {
   const m = useFrozenLandingMessages();
+  const reviewBodies = useLocalizedBetaReviewBodies();
   const picks = PUBLISHABLE_REVIEWS.slice(0, 3);
   return (
     <div className="max-w-xl">
@@ -807,7 +813,7 @@ function HeroProof() {
               {"★".repeat(review.rating)}
             </span>
             <blockquote className="mt-1.5 line-clamp-3 text-xs leading-relaxed text-white/80">
-              {review.en}
+              {betaReviewBody(review, reviewBodies)}
             </blockquote>
             <figcaption className="mt-2 flex items-center gap-1.5 text-[11px] text-white/45">
               <ReviewAvatar review={review} px={20} />

@@ -4,7 +4,11 @@ import assert from "node:assert/strict";
 import { existsSync, readdirSync } from "node:fs";
 import { test } from "node:test";
 
-import { BETA_REVIEWS, PUBLISHABLE_REVIEWS } from "../src/data/beta-reviews.ts";
+import {
+  BETA_REVIEWS,
+  PUBLICATION_APPROVED_REVIEW_IDS,
+  PUBLISHABLE_REVIEWS,
+} from "../src/data/beta-reviews.ts";
 import { BETA_REVIEWS_KO } from "../src/data/beta-reviews.ko.ts";
 import { countdownFrom, KICKSTARTER_LAUNCH_MS, pad2 } from "../src/lib/launch.ts";
 import {
@@ -110,24 +114,27 @@ test("counts are grouped for reading", () => {
 
 // --- reviews ---------------------------------------------------------------
 
-test("every review carries an attributable identity and both languages", () => {
+test("every review carries an attributable identity and an English rendering", () => {
   for (const review of BETA_REVIEWS) {
     assert.ok(review.name.trim().length > 0, `review ${review.id} has no name`);
     assert.ok(review.city.trim().length > 0, `review ${review.id} has no city`);
     assert.ok(review.en.trim().length > 0, `review ${review.id} has no English text`);
-    assert.ok(
-      (BETA_REVIEWS_KO[review.id] ?? "").trim().length > 0,
-      `review ${review.id} has no Korean copy`,
-    );
     assert.ok(review.rating === 4 || review.rating === 5, `review ${review.id} rating`);
   }
 });
 
-// The Korean copy is a separate module so the English page never ships it.
-// That only holds if the two stay joinable on id.
-test("every review has Korean copy, and the Korean module carries nothing else", () => {
-  assert.equal(Object.keys(BETA_REVIEWS_KO).length, BETA_REVIEWS.length);
-  const ids = new Set(BETA_REVIEWS.map((review) => review.id));
+// The Korean copy is a separate module so the English page never ships it. It
+// intentionally carries only publishable ids: withheld claims must not leak
+// into a public translation chunk even though the component filters them too.
+test("every publishable review has Korean copy, and the module carries nothing else", () => {
+  assert.equal(Object.keys(BETA_REVIEWS_KO).length, PUBLISHABLE_REVIEWS.length);
+  const ids = new Set(PUBLISHABLE_REVIEWS.map((review) => review.id));
+  for (const review of PUBLISHABLE_REVIEWS) {
+    assert.ok(
+      (BETA_REVIEWS_KO[review.id] ?? "").trim().length > 0,
+      `review ${review.id} has no Korean copy`,
+    );
+  }
   for (const key of Object.keys(BETA_REVIEWS_KO)) {
     assert.ok(ids.has(Number(key)), `Korean copy ${key} matches no review`);
   }
@@ -141,17 +148,20 @@ test("review ids are unique", () => {
 // A testimonial we publish is our own advertising claim. Anything asserting a
 // price, an algorithm or a safety feature that `docs/01-product-truth.md` still
 // lists as unconfirmed stays out until it has evidence.
-test("reviews asserting unverified product claims are withheld by default", () => {
-  const withheld = BETA_REVIEWS.filter((review) => review.unverifiedClaim);
-  assert.ok(withheld.length > 0, "expected the claims gate to be holding something back");
+test("the exhaustive Product Truth allowlist is the only publishable review set", () => {
+  const originallyFlagged = BETA_REVIEWS.filter((review) => review.unverifiedClaim);
+  assert.ok(originallyFlagged.length > 0, "expected the claims gate to be holding something back");
 
-  for (const review of withheld) {
+  for (const review of originallyFlagged) {
     assert.ok(
       !PUBLISHABLE_REVIEWS.includes(review),
       `review ${review.id} carries an unverified claim but is publishable`,
     );
   }
-  assert.equal(PUBLISHABLE_REVIEWS.length, BETA_REVIEWS.length - withheld.length);
+  assert.deepEqual(
+    PUBLISHABLE_REVIEWS.map(({ id }) => id),
+    [...PUBLICATION_APPROVED_REVIEW_IDS],
+  );
 });
 
 // --- reviewer avatars ------------------------------------------------------

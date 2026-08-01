@@ -85,7 +85,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     step3: "You're on the list",
   },
   heroProof: {
-    readAll: "Read all {count} beta reviews ↓",
+    readAll: "Read all {count} beta reviews (some translated) ↓",
   },
   hero: {
     badge: "Launching soon on Kickstarter",
@@ -198,9 +198,9 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   },
   reviews: {
     kicker: "From our beta testers",
-    // Beta-programme claim; individual reviews gated by unverifiedClaim.
-    h2: "{count} divers have already been in the water with it",
-    sub: "Reviews from the beta programme, translated from each tester’s own language.",
+    // Beta-programme claim; individual reviews use the Product Truth allowlist.
+    h2: "{count} beta testers shared their impressions",
+    sub: "Translation notice: Some reviews have been translated for readability, so minor differences in tone or nuance may remain.",
     disclosure:
       "Showing {published} of {total}. The rest mention product details we haven't finished verifying, so we're holding them back until we have.",
     countryUS: "United States",

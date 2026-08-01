@@ -19,7 +19,7 @@
  *   src/routes/__root.tsx       (404 / error shell)
  *   src/lib/error-page.ts       (server-rendered error page)
  *   src/lib/verification/contracts.ts (server messages shown in the form UI)
- *   src/data/beta-reviews.ts    (COUNTRY_LABEL only — see note below)
+ *   src/data/beta-reviews.ts    (review metadata and English rendering)
  *
  * This file is data only. Localized routes load it through an asynchronous
  * module boundary; it changes no DOM, className, CSS, layout, media, analytics,
@@ -42,11 +42,14 @@
  *   preserved unchanged in every locale. No locale adds or strengthens any
  *   product claim.
  *
- * Deliberately NOT in this catalog (untranslatable at runtime or data-driven):
- * - The 123 beta-review bodies and reviewer names/cities in
- *   src/data/beta-reviews.ts — testimonial data, not UI chrome. Translating
- *   quotes would put words in testers' mouths; the claims gate
- *   (unverifiedClaim) already curates them. Only COUNTRY_LABEL is included.
+ * Deliberately NOT in this catalog (runtime or data-driven):
+ * - The 122 beta-review bodies and reviewer names/cities in
+ *   src/data/beta-reviews.ts. The user approved localized renderings on
+ *   2026-08-01; each locale now lives in its own beta-reviews.<locale>.ts module
+ *   and is joined by immutable review id. The original rendering, attribution
+ *   and rating remain unchanged; the Product Truth publication allowlist is
+ *   authoritative. A visible translation notice explains that minor
+ *   differences in nuance may remain.
  * - Numerals and glyphs rendered as-is: step numbers "01/02/03", "404",
  *   countdown digits/"--"/":", "★", "↓", "‹", "›", "+", "🎉", "📬", "🎁".
  * - formatCount() output — hard-coded toLocaleString("en-US") grouping
@@ -74,8 +77,8 @@
  *   as changeable in Terms §2.
  * - Waitlist figures (26,321 baseline / 30,000 cap) — founder-stated constant
  *   recorded in docs/06-decision-log.md.
- * - "{count} divers have already been in the water with it" — beta-programme
- *   claim; individual reviews are gated by the unverifiedClaim flag.
+ * - "{count} beta testers shared their impressions" — beta-programme count;
+ *   individual reviews use the Product Truth publication allowlist.
  * - FAQ compatibility, sensor/Bluetooth architecture and battery warranty /
  *   paid-replacement terms were approved by the product owner on 2026-08-01.
  * - Ascent-rate alerts in the 9–18 m/min range — industry convention; no
@@ -183,7 +186,7 @@ const ko: FrozenLandingMessages = {
     step3: "등록 완료",
   },
   heroProof: {
-    readAll: "베타 리뷰 {count}개 모두 보기 ↓",
+    readAll: "베타 후기 {count}개 모두 보기 (일부 번역) ↓",
   },
   hero: {
     badge: "Kickstarter 런칭 임박",
@@ -290,8 +293,8 @@ const ko: FrozenLandingMessages = {
   },
   reviews: {
     kicker: "베타 테스터의 후기",
-    h2: "{count}명의 다이버가 이미 Watch Dive와 함께 물속에 다녀왔습니다",
-    sub: "베타 프로그램 참가자들의 후기이며, 각자 자기 언어로 남긴 원문을 번역했습니다.",
+    h2: "{count}명의 베타 테스터가 사용 소감을 전했습니다",
+    sub: "번역 안내: 읽기 쉽도록 번역한 후기가 포함되어 있어, 원문과 어조나 뉘앙스가 조금 다를 수 있습니다.",
     disclosure:
       "{total}개 중 {published}개를 표시하고 있습니다. 나머지는 아직 검증을 마치지 못한 제품 세부 내용을 언급하고 있어, 검증이 끝날 때까지 보류합니다.",
     countryUS: "미국",
@@ -614,7 +617,7 @@ const zhCN: FrozenLandingMessages = {
     step3: "加入名单完成",
   },
   heroProof: {
-    readAll: "查看全部 {count} 条内测评价 ↓",
+    readAll: "查看全部 {count} 条内测评价（部分为译文）↓",
   },
   hero: {
     badge: "即将登陆 Kickstarter",
@@ -718,8 +721,8 @@ const zhCN: FrozenLandingMessages = {
   },
   reviews: {
     kicker: "来自内测潜水员",
-    h2: "{count} 位潜水员已经带着它下过水",
-    sub: "来自内测计划的评价，由各位测试者的母语翻译而来。",
+    h2: "{count} 位内测用户分享了他们的使用感受",
+    sub: "翻译说明：部分评价为方便阅读而翻译，语气和细微含义可能与原文略有差异。",
     disclosure:
       "共 {total} 条，现展示 {published} 条。其余评价提及尚未完成验证的产品细节，验证完成前暂不展示。",
     countryUS: "美国",
@@ -1033,7 +1036,7 @@ const zhTW: FrozenLandingMessages = {
     step3: "加入名單完成",
   },
   heroProof: {
-    readAll: "閱讀全部 {count} 則 Beta 評價 ↓",
+    readAll: "閱讀全部 {count} 則 Beta 心得（部分為譯文）↓",
   },
   hero: {
     badge: "即將登陸 Kickstarter",
@@ -1137,8 +1140,8 @@ const zhTW: FrozenLandingMessages = {
   },
   reviews: {
     kicker: "來自 Beta 測試潛水員",
-    h2: "{count} 位潛水員已經帶著它下過水",
-    sub: "來自 Beta 計畫的評價，由各位測試者的母語翻譯而來。",
+    h2: "{count} 位 Beta 測試者分享了使用心得",
+    sub: "翻譯說明：部分心得為方便閱讀而翻譯，語氣與細微含義可能與原文略有差異。",
     disclosure:
       "共 {total} 則，目前顯示 {published} 則。其餘評價提及尚未完成驗證的產品細節，驗證完成前暫不顯示。",
     countryUS: "美國",
@@ -1455,7 +1458,7 @@ const ja: FrozenLandingMessages = {
     step3: "登録完了",
   },
   heroProof: {
-    readAll: "ベータレビュー全 {count} 件を読む ↓",
+    readAll: "ベータレビュー全 {count} 件を読む（一部翻訳）↓",
   },
   hero: {
     badge: "まもなく Kickstarter に登場",
@@ -1563,8 +1566,8 @@ const ja: FrozenLandingMessages = {
   },
   reviews: {
     kicker: "ベータテスターの声",
-    h2: "すでに {count} 人のダイバーが Watch Dive と一緒に潜りました",
-    sub: "ベータプログラム参加者のレビューを、各テスターの母語から翻訳しています。",
+    h2: "{count} 人のベータテスターから感想が届いています",
+    sub: "翻訳について：読みやすいように翻訳したレビューが含まれるため、原文と語調や細かなニュアンスが異なる場合があります。",
     disclosure:
       "全 {total} 件のうち {published} 件を表示中。残りは検証が終わっていない製品詳細に触れているため、検証完了まで保留しています。",
     countryUS: "アメリカ",
@@ -1892,7 +1895,7 @@ const es: FrozenLandingMessages = {
     step3: "Ya estás en la lista",
   },
   heroProof: {
-    readAll: "Lee las {count} reseñas beta ↓",
+    readAll: "Lee las {count} reseñas beta (algunas traducidas) ↓",
   },
   hero: {
     badge: "Muy pronto en Kickstarter",
@@ -2003,8 +2006,8 @@ const es: FrozenLandingMessages = {
   },
   reviews: {
     kicker: "De nuestros beta testers",
-    h2: "{count} buceadores ya se han metido al agua con él",
-    sub: "Reseñas del programa beta, traducidas del idioma de cada tester.",
+    h2: "{count} beta testers comparten sus impresiones",
+    sub: "Aviso de traducción: algunas reseñas se han traducido para facilitar la lectura, por lo que el tono o ciertos matices pueden diferir del original.",
     disclosure:
       "Mostrando {published} de {total}. El resto menciona detalles del producto que aún no hemos terminado de verificar, así que las retenemos hasta hacerlo.",
     countryUS: "Estados Unidos",
@@ -2339,7 +2342,7 @@ const fr: FrozenLandingMessages = {
     step3: "Vous êtes sur la liste",
   },
   heroProof: {
-    readAll: "Lire les {count} avis bêta ↓",
+    readAll: "Lire les {count} avis bêta (dont certains traduits) ↓",
   },
   hero: {
     badge: "Bientôt sur Kickstarter",
@@ -2454,8 +2457,8 @@ const fr: FrozenLandingMessages = {
   },
   reviews: {
     kicker: "De nos bêta-testeurs",
-    h2: "{count} plongeurs l'ont déjà emmené sous l'eau",
-    sub: "Avis du programme bêta, traduits depuis la langue de chaque testeur.",
+    h2: "{count} bêta-testeurs partagent leur avis",
+    sub: "Note de traduction : certains avis ont été traduits pour en faciliter la lecture ; le ton ou certaines nuances peuvent donc différer du texte d’origine.",
     disclosure:
       "{published} affichés sur {total}. Les autres mentionnent des détails produit dont la vérification n'est pas terminée ; nous les gardons de côté jusque-là.",
     countryUS: "États-Unis",
@@ -2791,7 +2794,7 @@ const de: FrozenLandingMessages = {
     step3: "Du bist auf der Liste",
   },
   heroProof: {
-    readAll: "Alle {count} Beta-Bewertungen lesen ↓",
+    readAll: "Alle {count} Beta-Bewertungen lesen (teilweise übersetzt) ↓",
   },
   hero: {
     badge: "Bald auf Kickstarter",
@@ -2902,8 +2905,8 @@ const de: FrozenLandingMessages = {
   },
   reviews: {
     kicker: "Von unseren Beta-Testern",
-    h2: "{count} Taucher waren damit schon im Wasser",
-    sub: "Bewertungen aus dem Beta-Programm, übersetzt aus der Sprache des jeweiligen Testers.",
+    h2: "{count} Beta-Tester teilen ihre Eindrücke",
+    sub: "Übersetzungshinweis: Einige Bewertungen wurden zur besseren Lesbarkeit übersetzt; Ton und Nuancen können daher vom Original abweichen.",
     disclosure:
       "{published} von {total} werden angezeigt. Der Rest erwähnt Produktdetails, deren Prüfung noch läuft — wir halten sie zurück, bis sie abgeschlossen ist.",
     countryUS: "USA",
@@ -3235,7 +3238,7 @@ const ptBR: FrozenLandingMessages = {
     step3: "Você está na lista",
   },
   heroProof: {
-    readAll: "Leia todas as {count} avaliações beta ↓",
+    readAll: "Leia as {count} avaliações beta (algumas traduzidas) ↓",
   },
   hero: {
     badge: "Em breve no Kickstarter",
@@ -3346,8 +3349,8 @@ const ptBR: FrozenLandingMessages = {
   },
   reviews: {
     kicker: "Dos nossos testadores beta",
-    h2: "{count} mergulhadores já entraram na água com o Watch Dive",
-    sub: "Avaliações do programa beta, traduzidas do idioma de cada testador.",
+    h2: "{count} testadores beta compartilham suas impressões",
+    sub: "Aviso de tradução: algumas avaliações foram traduzidas para facilitar a leitura, por isso o tom ou algumas nuances podem diferir do original.",
     disclosure:
       "Mostrando {published} de {total}. As demais mencionam detalhes do produto que ainda não terminamos de verificar, então as seguramos até concluir.",
     countryUS: "Estados Unidos",

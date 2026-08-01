@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BETA_REVIEWS, PUBLISHABLE_REVIEWS, type BetaReview } from "@/data/beta-reviews";
+import { betaReviewBody, type LocalizedBetaReviewBodies } from "@/data/beta-reviews.loader";
 import { ReviewAvatar } from "@/components/review-avatar";
-import { useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
+import {
+  useFrozenLandingMessages,
+  useLocalizedBetaReviewBodies,
+} from "@/lib/i18n/use-current-locale";
 
 // Two lanes drifting in opposite directions read as motion rather than as one
 // long list scrolling past. Each lane renders its reviews twice and translates
@@ -33,11 +37,21 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-function Card({ review, countryLabels }: { review: BetaReview; countryLabels: CountryLabels }) {
+function Card({
+  review,
+  countryLabels,
+  reviewBodies,
+}: {
+  review: BetaReview;
+  countryLabels: CountryLabels;
+  reviewBodies?: LocalizedBetaReviewBodies;
+}) {
   return (
     <figure className="flex w-[19rem] shrink-0 flex-col gap-3 rounded-2xl border border-white/12 bg-white/[0.06] p-5 backdrop-blur sm:w-[22rem]">
       <Stars rating={review.rating} />
-      <blockquote className="text-sm leading-relaxed text-white/85">{review.en}</blockquote>
+      <blockquote className="text-sm leading-relaxed text-white/85">
+        {betaReviewBody(review, reviewBodies)}
+      </blockquote>
       <figcaption className="mt-auto flex items-center gap-2.5 text-xs text-white/50">
         <ReviewAvatar review={review} />
         <span className="min-w-0">
@@ -55,11 +69,13 @@ function Lane({
   reverse,
   running,
   countryLabels,
+  reviewBodies,
 }: {
   reviews: BetaReview[];
   reverse: boolean;
   running: boolean;
   countryLabels: CountryLabels;
+  reviewBodies?: LocalizedBetaReviewBodies;
 }) {
   // Duration scales with the number of cards so lanes of different lengths move
   // at the same apparent speed rather than the same lap time.
@@ -81,7 +97,12 @@ function Lane({
         }
       >
         {[...reviews, ...reviews].map((review, index) => (
-          <Card key={`${review.id}-${index}`} review={review} countryLabels={countryLabels} />
+          <Card
+            key={`${review.id}-${index}`}
+            review={review}
+            countryLabels={countryLabels}
+            reviewBodies={reviewBodies}
+          />
         ))}
       </div>
     </div>
@@ -98,6 +119,7 @@ function Lane({
  */
 export function ReviewTicker() {
   const messages = useFrozenLandingMessages().reviews;
+  const reviewBodies = useLocalizedBetaReviewBodies();
   const [showAll, setShowAll] = useState(false);
   const [onScreen, setOnScreen] = useState(false);
   const section = useRef<HTMLElement>(null);
@@ -182,6 +204,7 @@ export function ReviewTicker() {
             reverse={index % 2 === 1}
             running={onScreen}
             countryLabels={countryLabels}
+            reviewBodies={reviewBodies}
           />
         ))}
       </div>

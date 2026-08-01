@@ -24,7 +24,7 @@ function sha256(value: string): string {
  * Locale work may replace text nodes and text-valued attributes, but it may not
  * replace elements, attributes, class names, media, forms, or component order.
  */
-function jsxStructure(sourceText: string): string {
+function jsxStructure(sourceText: string, hostElementsOnly = false): string {
   const source = ts.createSourceFile(
     "index.tsx",
     sourceText,
@@ -35,6 +35,7 @@ function jsxStructure(sourceText: string): string {
   const parts: string[] = [];
 
   const opening = (node: ts.JsxOpeningElement | ts.JsxSelfClosingElement) => {
+    if (hostElementsOnly && !/^[a-z]/.test(node.tagName.getText(source))) return;
     const attributes = node.attributes.properties.map((attribute) => {
       if (ts.isJsxSpreadAttribute(attribute)) return "{...spread}";
       const name = attribute.name.getText(source);
@@ -51,7 +52,12 @@ function jsxStructure(sourceText: string): string {
 
   const visit = (node: ts.Node) => {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) opening(node);
-    if (ts.isJsxClosingElement(node)) parts.push(`</${node.tagName.getText(source)}>`);
+    if (
+      ts.isJsxClosingElement(node) &&
+      (!hostElementsOnly || /^[a-z]/.test(node.tagName.getText(source)))
+    ) {
+      parts.push(`</${node.tagName.getText(source)}>`);
+    }
     ts.forEachChild(node, visit);
   };
   visit(source);
@@ -98,6 +104,13 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   assert.equal(
     sha256(read("src/styles.css")),
     "f9a558623d37232f6e83854d59564e8417eccd6c6d322858fca3983cfb64bc51",
+  );
+});
+
+test("testimonial localization preserves the frozen host DOM and classes", () => {
+  assert.equal(
+    sha256(jsxStructure(read("src/components/review-ticker.tsx"), true)),
+    "1963e9a5b58171b59a165d15f040b6cb5964d715c7aa20f757a74e2c77cb4804",
   );
 });
 
