@@ -13,6 +13,7 @@ import {
 } from "../src/lib/verification/contracts.ts";
 import {
   assertVerificationEnv,
+  checkLaunchOsEnv,
   checkVerificationEnv,
   formatEnvProblems,
 } from "../src/lib/verification/envPreflight.ts";
@@ -257,8 +258,141 @@ const COMPLETE_ENV = {
   WATCHDIVE_VERIFICATION_SECRET: "a-verification-secret-of-32-bytes!!",
 };
 
+const COMPLETE_LAUNCHOS_ENV = {
+  ...COMPLETE_ENV,
+  VERCEL: "1",
+  VERCEL_ENV: "production",
+  VITE_LAUNCHOS_MEASUREMENT_CONSENT_UI_ENABLED: "true",
+  LAUNCHOS_MEASUREMENT_ENABLED: "true",
+  LAUNCHOS_NOTION_REPLAY_ENABLED: "true",
+  LAUNCHOS_WITHDRAWAL_ENABLED: "true",
+  LAUNCHOS_BASE_URL: "https://launchos.example",
+  LAUNCHOS_PROJECT_ID: "watchdive-prelanding",
+  LAUNCHOS_FUNNEL_VERSION: "wd-prelaunch-v1",
+  LAUNCHOS_ENVIRONMENT: "production",
+  LAUNCHOS_WEB_EVENTS_INGRESS_KEY_ID: "watchdive.web.v1",
+  LAUNCHOS_WEB_EVENTS_INGRESS_SECRET: "web-events-secret-32-bytes-minimum-01",
+  LAUNCHOS_LEAD_STORE_INGRESS_KEY_ID: "watchdive.lead.v1",
+  LAUNCHOS_LEAD_STORE_INGRESS_SECRET: "lead-store-secret-32-bytes-minimum-02",
+  LAUNCHOS_VERIFICATION_INGRESS_KEY_ID: "watchdive.verify.v1",
+  LAUNCHOS_VERIFICATION_INGRESS_SECRET: "verification-secret-32-bytes-min-03",
+  LAUNCHOS_WITHDRAWAL_INGRESS_KEY_ID: "watchdive.privacy.v1",
+  LAUNCHOS_WITHDRAWAL_INGRESS_SECRET: "withdrawal-secret-32-bytes-minimum-06",
+  LAUNCHOS_CANONICAL_LEAD_HMAC_SECRET: "canonical-lead-secret-32-bytes-min-04",
+  WAITLIST_REPLAY_HMAC_SECRET: "replay-envelope-secret-32-bytes-min-05",
+  LAUNCHOS_QUALITY_RULE_VERSION: "wd-suspect-v1",
+  LAUNCHOS_VERIFICATION_POLICY_VERSION: "wd-email-double-opt-in-v1",
+  LAUNCHOS_APPROVED_META_IDENTITY_REGISTRY_JSON: JSON.stringify([
+    { campaignId: "1001", adsetId: "2002", adId: "3003" },
+  ]),
+};
+
 test("a complete environment passes", () => {
   assert.deepEqual(checkVerificationEnv(COMPLETE_ENV), []);
+});
+
+test("the complete LaunchOS activation environment passes as one exact contract", () => {
+  assert.deepEqual(checkLaunchOsEnv(COMPLETE_LAUNCHOS_ENV), []);
+  assert.deepEqual(checkVerificationEnv(COMPLETE_LAUNCHOS_ENV), []);
+});
+
+test("Sites relay origins require a bearer token with or without a trailing slash", () => {
+  for (const baseUrl of [
+    "https://lead-funnel-console.example.chatgpt.site",
+    "https://lead-funnel-console.example.chatgpt.site/",
+  ]) {
+    const withoutToken = checkLaunchOsEnv({
+      ...COMPLETE_LAUNCHOS_ENV,
+      LAUNCHOS_BASE_URL: baseUrl,
+    });
+    assert.ok(
+      withoutToken.some((problem) => problem.name === "LAUNCHOS_SITES_BEARER_TOKEN"),
+      `missing Sites bearer token was accepted for ${baseUrl}`,
+    );
+
+    assert.deepEqual(
+      checkLaunchOsEnv({
+        ...COMPLETE_LAUNCHOS_ENV,
+        LAUNCHOS_BASE_URL: baseUrl,
+        LAUNCHOS_SITES_BEARER_TOKEN: "sites-bearer-token-32-bytes-minimum-01",
+      }),
+      [],
+    );
+  }
+});
+
+test("one enabled LaunchOS gate requires the full activation set", () => {
+  const names = checkLaunchOsEnv({
+    VITE_LAUNCHOS_MEASUREMENT_CONSENT_UI_ENABLED: "true",
+  }).map((problem) => problem.name);
+  for (const required of [
+    "LAUNCHOS_MEASUREMENT_ENABLED",
+    "LAUNCHOS_NOTION_REPLAY_ENABLED",
+    "LAUNCHOS_WITHDRAWAL_ENABLED",
+    "LAUNCHOS_BASE_URL",
+    "LAUNCHOS_PROJECT_ID",
+    "LAUNCHOS_FUNNEL_VERSION",
+    "LAUNCHOS_WEB_EVENTS_INGRESS_SECRET",
+    "WAITLIST_REPLAY_HMAC_SECRET",
+    "LAUNCHOS_APPROVED_META_IDENTITY_REGISTRY_JSON",
+  ]) {
+    assert.ok(names.includes(required), `${required} was not required`);
+  }
+});
+
+test("a Vercel production build cannot label LaunchOS events preview or development", () => {
+  for (const environment of ["preview", "development"]) {
+    const problems = checkLaunchOsEnv({
+      ...COMPLETE_LAUNCHOS_ENV,
+      LAUNCHOS_ENVIRONMENT: environment,
+    });
+    assert.ok(
+      problems.some(
+        (problem) =>
+          problem.name === "LAUNCHOS_ENVIRONMENT" &&
+          /VERCEL_ENV is production/.test(problem.problem),
+      ),
+    );
+  }
+});
+
+test("LaunchOS secrets are exact, long enough, and purpose-separated", () => {
+  assert.ok(
+    checkLaunchOsEnv({
+      ...COMPLETE_LAUNCHOS_ENV,
+      LAUNCHOS_WEB_EVENTS_INGRESS_SECRET: " short ",
+    }).some((problem) => problem.name === "LAUNCHOS_WEB_EVENTS_INGRESS_SECRET"),
+  );
+  assert.ok(
+    checkLaunchOsEnv({
+      ...COMPLETE_LAUNCHOS_ENV,
+      WAITLIST_REPLAY_HMAC_SECRET: COMPLETE_LAUNCHOS_ENV.LAUNCHOS_CANONICAL_LEAD_HMAC_SECRET,
+    }).some((problem) => problem.name === "LAUNCHOS_*_SECRET"),
+  );
+  assert.ok(
+    checkLaunchOsEnv({
+      ...COMPLETE_LAUNCHOS_ENV,
+      LAUNCHOS_WITHDRAWAL_INGRESS_SECRET: COMPLETE_LAUNCHOS_ENV.LAUNCHOS_WEB_EVENTS_INGRESS_SECRET,
+    }).some((problem) => problem.name === "LAUNCHOS_*_SECRET"),
+  );
+  assert.ok(
+    checkLaunchOsEnv({
+      ...COMPLETE_LAUNCHOS_ENV,
+      LAUNCHOS_WITHDRAWAL_INGRESS_KEY_ID: COMPLETE_LAUNCHOS_ENV.LAUNCHOS_WEB_EVENTS_INGRESS_KEY_ID,
+    }).some((problem) => problem.name === "LAUNCHOS_*_INGRESS_KEY_ID"),
+  );
+});
+
+test("Meta identity registry uses the same four-to-thirty-two digit contract", () => {
+  const problems = checkLaunchOsEnv({
+    ...COMPLETE_LAUNCHOS_ENV,
+    LAUNCHOS_APPROVED_META_IDENTITY_REGISTRY_JSON: JSON.stringify([
+      { campaignId: "101", adsetId: "2002", adId: "3003" },
+    ]),
+  });
+  assert.ok(
+    problems.some((problem) => problem.name === "LAUNCHOS_APPROVED_META_IDENTITY_REGISTRY_JSON"),
+  );
 });
 
 test("every required value is checked, and all gaps are reported at once", () => {

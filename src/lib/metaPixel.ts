@@ -1,12 +1,19 @@
 // Meta Pixel — browser side. Measurement remains completely off unless the
 // public production gate is explicitly enabled and the dataset id is valid.
-// The restored production design has no consent banner, so preserve that visual
-// contract while still honoring an existing opt-out and Global Privacy Control.
+// The restored production design has no consent banner while the LaunchOS
+// feature flag is off. In that legacy mode preserve opt-out semantics; when the
+// optional purpose is enabled, only its separate versioned JSON grant applies.
+import { hasOptionalMeasurementConsent } from "./measurementConsent.ts";
+
 const META_TRACKING_ENABLED =
-  (import.meta.env.VITE_META_TRACKING_ENABLED as string | undefined)?.trim() === "true";
-const META_PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID as string | undefined)?.trim() ?? "";
+  (import.meta.env?.VITE_META_TRACKING_ENABLED as string | undefined)?.trim() === "true";
+const META_PIXEL_ID = (import.meta.env?.VITE_META_PIXEL_ID as string | undefined)?.trim() ?? "";
+const EXPLICIT_MEASUREMENT_CHOICE_ENABLED =
+  String(import.meta.env?.VITE_LAUNCHOS_MEASUREMENT_CONSENT_UI_ENABLED ?? "").toLowerCase() ===
+  "true";
 const META_CONSENT_STORAGE_KEY = "watchdive.measurement-consent.v3";
 const META_PIXEL_SCRIPT_ID = "watchdive-meta-pixel";
+export const META_MEASUREMENT_CONSENT_CHANGED_EVENT = "watchdive:meta-measurement-consent-changed";
 
 export type MetaMeasurementConsent = "granted" | "denied";
 
@@ -52,13 +59,33 @@ export function getMetaMeasurementConsent(): MetaMeasurementConsent | null {
 }
 
 export function hasMetaMeasurementConsent(): boolean {
-  if (!isMetaPixelConfigured() || getMetaMeasurementConsent() === "denied") return false;
+  if (!isMetaPixelConfigured()) return false;
+  if (
+    EXPLICIT_MEASUREMENT_CHOICE_ENABLED
+      ? !hasOptionalMeasurementConsent()
+      : getMetaMeasurementConsent() === "denied"
+  ) {
+    return false;
+  }
   if (typeof navigator !== "undefined" && "globalPrivacyControl" in navigator) {
     return (
       (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl !== true
     );
   }
   return true;
+}
+
+/**
+ * LaunchOS declares `website_consent/granted`, so unlike the legacy pixel gate
+ * it may only use an explicit stored/runtime grant. An absent choice remains a
+ * DATA_GAP and is never relabelled as consent.
+ */
+export function hasExplicitMetaMeasurementConsent(): boolean {
+  return isMetaPixelConfigured() && hasExplicitAdvertisingMeasurementConsent();
+}
+
+export function hasExplicitAdvertisingMeasurementConsent(): boolean {
+  return hasOptionalMeasurementConsent();
 }
 
 export function setMetaMeasurementConsent(choice: MetaMeasurementConsent): void {
@@ -74,6 +101,13 @@ export function setMetaMeasurementConsent(choice: MetaMeasurementConsent): void 
   if (choice === "denied" && window.fbq) {
     window.fbq("consent", "revoke");
   }
+  window.dispatchEvent(new CustomEvent(META_MEASUREMENT_CONSENT_CHANGED_EVENT, { detail: choice }));
+}
+
+export function revokeMetaMeasurementRuntime(): void {
+  if (typeof window === "undefined") return;
+  if (window.fbq) window.fbq("consent", "revoke");
+  window.__watchDiveMetaPageViewSent = false;
 }
 
 export function initMetaPixel() {

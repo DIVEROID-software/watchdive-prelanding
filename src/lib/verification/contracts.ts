@@ -81,6 +81,26 @@ export const FIELD_VERIFICATION_SENDS = "Verification sends";
 export const FIELD_LEAD_ID = "Lead ID";
 export const FIELD_META_EVENT_ID = "Meta Event ID";
 export const FIELD_WELCOME_EMAIL = "Welcome email";
+/** PII-free, HMAC-sealed first-touch context used to replay LaunchOS events. */
+export const FIELD_LAUNCHOS_REPLAY_METADATA = "LaunchOS replay metadata";
+/** Exact, non-PII state of the optional advertising-measurement authority. */
+export const FIELD_MEASUREMENT_CONSENT = "Measurement consent";
+/** Leaves a small safety margin below Notion's 2,000-character rich-text limit. */
+export const LAUNCHOS_REPLAY_METADATA_MAX_LENGTH = 1_980;
+
+export const MEASUREMENT_CONSENT_GRANTED = "WD-AD-MEASUREMENT-CONSENT-V1:granted" as const;
+export const MEASUREMENT_CONSENT_WITHDRAWN = "WD-AD-MEASUREMENT-CONSENT-V1:withdrawn" as const;
+
+// Measurement-only reconciliation context already provisioned on the live
+// waitlist database. Withdrawal clears these without touching operational CRM
+// state such as the address, verification, Counted, Suspect, or Duplicate.
+export const FIELD_ENVIRONMENT = "Environment";
+export const FIELD_ACQUISITION_PATH = "Acquisition path";
+export const FIELD_QUALIFICATION_RULE_VERSION = "Qualification rule version";
+export const FIELD_SOURCE_SCHEMA_VERSION = "Source schema version";
+export const FIELD_META_CAMPAIGN_ID = "Meta Campaign ID";
+export const FIELD_META_ADSET_ID = "Meta Ad Set ID";
+export const FIELD_META_AD_ID = "Meta Ad ID";
 
 // Attribution columns, already provisioned on the live database as text.
 export const FIELD_UTM_SOURCE = "UTM Source";
@@ -93,6 +113,8 @@ export const FIELD_LANDING_PATH = "Landing path";
 export const STATUS_PENDING = "pending";
 export const STATUS_VERIFIED = "verified";
 export const STATUS_UNSUBSCRIBED = "unsubscribed";
+/** Existing live option used only for non-operational synthetic tombstones. */
+export const STATUS_SUPPRESSED = "suppressed";
 
 /**
  * `legacy` is a row written before this flow existed: no status at all. Those
@@ -117,6 +139,8 @@ export type LeadRecord = {
   sentAt?: string;
   expiresAt?: string;
   verifiedAt?: string;
+  /** HMAC-sealed PII-free context. It is never returned to the browser. */
+  launchOsReplayMetadata?: string;
   /** Set once the welcome mail has been accepted by the provider. */
   welcomeAt?: string;
 };
@@ -141,6 +165,46 @@ export type LeadAttribution = {
   landingPath?: string;
 };
 
+/** PII-free browser context accepted by the LaunchOS website adapter. */
+export type LaunchOsMeasurementContext = {
+  funnelInstanceId: string;
+  attribution: {
+    campaignId?: string;
+    adsetId?: string;
+    targetId?: string;
+    adId?: string;
+    contentId?: string;
+  };
+  measurementConsent: {
+    purpose: "advertising_measurement";
+    state: "granted";
+    version: "WD-AD-MEASUREMENT-CONSENT-V1";
+  };
+  placement?: "hero" | "offer";
+};
+
+/**
+ * Server-bound consent evidence. The browser can never provide this field: the
+ * request handler derives it from the verified HttpOnly authority cookie and
+ * overwrites the browser payload before anything is sealed or dispatched.
+ */
+export type LaunchOsAuthorizedMeasurementContext = LaunchOsMeasurementContext & {
+  authorityReferenceHash: string;
+  attributionAuthority: "approved_meta_identity_snapshot_v1";
+};
+
+/**
+ * Inputs available only after the CRM has accepted the lead. The server turns
+ * these into one HMAC-sealed, PII-free replay contract; the canonical address
+ * is used to derive the opaque lead id and is never written into the envelope.
+ */
+export type LaunchOsReplaySeed = {
+  canonicalEmail: string;
+  suspect: boolean;
+  signedUpAt: string;
+  context: LaunchOsAuthorizedMeasurementContext;
+};
+
 export type CreatePendingInput = {
   email: string;
   canonical: string;
@@ -154,6 +218,7 @@ export type CreatePendingInput = {
   leadId: string;
   expiresAt: string;
   attribution?: LeadAttribution;
+  launchOsReplayMetadata?: string;
 };
 
 /** Written when a new attempt is minted — this is what kills the previous link. */

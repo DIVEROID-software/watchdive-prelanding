@@ -3,8 +3,15 @@
 // Named `.server.ts` and imported solely from server functions, so the Resend
 // and Notion credentials have no path into a client bundle.
 import { sendMetaCrmQualifiedLead, sendMetaLead } from "@/lib/api/metaCapi";
+import {
+  openLaunchOsReplayMetadata,
+  relayLaunchOsVerificationOutcome,
+  relayStoredWaitlistLead,
+  sealLaunchOsReplayMetadata,
+} from "@/lib/api/launchOsRelay.server";
 import type { PollResponse } from "./contracts.ts";
 import { createNotionLeadStore, createNotionRequest } from "./notionLead.ts";
+import { createNotionMeasurementRevocationRegistry } from "./measurementRevocationRegistry.server.ts";
 import { createPollGate } from "./pollGate.ts";
 import { createResendMailer } from "./resend.ts";
 import type { ServiceDependencies } from "./service.ts";
@@ -17,10 +24,47 @@ const pollGate = createPollGate<PollResponse>();
 export function createServiceDependencies(): ServiceDependencies {
   const databaseId = process.env.NOTION_WAITLIST_DB_ID;
   if (!databaseId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
+  const notionRequest = createNotionRequest();
+  const launchOsReplayEnabled = process.env.LAUNCHOS_NOTION_REPLAY_ENABLED?.trim() === "true";
+  const revocationRegistry = launchOsReplayEnabled
+    ? createNotionMeasurementRevocationRegistry({
+        request: notionRequest,
+        databaseId,
+        replaySecret: process.env.WAITLIST_REPLAY_HMAC_SECRET ?? "",
+        readReplayAuthority: (envelope) =>
+          openLaunchOsReplayMetadata(envelope)?.authorityReferenceHash,
+      })
+    : null;
   return {
-    store: createNotionLeadStore(createNotionRequest(), databaseId),
+    store: createNotionLeadStore(notionRequest, databaseId),
     mailer: createResendMailer(),
     pollGate,
+    ...(launchOsReplayEnabled
+      ? {
+          prepareLaunchOsReplayMetadata: (input) => sealLaunchOsReplayMetadata(input),
+          dispatchStoredLeadMeasurement: async (input: { replayMetadata: string }) => {
+            await relayStoredWaitlistLead({
+              ...input,
+              dependencies: {
+                sourceMeasurementRevoked: revocationRegistry!.isRevoked,
+              },
+            });
+          },
+          dispatchVerificationMeasurement: async (input: {
+            replayMetadata: string;
+            outcome: "verified" | "failed";
+            occurredAt: string;
+            reasonCode?: "expired";
+          }) => {
+            await relayLaunchOsVerificationOutcome({
+              ...input,
+              dependencies: {
+                sourceMeasurementRevoked: revocationRegistry!.isRevoked,
+              },
+            });
+          },
+        }
+      : {}),
     dispatchVerifiedLead: async (input) => {
       await sendMetaLead(input);
       // The CRM leg of the Conversion Leads integration rides the same gate:

@@ -21,6 +21,8 @@ import {
   pollVerificationService,
   requestVerificationService,
 } from "@/lib/verification/service";
+import { launchOsWaitlistMeasurementSchema } from "./launchOsRelay";
+import { bindCurrentRequestLaunchOsMeasurementContext } from "./launchOsRelay.server";
 
 // Waitlist signups are stored directly in a Notion database — no Supabase.
 // Server-only: the Notion, Resend and signing secrets never reach the browser.
@@ -92,13 +94,14 @@ function sanitizeMetaCookie(value: string | undefined | null): string {
 
 // Reads request metadata (IP, UA) inside a server fn. Header access can throw if
 // there is no active request context, so it always degrades to empty strings.
-function requestMeta(): { ip: string; ua: string } {
+function requestMeta(): { ip: string; ua: string; gpc: boolean } {
   try {
     const xff = getRequestHeader("x-forwarded-for") ?? getRequestHeader("x-real-ip");
     const ua = getRequestHeader("user-agent") ?? "";
-    return { ip: firstIp(xff), ua };
+    const secGpc = getRequestHeader("sec-gpc") ?? "";
+    return { ip: firstIp(xff), ua, gpc: secGpc.trim() === "1" };
   } catch {
-    return { ip: "", ua: "" };
+    return { ip: "", ua: "", gpc: false };
   }
 }
 
@@ -187,6 +190,9 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       // The browser's measurement choice, captured now and carried signed
       // through the token so the confirming browser cannot widen it.
       measurementConsent: z.boolean().default(false),
+      // Optional and strict. Invalid/version-skewed telemetry is discarded so
+      // it can never reject an otherwise valid operational signup.
+      launchOsMeasurement: launchOsWaitlistMeasurementSchema,
       // Email and confirmation-page language. It is signed into the
       // verification token rather than added to the CRM schema. Defaulting to
       // English keeps older clients and already-open tabs compatible.
@@ -230,7 +236,17 @@ export const joinWaitlist = createServerFn({ method: "POST" })
 
     const email = data.email.trim().toLowerCase();
     const canonical = canonicalEmail(email);
-    const { ip, ua } = requestMeta();
+    const { ip, ua, gpc } = requestMeta();
+    // The server signal is authoritative. A forged client boolean cannot
+    // override Global Privacy Control seen on the actual request.
+    const measurementConsent = data.measurementConsent && !gpc;
+    // LaunchOS authority is independent of whether Meta Pixel happens to be
+    // configured. It requires the exact versioned grant, its short-lived
+    // HttpOnly server binding, and no Sec-GPC override on this request.
+    const launchOsMeasurement =
+      !gpc && data.launchOsMeasurement
+        ? bindCurrentRequestLaunchOsMeasurementContext(data.launchOsMeasurement)
+        : undefined;
 
     // The network address and user agent are read, used, and dropped inside
     // this handler. Neither reaches Notion, and neither is logged. Only a keyed
@@ -264,7 +280,8 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           attribution: toLeadAttribution(attribution),
           flags,
           suspect: flags.length > 0,
-          measurementConsent: data.measurementConsent,
+          measurementConsent,
+          ...(launchOsMeasurement ? { launchOsMeasurement } : {}),
           locale: data.locale,
           networkSendBlocked: verdict.blocked,
         },
@@ -279,7 +296,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // pending, one already confirmed alike — so the latency it adds cannot say
     // which of those happened. That uniformity is the property the response
     // floor inside the service exists to protect, and this must not undo it.
-    if (data.submitEventId && data.measurementConsent && !conversionBlocked(flags)) {
+    if (data.submitEventId && measurementConsent && !conversionBlocked(flags)) {
       const fbp = sanitizeMetaCookie(data.fbp);
       // The pixel derives `_fbc` from an `fbclid` landing, but only if it ran at
       // all. When an ad blocker stopped it, the click id kept from that same

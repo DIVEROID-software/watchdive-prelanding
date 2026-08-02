@@ -455,7 +455,7 @@ const ko: FrozenLandingMessages = {
     back: "← 홈으로 돌아가기",
     h1: "개인정보처리방침 — Watch Dive 프리런칭",
     effectiveLabel: "시행일:",
-    effectiveDate: "2026년 7월 30일",
+    effectiveDate: "2026년 8월 2일",
     intro1:
       '본 개인정보처리방침은 OceanWick Inc.("회사", "당사", "DIVEROID")가 Watch Dive 프리런칭 페이지에서 예정된 Kickstarter 캠페인 소식을 받기 위해 신청하실 때 정보를 어떻게 처리하는지 설명합니다.',
     intro2:

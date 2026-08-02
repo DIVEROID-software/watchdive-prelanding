@@ -12,6 +12,8 @@ import type {
   LeadAttribution,
   LeadRecord,
   LeadStore,
+  LaunchOsAuthorizedMeasurementContext,
+  LaunchOsReplaySeed,
   PendingResponse,
   PollResponse,
 } from "./contracts.ts";
@@ -64,6 +66,8 @@ export type RequestVerificationInput = {
   attribution?: LeadAttribution;
   /** The browser's measurement choice at submit time. */
   measurementConsent: boolean;
+  /** Explicit, PII-free website-consent evidence. Absent means DATA_GAP. */
+  launchOsMeasurement?: LaunchOsAuthorizedMeasurementContext;
   /** Language selected on the page. Defaults to English for legacy callers. */
   locale?: Locale;
   /** True when this network has produced too many recent signups to keep mailing. */
@@ -78,6 +82,17 @@ export type ServiceDependencies = {
   leadId?: () => string;
   refCode?: () => string;
   dispatchVerifiedLead?: VerifiedLeadDispatch;
+  /** Signs the PII-free first-touch context before it enters the CRM row. */
+  prepareLaunchOsReplayMetadata?: (input: LaunchOsReplaySeed) => string | undefined;
+  /** Replays the immutable envelope after the authoritative CRM write succeeds. */
+  dispatchStoredLeadMeasurement?: (input: { replayMetadata: string }) => Promise<void>;
+  /** Best-effort adapter dispatch after a known verification outcome. */
+  dispatchVerificationMeasurement?: (input: {
+    replayMetadata: string;
+    outcome: "verified" | "failed";
+    occurredAt: string;
+    reasonCode?: "expired";
+  }) => Promise<void>;
   /** Test seam for the response floor. */
   sleep?: (ms: number) => Promise<void>;
   /** Shields the store from replayed poll bursts. */
@@ -86,6 +101,81 @@ export type ServiceDependencies = {
 
 function pendingResponse(handle: string): PendingResponse {
   return { ok: true, status: "pending", message: GENERIC_PENDING_MESSAGE, handle };
+}
+
+function launchOsReplayMetadata(
+  input: RequestVerificationInput,
+  dependencies: ServiceDependencies,
+  signedUpAt: string,
+): string | undefined {
+  if (!input.launchOsMeasurement || !dependencies.prepareLaunchOsReplayMetadata) return undefined;
+  try {
+    return dependencies.prepareLaunchOsReplayMetadata({
+      canonicalEmail: input.canonical,
+      suspect: input.suspect,
+      signedUpAt,
+      context: input.launchOsMeasurement,
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+async function currentReplayMetadata(
+  record: LeadRecord,
+  dependencies: ServiceDependencies,
+): Promise<string | undefined> {
+  try {
+    const current = await dependencies.store.reread(record.pageId);
+    return current && current.launchOsReplayMetadata === record.launchOsReplayMetadata
+      ? current.launchOsReplayMetadata
+      : undefined;
+  } catch {
+    // A source read failure must suppress telemetry, never authorize it from a
+    // stale in-memory record that may have been revoked concurrently.
+    return undefined;
+  }
+}
+
+async function dispatchStoredLeadMeasurement(
+  record: LeadRecord | undefined,
+  dependencies: ServiceDependencies,
+) {
+  if (!record?.launchOsReplayMetadata || !dependencies.dispatchStoredLeadMeasurement) {
+    return Promise.resolve();
+  }
+  const replayMetadata = await currentReplayMetadata(record, dependencies);
+  if (!replayMetadata) return;
+  return dependencies
+    .dispatchStoredLeadMeasurement({
+      replayMetadata,
+    })
+    .catch(() => {
+      // Measurement is replayable from the sealed CRM metadata and never
+      // changes the operational signup result.
+    });
+}
+
+async function dispatchVerificationMeasurement(
+  record: LeadRecord,
+  dependencies: ServiceDependencies,
+  outcome: "verified" | "failed",
+  occurredAt: string,
+  reasonCode?: "expired",
+) {
+  if (!record.launchOsReplayMetadata || !dependencies.dispatchVerificationMeasurement) return;
+  const replayMetadata = await currentReplayMetadata(record, dependencies);
+  if (!replayMetadata) return;
+  await dependencies
+    .dispatchVerificationMeasurement({
+      replayMetadata,
+      outcome,
+      occurredAt,
+      ...(reasonCode ? { reasonCode } : {}),
+    })
+    .catch(() => {
+      // Verification remains authoritative even when telemetry is unavailable.
+    });
 }
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -152,6 +242,11 @@ export async function requestVerificationService(
 
   const existing = await store.findByEmail(input.canonical, input.email);
 
+  const replayExistingMeasurement = () =>
+    existing?.status === "unsubscribed"
+      ? Promise.resolve()
+      : dispatchStoredLeadMeasurement(existing, dependencies);
+
   // A honeypot, a disposable domain or a headless client is somebody using the
   // form to mail a third party. The row is still written for review, but no
   // message is produced.
@@ -159,9 +254,13 @@ export async function requestVerificationService(
   const suppressed = abusive || input.networkSendBlocked;
 
   if (existing && existing.status !== "pending" && existing.status !== "legacy") {
+    await replayExistingMeasurement();
     return floor(pendingResponse(decoyHandle()));
   }
-  if (existing?.emailVerified) return floor(pendingResponse(decoyHandle()));
+  if (existing?.emailVerified) {
+    await replayExistingMeasurement();
+    return floor(pendingResponse(decoyHandle()));
+  }
   // A legacy single opt-in row is already counted; re-confirming it is not this
   // flow's job and would only reveal that the address is known.
   if (existing?.status === "legacy") return floor(pendingResponse(decoyHandle()));
@@ -170,10 +269,12 @@ export async function requestVerificationService(
     existing &&
     (!attemptCooled(existing, now.getTime()) || existing.sends >= VERIFICATION_MAX_SENDS)
   ) {
+    await replayExistingMeasurement();
     return floor(pendingResponse(decoyHandle()));
   }
 
   const leadId = mintLeadId();
+  const signedUpAt = now.toISOString();
   const expiresAt = new Date(now.getTime() + VERIFICATION_TTL_MS).toISOString();
   const handle = signPollHandle(leadId, now.getTime(), input.measurementConsent, secret);
 
@@ -184,7 +285,8 @@ export async function requestVerificationService(
   // row here, and it gets one purely so the attempt is reviewable.
   if (suppressed) {
     if (!existing) {
-      await store.createPending({
+      const replayMetadata = launchOsReplayMetadata(input, dependencies, signedUpAt);
+      const suppressedRecord = await store.createPending({
         email: input.email,
         canonical: input.canonical,
         ...(input.phone ? { phone: input.phone } : {}),
@@ -194,21 +296,28 @@ export async function requestVerificationService(
         ...(input.attribution ? { attribution: input.attribution } : {}),
         flags: input.flags,
         suspect: input.suspect,
-        signedUpAt: now.toISOString(),
+        signedUpAt,
         leadId,
         expiresAt,
+        ...(replayMetadata ? { launchOsReplayMetadata: replayMetadata } : {}),
       });
+      await dispatchStoredLeadMeasurement(suppressedRecord, dependencies);
+    } else {
+      await replayExistingMeasurement();
     }
     return floor(pendingResponse(decoyHandle()));
   }
 
   let record: LeadRecord;
+  let measurementDispatch: Promise<void> = Promise.resolve();
   if (existing) {
     // Count the attempt before it can fail, so a provider stuck at 500 cannot
     // be used to keep re-arming a send.
     await store.startAttempt(existing.pageId, { leadId, expiresAt, sends: existing.sends + 1 });
     record = existing;
+    measurementDispatch = dispatchStoredLeadMeasurement(record, dependencies);
   } else {
+    const replayMetadata = launchOsReplayMetadata(input, dependencies, signedUpAt);
     record = await store.createPending({
       email: input.email,
       canonical: input.canonical,
@@ -219,10 +328,12 @@ export async function requestVerificationService(
       ...(input.attribution ? { attribution: input.attribution } : {}),
       flags: input.flags,
       suspect: input.suspect,
-      signedUpAt: now.toISOString(),
+      signedUpAt,
       leadId,
       expiresAt,
+      ...(replayMetadata ? { launchOsReplayMetadata: replayMetadata } : {}),
     });
+    measurementDispatch = dispatchStoredLeadMeasurement(record, dependencies);
   }
 
   const token = createVerificationToken(
@@ -242,9 +353,15 @@ export async function requestVerificationService(
       locale: input.locale ?? DEFAULT_LOCALE,
     });
   } catch {
+    await measurementDispatch;
     // The attempt stays armed. Nothing about the failure reaches the response.
     return floor(pendingResponse(handle));
   }
+
+  // The email provider hand-off starts immediately after the CRM commit. The
+  // bounded direct relay runs in parallel, then is awaited before returning so
+  // a serverless runtime cannot freeze an unobserved fire-and-forget promise.
+  await measurementDispatch;
 
   try {
     await store.markSent(record.pageId, { sentAt: now.toISOString() });
@@ -329,6 +446,16 @@ export async function confirmVerificationService(
     // id is derived from the attempt, so a duplicate collapses into the same
     // conversion instead of inflating it.
     await dispatchIfPermitted(record, metaEventId, parsed.measurementConsent, dependencies);
+    // Replays must reproduce the exact payload paired with the deterministic
+    // event id. A fresh click time would turn an idempotent retry into a 409.
+    if (record.verifiedAt && Number.isFinite(Date.parse(record.verifiedAt))) {
+      await dispatchVerificationMeasurement(
+        record,
+        dependencies,
+        "verified",
+        new Date(record.verifiedAt).toISOString(),
+      );
+    }
     await scheduleWelcome(record, dependencies, now, parsed.locale);
     return {
       ok: true,
@@ -340,7 +467,21 @@ export async function confirmVerificationService(
 
   // Notion is the authority on the attempt window, not the signed expiry.
   const expiresAt = record.expiresAt ? Date.parse(record.expiresAt) : Number.NaN;
-  if (!Number.isFinite(expiresAt) || expiresAt <= now.getTime()) {
+  if (!Number.isFinite(expiresAt)) {
+    // There is no stable timestamp to bind to the deterministic failure id.
+    // Keep the operational response fail-closed and emit no ambiguous row.
+    return { ok: true, status: "expired" };
+  }
+  if (expiresAt <= now.getTime()) {
+    await dispatchVerificationMeasurement(
+      record,
+      dependencies,
+      "failed",
+      // Expiry is the stable outcome boundary. Reopening the same still-signed
+      // link later must not change occurredAt under the same event id.
+      new Date(expiresAt).toISOString(),
+      "expired",
+    );
     return { ok: true, status: "expired" };
   }
 
@@ -348,12 +489,13 @@ export async function confirmVerificationService(
   await dependencies.store.markVerified(record.pageId, { verifiedAt, metaEventId });
 
   // Notion has no compare-and-set, so two racing confirmations can genuinely
-  // both reach this line. That is safe, not lucky: the event id is derived from
-  // the attempt, so both emit the identical id and Meta collapses them into one
-  // conversion. Dispatch is the only downstream action and it is idempotent.
-  // Gating on a re-read would not add exactly-once — it would only risk
-  // dropping the single dispatch when the read comes back stale.
+  // both reach this line. Meta keeps the attempt-scoped id and dedupes them;
+  // LaunchOS binds each immutable verifiedAt to its event id, so two writers
+  // cannot send one id with conflicting timestamps. Its read model still
+  // counts the canonical lead once. A later click reuses the timestamp that
+  // survived in the CRM row.
   await dispatchIfPermitted(record, metaEventId, parsed.measurementConsent, dependencies);
+  await dispatchVerificationMeasurement(record, dependencies, "verified", verifiedAt);
   await scheduleWelcome(record, dependencies, now, parsed.locale);
 
   return {

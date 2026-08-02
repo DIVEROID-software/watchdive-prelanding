@@ -373,7 +373,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     back: "← Back to home",
     h1: "Privacy Policy — Watch Dive Pre-Launch",
     effectiveLabel: "Effective date:",
-    effectiveDate: "July 30, 2026",
+    effectiveDate: "August 2, 2026",
     intro1:
       'This Privacy Policy explains how OceanWick Inc. ("we", "us", "DIVEROID") handles your information when you sign up on the Watch Dive pre-launch page to receive updates about our upcoming Kickstarter campaign.',
     intro2:

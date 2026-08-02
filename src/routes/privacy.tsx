@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
+import { LAUNCHOS_BROWSER_MEASUREMENT_ENABLED } from "@/lib/funnelContext";
 import { homePath } from "@/lib/i18n/locale";
 import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 
@@ -109,6 +110,10 @@ export function PrivacyPage() {
             <p>{copy.s3Outro}</p>
           </Section>
 
+          {LAUNCHOS_BROWSER_MEASUREMENT_ENABLED && (locale === "en" || locale === "ko") && (
+            <LaunchOsMeasurementNotice korean={locale === "ko"} />
+          )}
+
           <Section title={copy.s4Title}>
             <p>{copy.s4Body}</p>
           </Section>
@@ -167,6 +172,28 @@ export function PrivacyPage() {
         </div>
       </article>
     </div>
+  );
+}
+
+function LaunchOsMeasurementNotice({ korean }: { korean: boolean }) {
+  return (
+    <Section title={korean ? "선택적 광고 성과 측정" : "Optional advertising measurement"}>
+      <p>
+        {korean
+          ? "허용을 선택한 경우에만 가명(무작위) 방문 ID와 승인된 Meta 캠페인·광고세트·광고 ID를 사용해 광고 노출 이후의 웹사이트 가입 퍼널을 측정합니다. 이메일·전화번호·IP 주소·사용자 에이전트는 LaunchOS 이벤트에 포함하지 않습니다."
+          : "Only after you choose Allow, we use a pseudonymous random visit ID and approved Meta campaign, ad set and ad IDs to measure the website signup funnel after an ad interaction. LaunchOS events do not include email, phone number, IP address or user agent."}
+      </p>
+      <p>
+        {korean
+          ? "거부하면 이후 측정을 중단하고 이 브라우저의 측정 세션을 지운 뒤, 기존 LaunchOS 기록의 집계 제외와 삭제 처리를 요청합니다. 화면에 ‘집계 제외·삭제 대기’가 표시되면 집계 제외는 접수됐지만 물리 삭제는 아직 끝나지 않은 상태입니다. 전송 실패는 대기 요청으로 남으며, 다른 원천 시스템의 삭제는 help@diveroid.com으로 별도 요청할 수 있습니다."
+          : "Declining stops future measurement, clears this browser's measurement session, and requests exclusion and deletion processing for prior LaunchOS records. An ‘excluded, deletion pending’ status means exclusion was accepted but physical deletion is not yet complete. Failed delivery remains pending for retry; deletion from other source systems can be requested separately at help@diveroid.com."}
+      </p>
+      <p>
+        {korean
+          ? "이 가명 측정 기록은 Watch Dive 런칭 캠페인 종료 또는 삭제 요청 중 먼저 도래하는 시점까지만 보유하며, 어떤 경우에도 수집일로부터 400일을 넘기지 않습니다."
+          : "We retain these pseudonymous measurement records only until the Watch Dive launch campaign ends or you request deletion, whichever comes first, and never for more than 400 days from collection."}
+      </p>
+    </Section>
   );
 }
 

@@ -23,6 +23,19 @@ import {
   trackMetaPhoneLead,
   trackMetaSubmitApplication,
 } from "@/lib/metaPixel";
+import { OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT } from "@/lib/measurementConsent";
+import {
+  browserWatchDiveMeasurementGateOpen,
+  getPendingBrowserWatchDiveEvents,
+  isBrowserWatchDiveEventCurrentPending,
+  markBrowserWatchDiveEventAccepted,
+  recordBrowserWatchDiveEvent,
+  type WatchDiveBrowserEventName,
+  type WatchDiveEventPlacement,
+} from "@/lib/funnelContext";
+import { createBoundedBrowserEventDrainer } from "@/lib/browserEventDelivery";
+import { trackLaunchOsWebEvent } from "@/lib/api/launchOsRelay";
+import type { LaunchOsMeasurementContext } from "@/lib/verification/contracts";
 import { getAttribution } from "@/lib/attribution";
 import { landingHead } from "@/lib/i18n/seo";
 import { privacyPath, termsPath } from "@/lib/i18n/locale";
@@ -82,12 +95,117 @@ export const Route = createFileRoute("/")({
   component: DesignFrozenLanding,
 });
 
+const launchOsBrowserEventDrainer = createBoundedBrowserEventDrainer({
+  listPending: getPendingBrowserWatchDiveEvents,
+  eventId: (captured) => captured.event.eventId,
+  isCurrentPending: (captured) =>
+    isBrowserWatchDiveEventCurrentPending(
+      captured.event.eventId,
+      captured.measurementContext.funnelInstanceId,
+    ),
+  relay: (captured) =>
+    trackLaunchOsWebEvent({ data: { ...captured.measurementContext, ...captured.event } }),
+  markAccepted: markBrowserWatchDiveEventAccepted,
+});
+
+const LAUNCHOS_BROWSER_RETRY_DELAYS_MS = [1_500, 5_000, 15_000] as const;
+let launchOsBrowserRetryTimer: ReturnType<typeof setTimeout> | undefined;
+let launchOsBrowserRetryAttempt = 0;
+let launchOsBrowserDeliveryLifecycle = 0;
+let observedLaunchOsDrain: Promise<unknown> | null = null;
+let observedLaunchOsDrainLifecycle = -1;
+
+function clearLaunchOsBrowserRetryTimer() {
+  if (launchOsBrowserRetryTimer !== undefined) clearTimeout(launchOsBrowserRetryTimer);
+  launchOsBrowserRetryTimer = undefined;
+}
+
+function stopLaunchOsBrowserEventDelivery() {
+  launchOsBrowserDeliveryLifecycle += 1;
+  launchOsBrowserRetryAttempt = 0;
+  clearLaunchOsBrowserRetryTimer();
+}
+
+function scheduleLaunchOsBrowserEventRetry(lifecycle: number) {
+  if (
+    lifecycle !== launchOsBrowserDeliveryLifecycle ||
+    launchOsBrowserRetryTimer !== undefined ||
+    launchOsBrowserRetryAttempt >= LAUNCHOS_BROWSER_RETRY_DELAYS_MS.length ||
+    !browserWatchDiveMeasurementGateOpen() ||
+    !navigator.onLine ||
+    document.visibilityState !== "visible"
+  ) {
+    return;
+  }
+  const delay = LAUNCHOS_BROWSER_RETRY_DELAYS_MS[launchOsBrowserRetryAttempt];
+  launchOsBrowserRetryAttempt += 1;
+  launchOsBrowserRetryTimer = setTimeout(() => {
+    launchOsBrowserRetryTimer = undefined;
+    if (
+      lifecycle !== launchOsBrowserDeliveryLifecycle ||
+      !browserWatchDiveMeasurementGateOpen() ||
+      !navigator.onLine ||
+      document.visibilityState !== "visible"
+    ) {
+      return;
+    }
+    drainLaunchOsBrowserEvents();
+  }, delay);
+}
+
+function drainLaunchOsBrowserEvents(resetRetryBudget = false) {
+  if (typeof window === "undefined" || !browserWatchDiveMeasurementGateOpen()) return;
+  if (resetRetryBudget) {
+    launchOsBrowserRetryAttempt = 0;
+    clearLaunchOsBrowserRetryTimer();
+  }
+  const lifecycle = launchOsBrowserDeliveryLifecycle;
+  const pendingDrain = launchOsBrowserEventDrainer.drain();
+  if (observedLaunchOsDrain === pendingDrain && observedLaunchOsDrainLifecycle === lifecycle) {
+    return;
+  }
+  observedLaunchOsDrain = pendingDrain;
+  observedLaunchOsDrainLifecycle = lifecycle;
+  void pendingDrain
+    .then((summary) => {
+      if (lifecycle !== launchOsBrowserDeliveryLifecycle) return;
+      if (summary.pending > 0) scheduleLaunchOsBrowserEventRetry(lifecycle);
+      else launchOsBrowserRetryAttempt = 0;
+    })
+    .catch(() => scheduleLaunchOsBrowserEventRetry(lifecycle))
+    .finally(() => {
+      if (observedLaunchOsDrain === pendingDrain && observedLaunchOsDrainLifecycle === lifecycle) {
+        observedLaunchOsDrain = null;
+        observedLaunchOsDrainLifecycle = -1;
+      }
+    });
+}
+
 export function DesignFrozenLanding() {
   // The campaign is recorded on arrival rather than at submit. A visitor who
   // lands tagged and then navigates before signing up leaves no query behind,
   // and by the time the form runs the URL that paid for them is gone.
   useEffect(() => {
     getAttribution();
+    const relayLanding = () => captureLaunchOsBrowserStage("landing_viewed", "page");
+    const onConsentChange = () => {
+      stopLaunchOsBrowserEventDelivery();
+      if (browserWatchDiveMeasurementGateOpen()) relayLanding();
+    };
+    const retryWhenOnline = () => drainLaunchOsBrowserEvents(true);
+    const retryWhenVisible = () => {
+      if (document.visibilityState === "visible") drainLaunchOsBrowserEvents(true);
+    };
+    relayLanding();
+    window.addEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, onConsentChange);
+    window.addEventListener("online", retryWhenOnline);
+    document.addEventListener("visibilitychange", retryWhenVisible);
+    return () => {
+      stopLaunchOsBrowserEventDelivery();
+      window.removeEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, onConsentChange);
+      window.removeEventListener("online", retryWhenOnline);
+      document.removeEventListener("visibilitychange", retryWhenVisible);
+    };
   }, []);
 
   return (
@@ -108,6 +226,29 @@ export function DesignFrozenLanding() {
       <Footer />
     </div>
   );
+}
+
+/**
+ * Canonical browser stages carry no form value, email, phone, IP, cookie or
+ * user-agent. Missing explicit consent or a relay outage is a DATA_GAP and
+ * never blocks the landing experience.
+ */
+function captureLaunchOsBrowserStage(
+  eventName: WatchDiveBrowserEventName,
+  placement: WatchDiveEventPlacement,
+): LaunchOsMeasurementContext | undefined {
+  try {
+    const captured = recordBrowserWatchDiveEvent(eventName, placement);
+    // Recording is synchronous and deterministic. Delivery drains separately,
+    // so a slow or unavailable relay never blocks CTA, focus or submit actions.
+    drainLaunchOsBrowserEvents(true);
+    return {
+      ...captured.measurementContext,
+      ...(placement === "hero" || placement === "offer" ? { placement } : {}),
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 function formatMessage(
@@ -509,6 +650,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
   const formStartSent = useRef(false); // FormStart once per form instance
+  const launchOsFormStartSent = useRef(false);
   // A ring that expands once, the first time the form is actually on screen.
   // It points at the next action after an anchor jump; it never repeats, so it
   // guides rather than nags.
@@ -533,6 +675,63 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    const element = formRef.current;
+    if (!element || typeof IntersectionObserver === "undefined") return;
+    let visibleEnough = false;
+    let sent = false;
+    let exposureTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const cancelTimer = () => {
+      if (exposureTimer) clearTimeout(exposureTimer);
+      exposureTimer = undefined;
+    };
+    const schedule = () => {
+      cancelTimer();
+      if (sent || !visibleEnough || document.visibilityState !== "visible") return;
+      exposureTimer = setTimeout(() => {
+        exposureTimer = undefined;
+        if (!visibleEnough || document.visibilityState !== "visible") return;
+        if (captureLaunchOsBrowserStage("cta_viewed", id)) sent = true;
+      }, 1_000);
+    };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        visibleEnough = entries.some((entry) => entry.intersectionRatio >= 0.5);
+        schedule();
+      },
+      { threshold: [0.5] },
+    );
+    const onVisibilityChange = () => schedule();
+    const onConsentChange = () => {
+      // A consent epoch owns its own exposure latch. A later grant may count a
+      // fresh one-second exposure, but never inherits the prior epoch's state.
+      sent = false;
+      cancelTimer();
+      if (browserWatchDiveMeasurementGateOpen()) schedule();
+    };
+    observer.observe(element);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, onConsentChange);
+    return () => {
+      cancelTimer();
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, onConsentChange);
+    };
+  }, [id]);
+
+  useEffect(() => {
+    // Do not turn a focus that happened before consent into a later
+    // `form_started`. A new consent epoch waits for the next real focus.
+    const resetForConsentEpoch = () => {
+      launchOsFormStartSent.current = false;
+    };
+    window.addEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, resetForConsentEpoch);
+    return () =>
+      window.removeEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, resetForConsentEpoch);
+  }, [id]);
 
   // Waits for the confirmation, which may never arrive in this tab — the link
   // can be opened on another device entirely. So the wait is deliberately
@@ -622,7 +821,10 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // `submitEventId` is passed only by the first submit, never by a resend: the
   // server mirrors the browser's optimisation event under that id, and one
   // person asking for their mail again is not a second application.
-  const submit = async (submitEventId?: string) => {
+  const submit = async (
+    submitEventId?: string,
+    launchOsMeasurement?: LaunchOsMeasurementContext,
+  ) => {
     const res = await joinWaitlist({
       data: {
         email: email.trim().toLowerCase(),
@@ -635,6 +837,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         attribution: getAttribution(),
         honeypot: hp,
         measurementConsent: hasMetaMeasurementConsent(),
+        ...(launchOsMeasurement ? { launchOsMeasurement } : {}),
         locale,
         ...(submitEventId ? { submitEventId } : {}),
         ...getMetaCookies(),
@@ -701,7 +904,8 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // signed from now on: the browser that opens the confirmation link
           // must not be able to widen it.
           const submitEventId = newMetaEventId();
-          const res = await submit(submitEventId);
+          const launchOsMeasurement = captureLaunchOsBrowserStage("submit_attempted", id);
+          const res = await submit(submitEventId, launchOsMeasurement);
           // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });
@@ -750,6 +954,11 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
             if (!formStartSent.current) {
               formStartSent.current = true;
               trackMetaCustom("FormStart", { source: id });
+            }
+            if (!launchOsFormStartSent.current) {
+              launchOsFormStartSent.current = Boolean(
+                captureLaunchOsBrowserStage("form_started", id),
+              );
             }
           }}
           placeholder={m.form.emailPlaceholder}

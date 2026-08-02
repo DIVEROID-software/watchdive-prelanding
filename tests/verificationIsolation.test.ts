@@ -90,7 +90,8 @@ test("the root mounts every third-party script behind the route gate", () => {
   const source = read("src/routes/__root.tsx");
   // Nothing third-party may sit in the always-rendered path.
   assert.ok(source.includes("const thirdParty = allowsThirdPartyScripts(pathname)"));
-  assert.ok(source.includes("{thirdParty && META_PIXEL_READY && ("));
+  assert.match(source, /\{thirdParty\s*&&\s*META_PIXEL_READY\s*&&/);
+  assert.ok(source.includes("!LAUNCHOS_BROWSER_MEASUREMENT_ENABLED || launchOsConsentLocale"));
   assert.ok(source.includes("{thirdParty && <Analytics />}"));
   assert.ok(source.includes("{thirdParty && <script src={SUPPORT_WIDGET_SRC} defer />}"));
   assert.ok(source.includes("if (!allowsThirdPartyScripts(pathname)) return;"));
@@ -121,6 +122,35 @@ test("the restored no-banner design keeps Meta fail-closed and honors privacy si
   assert.ok(pixel.includes('getMetaMeasurementConsent() === "denied"'));
   assert.ok(pixel.includes("globalPrivacyControl") && pixel.includes("!== true"));
   assert.ok(pixel.includes('window.fbq("consent", "revoke")'));
+});
+
+test("the client relay has no Node crypto or secret-bearing implementation", () => {
+  const client = read("src/lib/api/launchOsRelay.ts");
+  assert.ok(client.includes('await import("./launchOsRelay.server.ts")'));
+  assert.ok(!client.includes('from "node:crypto"'));
+  assert.ok(!client.includes("LAUNCHOS_WEB_EVENTS_INGRESS_SECRET"));
+  assert.ok(!client.includes("WAITLIST_REPLAY_HMAC_SECRET"));
+});
+
+test("the revised privacy notice dates and bounds LaunchOS retention", () => {
+  const route = read("src/routes/privacy.tsx");
+  const english = read("src/lib/i18n/frozen-landing-en.ts");
+  const korean = read("src/lib/i18n/frozen-landing-messages.ts");
+  assert.ok(english.includes('effectiveDate: "August 2, 2026"'));
+  assert.ok(korean.includes('effectiveDate: "2026년 8월 2일"'));
+  assert.ok(route.includes("pseudonymous random visit ID"));
+  assert.ok(route.includes("Meta campaign, ad set and ad IDs"));
+  assert.ok(route.includes("never for more than 400 days from collection"));
+  assert.ok(route.includes("런칭 캠페인 종료 또는 삭제 요청 중 먼저 도래"));
+});
+
+test("a fresh server grant resets one-shot browser funnel state before reload", () => {
+  const control = read("src/components/optional-measurement-control.tsx");
+  const choose = control.indexOf("const choose = async");
+  const reset = control.indexOf("optionalMeasurementChoiceRequiresDocumentReset(previous", choose);
+  const clear = control.indexOf("clearBrowserWatchDiveMeasurementContext();", reset);
+  const reload = control.indexOf("window.location.reload();", clear);
+  assert.ok(choose > 0 && reset > choose && clear > reset && reload > clear);
 });
 
 test("homepage metadata stays route-scoped and unverified claims stay out of shared surfaces", () => {
