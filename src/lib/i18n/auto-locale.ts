@@ -127,14 +127,16 @@ function isDocumentRequest(request: Request): boolean {
   return !accept || accept.includes("text/html") || accept.includes("application/xhtml+xml");
 }
 
+/**
+ * The language a first visit to `/` should see: the visitor's explicit choice
+ * (language switcher cookie), else the browser's language. The IP country is
+ * deliberately NOT used (2026-09-26): an English-language browser stays on the
+ * English root wherever it connects from, and only a Korean-language browser
+ * (or an explicit pick) is sent to `/ko`.
+ */
 export function preferredLocaleFromRequest(request: Request): Locale {
   const cookieLocale = localeFromPreferenceCookie(request.headers.get("cookie"));
   if (cookieLocale) return cookieLocale;
-
-  for (const header of ["x-vercel-ip-country", "cf-ipcountry"] as const) {
-    const countryLocale = localeFromCountry(request.headers.get(header));
-    if (countryLocale) return countryLocale;
-  }
 
   return localeFromAcceptLanguage(request.headers.get("accept-language")) ?? DEFAULT_LOCALE;
 }

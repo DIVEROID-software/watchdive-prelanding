@@ -1,4 +1,4 @@
-import { getMetaMeasurementConsent } from "@/lib/metaPixel";
+import { measurementAllowed } from "@/lib/consentRegion";
 import type { Locale } from "@/lib/i18n/locale";
 import { localeFromPathname } from "@/lib/i18n/locale";
 
@@ -10,14 +10,6 @@ type ClickMark = { id: string; x: number; y: number };
 type SectionMark = { id: string; dwellSec: number };
 
 let started = false;
-
-function measurementAllowed(): boolean {
-  if (getMetaMeasurementConsent() !== "granted") return false;
-  return (
-    typeof navigator === "undefined" ||
-    (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl !== true
-  );
-}
 
 function sessionId(): string {
   try {
@@ -40,7 +32,10 @@ function deviceClass(): "phone" | "tablet" | "desktop" {
 
 function hostOf(url: string): string {
   try {
-    return new URL(url).hostname.toLowerCase().replace(/[^a-z0-9.-]/g, "").slice(0, 80);
+    return new URL(url).hostname
+      .toLowerCase()
+      .replace(/[^a-z0-9.-]/g, "")
+      .slice(0, 80);
   } catch {
     return "";
   }
@@ -74,11 +69,18 @@ function clickId(target: Element): string | null {
   if (href.endsWith("/privacy")) return "privacy";
   if (href.endsWith("/terms")) return "terms";
   const form = target.closest("form");
-  if (target.closest("button[type=submit]") && form?.querySelector("#hero-email")) return "hero-submit";
-  if (target.closest("button[type=submit]") && form?.querySelector("#offer-email")) return "offer-submit";
+  if (target.closest("button[type=submit]") && form?.querySelector("#hero-email"))
+    return "hero-submit";
+  if (target.closest("button[type=submit]") && form?.querySelector("#offer-email"))
+    return "offer-submit";
   if (target.closest("summary")) return "disclosure";
   const label = target.closest("button")?.getAttribute("aria-label") ?? "";
-  if (label.startsWith("Show ") || label === "Previous" || label === "Next" || label.startsWith("Go to ")) {
+  if (
+    label.startsWith("Show ") ||
+    label === "Previous" ||
+    label === "Next" ||
+    label.startsWith("Go to ")
+  ) {
     return "app-slide";
   }
   if (target.closest("[role=dialog] button")) return "cookie-choice";

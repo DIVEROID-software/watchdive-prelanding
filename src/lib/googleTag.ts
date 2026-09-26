@@ -1,15 +1,23 @@
 // Google Analytics 4 and Google Ads. Both no-op until their public ids are set.
 //
-// Consent matches the Meta pixel: marketing storage stays off until this
-// browser clicks Allow. Consent Mode v2 is set before any tag config.
-// An explicit deny, no choice yet, or Global Privacy Control never loads the tag.
+// Consent matches the Meta pixel (`consentRegion.ts`): outside EU/EEA/UK/CH
+// the tag loads by default; inside, or with an unknown country, only after
+// Allow. "Not now" or Global Privacy Control never loads it. Consent Mode v2
+// is set before any tag config.
+
+import {
+  CONSENT_STORAGE_KEY,
+  INLINE_MEASUREMENT_ALLOWED_JS,
+  measurementAllowedFor,
+  readGeoCountry,
+} from "./consentRegion.ts";
 
 const GA_ID_PATTERN = /^G-[A-Z0-9]{4,20}$/;
 const ADS_ID_PATTERN = /^AW-\d{6,20}$/;
 const ADS_LABEL_PATTERN = /^[A-Za-z0-9_-]{1,40}$/;
 const EVENT_ID_PATTERN = /^[A-Za-z0-9._:-]{8,64}$/;
 
-export const GOOGLE_CONSENT_STORAGE_KEY = "watchdive.measurement-consent.v3";
+export const GOOGLE_CONSENT_STORAGE_KEY = CONSENT_STORAGE_KEY;
 
 export type GoogleTagConfig = {
   gaId?: string;
@@ -46,13 +54,16 @@ export function isGoogleTagConfigured(config: GoogleTagConfig = readGoogleTagCon
   return Boolean(config.gaId || config.adsId);
 }
 
-/** Same switch as the Meta pixel: only an explicit Allow turns storage on. */
+/** Same switch as the Meta pixel (see `measurementAllowedFor`). */
 export function googleConsentChoice(input: {
   stored: string | null;
   gpc: boolean;
+  country?: string | null;
 }): GoogleConsentChoice {
-  if (input.gpc || input.stored !== "granted") return "denied";
-  return "granted";
+  const stored = input.stored === "granted" || input.stored === "denied" ? input.stored : null;
+  return measurementAllowedFor({ stored, gpc: input.gpc, country: input.country })
+    ? "granted"
+    : "denied";
 }
 
 function readBrowserConsent(): GoogleConsentChoice {
@@ -66,7 +77,7 @@ function readBrowserConsent(): GoogleConsentChoice {
   const gpc =
     typeof navigator !== "undefined" &&
     (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true;
-  return googleConsentChoice({ stored, gpc });
+  return googleConsentChoice({ stored, gpc, country: readGeoCountry() });
 }
 
 function ensureGtag(): Gtag | null {
@@ -195,8 +206,7 @@ export function googleTagBootstrap(config: GoogleTagConfig): string {
   if (!isGoogleTagConfigured(config)) return "";
   const srcId = loaderId(config)!;
   return `(function(){try{
-  if(localStorage.getItem(${JSON.stringify(GOOGLE_CONSENT_STORAGE_KEY)})!=="granted")return;
-  if(navigator.globalPrivacyControl===true)return;
+  if(!${INLINE_MEASUREMENT_ALLOWED_JS})return;
   window.dataLayer=window.dataLayer||[];
   window.gtag=window.gtag||function(){window.dataLayer.push(arguments);};
   window.gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"denied",functionality_storage:"granted",security_storage:"granted",wait_for_update:500});

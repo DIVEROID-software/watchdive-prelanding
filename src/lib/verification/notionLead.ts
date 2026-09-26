@@ -184,8 +184,10 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
  */
 export function attributionProperties(
   attribution: LeadAttribution | undefined,
+  fbclidProperty: string | undefined = process.env.NOTION_FBCLID_PROPERTY,
 ): Record<string, ReturnType<typeof textProp>> {
   if (!attribution) return {};
+  const fbclidColumn = fbclidProperty?.trim();
   const pairs: [string, string | undefined][] = [
     [FIELD_UTM_SOURCE, attribution.utmSource],
     [FIELD_UTM_MEDIUM, attribution.utmMedium],
@@ -193,6 +195,10 @@ export function attributionProperties(
     [FIELD_UTM_CONTENT, attribution.utmContent],
     [FIELD_UTM_TERM, attribution.utmTerm],
     [FIELD_LANDING_PATH, attribution.landingPath],
+    // Opt-in column: see LeadAttribution.fbclid.
+    ...(fbclidColumn
+      ? ([[fbclidColumn, attribution.fbclid]] as [string, string | undefined][])
+      : []),
   ];
   return Object.fromEntries(
     pairs

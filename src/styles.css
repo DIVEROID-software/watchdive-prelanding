@@ -776,10 +776,3 @@ html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
   scroll-margin-bottom: var(--wd-cookie-space, var(--wd-bar-space));
 }
 
-/* Before measurement, keep the paragraph under the phone photo out of a
-   tall cookie bar. The landing script replaces this with the exact gap. */
-@media (max-width: 1023px) {
-  html[data-wd-cookie="open"] .wd-hero-frame {
-    margin-bottom: calc(var(--wd-cookie-space, 0px) + 11rem);
-  }
-}

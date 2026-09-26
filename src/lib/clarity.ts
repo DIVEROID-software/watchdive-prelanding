@@ -1,8 +1,10 @@
-// Microsoft Clarity. Heatmaps and session recordings stay off until a project
-// id is set and this browser has clicked Allow. Input text is masked.
+// Microsoft Clarity. Off until a project id is set; then it follows the shared
+// consent rule (`consentRegion.ts`): on by default outside EU/EEA/UK/CH, only
+// after Allow inside it. Input text is masked.
+
+import { measurementAllowed } from "./consentRegion.ts";
 
 const CLARITY_ID_PATTERN = /^[a-z0-9]{6,20}$/;
-const CONSENT_STORAGE_KEY = "watchdive.measurement-consent.v3";
 
 type ClarityFn = ((...args: unknown[]) => void) & { q?: unknown[][] };
 
@@ -20,16 +22,7 @@ export function readClarityProjectId(
 }
 
 function consentGranted(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    if (window.localStorage.getItem(CONSENT_STORAGE_KEY) !== "granted") return false;
-  } catch {
-    return false;
-  }
-  return (
-    typeof navigator === "undefined" ||
-    (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl !== true
-  );
+  return measurementAllowed();
 }
 
 function maskInputs(): void {

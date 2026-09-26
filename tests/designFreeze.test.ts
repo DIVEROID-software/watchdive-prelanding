@@ -72,8 +72,12 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // Classes change for one hero surface, the type scale, mid-violet buttons,
   // the two-row wordmark header, a single-frame product photo, and a notify
   // bar portaled to the document. Measurement calls in the form stay.
+  // 2026-09-26 (US conversion): below lg the hero shows headline, price and
+  // the email form before the product photo (flex order only; desktop order
+  // unchanged), the countdown became a static December notice, and the
+  // footer gained a Cookie settings link.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "8e9c9a9a7f9cd5fd60a58ab9fcb5947bc08f98cde6282ae167ac4a33db90c64e");
+  assert.equal(digest, "e899ebdf949949e4094ad18c1348176470a064eb986ccc9b675991903e3d1a7a");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -112,9 +116,11 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // bar reserves padding-bottom. While the cookie choice is open, that
   // padding matches the measured cookie bar and the notify link is hidden.
   // Brand hex tokens stay; the nested scrollport does not return.
+  // 2026-09-26: the cookie choice is a compact bottom bar, so the rule that
+  // pushed the phone photo below a tall cookie dialog is gone.
   assert.equal(
     sha256(read("src/styles.css")),
-    "cd38c44b709ff70bf315e44493518100e35e20cd8fba80179995a1ad8c8272d8",
+    "d420c8470300c1c0e05341fc0ec711b68a7ad3f6a273b4e3911070bb67bdaece",
   );
 });
 

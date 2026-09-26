@@ -55,8 +55,8 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     openGmail: "Open Gmail",
     openOutlook: "Open Outlook",
     openYahoo: "Open Yahoo Mail",
-    openNaver: "네이버 메일 열기",
-    openDaum: "다음 메일 열기",
+    openNaver: "Open Naver Mail",
+    openDaum: "Open Daum Mail",
   },
   closed: {
     title: "The list is full",
@@ -64,8 +64,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   server: {
     pending:
       "If this address can receive email, a confirmation link is on its way. Open it to finish.",
-    closed:
-      "The pre-launch list is full. Watch Dive opens to everyone on Kickstarter on November 18, 2026.",
+    closed: "The pre-launch list is full. Watch Dive launches on Kickstarter in December.",
   },
   toasts: {
     resent: "Sent again — check your inbox.",
@@ -89,7 +88,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     h1: "Watch Dive. For the smartwatch you already wear.",
     h1Highlight: "the smartwatch you already wear",
     sub: "A DIVEROID sensor in the housing reads depth and water temperature. Your Apple Watch or Galaxy Watch shows them as you dive.",
-    priceLine: "Early bird $149 on Kickstarter, November 18.",
+    priceLine: "Early bird $149 on Kickstarter. Launching in December.",
     backgroundAlt: "Scuba diver exploring a vibrant coral reef",
     sideImageAlt: "Watch Dive underwater hero product shot",
     stat1Label: "Housing · 197 ft (60 m)",
@@ -275,7 +274,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     q4: "Does it work for freediving?",
     a4: "Yes. Scuba and freediving.",
     q5: "When does Kickstarter open?",
-    a5: "Kickstarter opens on November 18, 2026. Leave your email and we send the link when it is live.",
+    a5: "Launching on Kickstarter in December. The exact day is not set yet. Leave your email and we send the link when it is live.",
     q6: "Will my smartwatch work?",
     a6: "This launch: Housing + App supports all other Apple Watch models and these Samsung smartwatches: Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro, Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra, Galaxy Watch8, Galaxy Watch8 Classic, and Galaxy Watch9. The Watch Dive housing uses its built-in DIVEROID pressure and water-temperature sensor with the app. Later, and not in this launch: App Only is planned for Apple Watch Ultra, Apple Watch Ultra 2, Apple Watch Ultra 3, and Galaxy Watch Ultra2, which have built-in depth (pressure) and water-temperature sensors.",
     q7: "How does it work?",
@@ -294,7 +293,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   },
   countdown: {
     launched: "The Kickstarter campaign is opening now.",
-    opens: "Kickstarter opens November 18",
+    opens: "Launching on Kickstarter in December",
     ariaPending: "Time until the Kickstarter launch",
     ariaLive:
       "{days} days, {hours} hours, {minutes} minutes and {seconds} seconds until the Kickstarter launch",
@@ -321,7 +320,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     confirmButton: "Confirm my email",
     verifiedTitle: "Your waitlist email is confirmed",
     verifiedBody:
-      "You're on the list. We'll email you the Kickstarter link the moment the campaign opens on November 18, 2026.",
+      "You're on the list. We'll email you the Kickstarter link the moment the campaign opens in December.",
     buddyTitle: "Bring a buddy",
     buddyBody: "Send your link to the divers who'd want this.",
     backHome: "Back to Watch Dive",
@@ -348,20 +347,20 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   privacy: {
     metaTitle: "Privacy Policy — Watch Dive",
     metaDescription:
-      "How OceanWick Inc. handles signup details and optional page measurement on the Watch Dive pre-launch page.",
+      "How Diveroid Ltd handles signup details and optional page measurement on the Watch Dive pre-launch page.",
     back: "← Back to home",
     h1: "Privacy Policy — Watch Dive Pre-Launch",
     effectiveLabel: "Effective date:",
     effectiveDate: "September 25, 2026",
     intro1:
-      'This Privacy Policy explains how OceanWick Inc. ("we", "us", "DIVEROID") handles your information when you sign up on the Watch Dive pre-launch page to receive updates about our upcoming Kickstarter campaign.',
+      'This Privacy Policy explains how Diveroid Ltd ("we", "us", "DIVEROID") handles your information when you sign up on the Watch Dive pre-launch page to receive updates about our upcoming Kickstarter campaign.',
     intro2:
       "This page is for collecting launch interest only. It is not a store and does not process any payment.",
     s1Title: "1. Who we are",
-    s1Company: "Company: OceanWick Inc. (오션윅 주식회사)",
+    s1Company: "Company: Diveroid Ltd (brand: DIVEROID)",
     s1Rep: "Representative: Jay Kim",
-    s1Addr: "Address: 1114, 145 Dosan-daero, Gangnam-gu, Seoul 06036, Republic of Korea",
-    s1Reg: "Business registration no.: 716-81-03722",
+    s1Addr: "Registered in: England",
+    s1Reg: "Company no.: 16343651",
     s1Contact: "Privacy contact: help@diveroid.com",
     s2Title: "2. What we collect",
     s2Email:
@@ -370,7 +369,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s2Security:
       "Security signals — abuse flags and a short-lived, keyed network bucket used in server memory to limit automated or repeated requests. We do not retain the raw IP address, the network bucket, or the full browser user-agent in the lead record.",
     s2Usage:
-      "Page measurement, only after you choose Allow — device class (phone, tablet, or desktop), screen size, time zone, country code, time on the page, scroll depth, sections you view, and named clicks such as a signup button. We do not store your IP address, the text you type, your precise location, or an inferred age or gender. When their identifiers are configured, Google Analytics 4, Google Ads, the Meta pixel, and Microsoft Clarity heatmaps may also run after Allow. Our support chat and Vercel Web Analytics can load with the page.",
+      "Page measurement — device class (phone, tablet, or desktop), screen size, time zone, country code, time on the page, scroll depth, sections you view, and named clicks such as a signup button. In the EU/EEA, the UK and Switzerland, or when we cannot tell your country, it runs only after you choose Allow; elsewhere it runs by default and you can turn it off with Cookie settings at the bottom of the page. We do not store your IP address, the text you type, your precise location, or an inferred age or gender. When their identifiers are configured, Google Analytics 4, Google Ads, the Meta pixel, and Microsoft Clarity heatmaps follow the same rule. Our support chat and Vercel Web Analytics can load with the page.",
     s2NoPayment: "We do not collect payment details on this page.",
     s3Title: "3. Why we use it",
     s3Intro: "We use the information you provide to:",
@@ -378,14 +377,14 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s3Item2: "send you a notification when Watch Dive launches on Kickstarter;",
     s3Item3: "share early-bird pricing and launch-related updates;",
     s3Item4: "protect the form and our email delivery service from abuse;",
-    s3Item5: "see which parts of the page are used, after you allow measurement, so we can improve it.",
+    s3Item5: "see which parts of the page are used, so we can improve it (after you allow measurement where Allow is required).",
     s3Outro: "We will not use your information for unrelated purposes.",
     s4Title: "4. Legal basis",
     s4Body:
-      "Submitting the form requests an operational confirmation email. Your waitlist registration and consent to launch updates are completed only after you use the confirmation link. Marketing and page-measurement cookies run only after you choose Allow. Not now, or a browser Global Privacy Control signal, keeps them off. A language preference cookie is stored so the page stays in the language you chose. You can withdraw consent at any time (see Section 7).",
+      "Submitting the form requests an operational confirmation email. Your waitlist registration and consent to launch updates are completed only after you use the confirmation link. Marketing and page-measurement cookies: in the EU/EEA, the UK and Switzerland, or when we cannot tell your country, they run only after you choose Allow (consent). Elsewhere they run by default, based on our legitimate interest in measuring our advertising, and you can opt out at any time with Cookie settings at the bottom of the page. Not now, or a browser Global Privacy Control signal, keeps them off everywhere. A short-lived country cookie records which of these rules applies. A language preference cookie is stored so the page stays in the language you chose. You can withdraw consent at any time (see Section 7).",
     s5Title: "5. Sharing and international transfer",
     s5Body:
-      "We use processors to run this page: Vercel for hosting and Web Analytics, Resend for confirmation and update email, Notion for waitlist records and, separately, consented page-measurement summaries, our own support chat, and Google and Meta only when those tags are enabled and you have allowed measurement. An SMS provider is used only if you opt into a text alert. These providers may store data outside Korea, including in the United States. We share only what the service needs, and we never sell your personal information.",
+      "We use processors to run this page: Vercel for hosting and Web Analytics, Resend for confirmation and update email, Notion for waitlist records and, separately, consented page-measurement summaries, our own support chat, and Google and Meta only when those tags are enabled and measurement is on for you (see Section 4). An SMS provider is used only if you opt into a text alert. These providers may store data outside Korea, including in the United States. We share only what the service needs, and we never sell your personal information.",
     s6Title: "6. How long we keep it",
     s6Body:
       "We keep waitlist details until the Watch Dive launch campaign ends, or until you ask us to delete them or unsubscribe, whichever comes first. Consented page-measurement summaries are kept for up to 12 months and then deleted. After a deletion request, we delete the matching records without undue delay.",
@@ -404,17 +403,17 @@ export const EN_FROZEN_LANDING_MESSAGES = {
       "We may update this Privacy Policy from time to time. The latest version will always be available on this page, with the effective date shown at the top.",
     s10Title: "10. Contact",
     s10Body: "Questions about your privacy? Email help@diveroid.com.",
-    footerLine: "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seoul, Republic of Korea",
+    footerLine: "Diveroid Ltd · Registered in England · Company no. 16343651",
   },
   terms: {
     metaTitle: "Terms of Use — Watch Dive",
-    metaDescription: "Terms of Use for the Watch Dive pre-launch page, operated by OceanWick Inc.",
+    metaDescription: "Terms of Use for the Watch Dive pre-launch page, operated by Diveroid Ltd",
     back: "← Back to home",
     h1: "Terms of Use — Watch Dive Pre-Launch",
     effectiveLabel: "Effective date:",
     effectiveDate: "July 30, 2026",
     intro:
-      'Welcome to the Watch Dive pre-launch page, operated by OceanWick Inc. ("we", "us", "DIVEROID"). By using this page and signing up, you agree to the following terms.',
+      'Welcome to the Watch Dive pre-launch page, operated by Diveroid Ltd ("we", "us", "DIVEROID"). By using this page and signing up, you agree to the following terms.',
     s1Title: "1. What this page is",
     s1Body:
       "This page lets you register your interest in Watch Dive and receive updates about our upcoming Kickstarter campaign. It is not a store. No purchase is made and no payment is taken here.",
@@ -427,7 +426,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s3PrivacyLink: "Privacy Policy",
     s4Title: "4. Intellectual property",
     s4Body:
-      "All content on this page — including the Watch Dive and DIVEROID names, logos, text, images, and videos — belongs to OceanWick Inc. or its licensors. You may not copy or reuse it without our permission.",
+      "All content on this page — including the Watch Dive and DIVEROID names, logos, text, images, and videos — belongs to Diveroid Ltd or its licensors. You may not copy or reuse it without our permission.",
     s5Title: "5. Disclaimer",
     s5Body1:
       "Watch Dive is a dive aid designed to work with a compatible smartwatch. When released, it is intended to support — not replace — proper dive training, certification, and a backup dive computer. Always dive within your training and follow safe diving practices.",
@@ -437,8 +436,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s6Body: "These terms are governed by the laws of the Republic of Korea.",
     s7Title: "7. Contact",
     s7Body: "Questions? Email help@diveroid.com.",
-    footerLine:
-      "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seoul, Republic of Korea · Business registration no. 716-81-03722",
+    footerLine: "Diveroid Ltd · Registered in England · Company no. 16343651",
   },
 };
 

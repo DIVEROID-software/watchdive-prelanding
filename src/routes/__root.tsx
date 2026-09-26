@@ -18,6 +18,8 @@ import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-curre
 import { initClarity } from "@/lib/clarity";
 import { googleTagBootstrap, initGoogleTag, readGoogleTagConfig } from "@/lib/googleTag";
 import { initMetaPixel } from "@/lib/metaPixel";
+import { INLINE_MEASUREMENT_ALLOWED_JS, resolveGeoCountry } from "@/lib/consentRegion";
+import { startPageBehavior } from "@/lib/pageBehavior";
 import { allowsThirdPartyScripts, SUPPORT_WIDGET_SRC } from "@/lib/thirdPartyScripts";
 import { CookieChoiceBar } from "@/components/cookie-choice-bar";
 
@@ -94,15 +96,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
  * give up and leave without ever being counted — the arrival metric was firing
  * after the bounce it was supposed to measure.
  *
- * Deliberately a copy of the guards in `metaPixel.ts` rather than an import: an
- * import is the bundle this exists to get ahead of. The shared window flags mean
- * `initMetaPixel()` later finds the work already done and does not repeat it.
+ * The consent rule is `consentRegion.ts`'s, inlined as a string: outside
+ * EU/EEA/UK/CH (per the server's `wd_geo` cookie) the pixel loads by default;
+ * inside, or with an unknown country, only after Allow. The shared window flags
+ * mean `initMetaPixel()` later finds the work already done and does not repeat it.
  */
 function metaPixelBootstrap(pixelId: string): string {
   return `(function(){try{
   if(window.__watchDiveMetaPageViewSent)return;
-  if(localStorage.getItem("watchdive.measurement-consent.v3")!=="granted")return;
-  if(navigator.globalPrivacyControl===true)return;
+  if(!${INLINE_MEASUREMENT_ALLOWED_JS})return;
   var f=window.fbq;if(!f){f=window.fbq=function(){f.callMethod?f.callMethod.apply(f,arguments):f.queue.push(arguments)};
   f.queue=[];f.push=f;f.loaded=!0;f.version="2.0";if(!window._fbq)window._fbq=f;}
   if(!document.getElementById("watchdive-meta-pixel")){var s=document.createElement("script");
@@ -152,9 +154,19 @@ function RootComponent() {
 
   useEffect(() => {
     if (!allowsThirdPartyScripts(pathname)) return;
-    initMetaPixel();
-    initGoogleTag();
-    initClarity();
+    let alive = true;
+    // Normally the `wd_geo` cookie is already here from the HTML response; if
+    // not, `/api/geo` answers once. Each init re-checks the consent rule.
+    void resolveGeoCountry().then(() => {
+      if (!alive) return;
+      initMetaPixel();
+      initGoogleTag();
+      initClarity();
+      startPageBehavior();
+    });
+    return () => {
+      alive = false;
+    };
   }, [pathname]);
 
   return (

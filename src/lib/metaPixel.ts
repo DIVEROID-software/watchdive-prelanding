@@ -1,6 +1,10 @@
 // Meta Pixel — browser side. Measurement stays off unless the public production
-// gate is on, the dataset id is valid, and this browser has clicked Allow.
-// Global Privacy Control and an explicit Not now stay off.
+// gate is on and the dataset id is valid. Then the regional rule in
+// `consentRegion.ts` decides: outside EU/EEA/UK/CH the pixel loads by default;
+// inside (or when the country is unknown) it waits for Allow. Global Privacy
+// Control and an explicit Not now always keep it off.
+import { browserGpc, readGeoCountry, measurementAllowedFor } from "./consentRegion.ts";
+
 const META_TRACKING_ENABLED =
   (import.meta.env.VITE_META_TRACKING_ENABLED as string | undefined)?.trim() === "true";
 const META_PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID as string | undefined)?.trim() ?? "";
@@ -50,14 +54,17 @@ export function getMetaMeasurementConsent(): MetaMeasurementConsent | null {
   return null;
 }
 
+/** The shared measurement rule, with this module's in-memory choice. */
+export function measurementPermitted(): boolean {
+  return measurementAllowedFor({
+    stored: getMetaMeasurementConsent(),
+    gpc: browserGpc(),
+    country: readGeoCountry(),
+  });
+}
+
 export function hasMetaMeasurementConsent(): boolean {
-  if (!isMetaPixelConfigured() || getMetaMeasurementConsent() !== "granted") return false;
-  if (typeof navigator !== "undefined" && "globalPrivacyControl" in navigator) {
-    return (
-      (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl !== true
-    );
-  }
-  return true;
+  return isMetaPixelConfigured() && measurementPermitted();
 }
 
 export function setMetaMeasurementConsent(choice: MetaMeasurementConsent): void {
@@ -130,8 +137,11 @@ function canTrackStandardEvent(eventId: string): boolean {
   );
 }
 
-// Fire only after the server confirms a NEW signup (never on button click, never
-// for duplicates) — otherwise ad optimization learns from junk conversions.
+// `Lead` fires the moment the server accepts an email submit (2026-09-26,
+// founder decision): waiting for the confirmation click left Meta with about
+// one conversion a week, too few to optimise delivery. The server mirrors it
+// through the Conversions API under the same event id, so Meta counts one.
+// A tripped honeypot or a resend never fires it.
 export function trackMetaLead(eventId: string, source: string) {
   if (!canTrackStandardEvent(eventId)) return;
 
@@ -139,6 +149,19 @@ export function trackMetaLead(eventId: string, source: string) {
     "track",
     "Lead",
     { content_name: "watchdive_email_signup", content_category: source },
+    { eventID: eventId },
+  );
+}
+
+// The confirmation click, reported as a custom event so it never adds a second
+// `Lead` for the same person. The server sends the matching CAPI leg.
+export function trackMetaEmailVerified(eventId: string, source: string) {
+  if (!canTrackStandardEvent(eventId)) return;
+
+  window.fbq!(
+    "trackCustom",
+    "EmailVerified",
+    { content_name: "watchdive_email_verified", content_category: source },
     { eventID: eventId },
   );
 }
@@ -152,22 +175,6 @@ export function trackMetaPhoneLead(eventId: string, source: string) {
     "track",
     "Contact",
     { content_name: "watchdive_phone_signup", content_category: source },
-    { eventID: eventId },
-  );
-}
-
-// Fired when the server accepts a submit, which is roughly an order of magnitude
-// more often than a confirmation arrives. Delivery cannot learn from about one
-// conversion a week, so this carries the volume — and it is a distinct standard
-// event precisely so `Lead` keeps meaning a confirmed address and stays the
-// number the team reads as truth.
-export function trackMetaSubmitApplication(eventId: string, source: string) {
-  if (!canTrackStandardEvent(eventId)) return;
-
-  window.fbq!(
-    "track",
-    "SubmitApplication",
-    { content_name: "watchdive_email_submit", content_category: source },
     { eventID: eventId },
   );
 }

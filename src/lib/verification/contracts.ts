@@ -139,6 +139,12 @@ export type LeadAttribution = {
   utmContent?: string;
   utmTerm?: string;
   landingPath?: string;
+  /**
+   * Meta click id. Written to the CRM only when `NOTION_FBCLID_PROPERTY` names
+   * an existing rich_text column (an unknown property would make Notion reject
+   * the whole row, so it is opt-in).
+   */
+  fbclid?: string;
 };
 
 export type CreatePendingInput = {
@@ -207,7 +213,7 @@ export type ClosedResponse = {
 };
 
 export const WAITLIST_CLOSED_MESSAGE =
-  "The pre-launch list is full. Watch Dive opens to everyone on Kickstarter on November 18, 2026.";
+  "The pre-launch list is full. Watch Dive launches on Kickstarter in December.";
 
 export type ConfirmStatus = "verified" | "expired" | "already_verified" | "invalid";
 

@@ -2,7 +2,7 @@
 //
 // Named `.server.ts` and imported solely from server functions, so the Resend
 // and Notion credentials have no path into a client bundle.
-import { sendMetaCrmQualifiedLead, sendMetaLead } from "@/lib/api/metaCapi";
+import { sendMetaCrmQualifiedLead, sendMetaEmailVerified } from "@/lib/api/metaCapi";
 import type { PollResponse } from "./contracts.ts";
 import { createNotionLeadStore, createNotionRequest } from "./notionLead.ts";
 import { createPollGate } from "./pollGate.ts";
@@ -22,7 +22,7 @@ export function createServiceDependencies(): ServiceDependencies {
     mailer: createResendMailer(),
     pollGate,
     dispatchVerifiedLead: async (input) => {
-      await sendMetaLead(input);
+      await sendMetaEmailVerified(input);
       // The CRM leg of the Conversion Leads integration rides the same gate:
       // it only fires for a consented, non-abusive confirmation, and its own
       // failure never un-confirms the lead.

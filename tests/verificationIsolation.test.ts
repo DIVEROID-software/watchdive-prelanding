@@ -99,29 +99,27 @@ test("the root mounts every third-party script behind the route gate", () => {
   assert.ok(!/scripts:\s*\[/.test(source), "root still declares static head scripts");
 });
 
-test("Meta stays off until Allow and still honors Global Privacy Control", () => {
+test("Meta follows the regional consent rule and still honors Global Privacy Control", () => {
   const root = read("src/routes/__root.tsx");
   const pixel = read("src/lib/metaPixel.ts");
+  const region = read("src/lib/consentRegion.ts");
 
   assert.ok(root.includes('VITE_META_TRACKING_ENABLED ?? "").toLowerCase() === "true"'));
   assert.ok(root.includes("/^\\d{10,20}$/.test(META_PIXEL_ID)"));
   assert.ok(root.includes("<CookieChoiceBar />"));
-  const storedGrant = root.indexOf(
-    'localStorage.getItem("watchdive.measurement-consent.v3")!=="granted"',
-  );
-  const globalPrivacyControl = root.indexOf("navigator.globalPrivacyControl===true");
+  // The inline bootstrap applies the shared rule before injecting the pixel.
+  const gate = root.indexOf("if(!${INLINE_MEASUREMENT_ALLOWED_JS})return;");
   const injectPixel = root.indexOf('s.src="https://connect.facebook.net/en_US/fbevents.js"');
-  assert.ok(storedGrant > 0 && storedGrant < injectPixel, "Allow is required before the pixel loads");
-  assert.ok(
-    globalPrivacyControl > 0 && globalPrivacyControl < injectPixel,
-    "Global Privacy Control runs before the pixel loads",
-  );
+  assert.ok(gate > 0 && gate < injectPixel, "the consent rule runs before the pixel loads");
+  // The rule: denied and GPC always off; unknown country fails closed (opt-in).
+  assert.ok(region.includes('if(s==="denied")return false;'));
+  assert.ok(region.includes("if(navigator.globalPrivacyControl===true)return false;"));
+  assert.ok(region.includes("if(!c||c===${JSON.stringify(GEO_UNKNOWN)})return false;"));
 
   assert.ok(
     pixel.includes('if (typeof window === "undefined" || !hasMetaMeasurementConsent()) return;'),
   );
-  assert.ok(pixel.includes('getMetaMeasurementConsent() !== "granted"'));
-  assert.ok(pixel.includes("globalPrivacyControl") && pixel.includes("!== true"));
+  assert.ok(pixel.includes("measurementAllowedFor"));
   assert.ok(pixel.includes('window.fbq("consent", "revoke")'));
 });
 

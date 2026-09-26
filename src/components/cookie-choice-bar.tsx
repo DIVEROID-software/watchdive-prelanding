@@ -10,80 +10,100 @@ import {
   initMetaPixel,
   setMetaMeasurementConsent,
 } from "@/lib/metaPixel";
+import { browserConsentRegion, resolveGeoCountry } from "@/lib/consentRegion";
 
 type ChoiceCopy = {
-  title: string;
+  /** One short line: the bar is a single compact row, even at 390 px. */
   body: string;
   allow: string;
   decline: string;
   privacy: string;
+  /** Footer link that reopens the choice (opt-out outside EU/EEA/UK/CH). */
+  settings: string;
 };
 
 const COPY: Record<Locale, ChoiceCopy> = {
   en: {
-    title: "Cookies for measurement",
-    body: "Allow us to record device type, country, time, and which parts of this page you open, click, and how long you stay. Signing up works either way.",
+    body: "We use cookies to measure this page.",
     allow: "Allow",
     decline: "Not now",
     privacy: "Privacy",
+    settings: "Cookie settings",
   },
   ko: {
-    title: "측정용 쿠키",
-    body: "기기 종류, 국가, 시간, 페이지에서 연 부분과 클릭, 머문 시간을 기록해도 될까요. 소식 신청은 동의하지 않아도 됩니다.",
+    body: "페이지 측정을 위해 쿠키를 사용해요.",
     allow: "허용",
     decline: "나중에",
     privacy: "개인정보",
+    settings: "쿠키 설정",
   },
   "zh-CN": {
-    title: "用于统计的 Cookie",
-    body: "允许后，我们会记录设备类型、国家、时间，以及你打开、点击和停留的页面部分。不点允许，也能留下邮箱。",
+    body: "我们用 Cookie 统计本页访问。",
     allow: "允许",
     decline: "暂时不要",
     privacy: "隐私",
+    settings: "Cookie 设置",
   },
   "zh-TW": {
-    title: "用來統計的 Cookie",
-    body: "允許之後，我們會記錄裝置類型、國家、時間，以及你打開、點擊和停留的頁面部分。不按允許，一樣可以留下信箱。",
+    body: "我們用 Cookie 統計本頁造訪。",
     allow: "允許",
     decline: "暫時不要",
     privacy: "隱私",
+    settings: "Cookie 設定",
   },
   ja: {
-    title: "計測のためのクッキー",
-    body: "端末の種類、国、時刻、ページのどこを開き、クリックし、どれだけ留まったかを記録してよいか伺います。メール登録は、許可しなくてもできます。",
+    body: "ページ計測にクッキーを使います。",
     allow: "許可する",
     decline: "今はしない",
     privacy: "プライバシー",
+    settings: "クッキー設定",
   },
   es: {
-    title: "Cookies de medición",
-    body: "Si lo permites, registramos el tipo de dispositivo, el país, la hora y qué partes abres, pulsas y cuánto te quedas. Apuntarte funciona igual sin eso.",
+    body: "Usamos cookies para medir esta página.",
     allow: "Permitir",
     decline: "Ahora no",
     privacy: "Privacidad",
+    settings: "Cookies",
   },
   fr: {
-    title: "Cookies de mesure",
-    body: "Si vous acceptez, nous notons le type d’appareil, le pays, l’heure, et quelles parties vous ouvrez, cliquez et combien de temps vous restez. L’inscription marche aussi sans ça.",
+    body: "Nous utilisons des cookies de mesure.",
     allow: "Autoriser",
     decline: "Pas maintenant",
     privacy: "Confidentialité",
+    settings: "Cookies",
   },
   de: {
-    title: "Cookies für die Messung",
-    body: "Wenn du zustimmst, speichern wir Gerätetyp, Land, Uhrzeit und welche Teile du öffnest, anklickst und wie lange du bleibst. Eintragen geht auch ohne Zustimmung.",
+    body: "Wir nutzen Cookies zur Messung.",
     allow: "Erlauben",
     decline: "Jetzt nicht",
     privacy: "Datenschutz",
+    settings: "Cookie-Einstellungen",
   },
   "pt-BR": {
-    title: "Cookies de medição",
-    body: "Se você permitir, registramos o tipo de aparelho, o país, a hora e quais partes você abre, clica e por quanto tempo fica. Deixar o e-mail funciona mesmo sem isso.",
+    body: "Usamos cookies para medir esta página.",
     allow: "Permitir",
     decline: "Agora não",
     privacy: "Privacidade",
+    settings: "Cookies",
   },
 };
+
+const OPEN_EVENT = "watchdive:open-cookie-choice";
+
+/** Reopens the choice bar (footer "Cookie settings"). */
+function openCookieChoice(): void {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(OPEN_EVENT));
+}
+
+/** Footer link that reopens the choice, so anyone can opt out later. */
+export function CookieSettingsLink({ className }: { className?: string }) {
+  const locale = useCurrentLocale();
+  return (
+    <button type="button" className={className} onClick={openCookieChoice}>
+      {COPY[locale].settings}
+    </button>
+  );
+}
 
 function globalPrivacyControlOn(): boolean {
   return (
@@ -99,13 +119,24 @@ export function CookieChoiceBar() {
   const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (globalPrivacyControlOn()) return;
-    if (getMetaMeasurementConsent() === "granted") {
-      initGoogleTag();
-      initClarity();
-      startPageBehavior();
-    }
-    if (getMetaMeasurementConsent() === null) setOpen(true);
+    let alive = true;
+    const reopen = () => setOpen(true);
+    window.addEventListener(OPEN_EVENT, reopen);
+    // The server hands down the country (`wd_geo`); outside EU/EEA/UK/CH the
+    // tags start by default and no bar is shown. Inside it, or with an unknown
+    // country, the bar asks once. GPC is an opt-out already: never ask.
+    void resolveGeoCountry().then(() => {
+      // Starting the tags when measurement is already allowed is the root
+      // layout's job (it knows which routes may load third-party scripts).
+      if (!alive || globalPrivacyControlOn()) return;
+      if (getMetaMeasurementConsent() === null && browserConsentRegion() === "opt-in") {
+        setOpen(true);
+      }
+    });
+    return () => {
+      alive = false;
+      window.removeEventListener(OPEN_EVENT, reopen);
+    };
   }, []);
 
   // While this bar is open it owns the bottom edge. The height is published
@@ -144,44 +175,40 @@ export function CookieChoiceBar() {
       initGoogleTag();
       initClarity();
       startPageBehavior();
+    } else if (typeof window !== "undefined" && window.clarity) {
+      window.clarity("consentv2", { ad_Storage: "denied", analytics_Storage: "denied" });
     }
     setOpen(false);
   }
 
   return (
-    <div ref={barRef} className="fixed inset-x-0 bottom-0 z-[10000] px-3 pb-3 sm:px-4 sm:pb-4">
+    <div ref={barRef} className="fixed inset-x-0 bottom-0 z-[10000] px-2 pb-2 sm:px-4 sm:pb-3">
       <div
         role="dialog"
-        aria-labelledby="cookie-choice-title"
-        className="mx-auto max-w-3xl rounded-2xl bg-[#201748] px-4 py-3 text-white sm:px-5 sm:py-4"
+        aria-label={copy.body}
+        className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-[#201748]/95 px-3 py-1.5 text-white shadow-lg sm:flex-nowrap sm:px-4"
       >
-        <p id="cookie-choice-title" className="text-sm font-medium tracking-tight sm:text-base">
-          {copy.title}
+        <p className="min-w-0 flex-1 basis-full text-xs leading-snug text-[#EDE6FF] min-[380px]:basis-auto sm:text-sm">
+          {copy.body}{" "}
+          <a href={privacyPath(locale)} className="text-[#36A9E1] underline">
+            {copy.privacy}
+          </a>
         </p>
-        <p className="mt-1 text-xs leading-snug text-[#EDE6FF] sm:mt-2 sm:text-sm sm:leading-relaxed">
-          {copy.body}
-        </p>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-[#3D2683] px-4 text-sm font-medium text-white"
-            onClick={() => choose("granted")}
-          >
-            {copy.allow}
-          </button>
-          <button
-            type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[#EDE6FF] px-4 text-sm font-medium text-[#EDE6FF]"
+            className="inline-flex min-h-9 items-center justify-center rounded-full border border-[#EDE6FF]/70 px-3 text-xs font-medium text-[#EDE6FF] sm:text-sm"
             onClick={() => choose("denied")}
           >
             {copy.decline}
           </button>
-          <a
-            href={privacyPath(locale)}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 text-sm text-[#36A9E1] underline"
+          <button
+            type="button"
+            className="inline-flex min-h-9 items-center justify-center rounded-full bg-[#3D2683] px-3 text-xs font-medium text-white sm:text-sm"
+            onClick={() => choose("granted")}
           >
-            {copy.privacy}
-          </a>
+            {copy.allow}
+          </button>
         </div>
       </div>
     </div>

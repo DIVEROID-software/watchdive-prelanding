@@ -113,39 +113,46 @@ test("the design-frozen catalog is complete and preserves runtime interpolation 
   }
 });
 
-test("every public launch-date surface announces 18 November 2026 in its locale", () => {
+test("every public launch-date surface says December, never a specific day", () => {
+  // The Kickstarter day is not confirmed (2026-09-26). Every surface names the
+  // month only; the countdown was removed.
   const expectedByLocale = {
-    en: { full: "November 18, 2026", compact: "November 18" },
-    ko: { full: "2026년 11월 18일", compact: "11월 18일" },
-    "zh-CN": { full: "2026年11月18日", compact: "11月18日" },
-    "zh-TW": { full: "2026 年 11 月 18 日", compact: "11 月 18 日" },
-    ja: { full: "2026年11月18日", compact: "11月18日" },
-    es: { full: "18 de noviembre de 2026", compact: "18 de noviembre" },
-    fr: { full: "18 novembre 2026", compact: "18 novembre" },
-    de: { full: "18. November 2026", compact: "18. November" },
-    "pt-BR": { full: "18 de novembro de 2026", compact: "18 de novembro" },
-  } as const satisfies Record<Locale, { full: string; compact: string }>;
+    en: { launch: "Launching on Kickstarter in December", month: "December" },
+    ko: { launch: "12월 킥스타터 런칭", month: "12월" },
+    "zh-CN": { launch: "12 月在 Kickstarter 上线", month: "12 月" },
+    "zh-TW": { launch: "12 月在 Kickstarter 上線", month: "12 月" },
+    ja: { launch: "12月に Kickstarter でローンチ", month: "12月" },
+    es: { launch: "Lanzamiento en Kickstarter en diciembre", month: "diciembre" },
+    fr: { launch: "Lancement sur Kickstarter en décembre", month: "décembre" },
+    de: { launch: "Start auf Kickstarter im Dezember", month: "Dezember" },
+    "pt-BR": { launch: "Lançamento no Kickstarter em dezembro", month: "dezembro" },
+  } as const satisfies Record<Locale, { launch: string; month: string }>;
 
   for (const locale of SUPPORTED_LOCALES) {
     const messages = FROZEN_LANDING_MESSAGES[locale];
     const expected = expectedByLocale[locale];
-    const fullDateSurfaces = {
+    assert.equal(messages.countdown.opens, expected.launch, `${locale}.countdown.opens`);
+    const monthSurfaces = {
       serverClosed: messages.server.closed,
       faq: messages.faq.a5,
       verified: messages.verify.verifiedBody,
+      priceLine: messages.hero.priceLine,
     };
-
-    for (const [surface, copy] of Object.entries(fullDateSurfaces)) {
-      assert.ok(copy.includes(expected.full), `${locale}.${surface}: launch date drift`);
+    for (const [surface, copy] of Object.entries(monthSurfaces)) {
+      assert.ok(copy.includes(expected.month), `${locale}.${surface}: launch month missing`);
     }
-    assert.ok(
-      messages.countdown.opens.includes(expected.compact),
-      `${locale}.countdown: launch date drift`,
-    );
   }
 
   const allCopy = flattenedText(FROZEN_LANDING_MESSAGES);
   for (const staleDate of [
+    "November 18",
+    "11월 18일",
+    "11 月 18 日",
+    "11月18日",
+    "18 de noviembre",
+    "18 novembre",
+    "18. November",
+    "18 de novembro",
     "10 August",
     "8월 10일",
     "8 月 10 日",

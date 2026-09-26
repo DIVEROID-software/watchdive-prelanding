@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse";
-import { sendMetaSubmitApplication } from "./metaCapi";
+import { sendMetaLead } from "./metaCapi";
 import {
   ATTRIBUTION_VALUE_MAX,
   FBCLID_MAX,
@@ -50,6 +50,8 @@ import {
 //   Lead ID (rich_text) · Meta Event ID (rich_text)
 //   UTM Source · UTM Medium · UTM Campaign · UTM Content · UTM Term (rich_text)
 //   Landing path (rich_text)
+//   Optional: a rich_text column for the Meta click id, named by
+//   NOTION_FBCLID_PROPERTY (e.g. "FBCLID"). Unset = fbclid is not stored.
 
 // Repeat-submit counters for one server process. The keyed digest of a client
 // address is used as a map key here and nowhere else — it is never written to
@@ -210,8 +212,9 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           capturedAt: z.number().int().positive().optional(),
         })
         .optional(),
-      // Present only when the browser fired its own SubmitApplication, so the
-      // two legs carry one id and Meta counts one event.
+      // The browser's `Lead` event id, sent on the first submit only (never on
+      // a resend), so the pixel and Conversions API legs carry one id and Meta
+      // counts one Lead.
       submitEventId: z
         .string()
         .regex(/^[A-Za-z0-9._:-]{8,64}$/)
@@ -265,7 +268,13 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
           source: data.source,
           ...(sanitizeRef(data.referredBy) ? { referredBy: sanitizeRef(data.referredBy) } : {}),
-          attribution: toLeadAttribution(attribution),
+          attribution: {
+            ...toLeadAttribution(attribution),
+            // Only when the CRM has a column for it (NOTION_FBCLID_PROPERTY).
+            ...(attribution.fbclid && process.env.NOTION_FBCLID_PROPERTY?.trim()
+              ? { fbclid: attribution.fbclid }
+              : {}),
+          },
           flags,
           suspect: flags.length > 0,
           measurementConsent: data.measurementConsent,
@@ -278,8 +287,9 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       throw sanitizeServerError("verification-request", error);
     }
 
-    // The optimisation event's server leg. Sent for every accepted submit that
-    // carries consent and no abuse signal — a brand-new address, one already
+    // The `Lead` server leg (optimisation event, fired at submit since
+    // 2026-09-26). Sent for every accepted submit that carries measurement
+    // permission and no abuse signal — a brand-new address, one already
     // pending, one already confirmed alike — so the latency it adds cannot say
     // which of those happened. That uniformity is the property the response
     // floor inside the service exists to protect, and this must not undo it.
@@ -295,7 +305,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
           : "");
 
-      await sendMetaSubmitApplication({
+      await sendMetaLead({
         eventId: data.submitEventId,
         email,
         ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
@@ -304,6 +314,14 @@ export const joinWaitlist = createServerFn({ method: "POST" })
         ...(fbp ? { fbp } : {}),
         ...(fbc ? { fbc } : {}),
         source: data.source,
+        utm: {
+          source: attribution.utmSource,
+          medium: attribution.utmMedium,
+          campaign: attribution.utmCampaign,
+          content: attribution.utmContent,
+          term: attribution.utmTerm,
+        },
+        ...(attribution.landingPath ? { landingPath: attribution.landingPath } : {}),
       });
     }
 

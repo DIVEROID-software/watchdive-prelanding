@@ -52,8 +52,11 @@ test("the bootstrap is empty without ids and refuses a denied browser", () => {
   const snippet = googleTagBootstrap({ gaId: "G-ABC123XY", adsId: "AW-123456789" });
   assert.match(snippet, /consent","default"/);
   assert.match(snippet, /ad_storage:"denied"/);
-  assert.match(snippet, /measurement-consent.v3"\)!=="granted"\)return/);
-  assert.match(snippet, /globalPrivacyControl===true\)return/);
+  // The shared regional rule gates the loader (see consentRegion.ts).
+  assert.match(snippet, /if\(!\(function\(\)\{/);
+  assert.match(snippet, /s==="denied"\)return false/);
+  assert.match(snippet, /globalPrivacyControl===true\)return false/);
+  assert.match(snippet, /wd_geo=/);
   assert.match(snippet, /G-ABC123XY/);
   assert.match(snippet, /AW-123456789/);
   assert.equal(snippet.includes("generate_lead"), false);

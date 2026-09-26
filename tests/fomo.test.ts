@@ -1,5 +1,6 @@
-// The countdown, the progress bar and the review set. All three make a public
-// factual claim, so the arithmetic behind them is tested rather than trusted.
+// The progress bar and the review set. Both make a public factual claim, so the
+// arithmetic behind them is tested rather than trusted. (The launch countdown
+// was removed on 2026-09-26: the Kickstarter day is not confirmed.)
 import assert from "node:assert/strict";
 import { existsSync, readdirSync } from "node:fs";
 import { test } from "node:test";
@@ -10,7 +11,6 @@ import {
   PUBLISHABLE_REVIEWS,
 } from "../src/data/beta-reviews.ts";
 import { BETA_REVIEWS_KO } from "../src/data/beta-reviews.ko.ts";
-import { countdownFrom, KICKSTARTER_LAUNCH_MS, pad2 } from "../src/lib/launch.ts";
 import {
   AVATAR_DIR,
   AVATAR_TONES,
@@ -26,44 +26,14 @@ import {
   waitlistProgress,
 } from "../src/lib/waitlistProgress.ts";
 
-// --- countdown -------------------------------------------------------------
+// --- launch line ---------------------------------------------------------
 
-test("the countdown splits the remaining time into whole units", () => {
-  const target = Date.parse("2026-11-18T00:00:00.000Z");
-  const now = Date.parse("2026-11-15T21:45:30.000Z");
-
-  assert.deepEqual(countdownFrom(now, target), {
-    days: 2,
-    hours: 2,
-    minutes: 14,
-    seconds: 30,
-    launched: false,
-  });
-});
-
-test("the countdown reads zero and launched once the date passes", () => {
-  const target = Date.parse("2026-11-18T00:00:00.000Z");
-
-  // A timer that ticks into negative numbers is worse than a changed message.
-  for (const now of [target, target + 1, target + 86_400_000]) {
-    assert.deepEqual(countdownFrom(now, target), {
-      days: 0,
-      hours: 0,
-      minutes: 0,
-      seconds: 0,
-      launched: true,
-    });
-  }
-});
-
-test("the launch instant is the announced date", () => {
-  assert.equal(new Date(KICKSTARTER_LAUNCH_MS).toISOString(), "2026-11-18T00:00:00.000Z");
-});
-
-test("units are padded so the row does not jitter", () => {
-  assert.equal(pad2(0), "00");
-  assert.equal(pad2(7), "07");
-  assert.equal(pad2(42), "42");
+test("no countdown module or component remains", () => {
+  assert.equal(existsSync(new URL("../src/lib/launch.ts", import.meta.url)), false);
+  assert.equal(
+    existsSync(new URL("../src/components/launch-countdown.tsx", import.meta.url)),
+    false,
+  );
 });
 
 // --- waitlist progress -----------------------------------------------------

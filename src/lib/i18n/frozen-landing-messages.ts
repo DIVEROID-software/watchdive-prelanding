@@ -28,7 +28,7 @@
  * server-message text rendered by:
  *
  *   src/routes/index.tsx        (all landing sections and both forms)
- *   src/components/launch-countdown.tsx
+ *   src/components/launch-notice.tsx
  *   src/components/waitlist-progress.tsx
  *   src/components/review-ticker.tsx
  *   src/routes/verify.tsx
@@ -96,17 +96,16 @@
  *   compatibility cards; additional models remain under verification.
  * - NVIDIA Inception membership, Samsung campaign appearance, AWS usage —
  *   membership/rights evidence pending internal confirmation.
- * - "Kickstarter opens November 18" — founder-reset date (2026-08-09), hedged
- *   as changeable in Terms §2.
+ * - "Launching on Kickstarter in December" — month only (2026-09-26); the exact
+ *   day is not confirmed, so no locale names a specific day. Terms §2 hedges it.
  * - Waitlist figures (26,321 baseline / 30,000 cap) — founder-stated constant
  *   recorded in docs/06-decision-log.md.
  * - "{count} beta testers shared their impressions" — beta-programme count;
  *   individual reviews use the Product Truth publication allowlist.
  * - FAQ compatibility, sensor/Bluetooth architecture and battery warranty /
  *   paid-replacement terms were approved by the product owner on 2026-08-01.
- * - NOTE (not fixed here): the landing footer names "DIVEROID LTD … England"
- *   as operator while Privacy/Terms name "OceanWick Inc." (Korea). Reproduced
- *   as-is in every locale.
+ * - Operator: Privacy/Terms name "Diveroid Ltd" (England, company no. 16343651),
+ *   matching the landing footer, in every locale (2026-09-26).
  *
  * Legal pages (privacy/terms): the eight non-English versions are faithful,
  * native-quality renderings for information only — they must be reviewed by
@@ -189,8 +188,7 @@ const ko: FrozenLandingMessages = {
   server: {
     pending:
       "메일을 받을 수 있는 주소라면 인증 링크가 곧 도착합니다. 링크를 열어 인증을 마쳐 주세요.",
-    closed:
-      "프리런칭 명단이 찼습니다. Watch Dive는 2026년 11월 18일 Kickstarter에서 모두에게 열립니다.",
+    closed: "프리런칭 명단이 찼습니다. Watch Dive는 12월 Kickstarter에서 런칭합니다.",
   },
   toasts: {
     resent: "다시 보냈습니다. 받은편지함을 확인하세요.",
@@ -214,7 +212,7 @@ const ko: FrozenLandingMessages = {
     h1: "Watch Dive. 쓰던 스마트워치 그대로, 바닷속으로.",
     h1Highlight: "쓰던 스마트워치 그대로",
     sub: "수심과 수온은 하우징 안의 DIVEROID 센서가 읽습니다. 숫자는 Apple Watch나 Galaxy Watch 화면에 뜹니다.",
-    priceLine: "Kickstarter 얼리버드 20만 원대. 11월 18일 오픈.",
+    priceLine: "Kickstarter 얼리버드 20만 원대. 12월 킥스타터 런칭.",
     backgroundAlt: "화려한 산호초를 탐험하는 스쿠버 다이버",
     sideImageAlt: "물속에서 촬영한 Watch Dive 제품 컷",
     stat1Label: "하우징 · 60m",
@@ -397,7 +395,7 @@ const ko: FrozenLandingMessages = {
     q4: "프리다이빙에도 쓸 수 있나요?",
     a4: "네. 스쿠버와 프리다이빙 모두 됩니다.",
     q5: "Kickstarter는 언제 열리나요?",
-    a5: "2026년 11월 18일에 열립니다. 이메일을 남겨 주시면 열리는 순간 링크를 보내 드립니다.",
+    a5: "12월 킥스타터 런칭 예정입니다. 정확한 날짜는 아직 정해지지 않았습니다. 이메일을 남겨 주시면 열리는 순간 링크를 보내 드립니다.",
     q6: "제 스마트워치도 되나요?",
     a6: "이번 출시: 하우징 + 앱은 그 외 모든 Apple Watch 모델과 다음 삼성 스마트워치를 지원합니다. Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro, Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra, Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9. 하우징에 내장된 DIVEROID 수압·수온 센서를 앱과 함께 씁니다. 앱 전용은 추후 지원이며 이번 출시에는 없습니다. Apple Watch Ultra, Apple Watch Ultra 2, Apple Watch Ultra 3, Galaxy Watch Ultra2처럼 수심(수압) 센서와 수온 센서를 자체적으로 갖춘 모델을 위한 방식입니다.",
     q7: "어떻게 동작하나요?",
@@ -416,7 +414,7 @@ const ko: FrozenLandingMessages = {
   },
   countdown: {
     launched: "Kickstarter 캠페인이 지금 열리고 있습니다.",
-    opens: "Kickstarter 11월 18일 오픈",
+    opens: "12월 킥스타터 런칭",
     ariaPending: "Kickstarter 오픈까지 남은 시간",
     ariaLive: "Kickstarter 오픈까지 {days}일 {hours}시간 {minutes}분 {seconds}초",
     days: "일",
@@ -442,7 +440,7 @@ const ko: FrozenLandingMessages = {
     confirmButton: "이메일 인증하기",
     verifiedTitle: "명단 이메일이 인증되었습니다",
     verifiedBody:
-      "명단에 올랐습니다. 2026년 11월 18일 캠페인이 열리는 순간 Kickstarter 링크를 메일로 보내 드립니다.",
+      "명단에 올랐습니다. 12월 캠페인이 열리는 순간 Kickstarter 링크를 메일로 보내 드립니다.",
     buddyTitle: "버디에게도",
     buddyBody: "같이 물에 들어가는 다이버에게 링크를 보내세요.",
     backHome: "Watch Dive로 돌아가기",
@@ -468,20 +466,20 @@ const ko: FrozenLandingMessages = {
   },
   privacy: {
     metaTitle: "개인정보처리방침 — Watch Dive",
-    metaDescription: "Watch Dive 프리런칭 페이지에서 소식 신청과 선택적 페이지 측정을 OceanWick Inc.가 처리하는 방법.",
+    metaDescription: "Watch Dive 프리런칭 페이지에서 소식 신청과 선택적 페이지 측정을 Diveroid Ltd가 처리하는 방법.",
     back: "← 홈으로 돌아가기",
     h1: "개인정보처리방침 — Watch Dive 프리런칭",
     effectiveLabel: "시행일:",
     effectiveDate: "2026년 9월 25일",
     intro1:
-      '본 개인정보처리방침은 OceanWick Inc.("회사", "당사", "DIVEROID")가 Watch Dive 프리런칭 페이지에서 예정된 Kickstarter 캠페인 소식을 받기 위해 신청하실 때 정보를 어떻게 처리하는지 설명합니다.',
+      '본 개인정보처리방침은 Diveroid Ltd("회사", "당사", "DIVEROID")가 Watch Dive 프리런칭 페이지에서 예정된 Kickstarter 캠페인 소식을 받기 위해 신청하실 때 정보를 어떻게 처리하는지 설명합니다.',
     intro2:
       "이 페이지는 런칭 관심 등록만을 위한 것입니다. 스토어가 아니며 어떤 결제도 처리하지 않습니다.",
     s1Title: "1. 회사 소개",
-    s1Company: "회사: OceanWick Inc. (오션윅 주식회사)",
+    s1Company: "회사: Diveroid Ltd (브랜드: DIVEROID)",
     s1Rep: "대표: Jay Kim",
-    s1Addr: "주소: 서울특별시 강남구 도산대로 145, 1114호 (06036), 대한민국",
-    s1Reg: "사업자등록번호: 716-81-03722",
+    s1Addr: "등록지: 영국(잉글랜드)",
+    s1Reg: "회사 번호: 16343651",
     s1Contact: "개인정보 문의: help@diveroid.com",
     s2Title: "2. 수집하는 정보",
     s2Email:
@@ -490,7 +488,7 @@ const ko: FrozenLandingMessages = {
     s2Security:
       "보안 신호 — 자동화되거나 반복적인 요청을 제한하기 위해 서버 메모리에서 사용하는 악용 플래그와 단기 키 기반 네트워크 버킷. 리드 기록에는 원본 IP 주소, 네트워크 버킷, 전체 브라우저 user-agent를 보존하지 않습니다.",
     s2Usage:
-      "페이지 측정, 허용을 선택한 경우에만 — 기기 종류(휴대폰, 태블릿, 데스크톱), 화면 크기, 시간대, 국가 코드, 머문 시간, 스크롤 깊이, 본 구역, 가입 버튼처럼 이름이 있는 클릭. IP 주소, 입력한 글, 정확한 위치, 추정한 나이와 성별은 저장하지 않습니다. 식별자가 설정된 경우 Google Analytics 4, Google Ads, Meta 픽셀, Microsoft Clarity 히트맵도 허용 후에만 동작할 수 있습니다. 지원 채팅과 Vercel Web Analytics는 페이지와 함께 로드될 수 있습니다.",
+      "페이지 측정 — 기기 종류(휴대폰, 태블릿, 데스크톱), 화면 크기, 시간대, 국가 코드, 머문 시간, 스크롤 깊이, 본 구역, 가입 버튼처럼 이름이 있는 클릭. EU/EEA, 영국, 스위스에서 접속했거나 국가를 알 수 없으면 허용을 선택한 경우에만 동작하고, 그 밖의 지역에서는 기본으로 동작하며 페이지 하단 쿠키 설정에서 끌 수 있습니다. IP 주소, 입력한 글, 정확한 위치, 추정한 나이와 성별은 저장하지 않습니다. 식별자가 설정된 경우 Google Analytics 4, Google Ads, Meta 픽셀, Microsoft Clarity 히트맵도 같은 기준을 따릅니다. 지원 채팅과 Vercel Web Analytics는 페이지와 함께 로드될 수 있습니다.",
     s2NoPayment: "이 페이지에서는 결제 정보를 수집하지 않습니다.",
     s3Title: "3. 이용 목적",
     s3Intro: "제공하신 정보는 다음 용도로 사용합니다:",
@@ -498,14 +496,14 @@ const ko: FrozenLandingMessages = {
     s3Item2: "Watch Dive가 Kickstarter에 런칭될 때 알림 전송;",
     s3Item3: "얼리버드 가격과 런칭 관련 소식 공유;",
     s3Item4: "폼과 이메일 발송 서비스를 악용으로부터 보호;",
-    s3Item5: "측정을 허용한 경우, 페이지의 어느 부분이 쓰이는지 보고 개선.",
+    s3Item5: "페이지의 어느 부분이 쓰이는지 보고 개선(허용이 필요한 지역에서는 허용한 경우에만).",
     s3Outro: "무관한 목적으로 정보를 사용하지 않습니다.",
     s4Title: "4. 법적 근거",
     s4Body:
-      "폼 제출은 운영상의 인증 메일을 요청하는 행위입니다. 대기명단 등록과 런칭 소식 수신 동의는 인증 링크를 사용하신 후에만 완료됩니다. 마케팅·페이지 측정 쿠키는 쿠키 창에서 허용을 선택한 뒤에만 동작합니다. 나중에를 선택하거나 브라우저의 Global Privacy Control이 켜져 있으면 측정은 꺼집니다. 언어 선택 쿠키는 고른 언어를 유지하기 위해 저장합니다. 동의는 언제든 철회할 수 있습니다(7항 참조).",
+      "폼 제출은 운영상의 인증 메일을 요청하는 행위입니다. 대기명단 등록과 런칭 소식 수신 동의는 인증 링크를 사용하신 후에만 완료됩니다. 마케팅·페이지 측정 쿠키는 EU/EEA, 영국, 스위스에서 접속했거나 국가를 알 수 없으면 쿠키 창에서 허용을 선택한 뒤에만 동작합니다(동의). 그 밖의 지역에서는 광고 효과 측정이라는 정당한 이익에 근거해 기본으로 동작하며, 페이지 하단 쿠키 설정에서 언제든 끌 수 있습니다. 나중에를 선택하거나 브라우저의 Global Privacy Control이 켜져 있으면 어디서든 측정은 꺼집니다. 어떤 기준이 적용되는지 기록하는 단기 국가 쿠키를 저장합니다. 언어 선택 쿠키는 고른 언어를 유지하기 위해 저장합니다. 동의는 언제든 철회할 수 있습니다(7항 참조).",
     s5Title: "5. 제3자 제공 및 국외 이전",
     s5Body:
-      "이 페이지를 운영하기 위해 처리자를 사용합니다. Vercel은 호스팅과 Web Analytics, Resend는 인증·소식 메일, Notion은 대기명단과 이와 분리된 측정 요약, 지원 채팅은 문의 응답에 쓰입니다. Google과 Meta는 해당 태그가 설정되어 있고 측정을 허용한 경우에만 사용합니다. 문자 알림을 선택한 경우에만 SMS 발송사를 사용합니다. 이 제공자는 미국을 포함해 한국 밖 서버에 데이터를 저장할 수 있습니다. 서비스에 필요한 것만 공유하며, 개인정보를 판매하지 않습니다.",
+      "이 페이지를 운영하기 위해 처리자를 사용합니다. Vercel은 호스팅과 Web Analytics, Resend는 인증·소식 메일, Notion은 대기명단과 이와 분리된 측정 요약, 지원 채팅은 문의 응답에 쓰입니다. Google과 Meta는 해당 태그가 설정되어 있고 측정이 켜져 있는 경우에만 사용합니다(4항 참조). 문자 알림을 선택한 경우에만 SMS 발송사를 사용합니다. 이 제공자는 미국을 포함해 한국 밖 서버에 데이터를 저장할 수 있습니다. 서비스에 필요한 것만 공유하며, 개인정보를 판매하지 않습니다.",
     s6Title: "6. 보유 기간",
     s6Body:
       "대기명단 정보는 Watch Dive 런칭 캠페인이 끝날 때까지, 또는 삭제·수신거부를 요청하실 때까지 중 먼저 오는 시점까지 보관합니다. 허용된 페이지 측정 요약은 최대 12개월 보관 후 삭제합니다. 삭제 요청이 있으면 해당하는 기록을 지체 없이 삭제합니다.",
@@ -524,17 +522,17 @@ const ko: FrozenLandingMessages = {
       "본 방침은 수시로 갱신될 수 있습니다. 최신 버전은 항상 이 페이지에서 확인할 수 있으며, 시행일은 상단에 표시됩니다.",
     s10Title: "10. 문의",
     s10Body: "개인정보 관련 문의는 help@diveroid.com으로 보내 주세요.",
-    footerLine: "OceanWick Inc. · 대한민국 서울특별시 강남구 도산대로 145",
+    footerLine: "Diveroid Ltd · 영국(잉글랜드) 등록 · 회사 번호 16343651",
   },
   terms: {
     metaTitle: "이용약관 — Watch Dive",
-    metaDescription: "OceanWick Inc.가 운영하는 Watch Dive 프리런칭 페이지의 이용약관.",
+    metaDescription: "Diveroid Ltd가 운영하는 Watch Dive 프리런칭 페이지의 이용약관.",
     back: "← 홈으로 돌아가기",
     h1: "이용약관 — Watch Dive 프리런칭",
     effectiveLabel: "시행일:",
     effectiveDate: "2026년 7월 30일",
     intro:
-      'OceanWick Inc.("회사", "당사", "DIVEROID")가 운영하는 Watch Dive 프리런칭 페이지에 오신 것을 환영합니다. 이 페이지를 이용하고 신청하시면 아래 약관에 동의하는 것입니다.',
+      'Diveroid Ltd("회사", "당사", "DIVEROID")가 운영하는 Watch Dive 프리런칭 페이지에 오신 것을 환영합니다. 이 페이지를 이용하고 신청하시면 아래 약관에 동의하는 것입니다.',
     s1Title: "1. 이 페이지의 성격",
     s1Body:
       "이 페이지는 Watch Dive에 대한 관심을 등록하고 예정된 Kickstarter 캠페인 소식을 받는 곳입니다. 스토어가 아닙니다. 여기서는 어떤 구매도 이루어지지 않고 어떤 결제도 받지 않습니다.",
@@ -547,7 +545,7 @@ const ko: FrozenLandingMessages = {
     s3PrivacyLink: "개인정보처리방침",
     s4Title: "4. 지식재산권",
     s4Body:
-      "이 페이지의 모든 콘텐츠 — Watch Dive와 DIVEROID 명칭, 로고, 텍스트, 이미지, 영상 포함 — 는 OceanWick Inc. 또는 라이선서의 소유입니다. 허락 없이 복제하거나 재사용할 수 없습니다.",
+      "이 페이지의 모든 콘텐츠 — Watch Dive와 DIVEROID 명칭, 로고, 텍스트, 이미지, 영상 포함 — 는 Diveroid Ltd 또는 라이선서의 소유입니다. 허락 없이 복제하거나 재사용할 수 없습니다.",
     s5Title: "5. 면책",
     s5Body1:
       "Watch Dive는 호환 스마트워치와 함께 사용하도록 설계된 다이빙 보조 도구입니다. 출시 후에도 정식 다이빙 교육, 자격, 백업 다이브 컴퓨터를 대체하는 것이 아니라 보조하기 위한 것입니다. 항상 교육받은 범위 안에서 다이빙하고 안전 수칙을 따르세요.",
@@ -557,8 +555,7 @@ const ko: FrozenLandingMessages = {
     s6Body: "본 약관은 대한민국 법률의 적용을 받습니다.",
     s7Title: "7. 문의",
     s7Body: "궁금한 점은 help@diveroid.com으로 이메일 주세요.",
-    footerLine:
-      "OceanWick Inc. · 대한민국 서울특별시 강남구 도산대로 145 · 사업자등록번호 716-81-03722",
+    footerLine: "Diveroid Ltd · 영국(잉글랜드) 등록 · 회사 번호 16343651",
   },
 };
 
@@ -619,7 +616,7 @@ const zhCN: FrozenLandingMessages = {
   },
   server: {
     pending: "如果这个地址能正常收信，确认链接很快就到。打开链接即可完成。",
-    closed: "上线前的名单已满。Watch Dive 将于 2026年11月18日 在 Kickstarter 面向所有人开放。",
+    closed: "上线前的名单已满。Watch Dive 将于 12 月在 Kickstarter 上线。",
   },
   toasts: {
     resent: "已重新发送，请查收邮箱。",
@@ -642,7 +639,7 @@ const zhCN: FrozenLandingMessages = {
     h1: "Watch Dive。手上那块智能手表，跟你一起下水。",
     h1Highlight: "手上那块智能手表",
     sub: "水深和水温，由外壳里的 DIVEROID 传感器测量。数值显示在你的 Apple Watch 或 Galaxy Watch 上。",
-    priceLine: "Kickstarter 早鸟价约 1,000 元。11月18日开启。",
+    priceLine: "Kickstarter 早鸟价约 1,000 元。12 月上线。",
     backgroundAlt: "在缤纷珊瑚礁间探索的水肺潜水员",
     sideImageAlt: "Watch Dive 水下产品实拍",
     stat1Label: "外壳 · 60 米",
@@ -822,7 +819,7 @@ const zhCN: FrozenLandingMessages = {
     q4: "自由潜能用吗？",
     a4: "能。水肺和自由潜都可以。",
     q5: "Kickstarter 什么时候开启？",
-    a5: "2026年11月18日 开启。留下邮箱，上线那一刻我们把链接发给你。",
+    a5: "12 月在 Kickstarter 上线，具体日期尚未确定。留下邮箱，上线那一刻我们把链接发给你。",
     q6: "我的智能手表能用吗？",
     a6: "本次发售：外壳 + App 支持其余所有 Apple Watch 型号，以及以下 Samsung 智能手表：Galaxy Watch4、Galaxy Watch4 Classic、Galaxy Watch5、Galaxy Watch5 Pro、Galaxy Watch6、Galaxy Watch6 Classic、Galaxy Watch FE、Galaxy Watch7、Galaxy Watch Ultra、Galaxy Watch8、Galaxy Watch8 Classic、Galaxy Watch9。Watch Dive 外壳内置的 DIVEROID 水压和水温传感器与 App 配合使用。仅 App 属于后续支持，本次不提供：这条路线面向 Apple Watch Ultra、Apple Watch Ultra 2、Apple Watch Ultra 3 和 Galaxy Watch Ultra2，这些智能手表自带深度（水压）和水温传感器。",
     q7: "它是怎么工作的？",
@@ -841,7 +838,7 @@ const zhCN: FrozenLandingMessages = {
   },
   countdown: {
     launched: "Kickstarter 众筹正在开启。",
-    opens: "Kickstarter 11月18日开启",
+    opens: "12 月在 Kickstarter 上线",
     ariaPending: "距 Kickstarter 开启还有",
     ariaLive: "距 Kickstarter 开启还有 {days} 天 {hours} 小时 {minutes} 分 {seconds} 秒",
     days: "天",
@@ -866,8 +863,7 @@ const zhCN: FrozenLandingMessages = {
     waitingBody: "还没有完成确认。点一下按钮就好。",
     confirmButton: "确认我的邮箱",
     verifiedTitle: "名单邮箱已确认",
-    verifiedBody:
-      "你已在名单上。2026年11月18日 众筹开启的那一刻，我们把 Kickstarter 链接发到你邮箱。",
+    verifiedBody: "你已在名单上。12 月众筹开启的那一刻，我们把 Kickstarter 链接发到你邮箱。",
     buddyTitle: "带上潜伴",
     buddyBody: "把链接发给一起下水的潜伴。",
     backHome: "返回 Watch Dive",
@@ -891,19 +887,19 @@ const zhCN: FrozenLandingMessages = {
   },
   privacy: {
     metaTitle: "隐私政策 — Watch Dive",
-    metaDescription: "你报名接收 Watch Dive 预启动消息时，OceanWick Inc. 如何处理你的信息。",
+    metaDescription: "你报名接收 Watch Dive 预启动消息时，Diveroid Ltd 如何处理你的信息。",
     back: "← 返回首页",
     h1: "隐私政策 — Watch Dive 预启动",
     effectiveLabel: "生效日期：",
     effectiveDate: "2026 年 9 月 25 日",
     intro1:
-      "本隐私政策说明 OceanWick Inc.（“我们”，“DIVEROID”）在你于 Watch Dive 预启动页面报名接收即将开启的 Kickstarter 众筹消息时，如何处理你的信息。",
+      "本隐私政策说明 Diveroid Ltd（“我们”，“DIVEROID”）在你于 Watch Dive 预启动页面报名接收即将开启的 Kickstarter 众筹消息时，如何处理你的信息。",
     intro2: "本页面仅用于收集上线意向。它不是商店，不处理任何付款。",
     s1Title: "1. 我们是谁",
-    s1Company: "公司：OceanWick Inc.（오션윅 주식회사）",
+    s1Company: "公司：Diveroid Ltd（品牌：DIVEROID）",
     s1Rep: "代表人：Jay Kim",
-    s1Addr: "地址：1114, 145 Dosan-daero, Gangnam-gu, Seoul 06036, Republic of Korea",
-    s1Reg: "营业执照号：716-81-03722",
+    s1Addr: "注册地：英国（英格兰）",
+    s1Reg: "公司编号：16343651",
     s1Contact: "隐私联系邮箱：help@diveroid.com",
     s2Title: "2. 我们收集什么",
     s2Email: "邮箱地址（必填）— 用于发送你请求的确认邮件，以及确认后的 Watch Dive 上线消息。",
@@ -943,17 +939,17 @@ const zhCN: FrozenLandingMessages = {
     s9Body: "我们可能不时更新本隐私政策。最新版本始终可在本页查看，顶部标注生效日期。",
     s10Title: "10. 联系我们",
     s10Body: "对隐私有疑问？请发邮件至 help@diveroid.com。",
-    footerLine: "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seoul, Republic of Korea",
+    footerLine: "Diveroid Ltd · 英国（英格兰）注册 · 公司编号 16343651",
   },
   terms: {
     metaTitle: "使用条款 — Watch Dive",
-    metaDescription: "由 OceanWick Inc. 运营的 Watch Dive 预启动页面使用条款。",
+    metaDescription: "由 Diveroid Ltd 运营的 Watch Dive 预启动页面使用条款。",
     back: "← 返回首页",
     h1: "使用条款 — Watch Dive 预启动",
     effectiveLabel: "生效日期：",
     effectiveDate: "2026 年 7 月 30 日",
     intro:
-      "欢迎来到由 OceanWick Inc.（“我们”，“DIVEROID”）运营的 Watch Dive 预启动页面。使用本页面并报名，即表示你同意以下条款。",
+      "欢迎来到由 Diveroid Ltd（“我们”，“DIVEROID”）运营的 Watch Dive 预启动页面。使用本页面并报名，即表示你同意以下条款。",
     s1Title: "1. 本页面是什么",
     s1Body:
       "本页面用于登记你对 Watch Dive 的兴趣并接收即将开启的 Kickstarter 众筹消息。它不是商店。这里不发生任何购买，也不收取任何款项。",
@@ -966,7 +962,7 @@ const zhCN: FrozenLandingMessages = {
     s3PrivacyLink: "隐私政策",
     s4Title: "4. 知识产权",
     s4Body:
-      "本页面的全部内容 — 包括 Watch Dive 与 DIVEROID 名称、标志、文字、图片与视频 — 均属 OceanWick Inc. 或其许可方所有。未经许可不得复制或再利用。",
+      "本页面的全部内容 — 包括 Watch Dive 与 DIVEROID 名称、标志、文字、图片与视频 — 均属 Diveroid Ltd 或其许可方所有。未经许可不得复制或再利用。",
     s5Title: "5. 免责声明",
     s5Body1:
       "Watch Dive 是为配合兼容智能手表而设计的潜水辅助工具。发布后，它旨在辅助 — 而非替代 — 正规潜水训练、证书与备用潜水电脑。请始终在训练范围内潜水并遵循安全潜水规范。",
@@ -976,8 +972,7 @@ const zhCN: FrozenLandingMessages = {
     s6Body: "本条款受大韩民国法律管辖。",
     s7Title: "7. 联系我们",
     s7Body: "有问题？请发邮件至 help@diveroid.com。",
-    footerLine:
-      "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seoul, Republic of Korea · 营业执照号 716-81-03722",
+    footerLine: "Diveroid Ltd · 英国（英格兰）注册 · 公司编号 16343651",
   },
 };
 
@@ -1038,7 +1033,7 @@ const zhTW: FrozenLandingMessages = {
   },
   server: {
     pending: "如果這個信箱收得到信，確認連結很快就會到。打開連結就完成了。",
-    closed: "開賣前的名單已滿。Watch Dive 將於 2026 年 11 月 18 日 在 Kickstarter 對所有人開放。",
+    closed: "開賣前的名單已滿。Watch Dive 將於 12 月在 Kickstarter 上線。",
   },
   toasts: {
     resent: "已重新寄送，請查看收件匣。",
@@ -1061,7 +1056,7 @@ const zhTW: FrozenLandingMessages = {
     h1: "Watch Dive。手上那支智慧手錶，陪你一起下水。",
     h1Highlight: "手上那支智慧手錶",
     sub: "水深與水溫，由外殼裡的 DIVEROID 感測器量測。數值顯示在你的 Apple Watch 或 Galaxy Watch 上。",
-    priceLine: "Kickstarter 早鳥價約 NT$5,000。11 月 18 日開賣。",
+    priceLine: "Kickstarter 早鳥價約 NT$5,000。12 月上線。",
     backgroundAlt: "在繽紛珊瑚礁間探索的水肺潛水員",
     sideImageAlt: "Watch Dive 水下產品實拍",
     stat1Label: "外殼 · 60 公尺",
@@ -1241,7 +1236,7 @@ const zhTW: FrozenLandingMessages = {
     q4: "自由潛能用嗎？",
     a4: "能。水肺和自由潛都可以。",
     q5: "Kickstarter 什麼時候開賣？",
-    a5: "2026 年 11 月 18 日 開賣。留下信箱，上線那一刻我們就把連結寄給你。",
+    a5: "12 月在 Kickstarter 上線，確切日期尚未確定。留下信箱，上線那一刻我們就把連結寄給你。",
     q6: "我的智慧手錶能用嗎？",
     a6: "本次發售：外殼 + App 支援其餘所有 Apple Watch 型號，以及下列 Samsung 智慧手錶：Galaxy Watch4、Galaxy Watch4 Classic、Galaxy Watch5、Galaxy Watch5 Pro、Galaxy Watch6、Galaxy Watch6 Classic、Galaxy Watch FE、Galaxy Watch7、Galaxy Watch Ultra、Galaxy Watch8、Galaxy Watch8 Classic、Galaxy Watch9。Watch Dive 外殼內建的 DIVEROID 水壓與水溫感測器會與 App 搭配使用。僅 App 屬於後續支援，本次不提供：這條路線面向 Apple Watch Ultra、Apple Watch Ultra 2、Apple Watch Ultra 3 和 Galaxy Watch Ultra2，這些智慧手錶自帶深度（水壓）與水溫感測器。",
     q7: "它怎麼運作？",
@@ -1260,7 +1255,7 @@ const zhTW: FrozenLandingMessages = {
   },
   countdown: {
     launched: "Kickstarter 募資正在開跑。",
-    opens: "Kickstarter 11 月 18 日開賣",
+    opens: "12 月在 Kickstarter 上線",
     ariaPending: "距 Kickstarter 開賣還有",
     ariaLive: "距 Kickstarter 開賣還有 {days} 天 {hours} 小時 {minutes} 分 {seconds} 秒",
     days: "天",
@@ -1285,8 +1280,7 @@ const zhTW: FrozenLandingMessages = {
     waitingBody: "還沒完成確認。點一下按鈕就好。",
     confirmButton: "確認我的信箱",
     verifiedTitle: "名單信箱已確認",
-    verifiedBody:
-      "你已在名單上。2026 年 11 月 18 日 募資開跑的那一刻，我們就把 Kickstarter 連結寄到你的信箱。",
+    verifiedBody: "你已在名單上。12 月募資開跑的那一刻，我們就把 Kickstarter 連結寄到你的信箱。",
     buddyTitle: "找上你的潛伴",
     buddyBody: "把連結傳給和你一起下水的潛伴。",
     backHome: "回到 Watch Dive",
@@ -1310,19 +1304,19 @@ const zhTW: FrozenLandingMessages = {
   },
   privacy: {
     metaTitle: "隱私權政策 — Watch Dive",
-    metaDescription: "你報名接收 Watch Dive 預先啟動消息時，OceanWick Inc. 如何處理你的資訊。",
+    metaDescription: "你報名接收 Watch Dive 預先啟動消息時，Diveroid Ltd 如何處理你的資訊。",
     back: "← 回到首頁",
     h1: "隱私權政策 — Watch Dive 預先啟動",
     effectiveLabel: "生效日期：",
     effectiveDate: "2026 年 9 月 25 日",
     intro1:
-      "本隱私權政策說明 OceanWick Inc.（「我們」，「DIVEROID」）在你於 Watch Dive 預先啟動頁面報名接收即將開啟的 Kickstarter 募資消息時，如何處理你的資訊。",
+      "本隱私權政策說明 Diveroid Ltd（「我們」，「DIVEROID」）在你於 Watch Dive 預先啟動頁面報名接收即將開啟的 Kickstarter 募資消息時，如何處理你的資訊。",
     intro2: "本頁面僅用於蒐集上線意向。它不是商店，也不處理任何付款。",
     s1Title: "1. 我們是誰",
-    s1Company: "公司：OceanWick Inc.（오션윅 주식회사）",
+    s1Company: "公司：Diveroid Ltd（品牌：DIVEROID）",
     s1Rep: "代表人：Jay Kim",
-    s1Addr: "地址：1114, 145 Dosan-daero, Gangnam-gu, Seoul 06036, Republic of Korea",
-    s1Reg: "營業登記號：716-81-03722",
+    s1Addr: "註冊地：英國（英格蘭）",
+    s1Reg: "公司編號：16343651",
     s1Contact: "隱私權聯絡信箱：help@diveroid.com",
     s2Title: "2. 我們蒐集什麼",
     s2Email: "電子郵件地址（必填）— 用於寄送你請求的確認信，以及確認後的 Watch Dive 上線消息。",
@@ -1362,17 +1356,17 @@ const zhTW: FrozenLandingMessages = {
     s9Body: "我們可能不時更新本隱私權政策。最新版本一律可在本頁查看，頂端標註生效日期。",
     s10Title: "10. 聯絡我們",
     s10Body: "對隱私權有疑問？請寄信至 help@diveroid.com。",
-    footerLine: "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seoul, Republic of Korea",
+    footerLine: "Diveroid Ltd · 英國（英格蘭）註冊 · 公司編號 16343651",
   },
   terms: {
     metaTitle: "使用條款 — Watch Dive",
-    metaDescription: "由 OceanWick Inc. 營運的 Watch Dive 預先啟動頁面使用條款。",
+    metaDescription: "由 Diveroid Ltd 營運的 Watch Dive 預先啟動頁面使用條款。",
     back: "← 回到首頁",
     h1: "使用條款 — Watch Dive 預先啟動",
     effectiveLabel: "生效日期：",
     effectiveDate: "2026 年 7 月 30 日",
     intro:
-      "歡迎來到由 OceanWick Inc.（「我們」，「DIVEROID」）營運的 Watch Dive 預先啟動頁面。使用本頁面並報名，即表示你同意以下條款。",
+      "歡迎來到由 Diveroid Ltd（「我們」，「DIVEROID」）營運的 Watch Dive 預先啟動頁面。使用本頁面並報名，即表示你同意以下條款。",
     s1Title: "1. 本頁面是什麼",
     s1Body:
       "本頁面用於登記你對 Watch Dive 的興趣並接收即將開啟的 Kickstarter 募資消息。它不是商店。這裡不進行任何購買，也不收取任何款項。",
@@ -1385,7 +1379,7 @@ const zhTW: FrozenLandingMessages = {
     s3PrivacyLink: "隱私權政策",
     s4Title: "4. 智慧財產權",
     s4Body:
-      "本頁面的全部內容 — 包括 Watch Dive 與 DIVEROID 名稱、標誌、文字、圖片與影片 — 均屬 OceanWick Inc. 或其授權方所有。未經許可不得複製或再利用。",
+      "本頁面的全部內容 — 包括 Watch Dive 與 DIVEROID 名稱、標誌、文字、圖片與影片 — 均屬 Diveroid Ltd 或其授權方所有。未經許可不得複製或再利用。",
     s5Title: "5. 免責聲明",
     s5Body1:
       "Watch Dive 是為搭配相容智慧手錶而設計的潛水輔助工具。發售後，它旨在輔助 — 而非取代 — 正規潛水訓練、證照與備用潛水電腦。請始終在訓練範圍內潛水並遵循安全潛水規範。",
@@ -1395,8 +1389,7 @@ const zhTW: FrozenLandingMessages = {
     s6Body: "本條款受大韓民國法律管轄。",
     s7Title: "7. 聯絡我們",
     s7Body: "有問題嗎？請寄信至 help@diveroid.com。",
-    footerLine:
-      "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seoul, Republic of Korea · 營業登記號 716-81-03722",
+    footerLine: "Diveroid Ltd · 英國（英格蘭）註冊 · 公司編號 16343651",
   },
 };
 
@@ -1458,8 +1451,7 @@ const ja: FrozenLandingMessages = {
   server: {
     pending:
       "このアドレスでメールを受け取れる場合、確認リンクがまもなく届きます。リンクを開いて完了してください。",
-    closed:
-      "事前登録リストは満員です。Watch Dive は2026年11月18日、Kickstarter で誰でも参加できるようになります。",
+    closed: "事前登録リストは満員です。Watch Dive は12月に Kickstarter でローンチします。",
   },
   toasts: {
     resent: "再送しました。受信トレイをご確認ください。",
@@ -1483,7 +1475,7 @@ const ja: FrozenLandingMessages = {
     h1: "Watch Dive. いつものスマートウォッチで、潜る。",
     h1Highlight: "いつものスマートウォッチで",
     sub: "水深と水温は、ハウジング内蔵のDIVEROIDセンサーが計測。数値は Apple Watch や Galaxy Watch の画面に表示されます。",
-    priceLine: "Kickstarter 早割は2万円台。11月18日スタート。",
+    priceLine: "Kickstarter 早割は2万円台。12月ローンチ。",
     backgroundAlt: "色鮮やかなサンゴ礁を探索するスキューバダイバー",
     sideImageAlt: "水中で撮影した Watch Dive の製品写真",
     stat1Label: "ハウジング · 60m",
@@ -1669,7 +1661,7 @@ const ja: FrozenLandingMessages = {
     q4: "フリーダイビングでも使えますか？",
     a4: "はい。スキューバもフリーダイビングも使えます。",
     q5: "Kickstarter はいつ始まりますか？",
-    a5: "2026年11月18日に始まります。メールアドレスをいただければ、公開の瞬間にリンクをお送りします。",
+    a5: "12月に Kickstarter でローンチ予定です。正確な日付はまだ決まっていません。メールアドレスをいただければ、公開の瞬間にリンクをお送りします。",
     q6: "自分のスマートウォッチでも使えますか？",
     a6: "今回の発売：ハウジング + アプリは、その他すべてのApple Watchモデルと、次のSamsungスマートウォッチに対応します。Galaxy Watch4、Galaxy Watch4 Classic、Galaxy Watch5、Galaxy Watch5 Pro、Galaxy Watch6、Galaxy Watch6 Classic、Galaxy Watch FE、Galaxy Watch7、Galaxy Watch Ultra、Galaxy Watch8、Galaxy Watch8 Classic、Galaxy Watch9。ハウジング内蔵のDIVEROID水圧・水温センサーをアプリと組み合わせて使います。アプリのみは後日対応で、今回は対象外です。Apple Watch Ultra、Apple Watch Ultra 2、Apple Watch Ultra 3、Galaxy Watch Ultra2 のように、水深（水圧）センサーと水温センサーを自ら備えたモデルに向けた方式です。",
     q7: "どういう仕組みですか？",
@@ -1688,7 +1680,7 @@ const ja: FrozenLandingMessages = {
   },
   countdown: {
     launched: "Kickstarter キャンペーンがいま始まります。",
-    opens: "Kickstarter は11月18日スタート",
+    opens: "12月に Kickstarter でローンチ",
     ariaPending: "Kickstarter 開始までの時間",
     ariaLive: "Kickstarter 開始まで {days} 日 {hours} 時間 {minutes} 分 {seconds} 秒",
     days: "日",
@@ -1714,7 +1706,7 @@ const ja: FrozenLandingMessages = {
     confirmButton: "メールアドレスを確認する",
     verifiedTitle: "リストのメールアドレスを確認しました",
     verifiedBody:
-      "リストに登録されました。2026年11月18日、キャンペーンが始まった瞬間に Kickstarter のリンクをメールでお送りします。",
+      "リストに登録されました。12月にキャンペーンが始まった瞬間に Kickstarter のリンクをメールでお送りします。",
     buddyTitle: "バディにも",
     buddyBody: "一緒に潜るダイバーにリンクを送ってください。",
     backHome: "Watch Dive に戻る",
@@ -1741,20 +1733,20 @@ const ja: FrozenLandingMessages = {
   privacy: {
     metaTitle: "プライバシーポリシー — Watch Dive",
     metaDescription:
-      "Watch Dive の事前登録にお申し込みいただいた際に、OceanWick Inc. が情報をどのように取り扱うか。",
+      "Watch Dive の事前登録にお申し込みいただいた際に、Diveroid Ltd が情報をどのように取り扱うか。",
     back: "← ホームに戻る",
     h1: "プライバシーポリシー — Watch Dive 事前登録",
     effectiveLabel: "発効日:",
     effectiveDate: "2026 年 9 月 25 日",
     intro1:
-      "本プライバシーポリシーは、OceanWick Inc.（「当社」、「DIVEROID」）が、Watch Dive 事前登録ページで今後の Kickstarter キャンペーン情報の受け取りにお申し込みいただいた際に、お客様の情報をどのように取り扱うかを説明するものです。",
+      "本プライバシーポリシーは、Diveroid Ltd（「当社」、「DIVEROID」）が、Watch Dive 事前登録ページで今後の Kickstarter キャンペーン情報の受け取りにお申し込みいただいた際に、お客様の情報をどのように取り扱うかを説明するものです。",
     intro2:
       "このページはローンチへの関心を登録するためだけのものです。ストアではなく、決済は一切行いません。",
     s1Title: "1. 当社について",
-    s1Company: "会社: OceanWick Inc.（오션윅 주식회사）",
+    s1Company: "会社: Diveroid Ltd（ブランド: DIVEROID）",
     s1Rep: "代表者: Jay Kim",
-    s1Addr: "住所: 1114, 145 Dosan-daero, Gangnam-gu, Seoul 06036, Republic of Korea",
-    s1Reg: "事業者登録番号: 716-81-03722",
+    s1Addr: "登記地: 英国（イングランド）",
+    s1Reg: "会社番号: 16343651",
     s1Contact: "プライバシー窓口: help@diveroid.com",
     s2Title: "2. 収集する情報",
     s2Email:
@@ -1797,17 +1789,17 @@ const ja: FrozenLandingMessages = {
       "本プライバシーポリシーは随時更新されることがあります。最新版は常にこのページで確認でき、冒頭に発効日を表示します。",
     s10Title: "10. お問い合わせ",
     s10Body: "プライバシーに関するご質問は help@diveroid.com までメールでお寄せください。",
-    footerLine: "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seoul, Republic of Korea",
+    footerLine: "Diveroid Ltd · 英国（イングランド）登記 · 会社番号 16343651",
   },
   terms: {
     metaTitle: "利用規約 — Watch Dive",
-    metaDescription: "OceanWick Inc. が運営する Watch Dive 事前登録ページの利用規約。",
+    metaDescription: "Diveroid Ltd が運営する Watch Dive 事前登録ページの利用規約。",
     back: "← ホームに戻る",
     h1: "利用規約 — Watch Dive 事前登録",
     effectiveLabel: "発効日:",
     effectiveDate: "2026 年 7 月 30 日",
     intro:
-      "OceanWick Inc.（「当社」、「DIVEROID」）が運営する Watch Dive 事前登録ページへようこそ。このページを利用し登録することで、以下の規約に同意したものとみなされます。",
+      "Diveroid Ltd（「当社」、「DIVEROID」）が運営する Watch Dive 事前登録ページへようこそ。このページを利用し登録することで、以下の規約に同意したものとみなされます。",
     s1Title: "1. このページについて",
     s1Body:
       "このページでは、Watch Dive への関心を登録し、今後の Kickstarter キャンペーン情報を受け取れます。ストアではありません。ここでは購入は行われず、支払いも発生しません。",
@@ -1820,7 +1812,7 @@ const ja: FrozenLandingMessages = {
     s3PrivacyLink: "プライバシーポリシー",
     s4Title: "4. 知的財産",
     s4Body:
-      "このページのすべてのコンテンツ — Watch Dive と DIVEROID の名称、ロゴ、テキスト、画像、動画を含む — は、OceanWick Inc. またはそのライセンサーに帰属します。許可なく複製・再利用することはできません。",
+      "このページのすべてのコンテンツ — Watch Dive と DIVEROID の名称、ロゴ、テキスト、画像、動画を含む — は、Diveroid Ltd またはそのライセンサーに帰属します。許可なく複製・再利用することはできません。",
     s5Title: "5. 免責事項",
     s5Body1:
       "Watch Dive は、対応スマートウォッチと組み合わせて使うよう設計されたダイビング補助器具です。発売後も、正式なダイビングトレーニング、資格、バックアップのダイブコンピューターを置き換えるのではなく、補助することを目的としています。常にトレーニングの範囲内で潜り、安全なダイビング慣行に従ってください。",
@@ -1830,8 +1822,7 @@ const ja: FrozenLandingMessages = {
     s6Body: "本規約は大韓民国の法律に準拠します。",
     s7Title: "7. お問い合わせ",
     s7Body: "ご質問は help@diveroid.com までメールでお寄せください。",
-    footerLine:
-      "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seoul, Republic of Korea · 事業者登録番号 716-81-03722",
+    footerLine: "Diveroid Ltd · 英国（イングランド）登記 · 会社番号 16343651",
   },
 };
 
@@ -1894,7 +1885,7 @@ const es: FrozenLandingMessages = {
     pending:
       "Si esta dirección puede recibir correo, el enlace de confirmación llegará enseguida. Ábrelo para terminar.",
     closed:
-      "La lista de prelanzamiento está llena. Watch Dive se abre para todos en Kickstarter el 18 de noviembre de 2026.",
+      "La lista de prelanzamiento está llena. Watch Dive se lanza en Kickstarter en diciembre.",
   },
   toasts: {
     resent: "Enviado otra vez. Mira tu bandeja de entrada.",
@@ -1918,7 +1909,7 @@ const es: FrozenLandingMessages = {
     h1: "Watch Dive. Tu smartwatch de siempre, bajo el agua.",
     h1Highlight: "bajo el agua",
     sub: "Un sensor DIVEROID dentro de la carcasa mide la profundidad y la temperatura del agua. Tu Apple Watch o Galaxy Watch las muestra mientras buceas.",
-    priceLine: "Early bird por unos 140 € en Kickstarter. Abre el 18 de noviembre.",
+    priceLine: "Early bird por unos 140 € en Kickstarter. Lanzamiento en diciembre.",
     backgroundAlt: "Buceador explorando un arrecife de coral lleno de vida",
     sideImageAlt: "Foto submarina del producto Watch Dive",
     stat1Label: "Carcasa · 60 m",
@@ -2107,7 +2098,7 @@ const es: FrozenLandingMessages = {
     q4: "¿Sirve para apnea?",
     a4: "Sí. Buceo con botella y apnea.",
     q5: "¿Cuándo abre Kickstarter?",
-    a5: "Kickstarter abre el 18 de noviembre de 2026. Déjanos tu correo y te enviamos el enlace en cuanto esté en marcha.",
+    a5: "Lanzamiento en Kickstarter en diciembre. La fecha exacta aún no está fijada. Déjanos tu correo y te enviamos el enlace en cuanto esté en marcha.",
     q6: "¿Funcionará con mi smartwatch?",
     a6: "En este lanzamiento: Carcasa + App admite todos los demás modelos de Apple Watch y estos smartwatches Samsung: Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro, Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra, Galaxy Watch8, Galaxy Watch8 Classic y Galaxy Watch9. La carcasa Watch Dive usa con la app su sensor DIVEROID de presión y temperatura del agua. Más adelante, y no entra en este lanzamiento: Solo App está previsto para Apple Watch Ultra, Apple Watch Ultra 2, Apple Watch Ultra 3 y Galaxy Watch Ultra2, que llevan sensores propios de profundidad (presión) y de temperatura del agua.",
     q7: "¿Cómo funciona?",
@@ -2126,7 +2117,7 @@ const es: FrozenLandingMessages = {
   },
   countdown: {
     launched: "La campaña de Kickstarter está abriendo ahora.",
-    opens: "Kickstarter abre el 18 de noviembre",
+    opens: "Lanzamiento en Kickstarter en diciembre",
     ariaPending: "Tiempo hasta el lanzamiento en Kickstarter",
     ariaLive:
       "{days} días, {hours} horas, {minutes} minutos y {seconds} segundos para el lanzamiento en Kickstarter",
@@ -2153,7 +2144,7 @@ const es: FrozenLandingMessages = {
     confirmButton: "Confirmar mi correo",
     verifiedTitle: "Tu correo está confirmado",
     verifiedBody:
-      "Ya estás en la lista. Te enviaremos el enlace de Kickstarter en cuanto la campaña abra, el 18 de noviembre de 2026.",
+      "Ya estás en la lista. Te enviaremos el enlace de Kickstarter en cuanto la campaña abra en diciembre.",
     buddyTitle: "Trae a tu compañero",
     buddyBody: "Pasa tu enlace a los buceadores con los que te metes al agua.",
     backHome: "Volver a Watch Dive",
@@ -2180,20 +2171,20 @@ const es: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Política de privacidad — Watch Dive",
     metaDescription:
-      "Cómo trata OceanWick Inc. tu información cuando te registras para recibir novedades del prelanzamiento de Watch Dive.",
+      "Cómo trata Diveroid Ltd tu información cuando te registras para recibir novedades del prelanzamiento de Watch Dive.",
     back: "← Volver al inicio",
     h1: "Política de privacidad — Prelanzamiento de Watch Dive",
     effectiveLabel: "Fecha de entrada en vigor:",
     effectiveDate: "25 de septiembre de 2026",
     intro1:
-      'Esta Política de privacidad explica cómo OceanWick Inc. ("nosotros", "DIVEROID") trata tu información cuando te registras en la página de prelanzamiento de Watch Dive para recibir novedades sobre nuestra próxima campaña de Kickstarter.',
+      'Esta Política de privacidad explica cómo Diveroid Ltd ("nosotros", "DIVEROID") trata tu información cuando te registras en la página de prelanzamiento de Watch Dive para recibir novedades sobre nuestra próxima campaña de Kickstarter.',
     intro2:
       "Esta página sirve únicamente para registrar interés en el lanzamiento. No es una tienda y no procesa ningún pago.",
     s1Title: "1. Quiénes somos",
-    s1Company: "Empresa: OceanWick Inc. (오션윅 주식회사)",
+    s1Company: "Empresa: Diveroid Ltd (marca: DIVEROID)",
     s1Rep: "Representante: Jay Kim",
-    s1Addr: "Dirección: 1114, 145 Dosan-daero, Gangnam-gu, Seúl 06036, República de Corea",
-    s1Reg: "N.º de registro mercantil: 716-81-03722",
+    s1Addr: "Registrada en: Inglaterra (Reino Unido)",
+    s1Reg: "N.º de empresa: 16343651",
     s1Contact: "Contacto de privacidad: help@diveroid.com",
     s2Title: "2. Qué recopilamos",
     s2Email:
@@ -2238,18 +2229,18 @@ const es: FrozenLandingMessages = {
       "Podemos actualizar esta Política de privacidad de vez en cuando. La versión más reciente estará siempre disponible en esta página, con la fecha de entrada en vigor arriba.",
     s10Title: "10. Contacto",
     s10Body: "¿Preguntas sobre tu privacidad? Escribe a help@diveroid.com.",
-    footerLine: "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seúl, República de Corea",
+    footerLine: "Diveroid Ltd · Registrada en Inglaterra · N.º de empresa 16343651",
   },
   terms: {
     metaTitle: "Términos de uso — Watch Dive",
     metaDescription:
-      "Términos de uso de la página de prelanzamiento de Watch Dive, operada por OceanWick Inc.",
+      "Términos de uso de la página de prelanzamiento de Watch Dive, operada por Diveroid Ltd",
     back: "← Volver al inicio",
     h1: "Términos de uso — Prelanzamiento de Watch Dive",
     effectiveLabel: "Fecha de entrada en vigor:",
     effectiveDate: "30 de julio de 2026",
     intro:
-      'Bienvenido a la página de prelanzamiento de Watch Dive, operada por OceanWick Inc. ("nosotros", "DIVEROID"). Al usar esta página y registrarte, aceptas los siguientes términos.',
+      'Bienvenido a la página de prelanzamiento de Watch Dive, operada por Diveroid Ltd ("nosotros", "DIVEROID"). Al usar esta página y registrarte, aceptas los siguientes términos.',
     s1Title: "1. Qué es esta página",
     s1Body:
       "Esta página te permite registrar tu interés en Watch Dive y recibir novedades sobre nuestra próxima campaña de Kickstarter. No es una tienda. Aquí no se realiza ninguna compra ni se cobra ningún pago.",
@@ -2262,7 +2253,7 @@ const es: FrozenLandingMessages = {
     s3PrivacyLink: "Política de privacidad",
     s4Title: "4. Propiedad intelectual",
     s4Body:
-      "Todo el contenido de esta página — incluidos los nombres Watch Dive y DIVEROID, logotipos, textos, imágenes y vídeos — pertenece a OceanWick Inc. o a sus licenciantes. No puedes copiarlo ni reutilizarlo sin nuestro permiso.",
+      "Todo el contenido de esta página — incluidos los nombres Watch Dive y DIVEROID, logotipos, textos, imágenes y vídeos — pertenece a Diveroid Ltd o a sus licenciantes. No puedes copiarlo ni reutilizarlo sin nuestro permiso.",
     s5Title: "5. Descargo de responsabilidad",
     s5Body1:
       "Watch Dive es una ayuda al buceo diseñada para funcionar con un smartwatch compatible. Cuando se lance, está pensado para apoyar — no reemplazar — la formación de buceo adecuada, la certificación y un ordenador de buceo de respaldo. Bucea siempre dentro de tu formación y sigue prácticas de buceo seguras.",
@@ -2272,8 +2263,7 @@ const es: FrozenLandingMessages = {
     s6Body: "Estos términos se rigen por las leyes de la República de Corea.",
     s7Title: "7. Contacto",
     s7Body: "¿Preguntas? Escribe a help@diveroid.com.",
-    footerLine:
-      "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seúl, República de Corea · N.º de registro mercantil 716-81-03722",
+    footerLine: "Diveroid Ltd · Registrada en Inglaterra · N.º de empresa 16343651",
   },
 };
 
@@ -2336,7 +2326,7 @@ const fr: FrozenLandingMessages = {
     pending:
       "Si cette adresse peut recevoir des e-mails, le lien de confirmation arrive sous peu. Ouvrez-le pour terminer.",
     closed:
-      "La liste de prélancement est complète. Watch Dive s’ouvre à tous sur Kickstarter le 18 novembre 2026.",
+      "La liste de prélancement est complète. Watch Dive sera lancé sur Kickstarter en décembre.",
   },
   toasts: {
     resent: "Renvoyé. Regardez votre boîte de réception.",
@@ -2360,7 +2350,7 @@ const fr: FrozenLandingMessages = {
     h1: "Watch Dive. Votre montre connectée, sous l’eau.",
     h1Highlight: "sous l’eau",
     sub: "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau. Votre Apple Watch ou Galaxy Watch les affiche pendant la plongée.",
-    priceLine: "Early bird à environ 140 € sur Kickstarter. Ouverture le 18 novembre.",
+    priceLine: "Early bird à environ 140 € sur Kickstarter. Lancement en décembre.",
     backgroundAlt: "Plongeur explorant un récif corallien éclatant",
     sideImageAlt: "Visuel produit sous-marin de Watch Dive",
     stat1Label: "Caisson · 60 m",
@@ -2550,7 +2540,7 @@ const fr: FrozenLandingMessages = {
     q4: "Fonctionne-t-il en apnée ?",
     a4: "Oui. Plongée bouteille et apnée.",
     q5: "Quand Kickstarter ouvre-t-il ?",
-    a5: "Kickstarter ouvre le 18 novembre 2026. Laissez votre e-mail : nous envoyons le lien dès la mise en ligne.",
+    a5: "Lancement sur Kickstarter en décembre. La date exacte n’est pas encore fixée. Laissez votre e-mail : nous envoyons le lien dès la mise en ligne.",
     q6: "Ma montre connectée est-elle compatible ?",
     a6: "Dans ce lancement : Caisson + Appli prend en charge tous les autres modèles d’Apple Watch et les montres connectées Samsung suivantes : Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro, Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra, Galaxy Watch8, Galaxy Watch8 Classic et Galaxy Watch9. Le caisson Watch Dive utilise avec l’appli son capteur DIVEROID intégré de pression et de température de l’eau. Plus tard, et pas dans ce lancement : Appli seule est prévue pour Apple Watch Ultra, Apple Watch Ultra 2, Apple Watch Ultra 3 et Galaxy Watch Ultra2, qui embarquent leurs propres capteurs de profondeur (pression) et de température de l’eau.",
     q7: "Comment ça marche ?",
@@ -2569,7 +2559,7 @@ const fr: FrozenLandingMessages = {
   },
   countdown: {
     launched: "La campagne Kickstarter ouvre en ce moment même.",
-    opens: "Kickstarter ouvre le 18 novembre",
+    opens: "Lancement sur Kickstarter en décembre",
     ariaPending: "Temps restant avant le lancement Kickstarter",
     ariaLive:
       "{days} jours, {hours} heures, {minutes} minutes et {seconds} secondes avant le lancement Kickstarter",
@@ -2596,7 +2586,7 @@ const fr: FrozenLandingMessages = {
     confirmButton: "Confirmer mon e-mail",
     verifiedTitle: "L’e-mail de votre liste est confirmé",
     verifiedBody:
-      "Vous êtes sur la liste. Nous vous envoyons le lien Kickstarter dès l’ouverture de la campagne, le 18 novembre 2026.",
+      "Vous êtes sur la liste. Nous vous envoyons le lien Kickstarter dès l’ouverture de la campagne en décembre.",
     buddyTitle: "Invitez votre binôme",
     buddyBody: "Transmettez votre lien aux plongeurs avec qui vous descendez.",
     backHome: "Retour à Watch Dive",
@@ -2623,20 +2613,20 @@ const fr: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Politique de confidentialité — Watch Dive",
     metaDescription:
-      "Comment OceanWick Inc. traite vos informations lorsque vous vous inscrivez aux actualités de prélancement de Watch Dive.",
+      "Comment Diveroid Ltd traite vos informations lorsque vous vous inscrivez aux actualités de prélancement de Watch Dive.",
     back: "← Retour à l’accueil",
     h1: "Politique de confidentialité — Prélancement Watch Dive",
     effectiveLabel: "Date d’entrée en vigueur :",
     effectiveDate: "25 septembre 2026",
     intro1:
-      "La présente Politique de confidentialité explique comment OceanWick Inc. (« nous », « DIVEROID ») traite vos informations lorsque vous vous inscrivez sur la page de prélancement de Watch Dive pour recevoir des nouvelles de notre prochaine campagne Kickstarter.",
+      "La présente Politique de confidentialité explique comment Diveroid Ltd (« nous », « DIVEROID ») traite vos informations lorsque vous vous inscrivez sur la page de prélancement de Watch Dive pour recevoir des nouvelles de notre prochaine campagne Kickstarter.",
     intro2:
       "Cette page sert uniquement à recueillir l’intérêt pour le lancement. Ce n’est pas une boutique et aucun paiement n’y est traité.",
     s1Title: "1. Qui nous sommes",
-    s1Company: "Société : OceanWick Inc. (오션윅 주식회사)",
+    s1Company: "Société : Diveroid Ltd (marque : DIVEROID)",
     s1Rep: "Représentant : Jay Kim",
-    s1Addr: "Adresse : 1114, 145 Dosan-daero, Gangnam-gu, Séoul 06036, République de Corée",
-    s1Reg: "N° d’immatriculation : 716-81-03722",
+    s1Addr: "Immatriculée en : Angleterre (Royaume-Uni)",
+    s1Reg: "N° de société : 16343651",
     s1Contact: "Contact confidentialité : help@diveroid.com",
     s2Title: "2. Ce que nous collectons",
     s2Email:
@@ -2681,18 +2671,18 @@ const fr: FrozenLandingMessages = {
       "Nous pouvons mettre à jour cette Politique de confidentialité de temps à autre. La dernière version sera toujours disponible sur cette page, avec la date d’entrée en vigueur affichée en haut.",
     s10Title: "10. Contact",
     s10Body: "Des questions sur votre vie privée ? Écrivez à help@diveroid.com.",
-    footerLine: "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Séoul, République de Corée",
+    footerLine: "Diveroid Ltd · Immatriculée en Angleterre · N° de société 16343651",
   },
   terms: {
     metaTitle: "Conditions d’utilisation — Watch Dive",
     metaDescription:
-      "Conditions d’utilisation de la page de prélancement Watch Dive, exploitée par OceanWick Inc.",
+      "Conditions d’utilisation de la page de prélancement Watch Dive, exploitée par Diveroid Ltd",
     back: "← Retour à l’accueil",
     h1: "Conditions d’utilisation — Prélancement Watch Dive",
     effectiveLabel: "Date d’entrée en vigueur :",
     effectiveDate: "30 juillet 2026",
     intro:
-      "Bienvenue sur la page de prélancement de Watch Dive, exploitée par OceanWick Inc. (« nous », « DIVEROID »). En utilisant cette page et en vous inscrivant, vous acceptez les conditions suivantes.",
+      "Bienvenue sur la page de prélancement de Watch Dive, exploitée par Diveroid Ltd (« nous », « DIVEROID »). En utilisant cette page et en vous inscrivant, vous acceptez les conditions suivantes.",
     s1Title: "1. Ce qu’est cette page",
     s1Body:
       "Cette page vous permet d’enregistrer votre intérêt pour Watch Dive et de recevoir des nouvelles de notre prochaine campagne Kickstarter. Ce n’est pas une boutique. Aucun achat n’y est effectué et aucun paiement n’y est encaissé.",
@@ -2705,7 +2695,7 @@ const fr: FrozenLandingMessages = {
     s3PrivacyLink: "Politique de confidentialité",
     s4Title: "4. Propriété intellectuelle",
     s4Body:
-      "Tout le contenu de cette page — y compris les noms Watch Dive et DIVEROID, logos, textes, images et vidéos — appartient à OceanWick Inc. ou à ses concédants. Vous ne pouvez pas le copier ni le réutiliser sans notre autorisation.",
+      "Tout le contenu de cette page — y compris les noms Watch Dive et DIVEROID, logos, textes, images et vidéos — appartient à Diveroid Ltd ou à ses concédants. Vous ne pouvez pas le copier ni le réutiliser sans notre autorisation.",
     s5Title: "5. Avertissement",
     s5Body1:
       "Watch Dive est une aide à la plongée conçue pour fonctionner avec une montre connectée compatible. À sa sortie, il est destiné à accompagner — et non remplacer — une formation de plongée adéquate, la certification et un ordinateur de plongée de secours. Plongez toujours dans les limites de votre formation et respectez les pratiques de plongée sûres.",
@@ -2715,8 +2705,7 @@ const fr: FrozenLandingMessages = {
     s6Body: "Les présentes conditions sont régies par le droit de la République de Corée.",
     s7Title: "7. Contact",
     s7Body: "Des questions ? Écrivez à help@diveroid.com.",
-    footerLine:
-      "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Séoul, République de Corée · N° d’immatriculation 716-81-03722",
+    footerLine: "Diveroid Ltd · Immatriculée en Angleterre · N° de société 16343651",
   },
 };
 
@@ -2779,8 +2768,7 @@ const de: FrozenLandingMessages = {
   server: {
     pending:
       "Wenn diese Adresse E-Mails empfangen kann, kommt der Bestätigungslink gleich an. Öffne ihn, um fertig zu werden.",
-    closed:
-      "Die Vorstart-Liste ist voll. Watch Dive öffnet am 18. November 2026 auf Kickstarter für alle.",
+    closed: "Die Vorstart-Liste ist voll. Watch Dive startet im Dezember auf Kickstarter.",
   },
   toasts: {
     resent: "Erneut gesendet. Sieh in deinem Posteingang nach.",
@@ -2804,7 +2792,7 @@ const de: FrozenLandingMessages = {
     h1: "Watch Dive. Deine Smartwatch, auch unter Wasser.",
     h1Highlight: "auch unter Wasser",
     sub: "Tiefe und Wassertemperatur misst ein DIVEROID-Sensor im Gehäuse. Deine Apple Watch oder Galaxy Watch zeigt beides beim Tauchen an.",
-    priceLine: "Early Bird für rund 140 € auf Kickstarter. Start am 18. November.",
+    priceLine: "Early Bird für rund 140 € auf Kickstarter. Start im Dezember.",
     backgroundAlt: "Taucher erkundet ein farbenprächtiges Korallenriff",
     sideImageAlt: "Watch Dive Unterwasser-Produktaufnahme",
     stat1Label: "Gehäuse · 60 m",
@@ -2993,7 +2981,7 @@ const de: FrozenLandingMessages = {
     q4: "Funktioniert es beim Apnoetauchen?",
     a4: "Ja. Gerätetauchen und Apnoe.",
     q5: "Wann öffnet Kickstarter?",
-    a5: "Kickstarter öffnet am 18. November 2026. Lass deine E-Mail da, dann schicken wir den Link, sobald es losgeht.",
+    a5: "Start auf Kickstarter im Dezember. Das genaue Datum steht noch nicht fest. Lass deine E-Mail da, dann schicken wir den Link, sobald es losgeht.",
     q6: "Passt meine Smartwatch?",
     a6: "In diesem Launch: Gehäuse + App unterstützt alle anderen Apple Watch-Modelle sowie diese Samsung-Smartwatches: Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro, Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra, Galaxy Watch8, Galaxy Watch8 Classic und Galaxy Watch9. Das Watch-Dive-Gehäuse nutzt dafür seinen eingebauten DIVEROID-Druck- und Wassertemperatursensor zusammen mit der App. Später, und nicht in diesem Launch: Nur App ist für Apple Watch Ultra, Apple Watch Ultra 2, Apple Watch Ultra 3 und Galaxy Watch Ultra2 vorgesehen, die Tiefen- beziehungsweise Drucksensoren und Wassertemperatursensoren schon eingebaut haben.",
     q7: "Wie funktioniert das?",
@@ -3012,7 +3000,7 @@ const de: FrozenLandingMessages = {
   },
   countdown: {
     launched: "Die Kickstarter-Kampagne öffnet gerade.",
-    opens: "Kickstarter öffnet am 18. November",
+    opens: "Start auf Kickstarter im Dezember",
     ariaPending: "Zeit bis zum Kickstarter-Start",
     ariaLive:
       "{days} Tage, {hours} Stunden, {minutes} Minuten und {seconds} Sekunden bis zum Kickstarter-Start",
@@ -3039,7 +3027,7 @@ const de: FrozenLandingMessages = {
     confirmButton: "Meine E-Mail bestätigen",
     verifiedTitle: "Deine E-Mail ist bestätigt",
     verifiedBody:
-      "Du stehst auf der Liste. Wir mailen dir den Kickstarter-Link, sobald die Kampagne am 18. November 2026 öffnet.",
+      "Du stehst auf der Liste. Wir mailen dir den Kickstarter-Link, sobald die Kampagne im Dezember öffnet.",
     buddyTitle: "Nimm deinen Buddy mit",
     buddyBody: "Gib deinen Link an die Taucher weiter, mit denen du ins Wasser gehst.",
     backHome: "Zurück zu Watch Dive",
@@ -3066,20 +3054,20 @@ const de: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Datenschutzerklärung — Watch Dive",
     metaDescription:
-      "Wie OceanWick Inc. deine Daten behandelt, wenn du dich für Watch-Dive-Vorstart-Updates anmeldest.",
+      "Wie Diveroid Ltd deine Daten behandelt, wenn du dich für Watch-Dive-Vorstart-Updates anmeldest.",
     back: "← Zur Startseite",
     h1: "Datenschutzerklärung — Watch Dive Vorstart",
     effectiveLabel: "Gültig ab:",
     effectiveDate: "25. September 2026",
     intro1:
-      "Diese Datenschutzerklärung erläutert, wie OceanWick Inc. („wir“, „uns“, „DIVEROID“) deine Daten behandelt, wenn du dich auf der Watch-Dive-Vorstart-Seite anmeldest, um Updates zu unserer kommenden Kickstarter-Kampagne zu erhalten.",
+      "Diese Datenschutzerklärung erläutert, wie Diveroid Ltd („wir“, „uns“, „DIVEROID“) deine Daten behandelt, wenn du dich auf der Watch-Dive-Vorstart-Seite anmeldest, um Updates zu unserer kommenden Kickstarter-Kampagne zu erhalten.",
     intro2:
       "Diese Seite dient ausschließlich der Erfassung von Start-Interesse. Sie ist kein Shop und verarbeitet keine Zahlungen.",
     s1Title: "1. Wer wir sind",
-    s1Company: "Unternehmen: OceanWick Inc. (오션윅 주식회사)",
+    s1Company: "Unternehmen: Diveroid Ltd (Marke: DIVEROID)",
     s1Rep: "Vertreter: Jay Kim",
-    s1Addr: "Adresse: 1114, 145 Dosan-daero, Gangnam-gu, Seoul 06036, Republik Korea",
-    s1Reg: "Handelsregisternr.: 716-81-03722",
+    s1Addr: "Registriert in: England (Vereinigtes Königreich)",
+    s1Reg: "Unternehmensnr.: 16343651",
     s1Contact: "Datenschutz-Kontakt: help@diveroid.com",
     s2Title: "2. Was wir erheben",
     s2Email:
@@ -3123,18 +3111,18 @@ const de: FrozenLandingMessages = {
       "Wir können diese Datenschutzerklärung von Zeit zu Zeit aktualisieren. Die aktuelle Version ist stets auf dieser Seite verfügbar, mit dem Gültigkeitsdatum oben.",
     s10Title: "10. Kontakt",
     s10Body: "Fragen zu deinen Daten? Schreib an help@diveroid.com.",
-    footerLine: "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seoul, Republik Korea",
+    footerLine: "Diveroid Ltd · Registriert in England · Unternehmensnr. 16343651",
   },
   terms: {
     metaTitle: "Nutzungsbedingungen — Watch Dive",
     metaDescription:
-      "Nutzungsbedingungen der Watch-Dive-Vorstart-Seite, betrieben von OceanWick Inc.",
+      "Nutzungsbedingungen der Watch-Dive-Vorstart-Seite, betrieben von Diveroid Ltd",
     back: "← Zur Startseite",
     h1: "Nutzungsbedingungen — Watch Dive Vorstart",
     effectiveLabel: "Gültig ab:",
     effectiveDate: "30. Juli 2026",
     intro:
-      "Willkommen auf der Watch-Dive-Vorstart-Seite, betrieben von OceanWick Inc. („wir“, „uns“, „DIVEROID“). Mit der Nutzung dieser Seite und deiner Anmeldung stimmst du den folgenden Bedingungen zu.",
+      "Willkommen auf der Watch-Dive-Vorstart-Seite, betrieben von Diveroid Ltd („wir“, „uns“, „DIVEROID“). Mit der Nutzung dieser Seite und deiner Anmeldung stimmst du den folgenden Bedingungen zu.",
     s1Title: "1. Was diese Seite ist",
     s1Body:
       "Auf dieser Seite kannst du dein Interesse an Watch Dive registrieren und Updates zu unserer kommenden Kickstarter-Kampagne erhalten. Sie ist kein Shop. Hier wird nichts gekauft und keine Zahlung entgegengenommen.",
@@ -3147,7 +3135,7 @@ const de: FrozenLandingMessages = {
     s3PrivacyLink: "Datenschutzerklärung",
     s4Title: "4. Geistiges Eigentum",
     s4Body:
-      "Alle Inhalte dieser Seite — einschließlich der Namen Watch Dive und DIVEROID, Logos, Texte, Bilder und Videos — gehören OceanWick Inc. oder ihren Lizenzgebern. Ohne unsere Erlaubnis darfst du sie nicht kopieren oder weiterverwenden.",
+      "Alle Inhalte dieser Seite — einschließlich der Namen Watch Dive und DIVEROID, Logos, Texte, Bilder und Videos — gehören Diveroid Ltd oder ihren Lizenzgebern. Ohne unsere Erlaubnis darfst du sie nicht kopieren oder weiterverwenden.",
     s5Title: "5. Haftungsausschluss",
     s5Body1:
       "Watch Dive ist eine Tauchhilfe, die für die Nutzung mit einer kompatiblen Smartwatch entwickelt wurde. Nach der Veröffentlichung soll es eine ordentliche Tauchausbildung, Zertifizierung und einen Backup-Tauchcomputer unterstützen — nicht ersetzen. Tauche immer im Rahmen deiner Ausbildung und befolge sichere Tauchpraktiken.",
@@ -3157,8 +3145,7 @@ const de: FrozenLandingMessages = {
     s6Body: "Diese Bedingungen unterliegen dem Recht der Republik Korea.",
     s7Title: "7. Kontakt",
     s7Body: "Fragen? Schreib an help@diveroid.com.",
-    footerLine:
-      "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seoul, Republik Korea · Handelsregisternr. 716-81-03722",
+    footerLine: "Diveroid Ltd · Registriert in England · Unternehmensnr. 16343651",
   },
 };
 
@@ -3221,7 +3208,7 @@ const ptBR: FrozenLandingMessages = {
     pending:
       "Se este endereço recebe e-mail, o link de confirmação chega em instantes. Abra o link para concluir.",
     closed:
-      "A lista de pré-lançamento está cheia. O Watch Dive abre para todo mundo no Kickstarter em 18 de novembro de 2026.",
+      "A lista de pré-lançamento está cheia. O Watch Dive será lançado no Kickstarter em dezembro.",
   },
   toasts: {
     resent: "Enviado de novo. Confira sua caixa de entrada.",
@@ -3245,7 +3232,7 @@ const ptBR: FrozenLandingMessages = {
     h1: "Watch Dive. Seu smartwatch de sempre, debaixo d'água.",
     h1Highlight: "debaixo d'água",
     sub: "Um sensor DIVEROID dentro da caixa mede a profundidade e a temperatura da água. Seu Apple Watch ou Galaxy Watch mostra os números durante o mergulho.",
-    priceLine: "Early bird por cerca de R$ 800 no Kickstarter. Abre em 18 de novembro.",
+    priceLine: "Early bird por cerca de R$ 800 no Kickstarter. Lançamento em dezembro.",
     backgroundAlt: "Mergulhador explorando um recife de coral vibrante",
     sideImageAlt: "Foto subaquática do produto Watch Dive",
     stat1Label: "Caixa · 60 m",
@@ -3432,7 +3419,7 @@ const ptBR: FrozenLandingMessages = {
     q4: "Funciona para apneia?",
     a4: "Sim. Mergulho com cilindro e apneia.",
     q5: "Quando o Kickstarter abre?",
-    a5: "O Kickstarter abre em 18 de novembro de 2026. Deixe seu e-mail e mandamos o link assim que estiver no ar.",
+    a5: "Lançamento no Kickstarter em dezembro. A data exata ainda não foi definida. Deixe seu e-mail e mandamos o link assim que estiver no ar.",
     q6: "Meu smartwatch vai funcionar?",
     a6: "Neste lançamento: Caixa + App funciona com todos os outros modelos de Apple Watch e com estes smartwatches Samsung: Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro, Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra, Galaxy Watch8, Galaxy Watch8 Classic e Galaxy Watch9. A caixa Watch Dive usa com o app o seu sensor DIVEROID interno de pressão e temperatura da água. Mais adiante, e não entra neste lançamento: Só o App está planejado para Apple Watch Ultra, Apple Watch Ultra 2, Apple Watch Ultra 3 e Galaxy Watch Ultra2, que já trazem sensores próprios de profundidade (pressão) e de temperatura da água.",
     q7: "Como funciona?",
@@ -3451,7 +3438,7 @@ const ptBR: FrozenLandingMessages = {
   },
   countdown: {
     launched: "A campanha no Kickstarter está abrindo agora.",
-    opens: "Kickstarter abre em 18 de novembro",
+    opens: "Lançamento no Kickstarter em dezembro",
     ariaPending: "Tempo até o lançamento no Kickstarter",
     ariaLive:
       "{days} dias, {hours} horas, {minutes} minutos e {seconds} segundos até o lançamento no Kickstarter",
@@ -3478,7 +3465,7 @@ const ptBR: FrozenLandingMessages = {
     confirmButton: "Confirmar meu e-mail",
     verifiedTitle: "Seu e-mail está confirmado",
     verifiedBody:
-      "Você está na lista. Mandamos o link do Kickstarter assim que a campanha abrir, em 18 de novembro de 2026.",
+      "Você está na lista. Mandamos o link do Kickstarter assim que a campanha abrir em dezembro.",
     buddyTitle: "Chame seu parceiro",
     buddyBody: "Passe seu link para os mergulhadores com quem você entra na água.",
     backHome: "Voltar ao Watch Dive",
@@ -3505,20 +3492,20 @@ const ptBR: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Política de Privacidade — Watch Dive",
     metaDescription:
-      "Como a OceanWick Inc. trata suas informações quando você se cadastra para receber novidades do pré-lançamento do Watch Dive.",
+      "Como a Diveroid Ltd trata suas informações quando você se cadastra para receber novidades do pré-lançamento do Watch Dive.",
     back: "← Voltar ao início",
     h1: "Política de Privacidade — Pré-lançamento Watch Dive",
     effectiveLabel: "Data de vigência:",
     effectiveDate: "25 de setembro de 2026",
     intro1:
-      'Esta Política de Privacidade explica como a OceanWick Inc. ("nós", "DIVEROID") trata suas informações quando você se cadastra na página de pré-lançamento do Watch Dive para receber novidades sobre nossa próxima campanha no Kickstarter.',
+      'Esta Política de Privacidade explica como a Diveroid Ltd ("nós", "DIVEROID") trata suas informações quando você se cadastra na página de pré-lançamento do Watch Dive para receber novidades sobre nossa próxima campanha no Kickstarter.',
     intro2:
       "Esta página serve apenas para registrar interesse no lançamento. Não é uma loja e não processa nenhum pagamento.",
     s1Title: "1. Quem somos",
-    s1Company: "Empresa: OceanWick Inc. (오션윅 주식회사)",
+    s1Company: "Empresa: Diveroid Ltd (marca: DIVEROID)",
     s1Rep: "Representante: Jay Kim",
-    s1Addr: "Endereço: 1114, 145 Dosan-daero, Gangnam-gu, Seul 06036, República da Coreia",
-    s1Reg: "Registro empresarial nº: 716-81-03722",
+    s1Addr: "Registrada em: Inglaterra (Reino Unido)",
+    s1Reg: "Nº da empresa: 16343651",
     s1Contact: "Contato de privacidade: help@diveroid.com",
     s2Title: "2. O que coletamos",
     s2Email:
@@ -3562,18 +3549,18 @@ const ptBR: FrozenLandingMessages = {
       "Podemos atualizar esta Política de Privacidade de tempos em tempos. A versão mais recente estará sempre disponível nesta página, com a data de vigência no topo.",
     s10Title: "10. Contato",
     s10Body: "Dúvidas sobre sua privacidade? Escreva para help@diveroid.com.",
-    footerLine: "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seul, República da Coreia",
+    footerLine: "Diveroid Ltd · Registrada na Inglaterra · Nº da empresa 16343651",
   },
   terms: {
     metaTitle: "Termos de Uso — Watch Dive",
     metaDescription:
-      "Termos de Uso da página de pré-lançamento do Watch Dive, operada pela OceanWick Inc.",
+      "Termos de Uso da página de pré-lançamento do Watch Dive, operada pela Diveroid Ltd",
     back: "← Voltar ao início",
     h1: "Termos de Uso — Pré-lançamento Watch Dive",
     effectiveLabel: "Data de vigência:",
     effectiveDate: "30 de julho de 2026",
     intro:
-      'Bem-vindo à página de pré-lançamento do Watch Dive, operada pela OceanWick Inc. ("nós", "DIVEROID"). Ao usar esta página e se cadastrar, você concorda com os termos a seguir.',
+      'Bem-vindo à página de pré-lançamento do Watch Dive, operada pela Diveroid Ltd ("nós", "DIVEROID"). Ao usar esta página e se cadastrar, você concorda com os termos a seguir.',
     s1Title: "1. O que é esta página",
     s1Body:
       "Esta página permite registrar seu interesse no Watch Dive e receber novidades sobre nossa próxima campanha no Kickstarter. Não é uma loja. Nenhuma compra é feita e nenhum pagamento é cobrado aqui.",
@@ -3586,7 +3573,7 @@ const ptBR: FrozenLandingMessages = {
     s3PrivacyLink: "Política de Privacidade",
     s4Title: "4. Propriedade intelectual",
     s4Body:
-      "Todo o conteúdo desta página — incluindo os nomes Watch Dive e DIVEROID, logos, textos, imagens e vídeos — pertence à OceanWick Inc. ou a seus licenciadores. Você não pode copiá-lo nem reutilizá-lo sem nossa permissão.",
+      "Todo o conteúdo desta página — incluindo os nomes Watch Dive e DIVEROID, logos, textos, imagens e vídeos — pertence à Diveroid Ltd ou a seus licenciadores. Você não pode copiá-lo nem reutilizá-lo sem nossa permissão.",
     s5Title: "5. Isenção de responsabilidade",
     s5Body1:
       "O Watch Dive é um auxílio ao mergulho projetado para funcionar com um smartwatch compatível. Quando lançado, destina-se a apoiar — não substituir — o treinamento adequado de mergulho, a certificação e um computador de mergulho reserva. Mergulhe sempre dentro do seu treinamento e siga práticas seguras de mergulho.",
@@ -3596,8 +3583,7 @@ const ptBR: FrozenLandingMessages = {
     s6Body: "Estes termos são regidos pelas leis da República da Coreia.",
     s7Title: "7. Contato",
     s7Body: "Dúvidas? Escreva para help@diveroid.com.",
-    footerLine:
-      "OceanWick Inc. · 145 Dosan-daero, Gangnam-gu, Seul, República da Coreia · Registro empresarial nº 716-81-03722",
+    footerLine: "Diveroid Ltd · Registrada na Inglaterra · Nº da empresa 16343651",
   },
 };
 

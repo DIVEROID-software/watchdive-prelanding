@@ -8,7 +8,8 @@ import { toast } from "sonner";
 import { track } from "@vercel/analytics";
 import { joinWaitlist, pollVerification, getReferralCount } from "@/lib/api/waitlist.functions";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { LaunchCountdown } from "@/components/launch-countdown";
+import { LaunchNotice } from "@/components/launch-notice";
+import { CookieSettingsLink } from "@/components/cookie-choice-bar";
 import { ReviewAvatar } from "@/components/review-avatar";
 import { ReviewTicker } from "@/components/review-ticker";
 import { WaitlistProgress } from "@/components/waitlist-progress";
@@ -20,9 +21,9 @@ import {
   hasMetaMeasurementConsent,
   newMetaEventId,
   trackMetaCustom,
+  trackMetaEmailVerified,
   trackMetaLead,
   trackMetaPhoneLead,
-  trackMetaSubmitApplication,
 } from "@/lib/metaPixel";
 import { getAttribution } from "@/lib/attribution";
 import { trackClarity } from "@/lib/clarity";
@@ -111,70 +112,6 @@ export function DesignFrozenLanding() {
       window.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
       delete document.documentElement.dataset.wdChat;
-    };
-  }, []);
-
-  // While the cookie choice owns the bottom of the first screen, the
-  // paragraph under the product photo has to start below that screen.
-  // The photo's position depends on the headline, so the gap is measured.
-  useEffect(() => {
-    const frame = document.querySelector(".wd-hero-frame");
-    if (!(frame instanceof HTMLElement)) return;
-    const tail = document.querySelector(".wd-stat-last");
-    const side = document.querySelector("header .hidden.lg\\:block");
-    const apply = () => {
-      const open = document.documentElement.dataset.wdCookie === "open";
-      const desktop = window.innerWidth >= 1024;
-      frame.style.marginBottom = "";
-      if (tail instanceof HTMLElement) tail.style.marginTop = "";
-      if (side instanceof HTMLElement) {
-        side.style.maxHeight = "";
-        side.style.overflow = "";
-      }
-      if (!open) return;
-      if (!desktop) {
-        const gap = window.innerHeight - frame.getBoundingClientRect().bottom;
-        frame.style.marginBottom = `${Math.max(0, Math.ceil(gap) + 8)}px`;
-        return;
-      }
-      // The cookie bar owns the bottom of the first desktop screen. The
-      // stat that would sit in it, and everything after it, starts below
-      // the fold. The product photo stops above the bar.
-      if (tail instanceof HTMLElement) {
-        const top = tail.getBoundingClientRect().top;
-        if (top < window.innerHeight) {
-          tail.style.marginTop = `${Math.ceil(window.innerHeight - top + 12)}px`;
-        }
-      }
-      if (side instanceof HTMLElement) {
-        const space = Number.parseFloat(
-          getComputedStyle(document.documentElement).getPropertyValue("--wd-cookie-space"),
-        );
-        const limit = window.innerHeight - (Number.isFinite(space) ? space : 0);
-        const bottom = side.getBoundingClientRect().bottom;
-        if (bottom > limit) {
-          const height = side.getBoundingClientRect().height - (bottom - limit);
-          side.style.maxHeight = `${Math.max(160, Math.floor(height))}px`;
-          side.style.overflow = "hidden";
-        }
-      }
-    };
-    apply();
-    const observer = new MutationObserver(apply);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-wd-cookie"],
-    });
-    window.addEventListener("resize", apply);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", apply);
-      frame.style.marginBottom = "";
-      if (tail instanceof HTMLElement) tail.style.marginTop = "";
-      if (side instanceof HTMLElement) {
-        side.style.maxHeight = "";
-        side.style.overflow = "";
-      }
     };
   }, []);
 
@@ -635,8 +572,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // cheap: twelve polls on a jittered backoff over about five minutes, paused
   // whenever the tab is hidden, and never more than one request in flight. The
   // lead is confirmed server-side either way; this only drives the live
-  // hand-off and the pixel leg, which fires here rather than at submit because
-  // an unconfirmed address is not a conversion.
+  // hand-off and the `EmailVerified` pixel leg. `Lead` already fired at submit.
   useEffect(() => {
     if (!handle || verified) return;
 
@@ -676,7 +612,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           setVerified(true);
           track("waitlist_verified", { source: id });
           if (res.browserLead) {
-            trackMetaLead(res.browserLead.eventId, res.browserLead.source);
+            trackMetaEmailVerified(res.browserLead.eventId, res.browserLead.source);
             trackGoogleLead(res.browserLead.eventId, res.browserLead.source);
             trackClarity("generate_lead", res.browserLead.source);
             if (res.browserLead.hasPhone) {
@@ -804,12 +740,13 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });
-          // Volume for delivery to optimise on, which one confirmation a week
-          // cannot provide. `Lead` still fires only after the address is
-          // confirmed, so the truth metric is unchanged. A tripped honeypot is
-          // knowable right here, and a bot is not something to optimise for.
+          // `Lead` fires here, at the accepted submit (2026-09-26): one
+          // confirmation a week is too little for delivery to optimise on. The
+          // server sent the Conversions API leg under the same event id, so
+          // Meta counts one Lead. A tripped honeypot is knowable right here,
+          // and a bot is not something to optimise for.
           if (res.status === "pending" && !hp.trim()) {
-            trackMetaSubmitApplication(submitEventId, id);
+            trackMetaLead(submitEventId, id);
             trackGoogleSubmit(submitEventId, id);
             trackClarity("sign_up", id);
           }
@@ -960,7 +897,10 @@ function Hero() {
       </div>
       <div className="relative z-10 mx-auto grid max-w-6xl gap-8 px-5 pb-16 pt-4 sm:pt-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.95fr)] lg:items-start lg:gap-14 lg:pt-14">
         <div className="flex flex-col gap-5 lg:gap-7 lg:py-10">
-          <div className="space-y-5">
+          {/* Phone order (below lg) puts the ask in the first screen: headline,
+              price, then the email field and the $149 button, and only then the
+              product photo. Desktop keeps the source order below. */}
+          <div className="space-y-5 max-lg:-order-3">
             <p className="inline-flex w-fit items-center gap-2 rounded-full bg-[#3D2683] px-3 py-1 text-caption text-[#F6FAFC]">
               <span className="size-1.5 shrink-0 rounded-full bg-[#36A9E1]" aria-hidden />
               {m.hero.badge}
@@ -970,11 +910,12 @@ function Hero() {
               <span className="text-[#36A9E1]">{h1Highlight}</span>
               {h1After}
             </h1>
+          </div>
 
-            {/* The product is the whole idea, and it has to be seen before the ask.
-                Desktop shows it in the right-hand column; on a phone that column
-                sits below everything, so a shorter crop goes here, directly under
-                the headline, so both win the first screen. One frame, no inner plate. */}
+          <div className="space-y-5">
+            {/* The product is the whole idea. Desktop shows it in the right-hand
+                column; on a phone that column sits below everything, so a shorter
+                crop goes here, right after the form. One frame, no inner plate. */}
             <div className="wd-hero-frame overflow-hidden rounded-[1.5rem] lg:hidden">
               <SectionImage
                 src={heroSideImage}
@@ -1069,7 +1010,7 @@ function Hero() {
             ))}
           </div>
 
-          <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 max-lg:-order-2">
             <span className="text-body text-[#F6FAFC]/75 line-through">{m.hero.wasPrice}</span>
             <span className="text-subhead text-white">{m.hero.nowPrice}</span>
             <span className="rounded-full bg-[#36A9E1] px-4 py-1.5 text-caption uppercase text-[#201748]">
@@ -1081,11 +1022,11 @@ function Hero() {
           <ReferralWelcome />
 
           <div className="max-w-xl space-y-6">
-            <LaunchCountdown />
+            <LaunchNotice />
             <WaitlistProgress />
           </div>
 
-          <div className="max-w-xl">
+          <div className="max-w-xl max-lg:-order-1">
             <EmailForm id="hero" />
           </div>
 
@@ -1849,7 +1790,7 @@ function OfferSection() {
           {leadAfter}
         </p>
         <div className="mt-7 rounded-2xl border border-white/12 bg-white/[0.06] p-5 text-left backdrop-blur">
-          <LaunchCountdown />
+          <LaunchNotice />
           <div className="my-5 h-px bg-white/10" />
           <WaitlistProgress />
         </div>
@@ -2039,6 +1980,7 @@ function Footer() {
           >
             {m.footer.privacy}
           </Link>
+          <CookieSettingsLink className="inline-flex min-h-11 items-center px-3 underline-offset-4 hover:underline" />
         </nav>
         <p className="mx-auto mt-6 max-w-2xl text-xs text-[#F6FAFC]">
           {formatMessage(m.footer.nvidiaTrademark, { year })}
