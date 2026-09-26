@@ -76,8 +76,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // the email form before the product photo (flex order only; desktop order
   // unchanged), the countdown became a static December notice, and the
   // footer gained a Cookie settings link.
+  // 2026-09-26: mobile optimization adds intrinsic form widths, wrapping
+  // footer links and compact app tabs; section order and signup flow stay.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "e899ebdf949949e4094ad18c1348176470a064eb986ccc9b675991903e3d1a7a");
+  assert.equal(digest, "9a2bdd7b4306e5b6a5edcc74f914a3222447a2f5c4a7427ceec53158ed4388a6");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -111,6 +113,8 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
 });
 
 test("production stylesheet stays at the approved locale-typography baseline", () => {
+  // Mobile pass: fluid headings, full product crop, compact chat launcher,
+  // wrapping translated copy and 16px inputs; desktop scale stays unchanged.
   // 2026-09-26: Pangram and Spoqa stay, with the 40/56 display scale, 32px
   // titles, 15px body, caption tracking 0, and document scrolling. The notify
   // bar reserves padding-bottom. While the cookie choice is open, that
@@ -120,7 +124,7 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // pushed the phone photo below a tall cookie dialog is gone.
   assert.equal(
     sha256(read("src/styles.css")),
-    "d420c8470300c1c0e05341fc0ec711b68a7ad3f6a273b4e3911070bb67bdaece",
+    "db9e1540d9efdf4d95efb9122c1c63137be0d4cd4b34d53d9b10f0715d046b67",
   );
 });
 

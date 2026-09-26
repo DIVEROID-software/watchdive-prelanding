@@ -182,7 +182,7 @@ export function CookieChoiceBar() {
   }
 
   return (
-    <div ref={barRef} className="fixed inset-x-0 bottom-0 z-[10000] px-2 pb-2 sm:px-4 sm:pb-3">
+    <div ref={barRef} className="fixed inset-x-0 bottom-0 z-[10000] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-3">
       <div
         role="dialog"
         aria-label={copy.body}
@@ -197,14 +197,14 @@ export function CookieChoiceBar() {
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
           <button
             type="button"
-            className="inline-flex min-h-9 items-center justify-center rounded-full border border-[#EDE6FF]/70 px-3 text-xs font-medium text-[#EDE6FF] sm:text-sm"
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#EDE6FF]/70 px-3 text-xs font-medium text-[#EDE6FF] sm:text-sm"
             onClick={() => choose("denied")}
           >
             {copy.decline}
           </button>
           <button
             type="button"
-            className="inline-flex min-h-9 items-center justify-center rounded-full bg-[#3D2683] px-3 text-xs font-medium text-white sm:text-sm"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#3D2683] px-3 text-xs font-medium text-white sm:text-sm"
             onClick={() => choose("granted")}
           >
             {copy.allow}
