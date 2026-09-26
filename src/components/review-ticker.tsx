@@ -49,13 +49,13 @@ function Card({
   return (
     <figure className="flex w-[19rem] shrink-0 flex-col gap-3 rounded-2xl border border-white/12 bg-white/[0.06] p-5 backdrop-blur sm:w-[22rem]">
       <Stars rating={review.rating} />
-      <blockquote className="text-sm leading-relaxed text-white/85">
+      <blockquote className="text-body leading-relaxed text-[#F6FAFC]">
         {betaReviewBody(review, reviewBodies)}
       </blockquote>
-      <figcaption className="mt-auto flex items-center gap-2.5 text-xs text-white/50">
+      <figcaption className="mt-auto flex items-center gap-2.5 text-xs text-[#F6FAFC]">
         <ReviewAvatar review={review} />
         <span className="min-w-0">
-          <span className="font-semibold text-white/75">{review.name}</span>
+          <span className="font-semibold">{review.name}</span>
           {" · "}
           {review.city}, {countryLabels[review.country]}
         </span>
@@ -171,25 +171,25 @@ export function ReviewTicker() {
     <section
       ref={section}
       id="beta-reviews"
-      className="relative overflow-hidden bg-[color:var(--color-deep-2)] py-16 sm:py-20"
+      className="relative overflow-hidden bg-[color:var(--color-deep-2)] py-20 sm:py-28"
       aria-labelledby="beta-reviews-heading"
     >
       <div className="mx-auto max-w-6xl px-5">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-cyan-glow)]">
+        <p className="text-center text-caption uppercase text-[#36A9E1]">
           {messages.kicker}
         </p>
         <h2
           id="beta-reviews-heading"
-          className="mt-3 text-center text-2xl font-bold text-white sm:text-3xl"
+          className="mt-3 text-center text-title text-white"
         >
           {messages.h2.replace("{count}", String(PUBLISHABLE_REVIEWS.length))}
         </h2>
-        <p className="mx-auto mt-3 max-w-xl text-center text-sm leading-relaxed text-white/60">
+        <p className="mx-auto mt-3 max-w-xl text-center text-body leading-relaxed text-[#F6FAFC]">
           {messages.sub}
         </p>
         {/* Saying what is missing is what makes the rest believable, and keeps
             the set honestly representative rather than curated for praise. */}
-        <p className="mx-auto mt-2 max-w-xl text-center text-xs leading-relaxed text-white/40">
+        <p className="mx-auto mt-2 max-w-xl text-center text-caption leading-relaxed text-[#F6FAFC]">
           {messages.disclosure
             .replace("{published}", String(PUBLISHABLE_REVIEWS.length))
             .replace("{total}", String(BETA_REVIEWS.length))}

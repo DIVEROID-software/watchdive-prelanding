@@ -53,11 +53,11 @@ export function WaitlistProgress({
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-sm font-semibold text-white">
           <span className="text-[color:var(--color-cyan-glow)]">{formatCount(progress.total)}</span>
-          <span className="text-white/60">{countLineTail}</span>
+          <span className="text-[#F6FAFC]">{countLineTail}</span>
         </p>
         <p
           className={`text-xs font-semibold ${
-            scarce ? "text-[color:var(--color-cyan-glow)]" : "text-white/55"
+            scarce ? "text-[color:var(--color-cyan-glow)]" : "text-[#F6FAFC]"
           }`}
         >
           {progress.full
@@ -78,12 +78,12 @@ export function WaitlistProgress({
           // scaleX rather than width: animating width relayouts and repaints
           // every frame, which is the cost this page just spent a day removing.
           // A transform stays on the compositor.
-          className="h-full w-full origin-left rounded-full bg-gradient-to-r from-[color:var(--color-cyan)] to-[color:var(--color-cyan-glow)] transition-transform duration-700 ease-out"
+          className="h-full w-full origin-left rounded-full bg-[color:var(--color-cyan)] transition-transform duration-700 ease-out"
           style={{ transform: `scaleX(${revealed ? progress.percent / 100 : 0})` }}
         />
       </div>
 
-      <p className="mt-2 text-[11px] leading-relaxed text-white/45">
+      <p className="mt-2 text-[11px] leading-relaxed text-[#F6FAFC]">
         {messages.capNote.replace("{cap}", formatCount(progress.cap))}
       </p>
     </div>

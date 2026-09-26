@@ -22,7 +22,8 @@ function sha256(value: string): string {
 /**
  * Fingerprint the production JSX skeleton while deliberately ignoring copy.
  * Locale work may replace text nodes and text-valued attributes, but it may not
- * replace elements, attributes, class names, media, forms, or component order.
+ * replace elements, attributes, class names, media, or forms. The component
+ * order below is the founder-directed content flow approved on 2026-08-03.
  */
 function jsxStructure(sourceText: string, hostElementsOnly = false): string {
   const source = ts.createSourceFile(
@@ -66,25 +67,27 @@ function jsxStructure(sourceText: string, hostElementsOnly = false): string {
 
 test("production landing DOM and Tailwind skeleton remain frozen", () => {
   const source = read("src/routes/index.tsx");
-  // Baseline advanced 2026-08-01 on the founder's direct instructions: larger
-  // 50%-off badge, hero gift line and footer operator line removed, and a
-  // language switcher added to the launch banner.
+  // 2026-09-26: the four-wave design pass is ported onto this tree.
+  // Section order, both email forms, #offer-form and #beta-reviews stay.
+  // Classes change for one hero surface, the type scale, mid-violet buttons,
+  // the two-row wordmark header, a single-frame product photo, and a notify
+  // bar portaled to the document. Measurement calls in the form stay.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "1f803abd147035d0b8959fe35a34637c33b92cb601045815c1a07e732770afb4");
+  assert.equal(digest, "8e9c9a9a7f9cd5fd60a58ab9fcb5947bc08f98cde6282ae167ac4a33db90c64e");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
     "<Hero />",
     "<ValueSection />",
-    "<FunctionsSection />",
     "<HowItWorks />",
-    "<AppEcosystem />",
-    "<ReviewTicker />",
     "<Compatibility />",
+    "<FunctionsSection />",
+    "<AppEcosystem />",
     "<ActionCameras />",
     "<SafetySection />",
-    "<OfferSection />",
+    "<ReviewTicker />",
     "<Credentials />",
+    "<OfferSection />",
     "<FAQ />",
     "<Footer />",
   ];
@@ -104,16 +107,23 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
 });
 
 test("production stylesheet stays at the approved locale-typography baseline", () => {
+  // 2026-09-26: Pangram and Spoqa stay, with the 40/56 display scale, 32px
+  // titles, 15px body, caption tracking 0, and document scrolling. The notify
+  // bar reserves padding-bottom. While the cookie choice is open, that
+  // padding matches the measured cookie bar and the notify link is hidden.
+  // Brand hex tokens stay; the nested scrollport does not return.
   assert.equal(
     sha256(read("src/styles.css")),
-    "d86b7c11f0cc24ac09d9e45de205bf0923cd9d75d5faae5f49dc8e853b9639d4",
+    "cd38c44b709ff70bf315e44493518100e35e20cd8fba80179995a1ad8c8272d8",
   );
 });
 
 test("testimonial localization preserves the frozen host DOM and classes", () => {
+  // 2026-09-26: same host elements and marquee. Body, name, and disclosure
+  // use the type scale and #F6FAFC on the deep-violet section.
   assert.equal(
     sha256(jsxStructure(read("src/components/review-ticker.tsx"), true)),
-    "1963e9a5b58171b59a165d15f040b6cb5964d715c7aa20f757a74e2c77cb4804",
+    "301336a35061d8b4ce5c46e2328c8c515c58939cf4b3285dfc9c822341568002",
   );
 });
 

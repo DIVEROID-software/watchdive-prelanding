@@ -5,11 +5,11 @@
 // tested rather than eyeballed in a browser.
 
 /**
- * Fixed by the founder on 2026-07-30. The hour is the part still worth a second
- * look — it decides what "2 days left" flips to midnight in — and changing it
- * is a one-line edit here rather than a hunt through components.
+ * Reset by the founder on 2026-08-09 to 18 November 2026. No new launch hour
+ * was specified, so the countdown preserves the existing UTC-midnight
+ * convention until an exact Kickstarter go-live time is confirmed.
  */
-export const KICKSTARTER_LAUNCH_ISO = "2026-08-10T00:00:00.000Z";
+export const KICKSTARTER_LAUNCH_ISO = "2026-11-18T00:00:00.000Z";
 
 export const KICKSTARTER_LAUNCH_MS = Date.parse(KICKSTARTER_LAUNCH_ISO);
 

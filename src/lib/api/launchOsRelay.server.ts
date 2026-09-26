@@ -143,6 +143,10 @@ const FORBIDDEN_PII_KEYS = new Set([
   "fbp",
   "fbc",
   "fbclid",
+  "gclid",
+  "gbraid",
+  "wbraid",
+  "ttclid",
 ]);
 
 type LaunchOsEventName =

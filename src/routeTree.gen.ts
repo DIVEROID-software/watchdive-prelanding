@@ -16,6 +16,7 @@ import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale.index'
 import { Route as RCodeRouteImport } from './routes/r.$code'
+import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
 import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
 import { Route as LocaleTermsRouteImport } from './routes/$locale.terms'
 import { Route as LocalePrivacyRouteImport } from './routes/$locale.privacy'
@@ -56,6 +57,11 @@ const RCodeRoute = RCodeRouteImport.update({
   path: '/r/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBehaviorRoute = AdminBehaviorRouteImport.update({
+  id: '/admin/behavior',
+  path: '/admin/behavior',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleVerifyRoute = LocaleVerifyRouteImport.update({
   id: '/verify',
   path: '/verify',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/$locale/privacy': typeof LocalePrivacyRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
+  '/admin/behavior': typeof AdminBehaviorRoute
   '/r/$code': typeof RCodeRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/$locale/privacy': typeof LocalePrivacyRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
+  '/admin/behavior': typeof AdminBehaviorRoute
   '/r/$code': typeof RCodeRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/$locale/privacy': typeof LocalePrivacyRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
+  '/admin/behavior': typeof AdminBehaviorRoute
   '/r/$code': typeof RCodeRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/$locale/privacy'
     | '/$locale/terms'
     | '/$locale/verify'
+    | '/admin/behavior'
     | '/r/$code'
     | '/$locale/'
     | '/$locale/r/$code'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/$locale/privacy'
     | '/$locale/terms'
     | '/$locale/verify'
+    | '/admin/behavior'
     | '/r/$code'
     | '/$locale'
     | '/$locale/r/$code'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/$locale/privacy'
     | '/$locale/terms'
     | '/$locale/verify'
+    | '/admin/behavior'
     | '/r/$code'
     | '/$locale/'
     | '/$locale/r/$code'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   VerifyRoute: typeof VerifyRoute
+  AdminBehaviorRoute: typeof AdminBehaviorRoute
   RCodeRoute: typeof RCodeRoute
 }
 
@@ -215,6 +228,13 @@ declare module '@tanstack/react-router' {
       path: '/r/$code'
       fullPath: '/r/$code'
       preLoaderRoute: typeof RCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/behavior': {
+      id: '/admin/behavior'
+      path: '/admin/behavior'
+      fullPath: '/admin/behavior'
+      preLoaderRoute: typeof AdminBehaviorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/verify': {
@@ -273,6 +293,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   VerifyRoute: VerifyRoute,
+  AdminBehaviorRoute: AdminBehaviorRoute,
   RCodeRoute: RCodeRoute,
 }
 export const routeTree = rootRouteImport

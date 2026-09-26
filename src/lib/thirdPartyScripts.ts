@@ -7,7 +7,7 @@
 // unaffected — a stylesheet cannot read a fragment.
 import { stripLocalePrefix } from "./i18n/locale.ts";
 
-const TOKEN_BEARING_ROUTES = new Set(["/verify"]);
+const TOKEN_BEARING_ROUTES = new Set(["/verify", "/admin/behavior"]);
 
 export const SUPPORT_WIDGET_SRC =
   "https://web-production-2bc5f.up.railway.app/widget.js?v=20260801a&pos=left&label=Live%20chat";

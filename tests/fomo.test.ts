@@ -29,8 +29,8 @@ import {
 // --- countdown -------------------------------------------------------------
 
 test("the countdown splits the remaining time into whole units", () => {
-  const target = Date.parse("2026-08-10T00:00:00.000Z");
-  const now = Date.parse("2026-08-07T21:45:30.000Z");
+  const target = Date.parse("2026-11-18T00:00:00.000Z");
+  const now = Date.parse("2026-11-15T21:45:30.000Z");
 
   assert.deepEqual(countdownFrom(now, target), {
     days: 2,
@@ -42,7 +42,7 @@ test("the countdown splits the remaining time into whole units", () => {
 });
 
 test("the countdown reads zero and launched once the date passes", () => {
-  const target = Date.parse("2026-08-10T00:00:00.000Z");
+  const target = Date.parse("2026-11-18T00:00:00.000Z");
 
   // A timer that ticks into negative numbers is worse than a changed message.
   for (const now of [target, target + 1, target + 86_400_000]) {
@@ -57,7 +57,7 @@ test("the countdown reads zero and launched once the date passes", () => {
 });
 
 test("the launch instant is the announced date", () => {
-  assert.equal(new Date(KICKSTARTER_LAUNCH_MS).toISOString(), "2026-08-10T00:00:00.000Z");
+  assert.equal(new Date(KICKSTARTER_LAUNCH_MS).toISOString(), "2026-11-18T00:00:00.000Z");
 });
 
 test("units are padded so the row does not jitter", () => {

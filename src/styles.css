@@ -4,14 +4,57 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Official DIVEROID faces. Pangram has no Hangul, so Korean falls through to Spoqa. */
+@font-face {
+  font-family: "Pangram Sans";
+  src: url("./assets/brand/fonts/PPPangramSans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pangram Sans";
+  src: url("./assets/brand/fonts/PPPangramSans-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pangram Sans";
+  src: url("./assets/brand/fonts/PPPangramSans-Semibold.woff2") format("woff2");
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Spoqa Han Sans Neo";
+  src: url("./assets/brand/fonts/SpoqaHanSansNeo-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Spoqa Han Sans Neo";
+  src: url("./assets/brand/fonts/SpoqaHanSansNeo-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Spoqa Han Sans Neo";
+  src: url("./assets/brand/fonts/SpoqaHanSansNeo-Bold.woff2") format("woff2");
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /*
  * Design system definition.
  *
  * The @theme inline block maps CSS custom properties to Tailwind utility
  * classes (e.g. --color-primary -> bg-primary, text-primary).
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
+ * Color values are the DIVEROID brand hex tokens. Do not invent nearby colors.
  *
  * To add a new semantic color:
  * 1. Add the variable to :root (light value) and .dark (dark value)
@@ -59,8 +102,24 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Pangram Sans", "Spoqa Han Sans Neo", "Hiragino Sans", "PingFang SC", "PingFang TC", "Noto Sans JP", "Noto Sans SC", "Noto Sans TC", "Helvetica Neue", system-ui, sans-serif;
   --color-deep: var(--deep);
+  /* DIVEROID type scale: display 40 on small screens, 56 from 1024px,
+     then 32 → 28 → 24, then 18 (heading) and 15 (body). */
+  --text-display: 2.5rem;
+  --text-display--line-height: 1.15;
+  --text-title: 2rem;
+  --text-title--line-height: 1.25;
+  --text-heading: 1.75rem;
+  --text-heading--line-height: 1.3;
+  --text-subhead: 1.5rem;
+  --text-subhead--line-height: 1.35;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.45;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.5;
+  --text-caption: 0.875rem;
+  --text-caption--line-height: 1.4;
   --color-deep-2: var(--deep-2);
   --color-cyan: var(--cyan);
   --color-cyan-glow: var(--cyan-glow);
@@ -68,33 +127,43 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  /* Deep ocean palette */
-  --deep: oklch(0.21 0.085 287);
-  --deep-2: oklch(0.13 0.065 287);
-  --cyan: oklch(0.696 0.129 235);
-  --cyan-glow: oklch(0.8 0.11 232);
-  --surface: oklch(0.26 0.09 287);
+  /* Brand radii: sm 4px, md 8px, lg 12px. Tailwind --radius is the card radius. */
+  --radius: 0.5rem;
+  /* The bottom toolbar is layout, not an overlay. 4rem clears 44px; the safe
+     area is added so the bar and the padding stay the same height. While the
+     cookie choice is open, --wd-cookie-space replaces this for page padding. */
+  --wd-bar-size: 4rem;
+  --wd-bar-space: calc(var(--wd-bar-size) + env(safe-area-inset-bottom, 0px));
+  /* DIVEROID core palette. deep-2 is the dark ground, cyan is surface blue, cyan-glow is mark lavender for type on dark. */
+  --deep: #3d2683;
+  --deep-2: #201748;
+  --cyan: #36a9e1;
+  --cyan-glow: #ede6ff;
+  --surface: #18143d;
+  --dv-gradient-abyss:
+    radial-gradient(circle at 18% 14%, rgba(141, 215, 255, 0.86) 0 9%, rgba(141, 215, 255, 0) 26%),
+    radial-gradient(circle at 78% 18%, rgba(126, 20, 255, 0.64) 0 12%, rgba(126, 20, 255, 0) 34%),
+    linear-gradient(135deg, #07131c 0%, #201748 30%, #3d2683 62%, #36a9e1 100%);
 
-  --background: oklch(0.99 0.005 230);
-  --foreground: oklch(0.18 0.05 245);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.05 245);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.05 245);
-  --primary: oklch(0.358 0.147 288);
-  --primary-foreground: oklch(0.99 0.005 230);
-  --secondary: oklch(0.95 0.02 220);
-  --secondary-foreground: oklch(0.18 0.05 245);
-  --muted: oklch(0.96 0.01 220);
-  --muted-foreground: oklch(0.48 0.03 240);
-  --accent: oklch(0.8 0.11 232);
-  --accent-foreground: oklch(0.18 0.05 245);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.9 0.02 230);
-  --input: oklch(0.92 0.02 230);
-  --ring: oklch(0.358 0.147 288);
+  --background: #f6fafc;
+  --foreground: #10212e;
+  --card: #ffffff;
+  --card-foreground: #10212e;
+  --popover: #ffffff;
+  --popover-foreground: #10212e;
+  --primary: #3d2683;
+  --primary-foreground: #ffffff;
+  --secondary: #eef9ff;
+  --secondary-foreground: #10212e;
+  --muted: #eaf2f6;
+  --muted-foreground: #526b7a;
+  --accent: #eef9ff;
+  --accent-foreground: #201748;
+  --destructive: #b6382e;
+  --destructive-foreground: #ffffff;
+  --border: #d5e3ea;
+  --input: #d5e3ea;
+  --ring: #1a668e;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -154,7 +223,24 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-size: var(--text-body);
+    font-weight: 400;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* The landing scrolls with the document. Body padding is the same
+     height as the toolbar, so the last line can sit fully above the bar.
+     The padding continues the footer colour; it is not a second bar.
+     While the cookie choice is open it owns that strip, and the padding
+     matches the measured bar instead of the notify toolbar. */
+  body:has(.wd-scroll) {
+    padding-bottom: var(--wd-bar-space);
+    background-color: var(--deep-2);
+  }
+
+  html[data-wd-cookie="open"] body:has(.wd-scroll) {
+    padding-bottom: var(--wd-cookie-space, var(--wd-bar-space));
   }
 
   h1,
@@ -162,52 +248,70 @@
   h3,
   h4 {
     font-family: var(--font-sans);
-    letter-spacing: -0.02em;
+    font-weight: 500;
+    letter-spacing: -0.01em;
   }
 
-  /* Locale-aware type rhythm. Layout, color, media, and component geometry
-     stay untouched; only glyph spacing and natural line-breaking change. */
-  :is(html:lang(en), html:lang(es)) {
-    --wd-kicker-tracking: 0.14em;
-    --wd-heading-tracking: -0.02em;
+  /* Heading steps are medium. 18px (lead) is a heading size, not body. */
+  .text-display,
+  .text-title,
+  .text-heading,
+  .text-subhead,
+  .text-lead {
+    font-weight: 500;
+    letter-spacing: var(--wd-heading-tracking);
   }
 
-  :is(html:lang(fr), html:lang(de), html:lang(pt-BR)) {
-    --wd-kicker-tracking: 0.1em;
-    --wd-heading-tracking: -0.015em;
+  .text-body {
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  .text-caption {
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+
+  /* Brand tracking: Latin display −1%, Korean display −2%, captions 0.
+     Korean body keeps −1% and a line-height of at least 1.45. */
+  :is(html:lang(en), html:lang(es), html:lang(fr), html:lang(de), html:lang(pt-BR)) {
+    --wd-kicker-tracking: 0;
+    --wd-heading-tracking: -0.01em;
   }
 
   html:lang(ko) {
-    --wd-kicker-tracking: 0.02em;
-    --wd-heading-tracking: -0.025em;
+    --wd-kicker-tracking: 0;
+    --wd-heading-tracking: -0.02em;
   }
 
-  :is(html:lang(zh-CN), html:lang(zh-TW)) {
-    --wd-kicker-tracking: 0.04em;
+  :is(html:lang(zh-CN), html:lang(zh-TW), html:lang(ja)) {
+    --wd-kicker-tracking: 0;
     --wd-heading-tracking: 0;
   }
 
-  html:lang(ja) {
-    --wd-kicker-tracking: 0.04em;
-    --wd-heading-tracking: 0.01em;
-  }
-
   html:lang(ko) body {
-    font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", var(--font-sans);
+    font-family: "Pangram Sans", "Spoqa Han Sans Neo", "Apple SD Gothic Neo", "Noto Sans KR", var(--font-sans);
+    letter-spacing: -0.01em;
+    line-height: 1.45;
     word-break: keep-all;
     overflow-wrap: anywhere;
   }
 
   html:lang(zh-CN) body {
-    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", var(--font-sans);
+    font-family: "Pangram Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", var(--font-sans);
   }
 
   html:lang(zh-TW) body {
-    font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", var(--font-sans);
+    font-family: "Pangram Sans", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", var(--font-sans);
   }
 
   html:lang(ja) body {
-    font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", var(--font-sans);
+    font-family: "Pangram Sans", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", var(--font-sans);
+  }
+
+  html:lang(de) :is(h1, h2, h3, p, li) {
+    hyphens: auto;
+    overflow-wrap: break-word;
   }
 
   :is(html:lang(zh-CN), html:lang(zh-TW), html:lang(ja)) body {
@@ -248,11 +352,8 @@
       html:lang(zh-TW),
       html:lang(ja)
     )
-    .uppercase[class*="tracking-["] {
-    letter-spacing: var(--wd-kicker-tracking);
-  }
-
-  :is(html:lang(ko), html:lang(zh-CN), html:lang(zh-TW), html:lang(ja)) .tracking-wide {
+    .uppercase[class*="tracking-["],
+    .tracking-wide {
     letter-spacing: var(--wd-kicker-tracking);
   }
 
@@ -305,20 +406,380 @@
   to   { opacity: 0; transform: scale(1); }
 }
 
-/* The support widget injects #dc-btn with inline layout styles only, so the
-   attention pulse lives here. Founder-requested (2026-08-01): the chat entry
-   should read as a live channel. Skipped for reduced-motion users. */
-@keyframes wd-chat-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 oklch(0.8 0.11 232 / 0.75);
-  }
-  70% {
-    box-shadow: 0 0 0 12px oklch(0.8 0.11 232 / 0);
+/* Shared vertical rhythm. One step, so sections don't change pace. */
+.wd-section {
+  padding: 5rem 1.25rem;
+}
+@media (min-width: 640px) {
+  .wd-section {
+    padding-top: 7rem;
+    padding-bottom: 7rem;
   }
 }
-@media (prefers-reduced-motion: no-preference) {
+
+/* Display is its own step below 1024px (40) and 56 from there.
+   Unlayered so it wins over the baked utility value. */
+.text-display {
+  font-size: 2.5rem;
+  line-height: 1.15;
+}
+@media (min-width: 1024px) {
+  .text-display {
+    font-size: 3.5rem;
+    line-height: 1.11;
+  }
+}
+
+/* Phone header: wordmark and language on one row, the offer on the second.
+   The header notify link is the same action as the bottom bar, so it stays
+   off this row until there is room for it. */
+.wd-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "mark actions"
+    "line line";
+  align-items: center;
+  column-gap: 1.5rem;
+  row-gap: 0.5rem;
+  padding: 0.625rem 0.75rem 0.75rem;
+}
+.wd-top-mark {
+  grid-area: mark;
+  height: 1.5rem;
+  width: auto;
+}
+.wd-top-actions {
+  grid-area: actions;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.wd-top-line {
+  grid-area: line;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Below 640px the hero badge is this word. Both show from 640px up. */
+.wd-top-kicker,
+.wd-top-dot {
+  display: none;
+}
+.wd-top-join {
+  display: none;
+}
+.wd-top-actions select {
+  width: max-content;
+  max-width: 100%;
+}
+@media (max-width: 389px) {
+  .wd-top-mark {
+    height: 1.25rem;
+  }
+}
+@media (min-width: 640px) {
+  .wd-top {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 1.25rem;
+  }
+  .wd-top-line {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    overflow: visible;
+  }
+  .wd-top-kicker {
+    display: inline;
+  }
+  .wd-top-actions {
+    margin-left: auto;
+  }
+  .wd-top-join {
+    display: inline-flex;
+  }
+}
+
+/* The reef is one photograph at every width. The scrim is heavy where the
+   type sits and opens across a long range, so the violet and the photo are
+   one field rather than a hard vertical cut. */
+.wd-hero-photo {
+  pointer-events: none;
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 100svh;
+  width: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+}
+.wd-hero-scrim {
+  pointer-events: none;
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 100svh;
+  background: linear-gradient(
+    180deg,
+    rgba(32, 23, 72, 0.96) 0%,
+    rgba(32, 23, 72, 0.9) 28%,
+    rgba(32, 23, 72, 0.84) 62%,
+    rgba(32, 23, 72, 0.78) 100%
+  );
+}
+/* The badge sits above the headline. On a 320px screen that would push
+   the product photo under the toolbar, so the crop stops above it. */
+@media (max-width: 389px) {
+  .wd-hero-shot {
+    max-height: 8.25rem;
+  }
+  /* The crop is shorter so the photo clears the toolbar. This keeps the
+     following paragraph below the fold, where it sat before the badge. */
+  .wd-hero-frame {
+    margin-bottom: 5.5rem;
+  }
+}
+/* At 430px the second stat's description was meeting the toolbar on the
+   longer English headline. A shorter crop keeps that line above the bar,
+   and the last stat keeps the gap the crop removed. */
+@media (min-width: 430px) and (max-width: 639px) {
+  .wd-hero-shot {
+    max-height: 16.5rem;
+  }
+  .wd-stat-last {
+    margin-top: 1.75rem;
+  }
+}
+@media (min-width: 1024px) {
+  .wd-hero-photo {
+    object-position: 70% center;
+  }
+  .wd-hero-scrim {
+    background: linear-gradient(
+      102deg,
+      rgba(32, 23, 72, 0.96) 0%,
+      rgba(32, 23, 72, 0.9) 20%,
+      rgba(32, 23, 72, 0.7) 44%,
+      rgba(32, 23, 72, 0.46) 68%,
+      rgba(32, 23, 72, 0.28) 100%
+    );
+  }
+}
+
+/* Layout wrappers are not hit targets, so a control on empty hero space
+   does not count as covering the whole section. Text, media, and controls
+   still take the pointer. */
+.wd-scroll,
+.wd-scroll header,
+.wd-scroll header .relative,
+.wd-scroll header .flex,
+.wd-scroll header .grid,
+.wd-scroll header .space-y-5 {
+  pointer-events: none;
+}
+.wd-scroll :is(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    label,
+    summary,
+    p,
+    h1,
+    h2,
+    h3,
+    li,
+    figcaption,
+    blockquote,
+    img
+  ),
+.wd-scroll h1 span {
+  pointer-events: auto;
+}
+
+/* Focus and scroll-into-view stop above the toolbar, which covers the
+   bottom 4rem. The margin does not change layout. */
+.wd-scroll :is(a, button, input, select, textarea) {
+  scroll-margin-bottom: var(--wd-bar-space);
+}
+
+/* Phone: the notify link is the whole strip until chat appears, then it
+   gives the left side up so the two controls do not share a box.
+   From 640px the link is a pill and this rule does not apply. */
+@media (max-width: 639px) {
+  html[data-wd-chat="on"] .wd-notify {
+    left: 11.5rem;
+    right: 0;
+    width: auto;
+    justify-content: flex-end;
+    padding-right: 1rem;
+  }
+}
+
+/* Caption tracking is 0. This sits outside @layer so it beats tracking utilities. */
+.uppercase,
+.tracking-wide {
+  letter-spacing: 0;
+}
+
+/* The support widget injects its stylesheet after ours, so these overrides
+   use !important. Launcher and panel use the violet palette and the type
+   scale. On a phone the launcher stays hidden until the first form has
+   scrolled past (html[data-wd-chat="on"]). */
+#dc-btn {
+  background: #3d2683 !important;
+  color: #f6fafc !important;
+  border: 1px solid rgb(246 250 252 / 0.55) !important;
+  box-shadow: none !important;
+  animation: none !important;
+  height: 2.75rem !important;
+  min-height: 2.75rem !important;
+  font-family: var(--font-sans) !important;
+  left: max(12px, env(safe-area-inset-left, 0px)) !important;
+  right: auto !important;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 0.625rem) !important;
+  z-index: 60 !important;
+  max-width: min(11rem, calc(100vw - 10rem));
+}
+#dc-btn span {
+  font-family: var(--font-sans) !important;
+  font-size: var(--text-caption) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+@media (min-width: 640px) {
   #dc-btn {
-    animation: wd-chat-pulse 2s ease-out infinite;
+    bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+@media (max-width: 639px) {
+  #dc-btn {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    border-width: 0 !important;
+    padding: 0 !important;
+  }
+  html[data-wd-chat="on"] #dc-btn {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    width: auto !important;
+    height: 2.75rem !important;
+    min-height: 2.75rem !important;
+    overflow: visible !important;
+    border-width: 1px !important;
+    padding: 0 14px 0 16px !important;
+  }
+}
+
+#dc-win {
+  font-family: var(--font-sans) !important;
+  background: #f6fafc !important;
+  color: #10212e !important;
+  border: 1px solid rgb(32 23 72 / 0.12) !important;
+  box-shadow: none !important;
+  max-width: calc(100vw - 1.5rem) !important;
+  left: max(12px, env(safe-area-inset-left, 0px)) !important;
+  right: auto !important;
+  bottom: calc(var(--wd-bar-space) + 0.75rem) !important;
+}
+#dc-head {
+  background: #201748 !important;
+  color: #f6fafc !important;
+}
+#dc-av {
+  background: #3d2683 !important;
+}
+#dc-hn {
+  font-size: var(--text-caption) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  line-height: var(--text-caption--line-height) !important;
+}
+#dc-hs {
+  font-size: var(--text-caption) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  color: rgb(246 250 252 / 0.72) !important;
+}
+#dc-cl {
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+  color: #f6fafc !important;
+  font-weight: 500 !important;
+}
+#dc-msgs {
+  font-size: var(--text-body) !important;
+}
+.dc-b {
+  font-size: var(--text-body) !important;
+  line-height: var(--text-body--line-height) !important;
+}
+.dc-m.agent .dc-b {
+  background: #e7eef3 !important;
+  color: #10212e !important;
+}
+.dc-m.user .dc-b {
+  background: #3d2683 !important;
+  color: #f6fafc !important;
+}
+.dc-m.human .dc-b {
+  background: #201748 !important;
+  color: #f6fafc !important;
+  border-left-color: #36a9e1 !important;
+}
+.dc-m.human .dc-label {
+  color: #201748 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+#dc-inp {
+  font-family: var(--font-sans) !important;
+  font-size: var(--text-body) !important;
+  color: #10212e !important;
+}
+#dc-inp:focus {
+  border-color: #36a9e1 !important;
+}
+#dc-send {
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  background: #3d2683 !important;
+}
+#dc-send:hover {
+  background: #4a2f99 !important;
+}
+
+/* The cookie choice owns the bottom edge while it is open. The notify
+   link and the chat launcher leave that strip, so the choice is not
+   covered and does not share the bar with a marketing control.
+   Page padding uses the measured cookie height (set on <html>). */
+html[data-wd-cookie="open"] .wd-notify {
+  display: none !important;
+}
+html[data-wd-cookie="open"] #dc-btn,
+html[data-wd-cookie="open"] #dc-win {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
+  scroll-margin-bottom: var(--wd-cookie-space, var(--wd-bar-space));
+}
+
+/* Before measurement, keep the paragraph under the phone photo out of a
+   tall cookie bar. The landing script replaces this with the exact gap. */
+@media (max-width: 1023px) {
+  html[data-wd-cookie="open"] .wd-hero-frame {
+    margin-bottom: calc(var(--wd-cookie-space, 0px) + 11rem);
   }
 }

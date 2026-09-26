@@ -16,11 +16,10 @@ export function LanguageSwitcher() {
   const locale = useCurrentLocale();
 
   return (
-    <label className="flex items-center gap-1.5 text-white/80">
+    <label className="relative flex h-11 min-w-0 max-w-full items-center text-[#F6FAFC]">
       <svg
         aria-hidden
-        width="14"
-        height="14"
+        className="pointer-events-none absolute left-3 size-4"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -41,7 +40,7 @@ export function LanguageSwitcher() {
           document.cookie = `${LOCALE_PREFERENCE_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=31536000; samesite=lax`;
           window.location.assign(switchLocalePath(window.location.pathname, next));
         }}
-        className="h-8 cursor-pointer rounded-full border border-white/20 bg-white/10 pl-2 pr-1 text-xs font-medium text-white outline-none backdrop-blur hover:bg-white/15 focus:ring-2 focus:ring-[color:var(--color-cyan-glow)] [&>option]:text-[color:var(--color-deep-2)]"
+        className="h-11 min-h-11 w-max min-w-11 max-w-full cursor-pointer appearance-none rounded-full border border-white/45 bg-[#201748] py-0 pl-9 pr-8 text-caption text-[#F6FAFC] outline-none hover:bg-white/10 focus:ring-2 focus:ring-[#36A9E1] [&>option]:bg-white [&>option]:text-[#10212E]"
       >
         {LANGUAGE_OPTIONS.map((option) => (
           <option key={option.locale} value={option.locale}>
@@ -49,6 +48,18 @@ export function LanguageSwitcher() {
           </option>
         ))}
       </select>
+      <svg
+        aria-hidden
+        className="pointer-events-none absolute right-3 size-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
     </label>
   );
 }

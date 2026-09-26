@@ -255,7 +255,7 @@ test("only a human GET or HEAD request for the exact root is eligible", () => {
     "/privacy",
     "/terms",
     "/r/abc12345",
-    "/favicon.svg",
+    "/favicon.png",
     "/robots.txt",
     "/_serverFn/submit",
     "//",

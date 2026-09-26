@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { toast } from "sonner";
 
@@ -23,20 +24,9 @@ import {
   trackMetaPhoneLead,
   trackMetaSubmitApplication,
 } from "@/lib/metaPixel";
-import { OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT } from "@/lib/measurementConsent";
-import {
-  browserWatchDiveMeasurementGateOpen,
-  getPendingBrowserWatchDiveEvents,
-  isBrowserWatchDiveEventCurrentPending,
-  markBrowserWatchDiveEventAccepted,
-  recordBrowserWatchDiveEvent,
-  type WatchDiveBrowserEventName,
-  type WatchDiveEventPlacement,
-} from "@/lib/funnelContext";
-import { createBoundedBrowserEventDrainer } from "@/lib/browserEventDelivery";
-import { trackLaunchOsWebEvent } from "@/lib/api/launchOsRelay";
-import type { LaunchOsMeasurementContext } from "@/lib/verification/contracts";
 import { getAttribution } from "@/lib/attribution";
+import { trackClarity } from "@/lib/clarity";
+import { trackGoogleFormStart, trackGoogleLead, trackGooglePhone, trackGoogleSubmit } from "@/lib/googleTag";
 import { landingHead } from "@/lib/i18n/seo";
 import { privacyPath, termsPath } from "@/lib/i18n/locale";
 import {
@@ -77,6 +67,7 @@ import watchScreen from "../assets/live/watch-screen.png";
 import housingImage from "../assets/live/housing.webp";
 import samsungFeature from "../assets/live/samsung-feature.webp";
 import samsungLogo from "../assets/live/samsung-logo.svg";
+import wordmarkWhite from "../assets/brand/diveroid-wordmark-white.png";
 
 // Inlines an App 3.0 icon SVG (imported ?raw) so it inherits the current text
 // color via currentColor — real product icons match our accent, any size.
@@ -95,160 +86,118 @@ export const Route = createFileRoute("/")({
   component: DesignFrozenLanding,
 });
 
-const launchOsBrowserEventDrainer = createBoundedBrowserEventDrainer({
-  listPending: getPendingBrowserWatchDiveEvents,
-  eventId: (captured) => captured.event.eventId,
-  isCurrentPending: (captured) =>
-    isBrowserWatchDiveEventCurrentPending(
-      captured.event.eventId,
-      captured.measurementContext.funnelInstanceId,
-    ),
-  relay: (captured) =>
-    trackLaunchOsWebEvent({ data: { ...captured.measurementContext, ...captured.event } }),
-  markAccepted: markBrowserWatchDiveEventAccepted,
-});
-
-const LAUNCHOS_BROWSER_RETRY_DELAYS_MS = [1_500, 5_000, 15_000] as const;
-let launchOsBrowserRetryTimer: ReturnType<typeof setTimeout> | undefined;
-let launchOsBrowserRetryAttempt = 0;
-let launchOsBrowserDeliveryLifecycle = 0;
-let observedLaunchOsDrain: Promise<unknown> | null = null;
-let observedLaunchOsDrainLifecycle = -1;
-
-function clearLaunchOsBrowserRetryTimer() {
-  if (launchOsBrowserRetryTimer !== undefined) clearTimeout(launchOsBrowserRetryTimer);
-  launchOsBrowserRetryTimer = undefined;
-}
-
-function stopLaunchOsBrowserEventDelivery() {
-  launchOsBrowserDeliveryLifecycle += 1;
-  launchOsBrowserRetryAttempt = 0;
-  clearLaunchOsBrowserRetryTimer();
-}
-
-function scheduleLaunchOsBrowserEventRetry(lifecycle: number) {
-  if (
-    lifecycle !== launchOsBrowserDeliveryLifecycle ||
-    launchOsBrowserRetryTimer !== undefined ||
-    launchOsBrowserRetryAttempt >= LAUNCHOS_BROWSER_RETRY_DELAYS_MS.length ||
-    !browserWatchDiveMeasurementGateOpen() ||
-    !navigator.onLine ||
-    document.visibilityState !== "visible"
-  ) {
-    return;
-  }
-  const delay = LAUNCHOS_BROWSER_RETRY_DELAYS_MS[launchOsBrowserRetryAttempt];
-  launchOsBrowserRetryAttempt += 1;
-  launchOsBrowserRetryTimer = setTimeout(() => {
-    launchOsBrowserRetryTimer = undefined;
-    if (
-      lifecycle !== launchOsBrowserDeliveryLifecycle ||
-      !browserWatchDiveMeasurementGateOpen() ||
-      !navigator.onLine ||
-      document.visibilityState !== "visible"
-    ) {
-      return;
-    }
-    drainLaunchOsBrowserEvents();
-  }, delay);
-}
-
-function drainLaunchOsBrowserEvents(resetRetryBudget = false) {
-  if (typeof window === "undefined" || !browserWatchDiveMeasurementGateOpen()) return;
-  if (resetRetryBudget) {
-    launchOsBrowserRetryAttempt = 0;
-    clearLaunchOsBrowserRetryTimer();
-  }
-  const lifecycle = launchOsBrowserDeliveryLifecycle;
-  const pendingDrain = launchOsBrowserEventDrainer.drain();
-  if (observedLaunchOsDrain === pendingDrain && observedLaunchOsDrainLifecycle === lifecycle) {
-    return;
-  }
-  observedLaunchOsDrain = pendingDrain;
-  observedLaunchOsDrainLifecycle = lifecycle;
-  void pendingDrain
-    .then((summary) => {
-      if (lifecycle !== launchOsBrowserDeliveryLifecycle) return;
-      if (summary.pending > 0) scheduleLaunchOsBrowserEventRetry(lifecycle);
-      else launchOsBrowserRetryAttempt = 0;
-    })
-    .catch(() => scheduleLaunchOsBrowserEventRetry(lifecycle))
-    .finally(() => {
-      if (observedLaunchOsDrain === pendingDrain && observedLaunchOsDrainLifecycle === lifecycle) {
-        observedLaunchOsDrain = null;
-        observedLaunchOsDrainLifecycle = -1;
-      }
-    });
-}
-
 export function DesignFrozenLanding() {
   // The campaign is recorded on arrival rather than at submit. A visitor who
   // lands tagged and then navigates before signing up leaves no query behind,
   // and by the time the form runs the URL that paid for them is gone.
   useEffect(() => {
     getAttribution();
-    const relayLanding = () => captureLaunchOsBrowserStage("landing_viewed", "page");
-    const onConsentChange = () => {
-      stopLaunchOsBrowserEventDelivery();
-      if (browserWatchDiveMeasurementGateOpen()) relayLanding();
+  }, []);
+
+  // Live chat is not a peer of the notify bar. On a phone it stays out of the
+  // toolbar until the first form has scrolled away. The document is the
+  // scroller — a nested scrollport would pin the small viewport on iOS.
+  useEffect(() => {
+    const update = () => {
+      const form = document.getElementById("hero-email")?.closest("form");
+      if (!form) return;
+      document.documentElement.dataset.wdChat =
+        form.getBoundingClientRect().bottom <= 0 ? "on" : "";
     };
-    const retryWhenOnline = () => drainLaunchOsBrowserEvents(true);
-    const retryWhenVisible = () => {
-      if (document.visibilityState === "visible") drainLaunchOsBrowserEvents(true);
-    };
-    relayLanding();
-    window.addEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, onConsentChange);
-    window.addEventListener("online", retryWhenOnline);
-    document.addEventListener("visibilitychange", retryWhenVisible);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
     return () => {
-      stopLaunchOsBrowserEventDelivery();
-      window.removeEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, onConsentChange);
-      window.removeEventListener("online", retryWhenOnline);
-      document.removeEventListener("visibilitychange", retryWhenVisible);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      delete document.documentElement.dataset.wdChat;
+    };
+  }, []);
+
+  // While the cookie choice owns the bottom of the first screen, the
+  // paragraph under the product photo has to start below that screen.
+  // The photo's position depends on the headline, so the gap is measured.
+  useEffect(() => {
+    const frame = document.querySelector(".wd-hero-frame");
+    if (!(frame instanceof HTMLElement)) return;
+    const tail = document.querySelector(".wd-stat-last");
+    const side = document.querySelector("header .hidden.lg\\:block");
+    const apply = () => {
+      const open = document.documentElement.dataset.wdCookie === "open";
+      const desktop = window.innerWidth >= 1024;
+      frame.style.marginBottom = "";
+      if (tail instanceof HTMLElement) tail.style.marginTop = "";
+      if (side instanceof HTMLElement) {
+        side.style.maxHeight = "";
+        side.style.overflow = "";
+      }
+      if (!open) return;
+      if (!desktop) {
+        const gap = window.innerHeight - frame.getBoundingClientRect().bottom;
+        frame.style.marginBottom = `${Math.max(0, Math.ceil(gap) + 8)}px`;
+        return;
+      }
+      // The cookie bar owns the bottom of the first desktop screen. The
+      // stat that would sit in it, and everything after it, starts below
+      // the fold. The product photo stops above the bar.
+      if (tail instanceof HTMLElement) {
+        const top = tail.getBoundingClientRect().top;
+        if (top < window.innerHeight) {
+          tail.style.marginTop = `${Math.ceil(window.innerHeight - top + 12)}px`;
+        }
+      }
+      if (side instanceof HTMLElement) {
+        const space = Number.parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue("--wd-cookie-space"),
+        );
+        const limit = window.innerHeight - (Number.isFinite(space) ? space : 0);
+        const bottom = side.getBoundingClientRect().bottom;
+        if (bottom > limit) {
+          const height = side.getBoundingClientRect().height - (bottom - limit);
+          side.style.maxHeight = `${Math.max(160, Math.floor(height))}px`;
+          side.style.overflow = "hidden";
+        }
+      }
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-wd-cookie"],
+    });
+    window.addEventListener("resize", apply);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", apply);
+      frame.style.marginBottom = "";
+      if (tail instanceof HTMLElement) tail.style.marginTop = "";
+      if (side instanceof HTMLElement) {
+        side.style.maxHeight = "";
+        side.style.overflow = "";
+      }
     };
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <>
       <StickyLaunchBanner />
-      <Hero />
-      <ValueSection />
-      <FunctionsSection />
-      <HowItWorks />
-      <AppEcosystem />
-      <ReviewTicker />
-      <Compatibility />
-      <ActionCameras />
-      <SafetySection />
-      <OfferSection />
-      <Credentials />
-      <FAQ />
-      <Footer />
-    </div>
+      <div className="wd-scroll bg-background text-foreground">
+        <Hero />
+        <ValueSection />
+        <HowItWorks />
+        <Compatibility />
+        <FunctionsSection />
+        <AppEcosystem />
+        <ActionCameras />
+        <SafetySection />
+        <ReviewTicker />
+        <Credentials />
+        <OfferSection />
+        <FAQ />
+        <Footer />
+      </div>
+    </>
   );
-}
-
-/**
- * Canonical browser stages carry no form value, email, phone, IP, cookie or
- * user-agent. Missing explicit consent or a relay outage is a DATA_GAP and
- * never blocks the landing experience.
- */
-function captureLaunchOsBrowserStage(
-  eventName: WatchDiveBrowserEventName,
-  placement: WatchDiveEventPlacement,
-): LaunchOsMeasurementContext | undefined {
-  try {
-    const captured = recordBrowserWatchDiveEvent(eventName, placement);
-    // Recording is synchronous and deterministic. Delivery drains separately,
-    // so a slow or unavailable relay never blocks CTA, focus or submit actions.
-    drainLaunchOsBrowserEvents(true);
-    return {
-      ...captured.measurementContext,
-      ...(placement === "hero" || placement === "offer" ? { placement } : {}),
-    };
-  } catch {
-    return undefined;
-  }
 }
 
 function formatMessage(
@@ -286,21 +235,21 @@ function splitTwoHighlights(
 function LaunchBanner() {
   const m = useFrozenLandingMessages();
   return (
-    <div className="relative z-20 border-b border-white/10 bg-[color:var(--color-deep-2)]/85 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 py-3 text-white sm:flex-row sm:justify-between sm:gap-6">
-        <div className="flex items-center gap-2">
-          <span className="size-1.5 rounded-full bg-[color:var(--color-cyan-glow)]" />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-cyan-glow)]">
-            {m.banner.kicker}
+    <div className="relative z-20 border-b border-white/10 bg-[#201748] text-white">
+      <div className="wd-top mx-auto max-w-6xl">
+        <img src={wordmarkWhite} alt="DIVEROID" className="wd-top-mark shrink-0" />
+        <p className="wd-top-line text-caption uppercase">
+          <span className="wd-top-kicker text-[#36A9E1]">{m.banner.kicker}</span>
+          <span className="wd-top-dot text-white/40" aria-hidden>
+            {" "}
+            ·{" "}
           </span>
-        </div>
-        <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:text-left">
-          <span className="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--color-cyan-glow)] sm:text-sm">
-            {m.banner.offer}
-          </span>
+          <span className="text-[#F6FAFC]">{m.banner.offer}</span>
+        </p>
+        <div className="wd-top-actions">
           <a
             href="#offer-form"
-            className="rounded-full bg-gradient-to-r from-[color:var(--color-cyan-glow)] to-[color:var(--color-cyan)] px-4 py-2 text-xs font-semibold text-[color:var(--color-deep-2)] shadow-[0_8px_24px_-12px_oklch(0.696_0.129_235/0.7)] hover:brightness-105"
+            className="wd-top-join min-h-11 min-w-11 items-center justify-center rounded-full border border-white/45 bg-[#3D2683] px-4 text-caption text-[#F6FAFC] hover:brightness-110"
           >
             {m.banner.joinCta}
           </a>
@@ -359,19 +308,25 @@ function StickyLaunchBanner() {
     };
   }, []);
 
+  // Portal onto body once mounted so the bar is not trapped in a
+  // pointer-events-none ancestor, and so it stays the last offer link.
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+  useEffect(() => setPortalRoot(document.body), []);
+
   if (hidden) return null;
 
-  return (
+  const bar = (
     <a
       href="#offer-form"
-      className="fixed bottom-3 right-3 z-50 flex max-w-[280px] items-center gap-2.5 rounded-full motion-safe:animate-[wd-rise-in_240ms_cubic-bezier(0.22,1,0.36,1)_both] border border-white/15 bg-[color:var(--color-deep-2)]/92 py-2.5 pl-3 pr-4 text-white shadow-[0_20px_60px_-25px_oklch(0.13_0.065_287/0.95)] backdrop-blur-xl transition hover:-translate-y-0.5 sm:bottom-5 sm:right-5"
+      className="wd-notify fixed inset-x-0 bottom-0 z-40 flex h-[var(--wd-bar-space)] items-center justify-center gap-3 border-t border-white/15 bg-[#201748] px-4 pb-[env(safe-area-inset-bottom)] text-[#F6FAFC] sm:inset-x-auto sm:bottom-4 sm:right-4 sm:h-11 sm:w-auto sm:rounded-full sm:border sm:px-4 sm:pb-0"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-cyan-glow)] text-[color:var(--color-deep-2)]">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#3D2683]">
         ↓
       </span>
-      <span className="min-w-0 text-sm font-semibold leading-tight">{m.cta.label}</span>
+      <span className="min-w-0 text-body font-medium leading-tight">{m.cta.label}</span>
     </a>
   );
+  return portalRoot ? createPortal(bar, portalRoot) : bar;
 }
 
 // Ref codes are exactly 8 lowercase alphanumerics. Some share targets glue the
@@ -494,7 +449,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
                   /* user dismissed share sheet — no-op */
                 }
               }}
-              className="h-11 rounded-lg bg-gradient-to-r from-[color:var(--color-cyan-glow)] to-[color:var(--color-cyan)] px-4 text-sm font-semibold text-[color:var(--color-deep-2)] hover:brightness-105"
+              className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-sm font-semibold text-[#F6FAFC] hover:brightness-110"
             >
               {copied ? m.referral.copied : m.referral.shareButton}
             </button>
@@ -650,7 +605,6 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
   const formStartSent = useRef(false); // FormStart once per form instance
-  const launchOsFormStartSent = useRef(false);
   // A ring that expands once, the first time the form is actually on screen.
   // It points at the next action after an anchor jump; it never repeats, so it
   // guides rather than nags.
@@ -675,63 +629,6 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-
-  useEffect(() => {
-    const element = formRef.current;
-    if (!element || typeof IntersectionObserver === "undefined") return;
-    let visibleEnough = false;
-    let sent = false;
-    let exposureTimer: ReturnType<typeof setTimeout> | undefined;
-
-    const cancelTimer = () => {
-      if (exposureTimer) clearTimeout(exposureTimer);
-      exposureTimer = undefined;
-    };
-    const schedule = () => {
-      cancelTimer();
-      if (sent || !visibleEnough || document.visibilityState !== "visible") return;
-      exposureTimer = setTimeout(() => {
-        exposureTimer = undefined;
-        if (!visibleEnough || document.visibilityState !== "visible") return;
-        if (captureLaunchOsBrowserStage("cta_viewed", id)) sent = true;
-      }, 1_000);
-    };
-    const observer = new IntersectionObserver(
-      (entries) => {
-        visibleEnough = entries.some((entry) => entry.intersectionRatio >= 0.5);
-        schedule();
-      },
-      { threshold: [0.5] },
-    );
-    const onVisibilityChange = () => schedule();
-    const onConsentChange = () => {
-      // A consent epoch owns its own exposure latch. A later grant may count a
-      // fresh one-second exposure, but never inherits the prior epoch's state.
-      sent = false;
-      cancelTimer();
-      if (browserWatchDiveMeasurementGateOpen()) schedule();
-    };
-    observer.observe(element);
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, onConsentChange);
-    return () => {
-      cancelTimer();
-      observer.disconnect();
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, onConsentChange);
-    };
-  }, [id]);
-
-  useEffect(() => {
-    // Do not turn a focus that happened before consent into a later
-    // `form_started`. A new consent epoch waits for the next real focus.
-    const resetForConsentEpoch = () => {
-      launchOsFormStartSent.current = false;
-    };
-    window.addEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, resetForConsentEpoch);
-    return () =>
-      window.removeEventListener(OPTIONAL_MEASUREMENT_CONSENT_CHANGED_EVENT, resetForConsentEpoch);
-  }, [id]);
 
   // Waits for the confirmation, which may never arrive in this tab — the link
   // can be opened on another device entirely. So the wait is deliberately
@@ -780,8 +677,11 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           track("waitlist_verified", { source: id });
           if (res.browserLead) {
             trackMetaLead(res.browserLead.eventId, res.browserLead.source);
+            trackGoogleLead(res.browserLead.eventId, res.browserLead.source);
+            trackClarity("generate_lead", res.browserLead.source);
             if (res.browserLead.hasPhone) {
               trackMetaPhoneLead(`${res.browserLead.eventId}:phone`, res.browserLead.source);
+              trackGooglePhone(`${res.browserLead.eventId}:phone`, res.browserLead.source);
             }
           }
           stop();
@@ -821,10 +721,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // `submitEventId` is passed only by the first submit, never by a resend: the
   // server mirrors the browser's optimisation event under that id, and one
   // person asking for their mail again is not a second application.
-  const submit = async (
-    submitEventId?: string,
-    launchOsMeasurement?: LaunchOsMeasurementContext,
-  ) => {
+  const submit = async (submitEventId?: string) => {
     const res = await joinWaitlist({
       data: {
         email: email.trim().toLowerCase(),
@@ -837,7 +734,6 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         attribution: getAttribution(),
         honeypot: hp,
         measurementConsent: hasMetaMeasurementConsent(),
-        ...(launchOsMeasurement ? { launchOsMeasurement } : {}),
         locale,
         ...(submitEventId ? { submitEventId } : {}),
         ...getMetaCookies(),
@@ -904,8 +800,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // signed from now on: the browser that opens the confirmation link
           // must not be able to widen it.
           const submitEventId = newMetaEventId();
-          const launchOsMeasurement = captureLaunchOsBrowserStage("submit_attempted", id);
-          const res = await submit(submitEventId, launchOsMeasurement);
+          const res = await submit(submitEventId);
           // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });
@@ -915,6 +810,8 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // knowable right here, and a bot is not something to optimise for.
           if (res.status === "pending" && !hp.trim()) {
             trackMetaSubmitApplication(submitEventId, id);
+            trackGoogleSubmit(submitEventId, id);
+            trackClarity("sign_up", id);
           }
         } catch {
           toast.error(m.toasts.error);
@@ -954,11 +851,8 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
             if (!formStartSent.current) {
               formStartSent.current = true;
               trackMetaCustom("FormStart", { source: id });
-            }
-            if (!launchOsFormStartSent.current) {
-              launchOsFormStartSent.current = Boolean(
-                captureLaunchOsBrowserStage("form_started", id),
-              );
+              trackGoogleFormStart(id);
+              trackClarity("form_start", id);
             }
           }}
           placeholder={m.form.emailPlaceholder}
@@ -976,7 +870,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         <button
           type="submit"
           disabled={loading}
-          className="order-3 h-14 px-5 rounded-xl font-semibold text-[color:var(--color-deep-2)] bg-gradient-to-r from-[color:var(--color-cyan-glow)] to-[color:var(--color-cyan)] shadow-[0_10px_30px_-10px_oklch(0.696_0.129_235/0.6)] hover:brightness-105 active:scale-[0.99] transition sm:order-2"
+          className="order-3 inline-flex h-14 min-h-11 items-center justify-center rounded-xl border border-white/45 bg-[#3D2683] px-5 font-semibold text-[#F6FAFC] hover:brightness-110 active:scale-[0.99] transition sm:order-2"
         >
           {loading ? m.form.saving : m.cta.label}
         </button>
@@ -995,12 +889,10 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         </label>
       )}
 
-      <p className="mt-3 text-xs leading-relaxed text-white/55">
-        <span className="font-semibold text-white/75">1.</span> {m.form.step1}{" "}
-        <span className="text-white/30">·</span>{" "}
-        <span className="font-semibold text-white/75">2.</span> {m.form.step2}{" "}
-        <span className="text-white/30">·</span>{" "}
-        <span className="font-semibold text-white/75">3.</span> {m.form.step3}
+      <p className="mt-3 text-caption leading-relaxed text-[#F6FAFC]">
+        <span className="font-semibold">1.</span> {m.form.step1} <span>·</span>{" "}
+        <span className="font-semibold">2.</span> {m.form.step2} <span>·</span>{" "}
+        <span className="font-semibold">3.</span> {m.form.step3}
       </p>
     </form>
   );
@@ -1014,19 +906,19 @@ function HeroProof() {
   const picks = PUBLISHABLE_REVIEWS.slice(0, 3);
   return (
     <div className="max-w-xl">
-      <div className="grid gap-2.5 sm:grid-cols-3">
+      <div className="flex flex-col gap-5">
         {picks.map((review) => (
           <figure
             key={review.id}
-            className="rounded-xl border border-white/12 bg-white/[0.06] p-3.5 backdrop-blur"
+            className="border-t border-white/15 pt-4 first:border-t-0 first:pt-0"
           >
-            <span className="text-[11px] tracking-[0.12em] text-[color:var(--color-cyan-glow)]">
+            <span className="text-caption text-[#36A9E1]">
               {"★".repeat(review.rating)}
             </span>
-            <blockquote className="mt-1.5 line-clamp-3 text-xs leading-relaxed text-white/80">
+            <blockquote className="mt-1.5 text-body leading-relaxed text-[#F6FAFC]">
               {betaReviewBody(review, reviewBodies)}
             </blockquote>
-            <figcaption className="mt-2 flex items-center gap-1.5 text-[11px] text-white/45">
+            <figcaption className="mt-2 flex items-center gap-1.5 text-caption text-[#F6FAFC]">
               <ReviewAvatar review={review} px={20} />
               <span className="min-w-0">
                 {review.name} · {review.city}
@@ -1037,7 +929,7 @@ function HeroProof() {
       </div>
       <a
         href="#beta-reviews"
-        className="mt-2.5 inline-block text-xs font-semibold text-white/60 underline underline-offset-2"
+        className="mt-2.5 inline-flex min-h-11 items-center text-caption text-[#F6FAFC] underline underline-offset-2"
       >
         {formatMessage(m.heroProof.readAll, { count: PUBLISHABLE_REVIEWS.length })}
       </a>
@@ -1048,69 +940,64 @@ function HeroProof() {
 function Hero() {
   const m = useFrozenLandingMessages();
   const [h1Before, h1Highlight, h1After] = splitHighlightedCopy(m.hero.h1, m.hero.h1Highlight);
-  const [subBefore, subDepth, subAfter] = splitHighlightedCopy(m.hero.sub, "60 m");
-  const [priceBefore, price, priceAfter] = splitHighlightedCopy(m.hero.priceLine, "$149");
+  const [subBefore, subDepth, subAfter] = splitHighlightedCopy(m.hero.sub, m.hero.stat1Label);
+  const [priceBefore, price, priceAfter] = splitHighlightedCopy(m.hero.priceLine, m.hero.nowPrice);
   return (
-    <header className="relative overflow-hidden text-white">
+    <header className="relative overflow-hidden bg-[#201748] text-white">
+      {/* The reef is the hero's atmosphere. The scrim keeps the type on violet
+          and feathers out, so the photograph does not end in a hard edge.
+          The wearing shot is the framed photo, on this first screen. */}
       <SectionImage
         src={heroBackground}
         alt={m.hero.backgroundAlt}
         priority
-        className="absolute inset-0 h-full w-full object-cover"
+        className="wd-hero-photo"
       />
-      <div className="absolute inset-0 bg-[linear-gradient(110deg,oklch(0.13_0.065_287/0.96)_12%,oklch(0.21_0.085_287/0.78)_48%,oklch(0.13_0.065_287/0.92)_100%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_oklch(0.8_0.11_232/0.32),_transparent_34%),radial-gradient(circle_at_bottom_right,_oklch(0.696_0.129_235/0.26),_transparent_30%)]" />
+      <div className="wd-hero-scrim" aria-hidden />
 
       <div className="relative z-10">
         <LaunchBanner />
       </div>
-      <div className="relative z-10 mx-auto grid min-h-[100svh] max-w-6xl gap-10 px-5 pb-16 pt-10 sm:pt-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.95fr)] lg:items-center lg:gap-14">
-        <div className="flex flex-col gap-7 lg:py-10">
-          <div className="inline-flex self-start items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur border border-white/15">
-            <span className="size-1.5 rounded-full bg-[color:var(--color-cyan-glow)]" />
-            {m.hero.badge}
-          </div>
-
-          <div className="space-y-4">
-            <h1
-              className="max-w-3xl text-4xl font-extrabold leading-[1.04] sm:text-5xl lg:text-6xl"
-              style={{ wordBreak: "keep-all", textWrap: "balance", overflowWrap: "normal" }}
-            >
+      <div className="relative z-10 mx-auto grid max-w-6xl gap-8 px-5 pb-16 pt-4 sm:pt-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.95fr)] lg:items-start lg:gap-14 lg:pt-14">
+        <div className="flex flex-col gap-5 lg:gap-7 lg:py-10">
+          <div className="space-y-5">
+            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-[#3D2683] px-3 py-1 text-caption text-[#F6FAFC]">
+              <span className="size-1.5 shrink-0 rounded-full bg-[#36A9E1]" aria-hidden />
+              {m.hero.badge}
+            </p>
+            <h1 className="max-w-3xl text-display">
               {h1Before}
-              <span className="bg-gradient-to-r from-[color:var(--color-cyan-glow)] via-white to-[color:var(--color-cyan)] bg-clip-text text-transparent">
-                {h1Highlight}
-              </span>
+              <span className="text-[#36A9E1]">{h1Highlight}</span>
               {h1After}
             </h1>
 
-            <p className="max-w-xl text-lg font-bold leading-snug text-white sm:text-2xl">
+            {/* The product is the whole idea, and it has to be seen before the ask.
+                Desktop shows it in the right-hand column; on a phone that column
+                sits below everything, so a shorter crop goes here, directly under
+                the headline, so both win the first screen. One frame, no inner plate. */}
+            <div className="wd-hero-frame overflow-hidden rounded-[1.5rem] lg:hidden">
+              <SectionImage
+                src={heroSideImage}
+                alt={m.hero.sideImageAlt}
+                priority
+                className="wd-hero-shot aspect-[4/3] max-h-[34svh] w-full object-cover"
+              />
+            </div>
+
+            <p className="max-w-xl text-body text-[#F6FAFC]">
               {subBefore}
               <span className="whitespace-nowrap">{subDepth}</span>
               {subAfter}
             </p>
 
-            <p className="max-w-xl text-base text-white/75 sm:text-lg">
+            <p className="max-w-xl text-body text-[#F6FAFC]">
               {priceBefore}
-              <span className="font-semibold text-white">{price}</span>
+              <span className="font-medium text-white">{price}</span>
               {priceAfter}
             </p>
           </div>
 
-          {/* The product is the whole idea, and it has to be seen before the ask.
-              Desktop shows it in the right-hand column; on a phone that column
-              sits below everything, so a shorter crop goes here instead. Capped
-              in vh so it introduces the product without pushing the form off a
-              second screen. */}
-          <div className="relative overflow-hidden rounded-[1.5rem] border border-white/12 bg-white/8 p-2 lg:hidden">
-            <SectionImage
-              src={heroSideImage}
-              alt={m.hero.sideImageAlt}
-              priority
-              className="max-h-[38vh] w-full rounded-[1.1rem] object-cover"
-            />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid max-w-xl gap-y-5">
             {[
               {
                 label: m.hero.stat1Label,
@@ -1153,10 +1040,10 @@ function Hero() {
                   </>
                 ),
               },
-            ].map((item) => (
+            ].map((item, index) => (
               <div
                 key={item.label}
-                className="flex flex-row items-center gap-3 rounded-2xl border border-white/12 bg-white/8 px-4 py-3.5 backdrop-blur-sm sm:flex-col sm:items-start sm:gap-2 sm:px-5 sm:py-4"
+                className={`flex items-start gap-3${index === 2 ? " wd-stat-last" : ""}`}
               >
                 {item.customIcon ?? (
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--color-cyan-glow)]/15 text-[color:var(--color-cyan-glow)]">
@@ -1174,30 +1061,27 @@ function Hero() {
                     </svg>
                   </span>
                 )}
-                <div className="flex flex-col gap-0.5 sm:contents">
-                  <span className="block text-lg font-extrabold leading-tight text-white sm:min-h-[2.9rem]">
-                    {item.label}
-                  </span>
-                  <span className="text-sm font-medium text-white/70">{item.desc}</span>
+                <div className="flex h-full min-w-0 flex-col gap-1">
+                  <span className="text-lead text-white">{item.label}</span>
+                  <span className="mt-auto text-body text-[#F6FAFC]">{item.desc}</span>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-[color:var(--color-cyan-glow)]/30 bg-[color:var(--color-cyan-glow)]/10 px-4 py-3">
-            <span className="text-base text-white/55 line-through">{m.hero.wasPrice}</span>
-            <span className="text-2xl font-extrabold text-white">{m.hero.nowPrice}</span>
-            <span className="rounded-full bg-[color:var(--color-cyan-glow)] px-4 py-1.5 text-base font-extrabold uppercase tracking-wide text-[color:var(--color-deep-2)] shadow-[0_0_18px_-2px_oklch(0.8_0.11_232/0.9)]">
+          <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-body text-[#F6FAFC]/75 line-through">{m.hero.wasPrice}</span>
+            <span className="text-subhead text-white">{m.hero.nowPrice}</span>
+            <span className="rounded-full bg-[#36A9E1] px-4 py-1.5 text-caption uppercase text-[#201748]">
               {m.hero.offBadge}
             </span>
-            <span className="text-sm font-medium text-white/85">{m.hero.offNote}</span>
+            <span className="text-body text-[#F6FAFC]">{m.hero.offNote}</span>
           </div>
 
           <ReferralWelcome />
 
-          <div className="max-w-xl rounded-2xl border border-white/12 bg-white/[0.06] p-5 backdrop-blur">
+          <div className="max-w-xl space-y-6">
             <LaunchCountdown />
-            <div className="my-5 h-px bg-white/10" />
             <WaitlistProgress />
           </div>
 
@@ -1207,7 +1091,7 @@ function Hero() {
 
           <HeroProof />
 
-          <div className="flex flex-wrap items-center gap-4 text-sm text-white/65">
+          <div className="flex max-w-xl flex-wrap items-center gap-x-4 gap-y-2 text-body leading-relaxed text-[#F6FAFC]">
             <span>{m.hero.trust1}</span>
             <span className="h-1 w-1 rounded-full bg-white/35" />
             <span>{m.hero.trust2}</span>
@@ -1215,7 +1099,7 @@ function Hero() {
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
             <div className="flex items-center gap-2.5">
-              <span className="text-[11px] uppercase tracking-[0.2em] text-white/50">
+              <span className="text-caption uppercase text-[#F6FAFC]">
                 {m.hero.backedBy}
               </span>
               <span className="inline-flex h-8 items-center rounded-lg bg-white px-2.5 shadow-sm">
@@ -1226,7 +1110,7 @@ function Hero() {
               </span>
             </div>
             <div className="flex items-center gap-2.5">
-              <span className="text-[11px] uppercase tracking-[0.2em] text-white/50">
+              <span className="text-caption uppercase text-[#F6FAFC]">
                 {m.hero.featuredBy}
               </span>
               <span className="inline-flex h-8 items-center rounded-lg bg-white px-3 shadow-sm">
@@ -1236,39 +1120,23 @@ function Hero() {
           </div>
         </div>
 
-        <div className="relative hidden lg:order-none lg:block">
-          <div className="absolute -right-2 bottom-10 rounded-2xl border border-white/12 bg-white/10 px-4 py-3 text-sm text-white/90 shadow-2xl backdrop-blur md:px-5">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-white/55">
-              {m.hero.promiseKicker}
-            </div>
-            <div className="mt-1 font-semibold">{m.hero.promiseText}</div>
-          </div>
-
-          <div className="relative overflow-hidden rounded-[2rem] border border-white/12 bg-white/8 p-3 shadow-[0_30px_90px_-35px_oklch(0.8_0.11_232/0.45)] backdrop-blur-sm sm:p-4">
+        <div className="relative hidden lg:block">
+          <div className="relative overflow-hidden rounded-[1.5rem]">
             <SectionImage
               src={heroSideImage}
               alt={m.hero.sideImageAlt}
               priority
-              className="aspect-[5/6] w-full rounded-[1.5rem] object-cover"
+              className="aspect-[5/6] w-full object-cover"
             />
-
-            <div className="absolute inset-x-6 bottom-6 rounded-[1.5rem] border border-white/12 bg-[color:var(--color-deep-2)]/82 p-5 backdrop-blur-xl">
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
-                    {m.hero.cardKicker}
-                  </div>
-                  <div className="mt-2 text-2xl font-bold">{m.hero.cardHeadline}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
-                    {m.hero.cardFrom}
-                  </div>
-                  <div className="mt-2 text-3xl font-extrabold text-[color:var(--color-cyan-glow)]">
-                    {m.hero.cardPrice}
-                  </div>
-                </div>
-              </div>
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#201748] via-[#201748]/88 to-transparent px-6 pb-6 pt-16">
+              <p className="text-caption uppercase text-[#F6FAFC]/55">{m.hero.cardKicker}</p>
+              <p className="mt-1 text-lead text-white/90">{m.hero.cardHeadline}</p>
+              <p className="mt-3 text-caption uppercase text-[#F6FAFC]/55">{m.hero.promiseKicker}</p>
+              <p className="mt-0.5 text-caption text-[#F6FAFC]/75">{m.hero.promiseText}</p>
+              <p className="mt-4 flex items-baseline gap-2">
+                <span className="text-caption uppercase text-[#F6FAFC]/55">{m.hero.cardFrom}</span>
+                <span className="text-title text-[#36A9E1]">{m.hero.cardPrice}</span>
+              </p>
             </div>
           </div>
         </div>
@@ -1280,12 +1148,14 @@ function Hero() {
 function ValueSection() {
   const m = useFrozenLandingMessages();
   return (
-    <section className="mx-auto max-w-6xl px-5 py-20 sm:py-28">
+    <section>
+      <div aria-hidden className="h-20 bg-gradient-to-b from-[#201748] to-background sm:h-28" />
+      <div className="mx-auto max-w-6xl px-5 pb-20 pt-2 sm:pb-28">
       <div className="lg:hidden">
-        <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+        <p className="mb-4 text-caption uppercase text-primary">
           {m.value.kicker}
         </p>
-        <h2 className="text-3xl font-bold leading-tight sm:text-5xl">{m.value.h2}</h2>
+        <h2 className="text-title">{m.value.h2}</h2>
       </div>
       <div className="mt-8 grid gap-10 lg:mt-0 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-center">
         <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
@@ -1295,21 +1165,21 @@ function ValueSection() {
             className="aspect-[4/5] w-full object-cover"
           />
           <div className="absolute inset-x-5 bottom-5 rounded-2xl border border-white/15 bg-[color:var(--color-deep-2)]/82 p-4 text-white backdrop-blur-md">
-            <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
+            <div className="text-caption uppercase text-[#F6FAFC]">
               {m.value.overlayKicker}
             </div>
-            <div className="mt-2 text-lg font-semibold">{m.value.overlayText}</div>
+            <div className="mt-2 text-lead">{m.value.overlayText}</div>
           </div>
         </div>
 
         <div>
           <div className="hidden lg:block">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+            <p className="mb-4 text-caption uppercase text-primary">
               {m.value.kicker}
             </p>
-            <h2 className="text-3xl font-bold leading-tight sm:text-5xl">{m.value.h2}</h2>
+            <h2 className="text-title">{m.value.h2}</h2>
           </div>
-          <p className="mt-6 text-lg text-muted-foreground lg:mt-6">{m.value.lead}</p>
+          <p className="mt-6 text-body text-muted-foreground">{m.value.lead}</p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {[
@@ -1377,12 +1247,13 @@ function ValueSection() {
                     {icon}
                   </svg>
                 </div>
-                <h3 className="mt-4 font-semibold">{title}</h3>
-                <p className="mt-1.5 text-sm text-muted-foreground">{copy}</p>
+                <h3 className="mt-4 text-lead">{title}</h3>
+                <p className="mt-1.5 text-body text-muted-foreground">{copy}</p>
               </div>
             ))}
           </div>
         </div>
+      </div>
       </div>
     </section>
   );
@@ -1426,14 +1297,14 @@ function FunctionsSection() {
   ];
 
   return (
-    <section className="bg-[color:var(--color-deep-2)] px-5 py-20 text-white sm:py-28">
+    <section className="wd-section bg-[color:var(--color-deep-2)] text-white">
       <div className="mx-auto max-w-6xl">
         <div className="max-w-2xl">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--color-cyan-glow)]">
+          <p className="mb-4 text-caption uppercase text-[#36A9E1]">
             {m.functions.kicker}
           </p>
-          <h2 className="text-3xl font-bold leading-tight sm:text-5xl">{m.functions.h2}</h2>
-          <p className="mt-5 text-white/70">{m.functions.sub}</p>
+          <h2 className="text-title">{m.functions.h2}</h2>
+          <p className="mt-5 text-body text-[#F6FAFC]">{m.functions.sub}</p>
         </div>
 
         <div className="mt-12 relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
@@ -1456,7 +1327,7 @@ function FunctionsSection() {
               key={i.t}
               className="group rounded-xl bg-white/5 border border-white/10 p-4 backdrop-blur-sm open:bg-white/8"
             >
-              <summary className="flex cursor-pointer list-none items-center gap-3 font-semibold">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 font-semibold">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--color-cyan-glow)]/15 text-[color:var(--color-cyan-glow)]">
                   {i.iconSrc ? (
                     <AppIcon svg={i.iconSrc} className="size-[18px]" />
@@ -1480,7 +1351,7 @@ function FunctionsSection() {
                   +
                 </span>
               </summary>
-              <p className="mt-3 text-sm text-white/75">{i.d}</p>
+              <p className="mt-3 text-body text-[#F6FAFC]">{i.d}</p>
             </details>
           ))}
         </div>
@@ -1518,12 +1389,12 @@ function HowItWorks() {
     },
   ];
   return (
-    <section className="px-5 py-20 sm:py-28 max-w-5xl mx-auto">
+    <section className="wd-section mx-auto max-w-5xl">
       <div className="text-center max-w-2xl mx-auto mb-14">
-        <p className="text-sm uppercase tracking-[0.2em] text-primary font-semibold mb-4">
+        <p className="text-caption uppercase text-primary mb-4">
           {m.how.kicker}
         </p>
-        <h2 className="text-3xl sm:text-5xl font-bold leading-tight">{m.how.h2}</h2>
+        <h2 className="text-title">{m.how.h2}</h2>
       </div>
       <div className="grid md:grid-cols-3 gap-5 items-stretch">
         {steps.map((s) => (
@@ -1535,15 +1406,17 @@ function HowItWorks() {
               <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <AppIcon svg={s.iconSvg} className="size-5" />
               </span>
-              <div className="text-sm font-bold text-primary">{s.n}</div>
+              <div className="text-caption text-primary">{s.n}</div>
             </div>
-            <h3 className="mt-3 text-lg font-semibold">{s.t}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{s.d}</p>
+            <h3 className="mt-3 text-lead">{s.t}</h3>
+            <p className="mt-2 text-body text-muted-foreground">{s.d}</p>
             <div className="mt-auto pt-5">
+              {/* Eager: a lazy 4/3 box paints as empty space until the card is near the viewport. */}
               <SectionImage
                 src={s.image}
                 alt={s.alt}
-                className="aspect-[4/3] w-full rounded-xl object-cover"
+                priority
+                className="block aspect-[4/3] w-full rounded-xl object-cover"
               />
             </div>
           </div>
@@ -1636,7 +1509,7 @@ function App3Carousel() {
                 svg={s.iconSvg}
                 className="mx-auto mb-2 size-6 text-[color:var(--color-cyan-glow)]"
               />
-              <div className="text-lg font-bold text-[color:var(--color-cyan-glow)]">{s.tab}</div>
+              <div className="text-lead text-[#36A9E1]">{s.tab}</div>
               <div className="mt-0.5 text-xs text-white/70">{s.tabDesc}</div>
             </button>
           );
@@ -1654,10 +1527,10 @@ function App3Carousel() {
             className="flex w-[62%] shrink-0 snap-center flex-col items-center text-center sm:w-full sm:shrink"
           >
             <div className="mb-4 flex flex-col items-center">
-              <div className="text-[11px] font-bold tracking-[0.28em] tabular-nums text-[color:var(--color-cyan-glow)]">
+              <div className="text-caption tabular-nums text-[#36A9E1]">
                 {String(i + 1).padStart(2, "0")}
               </div>
-              <div className="mt-1.5 text-base font-semibold text-white">{s.title}</div>
+              <div className="mt-1.5 text-lead text-white">{s.title}</div>
             </div>
             <div className="w-full overflow-hidden rounded-[1.5rem] border border-white/12 bg-black/30 shadow-[0_34px_66px_-16px_oklch(0.02_0.02_270/0.9),0_18px_46px_-10px_oklch(0.8_0.11_232/0.6)] sm:max-w-[200px]">
               <img
@@ -1686,7 +1559,7 @@ function App3Carousel() {
           aria-label={m.app.prevAria}
           onClick={() => goTo(active - 1)}
           disabled={active === 0}
-          className="flex size-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 disabled:opacity-30"
+          className="flex size-11 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 disabled:opacity-30"
         >
           ‹
         </button>
@@ -1697,10 +1570,14 @@ function App3Carousel() {
               type="button"
               aria-label={formatMessage(m.app.gotoAria, { title: s.title })}
               onClick={() => goTo(i)}
-              className={`h-1.5 rounded-full transition-all ${
-                i === active ? "w-6 bg-[color:var(--color-cyan-glow)]" : "w-1.5 bg-white/30"
-              }`}
-            />
+              className="flex min-h-11 min-w-11 items-center justify-center"
+            >
+              <span
+                className={`h-1.5 rounded-full ${
+                  i === active ? "w-6 bg-[color:var(--color-cyan-glow)]" : "w-1.5 bg-white/70"
+                }`}
+              />
+            </button>
           ))}
         </div>
         <button
@@ -1708,7 +1585,7 @@ function App3Carousel() {
           aria-label={m.app.nextAria}
           onClick={() => goTo(active + 1)}
           disabled={active === APP3_SCREENS.length - 1}
-          className="flex size-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 disabled:opacity-30"
+          className="flex size-11 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:bg-white/10 disabled:opacity-30"
         >
           ›
         </button>
@@ -1724,14 +1601,14 @@ function AppEcosystem() {
     m.app.leadHighlight,
   );
   return (
-    <section className="bg-gradient-to-b from-[color:var(--color-deep)] to-[color:var(--color-deep-2)] text-white px-5 py-20 sm:py-28">
+    <section className="wd-section bg-gradient-to-b from-[color:var(--color-deep)] to-[color:var(--color-deep-2)] text-white">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--color-cyan-glow)]">
+          <p className="mb-4 text-caption uppercase text-[#36A9E1]">
             {m.app.kicker}
           </p>
-          <h2 className="text-3xl font-bold leading-tight sm:text-5xl">{m.app.h2}</h2>
-          <p className="mt-5 text-base text-white/75 sm:text-lg">
+          <h2 className="text-title">{m.app.h2}</h2>
+          <p className="mt-5 text-body text-[#F6FAFC]">
             {leadBefore}
             <span className="font-semibold text-white">{leadHighlight}</span>
             {leadAfter}
@@ -1747,7 +1624,7 @@ function AppEcosystem() {
 function Compatibility() {
   const m = useFrozenLandingMessages();
   return (
-    <section className="px-5 py-20 sm:py-28">
+    <section className="wd-section">
       <div className="mx-auto max-w-6xl">
         <div className="overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
           <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
@@ -1765,11 +1642,11 @@ function Compatibility() {
         </div>
 
         <div className="mt-12 max-w-3xl">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+          <p className="mb-4 text-caption uppercase text-primary">
             {m.compat.kicker}
           </p>
-          <h2 className="text-3xl font-bold leading-tight sm:text-5xl">{m.compat.h2}</h2>
-          <p className="mt-5 text-muted-foreground">{m.compat.lead}</p>
+          <h2 className="text-title">{m.compat.h2}</h2>
+          <p className="mt-5 text-body text-muted-foreground">{m.compat.lead}</p>
         </div>
 
         {/* The housing is the path almost everyone arriving here is on: a depth
@@ -1779,13 +1656,13 @@ function Compatibility() {
         <div className="mt-8 grid gap-4 sm:grid-cols-5">
           <div className="flex items-start gap-5 rounded-2xl border-2 border-primary/35 bg-card p-6 shadow-[0_16px_40px_-12px_oklch(0.2_0.03_260/0.28)] sm:col-span-3">
             <div className="flex-1">
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+              <span className="inline-flex min-h-11 items-center rounded-full bg-primary/10 px-3 text-caption uppercase text-primary">
                 {m.compat.housingBadge}
               </span>
-              <div className="mt-3 text-lg font-bold sm:text-xl">{m.compat.housingTitle}</div>
+              <div className="mt-3 text-lead">{m.compat.housingTitle}</div>
               <p className="mt-1 font-semibold text-foreground">{m.compat.housingLead}</p>
-              <p className="mt-1.5 text-sm text-muted-foreground">{m.compat.housingBody}</p>
-              <ul className="mt-4 space-y-1.5 text-sm font-medium text-foreground/80">
+              <p className="mt-1.5 text-body text-muted-foreground">{m.compat.housingBody}</p>
+              <ul className="mt-4 space-y-1.5 text-body text-foreground/80">
                 {[
                   m.compat.housingModel1,
                   m.compat.housingModel2,
@@ -1806,15 +1683,17 @@ function Compatibility() {
             />
           </div>
 
-          <div className="flex items-start gap-4 rounded-2xl border border-border bg-muted/30 p-5 sm:col-span-2">
+          {/* App Only is not available yet. Keep this card visually secondary
+              and non-interactive so it cannot be mistaken for a purchase path. */}
+          <div className="flex items-start gap-4 rounded-2xl border border-dashed border-border/50 bg-muted/20 p-5 sm:col-span-2">
             <div className="flex-1">
-              <div className="font-semibold text-muted-foreground">{m.compat.appOnlyTitle}</div>
-              <p className="mt-1 text-sm text-muted-foreground">{m.compat.appOnlyBody}</p>
-              <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+              <div className="font-medium text-muted-foreground/80">{m.compat.appOnlyTitle}</div>
+              <p className="mt-1 text-sm text-muted-foreground/75">{m.compat.appOnlyBody}</p>
+              <ul className="mt-3 space-y-1 text-sm text-muted-foreground/70">
                 {[m.compat.appOnlyModel1, m.compat.appOnlyModel2, m.compat.appOnlyModel3].map(
                   (model) => (
                     <li key={model} className="flex items-center gap-2">
-                      <span className="size-1 rounded-full bg-muted-foreground/50" />
+                      <span className="size-1 rounded-full bg-muted-foreground/35" />
                       {model}
                     </li>
                   ),
@@ -1824,7 +1703,7 @@ function Compatibility() {
             <SectionImage
               src={watchScreen}
               alt={m.compat.watchScreenAlt}
-              className="size-20 shrink-0 self-center rounded-xl object-cover sm:size-24"
+              className="size-20 shrink-0 self-center rounded-xl object-cover grayscale opacity-50 sm:size-24"
             />
           </div>
         </div>
@@ -1837,13 +1716,13 @@ function Compatibility() {
 function ActionCameras() {
   const m = useFrozenLandingMessages();
   return (
-    <section className="bg-card/60 border-y border-border px-5 py-14 sm:py-16">
+    <section className="wd-section border-y border-border bg-card/60">
       <div className="mx-auto max-w-5xl text-center">
-        <p className="text-sm uppercase tracking-[0.2em] text-primary font-semibold mb-3">
+        <p className="text-caption uppercase text-primary mb-4">
           {m.cameras.kicker}
         </p>
-        <h3 className="text-2xl sm:text-3xl font-bold leading-tight">{m.cameras.h3}</h3>
-        <p className="mt-4 text-muted-foreground">{m.cameras.lead}</p>
+        <h3 className="text-heading">{m.cameras.h3}</h3>
+        <p className="mt-4 text-body text-muted-foreground">{m.cameras.lead}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           {["GoPro", "Insta360", "Canon", m.cameras.chipMore].map((name) => (
             <span
@@ -1892,13 +1771,13 @@ function SafetySection() {
     },
   ];
   return (
-    <section className="bg-card/60 border-y border-border px-5 py-16 sm:py-20">
+    <section className="wd-section border-y border-border bg-card/60">
       <div className="mx-auto max-w-5xl">
         <div className="max-w-3xl">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+          <p className="mb-4 text-caption uppercase text-primary">
             {m.safety.kicker}
           </p>
-          <h2 className="text-3xl font-bold leading-tight sm:text-4xl">{m.safety.h2}</h2>
+          <h2 className="text-title">{m.safety.h2}</h2>
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {points.map((p) => (
@@ -1925,8 +1804,8 @@ function SafetySection() {
                   </svg>
                 )}
               </div>
-              <h3 className="mt-4 font-semibold">{p.t}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{p.d}</p>
+              <h3 className="mt-4 text-lead">{p.t}</h3>
+              <p className="mt-1.5 text-body text-muted-foreground">{p.d}</p>
             </div>
           ))}
         </div>
@@ -1945,7 +1824,7 @@ function OfferSection() {
     m.offer.leadHighlight,
   );
   return (
-    <section id="offer-form" className="relative overflow-hidden px-5 py-20 text-white sm:py-28">
+    <section id="offer-form" className="wd-section relative overflow-hidden text-white">
       <div className="absolute inset-0 bg-[color:var(--color-deep-2)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_oklch(0.696_0.129_235/0.35),_transparent_60%)]" />
       <div className="relative z-10 mx-auto max-w-4xl text-center">
@@ -1954,17 +1833,17 @@ function OfferSection() {
           alt={m.offer.imageAlt}
           className="mx-auto mb-8 aspect-video w-full max-w-3xl rounded-[2rem] border border-white/10 object-cover object-top shadow-[0_30px_90px_-35px_oklch(0.8_0.11_232/0.45)]"
         />
-        <p className="text-sm uppercase tracking-[0.2em] text-[color:var(--color-cyan-glow)] font-semibold mb-4">
+        <p className="text-caption uppercase text-[#36A9E1] mb-4">
           {m.offer.kicker}
         </p>
-        <h2 className="text-3xl sm:text-5xl font-bold leading-tight">
+        <h2 className="text-title">
           {headlineBefore}
           <span className="text-white/45 line-through">{headlineStrike}</span>
           {headlineMiddle}
           <span className="text-[color:var(--color-cyan-glow)]">{headlineNew}</span>
           {headlineAfter}
         </h2>
-        <p className="mt-5 text-white/80">
+        <p className="mt-5 text-body text-[#F6FAFC]">
           {leadBefore}
           <span className="font-semibold text-white">{leadHighlight}</span>
           {leadAfter}
@@ -1988,9 +1867,9 @@ function Credentials() {
   const [nvidiaBefore, , nvidiaAfter] = splitHighlightedCopy(m.creds.nvidiaTitle, "NVIDIA");
   const [awsBefore, , awsAfter] = splitHighlightedCopy(m.creds.awsTitle, "AWS");
   return (
-    <section className="px-5 py-16 sm:py-20">
+    <section className="wd-section">
       <div className="mx-auto max-w-5xl">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
+        <p className="text-center text-caption uppercase text-muted-foreground">
           {m.creds.heading}
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -2010,13 +1889,13 @@ function Credentials() {
             </div>
             <div className="flex flex-1 flex-col items-center justify-center px-7 pb-7 pt-6">
               <div className="flex min-h-[3.25rem] flex-col items-center justify-end">
-                <div className="text-lg font-bold">
+                <div className="text-lead">
                   {nvidiaBefore}
                   <span style={{ color: "#76B900" }}>NVIDIA</span>
                   {nvidiaAfter}
                 </div>
               </div>
-              <p className="mt-3.5 text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-3.5 text-body leading-relaxed text-muted-foreground">
                 {m.creds.nvidiaBody}
               </p>
             </div>
@@ -2038,13 +1917,13 @@ function Credentials() {
             </div>
             <div className="flex flex-1 flex-col items-center justify-center px-7 pb-7 pt-6">
               <div className="flex min-h-[3.25rem] flex-col items-center justify-end">
-                <div className="text-lg font-bold">
+                <div className="text-lead">
                   {awsBefore}
                   <span style={{ color: "#FF9900" }}>AWS</span>
                   {awsAfter}
                 </div>
               </div>
-              <p className="mt-3.5 text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-3.5 text-body leading-relaxed text-muted-foreground">
                 {m.creds.awsBody}
               </p>
             </div>
@@ -2063,7 +1942,7 @@ function Credentials() {
             </div>
             <div className="flex flex-1 flex-col items-center justify-center px-7 pb-7 pt-6">
               <div className="flex min-h-[3.25rem] flex-col items-center justify-end">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                <span className="text-caption uppercase text-muted-foreground">
                   {m.creds.samsungFeatured}
                 </span>
                 <img
@@ -2072,7 +1951,7 @@ function Credentials() {
                   className="mt-1.5 h-[18px] w-auto"
                 />
               </div>
-              <p className="mt-3.5 text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-3.5 text-body leading-relaxed text-muted-foreground">
                 {m.creds.samsungBody}
               </p>
             </div>
@@ -2114,23 +1993,23 @@ function FAQ() {
     ...productFaqs,
   ];
   return (
-    <section className="px-5 py-20 sm:py-28 max-w-3xl mx-auto">
+    <section className="wd-section mx-auto max-w-3xl">
       <div className="text-center mb-10">
-        <p className="text-sm uppercase tracking-[0.2em] text-primary font-semibold mb-4">
+        <p className="text-caption uppercase text-primary mb-4">
           {m.faq.kicker}
         </p>
-        <h2 className="text-3xl sm:text-5xl font-bold leading-tight">{m.faq.h2}</h2>
+        <h2 className="text-title">{m.faq.h2}</h2>
       </div>
       <div className="divide-y divide-border rounded-2xl border border-border bg-card">
         {faqs.map((f) => (
           <details key={f.q} className="group p-5 sm:p-6">
-            <summary className="flex items-center justify-between cursor-pointer list-none font-semibold">
+            <summary className="flex min-h-11 items-center justify-between cursor-pointer list-none font-semibold">
               {f.q}
               <span className="ml-4 text-primary transition-transform group-open:rotate-45 text-2xl leading-none">
                 +
               </span>
             </summary>
-            <p className="mt-3 text-muted-foreground">{f.a}</p>
+            <p className="mt-3 text-body text-muted-foreground">{f.a}</p>
           </details>
         ))}
       </div>
@@ -2143,24 +2022,25 @@ function Footer() {
   const m = useFrozenLandingMessages();
   const year = new Date().getFullYear();
   return (
-    <footer className="bg-[color:var(--color-deep-2)] text-white/70 px-5 py-10 text-center text-sm">
+    <footer className="wd-section bg-[color:var(--color-deep-2)] text-center text-body text-[#F6FAFC]">
       <div className="max-w-3xl mx-auto">
-        <div className="font-semibold text-white">{m.footer.brand}</div>
-        <nav className="mt-4 flex justify-center gap-6 text-white/80">
+        <img src={wordmarkWhite} alt="DIVEROID" className="mx-auto h-5 w-auto" />
+        <div className="mt-6 font-medium text-white">{m.footer.brand}</div>
+        <nav className="mt-4 flex items-center justify-center gap-2 text-[#F6FAFC]">
           <Link
             to={termsPath(locale)}
-            className="hover:text-white underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center px-3 underline-offset-4 hover:underline"
           >
             {m.footer.terms}
           </Link>
           <Link
             to={privacyPath(locale)}
-            className="hover:text-white underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center px-3 underline-offset-4 hover:underline"
           >
             {m.footer.privacy}
           </Link>
         </nav>
-        <p className="mx-auto mt-6 max-w-2xl text-xs text-white/45">
+        <p className="mx-auto mt-6 max-w-2xl text-xs text-[#F6FAFC]">
           {formatMessage(m.footer.nvidiaTrademark, { year })}
         </p>
       </div>

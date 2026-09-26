@@ -29,9 +29,7 @@ import type {
 import {
   FIELD_EMAIL_VERIFIED,
   FIELD_LANDING_PATH,
-  FIELD_LAUNCHOS_REPLAY_METADATA,
   FIELD_LEAD_ID,
-  FIELD_MEASUREMENT_CONSENT,
   FIELD_META_EVENT_ID,
   FIELD_UTM_CAMPAIGN,
   FIELD_UTM_CONTENT,
@@ -44,8 +42,6 @@ import {
   FIELD_VERIFICATION_SENT,
   FIELD_VERIFICATION_STATUS,
   FIELD_VERIFIED_AT,
-  LAUNCHOS_REPLAY_METADATA_MAX_LENGTH,
-  MEASUREMENT_CONSENT_GRANTED,
   STATUS_PENDING,
   STATUS_UNSUBSCRIBED,
   STATUS_VERIFIED,
@@ -118,14 +114,6 @@ function textProp(value: string) {
   return { rich_text: [{ text: { content: value.slice(0, 1900) } }] };
 }
 
-/** The sealed envelope must never be silently truncated into an unreplayable row. */
-function launchOsReplayMetadataProp(value: string) {
-  if (value.length > LAUNCHOS_REPLAY_METADATA_MAX_LENGTH) {
-    throw new Error("LaunchOS replay metadata exceeds the CRM field bound");
-  }
-  return { rich_text: [{ text: { content: value } }] };
-}
-
 function readText(property: unknown): string {
   const rich = (property as { rich_text?: { plain_text?: string }[] } | undefined)?.rich_text;
   return rich?.[0]?.plain_text ?? "";
@@ -157,7 +145,6 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
   const expiresAt = readDate(properties[FIELD_VERIFICATION_EXPIRES]);
   const verifiedAt = readDate(properties[FIELD_VERIFIED_AT]);
   const welcomeAt = readDate(properties[FIELD_WELCOME_EMAIL]);
-  const launchOsReplayMetadata = readText(properties[FIELD_LAUNCHOS_REPLAY_METADATA]);
 
   return {
     pageId,
@@ -182,7 +169,6 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     ...(expiresAt ? { expiresAt } : {}),
     ...(verifiedAt ? { verifiedAt } : {}),
     ...(welcomeAt ? { welcomeAt } : {}),
-    ...(launchOsReplayMetadata ? { launchOsReplayMetadata } : {}),
   };
 }
 
@@ -270,14 +256,6 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
               : {}),
             Suspect: { checkbox: input.suspect },
             ...attributionProperties(input.attribution),
-            ...(input.launchOsReplayMetadata
-              ? {
-                  [FIELD_LAUNCHOS_REPLAY_METADATA]: launchOsReplayMetadataProp(
-                    input.launchOsReplayMetadata,
-                  ),
-                  [FIELD_MEASUREMENT_CONSENT]: textProp(MEASUREMENT_CONSENT_GRANTED),
-                }
-              : {}),
             [FIELD_VERIFICATION_STATUS]: { select: { name: STATUS_PENDING } },
             [FIELD_EMAIL_VERIFIED]: { checkbox: false },
             [FIELD_LEAD_ID]: textProp(input.leadId),

@@ -12,18 +12,14 @@ import { Analytics } from "@vercel/analytics/react";
 
 import appCss from "../styles.css?url";
 import { NotFoundPage } from "@/components/not-found-page";
-import { OptionalMeasurementControl } from "@/components/optional-measurement-control";
 import { Toaster } from "@/components/ui/sonner";
 import { homePath, localeFromPathname } from "@/lib/i18n/locale";
 import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
+import { initClarity } from "@/lib/clarity";
+import { googleTagBootstrap, initGoogleTag, readGoogleTagConfig } from "@/lib/googleTag";
 import { initMetaPixel } from "@/lib/metaPixel";
-import { LAUNCHOS_BROWSER_MEASUREMENT_ENABLED } from "@/lib/funnelContext";
-import { OPTIONAL_MEASUREMENT_CONSENT_STORAGE_KEY } from "@/lib/measurementConsent";
-import {
-  OPTIONAL_MEASUREMENT_CONSENT_PURPOSE,
-  OPTIONAL_MEASUREMENT_CONSENT_VERSION,
-} from "@/lib/measurementConsentContract";
 import { allowsThirdPartyScripts, SUPPORT_WIDGET_SRC } from "@/lib/thirdPartyScripts";
+import { CookieChoiceBar } from "@/components/cookie-choice-bar";
 
 function NotFoundComponent() {
   const locale = useCurrentLocale();
@@ -74,26 +70,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       {
         rel: "icon",
-        type: "image/svg+xml",
-        sizes: "any",
-        href: "/favicon.svg",
+        type: "image/png",
+        href: "/favicon.png",
       },
       {
         rel: "stylesheet",
         href: appCss,
-      },
-      {
-        rel: "preconnect",
-        href: "https://fonts.googleapis.com",
-      },
-      {
-        rel: "preconnect",
-        href: "https://fonts.gstatic.com",
-        crossOrigin: "anonymous",
-      },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap",
       },
     ],
   }),
@@ -119,9 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function metaPixelBootstrap(pixelId: string): string {
   return `(function(){try{
   if(window.__watchDiveMetaPageViewSent)return;
-  if(${LAUNCHOS_BROWSER_MEASUREMENT_ENABLED ? "false" : "true"}&&localStorage.getItem("watchdive.measurement-consent.v3")==="denied")return;
-  if(${LAUNCHOS_BROWSER_MEASUREMENT_ENABLED ? "true" : "false"}){var c=null;try{c=JSON.parse(localStorage.getItem(${JSON.stringify(OPTIONAL_MEASUREMENT_CONSENT_STORAGE_KEY)})||"null");}catch(e){return;}
-  if(!c||Object.keys(c).length!==3||c.purpose!==${JSON.stringify(OPTIONAL_MEASUREMENT_CONSENT_PURPOSE)}||c.state!=="granted"||c.version!==${JSON.stringify(OPTIONAL_MEASUREMENT_CONSENT_VERSION)})return;}
+  if(localStorage.getItem("watchdive.measurement-consent.v3")!=="granted")return;
   if(navigator.globalPrivacyControl===true)return;
   var f=window.fbq;if(!f){f=window.fbq=function(){f.callMethod?f.callMethod.apply(f,arguments):f.queue.push(arguments)};
   f.queue=[];f.push=f;f.loaded=!0;f.version="2.0";if(!window._fbq)window._fbq=f;}
@@ -138,22 +118,23 @@ const META_PIXEL_ID = ((import.meta.env.VITE_META_PIXEL_ID as string | undefined
 const META_PIXEL_READY =
   String(import.meta.env.VITE_META_TRACKING_ENABLED ?? "").toLowerCase() === "true" &&
   /^\d{10,20}$/.test(META_PIXEL_ID);
+const GOOGLE_TAG_BOOTSTRAP = googleTagBootstrap(readGoogleTagConfig());
 
 function RootShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const thirdParty = allowsThirdPartyScripts(pathname);
   const locale = localeFromPathname(pathname);
-  const launchOsConsentLocale = locale === "en" || locale === "ko";
 
   return (
     <html lang={locale}>
       <head>
         <HeadContent />
-        {thirdParty &&
-          META_PIXEL_READY &&
-          (!LAUNCHOS_BROWSER_MEASUREMENT_ENABLED || launchOsConsentLocale) && (
-            <script dangerouslySetInnerHTML={{ __html: metaPixelBootstrap(META_PIXEL_ID) }} />
-          )}
+        {thirdParty && META_PIXEL_READY && (
+          <script dangerouslySetInnerHTML={{ __html: metaPixelBootstrap(META_PIXEL_ID) }} />
+        )}
+        {thirdParty && GOOGLE_TAG_BOOTSTRAP && (
+          <script dangerouslySetInnerHTML={{ __html: GOOGLE_TAG_BOOTSTRAP }} />
+        )}
       </head>
       <body>
         {children}
@@ -168,21 +149,19 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const locale = localeFromPathname(pathname);
 
   useEffect(() => {
     if (!allowsThirdPartyScripts(pathname)) return;
-    if (LAUNCHOS_BROWSER_MEASUREMENT_ENABLED && locale !== "en" && locale !== "ko") return;
     initMetaPixel();
-  }, [locale, pathname]);
+    initGoogleTag();
+    initClarity();
+  }, [pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      {LAUNCHOS_BROWSER_MEASUREMENT_ENABLED &&
-        (locale === "en" || locale === "ko") &&
-        allowsThirdPartyScripts(pathname) && <OptionalMeasurementControl />}
+      {allowsThirdPartyScripts(pathname) && <CookieChoiceBar />}
       <Toaster />
     </QueryClientProvider>
   );

@@ -141,11 +141,32 @@ test("the capture time travels only with the click id it dates", () => {
 // --- what crosses into the CRM --------------------------------------------
 
 test("the click id stops at the server", () => {
-  const lead = toLeadAttribution(readAttribution("?utm_source=meta&fbclid=IwAR0abc", "/", NOW));
+  const lead = toLeadAttribution(
+    readAttribution(
+      "?utm_source=meta&fbclid=IwAR0abc&gclid=Cj0abc&gbraid=0Aabc&wbraid=Ckwabc&ttclid=E.C.P.abc",
+      "/",
+      NOW,
+    ),
+  );
 
   assert.deepEqual(lead, { utmSource: "meta", landingPath: "/" });
   assert.equal("fbclid" in lead, false);
+  assert.equal("gclid" in lead, false);
+  assert.equal("gbraid" in lead, false);
+  assert.equal("wbraid" in lead, false);
+  assert.equal("ttclid" in lead, false);
   assert.equal("capturedAt" in lead, false);
+});
+
+test("google and tiktok click ids are kept as a first touch and dated", () => {
+  const captured = readAttribution("?gclid=Cj0abc&wbraid=Ckwabc", "/", NOW);
+  assert.equal(captured.gclid, "Cj0abc");
+  assert.equal(captured.wbraid, "Ckwabc");
+  assert.equal(captured.capturedAt, NOW);
+  assert.equal(hasCampaignSignal(captured), true);
+  const later = readAttribution("?ttclid=E.C.P.abc", "/", NOW + 1000);
+  assert.equal(mergeAttribution(captured, later).gclid, "Cj0abc");
+  assert.equal(mergeAttribution(captured, later).ttclid, undefined);
 });
 
 // --- Notion property mapping ----------------------------------------------

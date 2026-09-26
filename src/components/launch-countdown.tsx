@@ -21,10 +21,10 @@ function useCountdown(): Countdown | undefined {
 function Unit({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex min-w-[3.25rem] flex-col items-center">
-      <span className="font-mono text-2xl font-bold tabular-nums leading-none text-white sm:text-3xl">
+      <span className="font-mono text-subhead tabular-nums leading-none text-white sm:text-heading">
         {value}
       </span>
-      <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
+      <span className="mt-1 text-caption uppercase text-[#F6FAFC]">
         {label}
       </span>
     </div>
@@ -32,7 +32,7 @@ function Unit({ value, label }: { value: string; label: string }) {
 }
 
 function Separator() {
-  return <span className="pb-4 font-mono text-xl text-white/25 sm:text-2xl">:</span>;
+  return <span className="pb-4 font-mono text-xl text-[#F6FAFC] sm:text-2xl">:</span>;
 }
 
 /**
@@ -58,7 +58,7 @@ export function LaunchCountdown({ className = "" }: { className?: string }) {
 
   return (
     <div className={className}>
-      <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--color-cyan-glow)]">
+      <p className="text-center text-caption uppercase text-[#36A9E1]">
         {messages.opens}
       </p>
       <div
