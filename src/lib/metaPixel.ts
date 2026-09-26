@@ -4,6 +4,7 @@
 // inside (or when the country is unknown) it waits for Allow. Global Privacy
 // Control and an explicit Not now always keep it off.
 import { browserGpc, readGeoCountry, measurementAllowedFor } from "./consentRegion.ts";
+import { META_LEAD_CURRENCY, META_LEAD_VALUE } from "./metaLeadValue.ts";
 
 const META_TRACKING_ENABLED =
   (import.meta.env.VITE_META_TRACKING_ENABLED as string | undefined)?.trim() === "true";
@@ -141,6 +142,9 @@ function canTrackStandardEvent(eventId: string): boolean {
 // founder decision): waiting for the confirmation click left Meta with about
 // one conversion a week, too few to optimise delivery. The server mirrors it
 // through the Conversions API under the same event id, so Meta counts one.
+// It fires for every accepted submit — a new address and a deduplicated one
+// alike, since the server answers both with the same `pending` — and carries
+// the same value/currency as the server leg (see `metaLeadValue.ts`).
 // A tripped honeypot or a resend never fires it.
 export function trackMetaLead(eventId: string, source: string) {
   if (!canTrackStandardEvent(eventId)) return;
@@ -148,7 +152,12 @@ export function trackMetaLead(eventId: string, source: string) {
   window.fbq!(
     "track",
     "Lead",
-    { content_name: "watchdive_email_signup", content_category: source },
+    {
+      content_name: "watchdive_email_signup",
+      content_category: source,
+      value: META_LEAD_VALUE,
+      currency: META_LEAD_CURRENCY,
+    },
     { eventID: eventId },
   );
 }
