@@ -225,23 +225,36 @@ function StickyLaunchBanner() {
 
   useEffect(() => {
     const forms = [...document.querySelectorAll("form")];
-    const onFocus = (event: FocusEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target?.closest("form")) setHidden(true);
+    const visibleForms = new Set<Element>();
+    const viewport = window.visualViewport;
+    const update = () => {
+      const focused = document.activeElement;
+      const editing = focused instanceof HTMLElement &&
+        !!focused.closest("form, #dc-win");
+      const keyboardOpen = !!viewport && viewport.height < window.innerHeight * 0.75;
+      const hide = visibleForms.size > 0 || editing || keyboardOpen;
+      setHidden(hide);
+      document.documentElement.dataset.wdForm = hide ? "active" : "";
     };
-    document.addEventListener("focusin", onFocus);
-
-    let observer: IntersectionObserver | undefined;
-    if (forms.length && typeof IntersectionObserver !== "undefined") {
-      observer = new IntersectionObserver(
-        (entries) => setHidden(entries.some((entry) => entry.isIntersecting)),
-        { rootMargin: "-10% 0px -10% 0px" },
-      );
-      forms.forEach((form) => observer!.observe(form));
-    }
+    const observer = new IntersectionObserver((entries) => {
+      // Entries contain only changed targets, not every observed form.
+      for (const entry of entries) {
+        if (entry.isIntersecting) visibleForms.add(entry.target);
+        else visibleForms.delete(entry.target);
+      }
+      update();
+    });
+    forms.forEach((form) => observer.observe(form));
+    document.addEventListener("focusin", update);
+    document.addEventListener("focusout", update);
+    viewport?.addEventListener("resize", update);
+    update();
     return () => {
-      document.removeEventListener("focusin", onFocus);
-      observer?.disconnect();
+      observer.disconnect();
+      document.removeEventListener("focusin", update);
+      document.removeEventListener("focusout", update);
+      viewport?.removeEventListener("resize", update);
+      delete document.documentElement.dataset.wdForm;
     };
   }, []);
 
@@ -777,7 +790,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         />
       )}
 
-      <div className="grid w-full gap-2 sm:grid-cols-[1fr_auto]">
+      <div className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <input
           id={`${id}-email`}
           type="email"
@@ -793,7 +806,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
             }
           }}
           placeholder={m.form.emailPlaceholder}
-          className="order-1 h-14 px-4 rounded-xl bg-gradient-to-b from-white to-[oklch(0.92_0.006_255)] text-[color:var(--color-deep-2)] placeholder:text-muted-foreground border border-white/50 shadow-[inset_0_1px_0_oklch(1_0_0/0.85),0_22px_48px_-8px_oklch(0.008_0.01_270/0.85),0_6px_16px_-3px_oklch(0.008_0.01_270/0.7)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)]"
+          className="order-1 h-14 w-full min-w-0 px-4 rounded-xl bg-gradient-to-b from-white to-[oklch(0.92_0.006_255)] text-[color:var(--color-deep-2)] placeholder:text-muted-foreground border border-white/50 shadow-[inset_0_1px_0_oklch(1_0_0/0.85),0_22px_48px_-8px_oklch(0.008_0.01_270/0.85),0_6px_16px_-3px_oklch(0.008_0.01_270/0.7)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)]"
         />
         {includePhone && (
           <input
@@ -801,13 +814,13 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder={m.form.phonePlaceholder}
-            className="order-2 h-14 w-full px-4 rounded-xl bg-gradient-to-b from-white to-[oklch(0.92_0.006_255)] text-[color:var(--color-deep-2)] placeholder:text-muted-foreground border border-white/50 shadow-[inset_0_1px_0_oklch(1_0_0/0.85),0_22px_48px_-8px_oklch(0.008_0.01_270/0.85),0_6px_16px_-3px_oklch(0.008_0.01_270/0.7)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)] sm:order-3 sm:col-span-2"
+            className="order-2 h-14 w-full min-w-0 px-4 rounded-xl bg-gradient-to-b from-white to-[oklch(0.92_0.006_255)] text-[color:var(--color-deep-2)] placeholder:text-muted-foreground border border-white/50 shadow-[inset_0_1px_0_oklch(1_0_0/0.85),0_22px_48px_-8px_oklch(0.008_0.01_270/0.85),0_6px_16px_-3px_oklch(0.008_0.01_270/0.7)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)] sm:order-3 sm:col-span-2"
           />
         )}
         <button
           type="submit"
           disabled={loading}
-          className="order-3 inline-flex h-14 min-h-11 items-center justify-center rounded-xl border border-white/45 bg-[#3D2683] px-5 font-semibold text-[#F6FAFC] hover:brightness-110 active:scale-[0.99] transition sm:order-2"
+          className="order-3 inline-flex min-h-14 items-center justify-center rounded-xl border border-white/45 bg-[#3D2683] px-5 py-3 font-semibold text-[#F6FAFC] hover:brightness-110 active:scale-[0.99] transition sm:order-2"
         >
           {loading ? m.form.saving : m.cta.label}
         </button>
@@ -1431,7 +1444,7 @@ function App3Carousel() {
     <div className="mt-10">
       {/* Tabs — synced to the carousel: tap to jump, and they follow the swipe.
           On desktop all three screens show at once, so tabs stay neutral there. */}
-      <div className="mx-auto grid max-w-3xl grid-cols-3 gap-3">
+      <div className="wd-app-tabs mx-auto grid max-w-3xl grid-cols-3 gap-3">
         {APP3_SCREENS.map((s, i) => {
           const on = i === active;
           return (
@@ -1967,7 +1980,7 @@ function Footer() {
       <div className="max-w-3xl mx-auto">
         <img src={wordmarkWhite} alt="DIVEROID" className="mx-auto h-5 w-auto" />
         <div className="mt-6 font-medium text-white">{m.footer.brand}</div>
-        <nav className="mt-4 flex items-center justify-center gap-2 text-[#F6FAFC]">
+        <nav className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[#F6FAFC]">
           <Link
             to={termsPath(locale)}
             className="inline-flex min-h-11 items-center px-3 underline-offset-4 hover:underline"
