@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse";
-import { sendMetaSubmitApplication } from "./metaCapi";
+import { sendMetaLead } from "./metaCapi";
 import {
   ATTRIBUTION_VALUE_MAX,
   FBCLID_MAX,
@@ -21,8 +21,6 @@ import {
   pollVerificationService,
   requestVerificationService,
 } from "@/lib/verification/service";
-import { launchOsWaitlistMeasurementSchema } from "./launchOsRelay";
-import { bindCurrentRequestLaunchOsMeasurementContext } from "./launchOsRelay.server";
 
 // Waitlist signups are stored directly in a Notion database — no Supabase.
 // Server-only: the Notion, Resend and signing secrets never reach the browser.
@@ -52,6 +50,8 @@ import { bindCurrentRequestLaunchOsMeasurementContext } from "./launchOsRelay.se
 //   Lead ID (rich_text) · Meta Event ID (rich_text)
 //   UTM Source · UTM Medium · UTM Campaign · UTM Content · UTM Term (rich_text)
 //   Landing path (rich_text)
+//   Optional: a rich_text column for the Meta click id, named by
+//   NOTION_FBCLID_PROPERTY (e.g. "FBCLID"). Unset = fbclid is not stored.
 
 // Repeat-submit counters for one server process. The keyed digest of a client
 // address is used as a map key here and nowhere else — it is never written to
@@ -94,14 +94,13 @@ function sanitizeMetaCookie(value: string | undefined | null): string {
 
 // Reads request metadata (IP, UA) inside a server fn. Header access can throw if
 // there is no active request context, so it always degrades to empty strings.
-function requestMeta(): { ip: string; ua: string; gpc: boolean } {
+function requestMeta(): { ip: string; ua: string } {
   try {
     const xff = getRequestHeader("x-forwarded-for") ?? getRequestHeader("x-real-ip");
     const ua = getRequestHeader("user-agent") ?? "";
-    const secGpc = getRequestHeader("sec-gpc") ?? "";
-    return { ip: firstIp(xff), ua, gpc: secGpc.trim() === "1" };
+    return { ip: firstIp(xff), ua };
   } catch {
-    return { ip: "", ua: "", gpc: false };
+    return { ip: "", ua: "" };
   }
 }
 
@@ -190,9 +189,6 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       // The browser's measurement choice, captured now and carried signed
       // through the token so the confirming browser cannot widen it.
       measurementConsent: z.boolean().default(false),
-      // Optional and strict. Invalid/version-skewed telemetry is discarded so
-      // it can never reject an otherwise valid operational signup.
-      launchOsMeasurement: launchOsWaitlistMeasurementSchema,
       // Email and confirmation-page language. It is signed into the
       // verification token rather than added to the CRM schema. Defaulting to
       // English keeps older clients and already-open tabs compatible.
@@ -209,11 +205,16 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           utmTerm: z.string().max(ATTRIBUTION_VALUE_MAX).optional(),
           landingPath: z.string().max(ATTRIBUTION_VALUE_MAX).optional(),
           fbclid: z.string().max(FBCLID_MAX).optional(),
+          gclid: z.string().max(FBCLID_MAX).optional(),
+          gbraid: z.string().max(FBCLID_MAX).optional(),
+          wbraid: z.string().max(FBCLID_MAX).optional(),
+          ttclid: z.string().max(FBCLID_MAX).optional(),
           capturedAt: z.number().int().positive().optional(),
         })
         .optional(),
-      // Present only when the browser fired its own SubmitApplication, so the
-      // two legs carry one id and Meta counts one event.
+      // The browser's `Lead` event id, sent on the first submit only (never on
+      // a resend), so the pixel and Conversions API legs carry one id and Meta
+      // counts one Lead.
       submitEventId: z
         .string()
         .regex(/^[A-Za-z0-9._:-]{8,64}$/)
@@ -236,17 +237,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
 
     const email = data.email.trim().toLowerCase();
     const canonical = canonicalEmail(email);
-    const { ip, ua, gpc } = requestMeta();
-    // The server signal is authoritative. A forged client boolean cannot
-    // override Global Privacy Control seen on the actual request.
-    const measurementConsent = data.measurementConsent && !gpc;
-    // LaunchOS authority is independent of whether Meta Pixel happens to be
-    // configured. It requires the exact versioned grant, its short-lived
-    // HttpOnly server binding, and no Sec-GPC override on this request.
-    const launchOsMeasurement =
-      !gpc && data.launchOsMeasurement
-        ? bindCurrentRequestLaunchOsMeasurementContext(data.launchOsMeasurement)
-        : undefined;
+    const { ip, ua } = requestMeta();
 
     // The network address and user agent are read, used, and dropped inside
     // this handler. Neither reaches Notion, and neither is logged. Only a keyed
@@ -277,11 +268,16 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
           source: data.source,
           ...(sanitizeRef(data.referredBy) ? { referredBy: sanitizeRef(data.referredBy) } : {}),
-          attribution: toLeadAttribution(attribution),
+          attribution: {
+            ...toLeadAttribution(attribution),
+            // Only when the CRM has a column for it (NOTION_FBCLID_PROPERTY).
+            ...(attribution.fbclid && process.env.NOTION_FBCLID_PROPERTY?.trim()
+              ? { fbclid: attribution.fbclid }
+              : {}),
+          },
           flags,
           suspect: flags.length > 0,
-          measurementConsent,
-          ...(launchOsMeasurement ? { launchOsMeasurement } : {}),
+          measurementConsent: data.measurementConsent,
           locale: data.locale,
           networkSendBlocked: verdict.blocked,
         },
@@ -291,12 +287,13 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       throw sanitizeServerError("verification-request", error);
     }
 
-    // The optimisation event's server leg. Sent for every accepted submit that
-    // carries consent and no abuse signal — a brand-new address, one already
+    // The `Lead` server leg (optimisation event, fired at submit since
+    // 2026-09-26). Sent for every accepted submit that carries measurement
+    // permission and no abuse signal — a brand-new address, one already
     // pending, one already confirmed alike — so the latency it adds cannot say
     // which of those happened. That uniformity is the property the response
     // floor inside the service exists to protect, and this must not undo it.
-    if (data.submitEventId && measurementConsent && !conversionBlocked(flags)) {
+    if (data.submitEventId && data.measurementConsent && !conversionBlocked(flags)) {
       const fbp = sanitizeMetaCookie(data.fbp);
       // The pixel derives `_fbc` from an `fbclid` landing, but only if it ran at
       // all. When an ad blocker stopped it, the click id kept from that same
@@ -308,7 +305,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
           : "");
 
-      await sendMetaSubmitApplication({
+      await sendMetaLead({
         eventId: data.submitEventId,
         email,
         ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
@@ -317,6 +314,14 @@ export const joinWaitlist = createServerFn({ method: "POST" })
         ...(fbp ? { fbp } : {}),
         ...(fbc ? { fbc } : {}),
         source: data.source,
+        utm: {
+          source: attribution.utmSource,
+          medium: attribution.utmMedium,
+          campaign: attribution.utmCampaign,
+          content: attribution.utmContent,
+          term: attribution.utmTerm,
+        },
+        ...(attribution.landingPath ? { landingPath: attribution.landingPath } : {}),
       });
     }
 

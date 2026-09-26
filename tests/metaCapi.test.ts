@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { afterEach, test } from "node:test";
 
-import { sendMetaLead } from "../src/lib/api/metaCapi.ts";
+import { sendMetaEmailVerified, sendMetaLead } from "../src/lib/api/metaCapi.ts";
 
 const META_ENV_KEYS = [
   "META_CAPI_ENABLED",
@@ -52,14 +52,14 @@ test("fails closed when browser and server dataset ids differ", async () => {
   assert.equal(called, false);
 });
 
-test("sends hashed lead and phone data with matching browser/server event ids", async () => {
+test("the submit Lead carries hashed contact data, fbp/fbc, UTMs and the landing page", async () => {
   configureMeta();
   let requestUrl = "";
   let requestInit: RequestInit | undefined;
   globalThis.fetch = async (input, init) => {
     requestUrl = String(input);
     requestInit = init;
-    return new Response(JSON.stringify({ events_received: 2, fbtrace_id: "trace-1" }), {
+    return new Response(JSON.stringify({ events_received: 1, fbtrace_id: "trace-1" }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
@@ -74,6 +74,8 @@ test("sends hashed lead and phone data with matching browser/server event ids", 
     fbp: "fb.1.123.456",
     fbc: "fb.1.123.click",
     source: "hero",
+    utm: { source: "ig", medium: "paid", campaign: "us-launch", content: "reel-1", term: "divers" },
+    landingPath: "/",
   });
 
   assert.equal(sent, true);
@@ -81,18 +83,54 @@ test("sends hashed lead and phone data with matching browser/server event ids", 
   assert.equal(new Headers(requestInit?.headers).get("Authorization"), "Bearer test-token");
 
   const body = JSON.parse(String(requestInit?.body));
-  assert.equal(body.data.length, 2);
-  assert.equal(body.data[0].event_name, "Lead");
-  assert.equal(body.data[0].event_id, "wd-test-dedup-1234");
-  assert.equal(body.data[1].event_name, "Contact");
-  assert.equal(body.data[1].event_id, "wd-test-dedup-1234:phone");
-  assert.deepEqual(body.data[0].user_data.em, [
+  assert.equal(body.data.length, 1, "an unconfirmed submit is one Lead, no Contact");
+  const [lead] = body.data;
+  assert.equal(lead.event_name, "Lead");
+  assert.equal(lead.event_id, "wd-test-dedup-1234");
+  assert.equal(lead.action_source, "website");
+  assert.equal(lead.event_source_url, "https://watchdive.diveroid.com/");
+  assert.deepEqual(lead.user_data.em, [
     createHash("sha256").update("diver@example.com").digest("hex"),
   ]);
-  assert.deepEqual(body.data[0].user_data.ph, [
-    createHash("sha256").update("14155550100").digest("hex"),
-  ]);
+  assert.deepEqual(lead.user_data.ph, [createHash("sha256").update("14155550100").digest("hex")]);
+  assert.equal(lead.user_data.fbp, "fb.1.123.456");
+  assert.equal(lead.user_data.fbc, "fb.1.123.click");
+  assert.equal(lead.custom_data.utm_source, "ig");
+  assert.equal(lead.custom_data.utm_medium, "paid");
+  assert.equal(lead.custom_data.utm_campaign, "us-launch");
+  assert.equal(lead.custom_data.utm_content, "reel-1");
+  assert.equal(lead.custom_data.utm_term, "divers");
   assert.equal(body.test_event_code, undefined);
+});
+
+test("the confirmation click is EmailVerified (not a second Lead), plus Contact for a phone", async () => {
+  configureMeta();
+  let requestInit: RequestInit | undefined;
+  globalThis.fetch = async (_input, init) => {
+    requestInit = init;
+    return new Response(JSON.stringify({ events_received: 2, fbtrace_id: "trace-3" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  const sent = await sendMetaEmailVerified({
+    eventId: "wd-test-verify-1234",
+    email: "diver@example.com",
+    phone: "+1 (415) 555-0100",
+  });
+
+  assert.equal(sent, true);
+  const body = JSON.parse(String(requestInit?.body));
+  assert.equal(body.data.length, 2);
+  assert.equal(body.data[0].event_name, "EmailVerified");
+  assert.equal(body.data[0].event_id, "wd-test-verify-1234");
+  assert.equal(body.data[1].event_name, "Contact");
+  assert.equal(body.data[1].event_id, "wd-test-verify-1234:phone");
+  assert.equal(
+    body.data.some((event: { event_name: string }) => event.event_name === "Lead"),
+    false,
+  );
 });
 
 test("does not report success when Meta acknowledges fewer events than sent", async () => {

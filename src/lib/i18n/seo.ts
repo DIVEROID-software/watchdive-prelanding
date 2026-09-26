@@ -1,3 +1,4 @@
+import localizedSocialImage from "../../assets/live/hero-background.webp";
 import { EN_FROZEN_LANDING_MESSAGES, type FrozenLandingMessages } from "./frozen-landing-en";
 import { homePath, privacyPath, SUPPORTED_LOCALES, termsPath, type Locale } from "./locale";
 
@@ -25,6 +26,10 @@ export function landingHead(
 ) {
   const copy = messages.meta;
   const canonical = absoluteWatchDivePath(homePath(locale));
+  // The legacy campaign card contains USD copy and claims that are not in the
+  // current Product Truth. Every locale therefore shares the same text-free
+  // underwater image until approved locale-specific cards exist.
+  const socialImage = absoluteWatchDivePath(localizedSocialImage);
 
   return {
     meta: [
@@ -35,13 +40,13 @@ export function landingHead(
       { property: "og:type", content: "website" },
       { property: "og:url", content: canonical },
       { property: "og:locale", content: OG_LOCALE[locale] },
-      { property: "og:image", content: `${WATCHDIVE_PUBLIC_ORIGIN}/og-image.png` },
-      { property: "og:image:width", content: "1200" },
-      { property: "og:image:height", content: "630" },
+      { property: "og:image", content: socialImage },
+      { property: "og:image:width", content: "1600" },
+      { property: "og:image:height", content: "971" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: copy.twitterTitle },
       { name: "twitter:description", content: copy.twitterDescription },
-      { name: "twitter:image", content: `${WATCHDIVE_PUBLIC_ORIGIN}/og-image.png` },
+      { name: "twitter:image", content: socialImage },
     ],
     links: [
       { rel: "canonical", href: canonical },

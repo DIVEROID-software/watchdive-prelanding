@@ -69,9 +69,6 @@ export class FakeLeadStore implements LeadStore {
       ...(record.expiresAt ? { expiresAt: record.expiresAt } : {}),
       ...(record.verifiedAt ? { verifiedAt: record.verifiedAt } : {}),
       ...(record.welcomeAt ? { welcomeAt: record.welcomeAt } : {}),
-      ...(record.launchOsReplayMetadata
-        ? { launchOsReplayMetadata: record.launchOsReplayMetadata }
-        : {}),
     };
     this.rows.set(row.pageId, row);
     this.byCanonical.set(record.canonical, row.pageId);
@@ -103,9 +100,6 @@ export class FakeLeadStore implements LeadStore {
       leadId: input.leadId,
       expiresAt: input.expiresAt,
       sends: 1,
-      ...(input.launchOsReplayMetadata
-        ? { launchOsReplayMetadata: input.launchOsReplayMetadata }
-        : {}),
     });
   }
 

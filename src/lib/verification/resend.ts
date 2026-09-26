@@ -27,6 +27,8 @@ const RETRYABLE_CONFLICT = "concurrent_idempotent_requests";
 export type ResendEnvironment = {
   RESEND_API_KEY?: string;
   WATCHDIVE_EMAIL_FROM?: string;
+  /** Display name shown in the inbox. Defaults to "DIVEROID". */
+  WATCHDIVE_EMAIL_FROM_NAME?: string;
   WATCHDIVE_EMAIL_REPLY_TO?: string;
 };
 
@@ -76,11 +78,27 @@ export function referralUrl(
   return new URL(referralPath(locale, refCode), publicOrigin).toString();
 }
 
+export const DEFAULT_SENDER_NAME = "DIVEROID";
+
+/**
+ * The inbox shows the brand, whatever display name the env value carries:
+ * `Name <addr>` or a bare `addr` becomes `DIVEROID <addr>`. Only the display
+ * name changes; the sending address (and so the verified Resend domain) stays
+ * exactly what `WATCHDIVE_EMAIL_FROM` says.
+ */
+export function senderWithDisplayName(from: string, name?: string): string {
+  const match = /<\s*([^<>\s]+@[^<>\s]+)\s*>\s*$/.exec(from);
+  const address = (match ? match[1] : from).trim();
+  const display = (name ?? "").replace(/["<>\r\n]/g, "").trim() || DEFAULT_SENDER_NAME;
+  return `${display} <${address}>`;
+}
+
 export function readResendConfig(env: ResendEnvironment = process.env): ResendConfig {
   const apiKey = (env.RESEND_API_KEY ?? "").trim();
   if (!apiKey) throw new Error("RESEND_API_KEY is not set");
-  const from = (env.WATCHDIVE_EMAIL_FROM ?? "").trim();
-  if (!from) throw new Error("WATCHDIVE_EMAIL_FROM is not set");
+  const rawFrom = (env.WATCHDIVE_EMAIL_FROM ?? "").trim();
+  if (!rawFrom) throw new Error("WATCHDIVE_EMAIL_FROM is not set");
+  const from = senderWithDisplayName(rawFrom, env.WATCHDIVE_EMAIL_FROM_NAME);
   const replyTo = (env.WATCHDIVE_EMAIL_REPLY_TO ?? "").trim();
   return { apiKey, from, ...(replyTo ? { replyTo } : {}) };
 }

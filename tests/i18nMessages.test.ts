@@ -113,6 +113,58 @@ test("the design-frozen catalog is complete and preserves runtime interpolation 
   }
 });
 
+test("every public launch-date surface says December, never a specific day", () => {
+  // The Kickstarter day is not confirmed (2026-09-26). Every surface names the
+  // month only; the countdown was removed.
+  const expectedByLocale = {
+    en: { launch: "Launching on Kickstarter in December", month: "December" },
+    ko: { launch: "12월 킥스타터 런칭", month: "12월" },
+    "zh-CN": { launch: "12 月在 Kickstarter 上线", month: "12 月" },
+    "zh-TW": { launch: "12 月在 Kickstarter 上線", month: "12 月" },
+    ja: { launch: "12月に Kickstarter でローンチ", month: "12月" },
+    es: { launch: "Lanzamiento en Kickstarter en diciembre", month: "diciembre" },
+    fr: { launch: "Lancement sur Kickstarter en décembre", month: "décembre" },
+    de: { launch: "Start auf Kickstarter im Dezember", month: "Dezember" },
+    "pt-BR": { launch: "Lançamento no Kickstarter em dezembro", month: "dezembro" },
+  } as const satisfies Record<Locale, { launch: string; month: string }>;
+
+  for (const locale of SUPPORTED_LOCALES) {
+    const messages = FROZEN_LANDING_MESSAGES[locale];
+    const expected = expectedByLocale[locale];
+    assert.equal(messages.countdown.opens, expected.launch, `${locale}.countdown.opens`);
+    const monthSurfaces = {
+      serverClosed: messages.server.closed,
+      faq: messages.faq.a5,
+      verified: messages.verify.verifiedBody,
+      priceLine: messages.hero.priceLine,
+    };
+    for (const [surface, copy] of Object.entries(monthSurfaces)) {
+      assert.ok(copy.includes(expected.month), `${locale}.${surface}: launch month missing`);
+    }
+  }
+
+  const allCopy = flattenedText(FROZEN_LANDING_MESSAGES);
+  for (const staleDate of [
+    "November 18",
+    "11월 18일",
+    "11 月 18 日",
+    "11月18日",
+    "18 de noviembre",
+    "18 novembre",
+    "18. November",
+    "18 de novembro",
+    "10 August",
+    "8월 10일",
+    "8 月 10 日",
+    "8月10日",
+    "10 de agosto",
+    "10 août",
+    "10. August",
+  ]) {
+    assert.ok(!allCopy.includes(staleDate), `stale launch date remains: ${staleDate}`);
+  }
+});
+
 test("transactional email copy contains no unapproved hard claims", () => {
   const resendSource = readFileSync(
     new URL("../src/lib/verification/resend.ts", import.meta.url),
@@ -228,6 +280,43 @@ test("native-reviewed landing copy does not regress to known literal translation
   }
 });
 
+test("the reorganized story explains the same bounded product mechanism in every locale", () => {
+  const pressure = /pressure|수압|压力|壓力|水圧|presión|pression|Druck|pressão/iu;
+  const waterTemperature =
+    /water-temperature|water temperature|수온|水温|水溫|temperatura del agua|température de l’eau|Wassertemperatur|temperatura da água/iu;
+  const bluetooth = /Bluetooth|蓝牙|藍牙/iu;
+  const unsupportedEquivalence =
+    /Bühlmann|Gradient Factors?|same (?:calculation|as)|전용 다이브 컴퓨터.{0,20}(?:같|동일)|专用潜水电脑|專用潛水電腦|専用ダイブコンピューター|ordenador de buceo dedicado|ordinateur de plongée dédié|dedizierter Tauchcomputer|computador de mergulho dedicado/iu;
+
+  for (const locale of SUPPORTED_LOCALES) {
+    const messages = FROZEN_LANDING_MESSAGES[locale];
+    assert.match(messages.hero.sub, /Apple Watch/);
+    assert.match(messages.hero.sub, /Galaxy Watch/);
+
+    for (const [path, copy] of [
+      ["value.card3Copy", messages.value.card3Copy],
+      ["how.step2Body", messages.how.step2Body],
+      ["safety.point3Body", messages.safety.point3Body],
+    ] as const) {
+      assert.match(copy, pressure, `${locale}.${path}: pressure sensor missing`);
+      assert.match(copy, waterTemperature, `${locale}.${path}: water-temperature sensor missing`);
+      assert.match(copy, bluetooth, `${locale}.${path}: Bluetooth transfer missing`);
+    }
+
+    const functionCopy = flattenedText(messages.functions);
+    assert.doesNotMatch(
+      functionCopy,
+      unsupportedEquivalence,
+      `${locale}: function copy implies unsupported technical equivalence`,
+    );
+    assert.doesNotMatch(
+      functionCopy,
+      /\$149|60\s*m|197\s*ft/iu,
+      `${locale}: function story repeats price or depth instead of explaining use`,
+    );
+  }
+});
+
 test("localized CTA copy asks for an invitation instead of claiming a purchase or price lock", () => {
   const purchaseGuarantee =
     /lock in|secure|guarantee|확보|보장|锁定|保证|鎖定|保證|確保|asegurar|garantizar|verrouiller|garantir|sichern/iu;
@@ -239,6 +328,126 @@ test("localized CTA copy asks for an invitation instead of claiming a purchase o
       `${locale}: CTA implies a purchase or guaranteed price`,
     );
   }
+});
+
+test("each locale uses its own contextual currency across every price-bearing surface", () => {
+  const localCurrency: Record<Locale, RegExp> = {
+    en: /\$(?:149|299|1,000)/,
+    ko: /(?:20만 원대|40만 원대|100만 원 이상)/,
+    "zh-CN": /(?:1,000|2,000|7,000) 元/,
+    "zh-TW": /NT\$(?:5,000|10,000|30,000)/,
+    ja: /(?:2万円台|4万円台|15万円以上)/,
+    es: /€|euros?/iu,
+    fr: /€|euros?/iu,
+    de: /€|Euro/iu,
+    "pt-BR": /R\$|reais/iu,
+  };
+  const localEstimateNotice: Record<Exclude<Locale, "en">, RegExp> = {
+    ko: /예상 범위|기준/,
+    "zh-CN": /仅供参考|为准/,
+    "zh-TW": /僅供參考|為準/,
+    ja: /目安|ご確認/,
+    es: /orientativos|prevalecerá/iu,
+    fr: /indicatifs|fera foi/iu,
+    de: /Richtwerte|Maßgeblich/iu,
+    "pt-BR": /estimativas|vale o valor/iu,
+  };
+
+  for (const locale of SUPPORTED_LOCALES) {
+    const messages = FROZEN_LANDING_MESSAGES[locale];
+    const priceBearingSurfaces = {
+      "meta.description": messages.meta.description,
+      "meta.ogDescription": messages.meta.ogDescription,
+      "meta.twitterDescription": messages.meta.twitterDescription,
+      "cta.label": messages.cta.label,
+      "referral.shareText": messages.referral.shareText,
+      "hero.priceLine": messages.hero.priceLine,
+      "hero.stat3Label": messages.hero.stat3Label,
+      "hero.wasPrice": messages.hero.wasPrice,
+      "hero.nowPrice": messages.hero.nowPrice,
+      "hero.cardPrice": messages.hero.cardPrice,
+      "value.h2": messages.value.h2,
+      "offer.headline": messages.offer.headline,
+      "offer.headlineStrike": messages.offer.headlineStrike,
+      "offer.headlineNew": messages.offer.headlineNew,
+      "offer.lead": messages.offer.lead,
+    };
+
+    assert.equal(
+      Object.keys(priceBearingSurfaces).length,
+      15,
+      `${locale}: price-surface contract changed`,
+    );
+    for (const [path, copy] of Object.entries(priceBearingSurfaces)) {
+      assert.match(copy, localCurrency[locale], `${locale}.${path}: local currency is missing`);
+      if (locale !== "en") {
+        assert.doesNotMatch(
+          copy,
+          /\$(?:149|299|1,000)/,
+          `${locale}.${path}: source USD price leaked into localized copy`,
+        );
+      }
+    }
+
+    assert.ok(
+      messages.hero.priceLine.includes(messages.hero.nowPrice),
+      `${locale}: hero price highlight is not in its parent copy`,
+    );
+    const strikeIndex = messages.offer.headline.indexOf(messages.offer.headlineStrike);
+    const newIndex = messages.offer.headline.indexOf(messages.offer.headlineNew);
+    assert.ok(strikeIndex >= 0 && newIndex > strikeIndex, `${locale}: offer price order drift`);
+
+    if (locale !== "en") {
+      assert.match(
+        messages.offer.lead,
+        localEstimateNotice[locale],
+        `${locale}: localized estimate notice is missing`,
+      );
+      assert.match(messages.offer.lead, /Kickstarter/, `${locale}: checkout authority is missing`);
+    }
+  }
+});
+
+test("depth proof uses audience-familiar units without inventing a rating or threshold", () => {
+  const depthDisplay: Record<Locale, string> = {
+    en: "197 ft (60 m)",
+    ko: "60m",
+    "zh-CN": "60 米",
+    "zh-TW": "60 公尺",
+    ja: "60m",
+    es: "60 m",
+    fr: "60 m",
+    de: "60 m",
+    "pt-BR": "60 m",
+  };
+
+  for (const locale of SUPPORTED_LOCALES) {
+    const messages = FROZEN_LANDING_MESSAGES[locale];
+    assert.ok(
+      messages.hero.stat1Label.includes(depthDisplay[locale]),
+      `${locale}: depth unit drift`,
+    );
+    assert.ok(
+      messages.safety.point1Title.includes(depthDisplay[locale]),
+      `${locale}: proof title omits the localized depth`,
+    );
+    assert.ok(
+      messages.faq.a2.includes(depthDisplay[locale]),
+      `${locale}: depth FAQ omits the localized test depth`,
+    );
+    assert.doesNotMatch(
+      messages.faq.a2,
+      /40\s*m/i,
+      `${locale}: unverified operating depth returned`,
+    );
+    assert.doesNotMatch(
+      messages.functions.item3Body,
+      /(?:10\s*m|33\s*ft)\/min/i,
+      `${locale}: undocumented ascent threshold returned`,
+    );
+  }
+
+  assert.doesNotMatch(FROZEN_LANDING_MESSAGES.fr.faq.a2, /réussi/iu);
 });
 
 test("compatibility cards mirror the owner-approved Apple and Galaxy model matrix", () => {
@@ -273,33 +482,74 @@ test("compatibility cards mirror the owner-approved Apple and Galaxy model matri
   }
 });
 
-test("unverified safety evidence remains explicitly framed as work in progress", () => {
-  const reviewLanguage: Record<Locale, RegExp> = {
-    en: /verification|review/,
-    ko: /검증|검토/,
-    "zh-CN": /验证|审核/,
-    "zh-TW": /驗證|審核/,
-    ja: /検証|確認/,
-    es: /verificación|revisión/,
-    fr: /vérification|examen/,
-    de: /geprüft|Prüfung/,
-    "pt-BR": /verificação|análise/,
+test("owner-confirmed proof cards state bounded completion in every locale", () => {
+  const completedLanguage: Record<Locale, RegExp> = {
+    en: /completed/,
+    ko: /완료/,
+    "zh-CN": /已完成/,
+    "zh-TW": /已完成/,
+    ja: /完了/,
+    es: /completad[ao]s?/,
+    fr: /terminé(?:e|s|es)?/,
+    de: /abgeschlossen/,
+    "pt-BR": /concluíd[ao]s?/,
   };
+  const oldProgressLanguage: Record<Locale, RegExp> = {
+    en: /under verification|under review/,
+    ko: /검증 중|검토 중/,
+    "zh-CN": /验证中|审核中/,
+    "zh-TW": /驗證中|審核中/,
+    ja: /検証中|確認中/,
+    es: /en verificación|en revisión/,
+    fr: /en cours de vérification|en cours d['’]examen/,
+    de: /wird geprüft|in Prüfung/,
+    "pt-BR": /em verificação|em análise/,
+  };
+  const unapprovedClaimLanguage =
+    /\b(?:certified|certification|passed)\b|인증|공인|통과|认证|認證|認証|certificación|certifié|certification|zertifiziert|Zertifizierung|certifica(?:ção|do)/iu;
 
   for (const locale of SUPPORTED_LOCALES) {
     const { point1Title, point1Body, point2Title, point2Body } =
       FROZEN_LANDING_MESSAGES[locale].safety;
+    const ratingClaim = `${point1Title} ${point1Body}`;
+    const openWaterClaim = `${point2Title} ${point2Body}`;
+
     assert.match(
-      `${point1Title} ${point1Body}`,
-      reviewLanguage[locale],
-      `${locale}: 60 m evidence is presented as complete`,
+      ratingClaim,
+      completedLanguage[locale],
+      `${locale}: 60 m test is not stated as completed`,
     );
     assert.match(
-      `${point2Title} ${point2Body}`,
-      reviewLanguage[locale],
-      `${locale}: ocean-dive evidence is presented as complete`,
+      openWaterClaim,
+      completedLanguage[locale],
+      `${locale}: ocean beta test is not stated as completed`,
+    );
+    assert.doesNotMatch(
+      `${ratingClaim} ${openWaterClaim}`,
+      oldProgressLanguage[locale],
+      `${locale}: stale in-progress language returned`,
+    );
+    assert.doesNotMatch(
+      `${ratingClaim} ${openWaterClaim}`,
+      unapprovedClaimLanguage,
+      `${locale}: proof copy overstates certification or a pass result`,
     );
   }
+
+  assert.deepEqual(FROZEN_LANDING_MESSAGES.ko.safety, {
+    ...FROZEN_LANDING_MESSAGES.ko.safety,
+    point1Title: "Watch Dive 하우징 · 60m 방수 테스트 완료",
+    point1Body: "Watch Dive 하우징은 60m 방수 테스트를 완료했습니다.",
+    point2Title: "해양 다이빙 베타 테스트 완료",
+    point2Body: "실제 바다에서 제품 베타 테스트를 완료했습니다.",
+  });
+  assert.deepEqual(FROZEN_LANDING_MESSAGES.en.safety, {
+    ...FROZEN_LANDING_MESSAGES.en.safety,
+    point1Title: "Watch Dive housing · 197 ft (60 m) water-resistance test completed",
+    point1Body: "The Watch Dive housing completed a water-resistance test at 197 ft (60 m).",
+    point2Title: "Ocean beta dives completed",
+    point2Body: "Product beta testing was completed on real ocean dives.",
+  });
 });
 
 test("the approved product FAQs are complete in every locale", () => {
@@ -318,16 +568,16 @@ test("the approved product FAQs are complete in every locale", () => {
     "Galaxy Watch9",
     "Galaxy Watch Ultra2",
   ] as const;
-  const allAppleCopy: Record<Locale, RegExp> = {
-    en: /all Apple Watch models/,
-    ko: /모든 Apple Watch 모델/,
+  const allOtherAppleCopy: Record<Locale, RegExp> = {
+    en: /all other Apple Watch models/,
+    ko: /그 외 모든 Apple Watch 모델/,
     "zh-CN": /所有 Apple Watch 型号/,
     "zh-TW": /所有 Apple Watch 型號/,
     ja: /すべてのApple Watchモデル/,
-    es: /todos los modelos de Apple Watch/,
-    fr: /tous les modèles d'Apple Watch/,
-    de: /alle Apple Watch-Modelle/,
-    "pt-BR": /todos os modelos de Apple Watch/,
+    es: /todos los demás modelos de Apple Watch/,
+    fr: /tous les autres modèles d['’]Apple Watch/,
+    de: /alle anderen Apple Watch-Modelle/,
+    "pt-BR": /todos os outros modelos de Apple Watch/,
   };
   const twoYearTerm: Record<Locale, RegExp> = {
     en: /two years/,
@@ -342,7 +592,7 @@ test("the approved product FAQs are complete in every locale", () => {
   };
   const pressure = /pressure|수압|水压|水壓|水圧|presión|pression|Druck|pressão/iu;
   const waterTemperature =
-    /water-temperature|water temperature|수온|水温|水溫|temperatura del agua|température de l'eau|Wassertemperatur|temperatura da água/iu;
+    /water-temperature|water temperature|수온|水温|水溫|temperatura del agua|température de l['’]eau|Wassertemperatur|temperatura da água/iu;
   const serviceCenter =
     /service center|서비스 센터|服务中心|服務中心|サービスセンター|centro de servicio|centre de service|Servicecenter|centro de serviço/iu;
   const paid =
@@ -350,7 +600,11 @@ test("the approved product FAQs are complete in every locale", () => {
 
   for (const locale of SUPPORTED_LOCALES) {
     const faq = FROZEN_LANDING_MESSAGES[locale].faq;
-    assert.match(faq.a6, allAppleCopy[locale], `${locale}: all-Apple-Watch support missing`);
+    assert.match(
+      faq.a6,
+      allOtherAppleCopy[locale],
+      `${locale}: housing-path Apple Watch coverage missing`,
+    );
     for (const model of galaxyModels) {
       assert.ok(faq.a6.includes(model), `${locale}: ${model} missing from compatibility FAQ`);
     }
@@ -427,7 +681,7 @@ test("the translated frozen catalog is fail-closed behind the exact internal-rev
     new URL("../src/lib/i18n/frozen-landing-messages.ts", import.meta.url),
     "utf8",
   );
-  assert.match(frozenCatalog, /UNVERIFIED-CLAIM FLAGS/);
+  assert.match(frozenCatalog, /CLAIM-EVIDENCE FLAGS/);
   assert.match(frozenCatalog, /\$149/);
   assert.match(frozenCatalog, /60 m/);
 
@@ -443,6 +697,16 @@ test("the translated frozen catalog is fail-closed behind the exact internal-rev
   assert.match(landing, /const productFaqs = \[/);
   assert.match(landing, /\.\.\.productFaqs/);
   assert.doesNotMatch(landing, /VITE_WATCHDIVE_PRODUCT_CLAIMS_REVIEW/);
+
+  const seoSource = readFileSync(new URL("../src/lib/i18n/seo.ts", import.meta.url), "utf8");
+  assert.match(seoSource, /hero-background\.webp/);
+  assert.doesNotMatch(seoSource, /og-image\.png/);
+  assert.match(seoSource, /socialImage/);
+  assert.equal(
+    existsSync(new URL("../public/og-image.png", import.meta.url)),
+    false,
+    "legacy public social card with unapproved claims returned",
+  );
 });
 
 const LEGAL_ESSENTIALS = {

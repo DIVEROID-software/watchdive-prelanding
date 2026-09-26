@@ -30,16 +30,16 @@ export function TermsPage() {
       <article className="mx-auto max-w-3xl px-5 py-16 sm:py-24">
         <Link
           to={homePath(locale)}
-          className="text-sm text-primary underline-offset-4 hover:underline"
+          className="text-body text-primary underline-offset-4 hover:underline"
         >
           {copy.back}
         </Link>
-        <h1 className="mt-6 text-4xl font-bold sm:text-5xl">{copy.h1}</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
+        <h1 className="mt-6 text-title">{copy.h1}</h1>
+        <p className="mt-3 text-caption text-muted-foreground">
           <strong>{copy.effectiveLabel}</strong> {copy.effectiveDate}
         </p>
 
-        <div className="prose-content mt-10 space-y-6 text-base leading-relaxed text-foreground/90">
+        <div className="prose-content mt-10 space-y-6 text-body leading-relaxed text-foreground/90">
           <p>{copy.intro}</p>
 
           <Section title={copy.s1Title}>
@@ -95,7 +95,7 @@ export function TermsPage() {
           </Section>
 
           <hr className="border-border" />
-          <p className="text-sm italic text-muted-foreground">{copy.footerLine}</p>
+          <p className="text-caption italic text-muted-foreground">{copy.footerLine}</p>
         </div>
       </article>
     </div>
@@ -138,7 +138,7 @@ function splitAround(value: string, needle: string): readonly [string, string, s
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
-      <h2 className="text-xl font-semibold sm:text-2xl">{title}</h2>
+      <h2 className="text-heading">{title}</h2>
       {children}
     </section>
   );

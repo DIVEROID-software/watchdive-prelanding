@@ -5,6 +5,7 @@ import {
   createResendMailer,
   readResendConfig,
   ResendDeliveryError,
+  senderWithDisplayName,
 } from "../src/lib/verification/resend.ts";
 import {
   createVerificationToken,
@@ -65,9 +66,28 @@ test("the sender and key are required", () => {
   assert.throws(() => readResendConfig({ ...ENV, WATCHDIVE_EMAIL_FROM: "" }));
   assert.deepEqual(readResendConfig(ENV), {
     apiKey: "re_test_key",
-    from: ENV.WATCHDIVE_EMAIL_FROM,
+    from: "DIVEROID <hello@watchdive.example>",
     replyTo: ENV.WATCHDIVE_EMAIL_REPLY_TO,
   });
+});
+
+test("the inbox display name is DIVEROID; the sending address is untouched", () => {
+  assert.equal(
+    senderWithDisplayName("OceanWick <verify@mail.oceanwick.ai>"),
+    "DIVEROID <verify@mail.oceanwick.ai>",
+  );
+  assert.equal(
+    senderWithDisplayName("verify@mail.oceanwick.ai"),
+    "DIVEROID <verify@mail.oceanwick.ai>",
+  );
+  assert.equal(
+    senderWithDisplayName("x <verify@mail.oceanwick.ai>", 'Diveroid "Team"'),
+    "Diveroid Team <verify@mail.oceanwick.ai>",
+  );
+  assert.equal(
+    readResendConfig({ ...ENV, WATCHDIVE_EMAIL_FROM_NAME: "  " }).from,
+    "DIVEROID <hello@watchdive.example>",
+  );
 });
 
 test("reply-to is genuinely optional", () => {

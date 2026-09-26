@@ -21,6 +21,12 @@ export const FBCLID_MAX = 255;
 export type Attribution = LeadAttribution & {
   /** Meta click id. Never persisted to the CRM — it only feeds the Meta match. */
   fbclid?: string;
+  /** Google Ads click ids. Same rule: match the ad, never a CRM column. */
+  gclid?: string;
+  gbraid?: string;
+  wbraid?: string;
+  /** Stored for a later TikTok match. No TikTok tag is loaded. */
+  ttclid?: string;
   /** When the click id was first seen, which is the time Meta's `fbc` encodes. */
   capturedAt?: number;
 };
@@ -74,7 +80,13 @@ const CAMPAIGN_KEYS = [
   "utmContent",
   "utmTerm",
   "fbclid",
+  "gclid",
+  "gbraid",
+  "wbraid",
+  "ttclid",
 ] as const;
+
+const CLICK_ID_KEYS = ["fbclid", "gclid", "gbraid", "wbraid", "ttclid"] as const;
 
 export function hasCampaignSignal(attribution: Attribution | undefined): boolean {
   return Boolean(attribution && CAMPAIGN_KEYS.some((key) => attribution[key]));
@@ -89,12 +101,16 @@ function compact(attribution: Attribution): Attribution {
   if (attribution.utmContent) out.utmContent = attribution.utmContent;
   if (attribution.utmTerm) out.utmTerm = attribution.utmTerm;
   if (attribution.landingPath) out.landingPath = attribution.landingPath;
-  // The capture time exists to date the click id, so it travels only with one.
-  if (attribution.fbclid) {
-    out.fbclid = attribution.fbclid;
-    if (attribution.capturedAt && Number.isFinite(attribution.capturedAt)) {
-      out.capturedAt = attribution.capturedAt;
-    }
+  for (const key of CLICK_ID_KEYS) {
+    if (attribution[key]) out[key] = attribution[key];
+  }
+  // The capture time exists to date a click id, so it travels only with one.
+  if (
+    CLICK_ID_KEYS.some((key) => out[key]) &&
+    attribution.capturedAt &&
+    Number.isFinite(attribution.capturedAt)
+  ) {
+    out.capturedAt = attribution.capturedAt;
   }
   return out;
 }
@@ -115,6 +131,10 @@ export function sanitizeAttribution(raw: Record<string, unknown> | undefined | n
     utmTerm: sanitizeAttributionValue(raw.utmTerm),
     landingPath: sanitizeLandingPath(raw.landingPath),
     fbclid: sanitizeFbclid(raw.fbclid),
+    gclid: sanitizeFbclid(raw.gclid),
+    gbraid: sanitizeFbclid(raw.gbraid),
+    wbraid: sanitizeFbclid(raw.wbraid),
+    ttclid: sanitizeFbclid(raw.ttclid),
     ...(capturedAt !== undefined ? { capturedAt } : {}),
   });
 }
@@ -130,6 +150,10 @@ export function readAttribution(search: string, pathname: string, now: number): 
     utmTerm: params.get("utm_term"),
     landingPath: pathname,
     fbclid: params.get("fbclid"),
+    gclid: params.get("gclid"),
+    gbraid: params.get("gbraid"),
+    wbraid: params.get("wbraid"),
+    ttclid: params.get("ttclid"),
     capturedAt: now,
   });
 }
@@ -149,7 +173,15 @@ export function mergeAttribution(
 
 /** Drops the fields that stop at the server and never reach the CRM. */
 export function toLeadAttribution(attribution: Attribution): LeadAttribution {
-  const { fbclid: _fbclid, capturedAt: _capturedAt, ...lead } = attribution;
+  const {
+    fbclid: _fbclid,
+    gclid: _gclid,
+    gbraid: _gbraid,
+    wbraid: _wbraid,
+    ttclid: _ttclid,
+    capturedAt: _capturedAt,
+    ...lead
+  } = attribution;
   return lead;
 }
 

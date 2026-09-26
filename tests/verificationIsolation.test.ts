@@ -26,6 +26,7 @@ const CLIENT_ROUTE_SOURCES = [
   "src/routes/$locale.terms.tsx",
   "src/routes/r.$code.tsx",
   "src/routes/$locale.r.$code.tsx",
+  "src/routes/admin.behavior.tsx",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -82,7 +83,7 @@ test("the verify surface emits no external script or frame URL of its own", () =
 test("the route gate module names the widget, so no route hardcodes it", () => {
   const gate = read("src/lib/thirdPartyScripts.ts");
   assert.ok(gate.includes("export const SUPPORT_WIDGET_SRC"));
-  assert.ok(gate.includes('TOKEN_BEARING_ROUTES = new Set(["/verify"])'));
+  assert.ok(gate.includes('TOKEN_BEARING_ROUTES = new Set(["/verify", "/admin/behavior"])'));
   assert.ok(gate.includes("stripLocalePrefix(pathname)"));
 });
 
@@ -90,8 +91,7 @@ test("the root mounts every third-party script behind the route gate", () => {
   const source = read("src/routes/__root.tsx");
   // Nothing third-party may sit in the always-rendered path.
   assert.ok(source.includes("const thirdParty = allowsThirdPartyScripts(pathname)"));
-  assert.match(source, /\{thirdParty\s*&&\s*META_PIXEL_READY\s*&&/);
-  assert.ok(source.includes("!LAUNCHOS_BROWSER_MEASUREMENT_ENABLED || launchOsConsentLocale"));
+  assert.ok(source.includes("{thirdParty && META_PIXEL_READY && ("));
   assert.ok(source.includes("{thirdParty && <Analytics />}"));
   assert.ok(source.includes("{thirdParty && <script src={SUPPORT_WIDGET_SRC} defer />}"));
   assert.ok(source.includes("if (!allowsThirdPartyScripts(pathname)) return;"));
@@ -99,58 +99,28 @@ test("the root mounts every third-party script behind the route gate", () => {
   assert.ok(!/scripts:\s*\[/.test(source), "root still declares static head scripts");
 });
 
-test("the restored no-banner design keeps Meta fail-closed and honors privacy signals", () => {
+test("Meta follows the regional consent rule and still honors Global Privacy Control", () => {
   const root = read("src/routes/__root.tsx");
   const pixel = read("src/lib/metaPixel.ts");
+  const region = read("src/lib/consentRegion.ts");
 
   assert.ok(root.includes('VITE_META_TRACKING_ENABLED ?? "").toLowerCase() === "true"'));
   assert.ok(root.includes("/^\\d{10,20}$/.test(META_PIXEL_ID)"));
-  const storedDenial = root.indexOf(
-    'localStorage.getItem("watchdive.measurement-consent.v3")==="denied"',
-  );
-  const globalPrivacyControl = root.indexOf("navigator.globalPrivacyControl===true");
+  assert.ok(root.includes("<CookieChoiceBar />"));
+  // The inline bootstrap applies the shared rule before injecting the pixel.
+  const gate = root.indexOf("if(!${INLINE_MEASUREMENT_ALLOWED_JS})return;");
   const injectPixel = root.indexOf('s.src="https://connect.facebook.net/en_US/fbevents.js"');
-  assert.ok(storedDenial > 0 && storedDenial < injectPixel, "stored opt-out runs after pixel load");
-  assert.ok(
-    globalPrivacyControl > 0 && globalPrivacyControl < injectPixel,
-    "Global Privacy Control runs after pixel load",
-  );
+  assert.ok(gate > 0 && gate < injectPixel, "the consent rule runs before the pixel loads");
+  // The rule: denied and GPC always off; unknown country fails closed (opt-in).
+  assert.ok(region.includes('if(s==="denied")return false;'));
+  assert.ok(region.includes("if(navigator.globalPrivacyControl===true)return false;"));
+  assert.ok(region.includes("if(!c||c===${JSON.stringify(GEO_UNKNOWN)})return false;"));
 
   assert.ok(
     pixel.includes('if (typeof window === "undefined" || !hasMetaMeasurementConsent()) return;'),
   );
-  assert.ok(pixel.includes('getMetaMeasurementConsent() === "denied"'));
-  assert.ok(pixel.includes("globalPrivacyControl") && pixel.includes("!== true"));
+  assert.ok(pixel.includes("measurementAllowedFor"));
   assert.ok(pixel.includes('window.fbq("consent", "revoke")'));
-});
-
-test("the client relay has no Node crypto or secret-bearing implementation", () => {
-  const client = read("src/lib/api/launchOsRelay.ts");
-  assert.ok(client.includes('await import("./launchOsRelay.server.ts")'));
-  assert.ok(!client.includes('from "node:crypto"'));
-  assert.ok(!client.includes("LAUNCHOS_WEB_EVENTS_INGRESS_SECRET"));
-  assert.ok(!client.includes("WAITLIST_REPLAY_HMAC_SECRET"));
-});
-
-test("the revised privacy notice dates and bounds LaunchOS retention", () => {
-  const route = read("src/routes/privacy.tsx");
-  const english = read("src/lib/i18n/frozen-landing-en.ts");
-  const korean = read("src/lib/i18n/frozen-landing-messages.ts");
-  assert.ok(english.includes('effectiveDate: "August 2, 2026"'));
-  assert.ok(korean.includes('effectiveDate: "2026년 8월 2일"'));
-  assert.ok(route.includes("pseudonymous random visit ID"));
-  assert.ok(route.includes("Meta campaign, ad set and ad IDs"));
-  assert.ok(route.includes("never for more than 400 days from collection"));
-  assert.ok(route.includes("런칭 캠페인 종료 또는 삭제 요청 중 먼저 도래"));
-});
-
-test("a fresh server grant resets one-shot browser funnel state before reload", () => {
-  const control = read("src/components/optional-measurement-control.tsx");
-  const choose = control.indexOf("const choose = async");
-  const reset = control.indexOf("optionalMeasurementChoiceRequiresDocumentReset(previous", choose);
-  const clear = control.indexOf("clearBrowserWatchDiveMeasurementContext();", reset);
-  const reload = control.indexOf("window.location.reload();", clear);
-  assert.ok(choose > 0 && reset > choose && clear > reset && reload > clear);
 });
 
 test("homepage metadata stays route-scoped and unverified claims stay out of shared surfaces", () => {
@@ -392,7 +362,7 @@ test("the Claim form still submits through joinWaitlist with its honeypot", () =
 
 test("the favicon is still declared and still present", () => {
   const root = read("src/routes/__root.tsx");
-  assert.ok(root.includes('href: "/favicon.svg"'));
+  assert.ok(root.includes('href: "/favicon.png"'));
   assert.ok(root.includes('rel: "icon"'));
-  assert.ok(read("public/favicon.svg").includes("<svg"));
+  assert.ok(read("public/favicon.png").includes("PNG"));
 });

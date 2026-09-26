@@ -160,25 +160,25 @@ export function VerifyPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[color:var(--color-deep-2)] px-5 py-14">
       <div className="w-full max-w-xl">
-        <Link to={homePath(locale)} className="mb-5 inline-block text-sm text-white/70 underline">
+        <Link to={homePath(locale)} className="mb-5 inline-flex min-h-11 items-center text-body text-white/70 underline">
           {copy.back}
         </Link>
 
         {(state === "reading" || state === "confirming") && (
           <Card>
-            <h1 className="text-2xl font-bold sm:text-3xl">{copy.confirmingTitle}</h1>
-            <p className="mt-3 text-sm leading-relaxed text-white/75">{copy.confirmingBody}</p>
+            <h1 className="text-heading">{copy.confirmingTitle}</h1>
+            <p className="mt-3 text-body leading-relaxed text-white/75">{copy.confirmingBody}</p>
           </Card>
         )}
 
         {state === "waiting" && (
           <Card>
-            <h1 className="text-2xl font-bold sm:text-3xl">{copy.waitingTitle}</h1>
-            <p className="mt-3 text-sm leading-relaxed text-white/75">{copy.waitingBody}</p>
+            <h1 className="text-heading">{copy.waitingTitle}</h1>
+            <p className="mt-3 text-body leading-relaxed text-white/75">{copy.waitingBody}</p>
             <button
               type="button"
               onClick={confirm}
-              className="mt-6 w-full rounded-xl border border-white/30 px-5 py-3 font-semibold text-white"
+              className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-white/30 px-5 py-3 text-body text-white"
             >
               {copy.confirmButton}
             </button>
@@ -187,30 +187,30 @@ export function VerifyPage() {
 
         {state === "verified" && (
           <Card>
-            <h1 className="text-2xl font-bold sm:text-3xl">{copy.verifiedTitle}</h1>
-            <p className="mt-3 text-sm leading-relaxed text-white/75">{copy.verifiedBody}</p>
+            <h1 className="text-heading">{copy.verifiedTitle}</h1>
+            <p className="mt-3 text-body leading-relaxed text-white/75">{copy.verifiedBody}</p>
 
             {/* Most people confirm on the phone they signed up on, so the tab
                 that was polling is often never seen again. The share link has
                 to be offered here or it is effectively never offered. */}
             {refCode && (
               <div className="mt-5 rounded-xl border border-white/15 bg-white/[0.06] p-4">
-                <div className="text-sm font-semibold text-[color:var(--color-cyan-glow)]">
+                <div className="text-lead text-[color:var(--color-cyan-glow)]">
                   {copy.buddyTitle}
                 </div>
-                <p className="mt-1 text-xs leading-relaxed text-white/70">{copy.buddyBody}</p>
+                <p className="mt-1 text-body leading-relaxed text-white/70">{copy.buddyBody}</p>
                 <input
                   readOnly
                   value={shareUrl}
                   onFocus={(event) => event.currentTarget.select()}
-                  className="mt-3 h-11 w-full rounded-lg bg-white/95 px-3 text-xs text-[color:var(--color-deep-2)] outline-none"
+                  className="mt-3 h-11 w-full rounded-lg bg-white/95 px-3 text-body text-[color:var(--color-deep-2)] outline-none"
                 />
               </div>
             )}
 
             <a
               href={homePath(locale)}
-              className="mt-5 block w-full rounded-xl border border-white/25 px-5 py-3 text-center font-semibold text-white"
+              className="mt-5 flex min-h-11 w-full items-center justify-center rounded-xl border border-white/25 px-5 py-3 text-center text-body text-white"
             >
               {copy.backHome}
             </a>
@@ -219,33 +219,33 @@ export function VerifyPage() {
 
         {state === "expired" && (
           <Card role="alert">
-            <h1 className="text-2xl font-bold">{copy.expiredTitle}</h1>
-            <p className="mt-3 text-sm text-white/75">{copy.expiredBody}</p>
+            <h1 className="text-heading">{copy.expiredTitle}</h1>
+            <p className="mt-3 text-body text-white/75">{copy.expiredBody}</p>
           </Card>
         )}
 
         {state === "invalid" && (
           <Card role="alert">
-            <h1 className="text-2xl font-bold">{copy.invalidTitle}</h1>
-            <p className="mt-3 text-sm text-white/75">{copy.invalidBody}</p>
+            <h1 className="text-heading">{copy.invalidTitle}</h1>
+            <p className="mt-3 text-body text-white/75">{copy.invalidBody}</p>
           </Card>
         )}
 
         {state === "error" && (
           <Card role="alert">
-            <h1 className="text-2xl font-bold">{copy.errorTitle}</h1>
-            <p className="mt-3 text-sm text-white/75">{copy.errorBody}</p>
+            <h1 className="text-heading">{copy.errorTitle}</h1>
+            <p className="mt-3 text-body text-white/75">{copy.errorBody}</p>
             <button
               type="button"
               onClick={confirm}
-              className="mt-6 w-full rounded-xl border border-white/30 px-5 py-3 font-semibold text-white"
+              className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-white/30 px-5 py-3 text-body text-white"
             >
               {copy.tryAgain}
             </button>
           </Card>
         )}
 
-        <footer className="mt-8 text-center text-xs text-white/55">
+        <footer className="mt-8 text-center text-caption text-white/55">
           <nav className="flex justify-center gap-4">
             <Link to={privacyPath(locale)} className="underline">
               {copy.footerPrivacy}
