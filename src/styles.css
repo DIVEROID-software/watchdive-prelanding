@@ -661,6 +661,10 @@
   #dc-btn span {
     display: none !important;
   }
+  html[data-wd-form="active"] #dc-btn {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
 }
 
 #dc-win {

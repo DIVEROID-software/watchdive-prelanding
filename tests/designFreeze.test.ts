@@ -124,7 +124,7 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // pushed the phone photo below a tall cookie dialog is gone.
   assert.equal(
     sha256(read("src/styles.css")),
-    "db9e1540d9efdf4d95efb9122c1c63137be0d4cd4b34d53d9b10f0715d046b67",
+    "a481d8004b3ace8948d914f000889f0abaaa6aae5503dde9e7f9cab6a2fd75df",
   );
 });
 

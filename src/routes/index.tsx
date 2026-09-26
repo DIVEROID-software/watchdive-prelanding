@@ -232,7 +232,9 @@ function StickyLaunchBanner() {
       const editing = focused instanceof HTMLElement &&
         !!focused.closest("form, #dc-win");
       const keyboardOpen = !!viewport && viewport.height < window.innerHeight * 0.75;
-      setHidden(visibleForms.size > 0 || editing || keyboardOpen);
+      const hide = visibleForms.size > 0 || editing || keyboardOpen;
+      setHidden(hide);
+      document.documentElement.dataset.wdForm = hide ? "active" : "";
     };
     const observer = new IntersectionObserver((entries) => {
       // Entries contain only changed targets, not every observed form.
@@ -252,6 +254,7 @@ function StickyLaunchBanner() {
       document.removeEventListener("focusin", update);
       document.removeEventListener("focusout", update);
       viewport?.removeEventListener("resize", update);
+      delete document.documentElement.dataset.wdForm;
     };
   }, []);
 
