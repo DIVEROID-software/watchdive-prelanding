@@ -11,28 +11,149 @@
 //   VITE_META_TRACKING_ENABLED  — browser and server measurement master gate
 import { createHash } from "node:crypto";
 
+import { META_LEAD_CURRENCY, META_LEAD_VALUE } from "../metaLeadValue.ts";
+
 const GRAPH_URL = "https://graph.facebook.com/v21.0";
 const META_REQUEST_TIMEOUT_MS = 5_000;
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 
-function metaCapiConfig(): { pixelId: string; token: string } | null {
+/** Outcome of one Conversions API delivery — a non-secret status, safe to return. */
+export type MetaCapiDelivery = "sent" | "disabled" | "error";
+
+// The browser gate and dataset id are `VITE_*` values. They are inlined into the
+// bundle at build time, but only reach a Vercel function's `process.env` when
+// the variable is also exposed to the runtime. Reading the build-time copy as a
+// fallback keeps the server leg from silently switching itself off just
+// because the runtime copy is absent. Outside Vite (`npm test`) there is no
+// `import.meta.env`, and `process.env` is the only source.
+function buildTimeEnv(): Record<string, string | undefined> {
+  try {
+    return ((import.meta as unknown as { env?: Record<string, string | undefined> }).env ??
+      {}) as Record<string, string | undefined>;
+  } catch {
+    return {};
+  }
+}
+
+function readEnv(name: string): string {
+  const runtime = process.env[name];
+  if (runtime !== undefined && runtime.trim() !== "") return runtime.trim();
+  return (buildTimeEnv()[name] ?? "").trim();
+}
+
+/**
+ * Which pieces of the Conversions API configuration are in place — booleans
+ * only, never a value. Powers the `[meta-capi]` skip log and `/api/capi-status`.
+ */
+export type MetaCapiConfigStatus = {
+  enabled: boolean;
+  META_CAPI_ENABLED: boolean;
+  META_CAPI_ACCESS_TOKEN: boolean;
+  META_PIXEL_ID: boolean;
+  VITE_META_TRACKING_ENABLED: boolean;
+  VITE_META_PIXEL_ID: boolean;
+  pixelIdsMatch: boolean;
+  testEventCode: boolean;
+  /** Names of the variables that are missing or invalid. Names, not values. */
+  missing: string[];
+};
+
+export function metaCapiConfigStatus(): MetaCapiConfigStatus {
   const capiEnabled = (process.env.META_CAPI_ENABLED ?? "").trim() === "true";
-  const browserEnabled = (process.env.VITE_META_TRACKING_ENABLED ?? "").trim() === "true";
+  const browserEnabled = readEnv("VITE_META_TRACKING_ENABLED") === "true";
   const pixelId = (process.env.META_PIXEL_ID ?? "").trim();
-  const browserPixelId = (process.env.VITE_META_PIXEL_ID ?? "").trim();
+  const browserPixelId = readEnv("VITE_META_PIXEL_ID");
   const token = (process.env.META_CAPI_ACCESS_TOKEN ?? "").trim();
 
-  if (
-    !capiEnabled ||
-    !browserEnabled ||
-    !/^\d{10,20}$/.test(pixelId) ||
-    pixelId !== browserPixelId ||
-    !token
-  ) {
-    return null;
+  const pixelValid = /^\d{10,20}$/.test(pixelId);
+  const browserPixelValid = /^\d{10,20}$/.test(browserPixelId);
+  const pixelIdsMatch = pixelValid && pixelId === browserPixelId;
+
+  const missing: string[] = [];
+  if (!capiEnabled) missing.push("META_CAPI_ENABLED");
+  if (!token) missing.push("META_CAPI_ACCESS_TOKEN");
+  if (!pixelValid) missing.push("META_PIXEL_ID");
+  if (!browserEnabled) missing.push("VITE_META_TRACKING_ENABLED");
+  if (!browserPixelValid) missing.push("VITE_META_PIXEL_ID");
+  if (pixelValid && browserPixelValid && !pixelIdsMatch) {
+    missing.push("META_PIXEL_ID (does not match VITE_META_PIXEL_ID)");
   }
 
-  return { pixelId, token };
+  return {
+    enabled: missing.length === 0,
+    META_CAPI_ENABLED: capiEnabled,
+    META_CAPI_ACCESS_TOKEN: Boolean(token),
+    META_PIXEL_ID: pixelValid,
+    VITE_META_TRACKING_ENABLED: browserEnabled,
+    VITE_META_PIXEL_ID: browserPixelValid,
+    pixelIdsMatch,
+    testEventCode: Boolean((process.env.META_CAPI_TEST_EVENT_CODE ?? "").trim()),
+    missing,
+  };
+}
+
+function metaCapiConfig(): { pixelId: string; token: string } | null {
+  const status = metaCapiConfigStatus();
+  if (!status.enabled) return null;
+  return {
+    pixelId: (process.env.META_PIXEL_ID ?? "").trim(),
+    token: (process.env.META_CAPI_ACCESS_TOKEN ?? "").trim(),
+  };
+}
+
+function logSkipped(label: string, eventId: string) {
+  // Names only — never a value. One line per skipped event, so a production log
+  // search for "[meta-capi]" shows at once why no server event reached Meta.
+  console.warn(
+    `[meta-capi] ${label} NOT sent event_id=${eventId}: disabled — missing/invalid env: ${metaCapiConfigStatus().missing.join(", ")}`,
+  );
+}
+
+let tokenCheckCache: { at: number; result: MetaCapiTokenCheck } | null = null;
+const TOKEN_CHECK_TTL_MS = 10 * 60 * 1000;
+
+export type MetaCapiTokenCheck =
+  | { checked: false; reason: "disabled" }
+  | { checked: true; ok: true }
+  | { checked: true; ok: false; httpStatus?: number; errorCode?: number; errorType?: string };
+
+/**
+ * Asks the Graph API whether the configured token can see the configured
+ * dataset. Read-only (no event is written), cached for ten minutes so the
+ * public status endpoint cannot be used to hammer Meta, and it reports only
+ * Meta's numeric error code and type — never the token or the response body.
+ */
+export async function checkMetaCapiToken(): Promise<MetaCapiTokenCheck> {
+  const config = metaCapiConfig();
+  if (!config) return { checked: false, reason: "disabled" };
+  if (tokenCheckCache && Date.now() - tokenCheckCache.at < TOKEN_CHECK_TTL_MS) {
+    return tokenCheckCache.result;
+  }
+  let result: MetaCapiTokenCheck;
+  try {
+    const res = await fetch(`${GRAPH_URL}/${config.pixelId}?fields=id`, {
+      headers: { Authorization: `Bearer ${config.token}` },
+      signal: AbortSignal.timeout(META_REQUEST_TIMEOUT_MS),
+    });
+    if (res.ok) {
+      result = { checked: true, ok: true };
+    } else {
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: { code?: number; type?: string };
+      };
+      result = {
+        checked: true,
+        ok: false,
+        httpStatus: res.status,
+        ...(typeof json.error?.code === "number" ? { errorCode: json.error.code } : {}),
+        ...(typeof json.error?.type === "string" ? { errorType: json.error.type.slice(0, 60) } : {}),
+      };
+    }
+  } catch {
+    result = { checked: true, ok: false };
+  }
+  tokenCheckCache = { at: Date.now(), result };
+  return result;
 }
 
 type MetaEventArgs = {
@@ -113,7 +234,9 @@ async function postEvents(
     });
     if (!res.ok) {
       const detail = await res.text();
-      console.error(`Meta CAPI ${label} failed (${res.status}): ${detail.slice(0, 300)}`);
+      console.error(
+        `[meta-capi] ${label} FAILED event_id=${eventId} http=${res.status}: ${detail.slice(0, 300)}`,
+      );
       return false;
     }
     const json = (await res.json()) as { events_received?: number; fbtrace_id?: string };
@@ -128,7 +251,9 @@ async function postEvents(
     );
     return true;
   } catch (err) {
-    console.error(`Meta CAPI ${label} error`, err);
+    console.error(
+      `[meta-capi] ${label} FAILED event_id=${eventId}: ${err instanceof Error ? `${err.name}: ${err.message}` : String(err)}`,
+    );
     return false;
   }
 }
@@ -141,14 +266,14 @@ async function postEvents(
  * server leg survives ad blockers. Carries the pixel cookies, client IP/UA and
  * the first-touch UTM tags. An unconfirmed phone number gets no `Contact`.
  */
-export async function sendMetaLead(args: MetaEventArgs): Promise<boolean> {
+export async function deliverMetaLead(args: MetaEventArgs): Promise<MetaCapiDelivery> {
   const config = metaCapiConfig();
   if (!config) {
-    console.log("[meta-capi] skipped: disabled or invalid/mismatched configuration");
-    return false;
+    logSkipped("Lead", args.eventId);
+    return "disabled";
   }
 
-  return postEvents(config, "Lead", [
+  const sent = await postEvents(config, "Lead", [
     {
       event_name: "Lead",
       event_time: Math.floor(Date.now() / 1000),
@@ -158,11 +283,19 @@ export async function sendMetaLead(args: MetaEventArgs): Promise<boolean> {
       user_data: hashedUserData(args, args.phone?.replace(/[^0-9]/g, "")),
       custom_data: {
         content_name: "watchdive_email_signup",
+        value: META_LEAD_VALUE,
+        currency: META_LEAD_CURRENCY,
         ...(args.source ? { content_category: args.source } : {}),
         ...utmCustomData(args.utm),
       },
     },
   ]);
+  return sent ? "sent" : "error";
+}
+
+/** Boolean form of {@link deliverMetaLead}, kept for existing callers. */
+export async function sendMetaLead(args: MetaEventArgs): Promise<boolean> {
+  return (await deliverMetaLead(args)) === "sent";
 }
 
 /**
@@ -174,7 +307,7 @@ export async function sendMetaLead(args: MetaEventArgs): Promise<boolean> {
 export async function sendMetaEmailVerified(args: MetaEventArgs): Promise<boolean> {
   const config = metaCapiConfig();
   if (!config) {
-    console.log("[meta-capi] skipped: disabled or invalid/mismatched configuration");
+    logSkipped("EmailVerified", args.eventId);
     return false;
   }
 
@@ -227,7 +360,7 @@ export async function sendMetaEmailVerified(args: MetaEventArgs): Promise<boolea
 export async function sendMetaCrmQualifiedLead(args: MetaEventArgs): Promise<boolean> {
   const config = metaCapiConfig();
   if (!config) {
-    console.log("[meta-capi] skipped: disabled or invalid/mismatched configuration");
+    logSkipped("LeadVerified", `${args.eventId}:crm`);
     return false;
   }
 

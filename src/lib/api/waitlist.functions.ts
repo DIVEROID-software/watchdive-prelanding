@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse";
-import { sendMetaLead } from "./metaCapi";
+import { deliverMetaLead, type MetaCapiDelivery } from "./metaCapi";
 import {
   ATTRIBUTION_VALUE_MAX,
   FBCLID_MAX,
@@ -293,6 +293,11 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // pending, one already confirmed alike — so the latency it adds cannot say
     // which of those happened. That uniformity is the property the response
     // floor inside the service exists to protect, and this must not undo it.
+    //
+    // `capi` in the response is a non-secret diagnostic of the server leg. It
+    // depends only on configuration, consent and Meta's answer — never on
+    // whether the address was new — so it does not reopen the existence oracle.
+    let capi: MetaCapiDelivery | "skipped" = "skipped";
     if (data.submitEventId && data.measurementConsent && !conversionBlocked(flags)) {
       const fbp = sanitizeMetaCookie(data.fbp);
       // The pixel derives `_fbc` from an `fbclid` landing, but only if it ran at
@@ -305,7 +310,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
           : "");
 
-      await sendMetaLead({
+      capi = await deliverMetaLead({
         eventId: data.submitEventId,
         email,
         ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
@@ -323,9 +328,15 @@ export const joinWaitlist = createServerFn({ method: "POST" })
         },
         ...(attribution.landingPath ? { landingPath: attribution.landingPath } : {}),
       });
+    } else if (data.submitEventId) {
+      console.log(
+        `[meta-capi] Lead skipped event_id=${data.submitEventId}: ${
+          !data.measurementConsent ? "no measurement consent" : "abuse flag"
+        }`,
+      );
     }
 
-    return result;
+    return { ...result, capi };
   });
 
 // The confirmation POST. The token reaches the server only here — it travelled

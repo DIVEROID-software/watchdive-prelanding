@@ -6,6 +6,7 @@ import { geoCookie, normalizeCountry, consentRegionFor } from "./lib/consentRegi
 import { autoLocaleRedirect } from "./lib/i18n/auto-locale";
 import { localeFromPathname } from "./lib/i18n/locale";
 import { isI18nReviewEnabled } from "./lib/i18n/review-gate";
+import { checkMetaCapiToken, metaCapiConfigStatus } from "./lib/api/metaCapi";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -52,6 +53,25 @@ function geoResponse(request: Request): Response {
       },
     },
   );
+}
+
+/**
+ * `/api/capi-status` — whether the Meta Conversions API leg is configured, as
+ * booleans and variable *names* only (never a value), plus a cached read-only
+ * Graph API check that the token can see the dataset. Lets anyone without
+ * Vercel access tell "server Lead is off" from "server Lead is failing".
+ */
+async function capiStatusResponse(): Promise<Response> {
+  const config = metaCapiConfigStatus();
+  const token = await checkMetaCapiToken();
+  return new Response(JSON.stringify({ ...config, tokenCheck: token }), {
+    status: 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "private, no-store",
+      "x-robots-tag": "noindex",
+    },
+  });
 }
 
 /**
@@ -114,6 +134,9 @@ export default {
     }
     if (pathname === "/api/geo" && (request.method === "GET" || request.method === "HEAD")) {
       return geoResponse(request);
+    }
+    if (pathname === "/api/capi-status" && request.method === "GET") {
+      return capiStatusResponse();
     }
 
     const redirect = autoLocaleRedirect(
