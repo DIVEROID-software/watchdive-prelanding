@@ -439,7 +439,7 @@ function welcomeBody(url: string, locale: Locale): { subject: string; text: stri
  * One accepted send, or a throw. Retries reuse the same idempotency key and the
  * byte-identical payload, so a retry can never become a second message.
  */
-async function deliver(
+async function deliverWithRetries(
   config: ResendConfig,
   fetchImpl: typeof fetch,
   sleep: (ms: number) => Promise<void>,
@@ -513,6 +513,34 @@ async function deliver(
   throw lastError ?? new ResendDeliveryError("Resend request failed", 0);
 }
 
+// The service intentionally returns a generic response when delivery fails.
+// Log once after retries are exhausted so those failures remain observable.
+// Never log the payload, recipient, token, API key, or provider response body.
+async function deliver(
+  config: ResendConfig,
+  fetchImpl: typeof fetch,
+  sleep: (ms: number) => Promise<void>,
+  idempotencyKey: string,
+  operation: "verification" | "welcome",
+  payload: Record<string, unknown>,
+): Promise<void> {
+  try {
+    await deliverWithRetries(config, fetchImpl, sleep, idempotencyKey, payload);
+  } catch (error) {
+    const status = error instanceof ResendDeliveryError ? error.status : null;
+    console.error("[watchdive] email_delivery_failed", {
+      provider: "resend",
+      operation,
+      status,
+      reason: status === null ? "unexpected_error"
+        : status === 0 ? "transport_error"
+        : status >= 200 && status < 300 ? "invalid_provider_response"
+        : "provider_rejected",
+    });
+    throw error;
+  }
+}
+
 export function createResendMailer(
   env: ResendEnvironment = process.env,
   fetchImpl: typeof fetch = fetch,
@@ -529,7 +557,7 @@ export function createResendMailer(
       const content = body(verificationUrl(publicOrigin, token), signedLocale);
       // Ties every retry of one attempt to one message. A new attempt mints a
       // new lead id, so a resend is a genuinely new key.
-      await deliver(config, fetchImpl, sleep, `watchdive-verification-${leadId}`, {
+      await deliver(config, fetchImpl, sleep, `watchdive-verification-${leadId}`, "verification", {
         to: [to],
         subject: content.subject,
         text: content.text,
@@ -541,7 +569,7 @@ export function createResendMailer(
       const content = welcomeBody(referralUrl(publicOrigin, refCode, locale), locale);
       // Keyed on the lead, not the moment: two confirmations that race, or a
       // retry from a later click, all collapse onto one scheduled message.
-      await deliver(config, fetchImpl, sleep, `watchdive-welcome-${leadId}`, {
+      await deliver(config, fetchImpl, sleep, `watchdive-welcome-${leadId}`, "welcome", {
         to: [to],
         subject: content.subject,
         text: content.text,

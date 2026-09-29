@@ -290,3 +290,64 @@ test("provider errors never carry the recipient or the body", async () => {
     },
   );
 });
+
+// Delivery failures are deliberately hidden from signup responses, but must
+// remain visible to operations without exposing the message or credentials.
+test("terminal Resend failures log once after retries, without sensitive data", async (t) => {
+  for (const scenario of [
+    { status: 400, body: { message: "diver@example.com" }, attempts: 1, reason: "provider_rejected" },
+    { status: 429, body: { message: "rate limited" }, attempts: 3, reason: "provider_rejected" },
+    { status: 503, body: { message: "unavailable" }, attempts: 3, reason: "provider_rejected" },
+    { status: 200, body: { unexpected: TOKEN }, attempts: 1, reason: "invalid_provider_response" },
+  ]) {
+    const log = t.mock.method(console, "error", () => {});
+    const provider = fakeFetch(Array.from({ length: scenario.attempts }, () => scenario));
+    try {
+      await assert.rejects(createResendMailer(ENV, provider.impl, noSleep).send(mail()), ResendDeliveryError);
+      assert.equal(provider.calls.length, scenario.attempts);
+      assert.equal(log.mock.callCount(), 1);
+      assert.deepEqual(log.mock.calls[0].arguments, ["[watchdive] email_delivery_failed", {
+        provider: "resend", operation: "verification", status: scenario.status, reason: scenario.reason,
+      }]);
+      const output = JSON.stringify(log.mock.calls[0].arguments);
+      for (const secret of [mail().to, TOKEN, ENV.RESEND_API_KEY, LEAD_ID]) {
+        assert.ok(!output.includes(secret));
+      }
+    } finally {
+      log.mock.restore();
+    }
+  }
+});
+
+test("transport failures log sanitized metadata and recovered retries do not log failure", async (t) => {
+  const log = t.mock.method(console, "error", () => {});
+  let attempts = 0;
+  const failedFetch = (async () => {
+    attempts++;
+    throw new Error(`transport failed for ${mail().to} ${TOKEN} ${ENV.RESEND_API_KEY}`);
+  }) as typeof fetch;
+  await assert.rejects(createResendMailer(ENV, failedFetch, noSleep).send(mail()), ResendDeliveryError);
+  assert.equal(attempts, 3);
+  assert.deepEqual(log.mock.calls[0].arguments, ["[watchdive] email_delivery_failed", {
+    provider: "resend", operation: "verification", status: 0, reason: "transport_error",
+  }]);
+  const recovered = fakeFetch([{ status: 503 }, { status: 200, body: { id: "msg_recovered" } }]);
+  await createResendMailer(ENV, recovered.impl, noSleep).send(mail());
+  assert.equal(log.mock.callCount(), 1, "successful retries must not report terminal failures");
+});
+
+test("welcome delivery failures are logged with a distinct operation", async (t) => {
+  const log = t.mock.method(console, "error", () => {});
+  const provider = fakeFetch([{ status: 403 }]);
+  await assert.rejects(createResendMailer(ENV, provider.impl, noSleep).sendWelcome({
+    to: mail().to,
+    leadId: LEAD_ID,
+    refCode: "abcd1234",
+    publicOrigin: TEST_ORIGIN,
+    scheduledAt: new Date(Date.now() + 86_400_000).toISOString(),
+    locale: "en",
+  }), ResendDeliveryError);
+  assert.deepEqual(log.mock.calls[0].arguments, ["[watchdive] email_delivery_failed", {
+    provider: "resend", operation: "welcome", status: 403, reason: "provider_rejected",
+  }]);
+});

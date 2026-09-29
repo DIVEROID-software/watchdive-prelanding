@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { confirmVerification } from "@/lib/api/waitlist.functions";
+import { isVerificationTokenShape } from "@/lib/verification/tokenShape";
 import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
 import { homePath, privacyPath, referralPath, termsPath } from "@/lib/i18n/locale";
 import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
@@ -43,11 +44,6 @@ function isUserPresent(): boolean {
   return document.visibilityState === "visible";
 }
 
-// `<uuid>.<expiry seconds>.<consent bit>.<43-char mac>` — shape only; the
-// signature is the server's business.
-const TOKEN_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.\d{1,11}\.[01]\.[A-Za-z0-9_-]{43}$/i;
-
 // The mail puts the bare token in the fragment: a literal `=` is eaten by the
 // quoted-printable transfer encoding mail bodies use. The legacy `token=` form
 // is still accepted so any link already in an inbox keeps working.
@@ -61,7 +57,7 @@ function tokenFromFragment(hash: string): string | undefined {
     raw = encoded;
   }
   const token = raw.startsWith("token=") ? raw.slice("token=".length) : raw;
-  return TOKEN_PATTERN.test(token) ? token : undefined;
+  return isVerificationTokenShape(token) ? token : undefined;
 }
 
 function Card({
