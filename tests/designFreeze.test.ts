@@ -78,8 +78,12 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // footer gained a Cookie settings link.
   // 2026-09-26: mobile optimization adds intrinsic form widths, wrapping
   // footer links and compact app tabs; section order and signup flow stay.
+  // 2026-10-07 (page weight): same elements, classes and sources. Photos gain
+  // srcset/sizes cuts and the first-screen photo fetchPriority; the three
+  // clips become LazyVideo (poster and playback only near the screen). Full-page
+  // screenshots at 390@3x and 1440@1x/2x differ only inside the resized photos.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "9a2bdd7b4306e5b6a5edcc74f914a3222447a2f5c4a7427ceec53158ed4388a6");
+  assert.equal(digest, "5d0da19a4b7d6be9b022cb63fb5778e478f324c9e3c48bacbd1a125f0f80037c");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -122,9 +126,11 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // Brand hex tokens stay; the nested scrollport does not return.
   // 2026-09-26: the cookie choice is a compact bottom bar, so the rule that
   // pushed the phone photo below a tall cookie dialog is gone.
+  // 2026-10-07: Spoqa faces declare their Hangul unicode-range (plus a 1 KB
+  // cut for 한국어 in the picker); Hangul renders pixel-identical.
   assert.equal(
     sha256(read("src/styles.css")),
-    "a481d8004b3ace8948d914f000889f0abaaa6aae5503dde9e7f9cab6a2fd75df",
+    "1725647e21ec457ce1b9ddde241ad2a75d4197412f5aa70c549069b66abbaebe",
   );
 });
 
