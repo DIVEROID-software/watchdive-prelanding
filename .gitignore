@@ -37,3 +37,6 @@ dist-ssr
 .env.*.local
 .vercel
 .env*
+
+# Launch-mail dry-run samples (scripts/launch-mail.ts)
+.launch-mail-preview/
