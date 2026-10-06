@@ -14,6 +14,7 @@ import { COUNTABLE_STATUS_FILTER, createNotionRequest } from "@/lib/verification
 import { conversionBlocked, WAITLIST_CLOSED_MESSAGE } from "@/lib/verification/contracts";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { waitlistClosed } from "@/lib/waitlistProgress";
+import { COUNT_RENDER_BUDGET_MS, createCountReader } from "@/lib/waitlistCount";
 import { createNetworkGate } from "@/lib/verification/networkGate";
 import { networkKey, requireSecret } from "@/lib/verification/token";
 import {
@@ -169,11 +170,40 @@ async function countableRows(dbId: string): Promise<number> {
   return count;
 }
 
-export const getWaitlistCount = createServerFn({ method: "GET" }).handler(async () => {
-  const dbId = process.env.NOTION_WAITLIST_DB_ID;
-  if (!dbId) return { count: 0 };
-  return { count: await countableRows(dbId) };
-});
+// The figure the page shows. It is rendered on the server (the landing route
+// loaders call this), so a crawler burst is answered from one short-lived
+// cached read rather than a Notion query per request. `null` means the count
+// could not be read: the page hides the figure instead of showing the
+// off-platform baseline as if it were the whole list. The cap gate in
+// `joinWaitlist` reads `countableRows` directly and is unaffected.
+const publicCount = createCountReader(
+  () => {
+    const dbId = process.env.NOTION_WAITLIST_DB_ID;
+    if (!dbId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
+    return countableRows(dbId);
+  },
+  // Logs the scope and the error's name only — never a Notion body or id.
+  { onError: (error) => void sanitizeServerError("waitlist-count", error) },
+);
+
+export const getWaitlistCount = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ count: number | null }> => ({
+    count: await publicCount.readWithin(COUNT_RENDER_BUDGET_MS),
+  }),
+);
+
+/**
+ * For a landing route loader: the live count, read during the server render so
+ * the HTML and the hydrated page show the same figure. `null` when it cannot
+ * be read — the figure is then hidden, never replaced by the baseline alone.
+ */
+export async function loadWaitlistCount(): Promise<number | null> {
+  try {
+    return (await getWaitlistCount()).count;
+  } catch {
+    return null;
+  }
+}
 
 // Submitting arms a verification attempt and sends one transactional mail. The
 // response is identical for a new address, one already pending, one already

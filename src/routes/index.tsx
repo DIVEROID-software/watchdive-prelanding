@@ -6,7 +6,12 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 import { track } from "@vercel/analytics";
-import { joinWaitlist, pollVerification, getReferralCount } from "@/lib/api/waitlist.functions";
+import {
+  joinWaitlist,
+  pollVerification,
+  getReferralCount,
+  loadWaitlistCount,
+} from "@/lib/api/waitlist.functions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LaunchNotice } from "@/components/launch-notice";
 import { CookieSettingsLink } from "@/components/cookie-choice-bar";
@@ -114,6 +119,9 @@ function AppIcon({ svg, className }: { svg: string; className?: string }) {
 }
 
 export const Route = createFileRoute("/")({
+  // The list figure is part of the server render, so it does not change a
+  // second after load (see WaitlistProgress).
+  loader: async () => ({ waitlistCount: await loadWaitlistCount() }),
   head: () => landingHead("en"),
   component: DesignFrozenLanding,
 });

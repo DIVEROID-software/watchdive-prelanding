@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLoaderData } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { getWaitlistCount } from "@/lib/api/waitlist.functions";
@@ -9,9 +10,14 @@ import { formatCount, LOW_REMAINING_THRESHOLD, waitlistProgress } from "@/lib/wa
  * How full the pre-launch list is.
  *
  * The live count comes from the server; the off-platform baseline is a recorded
- * constant. `justJoined` bumps the figure by one for the person who just
+ * constant. The first figure arrives with the page (the route loader reads it
+ * during the server render), so the number a visitor sees first is the one
+ * that stays. `justJoined` bumps the figure by one for the person who just
  * confirmed, so their own signup is visible immediately instead of waiting for
  * the next poll — the server figure catches up on its own.
+ *
+ * When the count cannot be read the whole block is left out. A scarcity
+ * number built from the baseline alone would be a claim the page cannot back.
  */
 export function WaitlistProgress({
   justJoined = 0,
@@ -21,9 +27,21 @@ export function WaitlistProgress({
   className?: string;
 }) {
   const messages = useFrozenLandingMessages().progress;
-  const { data } = useQuery({
+  const loaderData: unknown = useLoaderData({ strict: false });
+  const rendered =
+    loaderData && typeof loaderData === "object" && "waitlistCount" in loaderData
+      ? loaderData.waitlistCount
+      : undefined;
+  const seeded = typeof rendered === "number" ? rendered : undefined;
+  const { data: liveCount } = useQuery({
     queryKey: ["waitlist-count"],
-    queryFn: () => getWaitlistCount(),
+    queryFn: async () => {
+      const { count } = await getWaitlistCount();
+      // An unreadable count keeps the last good figure (or none) on screen.
+      if (count === null) throw new Error("waitlist count unavailable");
+      return count;
+    },
+    initialData: seeded,
     // Social proof does not need to be to-the-second, and this query is served
     // from a rate-limited CRM. One fetch a minute is plenty.
     staleTime: 60_000,
@@ -31,18 +49,22 @@ export function WaitlistProgress({
     retry: false,
   });
 
-  const progress = waitlistProgress((data?.count ?? 0) + justJoined);
-
   // The bar fills once, on arrival, so the number reads as something that grew
   // rather than as decoration. Every later refresh just moves it a little, and
   // the transition on the element handles that without a second reveal.
   const [revealed, setRevealed] = useState(false);
   const timer = useRef<number | undefined>(undefined);
+  const known = liveCount !== undefined;
   useEffect(() => {
-    if (revealed) return;
+    if (revealed || !known) return;
     timer.current = window.setTimeout(() => setRevealed(true), 120);
     return () => window.clearTimeout(timer.current);
-  }, [revealed]);
+  }, [revealed, known]);
+
+  if (!known) return null;
+
+  const progress = waitlistProgress(liveCount + justJoined);
+
   const scarce = progress.remaining <= LOW_REMAINING_THRESHOLD;
   const countLineTail = messages.countLine
     .replace("{total}", "")
