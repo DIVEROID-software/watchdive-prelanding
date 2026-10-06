@@ -470,7 +470,7 @@ const ko: FrozenLandingMessages = {
     back: "← 홈으로 돌아가기",
     h1: "개인정보처리방침 — Watch Dive 프리런칭",
     effectiveLabel: "시행일:",
-    effectiveDate: "2026년 9월 25일",
+    effectiveDate: "2026년 10월 7일",
     intro1:
       '본 개인정보처리방침은 Diveroid Ltd("회사", "당사", "DIVEROID")가 Watch Dive 프리런칭 페이지에서 예정된 Kickstarter 캠페인 소식을 받기 위해 신청하실 때 정보를 어떻게 처리하는지 설명합니다.',
     intro2:
@@ -891,7 +891,7 @@ const zhCN: FrozenLandingMessages = {
     back: "← 返回首页",
     h1: "隐私政策 — Watch Dive 预启动",
     effectiveLabel: "生效日期：",
-    effectiveDate: "2026 年 9 月 25 日",
+    effectiveDate: "2026 年 10 月 7 日",
     intro1:
       "本隐私政策说明 Diveroid Ltd（“我们”，“DIVEROID”）在你于 Watch Dive 预启动页面报名接收即将开启的 Kickstarter 众筹消息时，如何处理你的信息。",
     intro2: "本页面仅用于收集上线意向。它不是商店，不处理任何付款。",
@@ -1308,7 +1308,7 @@ const zhTW: FrozenLandingMessages = {
     back: "← 回到首頁",
     h1: "隱私權政策 — Watch Dive 預先啟動",
     effectiveLabel: "生效日期：",
-    effectiveDate: "2026 年 9 月 25 日",
+    effectiveDate: "2026 年 10 月 7 日",
     intro1:
       "本隱私權政策說明 Diveroid Ltd（「我們」，「DIVEROID」）在你於 Watch Dive 預先啟動頁面報名接收即將開啟的 Kickstarter 募資消息時，如何處理你的資訊。",
     intro2: "本頁面僅用於蒐集上線意向。它不是商店，也不處理任何付款。",
@@ -1737,7 +1737,7 @@ const ja: FrozenLandingMessages = {
     back: "← ホームに戻る",
     h1: "プライバシーポリシー — Watch Dive 事前登録",
     effectiveLabel: "発効日:",
-    effectiveDate: "2026 年 9 月 25 日",
+    effectiveDate: "2026 年 10 月 7 日",
     intro1:
       "本プライバシーポリシーは、Diveroid Ltd（「当社」、「DIVEROID」）が、Watch Dive 事前登録ページで今後の Kickstarter キャンペーン情報の受け取りにお申し込みいただいた際に、お客様の情報をどのように取り扱うかを説明するものです。",
     intro2:
@@ -2175,7 +2175,7 @@ const es: FrozenLandingMessages = {
     back: "← Volver al inicio",
     h1: "Política de privacidad — Prelanzamiento de Watch Dive",
     effectiveLabel: "Fecha de entrada en vigor:",
-    effectiveDate: "25 de septiembre de 2026",
+    effectiveDate: "7 de octubre de 2026",
     intro1:
       'Esta Política de privacidad explica cómo Diveroid Ltd ("nosotros", "DIVEROID") trata tu información cuando te registras en la página de prelanzamiento de Watch Dive para recibir novedades sobre nuestra próxima campaña de Kickstarter.',
     intro2:
@@ -2617,7 +2617,7 @@ const fr: FrozenLandingMessages = {
     back: "← Retour à l’accueil",
     h1: "Politique de confidentialité — Prélancement Watch Dive",
     effectiveLabel: "Date d’entrée en vigueur :",
-    effectiveDate: "25 septembre 2026",
+    effectiveDate: "7 octobre 2026",
     intro1:
       "La présente Politique de confidentialité explique comment Diveroid Ltd (« nous », « DIVEROID ») traite vos informations lorsque vous vous inscrivez sur la page de prélancement de Watch Dive pour recevoir des nouvelles de notre prochaine campagne Kickstarter.",
     intro2:
@@ -3058,7 +3058,7 @@ const de: FrozenLandingMessages = {
     back: "← Zur Startseite",
     h1: "Datenschutzerklärung — Watch Dive Vorstart",
     effectiveLabel: "Gültig ab:",
-    effectiveDate: "25. September 2026",
+    effectiveDate: "7. Oktober 2026",
     intro1:
       "Diese Datenschutzerklärung erläutert, wie Diveroid Ltd („wir“, „uns“, „DIVEROID“) deine Daten behandelt, wenn du dich auf der Watch-Dive-Vorstart-Seite anmeldest, um Updates zu unserer kommenden Kickstarter-Kampagne zu erhalten.",
     intro2:
@@ -3496,7 +3496,7 @@ const ptBR: FrozenLandingMessages = {
     back: "← Voltar ao início",
     h1: "Política de Privacidade — Pré-lançamento Watch Dive",
     effectiveLabel: "Data de vigência:",
-    effectiveDate: "25 de setembro de 2026",
+    effectiveDate: "7 de outubro de 2026",
     intro1:
       'Esta Política de Privacidade explica como a Diveroid Ltd ("nós", "DIVEROID") trata suas informações quando você se cadastra na página de pré-lançamento do Watch Dive para receber novidades sobre nossa próxima campanha no Kickstarter.',
     intro2:

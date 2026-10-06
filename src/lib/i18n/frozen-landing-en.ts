@@ -351,7 +351,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     back: "← Back to home",
     h1: "Privacy Policy — Watch Dive Pre-Launch",
     effectiveLabel: "Effective date:",
-    effectiveDate: "September 25, 2026",
+    effectiveDate: "October 7, 2026",
     intro1:
       'This Privacy Policy explains how Diveroid Ltd ("we", "us", "DIVEROID") handles your information when you sign up on the Watch Dive pre-launch page to receive updates about our upcoming Kickstarter campaign.',
     intro2:
