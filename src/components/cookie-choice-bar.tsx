@@ -11,9 +11,10 @@ import {
   setMetaMeasurementConsent,
 } from "@/lib/metaPixel";
 import { browserConsentRegion, resolveGeoCountry } from "@/lib/consentRegion";
+import { cookieBarShouldYield } from "@/lib/cookieBarPlacement";
 
 type ChoiceCopy = {
-  /** One short line: the bar is a single compact row, even at 390 px. */
+  /** One short line of text; Privacy and the two choices share the row below. */
   body: string;
   allow: string;
   decline: string;
@@ -139,28 +140,61 @@ export function CookieChoiceBar() {
     };
   }, []);
 
-  // While this bar is open it owns the bottom edge. The height is published
-  // so page padding matches the bar, and the notify link stays hidden.
+  // While this bar is open it owns the bottom edge. The space it takes up,
+  // from its top edge to the bottom of the viewport, is published so page
+  // padding matches the bar, and the notify link stays hidden. It never covers
+  // the first screen and steps aside while a signup form is on screen (see
+  // `cookieBarShouldYield`): it stays laid out but is not painted or tappable.
+  const [yielding, setYielding] = useState(false);
   useLayoutEffect(() => {
     const root = document.documentElement;
     const node = barRef.current;
     if (!open || !node) {
       delete root.dataset.wdCookie;
       root.style.removeProperty("--wd-cookie-space");
+      setYielding(false);
       return;
     }
+    const viewport = window.visualViewport;
+    let frame = 0;
     const apply = () => {
+      frame = 0;
+      const bar = node.getBoundingClientRect();
       root.dataset.wdCookie = "open";
       root.style.setProperty(
         "--wd-cookie-space",
-        `${Math.ceil(node.getBoundingClientRect().height)}px`,
+        `${Math.max(0, Math.ceil(window.innerHeight - bar.top))}px`,
+      );
+      const focused = document.activeElement;
+      setYielding(
+        cookieBarShouldYield({
+          forms: [...document.querySelectorAll("form")].map((form) => form.getBoundingClientRect()),
+          viewportHeight: window.innerHeight,
+          scrollY: window.scrollY,
+          editing: focused instanceof HTMLElement && !!focused.closest("form"),
+          keyboardOpen: !!viewport && viewport.height < window.innerHeight * 0.75,
+        }),
       );
     };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(apply);
+    };
     apply();
-    const observer = new ResizeObserver(apply);
+    const observer = new ResizeObserver(schedule);
     observer.observe(node);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    document.addEventListener("focusin", schedule);
+    document.addEventListener("focusout", schedule);
+    viewport?.addEventListener("resize", schedule);
     return () => {
+      if (frame) window.cancelAnimationFrame(frame);
       observer.disconnect();
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      document.removeEventListener("focusin", schedule);
+      document.removeEventListener("focusout", schedule);
+      viewport?.removeEventListener("resize", schedule);
       delete root.dataset.wdCookie;
       root.style.removeProperty("--wd-cookie-space");
     };
@@ -182,29 +216,43 @@ export function CookieChoiceBar() {
   }
 
   return (
-    <div ref={barRef} className="fixed inset-x-0 bottom-0 z-[10000] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-3">
+    // Phones: a full-width strip on the bottom edge. From `sm` up: a card in
+    // the notify link's bottom-right slot, beside the hero copy on a desktop
+    // first screen rather than across it.
+    <div
+      ref={barRef}
+      aria-hidden={yielding || undefined}
+      className={`fixed inset-x-0 bottom-0 z-[10000] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-[23rem] sm:px-0 sm:pb-[env(safe-area-inset-bottom)] ${
+        yielding ? "invisible pointer-events-none" : ""
+      }`}
+    >
       <div
         role="dialog"
         aria-label={copy.body}
-        className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-[#201748]/95 px-3 py-1.5 text-white shadow-lg sm:flex-nowrap sm:px-4"
+        className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-[#201748]/95 px-3 py-1.5 text-white shadow-lg sm:px-4 sm:py-3"
       >
-        <p className="min-w-0 flex-1 basis-full text-xs leading-snug text-[#EDE6FF] min-[380px]:basis-auto sm:text-sm">
-          {copy.body}{" "}
-          <a href={privacyPath(locale)} className="text-[#36A9E1] underline">
-            {copy.privacy}
-          </a>
+        <p className="min-w-0 basis-full text-xs leading-snug text-[#EDE6FF] sm:text-sm">
+          {copy.body}
         </p>
+        {/* On the action row, so its 44px tap target is a real box beside the
+            buttons instead of a hit area spilling over them from the text. */}
+        <a
+          href={privacyPath(locale)}
+          className="-ml-0.5 inline-flex min-h-11 min-w-11 items-center justify-center px-0.5 text-xs text-[#36A9E1] underline sm:text-sm"
+        >
+          {copy.privacy}
+        </a>
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
           <button
             type="button"
-            className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#EDE6FF]/70 px-3 text-xs font-medium text-[#EDE6FF] sm:text-sm"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[#EDE6FF]/70 px-2.5 text-xs font-medium text-[#EDE6FF] sm:px-3 sm:text-sm"
             onClick={() => choose("denied")}
           >
             {copy.decline}
           </button>
           <button
             type="button"
-            className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#3D2683] px-3 text-xs font-medium text-white sm:text-sm"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-[#3D2683] px-2.5 text-xs font-medium text-white sm:px-3 sm:text-sm"
             onClick={() => choose("granted")}
           >
             {copy.allow}
