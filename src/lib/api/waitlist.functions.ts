@@ -50,6 +50,9 @@ import {
 //   Lead ID (rich_text) · Meta Event ID (rich_text)
 //   UTM Source · UTM Medium · UTM Campaign · UTM Content · UTM Term (rich_text)
 //   Landing path (rich_text)
+//   Verification reminder (rich_text) — read and written only by the daily
+//   reminder job (api.cron.verification-reminder). Until it exists the job
+//   sends nothing; signups are unaffected.
 //   Optional: a rich_text column for the Meta click id, named by
 //   NOTION_FBCLID_PROPERTY (e.g. "FBCLID"). Unset = fbclid is not stored.
 

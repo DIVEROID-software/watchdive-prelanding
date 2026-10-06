@@ -44,6 +44,13 @@ export type VerificationMail = {
   leadId: string;
   publicOrigin: string;
   locale: Locale;
+  /**
+   * The single scheduled reminder of this same confirmation mail. Identical
+   * copy; only the idempotency key differs, because the reminder deliberately
+   * keeps the attempt's lead id (so the first link keeps working) and would
+   * otherwise collide with the original send's key.
+   */
+  reminder?: boolean;
 };
 
 export type WelcomeMail = {
@@ -513,6 +520,29 @@ async function deliverWithRetries(
   throw lastError ?? new ResendDeliveryError("Resend request failed", 0);
 }
 
+export type DeliveryFailureReason =
+  "unexpected_error" | "transport_error" | "invalid_provider_response" | "provider_rejected";
+
+export type DeliveryFailureClass = { status: number | null; reason: DeliveryFailureReason };
+
+/**
+ * The only description of a failed send that may leave this module: an HTTP
+ * status and one of four fixed reasons. Never the error message, which for an
+ * unexpected error could carry anything, including the recipient address.
+ */
+export function classifyDeliveryFailure(error: unknown): DeliveryFailureClass {
+  const status = error instanceof ResendDeliveryError ? error.status : null;
+  const reason: DeliveryFailureReason =
+    status === null
+      ? "unexpected_error"
+      : status === 0
+        ? "transport_error"
+        : status >= 200 && status < 300
+          ? "invalid_provider_response"
+          : "provider_rejected";
+  return { status, reason };
+}
+
 // The service intentionally returns a generic response when delivery fails.
 // Log once after retries are exhausted so those failures remain observable.
 // Never log the payload, recipient, token, API key, or provider response body.
@@ -521,21 +551,18 @@ async function deliver(
   fetchImpl: typeof fetch,
   sleep: (ms: number) => Promise<void>,
   idempotencyKey: string,
-  operation: "verification" | "welcome",
+  operation: "verification" | "verification_reminder" | "welcome",
   payload: Record<string, unknown>,
 ): Promise<void> {
   try {
     await deliverWithRetries(config, fetchImpl, sleep, idempotencyKey, payload);
   } catch (error) {
-    const status = error instanceof ResendDeliveryError ? error.status : null;
+    const { status, reason } = classifyDeliveryFailure(error);
     console.error("[watchdive] email_delivery_failed", {
       provider: "resend",
       operation,
       status,
-      reason: status === null ? "unexpected_error"
-        : status === 0 ? "transport_error"
-        : status >= 200 && status < 300 ? "invalid_provider_response"
-        : "provider_rejected",
+      reason,
     });
     throw error;
   }
@@ -549,20 +576,32 @@ export function createResendMailer(
   const config = readResendConfig(env);
 
   return {
-    async send({ to, token, leadId, publicOrigin, locale }) {
+    async send({ to, token, leadId, publicOrigin, locale, reminder }) {
       const signedLocale = verificationTokenLocale(token);
       if (!signedLocale || signedLocale !== locale) {
         throw new Error("Verification token locale mismatch");
       }
       const content = body(verificationUrl(publicOrigin, token), signedLocale);
       // Ties every retry of one attempt to one message. A new attempt mints a
-      // new lead id, so a resend is a genuinely new key.
-      await deliver(config, fetchImpl, sleep, `watchdive-verification-${leadId}`, "verification", {
-        to: [to],
-        subject: content.subject,
-        text: content.text,
-        html: content.html,
-      });
+      // new lead id, so a resend is a genuinely new key. The reminder reuses
+      // the attempt's lead id, so it gets its own namespace — one key per
+      // attempt, which also makes a duplicated reminder collapse at Resend.
+      const idempotencyKey = reminder
+        ? `watchdive-verification-reminder-${leadId}`
+        : `watchdive-verification-${leadId}`;
+      await deliver(
+        config,
+        fetchImpl,
+        sleep,
+        idempotencyKey,
+        reminder ? "verification_reminder" : "verification",
+        {
+          to: [to],
+          subject: content.subject,
+          text: content.text,
+          html: content.html,
+        },
+      );
     },
 
     async sendWelcome({ to, refCode, leadId, publicOrigin, scheduledAt, locale }) {

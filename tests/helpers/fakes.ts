@@ -69,6 +69,8 @@ export class FakeLeadStore implements LeadStore {
       ...(record.expiresAt ? { expiresAt: record.expiresAt } : {}),
       ...(record.verifiedAt ? { verifiedAt: record.verifiedAt } : {}),
       ...(record.welcomeAt ? { welcomeAt: record.welcomeAt } : {}),
+      ...(record.reminder ? { reminder: record.reminder } : {}),
+      ...(record.landingPath ? { landingPath: record.landingPath } : {}),
     };
     this.rows.set(row.pageId, row);
     this.byCanonical.set(record.canonical, row.pageId);

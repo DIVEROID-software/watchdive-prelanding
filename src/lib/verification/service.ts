@@ -82,6 +82,12 @@ export type ServiceDependencies = {
   sleep?: (ms: number) => Promise<void>;
   /** Shields the store from replayed poll bursts. */
   pollGate?: PollGate<PollResponse>;
+  /**
+   * Told when a confirmation mail could not be handed to the provider. Gets
+   * the raw error only so it can classify it; it must not put anything from it
+   * but the fixed failure class into an alert. Never allowed to fail a submit.
+   */
+  onDeliveryFailure?: (error: unknown) => Promise<void> | void;
 };
 
 function pendingResponse(handle: string): PendingResponse {
@@ -241,8 +247,15 @@ export async function requestVerificationService(
       publicOrigin,
       locale: input.locale ?? DEFAULT_LOCALE,
     });
-  } catch {
-    // The attempt stays armed. Nothing about the failure reaches the response.
+  } catch (error) {
+    // The attempt stays armed. Nothing about the failure reaches the response,
+    // but somebody has to hear about it: the visitor was just told to check an
+    // inbox no mail is going to reach.
+    try {
+      await dependencies.onDeliveryFailure?.(error);
+    } catch {
+      // Alerting is best effort and never changes what the visitor sees.
+    }
     return floor(pendingResponse(handle));
   }
 
