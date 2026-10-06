@@ -4,6 +4,7 @@
 // and Notion credentials have no path into a client bundle.
 import { sendMetaCrmQualifiedLead, sendMetaEmailVerified } from "@/lib/api/metaCapi";
 import type { PollResponse } from "./contracts.ts";
+import { createDeliveryAlerter, createSlackPoster } from "./deliveryAlert.ts";
 import { createNotionLeadStore, createNotionRequest } from "./notionLead.ts";
 import { createPollGate } from "./pollGate.ts";
 import { createResendMailer } from "./resend.ts";
@@ -14,6 +15,10 @@ import type { ServiceDependencies } from "./service.ts";
 // than its lifetime read ceiling.
 const pollGate = createPollGate<PollResponse>();
 
+// One aggregation window per server process, so an outage produces one Slack
+// alert per instance per window instead of one per visitor.
+const deliveryAlerter = createDeliveryAlerter({ post: createSlackPoster() });
+
 export function createServiceDependencies(): ServiceDependencies {
   const databaseId = process.env.NOTION_WAITLIST_DB_ID;
   if (!databaseId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
@@ -21,6 +26,7 @@ export function createServiceDependencies(): ServiceDependencies {
     store: createNotionLeadStore(createNotionRequest(), databaseId),
     mailer: createResendMailer(),
     pollGate,
+    onDeliveryFailure: (error) => deliveryAlerter.record(error),
     dispatchVerifiedLead: async (input) => {
       await sendMetaEmailVerified(input);
       // The CRM leg of the Conversion Leads integration rides the same gate:
