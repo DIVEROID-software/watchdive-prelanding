@@ -10,13 +10,13 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   meta: {
     title: "Watch Dive — depth on the smartwatch you already wear",
     description:
-      "A DIVEROID sensor housing turns a supported Apple Watch or Galaxy Watch into a dive computer. Depth, time, water temperature, no-deco. Early bird $149 on Kickstarter.",
+      "A DIVEROID sensor housing turns a supported Apple Watch or Galaxy Watch into a dive computer. Depth, time, water temperature, no-deco. Early bird $149 for the first 100 Kickstarter backers.",
     ogTitle: "Watch Dive — depth on the smartwatch you already wear",
     ogDescription:
-      "A DIVEROID sensor housing turns a supported Apple Watch or Galaxy Watch into a dive computer. Depth, time, water temperature, no-deco. Early bird $149 on Kickstarter.",
+      "A DIVEROID sensor housing turns a supported Apple Watch or Galaxy Watch into a dive computer. Depth, time, water temperature, no-deco. Early bird $149 for the first 100 Kickstarter backers.",
     twitterTitle: "Watch Dive — depth on the smartwatch you already wear",
     twitterDescription:
-      "A DIVEROID sensor housing for the Apple Watch or Galaxy Watch you already wear. Early bird $149 on Kickstarter.",
+      "A DIVEROID sensor housing for the Apple Watch or Galaxy Watch you already wear. Early bird $149 for the first 100 Kickstarter backers.",
   },
   banner: {
     kicker: "Kickstarter",
@@ -24,7 +24,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     joinCta: "Notify me",
   },
   cta: {
-    label: "Notify me · $149 early bird",
+    label: "Notify me · $149 for the first 100",
   },
   referral: {
     welcome: "A friend invited you — you're on their list. Confirm your email to join them.",
@@ -39,7 +39,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     copied: "Copied",
     shareButton: "Send to your dive buddy",
     shareText:
-      "Watch Dive is a DIVEROID sensor housing for the Apple Watch or Galaxy Watch I already wear. Early bird is $149 on Kickstarter. Join with my link.",
+      "Watch Dive is a DIVEROID sensor housing for the Apple Watch or Galaxy Watch I already wear. The first 100 Kickstarter backers get it for $149. Join with my link.",
   },
   inbox: {
     title: "One more step. Confirm your email.",
@@ -88,7 +88,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     h1: "Watch Dive. For the smartwatch you already wear.",
     h1Highlight: "the smartwatch you already wear",
     sub: "A DIVEROID sensor in the housing reads depth and water temperature. Your Apple Watch or Galaxy Watch shows them as you dive.",
-    priceLine: "Early bird $149 on Kickstarter. Launching in December.",
+    priceLine: "Early bird $149 for the first 100 backers on Kickstarter. Launching in December.",
     backgroundAlt: "Scuba diver exploring a vibrant coral reef",
     sideImageAlt: "Watch Dive underwater hero product shot",
     stat1Label: "Housing · 197 ft (60 m)",
@@ -96,7 +96,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     stat2Label: "Scuba + Freedive",
     stat2Desc: "Two modes",
     stat3Label: "$149",
-    stat3Desc: "Early bird · 50% off",
+    stat3Desc: "First 100 backers · 50% off",
     wasPrice: "$299",
     nowPrice: "$149",
     offBadge: "50% off",
@@ -114,12 +114,12 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     promiseText: "Depth, time, temperature. On the smartwatch you already wear.",
     cardKicker: "Kickstarter",
     cardHeadline: "Depth. Time. No-deco.",
-    cardFrom: "From",
+    cardFrom: "First 100 backers",
     cardPrice: "$149",
   },
   value: {
     kicker: "Why Watch Dive",
-    h2: "From $149.",
+    h2: "$149 for the first 100 backers.",
     imageAlt: "Diver at the pool edge wearing the Watch Dive housing",
     overlayKicker: "On the wrist",
     overlayText: "The housing and its sensor, on the smartwatch you already wear.",
@@ -242,11 +242,11 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   },
   offer: {
     imageAlt: "Watch Dive Kickstarter launch banner",
-    kicker: "Early bird · 50% off",
+    kicker: "First 100 backers · 50% off",
     headline: "$299 $149 — 50% off.",
     headlineStrike: "$299",
     headlineNew: "$149",
-    lead: "Hear first when Watch Dive opens on Kickstarter. Early bird is $149, before the $299 public price.",
+    lead: "Hear first when Watch Dive opens on Kickstarter. The first 100 backers get $149, before the $299 public price.",
     leadHighlight: "Hear first",
   },
   creds: {
