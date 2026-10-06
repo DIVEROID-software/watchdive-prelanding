@@ -83,15 +83,71 @@ export function describeNotionFailure(status: number, rawBody: string): string {
   return `Notion request failed (${status})${code ? `: ${code}` : ""}${property ? ` [${property}]` : ""}`;
 }
 
+/**
+ * Notion's own error message with everything identifying taken out: quoted
+ * values, ids, email addresses, URLs and long digit runs. What is left is the
+ * sentence Notion wrote, e.g. "Could not find database with ID: <id>. Make
+ * sure the relevant pages and databases are shared with your integration."
+ */
+export function sanitizeNotionMessage(message: string): string {
+  return message
+    .slice(0, 1000)
+    .replace(/https?:\/\/\S+/gi, "<url>")
+    .replace(/[^\s@"'`]+@[^\s@"'`]+/g, "<email>")
+    .replace(/"[^"]*"|`[^`]*`|“[^”]*”/g, "<value>")
+    .replace(/\b[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}\b/gi, "<id>")
+    .replace(/\b(?:ntn|secret)_\w+/gi, "<token>")
+    .replace(/\d{6,}/g, "<n>")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 240);
+}
+
+/**
+ * Thrown for a non-2xx Notion answer. `message` is exactly
+ * `describeNotionFailure` (the waitlist flow and its alerts read only that);
+ * `status`, `code` and the sanitized `detail` are there for callers that want
+ * to log why a write failed.
+ */
+export class NotionRequestError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly detail: string;
+
+  constructor(status: number, rawBody: string) {
+    super(describeNotionFailure(status, rawBody));
+    this.name = "NotionRequestError";
+    this.status = status;
+    let code = "";
+    let detail = "";
+    try {
+      const parsed = JSON.parse(rawBody.slice(0, 4096)) as { code?: unknown; message?: unknown };
+      if (typeof parsed.code === "string" && /^[a-z_]{1,64}$/.test(parsed.code)) code = parsed.code;
+      if (typeof parsed.message === "string") detail = sanitizeNotionMessage(parsed.message);
+    } catch {
+      // An unparseable body contributes nothing at all.
+    }
+    this.code = code;
+    this.detail = detail;
+  }
+}
+
 export type NotionRequest = (
   method: "GET" | "POST" | "PATCH",
   path: string,
   body?: unknown,
 ) => Promise<Record<string, unknown>>;
 
+/**
+ * The page-behaviour store can be given a data-source id instead of a
+ * database id; only that path asks for the newer API version.
+ */
+export const NOTION_DATA_SOURCE_VERSION = "2025-09-03";
+
 export function createNotionRequest(
   fetchImpl: typeof fetch = fetch,
   env: { NOTION_API_KEY?: string } = process.env,
+  notionVersion: string = NOTION_VERSION,
 ): NotionRequest {
   return async (method, path, body) => {
     const key = env.NOTION_API_KEY;
@@ -102,13 +158,13 @@ export function createNotionRequest(
       signal: AbortSignal.timeout(NOTION_TIMEOUT_MS),
       headers: {
         Authorization: `Bearer ${key}`,
-        "Notion-Version": NOTION_VERSION,
+        "Notion-Version": notionVersion,
         "Content-Type": "application/json",
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     if (!response.ok) {
-      throw new Error(describeNotionFailure(response.status, await response.text()));
+      throw new NotionRequestError(response.status, await response.text());
     }
     return (await response.json()) as Record<string, unknown>;
   };

@@ -139,6 +139,7 @@ export function startPageBehavior(): void {
   document.addEventListener("click", onClick, true);
   onScroll();
 
+  let lastSent = "";
   const send = () => {
     if (!measurementAllowed()) return;
     const now = Date.now();
@@ -150,27 +151,33 @@ export function startPageBehavior(): void {
       sections.push({ id: state.label, dwellSec });
     }
     const locale = localeFromPathname(window.location.pathname) as Locale;
-    void recordPageBehavior({
-      data: {
-        sessionId: id,
-        locale,
-        device: deviceClass(),
-        viewportW: window.innerWidth,
-        viewportH: window.innerHeight,
-        timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC").slice(0, 64),
-        durationSec: Math.min(86_400, Math.round((now - began) / 1000)),
-        maxScroll,
-        referrerHost: hostOf(document.referrer),
-        utmSource: utm("utm_source"),
-        utmMedium: utm("utm_medium"),
-        utmCampaign: utm("utm_campaign"),
-        sections,
-        clicks,
-      },
-    }).catch(() => undefined);
+    const data = {
+      sessionId: id,
+      locale,
+      device: deviceClass(),
+      viewportW: window.innerWidth,
+      viewportH: window.innerHeight,
+      timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC").slice(0, 64),
+      durationSec: Math.min(86_400, Math.round((now - began) / 1000)),
+      maxScroll,
+      referrerHost: hostOf(document.referrer),
+      utmSource: utm("utm_source"),
+      utmMedium: utm("utm_medium"),
+      utmCampaign: utm("utm_campaign"),
+      sections,
+      clicks,
+    };
+    // Duration always moves, so compare everything else: a tab switched back
+    // and forth without reading or clicking adds no Notion write.
+    const fingerprint = JSON.stringify({ ...data, durationSec: 0 });
+    if (fingerprint === lastSent) return;
+    lastSent = fingerprint;
+    void recordPageBehavior({ data }).catch(() => undefined);
   };
 
-  window.setInterval(send, 30_000);
+  // Sent when the page is hidden or left, not on a timer: the Notion
+  // integration is shared with the waitlist and its ~3 requests a second
+  // must stay free for signups.
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") send();
   });
