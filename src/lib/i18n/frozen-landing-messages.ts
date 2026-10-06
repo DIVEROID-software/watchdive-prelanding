@@ -488,7 +488,7 @@ const ko: FrozenLandingMessages = {
     s2Security:
       "보안 신호 — 자동화되거나 반복적인 요청을 제한하기 위해 서버 메모리에서 사용하는 악용 플래그와 단기 키 기반 네트워크 버킷. 리드 기록에는 원본 IP 주소, 네트워크 버킷, 전체 브라우저 user-agent를 보존하지 않습니다.",
     s2Usage:
-      "페이지 측정 — 기기 종류(휴대폰, 태블릿, 데스크톱), 화면 크기, 시간대, 국가 코드, 머문 시간, 스크롤 깊이, 본 구역, 가입 버튼처럼 이름이 있는 클릭. EU/EEA, 영국, 스위스에서 접속했거나 국가를 알 수 없으면 허용을 선택한 경우에만 동작하고, 그 밖의 지역에서는 기본으로 동작하며 페이지 하단 쿠키 설정에서 끌 수 있습니다. IP 주소, 입력한 글, 정확한 위치, 추정한 나이와 성별은 저장하지 않습니다. 식별자가 설정된 경우 Google Analytics 4, Google Ads, Meta 픽셀, Microsoft Clarity 히트맵도 같은 기준을 따릅니다. 지원 채팅과 Vercel Web Analytics는 페이지와 함께 로드될 수 있습니다.",
+      "페이지 측정 — 기기 종류(휴대폰, 태블릿, 데스크톱), 브라우저 창 크기, 페이지 언어, 시간대, 국가 코드, 머문 시간, 스크롤한 깊이, 구역별로 화면에 보인 시간, 그리고 가입 버튼처럼 이름이 있는 클릭과 그 클릭의 대략적인 화면 위치. 들어온 사이트의 도메인과 링크에 붙은 캠페인 태그(source, medium, campaign)도 기록하며, 이 기록은 해당 브라우저 탭에서만 유지되는 무작위 세션 식별자로 묶입니다. EU/EEA, 영국, 스위스에서 접속했거나 국가를 알 수 없으면 허용을 선택한 경우에만 동작하고, 그 밖의 지역에서는 기본으로 동작하며 페이지 하단 쿠키 설정에서 끌 수 있습니다. 이 기록에는 이메일 주소, 전화번호, IP 주소, 브라우저의 전체 사용자 에이전트, 입력한 글, 정확한 위치, 추정한 나이와 성별이 들어가지 않으며, 대기명단 기록과 연결하지 않습니다. 식별자가 설정된 경우 Google Analytics 4, Google Ads, Meta 픽셀, Microsoft Clarity 히트맵도 같은 기준을 따릅니다. 지원 채팅과 Vercel Web Analytics는 페이지와 함께 로드될 수 있습니다.",
     s2NoPayment: "이 페이지에서는 결제 정보를 수집하지 않습니다.",
     s3Title: "3. 이용 목적",
     s3Intro: "제공하신 정보는 다음 용도로 사용합니다:",
@@ -506,7 +506,7 @@ const ko: FrozenLandingMessages = {
       "이 페이지를 운영하기 위해 처리자를 사용합니다. Vercel은 호스팅과 Web Analytics, Resend는 인증·소식 메일, Notion은 대기명단과 이와 분리된 측정 요약, 지원 채팅은 문의 응답에 쓰입니다. Google과 Meta는 해당 태그가 설정되어 있고 측정이 켜져 있는 경우에만 사용합니다(4항 참조). 문자 알림을 선택한 경우에만 SMS 발송사를 사용합니다. 이 제공자는 미국을 포함해 한국 밖 서버에 데이터를 저장할 수 있습니다. 서비스에 필요한 것만 공유하며, 개인정보를 판매하지 않습니다.",
     s6Title: "6. 보유 기간",
     s6Body:
-      "대기명단 정보는 Watch Dive 런칭 캠페인이 끝날 때까지, 또는 삭제·수신거부를 요청하실 때까지 중 먼저 오는 시점까지 보관합니다. 허용된 페이지 측정 요약은 최대 12개월 보관 후 삭제합니다. 삭제 요청이 있으면 해당하는 기록을 지체 없이 삭제합니다.",
+      "대기명단 정보는 Watch Dive 런칭 캠페인이 끝날 때까지, 또는 삭제·수신거부를 요청하실 때까지 중 먼저 오는 시점까지 보관합니다. 페이지 측정 요약은 최대 12개월 보관 후 삭제합니다. 삭제 요청이 있으면 해당하는 기록을 지체 없이 삭제합니다.",
     s7Title: "7. 이용자의 권리",
     s7Intro: "언제든 다음을 할 수 있습니다:",
     s7Item1: "보유 중인 본인 정보에 대한 열람 요청;",
@@ -907,7 +907,7 @@ const zhCN: FrozenLandingMessages = {
     s2Security:
       "安全信号 — 用于限制自动化或重复请求、在服务器内存中使用的滥用标记与短时效的加密网络分桶。潜在客户记录中不保留原始 IP 地址、网络分桶或完整的浏览器 user-agent。",
     s2Usage:
-      "页面测量，仅在你选择允许之后 — 设备类型（手机、平板或电脑）、屏幕尺寸、时区、国家代码、停留时间、滚动深度、查看的区块，以及报名按钮这类有名称的点击。我们不保存 IP 地址、你输入的文字、精确位置，也不推断年龄或性别。Google Analytics 4、Google Ads、Meta Pixel 和 Microsoft Clarity 热图只在标识已配置且你已允许时运行。支持聊天和 Vercel Web Analytics 可能随页面加载。",
+      "页面测量 — 设备类型（手机、平板或电脑）、浏览器窗口尺寸、页面语言、时区、国家代码、停留时间、滚动深度、各区块在屏幕上停留的时间，以及报名按钮这类有名称的点击及其在屏幕上的大致位置。我们还会记录来源网站的域名和链接中的活动标记（source、medium、campaign），这些记录归在一个只在当前浏览器标签页中保留的随机会话标识下。在欧盟/欧洲经济区、英国和瑞士，或无法判断你所在的国家时，仅在你选择“允许”后运行；在其他地区默认运行，你可以通过页面底部的“Cookie 设置”关闭。该记录不包含你的电子邮箱、电话号码、IP 地址、完整的浏览器用户代理（User-Agent）、你输入的文字、精确位置，也不推断年龄或性别，并且不会与你的候补名单记录关联。Google Analytics 4、Google Ads、Meta Pixel 和 Microsoft Clarity 热图在标识已配置时遵循同样的规则。支持聊天和 Vercel Web Analytics 可能随页面加载。",
     s2NoPayment: "本页面不收集任何付款信息。",
     s3Title: "3. 使用目的",
     s3Intro: "你提供的信息用于：",
@@ -915,17 +915,17 @@ const zhCN: FrozenLandingMessages = {
     s3Item2: "在 Watch Dive 登陆 Kickstarter 时向你发送通知；",
     s3Item3: "分享早鸟价格与上线相关消息；",
     s3Item4: "保护表单与邮件发送服务免受滥用；",
-    s3Item5: "了解页面表现以便改进。",
+    s3Item5: "了解页面的哪些部分被使用，以便改进（在需要“允许”的地区，仅在你允许之后）。",
     s3Outro: "我们不会将你的信息用于无关目的。",
     s4Title: "4. 法律依据",
     s4Body:
-      "提交表单即请求一封运营性确认邮件。你的候补名单注册及接收上线消息的同意，仅在你使用确认链接后完成。你可以随时撤回同意（见第 7 条）。",
+      "提交表单即请求一封运营性确认邮件。你的候补名单注册及接收上线消息的同意，仅在你使用确认链接后完成。营销和页面测量 Cookie：在欧盟/欧洲经济区、英国和瑞士，或无法判断你所在的国家时，仅在你选择“允许”后运行（同意）。在其他地区，基于我们衡量广告效果的正当利益默认运行，你可以随时通过页面底部的“Cookie 设置”关闭。选择“暂时不要”或浏览器发出 Global Privacy Control 信号时，在任何地区都保持关闭。我们会保存一个短期的国家 Cookie，记录适用哪条规则；还会保存语言偏好 Cookie，让页面保持你选择的语言。你可以随时撤回同意（见第 7 条）。",
     s5Title: "5. 共享与跨境传输",
     s5Body:
-      "我们使用可信的服务提供商来运营本页面并发送确认或消息 — 例如事务性邮件与短信发送服务、网页托管与分析提供商。这些提供商可能将数据存储在韩国境外的服务器上，包括美国。我们只共享其提供服务所必需的信息，绝不出售你的个人信息。",
+      "我们使用以下处理方来运营本页面：Vercel 负责托管和 Web Analytics，Resend 负责确认邮件和消息邮件，Notion 保存候补名单记录以及与之分开的页面测量摘要，另有我们自己的支持聊天；Google 和 Meta 仅在相应标签已启用且你的测量处于开启状态时使用（见第 4 条）。只有在你选择短信提醒时才会使用短信服务商。这些提供商可能将数据存储在韩国境外，包括美国。我们只共享服务所必需的信息，绝不出售你的个人信息。",
     s6Title: "6. 保存期限",
     s6Body:
-      "我们会保存你的信息，直至 Watch Dive 上线活动结束，或你要求删除或退订 — 以先到者为准。此后我们将不无故拖延地删除。",
+      "候补名单信息保存至 Watch Dive 上线活动结束，或你要求删除或退订为止，以先到者为准。页面测量摘要最多保存 12 个月，之后删除。收到删除请求后，我们会不无故拖延地删除相应记录。",
     s7Title: "7. 你的权利",
     s7Intro: "你可以随时：",
     s7Item1: "询问我们持有你的哪些信息；",
@@ -1324,7 +1324,7 @@ const zhTW: FrozenLandingMessages = {
     s2Security:
       "安全訊號 — 用於限制自動化或重複請求、在伺服器記憶體中使用的濫用旗標與短效的金鑰式網路分桶。潛在名單紀錄中不保留原始 IP 位址、網路分桶或完整的瀏覽器 user-agent。",
     s2Usage:
-      "頁面測量，僅在你選擇允許之後 — 裝置類型（手機、平板或電腦）、螢幕尺寸、時區、國家代碼、停留時間、捲動深度、查看的區塊，以及報名按鈕這類有名稱的點擊。我們不保存 IP 位址、你輸入的文字、精確位置，也不推斷年齡或性別。Google Analytics 4、Google Ads、Meta Pixel 與 Microsoft Clarity 熱圖只在識別碼已設定且你已允許時執行。支援聊天與 Vercel Web Analytics 可能隨頁面載入。",
+      "頁面測量 — 裝置類型（手機、平板或電腦）、瀏覽器視窗大小、頁面語言、時區、國家代碼、停留時間、捲動深度、各區塊在畫面上停留的時間，以及報名按鈕這類有名稱的點擊與其在畫面上的大致位置。我們也會記錄來源網站的網域與連結中的活動標記（source、medium、campaign），這些紀錄歸在一個只在目前瀏覽器分頁中保留的隨機工作階段識別碼之下。在歐盟／歐洲經濟區、英國與瑞士，或無法判斷你所在的國家時，僅在你選擇「允許」後執行；在其他地區預設執行，你可以透過頁面底部的「Cookie 設定」關閉。這份紀錄不包含你的電子郵件、電話號碼、IP 位址、完整的瀏覽器使用者代理（User-Agent）、你輸入的文字、精確位置，也不推斷年齡或性別，並且不會與你的候補名單紀錄連結。Google Analytics 4、Google Ads、Meta Pixel 與 Microsoft Clarity 熱圖在識別碼已設定時遵循相同規則。支援聊天與 Vercel Web Analytics 可能隨頁面載入。",
     s2NoPayment: "本頁面不蒐集任何付款資訊。",
     s3Title: "3. 使用目的",
     s3Intro: "你提供的資訊用於：",
@@ -1332,17 +1332,17 @@ const zhTW: FrozenLandingMessages = {
     s3Item2: "在 Watch Dive 登陸 Kickstarter 時通知你；",
     s3Item3: "分享早鳥價格與上線相關消息；",
     s3Item4: "保護表單與郵件寄送服務不被濫用；",
-    s3Item5: "了解頁面成效以便改進。",
+    s3Item5: "了解頁面的哪些部分有被使用，以便改進（在需要「允許」的地區，僅在你允許之後）。",
     s3Outro: "我們不會將你的資訊用於無關目的。",
     s4Title: "4. 法律依據",
     s4Body:
-      "送出表單即請求一封營運性確認信。你的候補名單註冊及接收上線消息的同意，僅在你使用確認連結後完成。你可以隨時撤回同意（見第 7 條）。",
+      "送出表單即請求一封營運性確認信。你的候補名單註冊及接收上線消息的同意，僅在你使用確認連結後完成。行銷與頁面測量 Cookie：在歐盟／歐洲經濟區、英國與瑞士，或無法判斷你所在的國家時，僅在你選擇「允許」後執行（同意）。在其他地區，基於我們衡量廣告成效的正當利益預設執行，你可以隨時透過頁面底部的「Cookie 設定」關閉。選擇「暫時不要」或瀏覽器送出 Global Privacy Control 訊號時，在任何地區都會保持關閉。我們會儲存一個短期的國家 Cookie，記錄適用哪項規則；也會儲存語言偏好 Cookie，讓頁面維持你選擇的語言。你可以隨時撤回同意（見第 7 條）。",
     s5Title: "5. 共享與跨境傳輸",
     s5Body:
-      "我們使用可信賴的服務供應商來營運本頁面並寄送確認或消息 — 例如交易郵件與簡訊寄送服務、網頁託管與分析供應商。這些供應商可能將資料儲存在韓國境外的伺服器上，包括美國。我們只分享其提供服務所必需的資訊，絕不出售你的個人資訊。",
+      "我們使用下列處理者來營運本頁面：Vercel 負責代管與 Web Analytics，Resend 負責確認信與消息信，Notion 保存候補名單紀錄以及與之分開的頁面測量摘要，另有我們自己的支援聊天；Google 與 Meta 僅在相應標籤已啟用且你的測量處於開啟狀態時使用（見第 4 條）。只有在你選擇簡訊提醒時才會使用簡訊服務商。這些供應商可能將資料儲存在韓國境外，包括美國。我們只分享服務所必需的資訊，絕不出售你的個人資訊。",
     s6Title: "6. 保存期間",
     s6Body:
-      "我們會保存你的資訊，直到 Watch Dive 上線活動結束，或你要求刪除或取消訂閱 — 以先到者為準。之後我們會盡速刪除。",
+      "候補名單資訊保存至 Watch Dive 上線活動結束，或你要求刪除或取消訂閱為止，以先到者為準。頁面測量摘要最多保存 12 個月，之後刪除。收到刪除請求後，我們會盡速刪除相關紀錄。",
     s7Title: "7. 你的權利",
     s7Intro: "你可以隨時：",
     s7Item1: "詢問我們持有你的哪些資訊；",
@@ -1755,7 +1755,7 @@ const ja: FrozenLandingMessages = {
     s2Security:
       "セキュリティシグナル — 自動化された、または繰り返しのリクエストを制限するためにサーバーメモリ上で使う不正利用フラグと短命の鍵付きネットワークバケット。リード記録には、生の IP アドレス、ネットワークバケット、ブラウザーの完全な user-agent を保持しません。",
     s2Usage:
-      "ページ計測は、許可を選んだ場合だけです。端末の種類（スマホ、タブレット、パソコン）、画面サイズ、タイムゾーン、国コード、滞在時間、スクロール、見た部分、登録ボタンのような名前のあるクリックを記録します。IP アドレス、入力した文字、正確な位置、推定した年齢や性別は保存しません。Google Analytics 4、Google Ads、Meta ピクセル、Microsoft Clarity のヒートマップは、識別子が設定され、許可されたときだけ動きます。サポートチャットと Vercel Web Analytics はページと一緒に読み込まれることがあります。",
+      "ページ計測 — 端末の種類（スマホ、タブレット、パソコン）、ブラウザのウィンドウサイズ、ページの言語、タイムゾーン、国コード、滞在時間、スクロールした深さ、各セクションが画面に表示されていた時間、そして登録ボタンのような名前のあるクリックと、その画面上のおおよその位置を記録します。参照元サイトのドメインと、リンクに付いたキャンペーンタグ（source・medium・campaign）も記録し、これらはそのブラウザタブの中だけで保たれるランダムなセッション識別子にまとめられます。EU/EEA、英国、スイスから、または国が判別できない場合は「許可する」を選んだときだけ動き、それ以外の地域では最初から動きます。ページ下部の「クッキー設定」からいつでも止められます。この記録には、メールアドレス、電話番号、IP アドレス、ブラウザのユーザーエージェント全文、入力した文字、正確な位置、推定した年齢や性別は含まれず、ウェイトリストの登録情報とも結び付けません。Google Analytics 4、Google Ads、Meta ピクセル、Microsoft Clarity のヒートマップも、識別子が設定されている場合は同じルールに従います。サポートチャットと Vercel Web Analytics はページと一緒に読み込まれることがあります。",
     s2NoPayment: "このページでは決済情報を収集しません。",
     s3Title: "3. 利用目的",
     s3Intro: "ご提供いただいた情報は次の目的で利用します:",
@@ -1763,17 +1763,17 @@ const ja: FrozenLandingMessages = {
     s3Item2: "Watch Dive が Kickstarter でローンチした際の通知の送信;",
     s3Item3: "早割価格やローンチ関連情報の共有;",
     s3Item4: "フォームとメール配信サービスの不正利用からの保護;",
-    s3Item5: "ページの成果を把握し改善するため。",
+    s3Item5: "ページのどの部分が使われているかを把握し、改善するため（許可が必要な地域では、許可された場合のみ）。",
     s3Outro: "無関係な目的でお客様の情報を利用することはありません。",
     s4Title: "4. 法的根拠",
     s4Body:
-      "フォームの送信は、運用上の確認メールを依頼する行為です。ウェイトリストへの登録とローンチ情報受け取りへの同意は、確認リンクを使用した時点ではじめて完了します。同意はいつでも撤回できます（第 7 条参照）。",
+      "フォームの送信は、運用上の確認メールを依頼する行為です。ウェイトリストへの登録とローンチ情報受け取りへの同意は、確認リンクを使用した時点ではじめて完了します。マーケティング用とページ計測用のクッキーは、EU/EEA、英国、スイスから、または国が判別できない場合、「許可する」を選んだときだけ動きます（同意）。それ以外の地域では、広告の効果を測るという当社の正当な利益に基づいて最初から動き、ページ下部の「クッキー設定」からいつでも止められます。「今はしない」を選んだ場合や、ブラウザの Global Privacy Control 信号がある場合は、どの地域でも動きません。どのルールが適用されるかを記録する短期間の国クッキーと、選んだ言語でページを表示し続けるための言語設定クッキーを保存します。同意はいつでも撤回できます（第 7 条参照）。",
     s5Title: "5. 第三者提供と国外移転",
     s5Body:
-      "このページの運営と確認・お知らせの送信のために、信頼できるサービス提供者を利用します — 例: トランザクションメール・SMS 配信サービス、ウェブホスティング、解析プロバイダー。これらの提供者は、米国を含む韓国国外のサーバーにデータを保存することがあります。サービス提供に必要なものだけを共有し、個人情報を販売することは決してありません。",
+      "このページの運営には次の処理者を利用します。ホスティングと Web Analytics に Vercel、確認メールとお知らせメールに Resend、ウェイトリストの記録と、それとは別のページ計測の要約に Notion、そして当社のサポートチャットです。Google と Meta は、そのタグが設定され、お客様の計測がオンになっている場合だけ利用します（第 4 条参照）。SMS 配信事業者は、SMS 通知を選んだ場合だけ利用します。これらの提供者は、米国を含む韓国国外にデータを保存することがあります。サービスに必要なものだけを共有し、個人情報を販売することは決してありません。",
     s6Title: "6. 保存期間",
     s6Body:
-      "Watch Dive のローンチキャンペーンが終了するまで、または削除・配信停止のご依頼があるまで — いずれか早い方まで情報を保持します。その後は遅滞なく削除します。",
+      "ウェイトリストの情報は、Watch Dive のローンチキャンペーンが終了するまで、または削除・配信停止のご依頼があるまで — いずれか早い方まで保持します。ページ計測の要約は最長 12 か月保持したのち削除します。削除のご依頼があれば、該当する記録を遅滞なく削除します。",
     s7Title: "7. お客様の権利",
     s7Intro: "いつでも次のことができます:",
     s7Item1: "当社が保有するご自身の情報の照会;",
@@ -2194,7 +2194,7 @@ const es: FrozenLandingMessages = {
     s2Security:
       "Señales de seguridad — indicadores de abuso y un bucket de red cifrado y de corta vida usado en la memoria del servidor para limitar solicitudes automatizadas o repetidas. No conservamos la dirección IP en bruto, el bucket de red ni el user-agent completo del navegador en el registro del lead.",
     s2Usage:
-      "Medición de la página, solo después de Permitir — tipo de dispositivo (teléfono, tableta u ordenador), tamaño de pantalla, zona horaria, código de país, tiempo en la página, profundidad de scroll, secciones vistas y clics con nombre, como el botón de registro. No guardamos la IP, el texto que escribes, la ubicación precisa ni una edad o un género inferidos. Google Analytics 4, Google Ads, el píxel de Meta y los mapas de calor de Microsoft Clarity solo funcionan si sus identificadores están configurados y has permitido la medición. El chat de soporte y Vercel Web Analytics pueden cargarse con la página.",
+      "Medición de la página — tipo de dispositivo (teléfono, tableta u ordenador), tamaño de la ventana del navegador, idioma de la página, zona horaria, código de país, tiempo en la página, hasta dónde te desplazas, cuánto tiempo estuvo cada sección en pantalla y clics con nombre, como el botón de registro, con su posición aproximada en la pantalla. También registra el dominio del sitio desde el que llegas y las etiquetas de campaña del enlace (source, medium y campaign), agrupados bajo un identificador de sesión aleatorio que solo se conserva en esa pestaña del navegador. En la UE/EEE, el Reino Unido y Suiza, o cuando no podemos saber tu país, solo funciona después de que elijas Permitir; en el resto funciona por defecto y puedes desactivarla desde Cookies, al pie de la página. Este registro no incluye tu email, tu número de teléfono, tu dirección IP, el agente de usuario completo del navegador, el texto que escribes, tu ubicación precisa ni una edad o un género inferidos, y no se vincula con tu registro en la lista de espera. Cuando sus identificadores están configurados, Google Analytics 4, Google Ads, el píxel de Meta y los mapas de calor de Microsoft Clarity siguen la misma regla. El chat de soporte y Vercel Web Analytics pueden cargarse con la página.",
     s2NoPayment: "No recopilamos datos de pago en esta página.",
     s3Title: "3. Para qué la usamos",
     s3Intro: "Usamos la información que proporcionas para:",
@@ -2202,17 +2202,17 @@ const es: FrozenLandingMessages = {
     s3Item2: "notificarte cuando Watch Dive se lance en Kickstarter;",
     s3Item3: "compartir el precio early bird y novedades relacionadas con el lanzamiento;",
     s3Item4: "proteger el formulario y nuestro servicio de envío de email frente a abusos;",
-    s3Item5: "entender cómo funciona la página para poder mejorarla.",
+    s3Item5: "ver qué partes de la página se usan para poder mejorarla (después de que permitas la medición, donde se requiere Permitir).",
     s3Outro: "No usaremos tu información para fines no relacionados.",
     s4Title: "4. Base legal",
     s4Body:
-      "Enviar el formulario solicita un email operativo de confirmación. Tu registro en la lista de espera y tu consentimiento para recibir novedades del lanzamiento se completan solo después de que uses el enlace de confirmación. Puedes retirar tu consentimiento en cualquier momento (ver Sección 7).",
+      "Enviar el formulario solicita un email operativo de confirmación. Tu registro en la lista de espera y tu consentimiento para recibir novedades del lanzamiento se completan solo después de que uses el enlace de confirmación. Cookies de marketing y de medición: en la UE/EEE, el Reino Unido y Suiza, o cuando no podemos saber tu país, solo funcionan después de que elijas Permitir (consentimiento). En el resto funcionan por defecto, sobre la base de nuestro interés legítimo en medir nuestra publicidad, y puedes desactivarlas en cualquier momento desde Cookies, al pie de la página. Ahora no, o una señal Global Privacy Control del navegador, las mantiene desactivadas en todas partes. Una cookie de país de corta duración registra cuál de estas reglas se aplica, y una cookie de idioma mantiene la página en el idioma que elegiste. Puedes retirar tu consentimiento en cualquier momento (ver Sección 7).",
     s5Title: "5. Compartición y transferencia internacional",
     s5Body:
-      "Usamos proveedores de servicios de confianza para operar esta página y enviar confirmaciones o novedades — por ejemplo, servicios de email transaccional y SMS, alojamiento web y proveedores de analítica. Estos proveedores pueden almacenar datos en servidores fuera de Corea, incluido Estados Unidos. Solo compartimos lo necesario para que presten su servicio y nunca vendemos tu información personal.",
+      "Usamos encargados del tratamiento para operar esta página: Vercel para el alojamiento y Web Analytics, Resend para los emails de confirmación y de novedades, Notion para los registros de la lista de espera y, por separado, los resúmenes de medición de la página, nuestro propio chat de soporte, y Google y Meta solo cuando esas etiquetas están activadas y la medición está activa para ti (ver Sección 4). Solo usamos un proveedor de SMS si eliges recibir un aviso por mensaje de texto. Estos proveedores pueden almacenar datos fuera de Corea, incluido Estados Unidos. Solo compartimos lo que cada servicio necesita y nunca vendemos tu información personal.",
     s6Title: "6. Cuánto tiempo la conservamos",
     s6Body:
-      "Conservamos tu información hasta que termine la campaña de lanzamiento de Watch Dive o hasta que nos pidas eliminarla o darte de baja — lo que ocurra primero. Después, la eliminamos sin demora indebida.",
+      "Conservamos los datos de la lista de espera hasta que termine la campaña de lanzamiento de Watch Dive o hasta que nos pidas eliminarlos o darte de baja, lo que ocurra primero. Los resúmenes de medición de la página se conservan hasta 12 meses y después se eliminan. Tras una solicitud de eliminación, borramos los registros correspondientes sin demora indebida.",
     s7Title: "7. Tus derechos",
     s7Intro: "Puedes en cualquier momento:",
     s7Item1: "preguntar qué información tenemos sobre ti;",
@@ -2636,7 +2636,7 @@ const fr: FrozenLandingMessages = {
     s2Security:
       "Signaux de sécurité — indicateurs d’abus et compartiment réseau chiffré à courte durée de vie, utilisés en mémoire serveur pour limiter les requêtes automatisées ou répétées. Nous ne conservons ni l’adresse IP brute, ni le compartiment réseau, ni le user-agent complet du navigateur dans la fiche du prospect.",
     s2Usage:
-      "Mesure de la page, seulement après Autoriser — type d’appareil (téléphone, tablette ou ordinateur), taille d’écran, fuseau horaire, code pays, temps passé, profondeur de défilement, sections vues et clics nommés, comme le bouton d’inscription. Nous ne stockons pas l’adresse IP, le texte saisi, la position précise, ni un âge ou un genre déduit. Google Analytics 4, Google Ads, le pixel Meta et les cartes de chaleur Microsoft Clarity ne fonctionnent que si leurs identifiants sont configurés et que vous avez autorisé la mesure. Le chat d’assistance et Vercel Web Analytics peuvent se charger avec la page.",
+      "Mesure de la page — type d’appareil (téléphone, tablette ou ordinateur), taille de la fenêtre du navigateur, langue de la page, fuseau horaire, code pays, temps passé sur la page, profondeur de défilement, durée d’affichage de chaque section à l’écran et clics nommés, comme le bouton d’inscription, avec leur position approximative à l’écran. Elle enregistre aussi le domaine du site d’origine et les balises de campagne du lien (source, medium et campaign), regroupés sous un identifiant de session aléatoire conservé uniquement dans cet onglet du navigateur. Dans l’UE/EEE, au Royaume-Uni et en Suisse, ou lorsque nous ne pouvons pas déterminer votre pays, elle ne fonctionne qu’après Autoriser ; ailleurs, elle est active par défaut et vous pouvez la désactiver via Cookies, en bas de la page. Cet enregistrement ne contient ni votre adresse e-mail, ni votre numéro de téléphone, ni votre adresse IP, ni l’agent utilisateur complet du navigateur, ni le texte saisi, ni votre position précise, ni un âge ou un genre déduit, et il n’est pas relié à votre inscription sur la liste d’attente. Lorsque leurs identifiants sont configurés, Google Analytics 4, Google Ads, le pixel Meta et les cartes de chaleur Microsoft Clarity suivent la même règle. Le chat d’assistance et Vercel Web Analytics peuvent se charger avec la page.",
     s2NoPayment: "Nous ne collectons aucune donnée de paiement sur cette page.",
     s3Title: "3. Pourquoi nous les utilisons",
     s3Intro: "Nous utilisons les informations que vous fournissez pour :",
@@ -2644,17 +2644,17 @@ const fr: FrozenLandingMessages = {
     s3Item2: "vous notifier quand Watch Dive sera lancé sur Kickstarter ;",
     s3Item3: "partager le tarif early bird et les actualités liées au lancement ;",
     s3Item4: "protéger le formulaire et notre service d’envoi d’e-mails contre les abus ;",
-    s3Item5: "comprendre les performances de la page afin de l’améliorer.",
+    s3Item5: "comprendre quelles parties de la page sont utilisées afin de l’améliorer (après votre autorisation, là où Autoriser est requis).",
     s3Outro: "Nous n’utiliserons pas vos informations à des fins sans rapport.",
     s4Title: "4. Base légale",
     s4Body:
-      "L’envoi du formulaire demande un e-mail opérationnel de confirmation. Votre inscription sur la liste d’attente et votre consentement aux actualités de lancement ne sont finalisés qu’après utilisation du lien de confirmation. Vous pouvez retirer votre consentement à tout moment (voir Section 7).",
+      "L’envoi du formulaire demande un e-mail opérationnel de confirmation. Votre inscription sur la liste d’attente et votre consentement aux actualités de lancement ne sont finalisés qu’après utilisation du lien de confirmation. Cookies marketing et de mesure : dans l’UE/EEE, au Royaume-Uni et en Suisse, ou lorsque nous ne pouvons pas déterminer votre pays, ils ne fonctionnent qu’après Autoriser (consentement). Ailleurs, ils sont actifs par défaut, sur la base de notre intérêt légitime à mesurer notre publicité, et vous pouvez vous y opposer à tout moment via Cookies, en bas de la page. Pas maintenant, ou un signal Global Privacy Control du navigateur, les maintient désactivés partout. Un cookie de pays de courte durée indique laquelle de ces règles s’applique, et un cookie de langue conserve la page dans la langue choisie. Vous pouvez retirer votre consentement à tout moment (voir Section 7).",
     s5Title: "5. Partage et transfert international",
     s5Body:
-      "Nous faisons appel à des prestataires de confiance pour exploiter cette page et envoyer confirmations ou actualités — par exemple des services d’e-mail transactionnel et de SMS, l’hébergement web et des prestataires d’analyse. Ces prestataires peuvent stocker des données sur des serveurs situés hors de Corée, y compris aux États-Unis. Nous ne partageons que le nécessaire à leur service et ne vendons jamais vos informations personnelles.",
+      "Nous faisons appel à des sous-traitants pour exploiter cette page : Vercel pour l’hébergement et Web Analytics, Resend pour les e-mails de confirmation et d’actualités, Notion pour les inscriptions à la liste d’attente et, séparément, les résumés de mesure de la page, notre propre chat d’assistance, ainsi que Google et Meta uniquement lorsque ces balises sont activées et que la mesure est active pour vous (voir Section 4). Un prestataire SMS n’est utilisé que si vous choisissez une alerte par SMS. Ces prestataires peuvent stocker des données hors de Corée, y compris aux États-Unis. Nous ne partageons que ce dont chaque service a besoin et ne vendons jamais vos informations personnelles.",
     s6Title: "6. Durée de conservation",
     s6Body:
-      "Nous conservons vos informations jusqu’à la fin de la campagne de lancement de Watch Dive, ou jusqu’à ce que vous demandiez leur suppression ou votre désinscription — au premier des deux termes. Ensuite, nous les supprimons sans retard injustifié.",
+      "Nous conservons les informations de la liste d’attente jusqu’à la fin de la campagne de lancement de Watch Dive, ou jusqu’à ce que vous demandiez leur suppression ou votre désinscription — au premier des deux termes. Les résumés de mesure de la page sont conservés 12 mois au maximum, puis supprimés. Après une demande de suppression, nous effaçons les enregistrements concernés sans retard injustifié.",
     s7Title: "7. Vos droits",
     s7Intro: "Vous pouvez à tout moment :",
     s7Item1: "demander quelles informations nous détenons à votre sujet ;",
@@ -3076,7 +3076,7 @@ const de: FrozenLandingMessages = {
     s2Security:
       "Sicherheitssignale — Missbrauchs-Flags und ein kurzlebiger, verschlüsselter Netzwerk-Bucket im Serverspeicher, um automatisierte oder wiederholte Anfragen zu begrenzen. Rohe IP-Adresse, Netzwerk-Bucket oder den vollständigen Browser-User-Agent bewahren wir im Lead-Datensatz nicht auf.",
     s2Usage:
-      "Seitenmessung nur nach Erlauben — Geräteklasse (Telefon, Tablet oder Computer), Bildschirmgröße, Zeitzone, Ländercode, Verweildauer, Scrolltiefe, gesehene Abschnitte und benannte Klicks wie der Anmeldebutton. Wir speichern keine IP-Adresse, keinen eingegebenen Text, keinen genauen Standort und kein geschätztes Alter oder Geschlecht. Google Analytics 4, Google Ads, das Meta-Pixel und Microsoft-Clarity-Heatmaps laufen nur, wenn ihre Kennungen gesetzt sind und du zugestimmt hast. Der Support-Chat und Vercel Web Analytics können mit der Seite laden.",
+      "Seitenmessung — Geräteklasse (Telefon, Tablet oder Computer), Größe des Browserfensters, Seitensprache, Zeitzone, Ländercode, Verweildauer, Scrolltiefe, wie lange jeder Abschnitt auf dem Bildschirm war, und benannte Klicks wie der Anmeldebutton samt ihrer ungefähren Position auf dem Bildschirm. Außerdem erfasst sie die Domain der verweisenden Website und die Kampagnen-Tags im Link (source, medium und campaign), zusammengefasst unter einer zufälligen Sitzungskennung, die nur in diesem Browser-Tab erhalten bleibt. In der EU/im EWR, im Vereinigten Königreich und in der Schweiz oder wenn wir dein Land nicht erkennen können, läuft sie erst, nachdem du Erlauben gewählt hast; anderswo läuft sie standardmäßig, und du kannst sie über die Cookie-Einstellungen unten auf der Seite abschalten. Dieser Datensatz enthält weder deine E-Mail-Adresse noch deine Telefonnummer, deine IP-Adresse, den vollständigen User-Agent deines Browsers, eingegebenen Text, deinen genauen Standort oder ein geschätztes Alter oder Geschlecht, und er wird nicht mit deinem Wartelisten-Eintrag verknüpft. Wenn ihre Kennungen gesetzt sind, folgen Google Analytics 4, Google Ads, das Meta-Pixel und Microsoft-Clarity-Heatmaps derselben Regel. Der Support-Chat und Vercel Web Analytics können mit der Seite laden.",
     s2NoPayment: "Zahlungsdaten erheben wir auf dieser Seite nicht.",
     s3Title: "3. Wofür wir sie nutzen",
     s3Intro: "Wir nutzen die von dir angegebenen Daten, um:",
@@ -3085,17 +3085,17 @@ const de: FrozenLandingMessages = {
     s3Item2: "dich zu benachrichtigen, wenn Watch Dive auf Kickstarter startet;",
     s3Item3: "Early-Bird-Preise und startbezogene Updates zu teilen;",
     s3Item4: "das Formular und unseren E-Mail-Versanddienst vor Missbrauch zu schützen;",
-    s3Item5: "zu verstehen, wie die Seite funktioniert, um sie zu verbessern.",
+    s3Item5: "zu sehen, welche Teile der Seite genutzt werden, um sie zu verbessern (wo Erlauben erforderlich ist, erst nach deiner Zustimmung).",
     s3Outro: "Wir verwenden deine Daten nicht für sachfremde Zwecke.",
     s4Title: "4. Rechtsgrundlage",
     s4Body:
-      "Das Absenden des Formulars fordert eine betriebliche Bestätigungsmail an. Deine Wartelisten-Registrierung und die Einwilligung in Start-Updates werden erst abgeschlossen, wenn du den Bestätigungslink verwendest. Du kannst deine Einwilligung jederzeit widerrufen (siehe Abschnitt 7).",
+      "Das Absenden des Formulars fordert eine betriebliche Bestätigungsmail an. Deine Wartelisten-Registrierung und die Einwilligung in Start-Updates werden erst abgeschlossen, wenn du den Bestätigungslink verwendest. Marketing- und Messcookies: In der EU/im EWR, im Vereinigten Königreich und in der Schweiz oder wenn wir dein Land nicht erkennen können, laufen sie erst, nachdem du Erlauben gewählt hast (Einwilligung). Anderswo laufen sie standardmäßig auf Grundlage unseres berechtigten Interesses, unsere Werbung zu messen, und du kannst jederzeit über die Cookie-Einstellungen unten auf der Seite widersprechen. Jetzt nicht oder ein Global-Privacy-Control-Signal deines Browsers hält sie überall ausgeschaltet. Ein kurzlebiges Länder-Cookie hält fest, welche dieser Regeln gilt, und ein Sprach-Cookie sorgt dafür, dass die Seite in der gewählten Sprache bleibt. Du kannst deine Einwilligung jederzeit widerrufen (siehe Abschnitt 7).",
     s5Title: "5. Weitergabe und internationale Übermittlung",
     s5Body:
-      "Wir nutzen vertrauenswürdige Dienstleister, um diese Seite zu betreiben und Bestätigungen oder Updates zu versenden — zum Beispiel Dienste für Transaktions-E-Mails und SMS, Webhosting und Analyse-Anbieter. Diese Anbieter können Daten auf Servern außerhalb Koreas speichern, auch in den USA. Wir teilen nur, was für ihre Leistung nötig ist, und verkaufen deine personenbezogenen Daten niemals.",
+      "Für den Betrieb dieser Seite nutzen wir Auftragsverarbeiter: Vercel für Hosting und Web Analytics, Resend für Bestätigungs- und Update-E-Mails, Notion für die Wartelisten-Einträge und, getrennt davon, die Zusammenfassungen der Seitenmessung, unseren eigenen Support-Chat sowie Google und Meta nur, wenn diese Tags aktiviert sind und die Messung für dich aktiv ist (siehe Abschnitt 4). Einen SMS-Anbieter nutzen wir nur, wenn du eine SMS-Benachrichtigung wählst. Diese Anbieter können Daten außerhalb Koreas speichern, auch in den USA. Wir teilen nur, was der jeweilige Dienst braucht, und verkaufen deine personenbezogenen Daten niemals.",
     s6Title: "6. Wie lange wir sie aufbewahren",
     s6Body:
-      "Wir bewahren deine Daten auf, bis die Watch-Dive-Startkampagne endet oder du uns um Löschung bittest bzw. dich abmeldest — je nachdem, was zuerst eintritt. Danach löschen wir sie ohne unangemessene Verzögerung.",
+      "Wartelisten-Daten bewahren wir auf, bis die Watch-Dive-Startkampagne endet oder du uns um Löschung bittest bzw. dich abmeldest — je nachdem, was zuerst eintritt. Zusammenfassungen der Seitenmessung werden höchstens 12 Monate aufbewahrt und dann gelöscht. Nach einer Löschanfrage löschen wir die betreffenden Datensätze ohne unangemessene Verzögerung.",
     s7Title: "7. Deine Rechte",
     s7Intro: "Du kannst jederzeit:",
     s7Item1: "erfragen, welche Daten wir über dich gespeichert haben;",
@@ -3515,7 +3515,7 @@ const ptBR: FrozenLandingMessages = {
     s2Security:
       "Sinais de segurança — marcadores de abuso e um bucket de rede com chave e vida curta, usados na memória do servidor para limitar solicitações automatizadas ou repetidas. Não retemos o endereço IP bruto, o bucket de rede nem o user-agent completo do navegador no registro do lead.",
     s2Usage:
-      "Medição da página, só depois de Permitir — tipo de aparelho (telefone, tablet ou computador), tamanho da tela, fuso horário, código do país, tempo na página, profundidade da rolagem, seções vistas e cliques nomeados, como o botão de cadastro. Não guardamos IP, o texto digitado, a localização precisa nem idade ou gênero inferidos. Google Analytics 4, Google Ads, o pixel da Meta e os mapas de calor do Microsoft Clarity só funcionam se os identificadores estiverem configurados e você tiver permitido. O chat de suporte e o Vercel Web Analytics podem carregar com a página.",
+      "Medição da página — tipo de aparelho (telefone, tablet ou computador), tamanho da janela do navegador, idioma da página, fuso horário, código do país, tempo na página, até onde você rolou, quanto tempo cada seção ficou na tela e cliques nomeados, como o botão de cadastro, com a posição aproximada na tela. Também registra o domínio do site de onde você veio e as tags de campanha do link (source, medium e campaign), reunidos sob um identificador de sessão aleatório que só fica guardado naquela aba do navegador. Na UE/EEE, no Reino Unido e na Suíça, ou quando não conseguimos identificar seu país, ela só funciona depois que você escolhe Permitir; nos demais lugares, funciona por padrão e você pode desativá-la em Cookies, no rodapé da página. Esse registro não inclui seu e-mail, seu número de telefone, seu endereço IP, o user-agent completo do navegador, o texto digitado, sua localização precisa nem idade ou gênero inferidos, e não é vinculado ao seu cadastro na lista de espera. Quando os identificadores estão configurados, Google Analytics 4, Google Ads, o pixel da Meta e os mapas de calor do Microsoft Clarity seguem a mesma regra. O chat de suporte e o Vercel Web Analytics podem carregar com a página.",
     s2NoPayment: "Não coletamos dados de pagamento nesta página.",
     s3Title: "3. Por que usamos",
     s3Intro: "Usamos as informações que você fornece para:",
@@ -3523,17 +3523,17 @@ const ptBR: FrozenLandingMessages = {
     s3Item2: "avisar quando o Watch Dive lançar no Kickstarter;",
     s3Item3: "compartilhar o preço early bird e novidades relacionadas ao lançamento;",
     s3Item4: "proteger o formulário e nosso serviço de envio de e-mails contra abuso;",
-    s3Item5: "entender o desempenho da página para melhorá-la.",
+    s3Item5: "ver quais partes da página são usadas para melhorá-la (depois que você permite a medição, onde Permitir é exigido).",
     s3Outro: "Não usaremos suas informações para fins não relacionados.",
     s4Title: "4. Base legal",
     s4Body:
-      "Enviar o formulário solicita um e-mail operacional de confirmação. Seu registro na lista de espera e o consentimento para receber novidades do lançamento só se completam depois que você usa o link de confirmação. Você pode retirar seu consentimento a qualquer momento (veja a Seção 7).",
+      "Enviar o formulário solicita um e-mail operacional de confirmação. Seu registro na lista de espera e o consentimento para receber novidades do lançamento só se completam depois que você usa o link de confirmação. Cookies de marketing e de medição: na UE/EEE, no Reino Unido e na Suíça, ou quando não conseguimos identificar seu país, só funcionam depois que você escolhe Permitir (consentimento). Nos demais lugares, funcionam por padrão com base no nosso legítimo interesse em medir nossa publicidade, e você pode desativá-los a qualquer momento em Cookies, no rodapé da página. Agora não, ou um sinal Global Privacy Control do navegador, os mantém desligados em qualquer lugar. Um cookie de país de curta duração registra qual dessas regras se aplica, e um cookie de idioma mantém a página no idioma que você escolheu. Você pode retirar seu consentimento a qualquer momento (veja a Seção 7).",
     s5Title: "5. Compartilhamento e transferência internacional",
     s5Body:
-      "Usamos prestadores de serviço confiáveis para operar esta página e enviar confirmações ou novidades — por exemplo, serviços de e-mail transacional e SMS, hospedagem web e provedores de análise. Esses provedores podem armazenar dados em servidores fora da Coreia, inclusive nos Estados Unidos. Compartilhamos apenas o necessário para que prestem o serviço e nunca vendemos suas informações pessoais.",
+      "Usamos operadores para manter esta página: Vercel para hospedagem e Web Analytics, Resend para e-mails de confirmação e de novidades, Notion para os registros da lista de espera e, separadamente, os resumos de medição da página, nosso próprio chat de suporte, e Google e Meta só quando essas tags estão ativadas e a medição está ligada para você (veja a Seção 4). Um provedor de SMS só é usado se você escolher receber um alerta por mensagem de texto. Esses provedores podem armazenar dados fora da Coreia, inclusive nos Estados Unidos. Compartilhamos apenas o que cada serviço precisa e nunca vendemos suas informações pessoais.",
     s6Title: "6. Por quanto tempo guardamos",
     s6Body:
-      "Guardamos suas informações até o fim da campanha de lançamento do Watch Dive ou até você pedir a exclusão ou cancelar a inscrição — o que ocorrer primeiro. Depois disso, excluímos sem demora injustificada.",
+      "Guardamos os dados da lista de espera até o fim da campanha de lançamento do Watch Dive ou até você pedir a exclusão ou cancelar a inscrição — o que ocorrer primeiro. Os resumos de medição da página ficam guardados por até 12 meses e depois são excluídos. Após um pedido de exclusão, apagamos os registros correspondentes sem demora injustificada.",
     s7Title: "7. Seus direitos",
     s7Intro: "Você pode, a qualquer momento:",
     s7Item1: "perguntar quais informações temos sobre você;",
