@@ -6,7 +6,7 @@ import { deliverMetaLead, type MetaCapiDelivery } from "./metaCapi";
 import {
   ATTRIBUTION_VALUE_MAX,
   FBCLID_MAX,
-  sanitizeAttribution,
+  sanitizeSignupAttribution,
   toLeadAttribution,
 } from "@/lib/attribution";
 import { createServiceDependencies, sanitizeServerError } from "@/lib/verification/deps.server";
@@ -257,7 +257,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // Re-derived from the payload rather than taken from it: the client-side
     // capture applies the same bounds, but nothing stops a caller posting
     // straight to this function with whatever it likes.
-    const attribution = sanitizeAttribution(data.attribution);
+    const attribution = sanitizeSignupAttribution(data.attribution);
 
     let result;
     try {

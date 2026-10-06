@@ -9,6 +9,12 @@
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
 import type { LeadAttribution } from "./verification/contracts.ts";
+import { competitionRegistry, type CompetitionRound } from "./competitionRegistry.ts";
+import {
+  acceptsCompetitionCapture,
+  isCompetitionAttempt,
+  resolveCompetitionAttribution,
+} from "./competitionAttribution.ts";
 
 const STORAGE_KEY = "wd_attr";
 
@@ -139,6 +145,30 @@ export function sanitizeAttribution(raw: Record<string, unknown> | undefined | n
   });
 }
 
+/** Reject an incoherent/expired competition claim without blocking the signup. */
+export function sanitizeSignupAttribution(
+  raw: Record<string, unknown> | undefined | null,
+  now: number = Date.now(),
+  registry: readonly CompetitionRound[] = competitionRegistry,
+): Attribution {
+  if (
+    raw &&
+    isCompetitionAttempt(raw, registry) &&
+    !acceptsCompetitionCapture(raw, now, registry)
+  ) {
+    return sanitizeAttribution({ landingPath: raw.landingPath });
+  }
+  // Also catch IDs manufactured by the legacy punctuation sanitizer.
+  const clean = sanitizeAttribution(raw);
+  if (
+    isCompetitionAttempt(clean, registry) &&
+    !acceptsCompetitionCapture(raw ?? {}, now, registry)
+  ) {
+    return sanitizeAttribution({ landingPath: raw?.landingPath });
+  }
+  return clean;
+}
+
 /** What this page load's own URL says, before any stored first touch applies. */
 export function readAttribution(search: string, pathname: string, now: number): Attribution {
   const params = new URLSearchParams(search);
@@ -190,14 +220,41 @@ export function toLeadAttribution(attribution: Attribution): LeadAttribution {
  * first touch on record, and persist the winner. Mirrors `getRef()`, including
  * degrading to the current URL when storage is unavailable.
  */
-export function getAttribution(): Attribution {
+export function getAttribution(
+  registry: readonly CompetitionRound[] = competitionRegistry,
+): Attribution {
   if (typeof window === "undefined") return {};
-  const incoming = readAttribution(window.location.search, window.location.pathname, Date.now());
+  const now = Date.now();
+  const incoming = readAttribution(window.location.search, window.location.pathname, now);
+  const params = new URLSearchParams(window.location.search);
+  // Repeated tuple keys are ambiguous, rather than a choice of first/last value.
+  const tupleValue = (key: string) =>
+    params.getAll(key).length === 1 ? params.get(key) : undefined;
+  const rawTuple = {
+    utmCampaign: tupleValue("utm_campaign"),
+    utmTerm: tupleValue("utm_term"),
+    utmContent: tupleValue("utm_content"),
+  };
+  let storage: Storage | undefined;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const stored = raw ? (JSON.parse(raw) as Record<string, unknown>) : undefined;
-    const merged = mergeAttribution(stored ? sanitizeAttribution(stored) : undefined, incoming);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    storage = localStorage;
+  } catch {
+    /* Restricted webview. */
+  }
+  const scoped = resolveCompetitionAttribution({ incoming, rawTuple, now, registry, storage });
+  if (scoped.kind === "competition") return sanitizeAttribution(scoped.attribution);
+  if (scoped.kind === "rejected" || isCompetitionAttempt(incoming, registry)) {
+    return sanitizeAttribution({ landingPath: incoming.landingPath });
+  }
+  try {
+    const raw = storage?.getItem(STORAGE_KEY);
+    const stored = raw
+      ? sanitizeAttribution(JSON.parse(raw) as Record<string, unknown>)
+      : undefined;
+    // Never resurrect a competition tuple from the unbounded legacy key.
+    const legacy = stored && !isCompetitionAttempt(stored, registry) ? stored : undefined;
+    const merged = mergeAttribution(legacy, incoming);
+    storage?.setItem(STORAGE_KEY, JSON.stringify(merged));
     return merged;
   } catch {
     // Storage can be unavailable in a restricted webview, and stored JSON can be

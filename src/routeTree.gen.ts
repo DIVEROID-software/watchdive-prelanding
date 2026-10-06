@@ -9,32 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VerifyRouteImport } from './routes/verify'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LocaleRouteImport } from './routes/$locale'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as LocaleIndexRouteImport } from './routes/$locale.index'
-import { Route as RCodeRouteImport } from './routes/r.$code'
-import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
-import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
-import { Route as LocaleTermsRouteImport } from './routes/$locale.terms'
 import { Route as LocalePrivacyRouteImport } from './routes/$locale.privacy'
+import { Route as LocaleTermsRouteImport } from './routes/$locale.terms'
+import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
+import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
+import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
 
-const VerifyRoute = VerifyRouteImport.update({
-  id: '/verify',
-  path: '/verify',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleRoute = LocaleRouteImport.update({
@@ -42,9 +32,19 @@ const LocaleRoute = LocaleRouteImport.update({
   path: '/$locale',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyRoute = VerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleIndexRoute = LocaleIndexRouteImport.update({
@@ -52,19 +52,9 @@ const LocaleIndexRoute = LocaleIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LocaleRoute,
 } as any)
-const RCodeRoute = RCodeRouteImport.update({
-  id: '/r/$code',
-  path: '/r/$code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminBehaviorRoute = AdminBehaviorRouteImport.update({
-  id: '/admin/behavior',
-  path: '/admin/behavior',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleVerifyRoute = LocaleVerifyRouteImport.update({
-  id: '/verify',
-  path: '/verify',
+const LocalePrivacyRoute = LocalePrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => LocaleRoute,
 } as any)
 const LocaleTermsRoute = LocaleTermsRouteImport.update({
@@ -72,10 +62,20 @@ const LocaleTermsRoute = LocaleTermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => LocaleRoute,
 } as any)
-const LocalePrivacyRoute = LocalePrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
+const LocaleVerifyRoute = LocaleVerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
   getParentRoute: () => LocaleRoute,
+} as any)
+const AdminBehaviorRoute = AdminBehaviorRouteImport.update({
+  id: '/admin/behavior',
+  path: '/admin/behavior',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RCodeRoute = RCodeRouteImport.update({
+  id: '/r/$code',
+  path: '/r/$code',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleRCodeRoute = LocaleRCodeRouteImport.update({
   id: '/r/$code',
@@ -181,25 +181,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/verify': {
-      id: '/verify'
-      path: '/verify'
-      fullPath: '/verify'
-      preLoaderRoute: typeof VerifyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale': {
@@ -209,11 +195,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify': {
+      id: '/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof VerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/': {
@@ -223,25 +223,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleIndexRouteImport
       parentRoute: typeof LocaleRoute
     }
-    '/r/$code': {
-      id: '/r/$code'
-      path: '/r/$code'
-      fullPath: '/r/$code'
-      preLoaderRoute: typeof RCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/behavior': {
-      id: '/admin/behavior'
-      path: '/admin/behavior'
-      fullPath: '/admin/behavior'
-      preLoaderRoute: typeof AdminBehaviorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/verify': {
-      id: '/$locale/verify'
-      path: '/verify'
-      fullPath: '/$locale/verify'
-      preLoaderRoute: typeof LocaleVerifyRouteImport
+    '/$locale/privacy': {
+      id: '/$locale/privacy'
+      path: '/privacy'
+      fullPath: '/$locale/privacy'
+      preLoaderRoute: typeof LocalePrivacyRouteImport
       parentRoute: typeof LocaleRoute
     }
     '/$locale/terms': {
@@ -251,12 +237,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleTermsRouteImport
       parentRoute: typeof LocaleRoute
     }
-    '/$locale/privacy': {
-      id: '/$locale/privacy'
-      path: '/privacy'
-      fullPath: '/$locale/privacy'
-      preLoaderRoute: typeof LocalePrivacyRouteImport
+    '/$locale/verify': {
+      id: '/$locale/verify'
+      path: '/verify'
+      fullPath: '/$locale/verify'
+      preLoaderRoute: typeof LocaleVerifyRouteImport
       parentRoute: typeof LocaleRoute
+    }
+    '/admin/behavior': {
+      id: '/admin/behavior'
+      path: '/admin/behavior'
+      fullPath: '/admin/behavior'
+      preLoaderRoute: typeof AdminBehaviorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r/$code': {
+      id: '/r/$code'
+      path: '/r/$code'
+      fullPath: '/r/$code'
+      preLoaderRoute: typeof RCodeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/$locale/r/$code': {
       id: '/$locale/r/$code'
