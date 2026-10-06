@@ -2,6 +2,7 @@
 //
 // Reached solely from the cron route, so the Notion, Resend, Slack and cron
 // secrets have no path into a client bundle.
+import { createBehaviorNotion } from "../api/behaviorNotion.ts";
 import { checkCronAuthorization } from "./cronAuth.ts";
 import { createSlackPoster } from "./deliveryAlert.ts";
 import { createNotionReminderStore, createNotionRequest } from "./notionLead.ts";
@@ -46,5 +47,28 @@ export async function handleVerificationReminderCron(request: Request): Promise<
   console.log("[watchdive] verification_reminder_run", result);
   const summary = formatReminderSummary(result);
   if (summary) await createSlackPoster()(summary);
+  await purgeExpiredBehavior();
   return json(200, { ok: !result.aborted, ...result });
+}
+
+/**
+ * Page-behaviour retention rides on this daily cron (Hobby allows few cron
+ * entries). It runs after the reminder pass and can never change that
+ * result: failures are logged inside purgeExpired, and anything thrown here
+ * is reduced to one line.
+ */
+export async function purgeExpiredBehavior(
+  store: Pick<ReturnType<typeof createBehaviorNotion>, "purgeExpired"> = createBehaviorNotion(),
+  log: (line: string) => void = (line) => console.log(line),
+): Promise<void> {
+  try {
+    const outcome = await store.purgeExpired({
+      protectedIds: [process.env.NOTION_WAITLIST_DB_ID],
+    });
+    if (outcome.archived > 0) log(`[page-behavior] retention archived ${outcome.archived}`);
+  } catch (error) {
+    log(
+      `[page-behavior] retention failed — unexpected ${error instanceof Error ? error.name : "error"}`,
+    );
+  }
 }

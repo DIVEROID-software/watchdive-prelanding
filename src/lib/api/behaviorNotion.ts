@@ -37,6 +37,20 @@ export type BehaviorWriteResult =
 
 export type BehaviorEnv = { NOTION_API_KEY?: string; NOTION_UX_DB_ID?: string };
 
+/** The privacy policy's promise: page-measurement summaries go after 12 months. */
+export const BEHAVIOR_RETENTION_DAYS = 365;
+/** Archives per daily run. Sequential, so about a request per Notion round trip. */
+export const BEHAVIOR_PURGE_LIMIT = 50;
+
+export type BehaviorPurgeResult = {
+  status: "skipped" | "done" | "failed";
+  archived: number;
+};
+
+function normalizeId(id: string): string {
+  return id.replace(/-/g, "").toLowerCase();
+}
+
 const PAUSE_MS = 60_000;
 const SESSION_PAGES_MAX = 500;
 
@@ -141,7 +155,7 @@ export function createBehaviorNotion(
    * source while unresolved. On failure, logs one line and returns why.
    */
   async function run<T>(
-    op: "write" | "read",
+    op: "write" | "read" | "retention",
     attempt: (target: BehaviorTarget) => Promise<T>,
   ): Promise<{ value: T } | { failure: "unconfigured" | "failed" }> {
     if (!config()) {
@@ -206,6 +220,63 @@ export function createBehaviorNotion(
         sessionPages.set(summary.sessionId, pageId);
       }
       return { stored: true };
+    },
+
+    /**
+     * Moves summaries created more than BEHAVIOR_RETENTION_DAYS ago to the
+     * Notion trash, oldest first, at most `limit` per call. Only ever the
+     * NOTION_UX_DB_ID database: an id in `protectedIds` (the caller passes the
+     * waitlist's) is refused.
+     * Unset config is a silent skip; a failure logs one line and stops.
+     */
+    async purgeExpired(
+      options: { limit?: number; protectedIds?: (string | undefined)[] } = {},
+    ): Promise<BehaviorPurgeResult> {
+      const limit = options.limit ?? BEHAVIOR_PURGE_LIMIT;
+      const target = config();
+      if (!target) return { status: "skipped", archived: 0 };
+      const own = normalizeId(target.id);
+      if ((options.protectedIds ?? []).some((id) => id?.trim() && normalizeId(id.trim()) === own)) {
+        log("[page-behavior] retention refused: NOTION_UX_DB_ID is the waitlist database");
+        return { status: "failed", archived: 0 };
+      }
+      const before = new Date(now() - BEHAVIOR_RETENTION_DAYS * 86_400_000).toISOString();
+      const page = await run("retention", (kind) =>
+        requestFor(kind)(
+          "POST",
+          kind === "database" ? `databases/${target.id}/query` : `data_sources/${target.id}/query`,
+          {
+            filter: { timestamp: "created_time", created_time: { before } },
+            sorts: [{ timestamp: "created_time", direction: "ascending" }],
+            page_size: Math.min(Math.max(limit, 1), 100),
+          },
+        ),
+      );
+      if ("failure" in page) return { status: "failed", archived: 0 };
+      const kind = resolved ?? "database";
+      const ids = ((page.value.results as Record<string, unknown>[] | undefined) ?? [])
+        .map((row) => (typeof row.id === "string" ? row.id : ""))
+        .filter(Boolean)
+        .slice(0, limit);
+      let archived = 0;
+      for (const id of ids) {
+        try {
+          // 2022-06-28 calls it `archived`; 2025-09-03 renamed it `in_trash`.
+          await requestFor(kind)(
+            "PATCH",
+            `pages/${id}`,
+            kind === "database" ? { archived: true } : { in_trash: true },
+          );
+          archived += 1;
+        } catch (error) {
+          if (isClientError(error)) pausedUntil = now() + PAUSE_MS;
+          log(
+            `[page-behavior] retention failed after ${archived} archived — ${describeAttempt(kind, error)}`,
+          );
+          return { status: "failed", archived };
+        }
+      }
+      return { status: "done", archived };
     },
 
     async query(body: Record<string, unknown>) {

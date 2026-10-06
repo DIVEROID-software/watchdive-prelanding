@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 
+import { purgeExpiredBehavior } from "../src/lib/verification/reminderCron.server.ts";
 import {
+  BEHAVIOR_RETENTION_DAYS,
   behaviorProperties,
   campaignLine,
   createBehaviorNotion,
@@ -101,7 +103,7 @@ function fakeNotion(answers: Array<{ status: number; body: unknown } | Error>) {
 
 function harness(
   answers: Array<{ status: number; body: unknown } | Error>,
-  env = { NOTION_API_KEY: KEY, NOTION_UX_DB_ID: DB_ID },
+  env: Record<string, string> = { NOTION_API_KEY: KEY, NOTION_UX_DB_ID: DB_ID },
 ) {
   const notion = fakeNotion(answers);
   const lines: string[] = [];
@@ -281,4 +283,110 @@ test("Notion messages lose ids, quoted values, addresses and tokens", () => {
   assert.equal(error.code, "object_not_found");
   assert.equal(error.detail.includes("01234567-89ab"), false);
   assert.equal(new NotionRequestError(502, "<html>").detail, "");
+});
+
+// ---- 12-month retention ----------------------------------------------------
+
+test("retention trashes only rows older than 365 days, oldest first, bounded per run", async () => {
+  const { calls, store, lines } = harness([
+    { status: 200, body: { results: [{ id: "old-1" }, { id: "old-2" }] } },
+    { status: 200, body: { id: "old-1" } },
+    { status: 200, body: { id: "old-2" } },
+  ]);
+  assert.deepEqual(await store.purgeExpired(), { status: "done", archived: 2 });
+  assert.equal(calls[0].url, `https://api.notion.com/v1/databases/${DB_ID}/query`);
+  const cutoff = new Date(1_000_000 - BEHAVIOR_RETENTION_DAYS * 86_400_000).toISOString();
+  assert.deepEqual(calls[0].body?.filter, {
+    timestamp: "created_time",
+    created_time: { before: cutoff },
+  });
+  assert.deepEqual(calls[0].body?.sorts, [{ timestamp: "created_time", direction: "ascending" }]);
+  assert.equal(calls[0].body?.page_size, 50);
+  assert.deepEqual(
+    calls.slice(1).map((call) => [call.method, call.url, call.body]),
+    [
+      ["PATCH", "https://api.notion.com/v1/pages/old-1", { archived: true }],
+      ["PATCH", "https://api.notion.com/v1/pages/old-2", { archived: true }],
+    ],
+  );
+  assert.deepEqual(lines, []);
+});
+
+test("retention follows a data-source id and uses in_trash there", async () => {
+  const { calls, store } = harness([
+    NOT_FOUND,
+    { status: 200, body: { results: [{ id: "old-1" }] } },
+    { status: 200, body: { id: "old-1" } },
+  ]);
+  assert.deepEqual(await store.purgeExpired(), { status: "done", archived: 1 });
+  assert.equal(calls[1].url, `https://api.notion.com/v1/data_sources/${DB_ID}/query`);
+  assert.equal(calls[2].version, "2025-09-03");
+  assert.deepEqual(calls[2].body, { in_trash: true });
+});
+
+test("retention is silent when unset and never touches the waitlist database", async () => {
+  const unset = harness([], { NOTION_API_KEY: KEY });
+  assert.deepEqual(await unset.store.purgeExpired(), { status: "skipped", archived: 0 });
+  assert.equal(unset.calls.length, 0);
+  assert.deepEqual(unset.lines, []);
+
+  const same = harness([]);
+  assert.deepEqual(
+    await same.store.purgeExpired({ protectedIds: ["01234567-89AB-CDEF-0123-456789ABCDEF"] }),
+    { status: "failed", archived: 0 },
+  );
+  assert.equal(same.calls.length, 0);
+  assert.deepEqual(same.lines, [
+    "[page-behavior] retention refused: NOTION_UX_DB_ID is the waitlist database",
+  ]);
+});
+
+test("a retention failure logs one sanitized line, stops, and pauses", async () => {
+  const forbidden = {
+    status: 403,
+    body: { code: "restricted_resource", message: `No access to ${DB_ID}` },
+  };
+  const { calls, store, lines } = harness([
+    { status: 200, body: { results: [{ id: "old-1" }, { id: "old-2" }] } },
+    forbidden,
+  ]);
+  assert.deepEqual(await store.purgeExpired(), { status: "failed", archived: 0 });
+  assert.equal(calls.length, 2);
+  assert.deepEqual(lines, [
+    '[page-behavior] retention failed after 0 archived — as database_id: 403 restricted_resource "No access to <id>"',
+  ]);
+  // Paused like a write: the next run within a minute calls nothing.
+  assert.deepEqual(await store.purgeExpired(), { status: "failed", archived: 0 });
+  assert.equal(calls.length, 2);
+});
+
+test("the cron's retention step cannot throw into the reminder result", async () => {
+  const lines: string[] = [];
+  await purgeExpiredBehavior(
+    {
+      purgeExpired: async () => {
+        throw new TypeError(`boom ${DB_ID}`);
+      },
+    },
+    (line) => lines.push(line),
+  );
+  assert.deepEqual(lines, ["[page-behavior] retention failed — unexpected TypeError"]);
+
+  await purgeExpiredBehavior(
+    { purgeExpired: async () => ({ status: "done", archived: 3 }) },
+    (line) => lines.push(line),
+  );
+  assert.equal(lines[1], "[page-behavior] retention archived 3");
+});
+
+test("retention runs inside the existing daily cron, not a new cron entry", () => {
+  const vercel = JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
+  assert.equal(vercel.crons.length, 1);
+  const cron = readFileSync(
+    new URL("../src/lib/verification/reminderCron.server.ts", import.meta.url),
+    "utf8",
+  );
+  assert.ok(
+    cron.indexOf("await purgeExpiredBehavior()") > cron.indexOf("runVerificationReminders("),
+  );
 });
