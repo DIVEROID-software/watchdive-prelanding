@@ -81,6 +81,16 @@ export const FIELD_VERIFICATION_SENDS = "Verification sends";
 export const FIELD_LEAD_ID = "Lead ID";
 export const FIELD_META_EVENT_ID = "Meta Event ID";
 export const FIELD_WELCOME_EMAIL = "Welcome email";
+/**
+ * The one confirmation reminder (rich_text). NOT yet provisioned: it has to be
+ * added to the live database by hand. Until it exists, Notion rejects every
+ * query and write that names it, and the reminder job sends nothing at all.
+ * Any non-empty value means "this signup has had its reminder, or an attempt
+ * at one" and is never cleared, so no signup can be reminded twice.
+ */
+export const FIELD_VERIFICATION_REMINDER = "Verification reminder";
+export const FIELD_SIGNED_UP = "Signed up";
+export const FIELD_SUSPECT = "Suspect";
 
 // Attribution columns, already provisioned on the live database as text.
 export const FIELD_UTM_SOURCE = "UTM Source";
@@ -119,6 +129,10 @@ export type LeadRecord = {
   verifiedAt?: string;
   /** Set once the welcome mail has been accepted by the provider. */
   welcomeAt?: string;
+  /** Raw `Verification reminder` cell. Non-empty = reminder already claimed. */
+  reminder?: string;
+  /** First-touch landing path, read only to pick the reminder's language. */
+  landingPath?: string;
 };
 
 /**

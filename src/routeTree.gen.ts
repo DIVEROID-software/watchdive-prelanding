@@ -21,6 +21,7 @@ import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
 import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
+import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cron.verification-reminder'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +83,12 @@ const LocaleRCodeRoute = LocaleRCodeRouteImport.update({
   path: '/r/$code',
   getParentRoute: () => LocaleRoute,
 } as any)
+const ApiCronVerificationReminderRoute =
+  ApiCronVerificationReminderRouteImport.update({
+    id: '/api/cron/verification-reminder',
+    path: '/api/cron/verification-reminder',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/r/$code': typeof RCodeRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -109,6 +117,7 @@ export interface FileRoutesByTo {
   '/r/$code': typeof RCodeRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -124,6 +133,7 @@ export interface FileRoutesById {
   '/r/$code': typeof RCodeRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/$locale/'
     | '/$locale/r/$code'
+    | '/api/cron/verification-reminder'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/$locale'
     | '/$locale/r/$code'
+    | '/api/cron/verification-reminder'
   id:
     | '__root__'
     | '/'
@@ -167,6 +179,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/$locale/'
     | '/$locale/r/$code'
+    | '/api/cron/verification-reminder'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -177,6 +190,7 @@ export interface RootRouteChildren {
   VerifyRoute: typeof VerifyRoute
   AdminBehaviorRoute: typeof AdminBehaviorRoute
   RCodeRoute: typeof RCodeRoute
+  ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -265,6 +279,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleRCodeRouteImport
       parentRoute: typeof LocaleRoute
     }
+    '/api/cron/verification-reminder': {
+      id: '/api/cron/verification-reminder'
+      path: '/api/cron/verification-reminder'
+      fullPath: '/api/cron/verification-reminder'
+      preLoaderRoute: typeof ApiCronVerificationReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -295,6 +316,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyRoute: VerifyRoute,
   AdminBehaviorRoute: AdminBehaviorRoute,
   RCodeRoute: RCodeRoute,
+  ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

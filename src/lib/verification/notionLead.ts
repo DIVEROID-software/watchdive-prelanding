@@ -16,6 +16,7 @@ import {
   canonicalEmailProperties,
   withCanonicalEmailShape,
 } from "../api/notionCanonicalEmail.ts";
+import type { ReminderStore } from "./reminder.ts";
 import type {
   CreatePendingInput,
   LeadAttribution,
@@ -40,6 +41,9 @@ import {
   FIELD_VERIFICATION_EXPIRES,
   FIELD_VERIFICATION_SENDS,
   FIELD_VERIFICATION_SENT,
+  FIELD_SIGNED_UP,
+  FIELD_SUSPECT,
+  FIELD_VERIFICATION_REMINDER,
   FIELD_VERIFICATION_STATUS,
   FIELD_VERIFIED_AT,
   STATUS_PENDING,
@@ -145,6 +149,8 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
   const expiresAt = readDate(properties[FIELD_VERIFICATION_EXPIRES]);
   const verifiedAt = readDate(properties[FIELD_VERIFIED_AT]);
   const welcomeAt = readDate(properties[FIELD_WELCOME_EMAIL]);
+  const reminder = readText(properties[FIELD_VERIFICATION_REMINDER]);
+  const landingPath = readText(properties[FIELD_LANDING_PATH]);
 
   return {
     pageId,
@@ -169,6 +175,8 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     ...(expiresAt ? { expiresAt } : {}),
     ...(verifiedAt ? { verifiedAt } : {}),
     ...(welcomeAt ? { welcomeAt } : {}),
+    ...(reminder ? { reminder } : {}),
+    ...(landingPath ? { landingPath } : {}),
   };
 }
 
@@ -317,6 +325,89 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
 
     async reread(pageId: string) {
       return toLeadRecord(await request("GET", `pages/${pageId}`));
+    },
+  };
+}
+
+/**
+ * The reminder job's view of the same database. Every query and write names
+ * `Verification reminder`, so until that property exists Notion rejects them
+ * all with `validation_error` and the job sends nothing.
+ */
+export function createNotionReminderStore(
+  request: NotionRequest,
+  databaseId: string,
+): ReminderStore {
+  const pendingNotSuspect = [
+    { property: FIELD_VERIFICATION_STATUS, select: { equals: STATUS_PENDING } },
+    { property: FIELD_EMAIL_VERIFIED, checkbox: { equals: false } },
+    { property: FIELD_SUSPECT, checkbox: { equals: false } },
+  ];
+
+  return {
+    async findReminderCandidates(query) {
+      const result = await request("POST", `databases/${databaseId}/query`, {
+        filter: {
+          and: [
+            ...pendingNotSuspect,
+            { property: FIELD_VERIFICATION_REMINDER, rich_text: { is_empty: true } },
+            { property: FIELD_VERIFICATION_SENT, date: { on_or_before: query.sentOnOrBefore } },
+            { property: FIELD_VERIFICATION_SENT, date: { on_or_after: query.sentOnOrAfter } },
+          ],
+        },
+        sorts: [{ property: FIELD_VERIFICATION_SENT, direction: "ascending" }],
+        page_size: Math.min(Math.max(query.limit, 1), 100),
+      });
+      return ((result.results as Record<string, unknown>[] | undefined) ?? [])
+        .map(toLeadRecord)
+        .filter((record): record is LeadRecord => Boolean(record));
+    },
+
+    async claimReminder(pageId, claim) {
+      // One PATCH: the claim, the widened window for the new link, and the
+      // send counter. If Notion rejects any of it, none of it applies and the
+      // caller sends nothing.
+      await request("PATCH", `pages/${pageId}`, {
+        properties: {
+          [FIELD_VERIFICATION_REMINDER]: textProp(claim.marker),
+          [FIELD_VERIFICATION_EXPIRES]: { date: { start: claim.expiresAt } },
+          [FIELD_VERIFICATION_SENDS]: { number: claim.sends },
+        },
+      });
+    },
+
+    async recordReminderOutcome(pageId, outcome) {
+      if (!outcome.trim()) throw new Error("A reminder outcome must never clear the claim");
+      await request("PATCH", `pages/${pageId}`, {
+        properties: { [FIELD_VERIFICATION_REMINDER]: textProp(outcome) },
+      });
+    },
+
+    async reread(pageId) {
+      return toLeadRecord(await request("GET", `pages/${pageId}`));
+    },
+
+    async countUnsentPending(window) {
+      let count = 0;
+      let cursor: string | undefined;
+      for (let page = 0; page < 10; page++) {
+        const result = await request("POST", `databases/${databaseId}/query`, {
+          filter: {
+            and: [
+              ...pendingNotSuspect,
+              { property: FIELD_VERIFICATION_SENT, date: { is_empty: true } },
+              { property: FIELD_SIGNED_UP, date: { on_or_after: window.signedUpOnOrAfter } },
+              { property: FIELD_SIGNED_UP, date: { before: window.signedUpBefore } },
+            ],
+          },
+          page_size: 100,
+          ...(cursor ? { start_cursor: cursor } : {}),
+        });
+        count += (result.results as unknown[] | undefined)?.length ?? 0;
+        if (!result.has_more || typeof result.next_cursor !== "string") break;
+        cursor = result.next_cursor;
+      }
+      return count;
     },
   };
 }
