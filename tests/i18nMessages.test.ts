@@ -408,6 +408,75 @@ test("each locale uses its own contextual currency across every price-bearing su
   }
 });
 
+test("every early-bird price mention says it is for the first 100 backers", () => {
+  // The early-bird price is for the first 100 backers at launch only; the
+  // public price is twice that. A bare "early bird $149" in a search snippet,
+  // a share text or on the sticky button reads as the price everyone gets,
+  // which is a bait-advertising complaint waiting to happen (2026-10-07). Each
+  // surface that states the price carries the qualifier itself, or sits
+  // directly beside one that does. Prices and the 100 are unchanged.
+  const firstHundred: Record<Locale, RegExp> = {
+    en: /first 100/i,
+    ko: /(?:선착순|처음) 100명/,
+    "zh-CN": /前 100 名/,
+    "zh-TW": /前 100 名/,
+    ja: /(?:先着100名|最初の100人)/,
+    es: /100 primeros/i,
+    fr: /100 premiers/i,
+    de: /ersten? 100/i,
+    "pt-BR": /100 primeiros/i,
+  };
+
+  for (const locale of SUPPORTED_LOCALES) {
+    const messages = FROZEN_LANDING_MESSAGES[locale];
+    const qualifier = firstHundred[locale];
+
+    // Surfaces read on their own: the qualifier must be in the string.
+    const standalone = {
+      "meta.description": messages.meta.description,
+      "meta.ogDescription": messages.meta.ogDescription,
+      "meta.twitterDescription": messages.meta.twitterDescription,
+      // Also the sticky notify bar, where no other offer copy is visible.
+      "cta.label": messages.cta.label,
+      "referral.shareText": messages.referral.shareText,
+      "hero.priceLine": messages.hero.priceLine,
+      "hero.trust2": messages.hero.trust2,
+      "value.h2": messages.value.h2,
+      "offer.lead": messages.offer.lead,
+    };
+    const amount = messages.hero.nowPrice.match(/\d[\d,.]*/)?.[0] ?? "";
+    for (const [path, copy] of Object.entries(standalone)) {
+      assert.ok(amount && copy.includes(amount), `${locale}.${path}: price moved`);
+      assert.match(copy, qualifier, `${locale}.${path}: early-bird price without "first 100"`);
+    }
+
+    // Bare price figures, each rendered next to the qualifier named here.
+    const beside = {
+      "hero.nowPrice → hero.offNote": messages.hero.offNote,
+      "hero.stat3Label → hero.stat3Desc": messages.hero.stat3Desc,
+      "hero.cardPrice → hero.cardFrom": messages.hero.cardFrom,
+      "offer.headline → offer.kicker": messages.offer.kicker,
+    };
+    for (const [path, copy] of Object.entries(beside)) {
+      assert.match(copy, qualifier, `${locale}.${path}: no visible "first 100" beside the price`);
+    }
+  }
+
+  assert.equal(FROZEN_LANDING_MESSAGES.en.hero.nowPrice, "$149");
+  assert.equal(FROZEN_LANDING_MESSAGES.en.hero.wasPrice, "$299");
+});
+
+test("the CTA label stays short enough for the 320px button and the sticky bar", () => {
+  // Measured 2026-10-07 at 320/390/768/1440: at this length every locale fits
+  // the full-width phone button in at most two lines, and on desktop the
+  // auto-sized button still leaves the email field over 200px. Longer labels
+  // squeeze the email field next to it.
+  for (const locale of SUPPORTED_LOCALES) {
+    const label = FROZEN_LANDING_MESSAGES[locale].cta.label;
+    assert.ok([...label].length <= 44, `${locale}.cta.label is ${[...label].length} characters`);
+  }
+});
+
 test("depth proof uses audience-familiar units without inventing a rating or threshold", () => {
   const depthDisplay: Record<Locale, string> = {
     en: "197 ft (60 m)",

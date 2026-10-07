@@ -6,7 +6,12 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 import { track } from "@vercel/analytics";
-import { joinWaitlist, pollVerification, getReferralCount } from "@/lib/api/waitlist.functions";
+import {
+  joinWaitlist,
+  pollVerification,
+  getReferralCount,
+  loadWaitlistCount,
+} from "@/lib/api/waitlist.functions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LaunchNotice } from "@/components/launch-notice";
 import { CookieSettingsLink } from "@/components/cookie-choice-bar";
@@ -114,6 +119,9 @@ function AppIcon({ svg, className }: { svg: string; className?: string }) {
 }
 
 export const Route = createFileRoute("/")({
+  // The list figure is part of the server render, so it does not change a
+  // second after load (see WaitlistProgress).
+  loader: async () => ({ waitlistCount: await loadWaitlistCount() }),
   head: () => landingHead("en"),
   component: DesignFrozenLanding,
 });
@@ -1745,9 +1753,9 @@ function Compatibility() {
             section has to answer first. Sizing the two cards equally sent the
             opposite message — that the Ultra route was the main one. */}
         <div className="mt-8 grid gap-4 sm:grid-cols-5">
-          <div className="flex items-start gap-5 rounded-2xl border-2 border-primary/35 bg-card p-6 shadow-[0_16px_40px_-12px_oklch(0.2_0.03_260/0.28)] sm:col-span-3">
-            <div className="flex-1">
-              <span className="inline-flex min-h-11 items-center rounded-full bg-primary/10 px-3 text-caption uppercase text-primary">
+          <div className="flex items-start gap-5 min-w-0 rounded-2xl border-2 border-primary/35 bg-card p-6 shadow-[0_16px_40px_-12px_oklch(0.2_0.03_260/0.28)] sm:col-span-3">
+            <div className="min-w-0 flex-1">
+              <span className="inline-flex min-h-11 max-w-full items-center rounded-full bg-primary/10 px-3 text-caption uppercase text-primary hyphens-auto [overflow-wrap:anywhere]">
                 {m.compat.housingBadge}
               </span>
               <div className="mt-3 text-lead">{m.compat.housingTitle}</div>
@@ -1778,8 +1786,8 @@ function Compatibility() {
 
           {/* App Only is not available yet. Keep this card visually secondary
               and non-interactive so it cannot be mistaken for a purchase path. */}
-          <div className="flex items-start gap-4 rounded-2xl border border-dashed border-border/50 bg-muted/20 p-5 sm:col-span-2">
-            <div className="flex-1">
+          <div className="flex items-start gap-4 min-w-0 rounded-2xl border border-dashed border-border/50 bg-muted/20 p-5 sm:col-span-2">
+            <div className="min-w-0 flex-1">
               <div className="font-medium text-muted-foreground/80">{m.compat.appOnlyTitle}</div>
               <p className="mt-1 text-sm text-muted-foreground/75">{m.compat.appOnlyBody}</p>
               <ul className="mt-3 space-y-1 text-sm text-muted-foreground/70">

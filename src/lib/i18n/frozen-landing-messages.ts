@@ -91,7 +91,11 @@
  *   either owner-confirmed completion statement.
  * - English "$149" / "$299" and localized price estimates / "50% off" —
  *   cost, quantity and conditions unconfirmed; local amounts are contextual
- *   references rather than exchange-rate or checkout guarantees.
+ *   references rather than exchange-rate or checkout guarantees. The early-bird
+ *   price is for the first 100 backers at launch only, so since 2026-10-07 every
+ *   surface that states it (search/social descriptions, share text, the CTA and
+ *   sticky bar, the hero price line, the value headline, the offer lead) names
+ *   that condition, and each bare price figure sits beside a label that does.
  * - Compatibility model lists — owner-approved FAQ matrix is mirrored in the
  *   compatibility cards; additional models remain under verification.
  * - NVIDIA Inception membership, Samsung campaign appearance, AWS usage —
@@ -134,13 +138,13 @@ const ko: FrozenLandingMessages = {
   meta: {
     title: "Watch Dive — 쓰던 스마트워치 그대로, 바닷속으로",
     description:
-      "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 얼리버드 20만 원대.",
+      "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 선착순 100명 얼리버드 20만 원대.",
     ogTitle: "Watch Dive — 쓰던 스마트워치 그대로, 바닷속으로",
     ogDescription:
-      "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 얼리버드 20만 원대.",
+      "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 선착순 100명 얼리버드 20만 원대.",
     twitterTitle: "Watch Dive — 쓰던 스마트워치 그대로, 바닷속으로",
     twitterDescription:
-      "쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징. Kickstarter 얼리버드 20만 원대.",
+      "쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징. Kickstarter 선착순 100명 얼리버드 20만 원대.",
   },
   banner: {
     kicker: "Kickstarter",
@@ -148,7 +152,7 @@ const ko: FrozenLandingMessages = {
     joinCta: "알림 신청",
   },
   cta: {
-    label: "얼리버드 20만 원대 알림 받기",
+    label: "선착순 100명 20만 원대 알림 받기",
   },
   referral: {
     welcome: "친구가 초대했습니다. 이메일을 인증하면 같은 명단에 올라갑니다.",
@@ -163,7 +167,7 @@ const ko: FrozenLandingMessages = {
     copied: "복사했습니다",
     shareButton: "다이빙 버디에게 보내기",
     shareText:
-      "Watch Dive는 쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징입니다. Kickstarter 얼리버드는 20만 원대. 제 링크로 같이 신청하세요.",
+      "Watch Dive는 쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징입니다. Kickstarter 얼리버드는 선착순 100명까지 20만 원대. 제 링크로 같이 신청하세요.",
   },
   inbox: {
     title: "한 단계 남았습니다. 이메일을 인증해 주세요.",
@@ -212,7 +216,7 @@ const ko: FrozenLandingMessages = {
     h1: "Watch Dive. 쓰던 스마트워치 그대로, 바닷속으로.",
     h1Highlight: "쓰던 스마트워치 그대로",
     sub: "수심과 수온은 하우징 안의 DIVEROID 센서가 읽습니다. 숫자는 Apple Watch나 Galaxy Watch 화면에 뜹니다.",
-    priceLine: "Kickstarter 얼리버드 20만 원대. 12월 킥스타터 런칭.",
+    priceLine: "Kickstarter 선착순 100명 얼리버드 20만 원대. 12월 킥스타터 런칭.",
     backgroundAlt: "화려한 산호초를 탐험하는 스쿠버 다이버",
     sideImageAlt: "물속에서 촬영한 Watch Dive 제품 컷",
     stat1Label: "하우징 · 60m",
@@ -220,7 +224,7 @@ const ko: FrozenLandingMessages = {
     stat2Label: "스쿠버 + 프리다이빙",
     stat2Desc: "두 가지 모드",
     stat3Label: "20만 원대",
-    stat3Desc: "얼리버드 · 50% 할인",
+    stat3Desc: "선착순 100명 · 50% 할인",
     wasPrice: "40만 원대",
     nowPrice: "20만 원대",
     offBadge: "50% 할인",
@@ -238,12 +242,12 @@ const ko: FrozenLandingMessages = {
     promiseText: "수심, 시간, 수온. 쓰던 스마트워치에서.",
     cardKicker: "Kickstarter",
     cardHeadline: "수심. 시간. 무감압.",
-    cardFrom: "최저",
+    cardFrom: "선착순 100명",
     cardPrice: "20만 원대",
   },
   value: {
     kicker: "왜 Watch Dive인가",
-    h2: "20만 원대부터.",
+    h2: "선착순 100명, 20만 원대.",
     imageAlt: "수영장 가장자리에서 Watch Dive 하우징을 착용한 다이버",
     overlayKicker: "손목에서",
     overlayText: "쓰던 스마트워치 위에 하우징과 센서를 더했습니다.",
@@ -363,11 +367,11 @@ const ko: FrozenLandingMessages = {
   },
   offer: {
     imageAlt: "Watch Dive Kickstarter 오픈 배너",
-    kicker: "얼리버드 · 50% 할인",
+    kicker: "선착순 100명 · 50% 할인",
     headline: "40만 원대 20만 원대 — 50% 할인.",
     headlineStrike: "40만 원대",
     headlineNew: "20만 원대",
-    lead: "Watch Dive가 열리는 날 가장 먼저 알려 드립니다. 정가는 40만 원대, 얼리버드는 20만 원대입니다. 원화 금액은 이해를 돕기 위한 예상 범위이고, 실제 결제 금액은 Kickstarter 캠페인 페이지를 기준으로 합니다.",
+    lead: "Watch Dive가 열리는 날 가장 먼저 알려 드립니다. 정가는 40만 원대, 선착순 100명 얼리버드는 20만 원대입니다. 원화 금액은 이해를 돕기 위한 예상 범위이고, 실제 결제 금액은 Kickstarter 캠페인 페이지를 기준으로 합니다.",
     leadHighlight: "가장 먼저",
   },
   creds: {
@@ -563,13 +567,13 @@ const zhCN: FrozenLandingMessages = {
   meta: {
     title: "Watch Dive — 手上那块智能手表，跟你一起下水",
     description:
-      "水深和水温由外壳内置的 DIVEROID 传感器测量，数值显示在受支持的 Apple Watch 或 Galaxy Watch 上。Kickstarter 早鸟价约 1,000 元。",
+      "水深和水温由外壳内置的 DIVEROID 传感器测量，数值显示在受支持的 Apple Watch 或 Galaxy Watch 上。Kickstarter 前 100 名支持者早鸟价约 1,000 元。",
     ogTitle: "Watch Dive — 手上那块智能手表，跟你一起下水",
     ogDescription:
-      "水深和水温由外壳内置的 DIVEROID 传感器测量，数值显示在受支持的 Apple Watch 或 Galaxy Watch 上。Kickstarter 早鸟价约 1,000 元。",
+      "水深和水温由外壳内置的 DIVEROID 传感器测量，数值显示在受支持的 Apple Watch 或 Galaxy Watch 上。Kickstarter 前 100 名支持者早鸟价约 1,000 元。",
     twitterTitle: "Watch Dive — 手上那块智能手表，跟你一起下水",
     twitterDescription:
-      "给你已有的 Apple Watch 或 Galaxy Watch 配一个 DIVEROID 传感器外壳。Kickstarter 早鸟价约 1,000 元。",
+      "给你已有的 Apple Watch 或 Galaxy Watch 配一个 DIVEROID 传感器外壳。Kickstarter 前 100 名支持者早鸟价约 1,000 元。",
   },
   banner: {
     kicker: "Kickstarter",
@@ -577,7 +581,7 @@ const zhCN: FrozenLandingMessages = {
     joinCta: "通知我",
   },
   cta: {
-    label: "接收约 1,000 元早鸟通知",
+    label: "通知我 · 前 100 名约 1,000 元",
   },
   referral: {
     welcome: "朋友邀请了你。确认邮箱，就和他在同一份名单上。",
@@ -592,7 +596,7 @@ const zhCN: FrozenLandingMessages = {
     copied: "已复制",
     shareButton: "发给你的潜伴",
     shareText:
-      "Watch Dive 是给我手上这块 Apple Watch / Galaxy Watch 配的 DIVEROID 传感器外壳。Kickstarter 早鸟价约 1,000 元，用我的链接一起加入名单吧。",
+      "Watch Dive 是给我手上这块 Apple Watch / Galaxy Watch 配的 DIVEROID 传感器外壳。Kickstarter 前 100 名支持者早鸟价约 1,000 元，用我的链接一起加入名单吧。",
   },
   inbox: {
     title: "还差一步，确认一下邮箱。",
@@ -639,7 +643,7 @@ const zhCN: FrozenLandingMessages = {
     h1: "Watch Dive。手上那块智能手表，跟你一起下水。",
     h1Highlight: "手上那块智能手表",
     sub: "水深和水温，由外壳里的 DIVEROID 传感器测量。数值显示在你的 Apple Watch 或 Galaxy Watch 上。",
-    priceLine: "Kickstarter 早鸟价约 1,000 元。12 月上线。",
+    priceLine: "Kickstarter 前 100 名早鸟价约 1,000 元。12 月上线。",
     backgroundAlt: "在缤纷珊瑚礁间探索的水肺潜水员",
     sideImageAlt: "Watch Dive 水下产品实拍",
     stat1Label: "外壳 · 60 米",
@@ -647,7 +651,7 @@ const zhCN: FrozenLandingMessages = {
     stat2Label: "水肺 + 自由潜",
     stat2Desc: "两种模式",
     stat3Label: "约 1,000 元",
-    stat3Desc: "早鸟 · 5 折",
+    stat3Desc: "前 100 名 · 5 折",
     wasPrice: "约 2,000 元",
     nowPrice: "约 1,000 元",
     offBadge: "5 折",
@@ -664,12 +668,12 @@ const zhCN: FrozenLandingMessages = {
     promiseText: "深度、时间、水温。就在你戴着的那块智能手表上。",
     cardKicker: "Kickstarter",
     cardHeadline: "深度。时间。免减压。",
-    cardFrom: "低至",
+    cardFrom: "前 100 名",
     cardPrice: "约 1,000 元",
   },
   value: {
     kicker: "为什么选 Watch Dive",
-    h2: "约 1,000 元起。",
+    h2: "前 100 名约 1,000 元。",
     imageAlt: "在泳池边佩戴 Watch Dive 外壳的潜水员",
     overlayKicker: "戴在手上",
     overlayText: "外壳和传感器，装在你原本就戴的那块智能手表上。",
@@ -787,11 +791,11 @@ const zhCN: FrozenLandingMessages = {
   },
   offer: {
     imageAlt: "Watch Dive Kickstarter 上线横幅",
-    kicker: "早鸟 · 5 折",
+    kicker: "前 100 名 · 5 折",
     headline: "约 2,000 元 约 1,000 元 — 5 折。",
     headlineStrike: "约 2,000 元",
     headlineNew: "约 1,000 元",
-    lead: "Watch Dive 开启时，第一时间通知你。公开价格约 2,000 元，早鸟价约 1,000 元。以上人民币金额仅供参考，实际支付金额以 Kickstarter 页面显示为准。",
+    lead: "Watch Dive 开启时，第一时间通知你。公开价格约 2,000 元，前 100 名早鸟价约 1,000 元。以上人民币金额仅供参考，实际支付金额以 Kickstarter 页面显示为准。",
     leadHighlight: "第一时间",
   },
   creds: {
@@ -980,13 +984,13 @@ const zhTW: FrozenLandingMessages = {
   meta: {
     title: "Watch Dive — 手上那支智慧手錶，陪你一起下水",
     description:
-      "水深與水溫由外殼內建的 DIVEROID 感測器量測，數值顯示在支援的 Apple Watch 或 Galaxy Watch 上。Kickstarter 早鳥價約 NT$5,000。",
+      "水深與水溫由外殼內建的 DIVEROID 感測器量測，數值顯示在支援的 Apple Watch 或 Galaxy Watch 上。Kickstarter 前 100 名贊助者早鳥價約 NT$5,000。",
     ogTitle: "Watch Dive — 手上那支智慧手錶，陪你一起下水",
     ogDescription:
-      "水深與水溫由外殼內建的 DIVEROID 感測器量測，數值顯示在支援的 Apple Watch 或 Galaxy Watch 上。Kickstarter 早鳥價約 NT$5,000。",
+      "水深與水溫由外殼內建的 DIVEROID 感測器量測，數值顯示在支援的 Apple Watch 或 Galaxy Watch 上。Kickstarter 前 100 名贊助者早鳥價約 NT$5,000。",
     twitterTitle: "Watch Dive — 手上那支智慧手錶，陪你一起下水",
     twitterDescription:
-      "為你現有的 Apple Watch 或 Galaxy Watch 配一個 DIVEROID 感測器外殼。Kickstarter 早鳥價約 NT$5,000。",
+      "為你現有的 Apple Watch 或 Galaxy Watch 配一個 DIVEROID 感測器外殼。Kickstarter 前 100 名贊助者早鳥價約 NT$5,000。",
   },
   banner: {
     kicker: "Kickstarter",
@@ -994,7 +998,7 @@ const zhTW: FrozenLandingMessages = {
     joinCta: "通知我",
   },
   cta: {
-    label: "接收約 NT$5,000 早鳥通知",
+    label: "通知我 · 前 100 名約 NT$5,000",
   },
   referral: {
     welcome: "朋友邀請了你。確認信箱後，你們就在同一份名單上。",
@@ -1009,7 +1013,7 @@ const zhTW: FrozenLandingMessages = {
     copied: "已複製",
     shareButton: "傳給你的潛伴",
     shareText:
-      "Watch Dive 是為我手上這支 Apple Watch / Galaxy Watch 配的 DIVEROID 感測器外殼。Kickstarter 早鳥價約 NT$5,000，用我的連結一起加入名單吧。",
+      "Watch Dive 是為我手上這支 Apple Watch / Galaxy Watch 配的 DIVEROID 感測器外殼。Kickstarter 前 100 名贊助者早鳥價約 NT$5,000，用我的連結一起加入名單吧。",
   },
   inbox: {
     title: "剩最後一步，確認一下信箱。",
@@ -1056,7 +1060,7 @@ const zhTW: FrozenLandingMessages = {
     h1: "Watch Dive。手上那支智慧手錶，陪你一起下水。",
     h1Highlight: "手上那支智慧手錶",
     sub: "水深與水溫，由外殼裡的 DIVEROID 感測器量測。數值顯示在你的 Apple Watch 或 Galaxy Watch 上。",
-    priceLine: "Kickstarter 早鳥價約 NT$5,000。12 月上線。",
+    priceLine: "Kickstarter 前 100 名早鳥價約 NT$5,000。12 月上線。",
     backgroundAlt: "在繽紛珊瑚礁間探索的水肺潛水員",
     sideImageAlt: "Watch Dive 水下產品實拍",
     stat1Label: "外殼 · 60 公尺",
@@ -1064,7 +1068,7 @@ const zhTW: FrozenLandingMessages = {
     stat2Label: "水肺 + 自由潛",
     stat2Desc: "兩種模式",
     stat3Label: "約 NT$5,000",
-    stat3Desc: "早鳥 · 5 折",
+    stat3Desc: "前 100 名 · 5 折",
     wasPrice: "約 NT$10,000",
     nowPrice: "約 NT$5,000",
     offBadge: "5 折",
@@ -1081,12 +1085,12 @@ const zhTW: FrozenLandingMessages = {
     promiseText: "深度、時間、水溫。就在你戴著的那支智慧手錶上。",
     cardKicker: "Kickstarter",
     cardHeadline: "深度。時間。免減壓。",
-    cardFrom: "只要",
+    cardFrom: "前 100 名",
     cardPrice: "約 NT$5,000",
   },
   value: {
     kicker: "為什麼選 Watch Dive",
-    h2: "約 NT$5,000 起。",
+    h2: "前 100 名約 NT$5,000。",
     imageAlt: "在泳池邊配戴 Watch Dive 外殼的潛水員",
     overlayKicker: "戴在手上",
     overlayText: "外殼與感測器，裝在你本來就戴的那支智慧手錶上。",
@@ -1204,11 +1208,11 @@ const zhTW: FrozenLandingMessages = {
   },
   offer: {
     imageAlt: "Watch Dive Kickstarter 開賣橫幅",
-    kicker: "早鳥 · 5 折",
+    kicker: "前 100 名 · 5 折",
     headline: "約 NT$10,000 約 NT$5,000 — 5 折。",
     headlineStrike: "約 NT$10,000",
     headlineNew: "約 NT$5,000",
-    lead: "Watch Dive 開賣時，第一時間通知你。公開售價約 NT$10,000，早鳥價約 NT$5,000。以上台幣金額僅供參考，實際付款金額以 Kickstarter 頁面顯示為準。",
+    lead: "Watch Dive 開賣時，第一時間通知你。公開售價約 NT$10,000，前 100 名早鳥價約 NT$5,000。以上台幣金額僅供參考，實際付款金額以 Kickstarter 頁面顯示為準。",
     leadHighlight: "第一時間",
   },
   creds: {
@@ -1397,13 +1401,13 @@ const ja: FrozenLandingMessages = {
   meta: {
     title: "Watch Dive — いつものスマートウォッチで、潜る",
     description:
-      "水深と水温は、ハウジング内蔵のDIVEROIDセンサーが計測。数値は対応する Apple Watch や Galaxy Watch に表示されます。Kickstarter 早割は2万円台。",
+      "水深と水温は、ハウジング内蔵のDIVEROIDセンサーが計測。数値は対応する Apple Watch や Galaxy Watch に表示されます。Kickstarter 先着100名の早割は2万円台。",
     ogTitle: "Watch Dive — いつものスマートウォッチで、潜る",
     ogDescription:
-      "水深と水温は、ハウジング内蔵のDIVEROIDセンサーが計測。数値は対応する Apple Watch や Galaxy Watch に表示されます。Kickstarter 早割は2万円台。",
+      "水深と水温は、ハウジング内蔵のDIVEROIDセンサーが計測。数値は対応する Apple Watch や Galaxy Watch に表示されます。Kickstarter 先着100名の早割は2万円台。",
     twitterTitle: "Watch Dive — いつものスマートウォッチで、潜る",
     twitterDescription:
-      "いつもの Apple Watch や Galaxy Watch に装着する、DIVEROIDセンサー内蔵のハウジング。Kickstarter 早割は2万円台。",
+      "いつもの Apple Watch や Galaxy Watch に装着する、DIVEROIDセンサー内蔵のハウジング。Kickstarter 先着100名の早割は2万円台。",
   },
   banner: {
     kicker: "Kickstarter",
@@ -1411,7 +1415,7 @@ const ja: FrozenLandingMessages = {
     joinCta: "お知らせを受け取る",
   },
   cta: {
-    label: "2万円台の早割を知らせる",
+    label: "先着100名・2万円台の早割を知らせる",
   },
   referral: {
     welcome: "友だちからの招待です。メールアドレスを確認すると、同じリストに並びます。",
@@ -1426,7 +1430,7 @@ const ja: FrozenLandingMessages = {
     copied: "コピーしました",
     shareButton: "ダイビングバディに送る",
     shareText:
-      "Watch Dive は、いつもの Apple Watch や Galaxy Watch に装着する DIVEROIDセンサー内蔵のハウジングです。Kickstarter の早割は2万円台。私のリンクから一緒に登録しませんか。",
+      "Watch Dive は、いつもの Apple Watch や Galaxy Watch に装着する DIVEROIDセンサー内蔵のハウジングです。Kickstarter の早割は先着100名で2万円台。私のリンクから一緒に登録しませんか。",
   },
   inbox: {
     title: "あと一歩。メールアドレスの確認をお願いします。",
@@ -1475,7 +1479,7 @@ const ja: FrozenLandingMessages = {
     h1: "Watch Dive. いつものスマートウォッチで、潜る。",
     h1Highlight: "いつものスマートウォッチで",
     sub: "水深と水温は、ハウジング内蔵のDIVEROIDセンサーが計測。数値は Apple Watch や Galaxy Watch の画面に表示されます。",
-    priceLine: "Kickstarter 早割は2万円台。12月ローンチ。",
+    priceLine: "Kickstarter 先着100名の早割は2万円台。12月ローンチ。",
     backgroundAlt: "色鮮やかなサンゴ礁を探索するスキューバダイバー",
     sideImageAlt: "水中で撮影した Watch Dive の製品写真",
     stat1Label: "ハウジング · 60m",
@@ -1483,7 +1487,7 @@ const ja: FrozenLandingMessages = {
     stat2Label: "スキューバ + フリーダイビング",
     stat2Desc: "2つのモード",
     stat3Label: "2万円台",
-    stat3Desc: "早割 · 50% オフ",
+    stat3Desc: "先着100名 · 50% オフ",
     wasPrice: "4万円台",
     nowPrice: "2万円台",
     offBadge: "50% オフ",
@@ -1500,12 +1504,12 @@ const ja: FrozenLandingMessages = {
     promiseText: "水深、時間、水温。いつものスマートウォッチで。",
     cardKicker: "Kickstarter",
     cardHeadline: "水深。時間。無減圧。",
-    cardFrom: "早割",
+    cardFrom: "先着100名",
     cardPrice: "2万円台",
   },
   value: {
     kicker: "Watch Dive を選ぶ理由",
-    h2: "2万円台から。",
+    h2: "先着100名は2万円台。",
     imageAlt: "プールサイドで Watch Dive ハウジングを着けたダイバー",
     overlayKicker: "手首の上で",
     overlayText: "いつものスマートウォッチに、ハウジングとセンサーを。",
@@ -1628,11 +1632,11 @@ const ja: FrozenLandingMessages = {
   },
   offer: {
     imageAlt: "Watch Dive Kickstarter ローンチバナー",
-    kicker: "早割 · 50% オフ",
+    kicker: "先着100名 · 50% オフ",
     headline: "4万円台 2万円台 — 50% オフ。",
     headlineStrike: "4万円台",
     headlineNew: "2万円台",
-    lead: "Watch Dive が始まる日を、いちばん早くお知らせします。一般価格は4万円台、早割は2万円台です。円の金額は目安です。実際のお支払い額は Kickstarter のキャンペーンページでご確認ください。",
+    lead: "Watch Dive が始まる日を、いちばん早くお知らせします。一般価格は4万円台、先着100名の早割は2万円台です。円の金額は目安です。実際のお支払い額は Kickstarter のキャンペーンページでご確認ください。",
     leadHighlight: "いちばん早く",
   },
   creds: {
@@ -1830,13 +1834,13 @@ const es: FrozenLandingMessages = {
   meta: {
     title: "Watch Dive — tu smartwatch de siempre, bajo el agua",
     description:
-      "Un sensor DIVEROID dentro de la carcasa mide la profundidad y la temperatura del agua, y tu Apple Watch o Galaxy Watch las muestra. Early bird por unos 140 € en Kickstarter.",
+      "Un sensor DIVEROID dentro de la carcasa mide la profundidad y la temperatura del agua, y tu Apple Watch o Galaxy Watch las muestra. Early bird por unos 140 € para los 100 primeros patrocinadores en Kickstarter.",
     ogTitle: "Watch Dive — tu smartwatch de siempre, bajo el agua",
     ogDescription:
-      "Un sensor DIVEROID dentro de la carcasa mide la profundidad y la temperatura del agua, y tu Apple Watch o Galaxy Watch las muestra. Early bird por unos 140 € en Kickstarter.",
+      "Un sensor DIVEROID dentro de la carcasa mide la profundidad y la temperatura del agua, y tu Apple Watch o Galaxy Watch las muestra. Early bird por unos 140 € para los 100 primeros patrocinadores en Kickstarter.",
     twitterTitle: "Watch Dive — tu smartwatch de siempre, bajo el agua",
     twitterDescription:
-      "Una carcasa con sensor DIVEROID para el Apple Watch o Galaxy Watch que ya llevas. Early bird por unos 140 € en Kickstarter.",
+      "Una carcasa con sensor DIVEROID para el Apple Watch o Galaxy Watch que ya llevas. Early bird por unos 140 € para los 100 primeros patrocinadores en Kickstarter.",
   },
   banner: {
     kicker: "Kickstarter",
@@ -1844,7 +1848,7 @@ const es: FrozenLandingMessages = {
     joinCta: "Avísame",
   },
   cta: {
-    label: "Avísame · unos 140 €",
+    label: "Avísame · 100 primeros a unos 140 €",
   },
   referral: {
     welcome: "Te ha invitado un amigo. Confirma tu correo y estaréis en la misma lista.",
@@ -1859,7 +1863,7 @@ const es: FrozenLandingMessages = {
     copied: "Copiado",
     shareButton: "Enviar a tu compañero de buceo",
     shareText:
-      "Watch Dive es una carcasa con sensor DIVEROID para el Apple Watch o Galaxy Watch que ya llevo. El early bird ronda los 140 € en Kickstarter. Únete con mi enlace.",
+      "Watch Dive es una carcasa con sensor DIVEROID para el Apple Watch o Galaxy Watch que ya llevo. El early bird ronda los 140 € para los 100 primeros patrocinadores en Kickstarter. Únete con mi enlace.",
   },
   inbox: {
     title: "Un paso más. Confirma tu correo.",
@@ -1909,7 +1913,7 @@ const es: FrozenLandingMessages = {
     h1: "Watch Dive. Tu smartwatch de siempre, bajo el agua.",
     h1Highlight: "bajo el agua",
     sub: "Un sensor DIVEROID dentro de la carcasa mide la profundidad y la temperatura del agua. Tu Apple Watch o Galaxy Watch las muestra mientras buceas.",
-    priceLine: "Early bird por unos 140 € en Kickstarter. Lanzamiento en diciembre.",
+    priceLine: "Early bird por unos 140 € para los 100 primeros en Kickstarter. Lanzamiento en diciembre.",
     backgroundAlt: "Buceador explorando un arrecife de coral lleno de vida",
     sideImageAlt: "Foto submarina del producto Watch Dive",
     stat1Label: "Carcasa · 60 m",
@@ -1917,7 +1921,7 @@ const es: FrozenLandingMessages = {
     stat2Label: "Buceo + Apnea",
     stat2Desc: "Dos modos",
     stat3Label: "unos 140 €",
-    stat3Desc: "Early bird · 50 % dto.",
+    stat3Desc: "Los 100 primeros · 50 % dto.",
     wasPrice: "unos 280 €",
     nowPrice: "unos 140 €",
     offBadge: "50 % dto.",
@@ -1935,12 +1939,12 @@ const es: FrozenLandingMessages = {
     promiseText: "Profundidad, tiempo y temperatura. En el smartwatch que ya llevas.",
     cardKicker: "Kickstarter",
     cardHeadline: "Profundidad. Tiempo. Sin deco.",
-    cardFrom: "Desde",
+    cardFrom: "Los 100 primeros",
     cardPrice: "unos 140 €",
   },
   value: {
     kicker: "Por qué Watch Dive",
-    h2: "Desde unos 140 €.",
+    h2: "Unos 140 € para los 100 primeros.",
     imageAlt: "Buceador al borde de la piscina con la carcasa Watch Dive",
     overlayKicker: "En la muñeca",
     overlayText: "La carcasa y su sensor, sobre el smartwatch que ya llevas.",
@@ -2065,11 +2069,11 @@ const es: FrozenLandingMessages = {
   },
   offer: {
     imageAlt: "Banner de lanzamiento de Watch Dive en Kickstarter",
-    kicker: "Early bird · 50 % dto.",
+    kicker: "Los 100 primeros · 50 % dto.",
     headline: "De unos 280 € a unos 140 € — 50 % de descuento.",
     headlineStrike: "unos 280 €",
     headlineNew: "unos 140 €",
-    lead: "Regístrate y entérate primero del día que Watch Dive abre en Kickstarter. El precio público rondará los 280 € y el early bird, los 140 €. Los importes en euros son orientativos; prevalecerá el que muestre Kickstarter.",
+    lead: "Regístrate y entérate primero del día que Watch Dive abre en Kickstarter. El precio público rondará los 280 € y el early bird para los 100 primeros, los 140 €. Los importes en euros son orientativos; prevalecerá el que muestre Kickstarter.",
     leadHighlight: "entérate primero",
   },
   creds: {
@@ -2271,13 +2275,13 @@ const fr: FrozenLandingMessages = {
   meta: {
     title: "Watch Dive — votre montre connectée, sous l’eau",
     description:
-      "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau ; votre Apple Watch ou Galaxy Watch les affiche. Early bird à environ 140 € sur Kickstarter.",
+      "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau ; votre Apple Watch ou Galaxy Watch les affiche. Early bird à environ 140 € pour les 100 premiers contributeurs Kickstarter.",
     ogTitle: "Watch Dive — votre montre connectée, sous l’eau",
     ogDescription:
-      "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau ; votre Apple Watch ou Galaxy Watch les affiche. Early bird à environ 140 € sur Kickstarter.",
+      "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau ; votre Apple Watch ou Galaxy Watch les affiche. Early bird à environ 140 € pour les 100 premiers contributeurs Kickstarter.",
     twitterTitle: "Watch Dive — votre montre connectée, sous l’eau",
     twitterDescription:
-      "Un caisson à capteur DIVEROID pour l’Apple Watch ou la Galaxy Watch que vous portez déjà. Early bird à environ 140 € sur Kickstarter.",
+      "Un caisson à capteur DIVEROID pour l’Apple Watch ou la Galaxy Watch que vous portez déjà. Early bird à environ 140 € pour les 100 premiers contributeurs Kickstarter.",
   },
   banner: {
     kicker: "Kickstarter",
@@ -2285,7 +2289,7 @@ const fr: FrozenLandingMessages = {
     joinCta: "Me prévenir",
   },
   cta: {
-    label: "Me prévenir · environ 140 €",
+    label: "Me prévenir · env. 140 € aux 100 premiers",
   },
   referral: {
     welcome: "Un ami vous a invité. Confirmez votre e-mail pour le rejoindre sur la liste.",
@@ -2300,7 +2304,7 @@ const fr: FrozenLandingMessages = {
     copied: "Copié",
     shareButton: "Envoyer à votre binôme",
     shareText:
-      "Watch Dive, c’est un caisson à capteur DIVEROID pour l’Apple Watch ou la Galaxy Watch que je porte déjà. L’early bird est à environ 140 € sur Kickstarter. Rejoignez la liste avec mon lien.",
+      "Watch Dive, c’est un caisson à capteur DIVEROID pour l’Apple Watch ou la Galaxy Watch que je porte déjà. L’early bird est à environ 140 € pour les 100 premiers contributeurs Kickstarter. Rejoignez la liste avec mon lien.",
   },
   inbox: {
     title: "Encore une étape. Confirmez votre e-mail.",
@@ -2350,7 +2354,7 @@ const fr: FrozenLandingMessages = {
     h1: "Watch Dive. Votre montre connectée, sous l’eau.",
     h1Highlight: "sous l’eau",
     sub: "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau. Votre Apple Watch ou Galaxy Watch les affiche pendant la plongée.",
-    priceLine: "Early bird à environ 140 € sur Kickstarter. Lancement en décembre.",
+    priceLine: "Early bird à environ 140 € pour les 100 premiers sur Kickstarter. Lancement en décembre.",
     backgroundAlt: "Plongeur explorant un récif corallien éclatant",
     sideImageAlt: "Visuel produit sous-marin de Watch Dive",
     stat1Label: "Caisson · 60 m",
@@ -2358,7 +2362,7 @@ const fr: FrozenLandingMessages = {
     stat2Label: "Plongée bouteille + apnée",
     stat2Desc: "Deux modes",
     stat3Label: "environ 140 €",
-    stat3Desc: "Early bird · −50 %",
+    stat3Desc: "Les 100 premiers · −50 %",
     wasPrice: "environ 280 €",
     nowPrice: "environ 140 €",
     offBadge: "−50 %",
@@ -2376,12 +2380,12 @@ const fr: FrozenLandingMessages = {
     promiseText: "Profondeur, temps, température. Sur la montre connectée que vous portez déjà.",
     cardKicker: "Kickstarter",
     cardHeadline: "Profondeur. Temps. Sans palier.",
-    cardFrom: "Dès",
+    cardFrom: "Les 100 premiers",
     cardPrice: "environ 140 €",
   },
   value: {
     kicker: "Pourquoi Watch Dive",
-    h2: "À partir d’environ 140 €.",
+    h2: "Environ 140 € pour les 100 premiers.",
     imageAlt: "Plongeur au bord du bassin portant le caisson Watch Dive",
     overlayKicker: "Au poignet",
     overlayText: "Le caisson et son capteur, sur la montre connectée que vous portez déjà.",
@@ -2506,11 +2510,11 @@ const fr: FrozenLandingMessages = {
   },
   offer: {
     imageAlt: "Bannière de lancement Kickstarter de Watch Dive",
-    kicker: "Early bird · −50 %",
+    kicker: "Les 100 premiers · −50 %",
     headline: "D’environ 280 € à environ 140 € — 50 % de réduction.",
     headlineStrike: "environ 280 €",
     headlineNew: "environ 140 €",
-    lead: "Inscrivez-vous pour être prévenu en premier de l’ouverture de Watch Dive sur Kickstarter. Le tarif public sera d’environ 280 € et l’early bird d’environ 140 €. Ces montants sont indicatifs ; le montant affiché sur Kickstarter fera foi.",
+    lead: "Inscrivez-vous pour être prévenu en premier de l’ouverture de Watch Dive sur Kickstarter. Le tarif public sera d’environ 280 € et l’early bird, réservé aux 100 premiers, d’environ 140 €. Ces montants sont indicatifs ; le montant affiché sur Kickstarter fera foi.",
     leadHighlight: "en premier",
   },
   creds: {
@@ -2713,13 +2717,13 @@ const de: FrozenLandingMessages = {
   meta: {
     title: "Watch Dive — deine Smartwatch, auch unter Wasser",
     description:
-      "Tiefe und Wassertemperatur misst ein DIVEROID-Sensor im Gehäuse, deine unterstützte Apple Watch oder Galaxy Watch zeigt sie an. Early Bird für rund 140 € auf Kickstarter.",
+      "Tiefe und Wassertemperatur misst ein DIVEROID-Sensor im Gehäuse, deine unterstützte Apple Watch oder Galaxy Watch zeigt sie an. Early Bird auf Kickstarter: rund 140 € für die ersten 100 Unterstützer.",
     ogTitle: "Watch Dive — deine Smartwatch, auch unter Wasser",
     ogDescription:
-      "Tiefe und Wassertemperatur misst ein DIVEROID-Sensor im Gehäuse, deine unterstützte Apple Watch oder Galaxy Watch zeigt sie an. Early Bird für rund 140 € auf Kickstarter.",
+      "Tiefe und Wassertemperatur misst ein DIVEROID-Sensor im Gehäuse, deine unterstützte Apple Watch oder Galaxy Watch zeigt sie an. Early Bird auf Kickstarter: rund 140 € für die ersten 100 Unterstützer.",
     twitterTitle: "Watch Dive — deine Smartwatch, auch unter Wasser",
     twitterDescription:
-      "Ein Gehäuse mit DIVEROID-Sensor für die Apple Watch oder Galaxy Watch, die du ohnehin trägst. Early Bird für rund 140 € auf Kickstarter.",
+      "Ein Gehäuse mit DIVEROID-Sensor für die Apple Watch oder Galaxy Watch, die du ohnehin trägst. Early Bird auf Kickstarter: rund 140 € für die ersten 100 Unterstützer.",
   },
   banner: {
     kicker: "Kickstarter",
@@ -2727,7 +2731,7 @@ const de: FrozenLandingMessages = {
     joinCta: "Benachrichtige mich",
   },
   cta: {
-    label: "Benachrichtige mich · rund 140 €",
+    label: "Erinnere mich · erste 100 für rund 140 €",
   },
   referral: {
     welcome:
@@ -2743,7 +2747,7 @@ const de: FrozenLandingMessages = {
     copied: "Kopiert",
     shareButton: "An deinen Tauchbuddy senden",
     shareText:
-      "Watch Dive ist ein Gehäuse mit DIVEROID-Sensor für die Apple Watch oder Galaxy Watch, die ich ohnehin trage. Der Early Bird liegt bei rund 140 € auf Kickstarter. Komm über meinen Link auf die Liste.",
+      "Watch Dive ist ein Gehäuse mit DIVEROID-Sensor für die Apple Watch oder Galaxy Watch, die ich ohnehin trage. Für die ersten 100 Unterstützer liegt der Early Bird auf Kickstarter bei rund 140 €. Komm über meinen Link auf die Liste.",
   },
   inbox: {
     title: "Noch ein Schritt. Bestätige deine E-Mail.",
@@ -2792,7 +2796,7 @@ const de: FrozenLandingMessages = {
     h1: "Watch Dive. Deine Smartwatch, auch unter Wasser.",
     h1Highlight: "auch unter Wasser",
     sub: "Tiefe und Wassertemperatur misst ein DIVEROID-Sensor im Gehäuse. Deine Apple Watch oder Galaxy Watch zeigt beides beim Tauchen an.",
-    priceLine: "Early Bird für rund 140 € auf Kickstarter. Start im Dezember.",
+    priceLine: "Early Bird für die ersten 100 auf Kickstarter: rund 140 €. Start im Dezember.",
     backgroundAlt: "Taucher erkundet ein farbenprächtiges Korallenriff",
     sideImageAlt: "Watch Dive Unterwasser-Produktaufnahme",
     stat1Label: "Gehäuse · 60 m",
@@ -2800,7 +2804,7 @@ const de: FrozenLandingMessages = {
     stat2Label: "Gerätetauchen + Apnoe",
     stat2Desc: "Zwei Modi",
     stat3Label: "rund 140 €",
-    stat3Desc: "Early Bird · 50 % Rabatt",
+    stat3Desc: "Die ersten 100 · 50 % Rabatt",
     wasPrice: "rund 280 €",
     nowPrice: "rund 140 €",
     offBadge: "50 % Rabatt",
@@ -2818,12 +2822,12 @@ const de: FrozenLandingMessages = {
     promiseText: "Tiefe, Zeit, Temperatur. Auf der Smartwatch, die du schon trägst.",
     cardKicker: "Kickstarter",
     cardHeadline: "Tiefe. Zeit. Nullzeit.",
-    cardFrom: "Ab",
+    cardFrom: "Die ersten 100",
     cardPrice: "rund 140 €",
   },
   value: {
     kicker: "Warum Watch Dive",
-    h2: "Ab rund 140 €.",
+    h2: "Rund 140 € für die ersten 100.",
     imageAlt: "Taucher am Beckenrand mit dem Watch Dive Gehäuse",
     overlayKicker: "Am Handgelenk",
     overlayText: "Gehäuse und Sensor, auf der Smartwatch, die du schon trägst.",
@@ -2948,11 +2952,11 @@ const de: FrozenLandingMessages = {
   },
   offer: {
     imageAlt: "Watch Dive Kickstarter-Start-Banner",
-    kicker: "Early Bird · 50 % Rabatt",
+    kicker: "Die ersten 100 · 50 % Rabatt",
     headline: "Von rund 280 € auf rund 140 € — 50 % Rabatt.",
     headlineStrike: "rund 280 €",
     headlineNew: "rund 140 €",
-    lead: "Melde dich an und erfahre als Erstes, wann Watch Dive auf Kickstarter startet. Der öffentliche Preis liegt bei rund 280 €, der Early Bird bei rund 140 €. Die Eurobeträge sind unverbindliche Richtwerte. Maßgeblich ist der auf Kickstarter angezeigte Betrag.",
+    lead: "Melde dich an und erfahre als Erstes, wann Watch Dive auf Kickstarter startet. Der öffentliche Preis liegt bei rund 280 €, der Early Bird für die ersten 100 bei rund 140 €. Die Eurobeträge sind unverbindliche Richtwerte. Maßgeblich ist der auf Kickstarter angezeigte Betrag.",
     leadHighlight: "als Erstes",
   },
   creds: {
@@ -3153,13 +3157,13 @@ const ptBR: FrozenLandingMessages = {
   meta: {
     title: "Watch Dive — seu smartwatch de sempre, debaixo d'água",
     description:
-      "Um sensor DIVEROID dentro da caixa mede a profundidade e a temperatura da água, e o seu Apple Watch ou Galaxy Watch mostra tudo. Early bird por cerca de R$ 800 no Kickstarter.",
+      "Um sensor DIVEROID dentro da caixa mede a profundidade e a temperatura da água, e o seu Apple Watch ou Galaxy Watch mostra tudo. Early bird por cerca de R$ 800 para os 100 primeiros apoiadores no Kickstarter.",
     ogTitle: "Watch Dive — seu smartwatch de sempre, debaixo d'água",
     ogDescription:
-      "Um sensor DIVEROID dentro da caixa mede a profundidade e a temperatura da água, e o seu Apple Watch ou Galaxy Watch mostra tudo. Early bird por cerca de R$ 800 no Kickstarter.",
+      "Um sensor DIVEROID dentro da caixa mede a profundidade e a temperatura da água, e o seu Apple Watch ou Galaxy Watch mostra tudo. Early bird por cerca de R$ 800 para os 100 primeiros apoiadores no Kickstarter.",
     twitterTitle: "Watch Dive — seu smartwatch de sempre, debaixo d'água",
     twitterDescription:
-      "Uma caixa com sensor DIVEROID para o Apple Watch ou Galaxy Watch que você já usa. Early bird por cerca de R$ 800 no Kickstarter.",
+      "Uma caixa com sensor DIVEROID para o Apple Watch ou Galaxy Watch que você já usa. Early bird por cerca de R$ 800 para os 100 primeiros apoiadores no Kickstarter.",
   },
   banner: {
     kicker: "Kickstarter",
@@ -3167,7 +3171,7 @@ const ptBR: FrozenLandingMessages = {
     joinCta: "Me avise",
   },
   cta: {
-    label: "Me avise · cerca de R$ 800",
+    label: "Me avise · 100 primeiros por cerca de R$ 800",
   },
   referral: {
     welcome: "Um amigo te convidou. Confirme seu e-mail para entrar na mesma lista.",
@@ -3182,7 +3186,7 @@ const ptBR: FrozenLandingMessages = {
     copied: "Copiado",
     shareButton: "Mandar para seu parceiro de mergulho",
     shareText:
-      "Watch Dive é uma caixa com sensor DIVEROID para o Apple Watch ou Galaxy Watch que eu já uso. O early bird sai por cerca de R$ 800 no Kickstarter. Entra na lista pelo meu link.",
+      "Watch Dive é uma caixa com sensor DIVEROID para o Apple Watch ou Galaxy Watch que eu já uso. O early bird sai por cerca de R$ 800 para os 100 primeiros apoiadores no Kickstarter. Entra na lista pelo meu link.",
   },
   inbox: {
     title: "Falta um passo. Confirme seu e-mail.",
@@ -3232,7 +3236,7 @@ const ptBR: FrozenLandingMessages = {
     h1: "Watch Dive. Seu smartwatch de sempre, debaixo d'água.",
     h1Highlight: "debaixo d'água",
     sub: "Um sensor DIVEROID dentro da caixa mede a profundidade e a temperatura da água. Seu Apple Watch ou Galaxy Watch mostra os números durante o mergulho.",
-    priceLine: "Early bird por cerca de R$ 800 no Kickstarter. Lançamento em dezembro.",
+    priceLine: "Early bird por cerca de R$ 800 para os 100 primeiros no Kickstarter. Lançamento em dezembro.",
     backgroundAlt: "Mergulhador explorando um recife de coral vibrante",
     sideImageAlt: "Foto subaquática do produto Watch Dive",
     stat1Label: "Caixa · 60 m",
@@ -3240,7 +3244,7 @@ const ptBR: FrozenLandingMessages = {
     stat2Label: "Cilindro + Apneia",
     stat2Desc: "Dois modos",
     stat3Label: "cerca de R$ 800",
-    stat3Desc: "Early bird · 50% off",
+    stat3Desc: "Os 100 primeiros · 50% off",
     wasPrice: "cerca de R$ 1.600",
     nowPrice: "cerca de R$ 800",
     offBadge: "50% off",
@@ -3258,12 +3262,12 @@ const ptBR: FrozenLandingMessages = {
     promiseText: "Profundidade, tempo e temperatura. No smartwatch que você já usa.",
     cardKicker: "Kickstarter",
     cardHeadline: "Profundidade. Tempo. Sem deco.",
-    cardFrom: "A partir de",
+    cardFrom: "Os 100 primeiros",
     cardPrice: "cerca de R$ 800",
   },
   value: {
     kicker: "Por que Watch Dive",
-    h2: "A partir de cerca de R$ 800.",
+    h2: "Cerca de R$ 800 para os 100 primeiros.",
     imageAlt: "Mergulhador na beira da piscina usando a caixa Watch Dive",
     overlayKicker: "No pulso",
     overlayText: "A caixa e o sensor, sobre o smartwatch que você já usa.",
@@ -3387,11 +3391,11 @@ const ptBR: FrozenLandingMessages = {
   },
   offer: {
     imageAlt: "Banner de lançamento do Watch Dive no Kickstarter",
-    kicker: "Early bird · 50% off",
+    kicker: "Os 100 primeiros · 50% off",
     headline: "De cerca de R$ 1.600 para cerca de R$ 800 — 50% de desconto.",
     headlineStrike: "cerca de R$ 1.600",
     headlineNew: "cerca de R$ 800",
-    lead: "Cadastre-se e saiba primeiro quando o Watch Dive abre no Kickstarter. O preço público deve ficar em cerca de R$ 1.600 e o early bird, em cerca de R$ 800. Os valores em reais são estimativas; vale o valor exibido no Kickstarter.",
+    lead: "Cadastre-se e saiba primeiro quando o Watch Dive abre no Kickstarter. O preço público deve ficar em cerca de R$ 1.600 e o early bird, para os 100 primeiros, em cerca de R$ 800. Os valores em reais são estimativas; vale o valor exibido no Kickstarter.",
     leadHighlight: "saiba primeiro",
   },
   creds: {

@@ -82,8 +82,12 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // srcset/sizes cuts and the first-screen photo fetchPriority; the three
   // clips become LazyVideo (poster and playback only near the screen). Full-page
   // screenshots at 390@3x and 1440@1x/2x differ only inside the resized photos.
+  // 2026-10-07: the two compatibility cards and their text columns get
+  // min-w-0, and the housing badge may hyphenate, so es/pt-BR (and fr's
+  // grid track) no longer overflow a 320px viewport. Measured: no size change
+  // at 390/430/1440 or in any other locale.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "5d0da19a4b7d6be9b022cb63fb5778e478f324c9e3c48bacbd1a125f0f80037c");
+  assert.equal(digest, "82de8e2bb7b3218d6b470335246dfd753682ae39db2bd94c2a4eae97f5260545");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
