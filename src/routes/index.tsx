@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { track } from "@vercel/analytics";
 import {
+  grantAttemptMeasurement,
   joinWaitlist,
   pollVerification,
   getReferralCount,
@@ -17,6 +18,10 @@ import { ProductGallery } from "@/components/product-gallery";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LaunchNotice } from "@/components/launch-notice";
 import { CookieSettingsLink } from "@/components/cookie-choice-bar";
+import { MeasurementAsk, measurementAskEligible } from "@/components/measurement-ask";
+import { initGoogleTag } from "@/lib/googleTag";
+import { initClarity } from "@/lib/clarity";
+import { startPageBehavior } from "@/lib/pageBehavior";
 import { ReviewAvatar } from "@/components/review-avatar";
 import { ReviewTicker } from "@/components/review-ticker";
 import { WaitlistProgress } from "@/components/waitlist-progress";
@@ -26,6 +31,7 @@ import { nextPollDelayMs, VERIFY_POLL_MAX_ATTEMPTS } from "@/lib/verifyPolling";
 import {
   getMetaCookies,
   hasMetaMeasurementConsent,
+  initMetaPixel,
   newMetaEventId,
   trackMetaCustom,
   trackMetaEmailVerified,
@@ -625,12 +631,15 @@ function CheckInboxCard({
   onResend,
   onStartOver,
   resending,
+  onAllowMeasurement,
 }: {
   message: string;
   email: string;
   onResend: () => void;
   onStartOver: () => void;
   resending: boolean;
+  /** Present when this browser may still be asked about measurement. */
+  onAllowMeasurement?: () => void | Promise<void>;
 }) {
   const m = useFrozenLandingMessages();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -720,6 +729,7 @@ function CheckInboxCard({
         </button>
       </div>
       <p className="mt-2 text-xs leading-relaxed text-white/65">{message}</p>
+      {onAllowMeasurement && <MeasurementAsk onAllow={onAllowMeasurement} />}
     </div>
   );
 }
@@ -742,6 +752,12 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
   const formStartSent = useRef(false); // FormStart once per form instance
+  // The first submit's `Lead` event id, kept so a measurement grant on the
+  // inbox card can send the conversion that was withheld at submit time.
+  const submitEventIdRef = useRef<string | undefined>(undefined);
+  // Decided once, when the inbox card appears: asking is for browsers that
+  // have not answered yet in a country where measurement is opt-in.
+  const [askMeasurement, setAskMeasurement] = useState(false);
   // A ring that expands once, the first time the form is actually on screen.
   // It points at the next action after an anchor jump; it never repeats, so it
   // guides rather than nags.
@@ -912,6 +928,42 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     return res;
   };
 
+  // Allowed on the inbox card: start the tags this browser now permits, fire
+  // the submit `Lead` that was withheld under the same event id the server
+  // leg uses, and record the grant so the confirmation — wherever it is
+  // opened — is reported too.
+  async function allowMeasurementAfterSubmit() {
+    initMetaPixel();
+    initGoogleTag();
+    initClarity();
+    startPageBehavior();
+    const submitEventId = submitEventIdRef.current;
+    if (submitEventId) {
+      trackMetaLead(submitEventId, id);
+      trackGoogleSubmit(submitEventId, id);
+    }
+    if (!handle) return;
+    const attribution = getAttribution();
+    const cookies = getMetaCookies();
+    const fbc =
+      cookies.fbc ||
+      (attribution.fbclid && attribution.capturedAt
+        ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
+        : undefined);
+    const res = await grantAttemptMeasurement({
+      data: {
+        handle,
+        ...(submitEventId ? { submitEventId } : {}),
+        ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
+        ...(fbc ? { fbc } : {}),
+      },
+    });
+    if (res.browserLead) {
+      trackMetaEmailVerified(res.browserLead.eventId, res.browserLead.source);
+      trackGoogleLead(res.browserLead.eventId, res.browserLead.source);
+    }
+  }
+
   if (closed) {
     return (
       <div
@@ -943,6 +995,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
             setLoading(false);
           }
         }}
+        onAllowMeasurement={askMeasurement ? allowMeasurementAfterSubmit : undefined}
         onStartOver={() => {
           // A typo is otherwise unrecoverable without a page reload.
           setPending(null);
@@ -967,7 +1020,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // signed from now on: the browser that opens the confirmation link
           // must not be able to widen it.
           const submitEventId = newMetaEventId();
+          submitEventIdRef.current = submitEventId;
           const res = await submit(submitEventId);
+          setAskMeasurement(res.status === "pending" && !hp.trim() && measurementAskEligible());
           // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });

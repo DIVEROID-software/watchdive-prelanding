@@ -155,6 +155,20 @@ export type LeadRecord = {
   reminder?: string;
   /** First-touch landing path, read only to pick the reminder's language. */
   landingPath?: string;
+  /**
+   * Raw `Measurement consent` cell. `MEASUREMENT_CONSENT_GRANTED` is written
+   * when the person allows advertising measurement after submitting (the inbox
+   * card or the confirmation page); `MEASUREMENT_CONSENT_WITHDRAWN` by the
+   * withdrawal registry. Withdrawn always wins over every other signal.
+   */
+  measurementConsent?: string;
+  /**
+   * Meta click cookie value (`fb.1.<ms>.<fbclid>`), stored only once measurement
+   * was allowed and only when `NOTION_META_FBC_PROPERTY` names the column. It is
+   * what lets the confirmation, usually opened in a different browser than the
+   * ad click, be attributed to that click.
+   */
+  metaFbc?: string;
 };
 
 /**
@@ -236,6 +250,8 @@ export type CreatePendingInput = {
   leadId: string;
   expiresAt: string;
   attribution?: LeadAttribution;
+  /** Present only when the submitting browser allowed measurement. */
+  metaFbc?: string;
 };
 
 /** Written when a new attempt is minted — this is what kills the previous link. */
@@ -259,6 +275,12 @@ export type MarkVerifiedInput = {
   metaEventId: string;
 };
 
+/** Written when someone allows measurement after the submit itself. */
+export type MeasurementGrantInput = {
+  /** Only kept when the column exists (`NOTION_META_FBC_PROPERTY`). */
+  metaFbc?: string;
+};
+
 export interface LeadStore {
   findByEmail(canonical: string, email: string): Promise<LeadRecord | undefined>;
   findByLeadId(leadId: string): Promise<LeadRecord | undefined>;
@@ -267,6 +289,7 @@ export interface LeadStore {
   markSent(pageId: string, input: MarkSentInput): Promise<void>;
   markVerified(pageId: string, input: MarkVerifiedInput): Promise<void>;
   markWelcomeScheduled(pageId: string, input: MarkWelcomeInput): Promise<void>;
+  recordMeasurementGrant(pageId: string, input: MeasurementGrantInput): Promise<void>;
   reread(pageId: string): Promise<LeadRecord | undefined>;
 }
 
@@ -304,7 +327,19 @@ export type ConfirmResponse = {
   ok: true;
   status: ConfirmStatus;
   refCode?: string;
-  /** Present only when the attempt's signed consent bit permits measurement. */
+  /** Present only when measurement is permitted for this lead. */
+  browserLead?: BrowserLead;
+  /**
+   * The lead is confirmed but nobody has allowed advertising measurement for
+   * it yet (and nobody withdrew it). The page may ask once; the answer goes to
+   * `grantConfirmationMeasurement`. Never set for abuse-flagged rows.
+   */
+  measurementAsk?: true;
+};
+
+/** The answer to a measurement grant. Uniform for real and decoy attempts. */
+export type MeasurementGrantResponse = {
+  ok: true;
   browserLead?: BrowserLead;
 };
 

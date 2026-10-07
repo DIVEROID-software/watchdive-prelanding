@@ -320,7 +320,9 @@ export async function sendMetaEmailVerified(args: MetaEventArgs): Promise<boolea
       event_time: eventTime,
       event_id: args.eventId,
       action_source: "website",
-      event_source_url: `${PUBLIC_ORIGIN}/`,
+      // The page the lead came from (e.g. `/es`); the custom conversion only
+      // needs the domain, and the locale tells Meta which page converted.
+      event_source_url: eventSourceUrl(args.landingPath),
       user_data: userData,
       custom_data: {
         content_name: "watchdive_email_verified",

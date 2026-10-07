@@ -4,6 +4,7 @@
 //   requestVerification — they submitted the form
 //   confirmVerification — their tab POSTed the token from the mail
 //   pollVerification    — the original tab is asking whether that happened
+//   grant*Measurement   — they allowed advertising measurement after the submit
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
 import type {
@@ -12,11 +13,14 @@ import type {
   LeadAttribution,
   LeadRecord,
   LeadStore,
+  MeasurementGrantResponse,
   PendingResponse,
   PollResponse,
 } from "./contracts.ts";
 import {
   conversionBlocked,
+  MEASUREMENT_CONSENT_GRANTED,
+  MEASUREMENT_CONSENT_WITHDRAWN,
   GENERIC_PENDING_MESSAGE,
   MIN_RESPONSE_MS,
   POLL_HANDLE_TTL_MS,
@@ -41,12 +45,38 @@ import {
   verifyPollHandle,
 } from "./token.ts";
 
-export type VerifiedLeadDispatch = (input: {
-  eventId: string;
-  email: string;
-  phone?: string;
-  source: string;
-}) => Promise<void>;
+/**
+ * Meta cookies of the browser that produced a conversion. The click cookie is
+ * what ties a confirmation — usually opened in a mail app, not the browser the
+ * ad opened — to the ad. The request's network address and user agent never
+ * enter this module: the server function adds them when it assembles the
+ * dispatchers (`createServiceDependencies`).
+ */
+export type ConversionContext = {
+  fbp?: string;
+  fbc?: string;
+};
+
+export type VerifiedLeadDispatch = (
+  input: {
+    eventId: string;
+    email: string;
+    phone?: string;
+    source: string;
+    landingPath?: string;
+  } & ConversionContext,
+) => Promise<void>;
+
+/** The submit-time `Lead`, sent late when measurement is allowed after the submit. */
+export type SubmitLeadDispatch = (
+  input: {
+    eventId: string;
+    email: string;
+    phone?: string;
+    source: string;
+    landingPath?: string;
+  } & ConversionContext,
+) => Promise<void>;
 
 export type RequestVerificationInput = {
   email: string;
@@ -64,6 +94,8 @@ export type RequestVerificationInput = {
   attribution?: LeadAttribution;
   /** The browser's measurement choice at submit time. */
   measurementConsent: boolean;
+  /** Meta click cookie, stored only when `measurementConsent` is true. */
+  metaFbc?: string;
   /** Language selected on the page. Defaults to English for legacy callers. */
   locale?: Locale;
   /** True when this network has produced too many recent signups to keep mailing. */
@@ -78,6 +110,7 @@ export type ServiceDependencies = {
   leadId?: () => string;
   refCode?: () => string;
   dispatchVerifiedLead?: VerifiedLeadDispatch;
+  dispatchSubmitLead?: SubmitLeadDispatch;
   /** Test seam for the response floor. */
   sleep?: (ms: number) => Promise<void>;
   /** Shields the store from replayed poll bursts. */
@@ -228,6 +261,7 @@ export async function requestVerificationService(
       signedUpAt: now.toISOString(),
       leadId,
       expiresAt,
+      ...(input.measurementConsent && input.metaFbc ? { metaFbc: input.metaFbc } : {}),
     });
   }
 
@@ -316,6 +350,7 @@ async function scheduleWelcome(
 export async function confirmVerificationService(
   rawToken: string,
   dependencies: ServiceDependencies,
+  context: ConversionContext = {},
 ): Promise<ConfirmResponse> {
   const env = dependencies.env ?? process.env;
   const secret = requireSecret(env);
@@ -341,13 +376,15 @@ export async function confirmVerificationService(
     // one: the first attempt may have been the one that failed, and the event
     // id is derived from the attempt, so a duplicate collapses into the same
     // conversion instead of inflating it.
-    await dispatchIfPermitted(record, metaEventId, parsed.measurementConsent, dependencies);
+    const consent = effectiveMeasurement(record, parsed.measurementConsent);
+    await dispatchIfPermitted(record, metaEventId, consent, dependencies, context);
     await scheduleWelcome(record, dependencies, now, parsed.locale);
     return {
       ok: true,
       status: "already_verified",
       refCode: record.refCode,
-      ...browserLead(record, metaEventId, parsed.measurementConsent),
+      ...browserLead(record, metaEventId, consent),
+      ...measurementAsk(record, parsed.measurementConsent),
     };
   }
 
@@ -366,14 +403,16 @@ export async function confirmVerificationService(
   // conversion. Dispatch is the only downstream action and it is idempotent.
   // Gating on a re-read would not add exactly-once — it would only risk
   // dropping the single dispatch when the read comes back stale.
-  await dispatchIfPermitted(record, metaEventId, parsed.measurementConsent, dependencies);
+  const consent = effectiveMeasurement(record, parsed.measurementConsent);
+  await dispatchIfPermitted(record, metaEventId, consent, dependencies, context);
   await scheduleWelcome(record, dependencies, now, parsed.locale);
 
   return {
     ok: true,
     status: "verified",
     refCode: record.refCode,
-    ...browserLead(record, metaEventId, parsed.measurementConsent),
+    ...browserLead(record, metaEventId, consent),
+    ...measurementAsk(record, parsed.measurementConsent),
   };
 }
 
@@ -400,7 +439,11 @@ export async function pollVerificationService(
       ok: true,
       status: "verified",
       refCode: record.refCode,
-      ...browserLead(record, record.metaEventId, parsed.measurementConsent),
+      ...browserLead(
+        record,
+        record.metaEventId,
+        effectiveMeasurement(record, parsed.measurementConsent),
+      ),
     };
   };
 
@@ -416,6 +459,7 @@ async function dispatchIfPermitted(
   eventId: string,
   measurementConsent: boolean,
   dependencies: ServiceDependencies,
+  context: ConversionContext = {},
 ): Promise<void> {
   if (!measurementConsent || conversionBlocked(record.flags)) return;
   if (!dependencies.dispatchVerifiedLead) return;
@@ -425,6 +469,8 @@ async function dispatchIfPermitted(
       email: record.email,
       ...(record.phone ? { phone: record.phone } : {}),
       source: record.source,
+      ...(record.landingPath ? { landingPath: record.landingPath } : {}),
+      ...conversionContext(record, context),
     })
     .catch(() => {
       // A measurement outage never un-confirms a confirmed lead.
@@ -444,6 +490,124 @@ function browserLead(
 ): { browserLead?: BrowserLead } {
   if (!measurementConsent || !eventId || conversionBlocked(record.flags)) return {};
   return { browserLead: { eventId, source: record.source, hasPhone: Boolean(record.phone) } };
+}
+
+/**
+ * Whether advertising measurement is allowed for this lead now. A withdrawal
+ * recorded on the row beats everything; otherwise the submitting browser's
+ * signed choice, or a later explicit grant recorded on the row, allows it.
+ */
+export function effectiveMeasurement(record: LeadRecord, signedConsent: boolean): boolean {
+  if (record.measurementConsent === MEASUREMENT_CONSENT_WITHDRAWN) return false;
+  return signedConsent || record.measurementConsent === MEASUREMENT_CONSENT_GRANTED;
+}
+
+/** Ask once on the confirmation page: nobody allowed it, nobody refused it. */
+function measurementAsk(record: LeadRecord, signedConsent: boolean): { measurementAsk?: true } {
+  if (effectiveMeasurement(record, signedConsent)) return {};
+  if (record.measurementConsent === MEASUREMENT_CONSENT_WITHDRAWN) return {};
+  if (conversionBlocked(record.flags)) return {};
+  return { measurementAsk: true };
+}
+
+/**
+ * The click cookie: the confirming browser's when it has one, else the one
+ * stored with the lead when measurement was allowed. No value is invented.
+ */
+function conversionContext(record: LeadRecord, context: ConversionContext): ConversionContext {
+  const fbc = context.fbc || record.metaFbc;
+  return {
+    ...(context.fbp ? { fbp: context.fbp } : {}),
+    ...(fbc ? { fbc } : {}),
+  };
+}
+
+export type AttemptGrantInput = ConversionContext & {
+  /** The browser's `Lead` event id from the first submit. */
+  submitEventId?: string;
+};
+
+/**
+ * Measurement allowed from the inbox card, after the submit. The poll handle
+ * — held only by the submitting tab, signed, and short-lived — names the
+ * attempt. Records the grant on the row, sends the submit `Lead` that was
+ * withheld, and, if the person has already confirmed, the confirmation too.
+ * The answer is the same for a real attempt and a decoy handle.
+ */
+export async function grantAttemptMeasurementService(
+  handle: string,
+  input: AttemptGrantInput,
+  dependencies: ServiceDependencies,
+): Promise<MeasurementGrantResponse> {
+  const env = dependencies.env ?? process.env;
+  const secret = requireSecret(env);
+  const now = (dependencies.now ?? (() => new Date()))();
+  const parsed = verifyPollHandle(handle, secret, now.getTime(), POLL_HANDLE_TTL_MS);
+  if (!parsed) return { ok: true };
+
+  const record = await dependencies.store.findByLeadId(parsed.leadId);
+  if (!record || record.status === "unsubscribed") return { ok: true };
+  if (record.measurementConsent === MEASUREMENT_CONSENT_WITHDRAWN) return { ok: true };
+  if (conversionBlocked(record.flags)) return { ok: true };
+
+  const context = conversionContext(record, input);
+  await dependencies.store
+    .recordMeasurementGrant(record.pageId, { ...(context.fbc ? { metaFbc: context.fbc } : {}) })
+    .catch(() => {
+      // The conversion below still reflects this browser's explicit choice.
+    });
+
+  if (input.submitEventId && dependencies.dispatchSubmitLead) {
+    await dependencies
+      .dispatchSubmitLead({
+        eventId: input.submitEventId,
+        email: record.email,
+        ...(record.phone ? { phone: record.phone } : {}),
+        source: record.source,
+        ...(record.landingPath ? { landingPath: record.landingPath } : {}),
+        ...context,
+      })
+      .catch(() => {});
+  }
+
+  if (record.emailVerified && record.metaEventId) {
+    await dispatchIfPermitted(record, record.metaEventId, true, dependencies, input);
+    return { ok: true, ...browserLead(record, record.metaEventId, true) };
+  }
+  return { ok: true };
+}
+
+/**
+ * Measurement allowed on the confirmation page. The confirmation token names
+ * the attempt; the lead must already be confirmed. Records the grant and sends
+ * the confirmation conversion that was withheld, returning the browser half.
+ */
+export async function grantConfirmationMeasurementService(
+  rawToken: string,
+  input: ConversionContext,
+  dependencies: ServiceDependencies,
+): Promise<MeasurementGrantResponse> {
+  const env = dependencies.env ?? process.env;
+  const secret = requireSecret(env);
+  const now = (dependencies.now ?? (() => new Date()))();
+  if (!isVerificationTokenShape(rawToken)) return { ok: true };
+  const parsed = parseVerificationToken(rawToken, secret, now.getTime());
+  if (!parsed) return { ok: true };
+
+  const record = await dependencies.store.findByLeadId(parsed.leadId);
+  if (!record || record.status === "unsubscribed") return { ok: true };
+  if (!(record.emailVerified || record.status === "verified")) return { ok: true };
+  if (record.measurementConsent === MEASUREMENT_CONSENT_WITHDRAWN) return { ok: true };
+  if (conversionBlocked(record.flags)) return { ok: true };
+
+  const context = conversionContext(record, input);
+  await dependencies.store
+    .recordMeasurementGrant(record.pageId, { ...(context.fbc ? { metaFbc: context.fbc } : {}) })
+    .catch(() => {});
+
+  const metaEventId = deterministicMetaEventId(parsed.leadId, secret);
+  await dispatchIfPermitted(record, metaEventId, true, dependencies, input);
+  return { ok: true, ...browserLead(record, metaEventId, true) };
 }
 
 function defaultRefCode(): string {

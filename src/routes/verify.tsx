@@ -1,15 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
-import { confirmVerification } from "@/lib/api/waitlist.functions";
+import { confirmVerification, grantConfirmationMeasurement } from "@/lib/api/waitlist.functions";
+import { MeasurementAsk, measurementAskEligible } from "@/components/measurement-ask";
+import { resolveGeoCountry } from "@/lib/consentRegion";
+import {
+  getMetaCookies,
+  getMetaMeasurementConsent,
+  initMetaPixel,
+  measurementPermitted,
+  trackMetaEmailVerified,
+  trackMetaPhoneLead,
+} from "@/lib/metaPixel";
+import type { BrowserLead } from "@/lib/verification/contracts";
 import { isVerificationTokenShape } from "@/lib/verification/tokenShape";
 import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
 import { homePath, privacyPath, referralPath, termsPath } from "@/lib/i18n/locale";
 import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 
-// Deliberately no analytics, pixel or widget import. This route carries the
-// token in its fragment, and the root gates every third-party script off it —
-// an import here would put one back.
+// No third-party script starts on load. This route carries the token in its
+// fragment, so the root gates every tag off it. The Meta pixel is started here
+// only after the fragment is stripped, the confirmation has succeeded, and
+// measurement is allowed — this is the one page most people actually see after
+// confirming (in their mail app, not the tab that signed up), so without it the
+// confirmation reached Meta with no browser context at all.
 
 export const Route = createFileRoute("/verify")({
   head: () => ({
@@ -93,6 +107,29 @@ export function VerifyPage() {
       : "";
   const token = useRef<string | undefined>(undefined);
   const started = useRef(false);
+  const [askMeasurement, setAskMeasurement] = useState(false);
+
+  /** The browser half of the confirmation, under the server leg's event id. */
+  const fireBrowserLead = (lead: BrowserLead) => {
+    initMetaPixel();
+    trackMetaEmailVerified(lead.eventId, lead.source);
+    if (lead.hasPhone) trackMetaPhoneLead(`${lead.eventId}:phone`, lead.source);
+  };
+
+  /** Records the grant server-side and sends the confirmation that was withheld. */
+  const grantMeasurement = async () => {
+    if (!token.current) return;
+    initMetaPixel();
+    const cookies = getMetaCookies();
+    const res = await grantConfirmationMeasurement({
+      data: {
+        token: token.current,
+        ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
+        ...(cookies.fbc ? { fbc: cookies.fbc } : {}),
+      },
+    });
+    if (res.browserLead) fireBrowserLead(res.browserLead);
+  };
 
   const confirm = async () => {
     if (!token.current) {
@@ -105,8 +142,20 @@ export function VerifyPage() {
       if (result.status === "verified" || result.status === "already_verified") {
         setRefCode(result.refCode ?? "");
         setState("verified");
-        // The pixel leg belongs to the tab that submitted, which polls for this
-        // and already has consent context. Nothing third-party runs here.
+        await resolveGeoCountry();
+        if (result.browserLead && measurementPermitted()) {
+          // Measurement was allowed for this lead and this browser allows it
+          // too: the pixel leg, deduplicated against the server leg by id.
+          fireBrowserLead(result.browserLead);
+        } else if (result.measurementAsk) {
+          if (getMetaMeasurementConsent() === "granted") {
+            // This browser already said yes (on the page, before or after the
+            // submit): no need to ask again, only to record it for this lead.
+            void grantMeasurement().catch(() => {});
+          } else if (measurementAskEligible()) {
+            setAskMeasurement(true);
+          }
+        }
         return;
       }
       setState(result.status === "expired" ? "expired" : "invalid");
@@ -203,6 +252,8 @@ export function VerifyPage() {
                 />
               </div>
             )}
+
+            {askMeasurement && <MeasurementAsk tone="card" onAllow={grantMeasurement} />}
 
             <a
               href={homePath(locale)}

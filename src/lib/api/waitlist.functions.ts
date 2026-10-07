@@ -19,6 +19,8 @@ import { createNetworkGate } from "@/lib/verification/networkGate";
 import { networkKey, requireSecret } from "@/lib/verification/token";
 import {
   confirmVerificationService,
+  grantAttemptMeasurementService,
+  grantConfirmationMeasurementService,
   pollVerificationService,
   requestVerificationService,
 } from "@/lib/verification/service";
@@ -291,6 +293,15 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // capture applies the same bounds, but nothing stops a caller posting
     // straight to this function with whatever it likes.
     const attribution = sanitizeSignupAttribution(data.attribution);
+    // The pixel derives `_fbc` from an `fbclid` landing, but only if it ran at
+    // all. When an ad blocker stopped it, the click id kept from that same
+    // landing rebuilds the value in Meta's documented shape — which is the
+    // difference between a matched click and an unattributed one.
+    const submitFbc =
+      sanitizeMetaCookie(data.fbc) ||
+      (attribution.fbclid && attribution.capturedAt
+        ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
+        : "");
 
     let result;
     try {
@@ -311,6 +322,9 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           flags,
           suspect: flags.length > 0,
           measurementConsent: data.measurementConsent,
+          // Kept with the lead only when measurement was allowed, so the
+          // confirmation — usually opened in a mail app — can name the click.
+          ...(data.measurementConsent && submitFbc ? { metaFbc: submitFbc } : {}),
           locale: data.locale,
           networkSendBlocked: verdict.blocked,
         },
@@ -333,15 +347,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     let capi: MetaCapiDelivery | "skipped" = "skipped";
     if (data.submitEventId && data.measurementConsent && !conversionBlocked(flags)) {
       const fbp = sanitizeMetaCookie(data.fbp);
-      // The pixel derives `_fbc` from an `fbclid` landing, but only if it ran at
-      // all. When an ad blocker stopped it, the click id kept from that same
-      // landing rebuilds the value in Meta's documented shape — which is the
-      // difference between a matched click and an unattributed one.
-      const fbc =
-        sanitizeMetaCookie(data.fbc) ||
-        (attribution.fbclid && attribution.capturedAt
-          ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
-          : "");
+      const fbc = submitFbc;
 
       capi = await deliverMetaLead({
         eventId: data.submitEventId,
@@ -380,7 +386,9 @@ export const confirmVerification = createServerFn({ method: "POST" })
   .validator(z.object({ token: z.string().min(16).max(400) }))
   .handler(async ({ data }) => {
     try {
-      return await confirmVerificationService(data.token, createServiceDependencies());
+      // The confirming request's own IP and user agent: a website conversion
+      // without a user agent is one Meta cannot match to the person.
+      return await confirmVerificationService(data.token, createServiceDependencies(requestMeta()));
     } catch (error) {
       throw sanitizeServerError("verification-confirm", error);
     }
@@ -394,5 +402,61 @@ export const pollVerification = createServerFn({ method: "POST" })
       return await pollVerificationService(data.handle, createServiceDependencies());
     } catch (error) {
       throw sanitizeServerError("verification-poll", error);
+    }
+  });
+
+// Measurement allowed after the submit — the inbox card in the submitting tab.
+// Only that tab holds the signed poll handle. The answer is uniform.
+export const grantAttemptMeasurement = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      handle: z.string().min(16).max(400),
+      submitEventId: z
+        .string()
+        .regex(/^[A-Za-z0-9._:-]{8,64}$/)
+        .optional(),
+      fbp: z.string().max(META_COOKIE_MAX).optional(),
+      fbc: z.string().max(META_COOKIE_MAX).optional(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const fbp = sanitizeMetaCookie(data.fbp);
+      const fbc = sanitizeMetaCookie(data.fbc);
+      return await grantAttemptMeasurementService(
+        data.handle,
+        {
+          ...(data.submitEventId ? { submitEventId: data.submitEventId } : {}),
+          ...(fbp ? { fbp } : {}),
+          ...(fbc ? { fbc } : {}),
+        },
+        createServiceDependencies(requestMeta()),
+      );
+    } catch (error) {
+      throw sanitizeServerError("measurement-grant-attempt", error);
+    }
+  });
+
+// Measurement allowed on the confirmation page, which still holds the token in
+// memory. The lead must already be confirmed.
+export const grantConfirmationMeasurement = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      token: z.string().min(16).max(400),
+      fbp: z.string().max(META_COOKIE_MAX).optional(),
+      fbc: z.string().max(META_COOKIE_MAX).optional(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const fbp = sanitizeMetaCookie(data.fbp);
+      const fbc = sanitizeMetaCookie(data.fbc);
+      return await grantConfirmationMeasurementService(
+        data.token,
+        { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
+        createServiceDependencies(requestMeta()),
+      );
+    } catch (error) {
+      throw sanitizeServerError("measurement-grant-confirmation", error);
     }
   });

@@ -24,6 +24,7 @@ import type {
   LeadStore,
   MarkSentInput,
   MarkVerifiedInput,
+  MeasurementGrantInput,
   StartAttemptInput,
   VerificationStatus,
 } from "./contracts.ts";
@@ -31,6 +32,7 @@ import {
   FIELD_EMAIL_VERIFIED,
   FIELD_LANDING_PATH,
   FIELD_LEAD_ID,
+  FIELD_MEASUREMENT_CONSENT,
   FIELD_META_EVENT_ID,
   FIELD_UTM_CAMPAIGN,
   FIELD_UTM_CONTENT,
@@ -46,10 +48,31 @@ import {
   FIELD_VERIFICATION_REMINDER,
   FIELD_VERIFICATION_STATUS,
   FIELD_VERIFIED_AT,
+  MEASUREMENT_CONSENT_GRANTED,
   STATUS_PENDING,
   STATUS_UNSUBSCRIBED,
   STATUS_VERIFIED,
 } from "./contracts.ts";
+
+/**
+ * The opt-in column holding the Meta click cookie of a lead that allowed
+ * measurement. Unset = the value is never written or read: an unknown property
+ * would make Notion reject the whole write, and on `createPending` that would
+ * lose the signup itself.
+ */
+export function metaFbcColumn(
+  value: string | undefined = process.env.NOTION_META_FBC_PROPERTY,
+): string | undefined {
+  const column = value?.trim();
+  return column ? column : undefined;
+}
+
+/** `fb.1.<ms>.<fbclid>` — anything else is not stored. */
+export function isMetaFbc(value: unknown): value is string {
+  return (
+    typeof value === "string" && /^fb\.[0-9]\.[0-9]{10,16}\.[A-Za-z0-9_.-]{8,500}$/.test(value)
+  );
+}
 
 const NOTION_VERSION = "2022-06-28";
 const NOTION_TIMEOUT_MS = 10_000;
@@ -207,6 +230,9 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
   const welcomeAt = readDate(properties[FIELD_WELCOME_EMAIL]);
   const reminder = readText(properties[FIELD_VERIFICATION_REMINDER]);
   const landingPath = readText(properties[FIELD_LANDING_PATH]);
+  const measurementConsent = readText(properties[FIELD_MEASUREMENT_CONSENT]);
+  const fbcColumn = metaFbcColumn();
+  const metaFbc = fbcColumn ? readText(properties[fbcColumn]) : "";
 
   return {
     pageId,
@@ -233,6 +259,8 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     ...(welcomeAt ? { welcomeAt } : {}),
     ...(reminder ? { reminder } : {}),
     ...(landingPath ? { landingPath } : {}),
+    ...(measurementConsent ? { measurementConsent } : {}),
+    ...(isMetaFbc(metaFbc) ? { metaFbc } : {}),
   };
 }
 
@@ -331,6 +359,9 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
             [FIELD_LEAD_ID]: textProp(input.leadId),
             [FIELD_VERIFICATION_EXPIRES]: { date: { start: input.expiresAt } },
             [FIELD_VERIFICATION_SENDS]: { number: 1 },
+            ...(input.metaFbc && isMetaFbc(input.metaFbc) && metaFbcColumn()
+              ? { [metaFbcColumn() as string]: textProp(input.metaFbc) }
+              : {}),
           },
         }),
       );
@@ -369,6 +400,18 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
           [FIELD_EMAIL_VERIFIED]: { checkbox: true },
           [FIELD_VERIFIED_AT]: { date: { start: input.verifiedAt } },
           [FIELD_META_EVENT_ID]: textProp(input.metaEventId),
+        },
+      });
+    },
+
+    async recordMeasurementGrant(pageId: string, input: MeasurementGrantInput) {
+      const column = metaFbcColumn();
+      await request("PATCH", `pages/${pageId}`, {
+        properties: {
+          [FIELD_MEASUREMENT_CONSENT]: textProp(MEASUREMENT_CONSENT_GRANTED),
+          ...(column && input.metaFbc && isMetaFbc(input.metaFbc)
+            ? { [column]: textProp(input.metaFbc) }
+            : {}),
         },
       });
     },

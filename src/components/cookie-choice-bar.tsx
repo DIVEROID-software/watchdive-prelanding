@@ -12,6 +12,7 @@ import {
 } from "@/lib/metaPixel";
 import { browserConsentRegion, resolveGeoCountry } from "@/lib/consentRegion";
 import { cookieBarShouldYield } from "@/lib/cookieBarPlacement";
+import { MEASUREMENT_CHOICE_EVENT } from "@/components/measurement-ask";
 
 type ChoiceCopy = {
   /** One short line of text; Privacy and the two choices share the row below. */
@@ -25,63 +26,63 @@ type ChoiceCopy = {
 
 const COPY: Record<Locale, ChoiceCopy> = {
   en: {
-    body: "We use cookies to measure this page.",
+    body: "Allow cookies so we know which ads find divers? Optional.",
     allow: "Allow",
     decline: "Not now",
     privacy: "Privacy",
     settings: "Cookie settings",
   },
   ko: {
-    body: "페이지 측정을 위해 쿠키를 사용해요.",
+    body: "어떤 광고가 다이버를 데려오는지 알 수 있게 쿠키를 허용할까요? 선택이에요.",
     allow: "허용",
     decline: "나중에",
     privacy: "개인정보",
     settings: "쿠키 설정",
   },
   "zh-CN": {
-    body: "我们用 Cookie 统计本页访问。",
+    body: "允许 Cookie，让我们知道哪些广告找到了潜水员？可选。",
     allow: "允许",
     decline: "暂时不要",
     privacy: "隐私",
     settings: "Cookie 设置",
   },
   "zh-TW": {
-    body: "我們用 Cookie 統計本頁造訪。",
+    body: "允許 Cookie，讓我們知道哪些廣告找到了潛水員？可選。",
     allow: "允許",
     decline: "暫時不要",
     privacy: "隱私",
     settings: "Cookie 設定",
   },
   ja: {
-    body: "ページ計測にクッキーを使います。",
+    body: "どの広告がダイバーに届いたか分かるよう、クッキーを許可しますか？任意です。",
     allow: "許可する",
     decline: "今はしない",
     privacy: "プライバシー",
     settings: "クッキー設定",
   },
   es: {
-    body: "Usamos cookies para medir esta página.",
+    body: "¿Permites cookies para saber qué anuncios encuentran buceadores? Es opcional.",
     allow: "Permitir",
     decline: "Ahora no",
     privacy: "Privacidad",
     settings: "Cookies",
   },
   fr: {
-    body: "Nous utilisons des cookies de mesure.",
+    body: "Autoriser les cookies pour savoir quelles annonces trouvent des plongeurs ? Facultatif.",
     allow: "Autoriser",
     decline: "Pas maintenant",
     privacy: "Confidentialité",
     settings: "Cookies",
   },
   de: {
-    body: "Wir nutzen Cookies zur Messung.",
+    body: "Cookies erlauben, damit wir wissen, welche Anzeigen Taucher finden? Freiwillig.",
     allow: "Erlauben",
     decline: "Jetzt nicht",
     privacy: "Datenschutz",
     settings: "Cookie-Einstellungen",
   },
   "pt-BR": {
-    body: "Usamos cookies para medir esta página.",
+    body: "Permitir cookies para sabermos quais anúncios encontram mergulhadores? É opcional.",
     allow: "Permitir",
     decline: "Agora não",
     privacy: "Privacidade",
@@ -122,7 +123,10 @@ export function CookieChoiceBar() {
   useEffect(() => {
     let alive = true;
     const reopen = () => setOpen(true);
+    // Answered on the inbox card or the confirmation page: nothing left to ask.
+    const answered = () => setOpen(false);
     window.addEventListener(OPEN_EVENT, reopen);
+    window.addEventListener(MEASUREMENT_CHOICE_EVENT, answered);
     // The server hands down the country (`wd_geo`); outside EU/EEA/UK/CH the
     // tags start by default and no bar is shown. Inside it, or with an unknown
     // country, the bar asks once. GPC is an opt-out already: never ask.
@@ -137,6 +141,7 @@ export function CookieChoiceBar() {
     return () => {
       alive = false;
       window.removeEventListener(OPEN_EVENT, reopen);
+      window.removeEventListener(MEASUREMENT_CHOICE_EVENT, answered);
     };
   }, []);
 
@@ -168,7 +173,11 @@ export function CookieChoiceBar() {
       const focused = document.activeElement;
       setYielding(
         cookieBarShouldYield({
-          forms: [...document.querySelectorAll("form")].map((form) => form.getBoundingClientRect()),
+          // The inline measurement question counts as a form: the bar asks the
+          // same thing, and must not sit on that card's own two buttons.
+          forms: [...document.querySelectorAll("form, [data-measurement-ask]")].map((form) =>
+            form.getBoundingClientRect(),
+          ),
           viewportHeight: window.innerHeight,
           scrollY: window.scrollY,
           editing: focused instanceof HTMLElement && !!focused.closest("form"),

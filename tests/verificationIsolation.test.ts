@@ -58,18 +58,36 @@ test("the route gate isolates /verify in every supported locale", () => {
   assert.equal(allowsThirdPartyScripts("/terms"), true);
 });
 
-test("the verify surface imports no analytics, pixel or widget", () => {
+test("the verify surface imports no analytics or widget", () => {
   for (const path of VERIFY_CLIENT_SOURCES) {
     const source = read(path);
-    for (const forbidden of [
-      "@vercel/analytics",
-      "metaPixel",
-      "widget.js",
-      "connect.facebook.net",
-    ]) {
+    for (const forbidden of ["@vercel/analytics", "widget.js", "connect.facebook.net"]) {
       assert.ok(!source.includes(forbidden), `${path} imports ${forbidden}`);
     }
   }
+});
+
+// 2026-10-08: the confirmation page is where most people land after confirming
+// (their mail app, not the tab that signed up), so the Meta pixel may start
+// here — but only from the two post-confirmation paths, never on load. Both run
+// after the fragment holding the token has been stripped, because `confirm`
+// itself is only ever called after `history.replaceState`.
+test("the verify page starts the pixel only after a confirmation, never on load", () => {
+  const source = read("src/routes/verify.tsx");
+  const starts = source.split("initMetaPixel()").length - 1;
+  assert.equal(starts, 2, "initMetaPixel must be called from exactly two places");
+  const fire = source.indexOf("const fireBrowserLead");
+  const grant = source.indexOf("const grantMeasurement");
+  assert.ok(fire > 0 && grant > fire, "the pixel starts only inside the post-confirmation helpers");
+  const firstStart = source.indexOf("initMetaPixel()");
+  assert.ok(firstStart > fire, "no pixel start before the helpers are defined");
+  const strip = source.indexOf("window.history.replaceState");
+  const firstConfirmCall = source.indexOf("void confirm()");
+  assert.ok(strip > 0 && firstConfirmCall > strip, "the token is stripped before any confirmation");
+  assert.ok(
+    source.includes('result.status === "verified" || result.status === "already_verified"'),
+    "the pixel paths hang off a successful confirmation",
+  );
 });
 
 test("the verify surface emits no external script or frame URL of its own", () => {

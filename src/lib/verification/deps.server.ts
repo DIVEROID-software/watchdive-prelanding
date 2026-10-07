@@ -2,7 +2,11 @@
 //
 // Named `.server.ts` and imported solely from server functions, so the Resend
 // and Notion credentials have no path into a client bundle.
-import { sendMetaCrmQualifiedLead, sendMetaEmailVerified } from "@/lib/api/metaCapi";
+import {
+  deliverMetaLead,
+  sendMetaCrmQualifiedLead,
+  sendMetaEmailVerified,
+} from "@/lib/api/metaCapi";
 import type { PollResponse } from "./contracts.ts";
 import { createDeliveryAlerter, createSlackPoster } from "./deliveryAlert.ts";
 import { createNotionLeadStore, createNotionRequest } from "./notionLead.ts";
@@ -19,7 +23,18 @@ const pollGate = createPollGate<PollResponse>();
 // alert per instance per window instead of one per visitor.
 const deliveryAlerter = createDeliveryAlerter({ post: createSlackPoster() });
 
-export function createServiceDependencies(): ServiceDependencies {
+/**
+ * `request` is the calling request's own network address and user agent. They
+ * reach Meta only inside a conversion this request produced — a website event
+ * Meta cannot match without a user agent — and are never stored.
+ */
+export function createServiceDependencies(
+  request: { ip?: string; ua?: string } = {},
+): ServiceDependencies {
+  const client = {
+    ...(request.ip ? { ip: request.ip } : {}),
+    ...(request.ua ? { ua: request.ua } : {}),
+  };
   const databaseId = process.env.NOTION_WAITLIST_DB_ID;
   if (!databaseId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
   return {
@@ -28,11 +43,16 @@ export function createServiceDependencies(): ServiceDependencies {
     pollGate,
     onDeliveryFailure: (error) => deliveryAlerter.record(error),
     dispatchVerifiedLead: async (input) => {
-      await sendMetaEmailVerified(input);
+      await sendMetaEmailVerified({ ...input, ...client });
       // The CRM leg of the Conversion Leads integration rides the same gate:
       // it only fires for a consented, non-abusive confirmation, and its own
       // failure never un-confirms the lead.
       await sendMetaCrmQualifiedLead(input);
+    },
+    // The submit `Lead`, sent late when the person allows measurement on the
+    // inbox card. Same event id as the browser leg fired at that moment.
+    dispatchSubmitLead: async (input) => {
+      await deliverMetaLead({ ...input, ...client });
     },
   };
 }

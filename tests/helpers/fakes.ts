@@ -71,6 +71,8 @@ export class FakeLeadStore implements LeadStore {
       ...(record.welcomeAt ? { welcomeAt: record.welcomeAt } : {}),
       ...(record.reminder ? { reminder: record.reminder } : {}),
       ...(record.landingPath ? { landingPath: record.landingPath } : {}),
+      ...(record.measurementConsent ? { measurementConsent: record.measurementConsent } : {}),
+      ...(record.metaFbc ? { metaFbc: record.metaFbc } : {}),
     };
     this.rows.set(row.pageId, row);
     this.byCanonical.set(record.canonical, row.pageId);
@@ -102,6 +104,20 @@ export class FakeLeadStore implements LeadStore {
       leadId: input.leadId,
       expiresAt: input.expiresAt,
       sends: 1,
+      ...(input.metaFbc ? { metaFbc: input.metaFbc } : {}),
+    });
+  }
+
+  measurementGrants: { pageId: string; metaFbc?: string }[] = [];
+
+  async recordMeasurementGrant(pageId: string, input: { metaFbc?: string }): Promise<void> {
+    this.measurementGrants.push({ pageId, ...input });
+    const row = this.rows.get(pageId);
+    if (!row) return;
+    this.rows.set(pageId, {
+      ...row,
+      measurementConsent: "WD-AD-MEASUREMENT-CONSENT-V1:granted",
+      ...(input.metaFbc ? { metaFbc: input.metaFbc } : {}),
     });
   }
 

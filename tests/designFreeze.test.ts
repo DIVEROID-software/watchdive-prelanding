@@ -101,8 +101,12 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // submit made before hydration is held and sent once React is ready; on
   // Save-Data or slow connections videos wait for a tap. Both forms, #offer-form,
   // section order, consent and tracking calls are unchanged.
+  // 2026-10-08: the inbox card (after a submit) may show one optional
+  // measurement question to visitors in opt-in countries who have not answered
+  // the cookie bar — which on this page they almost never saw. Nothing else in
+  // the DOM changes; the form, sections and order are untouched.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "a2e4dcb8ae0dbc000d05ea2a0c2affc3193950973d6d37c593f077621a96b47b");
+  assert.equal(digest, "a7420ffd68016a9788634ef0b553a30ceadaa638d15051745260c7b026250b91");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
