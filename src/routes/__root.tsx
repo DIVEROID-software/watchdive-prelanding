@@ -12,6 +12,7 @@ import { type ReactNode, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
 import appCss from "../styles.css?url";
+import brutalCss from "../styles-brutal.css?url";
 import { NotFoundPage } from "@/components/not-found-page";
 import { Toaster } from "@/components/ui/sonner";
 import { homePath, localeFromPathname } from "@/lib/i18n/locale";
@@ -63,6 +64,13 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
+// Design variant switch, fixed at build time. Only an allowlisted name turns
+// a theme on; production builds leave VITE_DESIGN_THEME unset.
+const DESIGN_THEME =
+  (import.meta.env.VITE_DESIGN_THEME as string | undefined)?.trim() === "brutal"
+    ? "brutal"
+    : undefined;
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
@@ -80,6 +88,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      // The design variant, only when the build names it (see DESIGN_THEME).
+      ...(DESIGN_THEME === "brutal" ? [{ rel: "stylesheet", href: brutalCss }] : []),
     ],
   }),
   shellComponent: RootShell,
