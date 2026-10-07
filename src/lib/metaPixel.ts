@@ -88,6 +88,16 @@ export function setMetaMeasurementConsent(choice: MetaMeasurementConsent): void 
   }
 }
 
+/**
+ * Used only by the dormant LaunchOS consent control
+ * (`optional-measurement-control.tsx`), which no live route mounts.
+ */
+export function revokeMetaMeasurementRuntime(): void {
+  if (typeof window === "undefined") return;
+  if (window.fbq) window.fbq("consent", "revoke");
+  window.__watchDiveMetaPageViewSent = false;
+}
+
 export function initMetaPixel() {
   if (typeof window === "undefined" || !hasMetaMeasurementConsent()) return;
 
