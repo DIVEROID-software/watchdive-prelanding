@@ -15,7 +15,9 @@ import { cookieBarShouldYield } from "@/lib/cookieBarPlacement";
 import { MEASUREMENT_CHOICE_EVENT } from "@/components/measurement-ask";
 
 type ChoiceCopy = {
-  /** One short line of text; Privacy and the two choices share the row below. */
+  /** Banner heading. */
+  title: string;
+  /** What the cookies are for, and that the page works either way. */
   body: string;
   allow: string;
   decline: string;
@@ -26,66 +28,75 @@ type ChoiceCopy = {
 
 const COPY: Record<Locale, ChoiceCopy> = {
   en: {
-    body: "Allow cookies so we know which ads find divers? Optional.",
-    allow: "Allow",
-    decline: "Not now",
-    privacy: "Privacy",
+    title: "Your privacy choices",
+    body: "We'd like cookies to see which ads bring divers here, so a small team spends less reaching the next one. Optional: your signup works either way.",
+    allow: "Accept all",
+    decline: "Reject all",
+    privacy: "Privacy Policy",
     settings: "Cookie settings",
   },
   ko: {
-    body: "어떤 광고가 다이버를 데려오는지 알 수 있게 쿠키를 허용할까요? 선택이에요.",
-    allow: "허용",
-    decline: "나중에",
-    privacy: "개인정보",
+    title: "개인정보 선택",
+    body: "어떤 광고가 다이버를 데려오는지 알기 위해 쿠키를 쓰고 싶어요. 작은 팀이 다음 다이버를 만나는 비용을 줄일 수 있어요. 선택 사항이며, 가입은 그대로 유지돼요.",
+    allow: "모두 허용",
+    decline: "모두 거부",
+    privacy: "개인정보처리방침",
     settings: "쿠키 설정",
   },
   "zh-CN": {
-    body: "允许 Cookie，让我们知道哪些广告找到了潜水员？可选。",
-    allow: "允许",
-    decline: "暂时不要",
-    privacy: "隐私",
+    title: "您的隐私选择",
+    body: "我们希望用 Cookie 了解哪些广告带来了潜水员，让小团队用更少预算找到下一位。可选：不影响您的报名。",
+    allow: "全部接受",
+    decline: "全部拒绝",
+    privacy: "隐私政策",
     settings: "Cookie 设置",
   },
   "zh-TW": {
-    body: "允許 Cookie，讓我們知道哪些廣告找到了潛水員？可選。",
-    allow: "允許",
-    decline: "暫時不要",
-    privacy: "隱私",
+    title: "您的隱私選擇",
+    body: "我們希望用 Cookie 了解哪些廣告帶來了潛水員，讓小團隊用更少預算找到下一位。可選：不影響您的報名。",
+    allow: "全部接受",
+    decline: "全部拒絕",
+    privacy: "隱私權政策",
     settings: "Cookie 設定",
   },
   ja: {
-    body: "どの広告がダイバーに届いたか分かるよう、クッキーを許可しますか？任意です。",
-    allow: "許可する",
-    decline: "今はしない",
-    privacy: "プライバシー",
+    title: "プライバシーの選択",
+    body: "どの広告がダイバーに届いたかを知るためにクッキーを使わせてください。小さなチームの費用を抑えられます。任意です。登録はそのまま有効です。",
+    allow: "すべて許可",
+    decline: "すべて拒否",
+    privacy: "プライバシーポリシー",
     settings: "クッキー設定",
   },
   es: {
-    body: "¿Permites cookies para saber qué anuncios encuentran buceadores? Es opcional.",
-    allow: "Permitir",
-    decline: "Ahora no",
-    privacy: "Privacidad",
+    title: "Tus opciones de privacidad",
+    body: "Queremos usar cookies para saber qué anuncios traen buceadores, y así un equipo pequeño gasta menos. Es opcional: tu registro funciona igual.",
+    allow: "Aceptar todo",
+    decline: "Rechazar todo",
+    privacy: "Política de privacidad",
     settings: "Cookies",
   },
   fr: {
-    body: "Autoriser les cookies pour savoir quelles annonces trouvent des plongeurs ? Facultatif.",
-    allow: "Autoriser",
-    decline: "Pas maintenant",
-    privacy: "Confidentialité",
+    title: "Vos choix de confidentialité",
+    body: "Des cookies nous diraient quelles annonces amènent des plongeurs, pour qu'une petite équipe dépense moins. Facultatif : votre inscription reste valable.",
+    allow: "Tout accepter",
+    decline: "Tout refuser",
+    privacy: "Politique de confidentialité",
     settings: "Cookies",
   },
   de: {
-    body: "Cookies erlauben, damit wir wissen, welche Anzeigen Taucher finden? Freiwillig.",
-    allow: "Erlauben",
-    decline: "Jetzt nicht",
-    privacy: "Datenschutz",
+    title: "Deine Datenschutz-Einstellungen",
+    body: "Mit Cookies sehen wir, welche Anzeigen Taucher herbringen – so gibt ein kleines Team weniger aus. Freiwillig: deine Anmeldung gilt so oder so.",
+    allow: "Alle akzeptieren",
+    decline: "Alle ablehnen",
+    privacy: "Datenschutzerklärung",
     settings: "Cookie-Einstellungen",
   },
   "pt-BR": {
-    body: "Permitir cookies para sabermos quais anúncios encontram mergulhadores? É opcional.",
-    allow: "Permitir",
-    decline: "Agora não",
-    privacy: "Privacidade",
+    title: "Suas escolhas de privacidade",
+    body: "Com cookies sabemos quais anúncios trazem mergulhadores, e uma equipe pequena gasta menos. Opcional: seu cadastro vale de qualquer jeito.",
+    allow: "Aceitar tudo",
+    decline: "Rejeitar tudo",
+    privacy: "Política de privacidade",
     settings: "Cookies",
   },
 };
@@ -147,8 +158,8 @@ export function CookieChoiceBar() {
 
   // While this bar is open it owns the bottom edge. The space it takes up,
   // from its top edge to the bottom of the viewport, is published so page
-  // padding matches the bar, and the notify link stays hidden. It never covers
-  // the first screen and steps aside while a signup form is on screen (see
+  // padding matches the bar, and the notify link stays hidden. It steps aside
+  // only while someone types or the inline measurement question is on screen (see
   // `cookieBarShouldYield`): it stays laid out but is not painted or tappable.
   const [yielding, setYielding] = useState(false);
   useLayoutEffect(() => {
@@ -173,13 +184,12 @@ export function CookieChoiceBar() {
       const focused = document.activeElement;
       setYielding(
         cookieBarShouldYield({
-          // The inline measurement question counts as a form: the bar asks the
-          // same thing, and must not sit on that card's own two buttons.
-          forms: [...document.querySelectorAll("form, [data-measurement-ask]")].map((form) =>
-            form.getBoundingClientRect(),
+          // The inline measurement question asks the same thing; the banner
+          // must not sit on that card's own two buttons.
+          asks: [...document.querySelectorAll("[data-measurement-ask]")].map((ask) =>
+            ask.getBoundingClientRect(),
           ),
           viewportHeight: window.innerHeight,
-          scrollY: window.scrollY,
           editing: focused instanceof HTMLElement && !!focused.closest("form"),
           keyboardOpen: !!viewport && viewport.height < window.innerHeight * 0.75,
         }),
@@ -225,43 +235,56 @@ export function CookieChoiceBar() {
   }
 
   return (
-    // Phones: a full-width strip on the bottom edge. From `sm` up: a card in
-    // the notify link's bottom-right slot, beside the hero copy on a desktop
-    // first screen rather than across it.
+    // A full-width bottom sheet on every viewport, shown on arrival in opt-in
+    // countries. Reject all and Accept all are the same size and both plainly
+    // visible: refusing has to be as easy as accepting. Accept carries the
+    // page's primary button colour; that emphasis is the only difference.
     <div
       ref={barRef}
       aria-hidden={yielding || undefined}
-      className={`fixed inset-x-0 bottom-0 z-[10000] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-[23rem] sm:px-0 sm:pb-[env(safe-area-inset-bottom)] ${
+      className={`fixed inset-x-0 bottom-0 z-[10000] border-t border-white/15 bg-[#201748] text-white shadow-[0_-12px_40px_rgba(7,19,28,0.55)] ${
         yielding ? "invisible pointer-events-none" : ""
       }`}
     >
       <div
         role="dialog"
-        aria-label={copy.body}
-        className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-[#201748]/95 px-3 py-1.5 text-white shadow-lg sm:px-4 sm:py-3"
+        aria-labelledby="wd-privacy-title"
+        aria-describedby="wd-privacy-body"
+        className="mx-auto flex max-w-6xl flex-col gap-2.5 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:gap-3 sm:px-6 sm:pt-5 lg:flex-row lg:items-end lg:gap-10 lg:pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:pt-6"
       >
-        <p className="min-w-0 basis-full text-xs leading-snug text-[#EDE6FF] sm:text-sm">
-          {copy.body}
-        </p>
-        {/* On the action row, so its 44px tap target is a real box beside the
-            buttons instead of a hit area spilling over them from the text. */}
-        <a
-          href={privacyPath(locale)}
-          className="-ml-0.5 inline-flex min-h-11 min-w-11 items-center justify-center px-0.5 text-xs text-[#36A9E1] underline sm:text-sm"
-        >
-          {copy.privacy}
-        </a>
-        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <div className="min-w-0 lg:flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <h2
+              id="wd-privacy-title"
+              className="text-base font-semibold leading-tight tracking-tight text-white sm:text-xl"
+            >
+              {copy.title}
+            </h2>
+            <a
+              href={privacyPath(locale)}
+              className="-my-2 inline-flex min-h-11 shrink-0 items-center text-xs text-[#36A9E1] underline sm:text-sm"
+            >
+              {copy.privacy}
+            </a>
+          </div>
+          <p
+            id="wd-privacy-body"
+            className="mt-1 text-[0.8125rem] leading-snug text-[#EDE6FF] sm:text-[0.9375rem] sm:leading-relaxed"
+          >
+            {copy.body}
+          </p>
+        </div>
+        <div className="grid shrink-0 grid-cols-2 gap-2.5 lg:w-[26rem]">
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[#EDE6FF]/70 px-2.5 text-xs font-medium text-[#EDE6FF] sm:px-3 sm:text-sm"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/60 px-3 text-sm font-semibold text-white sm:text-[0.9375rem]"
             onClick={() => choose("denied")}
           >
             {copy.decline}
           </button>
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-[#3D2683] px-2.5 text-xs font-medium text-white sm:px-3 sm:text-sm"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#65ceee] bg-[#65ceee] px-3 text-sm font-semibold text-[#181238] sm:text-[0.9375rem]"
             onClick={() => choose("granted")}
           >
             {copy.allow}
