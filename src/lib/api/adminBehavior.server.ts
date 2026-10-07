@@ -1,10 +1,17 @@
 import { getCookie, getRequestHeader, setCookie } from "@tanstack/react-start/server";
 
-import { ADMIN_COOKIE, adminCookieMatches, adminPasswordsMatch, adminSessionToken } from "@/lib/adminAuth";
+import {
+  ADMIN_COOKIE,
+  adminCookieMatches,
+  adminPasswordsMatch,
+  adminSessionToken,
+} from "@/lib/adminAuth";
 import type { BehaviorReport, BehaviorRow } from "@/lib/adminBehaviorReport";
-import { createNotionRequest } from "@/lib/verification/notionLead";
+import { createBehaviorNotion } from "@/lib/api/behaviorNotion";
 
 export type { BehaviorReport, BehaviorRow };
+
+const behaviorNotion = createBehaviorNotion();
 
 function password(): string {
   return process.env.WATCHDIVE_ADMIN_PASSWORD?.trim() ?? "";
@@ -42,6 +49,14 @@ function richText(property: unknown): string {
     .slice(0, 500);
 }
 
+function titleText(property: unknown): string {
+  const title = (property as { title?: { plain_text?: string }[] } | undefined)?.title;
+  return (title ?? [])
+    .map((part) => part.plain_text ?? "")
+    .join("")
+    .slice(0, 80);
+}
+
 function numberValue(property: unknown): number {
   const value = (property as { number?: number | null } | undefined)?.number;
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
@@ -69,7 +84,8 @@ function clickNames(value: string): string[] {
 
 export async function loadBehaviorReport(): Promise<BehaviorReport> {
   const empty: BehaviorReport = {
-    configured: Boolean(process.env.NOTION_UX_DB_ID?.trim()),
+    configured: Boolean(process.env.NOTION_UX_DB_ID?.trim() && process.env.NOTION_API_KEY?.trim()),
+    readFailed: false,
     rows: [],
     sessions: 0,
     devices: [],
@@ -78,45 +94,56 @@ export async function loadBehaviorReport(): Promise<BehaviorReport> {
     meanScroll: 0,
     topClicks: [],
   };
-  const databaseId = process.env.NOTION_UX_DB_ID?.trim();
-  if (!databaseId) return empty;
-  try {
-    const page = await createNotionRequest()("POST", `databases/${databaseId}/query`, {
-      page_size: 50,
-      sorts: [{ timestamp: "created_time", direction: "descending" }],
+  if (!empty.configured) return empty;
+  // Failures are logged inside behaviorNotion as one `[page-behavior] read failed` line.
+  const page = await behaviorNotion.query({
+    page_size: 100,
+    sorts: [{ timestamp: "created_time", direction: "descending" }],
+  });
+  if (!page) return { ...empty, readFailed: true };
+  const results = (page.results as Array<Record<string, unknown>> | undefined) ?? [];
+  // Newest first, so the first row seen for a session is its latest summary.
+  const seen = new Set<string>();
+  const rows: BehaviorRow[] = [];
+  for (const result of results) {
+    const properties = (result.properties ?? {}) as Record<string, unknown>;
+    const session = titleText(properties.Name);
+    if (session) {
+      if (seen.has(session)) continue;
+      seen.add(session);
+    }
+    rows.push({
+      when: String(result.created_time ?? "")
+        .slice(0, 16)
+        .replace("T", " "),
+      locale: richText(properties.Locale),
+      device: richText(properties.Device),
+      country: richText(properties.Country),
+      timezone: richText(properties.Timezone),
+      durationSec: numberValue(properties.Duration),
+      scroll: numberValue(properties.Scroll),
+      viewport: richText(properties.Viewport),
+      referrer: richText(properties.Referrer),
+      campaign: richText(properties.Campaign),
+      sections: richText(properties.Sections),
+      clicks: richText(properties.Clicks),
     });
-    const results = (page.results as Array<Record<string, unknown>> | undefined) ?? [];
-    const rows: BehaviorRow[] = results.map((result) => {
-      const properties = (result.properties ?? {}) as Record<string, unknown>;
-      return {
-        when: String(result.created_time ?? "").slice(0, 16).replace("T", " "),
-        locale: richText(properties.Locale),
-        device: richText(properties.Device),
-        country: richText(properties.Country),
-        timezone: richText(properties.Timezone),
-        durationSec: numberValue(properties.Duration),
-        scroll: numberValue(properties.Scroll),
-        viewport: richText(properties.Viewport),
-        referrer: richText(properties.Referrer),
-        campaign: richText(properties.Campaign),
-        sections: richText(properties.Sections),
-        clicks: richText(properties.Clicks),
-      };
-    });
-    const sessions = rows.length;
-    const mean = (values: number[]) =>
-      values.length === 0 ? 0 : Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
-    return {
-      configured: true,
-      rows,
-      sessions,
-      devices: tally(rows.map((row) => row.device)),
-      countries: tally(rows.map((row) => row.country)),
-      meanDuration: mean(rows.map((row) => row.durationSec)),
-      meanScroll: mean(rows.map((row) => row.scroll)),
-      topClicks: tally(rows.flatMap((row) => clickNames(row.clicks))),
-    };
-  } catch {
-    return empty;
+    if (rows.length >= 50) break;
   }
+  const sessions = rows.length;
+  const mean = (values: number[]) =>
+    values.length === 0
+      ? 0
+      : Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+  return {
+    configured: true,
+    readFailed: false,
+    rows,
+    sessions,
+    devices: tally(rows.map((row) => row.device)),
+    countries: tally(rows.map((row) => row.country)),
+    meanDuration: mean(rows.map((row) => row.durationSec)),
+    meanScroll: mean(rows.map((row) => row.scroll)),
+    topClicks: tally(rows.flatMap((row) => clickNames(row.clicks))),
+  };
 }

@@ -110,7 +110,13 @@ function Report({ report }: { report: BehaviorReport }) {
     <div className="mt-8 space-y-8">
       {!report.configured ? (
         <p className="text-sm text-muted-foreground">
-          NOTION_UX_DB_ID 가 없어 아직 저장된 방문이 없습니다.
+          NOTION_UX_DB_ID 또는 Notion API 키가 없어 아직 저장된 방문이 없습니다.
+        </p>
+      ) : null}
+      {report.readFailed ? (
+        <p className="text-sm text-muted-foreground">
+          Notion 읽기에 실패했습니다. Vercel 런타임 로그에서 “[page-behavior] read failed” 줄을
+          확인하세요.
         </p>
       ) : null}
       <div className="grid gap-3 sm:grid-cols-4">

@@ -5,6 +5,7 @@ import type { BehaviorReport } from "@/lib/adminBehaviorReport";
 
 const emptyReport: BehaviorReport = {
   configured: false,
+  readFailed: false,
   rows: [],
   sessions: 0,
   devices: [],

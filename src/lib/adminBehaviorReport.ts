@@ -15,6 +15,8 @@ export type BehaviorRow = {
 
 export type BehaviorReport = {
   configured: boolean;
+  /** Configured, but Notion refused or did not answer the read. */
+  readFailed: boolean;
   rows: BehaviorRow[];
   sessions: number;
   devices: Array<{ name: string; count: number }>;
