@@ -2,7 +2,9 @@
 // client bundle: this module is only ever reached from a server function.
 //
 // Delivery is one transactional message to one recipient. It is never batched,
-// never a campaign, and carries no list state.
+// never a campaign, and carries no list state. The launch mails
+// (src/lib/launchMail) reuse `deliver` below, still one recipient per request,
+// but keep their own list state in Notion.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
 import { verificationTokenLocale, verificationUrl } from "./token.ts";
@@ -546,12 +548,15 @@ export function classifyDeliveryFailure(error: unknown): DeliveryFailureClass {
 // The service intentionally returns a generic response when delivery fails.
 // Log once after retries are exhausted so those failures remain observable.
 // Never log the payload, recipient, token, API key, or provider response body.
-async function deliver(
+//
+// Exported for the launch-mail job (src/lib/launchMail), which sends through
+// this same path: same retries, same idempotency handling, same silence.
+export async function deliver(
   config: ResendConfig,
   fetchImpl: typeof fetch,
   sleep: (ms: number) => Promise<void>,
   idempotencyKey: string,
-  operation: "verification" | "verification_reminder" | "welcome",
+  operation: "verification" | "verification_reminder" | "welcome" | "launch_mail",
   payload: Record<string, unknown>,
 ): Promise<void> {
   try {

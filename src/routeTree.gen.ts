@@ -20,6 +20,7 @@ import { Route as LocaleTermsRouteImport } from './routes/$locale.terms'
 import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
 import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
 import { Route as RCodeRouteImport } from './routes/r.$code'
+import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
 import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cron.verification-reminder'
 
@@ -78,6 +79,11 @@ const RCodeRoute = RCodeRouteImport.update({
   path: '/r/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
+  id: '/unsubscribe/$token',
+  path: '/unsubscribe/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleRCodeRoute = LocaleRCodeRouteImport.update({
   id: '/r/$code',
   path: '/r/$code',
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
   '/r/$code': typeof RCodeRoute
+  '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
   '/r/$code': typeof RCodeRoute
+  '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
   '/r/$code': typeof RCodeRoute
+  '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/$locale/verify'
     | '/admin/behavior'
     | '/r/$code'
+    | '/unsubscribe/$token'
     | '/$locale/'
     | '/$locale/r/$code'
     | '/api/cron/verification-reminder'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/$locale/verify'
     | '/admin/behavior'
     | '/r/$code'
+    | '/unsubscribe/$token'
     | '/$locale'
     | '/$locale/r/$code'
     | '/api/cron/verification-reminder'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/$locale/verify'
     | '/admin/behavior'
     | '/r/$code'
+    | '/unsubscribe/$token'
     | '/$locale/'
     | '/$locale/r/$code'
     | '/api/cron/verification-reminder'
@@ -190,6 +202,7 @@ export interface RootRouteChildren {
   VerifyRoute: typeof VerifyRoute
   AdminBehaviorRoute: typeof AdminBehaviorRoute
   RCodeRoute: typeof RCodeRoute
+  UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
 }
 
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/unsubscribe/$token': {
+      id: '/unsubscribe/$token'
+      path: '/unsubscribe/$token'
+      fullPath: '/unsubscribe/$token'
+      preLoaderRoute: typeof UnsubscribeTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/r/$code': {
       id: '/$locale/r/$code'
       path: '/r/$code'
@@ -316,6 +336,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyRoute: VerifyRoute,
   AdminBehaviorRoute: AdminBehaviorRoute,
   RCodeRoute: RCodeRoute,
+  UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
 }
 export const routeTree = rootRouteImport
