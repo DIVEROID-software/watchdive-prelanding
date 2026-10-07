@@ -41,8 +41,22 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     shareText:
       "Watch Dive is a DIVEROID sensor housing for the Apple Watch or Galaxy Watch I already wear. The first 100 Kickstarter backers get it for $149. Join with my link.",
   },
+  gallery: {
+    black: "Black",
+    white: "White",
+    blackAlt: "Watch Dive housing, black",
+    whiteAlt: "Watch Dive housing, white",
+    label: "Choose a color",
+  },
   inbox: {
-    title: "One more step. Confirm your email.",
+    stepLabel: "Step 2 of 2",
+    action1: "Open your email app",
+    action2: "Tap the button in the email",
+    requirement: "Confirm your email to complete signup and receive launch updates.",
+    help: "No email? Check Spam or Promotions. The link expires in 24 hours.",
+    countdown: "Resend in {seconds}s",
+
+    title: "Check your inbox to finish.",
     note: "Look for the subject “Confirm your Watch Dive waitlist email” and press Confirm my email. Check spam or promotions if it is not there within a minute. The link lasts 24 hours, and this page updates on its own.",
     noteSubject: "“Confirm your Watch Dive waitlist email”",
     noteButton: "Confirm my email",
@@ -67,17 +81,18 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     closed: "The pre-launch list is full. Watch Dive launches on Kickstarter in December.",
   },
   toasts: {
-    resent: "Sent again — check your inbox.",
+    resent: "Resend requested — check your inbox.",
     error: "Something went wrong. Please try again.",
   },
   form: {
+    confirmRequired: "Confirm your email to complete signup and receive launch updates.",
     emailPlaceholder: "you@email.com",
     phonePlaceholder: "Phone (optional) — for a launch-day text",
     saving: "Saving…",
     smsConsent:
       "Text me when the Watch Dive Kickstarter opens. Optional — your email signup works without it.",
     step1: "Enter your email",
-    step2: "Open the confirmation link",
+    step2: "Confirm via email",
     step3: "Get a reminder 1 day and 1 hour before",
   },
   heroProof: {
@@ -120,7 +135,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   value: {
     kicker: "Why Watch Dive",
     h2: "$149 for the first 100 backers.",
-    imageAlt: "Diver at the pool edge wearing the Watch Dive housing",
+    imageAlt: "Watch Dive worn on a wrist underwater",
     overlayKicker: "On the wrist",
     overlayText: "The housing and its sensor, on the smartwatch you already wear.",
     lead: "Keep the smartwatch. Add the housing. The dive ends up in the app.",
@@ -157,7 +172,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     step2Title: "The housing measures.",
     step2Body:
       "Pressure and water-temperature sensors send readings to the watch app over Bluetooth while you dive.",
-    step2Alt: "Freediver wearing Watch Dive at the pool edge",
+    step2Alt: "Watch Dive on a diver’s wrist in the pool",
     step3Title: "Sync at the surface.",
     step3Body: "The dive profile goes to the app. Read it in your logbook.",
     step3Alt: "Diver reviewing a dive log in the connected app poolside",
@@ -241,7 +256,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
       "Watch Dive is a dive aid. It does not replace training. Dive within your certification and your limits, follow standard safety procedures, and carry a backup dive computer.",
   },
   offer: {
-    imageAlt: "Watch Dive Kickstarter launch banner",
+    imageAlt: "Watch Dive housing at the pool edge",
     kicker: "First 100 backers · 50% off",
     headline: "$299 $149 — 50% off.",
     headlineStrike: "$299",
@@ -377,7 +392,8 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s3Item2: "send you a notification when Watch Dive launches on Kickstarter;",
     s3Item3: "share early-bird pricing and launch-related updates;",
     s3Item4: "protect the form and our email delivery service from abuse;",
-    s3Item5: "see which parts of the page are used, so we can improve it (after you allow measurement where Allow is required).",
+    s3Item5:
+      "see which parts of the page are used, so we can improve it (after you allow measurement where Allow is required).",
     s3Outro: "We will not use your information for unrelated purposes.",
     s4Title: "4. Legal basis",
     s4Body:

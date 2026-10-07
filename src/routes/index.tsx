@@ -12,6 +12,7 @@ import {
   getReferralCount,
   loadWaitlistCount,
 } from "@/lib/api/waitlist.functions";
+import { ProductGallery } from "@/components/product-gallery";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LaunchNotice } from "@/components/launch-notice";
 import { CookieSettingsLink } from "@/components/cookie-choice-bar";
@@ -32,7 +33,12 @@ import {
 } from "@/lib/metaPixel";
 import { getAttribution } from "@/lib/attribution";
 import { trackClarity } from "@/lib/clarity";
-import { trackGoogleFormStart, trackGoogleLead, trackGooglePhone, trackGoogleSubmit } from "@/lib/googleTag";
+import {
+  trackGoogleFormStart,
+  trackGoogleLead,
+  trackGooglePhone,
+  trackGoogleSubmit,
+} from "@/lib/googleTag";
 import { landingHead } from "@/lib/i18n/seo";
 import { privacyPath, termsPath } from "@/lib/i18n/locale";
 import {
@@ -41,12 +47,10 @@ import {
   useLocalizedBetaReviewBodies,
 } from "@/lib/i18n/use-current-locale";
 
-import heroBackground from "../assets/live/hero-background.webp";
-import heroSideImage from "../assets/live/watchdive-image10.webp";
-import whyImage from "../assets/live/watchdive-why-new.webp";
+import whyImage from "../assets/live/refresh/underwater-mobile-1000.webp";
 import step1Image from "../assets/live/watchdive-step1.webp";
-import step2Image from "../assets/live/watchdive-step2.webp";
-import syncImage from "../assets/live/watchdive-sync.webp";
+import step2Image from "../assets/live/refresh/wrist-pool-1000.webp";
+import syncImage from "../assets/live/refresh/sync-app-1000.webp";
 import app3_1 from "../assets/live/app3/app3-1.jpg";
 import app3_4 from "../assets/live/app3/app3-4.jpg";
 import app3_6 from "../assets/live/app3/app3-6.jpg";
@@ -64,7 +68,7 @@ import connectedAppVideo from "../assets/live/connected-app.mp4";
 import connectedAppPoster from "../assets/live/connected-app-poster.jpg";
 import functionsVideo from "../assets/live/watchdive-functions.mp4";
 import functionsPoster from "../assets/live/watchdive-functions-poster.jpg";
-import kickstarterImage from "../assets/live/kickstarter-crop.webp";
+import kickstarterImage from "../assets/live/refresh/poolside-1600.webp";
 import nvidiaInceptionBadge from "../assets/live/nvidia-inception.svg";
 import awsLogo from "../assets/live/aws-logo.png";
 import watchdiveClip from "../assets/live/watchdive-clip.mp4";
@@ -76,32 +80,27 @@ import samsungLogo from "../assets/live/samsung-logo.svg";
 import wordmarkWhite from "../assets/brand/diveroid-wordmark-white.png";
 // Smaller cuts of the same photographs (Lanczos, WebP q86), offered through
 // srcset so a phone fetches the width it paints instead of the 1600px master.
-import heroSide800 from "../assets/live/responsive/watchdive-image10-800.webp";
-import heroSide1200 from "../assets/live/responsive/watchdive-image10-1200.webp";
-import why800 from "../assets/live/responsive/watchdive-why-new-800.webp";
-import why1200 from "../assets/live/responsive/watchdive-why-new-1200.webp";
+import why800 from "../assets/live/refresh/underwater-mobile-640.webp";
+import why1200 from "../assets/live/refresh/underwater-1600.webp";
 import step1_800 from "../assets/live/responsive/watchdive-step1-800.webp";
 import step1_1200 from "../assets/live/responsive/watchdive-step1-1200.webp";
-import step2_800 from "../assets/live/responsive/watchdive-step2-800.webp";
-import step2_1200 from "../assets/live/responsive/watchdive-step2-1200.webp";
-import sync800 from "../assets/live/responsive/watchdive-sync-800.webp";
-import sync1200 from "../assets/live/responsive/watchdive-sync-1200.webp";
-import kickstarter800 from "../assets/live/responsive/kickstarter-crop-800.webp";
-import kickstarter1200 from "../assets/live/responsive/kickstarter-crop-1200.webp";
+import step2_800 from "../assets/live/refresh/wrist-pool-640.webp";
+import sync800 from "../assets/live/refresh/sync-app-640.webp";
+import kickstarter800 from "../assets/live/refresh/poolside-640.webp";
+import kickstarter1200 from "../assets/live/refresh/poolside-1000.webp";
 import samsungFeature800 from "../assets/live/responsive/samsung-feature-800.webp";
 import samsungFeature1200 from "../assets/live/responsive/samsung-feature-1200.webp";
 import housing800 from "../assets/live/responsive/housing-800.webp";
 import watchScreen400 from "../assets/live/responsive/watch-screen-400.webp";
 import watchdiveClip720 from "../assets/live/responsive/watchdive-clip-720.mp4";
 
-const heroSideSrcSet = `${heroSide800} 800w, ${heroSide1200} 1200w, ${heroSideImage} 1600w`;
-const whySrcSet = `${why800} 800w, ${why1200} 1200w, ${whyImage} 1600w`;
+const whySrcSet = `${why800} 640w, ${whyImage} 1000w`;
 const stepSrcSets = {
   step1: `${step1_800} 800w, ${step1_1200} 1200w, ${step1Image} 1600w`,
-  step2: `${step2_800} 800w, ${step2_1200} 1200w, ${step2Image} 1600w`,
-  sync: `${sync800} 800w, ${sync1200} 1200w, ${syncImage} 1600w`,
+  step2: `${step2_800} 640w, ${step2Image} 1000w`,
+  sync: `${sync800} 640w, ${syncImage} 1000w`,
 };
-const kickstarterSrcSet = `${kickstarter800} 800w, ${kickstarter1200} 1200w, ${kickstarterImage} 1600w`;
+const kickstarterSrcSet = `${kickstarter800} 640w, ${kickstarter1200} 1000w, ${kickstarterImage} 1600w`;
 const samsungFeatureSrcSet = `${samsungFeature800} 800w, ${samsungFeature1200} 1200w, ${samsungFeature} 1600w`;
 const housingSrcSet = `${housing800} 800w, ${housingImage} 1600w`;
 const watchScreenSrcSet = `${watchScreen400} 400w, ${watchScreen} 1440w`;
@@ -369,8 +368,7 @@ function StickyLaunchBanner() {
     const viewport = window.visualViewport;
     const update = () => {
       const focused = document.activeElement;
-      const editing = focused instanceof HTMLElement &&
-        !!focused.closest("form, #dc-win");
+      const editing = focused instanceof HTMLElement && !!focused.closest("form, #dc-win");
       const keyboardOpen = !!viewport && viewport.height < window.innerHeight * 0.75;
       const hide = visibleForms.size > 0 || editing || keyboardOpen;
       setHidden(hide);
@@ -604,75 +602,91 @@ function CheckInboxCard({
   resending: boolean;
 }) {
   const m = useFrozenLandingMessages();
-  // A resend offered instantly invites double-sends; the server enforces a
-  // sixty-second cooldown anyway, so the button appears when it would work.
-  const [canResend, setCanResend] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [remaining, setRemaining] = useState(60);
+  // Restart after every resend, not only the first submission. Use wall time
+  // so a backgrounded Instagram tab cannot leave a stale countdown behind.
   useEffect(() => {
-    const timer = setTimeout(() => setCanResend(true), 60_000);
-    return () => clearTimeout(timer);
+    const deadline = Date.now() + 60_000;
+    setRemaining(60);
+    const timer = window.setInterval(() => {
+      const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setRemaining(seconds);
+      if (seconds === 0) window.clearInterval(timer);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resending]);
+
+  useEffect(() => {
+    cardRef.current?.focus({ preventScroll: true });
+    cardRef.current?.scrollIntoView({ block: "nearest" });
   }, []);
 
   const webmail = webmailFor(email);
-  // Read after mount: the server has no user agent to inspect.
   const [inApp, setInApp] = useState(false);
   useEffect(() => setInApp(isInAppBrowser()), []);
-  const [noteBefore, noteSubject, noteMiddle, noteButton, noteAfter] = splitTwoHighlights(
-    m.inbox.note,
-    m.inbox.noteSubject,
-    m.inbox.noteButton,
-  );
 
   return (
     <div
-      role="status"
-      aria-live="polite"
-      className="rounded-2xl bg-white/10 backdrop-blur p-5 text-white"
+      ref={cardRef}
+      tabIndex={-1}
+      role="region"
+      aria-label={m.inbox.title}
+      className="wd-inbox-card"
     >
-      <div className="text-base font-semibold">{m.inbox.title}</div>
-      <p className="mt-1 text-sm text-white/80">{message}</p>
-      <p className="mt-3 text-xs text-white/60">
-        {noteBefore}
-        <span className="font-semibold text-white/85">{noteSubject}</span>
-        {noteMiddle}
-        <span className="font-semibold text-white/85">{noteButton}</span>
-        {noteAfter}
+      <p className="wd-inbox-step">{m.inbox.stepLabel}</p>
+      <h2 className="text-2xl font-semibold leading-tight">{m.inbox.title}</h2>
+      <p role="status" className="mt-3 text-sm leading-relaxed">
+        {m.inbox.requirement}
       </p>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {webmail && !inApp && (
-          <a
-            href={webmail.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center rounded-lg bg-white px-4 text-sm font-semibold text-[color:var(--color-deep-2)]"
-          >
-            {m.inbox[webmail.label]}
-          </a>
-        )}
+      <p className="wd-inbox-address" data-clarity-mask="true">
+        <bdi>{email.trim()}</bdi>
+      </p>
+      <ol className="wd-inbox-actions">
+        <li>
+          <span aria-hidden>1</span>
+          <div>
+            <strong>{m.inbox.action1}</strong>
+            <p>{m.inbox.noteSubject}</p>
+          </div>
+        </li>
+        <li>
+          <span aria-hidden>2</span>
+          <div>
+            <strong>{m.inbox.action2}</strong>
+            <p className="font-semibold">{m.inbox.noteButton}</p>
+          </div>
+        </li>
+      </ol>
+      {inApp && <p className="wd-inapp-hint">{m.inbox.inAppHint}</p>}
+      {webmail && !inApp && (
+        <a href={webmail.url} target="_blank" rel="noopener noreferrer" className="wd-open-mail">
+          {m.inbox[webmail.label]} <span aria-hidden>↗</span>
+        </a>
+      )}
+      <p className="mt-4 text-sm leading-relaxed text-white/85">{m.inbox.help}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
         <button
           type="button"
           onClick={onResend}
-          disabled={!canResend || resending}
-          className="inline-flex min-h-11 items-center rounded-lg border border-white/25 px-4 text-sm font-semibold text-white disabled:opacity-45"
+          disabled={remaining > 0 || resending}
+          className="wd-resend"
         >
-          {resending ? m.inbox.resendBusy : canResend ? m.inbox.resendIdle : m.inbox.resendWait}
+          {resending
+            ? m.inbox.resendBusy
+            : remaining > 0
+              ? formatMessage(m.inbox.countdown, { seconds: remaining })
+              : m.inbox.resendIdle}
         </button>
         <button
           type="button"
           onClick={onStartOver}
-          className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-white/65 underline underline-offset-2"
+          className="min-h-11 text-sm text-white underline underline-offset-4"
         >
           {m.inbox.wrongAddress}
         </button>
       </div>
-
-      {inApp && (
-        <p className="mt-3 text-xs leading-relaxed text-white/55">
-          {splitHighlightedCopy(m.inbox.inAppHint, m.inbox.inAppHintHighlight)[0]}
-          <span className="text-white/80">{m.inbox.inAppHintHighlight}</span>
-          {splitHighlightedCopy(m.inbox.inAppHint, m.inbox.inAppHintHighlight)[2]}
-        </p>
-      )}
+      <p className="mt-2 text-xs leading-relaxed text-white/65">{message}</p>
     </div>
   );
 }
@@ -872,6 +886,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // A typo is otherwise unrecoverable without a page reload.
           setPending(null);
           setHandle("");
+          requestAnimationFrame(() => document.getElementById(`${id}-email`)?.focus());
         }}
       />
     );
@@ -930,10 +945,19 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         />
       )}
 
+      <p id={`${id}-confirm-note`} className="text-sm leading-relaxed text-white/90">
+        {m.form.confirmRequired}
+      </p>
       <div className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <input
           id={`${id}-email`}
           type="email"
+          autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          aria-label={m.form.step1}
+          aria-describedby={`${id}-confirm-note`}
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -951,6 +975,8 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         {includePhone && (
           <input
             type="tel"
+            autoComplete="tel"
+            aria-label={m.form.phonePlaceholder}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder={m.form.phonePlaceholder}
@@ -960,7 +986,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         <button
           type="submit"
           disabled={loading}
-          className="order-3 inline-flex min-h-14 items-center justify-center rounded-xl border border-white/45 bg-[#3D2683] px-5 py-3 font-semibold text-[#F6FAFC] hover:brightness-110 active:scale-[0.99] transition sm:order-2"
+          className="wd-submit order-3 inline-flex min-h-14 items-center justify-center rounded-xl border border-white/45 bg-[#3D2683] px-5 py-3 font-semibold text-[#F6FAFC] hover:brightness-110 active:scale-[0.99] transition sm:order-2"
         >
           {loading ? m.form.saving : m.cta.label}
         </button>
@@ -979,21 +1005,24 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         </label>
       )}
 
-      <p className="mt-3 text-caption leading-relaxed text-[#F6FAFC]">
-        <span className="font-semibold">1.</span> {m.form.step1} <span>·</span>{" "}
-        <span className="font-semibold">2.</span> {m.form.step2} <span>·</span>{" "}
-        <span className="font-semibold">3.</span> {m.form.step3}
+      <p className="wd-signup-steps text-xs text-white/80">
+        <span>
+          <b>1</b> {m.form.step1}
+        </span>
+        <span aria-hidden>→</span>
+        <span>
+          <b>2</b> {m.form.step2}
+        </span>
       </p>
     </form>
   );
 }
 
-// A Meta click needs proof within the first screen and a half, not after the
-// app carousel. Three real cards, then a jump to the full set.
+// One published review supports the first signup; the full review set stays below.
 function HeroProof() {
   const m = useFrozenLandingMessages();
   const reviewBodies = useLocalizedBetaReviewBodies();
-  const picks = PUBLISHABLE_REVIEWS.slice(0, 3);
+  const picks = PUBLISHABLE_REVIEWS.slice(1, 2);
   return (
     <div className="max-w-xl">
       <div className="flex flex-col gap-5">
@@ -1002,9 +1031,7 @@ function HeroProof() {
             key={review.id}
             className="border-t border-white/15 pt-4 first:border-t-0 first:pt-0"
           >
-            <span className="text-caption text-[#36A9E1]">
-              {"★".repeat(review.rating)}
-            </span>
+            <span className="text-caption text-[#36A9E1]">{"★".repeat(review.rating)}</span>
             <blockquote className="mt-1.5 text-body leading-relaxed text-[#F6FAFC]">
               {betaReviewBody(review, reviewBodies)}
             </blockquote>
@@ -1029,216 +1056,56 @@ function HeroProof() {
 
 function Hero() {
   const m = useFrozenLandingMessages();
-  const [h1Before, h1Highlight, h1After] = splitHighlightedCopy(m.hero.h1, m.hero.h1Highlight);
-  const [subBefore, subDepth, subAfter] = splitHighlightedCopy(m.hero.sub, m.hero.stat1Label);
-  const [priceBefore, price, priceAfter] = splitHighlightedCopy(m.hero.priceLine, m.hero.nowPrice);
+  const [before, highlight, after] = splitHighlightedCopy(m.hero.h1, m.hero.h1Highlight);
   return (
-    <header className="relative overflow-hidden bg-[#201748] text-white">
-      {/* The reef is the hero's atmosphere. The scrim keeps the type on violet
-          and feathers out, so the photograph does not end in a hard edge.
-          The wearing shot is the framed photo, on this first screen. */}
-      <SectionImage
-        src={heroBackground}
-        alt={m.hero.backgroundAlt}
-        priority
-        className="wd-hero-photo"
-      />
-      <div className="wd-hero-scrim" aria-hidden />
-
-      <div className="relative z-10">
-        <LaunchBanner />
-      </div>
-      <div className="relative z-10 mx-auto grid max-w-6xl gap-8 px-5 pb-16 pt-4 sm:pt-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.95fr)] lg:items-start lg:gap-14 lg:pt-14">
-        <div className="flex flex-col gap-5 lg:gap-7 lg:py-10">
-          {/* Phone order (below lg) puts the ask in the first screen: headline,
-              price, then the email field and the $149 button, and only then the
-              product photo. Desktop keeps the source order below. */}
-          <div className="space-y-5 max-lg:-order-3">
-            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-[#3D2683] px-3 py-1 text-caption text-[#F6FAFC]">
-              <span className="size-1.5 shrink-0 rounded-full bg-[#36A9E1]" aria-hidden />
-              {m.hero.badge}
-            </p>
-            <h1 className="max-w-3xl text-display">
-              {h1Before}
-              <span className="text-[#36A9E1]">{h1Highlight}</span>
-              {h1After}
-            </h1>
-          </div>
-
-          <div className="space-y-5">
-            {/* The product is the whole idea. Desktop shows it in the right-hand
-                column; on a phone that column sits below everything, so a shorter
-                crop goes here, right after the form. One frame, no inner plate. */}
-            <div className="wd-hero-frame overflow-hidden rounded-[1.5rem] lg:hidden">
-              <SectionImage
-                src={heroSideImage}
-                srcSet={heroSideSrcSet}
-                sizes="(min-width: 1024px) 520px, calc(100vw - 40px)"
-                alt={m.hero.sideImageAlt}
-                priority
-                fetchPriority="high"
-                className="wd-hero-shot aspect-[4/3] max-h-[34svh] w-full object-cover"
-              />
+    <header className="wd-hero-new text-white">
+      <LaunchBanner />
+      <div className="wd-hero-layout mx-auto max-w-6xl px-5">
+        <div className="wd-hero-heading">
+          <h1 className="text-display">
+            {before}
+            <span className="text-[#65ceee]">{highlight}</span>
+            {after}
+          </h1>
+        </div>
+        <div className="wd-hero-media">
+          <ProductGallery />
+        </div>
+        <div className="wd-hero-signup">
+          <p className="text-body text-[#F6FAFC]">{m.hero.sub}</p>
+          <div className="wd-hero-price">
+            <span className="text-white/65 line-through">{m.hero.wasPrice}</span>
+            <span className="text-subhead">{m.hero.nowPrice}</span>
+            <div>
+              <span className="text-sm font-semibold text-[#65ceee]">{m.hero.offBadge}</span>
+              <p className="text-xs text-white/85">{m.hero.offNote}</p>
             </div>
-
-            <p className="max-w-xl text-body text-[#F6FAFC]">
-              {subBefore}
-              <span className="whitespace-nowrap">{subDepth}</span>
-              {subAfter}
-            </p>
-
-            <p className="max-w-xl text-body text-[#F6FAFC]">
-              {priceBefore}
-              <span className="font-medium text-white">{price}</span>
-              {priceAfter}
-            </p>
           </div>
-
-          <div className="grid max-w-xl gap-y-5">
-            {[
-              {
-                label: m.hero.stat1Label,
-                desc: m.hero.stat1Desc,
-                customIcon: null,
-                // real App 3.0 Max Depth icon (ic_l_MaxDepth) — water surface + limit line + descent arrow
-                icon: (
-                  <>
-                    <path
-                      d="M21 3L20.2265 3.77346C19.5228 4.47724 18.4086 4.55643 17.6123 3.95925L16.3877 3.04075C15.5914 2.44357 14.4772 2.52276 13.7735 3.22654L13.4142 3.58579C12.6332 4.36684 11.3668 4.36683 10.5858 3.58579L10.2265 3.22654C9.52276 2.52276 8.40857 2.44357 7.61233 3.04075L6.38767 3.95925C5.59143 4.55643 4.47724 4.47724 3.77346 3.77346L3 3"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                    />
-                    <path d="M3 21H21" strokeWidth="1.6" />
-                    <path d="M9 15L12 18L15 15" strokeWidth="1.6" strokeLinejoin="round" />
-                    <path d="M12 7.5V17" strokeWidth="1.6" strokeLinecap="square" />
-                  </>
-                ),
-              },
-              {
-                label: m.hero.stat2Label,
-                desc: m.hero.stat2Desc,
-                // real App 3.0 mode icons (scuba diver + freediver), tinted cyan to match
-                customIcon: (
-                  <span className="flex size-9 shrink-0 items-center justify-center gap-0.5 rounded-lg bg-[color:var(--color-cyan-glow)]/15 text-[color:var(--color-cyan-glow)]">
-                    <AppIcon svg={scubaFigureIcon} className="size-[15px]" />
-                    <AppIcon svg={freeFigureIcon} className="size-[15px]" />
-                  </span>
-                ),
-                icon: null,
-              },
-              {
-                label: m.hero.stat3Label,
-                desc: m.hero.stat3Desc,
-                customIcon: null,
-                icon: (
-                  <>
-                    <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
-                    <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
-                  </>
-                ),
-              },
-            ].map((item, index) => (
-              <div
-                key={item.label}
-                className={`flex items-start gap-3${index === 2 ? " wd-stat-last" : ""}`}
-              >
-                {item.customIcon ?? (
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--color-cyan-glow)]/15 text-[color:var(--color-cyan-glow)]">
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      {item.icon}
-                    </svg>
-                  </span>
-                )}
-                <div className="flex h-full min-w-0 flex-col gap-1">
-                  <span className="text-lead text-white">{item.label}</span>
-                  <span className="mt-auto text-body text-[#F6FAFC]">{item.desc}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 max-lg:-order-2">
-            <span className="text-body text-[#F6FAFC]/75 line-through">{m.hero.wasPrice}</span>
-            <span className="text-subhead text-white">{m.hero.nowPrice}</span>
-            <span className="rounded-full bg-[#36A9E1] px-4 py-1.5 text-caption uppercase text-[#201748]">
-              {m.hero.offBadge}
-            </span>
-            <span className="text-body text-[#F6FAFC]">{m.hero.offNote}</span>
-          </div>
-
-          <ReferralWelcome />
-
-          <div className="max-w-xl space-y-6">
+          <EmailForm id="hero" />
+          <div className="mt-5">
             <LaunchNotice />
             <WaitlistProgress />
           </div>
-
-          <div className="max-w-xl max-lg:-order-1">
-            <EmailForm id="hero" />
-          </div>
-
-          <HeroProof />
-
-          <div className="flex max-w-xl flex-wrap items-center gap-x-4 gap-y-2 text-body leading-relaxed text-[#F6FAFC]">
-            <span>{m.hero.trust1}</span>
-            <span className="h-1 w-1 rounded-full bg-white/35" />
-            <span>{m.hero.trust2}</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            <div className="flex items-center gap-2.5">
-              <span className="text-caption uppercase text-[#F6FAFC]">
-                {m.hero.backedBy}
-              </span>
-              <span className="inline-flex h-8 items-center rounded-lg bg-white px-2.5 shadow-sm">
-                <img src={nvidiaInceptionBadge} alt={m.hero.nvidiaAlt} className="h-4 w-auto" />
-              </span>
-              <span className="inline-flex h-8 items-center rounded-lg bg-white px-2.5 shadow-sm">
-                <img src={awsLogo} alt={m.hero.awsAlt} className="h-5 w-auto" />
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-caption uppercase text-[#F6FAFC]">
-                {m.hero.featuredBy}
-              </span>
-              <span className="inline-flex h-8 items-center rounded-lg bg-white px-3 shadow-sm">
-                <img src={samsungLogo} alt={m.hero.samsungAlt} className="h-3.5 w-auto" />
-              </span>
-            </div>
-          </div>
+          <ReferralWelcome />
         </div>
-
-        <div className="relative hidden lg:block">
-          <div className="relative overflow-hidden rounded-[1.5rem]">
-            <SectionImage
-              src={heroSideImage}
-              srcSet={heroSideSrcSet}
-              sizes="(min-width: 1024px) 520px, calc(100vw - 40px)"
-              alt={m.hero.sideImageAlt}
-              priority
-              fetchPriority="high"
-              className="aspect-[5/6] w-full object-cover"
-            />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#201748] via-[#201748]/88 to-transparent px-6 pb-6 pt-16">
-              <p className="text-caption uppercase text-[#F6FAFC]/55">{m.hero.cardKicker}</p>
-              <p className="mt-1 text-lead text-white/90">{m.hero.cardHeadline}</p>
-              <p className="mt-3 text-caption uppercase text-[#F6FAFC]/55">{m.hero.promiseKicker}</p>
-              <p className="mt-0.5 text-caption text-[#F6FAFC]/75">{m.hero.promiseText}</p>
-              <p className="mt-4 flex items-baseline gap-2">
-                <span className="text-caption uppercase text-[#F6FAFC]/55">{m.hero.cardFrom}</span>
-                <span className="text-title text-[#36A9E1]">{m.hero.cardPrice}</span>
+        <div className="wd-hero-proof">
+          <div className="wd-product-facts">
+            <div>
+              <AppIcon svg={maxDepthIcon} className="size-7" />
+              <p>
+                {m.hero.stat1Label}
+                <small>{m.hero.stat1Desc}</small>
+              </p>
+            </div>
+            <div>
+              <AppIcon svg={scubaFigureIcon} className="size-7" />
+              <p>
+                {m.hero.stat2Label}
+                <small>{m.hero.stat2Desc}</small>
               </p>
             </div>
           </div>
+          <HeroProof />
         </div>
       </div>
     </header>
@@ -1249,113 +1116,110 @@ function ValueSection() {
   const m = useFrozenLandingMessages();
   return (
     <section>
-      <div aria-hidden className="h-20 bg-gradient-to-b from-[#201748] to-background sm:h-28" />
+      <div aria-hidden className="h-10 bg-gradient-to-b from-[#201748] to-background sm:h-20" />
       <div className="mx-auto max-w-6xl px-5 pb-20 pt-2 sm:pb-28">
-      <div className="lg:hidden">
-        <p className="mb-4 text-caption uppercase text-primary">
-          {m.value.kicker}
-        </p>
-        <h2 className="text-title">{m.value.h2}</h2>
-      </div>
-      <div className="mt-8 grid gap-10 lg:mt-0 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-center">
-        <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
-          <SectionImage
-            src={whyImage}
-            srcSet={whySrcSet}
-            sizes="(min-width: 1024px) 520px, calc(100vw - 40px)"
-            alt={m.value.imageAlt}
-            className="aspect-[4/5] w-full object-cover"
-          />
-          <div className="absolute inset-x-5 bottom-5 rounded-2xl border border-white/15 bg-[color:var(--color-deep-2)]/82 p-4 text-white backdrop-blur-md">
-            <div className="text-caption uppercase text-[#F6FAFC]">
-              {m.value.overlayKicker}
+        <div className="lg:hidden">
+          <p className="mb-4 text-caption uppercase text-primary">{m.value.kicker}</p>
+          <h2 className="text-title">{m.value.h2}</h2>
+        </div>
+        <div className="mt-8 grid gap-10 lg:mt-0 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-center">
+          <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
+            <picture>
+              <source media="(min-width: 1024px)" srcSet={why1200} />
+              <SectionImage
+                src={whyImage}
+                srcSet={whySrcSet}
+                sizes="(min-width: 1024px) 520px, calc(100vw - 40px)"
+                alt={m.value.imageAlt}
+                className="aspect-[4/5] w-full object-cover lg:aspect-square"
+              />
+            </picture>
+            <div className="absolute inset-x-5 bottom-5 rounded-2xl border border-white/15 bg-[color:var(--color-deep-2)]/82 p-4 text-white backdrop-blur-md">
+              <div className="text-caption uppercase text-[#F6FAFC]">{m.value.overlayKicker}</div>
+              <div className="mt-2 text-lead">{m.value.overlayText}</div>
             </div>
-            <div className="mt-2 text-lead">{m.value.overlayText}</div>
           </div>
-        </div>
 
-        <div>
-          <div className="hidden lg:block">
-            <p className="mb-4 text-caption uppercase text-primary">
-              {m.value.kicker}
-            </p>
-            <h2 className="text-title">{m.value.h2}</h2>
-          </div>
-          <p className="mt-6 text-body text-muted-foreground">{m.value.lead}</p>
+          <div>
+            <div className="hidden lg:block">
+              <p className="mb-4 text-caption uppercase text-primary">{m.value.kicker}</p>
+              <h2 className="text-title">{m.value.h2}</h2>
+            </div>
+            <p className="mt-6 text-body text-muted-foreground">{m.value.lead}</p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {[
-              {
-                title: m.value.card1Title,
-                copy: m.value.card1Copy,
-                icon: (
-                  <>
-                    <circle cx="12" cy="12" r="6" />
-                    <polyline points="12 10 12 12 13 13" />
-                    <path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 4.05" />
-                    <path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05" />
-                  </>
-                ),
-              },
-              {
-                title: m.value.card2Title,
-                copy: m.value.card2Copy,
-                icon: (
-                  <>
-                    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
-                    <path d="m9 12 2 2 4-4" />
-                  </>
-                ),
-              },
-              {
-                title: m.value.card3Title,
-                copy: m.value.card3Copy,
-                icon: (
-                  <>
-                    <path d="m12 14 4-4" />
-                    <path d="M3.34 19a10 10 0 1 1 17.32 0" />
-                  </>
-                ),
-              },
-              {
-                title: m.value.card4Title,
-                copy: m.value.card4Copy,
-                icon: (
-                  <>
-                    <circle cx="18" cy="5" r="3" />
-                    <circle cx="6" cy="12" r="3" />
-                    <circle cx="18" cy="19" r="3" />
-                    <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
-                    <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />
-                  </>
-                ),
-              },
-            ].map(({ title, copy, icon }) => (
-              <div
-                key={title}
-                className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_28px_-10px_oklch(0.2_0.03_260/0.18)]"
-              >
-                <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <svg
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    {icon}
-                  </svg>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              {[
+                {
+                  title: m.value.card1Title,
+                  copy: m.value.card1Copy,
+                  icon: (
+                    <>
+                      <circle cx="12" cy="12" r="6" />
+                      <polyline points="12 10 12 12 13 13" />
+                      <path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 4.05" />
+                      <path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05" />
+                    </>
+                  ),
+                },
+                {
+                  title: m.value.card2Title,
+                  copy: m.value.card2Copy,
+                  icon: (
+                    <>
+                      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+                      <path d="m9 12 2 2 4-4" />
+                    </>
+                  ),
+                },
+                {
+                  title: m.value.card3Title,
+                  copy: m.value.card3Copy,
+                  icon: (
+                    <>
+                      <path d="m12 14 4-4" />
+                      <path d="M3.34 19a10 10 0 1 1 17.32 0" />
+                    </>
+                  ),
+                },
+                {
+                  title: m.value.card4Title,
+                  copy: m.value.card4Copy,
+                  icon: (
+                    <>
+                      <circle cx="18" cy="5" r="3" />
+                      <circle cx="6" cy="12" r="3" />
+                      <circle cx="18" cy="19" r="3" />
+                      <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
+                      <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />
+                    </>
+                  ),
+                },
+              ].map(({ title, copy, icon }) => (
+                <div
+                  key={title}
+                  className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_28px_-10px_oklch(0.2_0.03_260/0.18)]"
+                >
+                  <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      {icon}
+                    </svg>
+                  </div>
+                  <h3 className="mt-4 text-lead">{title}</h3>
+                  <p className="mt-1.5 text-body text-muted-foreground">{copy}</p>
                 </div>
-                <h3 className="mt-4 text-lead">{title}</h3>
-                <p className="mt-1.5 text-body text-muted-foreground">{copy}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </section>
   );
@@ -1402,9 +1266,7 @@ function FunctionsSection() {
     <section className="wd-section bg-[color:var(--color-deep-2)] text-white">
       <div className="mx-auto max-w-6xl">
         <div className="max-w-2xl">
-          <p className="mb-4 text-caption uppercase text-[#36A9E1]">
-            {m.functions.kicker}
-          </p>
+          <p className="mb-4 text-caption uppercase text-[#36A9E1]">{m.functions.kicker}</p>
           <h2 className="text-title">{m.functions.h2}</h2>
           <p className="mt-5 text-body text-[#F6FAFC]">{m.functions.sub}</p>
         </div>
@@ -1491,9 +1353,7 @@ function HowItWorks() {
   return (
     <section className="wd-section mx-auto max-w-5xl">
       <div className="text-center max-w-2xl mx-auto mb-14">
-        <p className="text-caption uppercase text-primary mb-4">
-          {m.how.kicker}
-        </p>
+        <p className="text-caption uppercase text-primary mb-4">{m.how.kicker}</p>
         <h2 className="text-title">{m.how.h2}</h2>
       </div>
       <div className="grid md:grid-cols-3 gap-5 items-stretch">
@@ -1511,14 +1371,12 @@ function HowItWorks() {
             <h3 className="mt-3 text-lead">{s.t}</h3>
             <p className="mt-2 text-body text-muted-foreground">{s.d}</p>
             <div className="mt-auto pt-5">
-              {/* Eager: a lazy 4/3 box paints as empty space until the card is near the viewport. */}
+              {/* The aspect-ratio reserves space while below-fold photographs load lazily. */}
               <SectionImage
                 src={s.image}
                 srcSet={s.srcSet}
                 sizes="(min-width: 768px) 340px, calc(112vw - 98px)"
                 alt={s.alt}
-                priority
-                fetchPriority="low"
                 className="block aspect-[4/3] w-full rounded-xl object-cover"
               />
             </div>
@@ -1707,9 +1565,7 @@ function AppEcosystem() {
     <section className="wd-section bg-gradient-to-b from-[color:var(--color-deep)] to-[color:var(--color-deep-2)] text-white">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="mb-4 text-caption uppercase text-[#36A9E1]">
-            {m.app.kicker}
-          </p>
+          <p className="mb-4 text-caption uppercase text-[#36A9E1]">{m.app.kicker}</p>
           <h2 className="text-title">{m.app.h2}</h2>
           <p className="mt-5 text-body text-[#F6FAFC]">
             {leadBefore}
@@ -1741,9 +1597,7 @@ function Compatibility() {
         </div>
 
         <div className="mt-12 max-w-3xl">
-          <p className="mb-4 text-caption uppercase text-primary">
-            {m.compat.kicker}
-          </p>
+          <p className="mb-4 text-caption uppercase text-primary">{m.compat.kicker}</p>
           <h2 className="text-title">{m.compat.h2}</h2>
           <p className="mt-5 text-body text-muted-foreground">{m.compat.lead}</p>
         </div>
@@ -1821,9 +1675,7 @@ function ActionCameras() {
   return (
     <section className="wd-section border-y border-border bg-card/60">
       <div className="mx-auto max-w-5xl text-center">
-        <p className="text-caption uppercase text-primary mb-4">
-          {m.cameras.kicker}
-        </p>
+        <p className="text-caption uppercase text-primary mb-4">{m.cameras.kicker}</p>
         <h3 className="text-heading">{m.cameras.h3}</h3>
         <p className="mt-4 text-body text-muted-foreground">{m.cameras.lead}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -1872,9 +1724,7 @@ function SafetySection() {
     <section className="wd-section border-y border-border bg-card/60">
       <div className="mx-auto max-w-5xl">
         <div className="max-w-3xl">
-          <p className="mb-4 text-caption uppercase text-primary">
-            {m.safety.kicker}
-          </p>
+          <p className="mb-4 text-caption uppercase text-primary">{m.safety.kicker}</p>
           <h2 className="text-title">{m.safety.h2}</h2>
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -1933,9 +1783,7 @@ function OfferSection() {
           alt={m.offer.imageAlt}
           className="mx-auto mb-8 aspect-video w-full max-w-3xl rounded-[2rem] border border-white/10 object-cover object-top shadow-[0_30px_90px_-35px_oklch(0.8_0.11_232/0.45)]"
         />
-        <p className="text-caption uppercase text-[#36A9E1] mb-4">
-          {m.offer.kicker}
-        </p>
+        <p className="text-caption uppercase text-[#36A9E1] mb-4">{m.offer.kicker}</p>
         <h2 className="text-title">
           {headlineBefore}
           <span className="text-white/45 line-through">{headlineStrike}</span>
@@ -2097,9 +1945,7 @@ function FAQ() {
   return (
     <section className="wd-section mx-auto max-w-3xl">
       <div className="text-center mb-10">
-        <p className="text-caption uppercase text-primary mb-4">
-          {m.faq.kicker}
-        </p>
+        <p className="text-caption uppercase text-primary mb-4">{m.faq.kicker}</p>
         <h2 className="text-title">{m.faq.h2}</h2>
       </div>
       <div className="divide-y divide-border rounded-2xl border border-border bg-card">

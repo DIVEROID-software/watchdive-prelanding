@@ -130,7 +130,10 @@ test("jitter spreads a crowd without ever collapsing to zero", () => {
 });
 
 test("the waiting tab pauses while hidden and never overlaps a request", () => {
-  const source = read("src/routes/index.tsx");
+  // The inbox's resend-label countdown is local UI, not verification polling.
+  // Scope these safeguards to the form that owns the network polling effect.
+  const page = read("src/routes/index.tsx");
+  const source = page.slice(page.indexOf("function EmailForm("), page.indexOf("function HeroProof("));
   assert.ok(!source.includes("setInterval"), "the tab still polls on a fixed interval");
   assert.ok(source.includes('document.visibilityState === "hidden"'));
   assert.ok(source.includes('document.addEventListener("visibilitychange", onVisibilityChange)'));

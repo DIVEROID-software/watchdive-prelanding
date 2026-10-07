@@ -536,47 +536,6 @@
   }
 }
 
-/* The reef is one photograph at every width. The scrim is heavy where the
-   type sits and opens across a long range, so the violet and the photo are
-   one field rather than a hard vertical cut. */
-.wd-hero-photo {
-  pointer-events: none;
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 100svh;
-  width: 100%;
-  object-fit: cover;
-  object-position: center 42%;
-}
-.wd-hero-scrim {
-  pointer-events: none;
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 100svh;
-  background: linear-gradient(
-    180deg,
-    rgba(32, 23, 72, 0.96) 0%,
-    rgba(32, 23, 72, 0.9) 28%,
-    rgba(32, 23, 72, 0.84) 62%,
-    rgba(32, 23, 72, 0.78) 100%
-  );
-}
-@media (min-width: 1024px) {
-  .wd-hero-photo {
-    object-position: 70% center;
-  }
-  .wd-hero-scrim {
-    background: linear-gradient(
-      102deg,
-      rgba(32, 23, 72, 0.96) 0%,
-      rgba(32, 23, 72, 0.9) 20%,
-      rgba(32, 23, 72, 0.7) 44%,
-      rgba(32, 23, 72, 0.46) 68%,
-      rgba(32, 23, 72, 0.28) 100%
-    );
-  }
-}
-
 /* Layout wrappers are not hit targets, so a control on empty hero space
    does not count as covering the whole section. Text, media, and controls
    still take the pointer. */
@@ -807,7 +766,6 @@ html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
   .wd-top { column-gap: 0.75rem; }
   .wd-top-mark { height: clamp(1rem, 5.5vw, 1.375rem); }
   .wd-top-line { white-space: normal; }
-  .wd-hero-shot { aspect-ratio: 4 / 3; max-height: none; }
   .wd-app-tabs { gap: 0.5rem; }
   .wd-app-tabs button { min-width: 0; padding: 0.75rem 0.375rem; }
   .wd-app-tabs .text-lead { font-size: 1rem; }
@@ -821,3 +779,84 @@ html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
   .wd-top-join { display: none; }
 }
 .wd-scroll form { scroll-margin-block: 1rem var(--wd-bar-space); }
+
+/* Owner-requested mobile content refresh, 2026-10-07. Product first, then
+   one explicit email-confirmation action. Existing section/tracking IDs stay. */
+.wd-hero-new { background: #201748; }
+.wd-hero-layout {
+  display: grid;
+  grid-template-areas: "heading" "media" "signup" "proof";
+  gap: 1.25rem;
+  padding-top: 1.5rem;
+  padding-bottom: 3rem;
+}
+.wd-hero-heading { grid-area: heading; }
+.wd-hero-media { grid-area: media; min-width: 0; }
+.wd-hero-signup { grid-area: signup; min-width: 0; }
+.wd-hero-heading h1 { max-width: 16ch; }
+.wd-hero-price { display: flex; align-items: center; gap: .75rem; margin: 1rem 0; }
+.wd-hero-proof { grid-area: proof; display: grid; gap: 1.5rem; border-top: 1px solid #ffffff25; padding-top: 1.5rem; margin-top: .5rem; }
+.wd-product-gallery { overflow: hidden; border-radius: 1.25rem; background: #fff; color: #201748; }
+.wd-product-stage { aspect-ratio: 4 / 3; overflow: hidden; }
+.wd-product-stage img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.wd-product-caption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .25rem .5rem; padding: 0 .875rem .5rem; }
+.wd-product-name { font-size: .625rem; font-weight: 700; letter-spacing: .12em; }
+.wd-color-options { display: flex; flex-wrap: wrap; gap: .25rem; }
+.wd-color-options button { min-height: 44px; display: flex; align-items: center; justify-content: center; gap: .35rem; padding: 0 .6rem; font-size: .75rem; border-radius: 999px; border: 1px solid transparent; }
+.wd-color-options button[aria-pressed="true"] { border-color: #20174855; background: #f1f0f6; }
+.wd-color-options button:focus-visible { outline: 2px solid #3d2683; outline-offset: 2px; }
+.wd-swatch { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #20174844; }
+.wd-swatch-black { background: #23252a; }
+.wd-swatch-white { background: #fff; }
+.wd-product-facts { display: grid; gap: 1rem; align-content: center; }
+.wd-product-facts > div { display: flex; gap: .875rem; align-items: center; }
+.wd-product-facts > div > span { color: #65ceee; flex-shrink: 0; }
+.wd-product-facts p { font-size: 1rem; font-weight: 500; }
+.wd-product-facts small { display: block; font-size: .75rem; font-weight: 400; color: #e2deef; margin-top: .25rem; }
+.wd-submit { background: #65ceee; color: #181238; border-color: #65ceee; box-shadow: 0 4px 20px #00000014; }
+.wd-submit:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+.wd-signup-steps { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: .4rem .65rem; }
+.wd-signup-steps b { display: inline-flex; align-items: center; justify-content: center; width: 1.125rem; height: 1.125rem; background: #ffffff18; border-radius: 50%; margin-right: .125rem; }
+.wd-inbox-card { background: #30235c; border: 1px solid #65ceee80; border-radius: 1.25rem; padding: 1.25rem; color: #fff; scroll-margin: 1rem 0 calc(var(--wd-bar-space) + 1rem); }
+.wd-inbox-card:focus-visible { outline: 2px solid #65ceee; outline-offset: 3px; }
+.wd-inbox-step { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #82def7; margin-bottom: .5rem; }
+.wd-inbox-address { border: 1px solid #ffffff25; background: #201748; padding: .7rem .8rem; border-radius: .65rem; font-size: 1rem; font-weight: 500; overflow-wrap: anywhere; margin: 1rem 0; }
+.wd-inbox-actions { display: grid; gap: .875rem; }
+.wd-inbox-actions li { display: flex; gap: .75rem; font-size: .875rem; }
+.wd-inbox-actions li > span { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #65ceee; color: #201748; font-weight: 700; }
+.wd-inbox-actions strong { font-weight: 500; }
+.wd-inbox-actions p { margin-top: .2rem; color: #ddf5ff; line-height: 1.5; }
+.wd-open-mail { display: flex; align-items: center; justify-content: center; gap: .75rem; min-height: 48px; background: #65ceee; color: #201748; border-radius: .65rem; font-weight: 600; margin-top: 1rem; }
+.wd-resend { min-height: 44px; font-size: .875rem; font-weight: 500; text-decoration: underline; text-underline-offset: 4px; }
+.wd-resend:disabled { color: #c1bad4; text-decoration: none; }
+.wd-inapp-hint { border-left: 3px solid #65ceee; padding: .625rem .75rem; margin-top: 1rem; background: #201748; font-size: .875rem; }
+@media (min-width: 640px) and (max-width: 1023px) {
+  .wd-hero-layout { max-width: 640px; }
+  .wd-hero-heading h1 { max-width: none; }
+}
+@media (min-width: 1024px) {
+  .wd-hero-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "heading media" "signup media" "proof proof"; column-gap: 3.5rem; padding-top: 3rem; padding-bottom: 4rem; }
+  .wd-hero-media { align-self: start; }
+  .wd-product-stage { aspect-ratio: 1 / 1; }
+  .wd-product-caption { padding: 0 1.5rem 1.25rem; }
+  .wd-product-name { font-size: .875rem; }
+  .wd-color-options button { font-size: .875rem; }
+  .wd-hero-proof { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 3.5rem; padding-top: 2rem; margin-top: 1rem; }
+}
+@media (max-width: 639px) {
+  .wd-hero-layout { padding-top: 1.25rem; gap: 1rem; }
+  .wd-hero-heading h1 { font-size: clamp(1.875rem, 8.2vw, 2.5rem); line-height: 1.13; max-width: 19ch; }
+  .wd-product-stage { aspect-ratio: 1.65; }
+  .wd-product-caption { padding-bottom: .5rem; }
+  .wd-hero-signup > p { font-size: .875rem; }
+  .wd-hero-price { margin: .875rem 0; }
+  .wd-product-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  .wd-product-facts > div { align-items: flex-start; gap: .5rem; }
+  .wd-product-facts p { font-size: .875rem; }
+  .wd-inbox-card { padding: 1rem; }
+}
+
+.wd-hero-new .wd-top-kicker { display: inline; margin-right: .5rem; }
+
+/* Avoid focus zoom on iPad as well as narrow iPhone viewports. */
+.wd-scroll input:not([type="checkbox"]) { font-size: 1rem; }

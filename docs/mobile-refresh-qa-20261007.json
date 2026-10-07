@@ -1,0 +1,48 @@
+{
+  "requested": "2026-10-07 owner-requested supplied-media and mobile upgrade plus explicit email verification UX",
+  "base_commit": "0d515bbe9feffcfad9b267dc5ded20a93132ca34",
+  "asset_manifest": "mobile-content-assets-20261007.json",
+  "scope": [
+    "Single responsive black/white studio product gallery before the mobile form",
+    "Actual underwater, wrist, app and poolside media from owner-supplied TCF folder",
+    "New explicit confirmation requirement in all nine locales",
+    "Pending card: entered address, exact email subject/button, mailbox shortcut or in-app instructions, focus and scroll",
+    "Resend countdown restarts on repeat requests; wrong-address returns to focused input",
+    "Below-fold how-it-works photos lazy-load"
+  ],
+  "preserved": [
+    "Two signup sources hero/offer and all API/CRM contracts",
+    "EmailVerified definition, consent and first-touch competition attribution",
+    "Price conditions, launch month, product claims, safety disclosure and published review list",
+    "Existing A–E campaign settings and budgets"
+  ],
+  "validation": {
+    "visual": "Chrome viewport overrides, not physical devices; local no-send fixture uses production UI code",
+    "locales_320": [
+      "en",
+      "ko",
+      "zh-CN",
+      "zh-TW",
+      "ja",
+      "es",
+      "fr",
+      "de",
+      "pt-BR"
+    ],
+    "horizontal_overflow": false,
+    "in_app": "UA branch simulated only in external /tmp fixture; Gmail link absent, mail-app instructions visible",
+    "resend": "Disabled initially, enabled after 60 seconds, disabled with fresh 60 seconds after resend",
+    "email_delivery": "No real test emails sent in this task; delivery-provider and CRM contracts covered by existing tests",
+    "production_signup_stub": "Not present. No fixture or audit_inapp code allowed in checkout.",
+    "viewports": [
+      "320x568",
+      "390x844",
+      "430x932",
+      "768x1024",
+      "1440x1000"
+    ],
+    "tests": "426 passing; TypeScript noEmit and Vite production build pass",
+    "privacy": "Displayed email is explicitly data-clarity-mask=true. No address enters custom click analytics."
+  },
+  "measurement_note": "A shared landing change applies to all A–E teams. Record production readyAt and compare cohorts across the release separately. UX change alone is not evidence of a conversion lift."
+}
