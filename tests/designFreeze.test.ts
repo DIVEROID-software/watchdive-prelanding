@@ -86,8 +86,13 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // min-w-0, and the housing badge may hyphenate, so es/pt-BR (and fr's
   // grid track) no longer overflow a 320px viewport. Measured: no size change
   // at 390/430/1440 or in any other locale.
+  // 2026-10-07: owner explicitly requested a mobile-first content upgrade
+  // using their TCF media archive. Reviewed baseline: one responsive studio
+  // gallery, product before signup on mobile, real underwater/pool/app photos,
+  // clearer two-step email confirmation, address display and resend cooldown.
+  // Both forms, section IDs/order, consent and tracking contracts remain.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "82de8e2bb7b3218d6b470335246dfd753682ae39db2bd94c2a4eae97f5260545");
+  assert.equal(digest, "fa9070353c342a9e882c0ae95d2a1f97aa37c27fdc3622efd8966f2b6e8bb49b");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -132,9 +137,11 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // pushed the phone photo below a tall cookie dialog is gone.
   // 2026-10-07: Spoqa faces declare their Hangul unicode-range (plus a 1 KB
   // cut for 한국어 in the picker); Hangul renders pixel-identical.
+  // 2026-10-07: owner-authorized mobile content/verification refresh, visually
+  // inspected at 320, 390 and 1440px. Old reef styling retired; brand retained.
   assert.equal(
     sha256(read("src/styles.css")),
-    "1725647e21ec457ce1b9ddde241ad2a75d4197412f5aa70c549069b66abbaebe",
+    "901f65afb94d9bdbcd6fe3637270c9d382512aa5256d9eec4d2379e6c3f7987b",
   );
 });
 

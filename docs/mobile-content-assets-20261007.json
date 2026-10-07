@@ -1,0 +1,146 @@
+[
+  {
+    "asset": "src/assets/live/refresh/studio-black-640.webp",
+    "source": "01_STUDIO SHOTS:RENDERS/01_Black/002_LEDon/3_WatchDive_LEDon_Black.png",
+    "source_sha256": "e51e052f0754ce69bf0c223c2d3c45bbc10c215cc9f44b79a450d64f7e5a3f12",
+    "width": 640,
+    "height": 480,
+    "bytes": 18622,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/studio-black-1000.webp",
+    "source": "01_STUDIO SHOTS:RENDERS/01_Black/002_LEDon/3_WatchDive_LEDon_Black.png",
+    "source_sha256": "e51e052f0754ce69bf0c223c2d3c45bbc10c215cc9f44b79a450d64f7e5a3f12",
+    "width": 1000,
+    "height": 750,
+    "bytes": 37514,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/studio-black-1600.webp",
+    "source": "01_STUDIO SHOTS:RENDERS/01_Black/002_LEDon/3_WatchDive_LEDon_Black.png",
+    "source_sha256": "e51e052f0754ce69bf0c223c2d3c45bbc10c215cc9f44b79a450d64f7e5a3f12",
+    "width": 1600,
+    "height": 1200,
+    "bytes": 83058,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/studio-white-640.webp",
+    "source": "01_STUDIO SHOTS:RENDERS/02_White/002_LEDon/3_WatchDive_LEDon_White.png",
+    "source_sha256": "bb2517efdf1f5316fae32d64504c17ca685fd0bac8f0eef19e27f506ad08dac3",
+    "width": 640,
+    "height": 480,
+    "bytes": 16270,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/studio-white-1000.webp",
+    "source": "01_STUDIO SHOTS:RENDERS/02_White/002_LEDon/3_WatchDive_LEDon_White.png",
+    "source_sha256": "bb2517efdf1f5316fae32d64504c17ca685fd0bac8f0eef19e27f506ad08dac3",
+    "width": 1000,
+    "height": 750,
+    "bytes": 30962,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/studio-white-1600.webp",
+    "source": "01_STUDIO SHOTS:RENDERS/02_White/002_LEDon/3_WatchDive_LEDon_White.png",
+    "source_sha256": "bb2517efdf1f5316fae32d64504c17ca685fd0bac8f0eef19e27f506ad08dac3",
+    "width": 1600,
+    "height": 1200,
+    "bytes": 71266,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/underwater-1600.webp",
+    "source": "07_USE CASE | DEEP DIVING/2_DEEPDIVING.jpeg",
+    "source_sha256": "428ab29dc20c080b5fb9a1aa3da0419b7ac41ee60649b87439b617b739b3253e",
+    "width": 1600,
+    "height": 1067,
+    "bytes": 37438,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/underwater-mobile-640.webp",
+    "source": "04_LIFESTYLE/00_recommended-product-safe-4x5/L-underwater-wrist-close_product-safe.jpg",
+    "source_sha256": "1f0af9437f1bc7ce7a5a5a8d11201c7e51fff597e50b55efab8e5fe75f335cfd",
+    "width": 640,
+    "height": 800,
+    "bytes": 21116,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/underwater-mobile-1000.webp",
+    "source": "04_LIFESTYLE/00_recommended-product-safe-4x5/L-underwater-wrist-close_product-safe.jpg",
+    "source_sha256": "1f0af9437f1bc7ce7a5a5a8d11201c7e51fff597e50b55efab8e5fe75f335cfd",
+    "width": 1000,
+    "height": 1250,
+    "bytes": 42712,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/poolside-640.webp",
+    "source": "04_LIFESTYLE/6_LIFESTYLE.jpeg",
+    "source_sha256": "63a83dabfc9776b59a6b6eed9223643772b22b29337eccd23efa6e25709a1087",
+    "width": 640,
+    "height": 427,
+    "bytes": 23026,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/poolside-1000.webp",
+    "source": "04_LIFESTYLE/6_LIFESTYLE.jpeg",
+    "source_sha256": "63a83dabfc9776b59a6b6eed9223643772b22b29337eccd23efa6e25709a1087",
+    "width": 1000,
+    "height": 667,
+    "bytes": 40826,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/poolside-1600.webp",
+    "source": "04_LIFESTYLE/6_LIFESTYLE.jpeg",
+    "source_sha256": "63a83dabfc9776b59a6b6eed9223643772b22b29337eccd23efa6e25709a1087",
+    "width": 1600,
+    "height": 1067,
+    "bytes": 73594,
+    "processing": "EXIF orientation, white alpha composite; studio: crop blank margins; Lanczos resize, WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/sync-app-640.webp",
+    "source": "08_APP/4_APP.jpeg",
+    "source_sha256": "d1ba5d3636cf69f6eb5b77ab5adeb2ccf312efdd834bb08f96a319b007c47a11",
+    "width": 640,
+    "height": 427,
+    "bytes": 29636,
+    "processing": "EXIF orientation; Lanczos resize; WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/sync-app-1000.webp",
+    "source": "08_APP/4_APP.jpeg",
+    "source_sha256": "d1ba5d3636cf69f6eb5b77ab5adeb2ccf312efdd834bb08f96a319b007c47a11",
+    "width": 1000,
+    "height": 667,
+    "bytes": 51542,
+    "processing": "EXIF orientation; Lanczos resize; WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/wrist-pool-640.webp",
+    "source": "05_USE CASE | FUN ACTIVITY/1_FUN ACTIVITY.jpeg",
+    "source_sha256": "df727b7d309ae2fd3853ace0ddeded7ea6183f8366fb835e21b278add47bf6e9",
+    "width": 640,
+    "height": 427,
+    "bytes": 42224,
+    "processing": "EXIF orientation; Lanczos resize; WebP q86. Product pixels unretouched."
+  },
+  {
+    "asset": "src/assets/live/refresh/wrist-pool-1000.webp",
+    "source": "05_USE CASE | FUN ACTIVITY/1_FUN ACTIVITY.jpeg",
+    "source_sha256": "df727b7d309ae2fd3853ace0ddeded7ea6183f8366fb835e21b278add47bf6e9",
+    "width": 1000,
+    "height": 667,
+    "bytes": 80632,
+    "processing": "EXIF orientation; Lanczos resize; WebP q86. Product pixels unretouched."
+  }
+]

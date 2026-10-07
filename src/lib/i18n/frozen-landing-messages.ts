@@ -169,8 +169,22 @@ const ko: FrozenLandingMessages = {
     shareText:
       "Watch Dive는 쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징입니다. Kickstarter 얼리버드는 선착순 100명까지 20만 원대. 제 링크로 같이 신청하세요.",
   },
+  gallery: {
+    black: "블랙",
+    white: "화이트",
+    blackAlt: "블랙 Watch Dive 하우징",
+    whiteAlt: "화이트 Watch Dive 하우징",
+    label: "색상 선택",
+  },
   inbox: {
-    title: "한 단계 남았습니다. 이메일을 인증해 주세요.",
+    stepLabel: "2단계 중 2단계",
+    action1: "이메일 앱을 열어주세요",
+    action2: "메일 안의 버튼을 눌러주세요",
+    requirement: "이메일을 인증해야 등록이 완료되고 출시 알림을 받을 수 있어요.",
+    help: "메일이 없나요? 스팸함·프로모션함도 확인하세요. 링크는 24시간 동안 유효해요.",
+    countdown: "{seconds}초 후 재전송",
+
+    title: "이메일 인증으로 등록을 마무리하세요.",
     note: "“Watch Dive 대기 명단 이메일을 인증해 주세요” 제목의 메일을 찾아 이메일 인증하기 버튼을 눌러 주세요. 1분 안에 오지 않으면 스팸함과 프로모션함을 확인하세요. 링크는 24시간 동안 유효하고, 이 페이지는 저절로 바뀝니다.",
     noteSubject: "“Watch Dive 대기 명단 이메일을 인증해 주세요”",
     noteButton: "이메일 인증하기",
@@ -195,17 +209,18 @@ const ko: FrozenLandingMessages = {
     closed: "프리런칭 명단이 찼습니다. Watch Dive는 12월 Kickstarter에서 런칭합니다.",
   },
   toasts: {
-    resent: "다시 보냈습니다. 받은편지함을 확인하세요.",
+    resent: "재전송을 요청했어요. 이메일을 확인해주세요.",
     error: "문제가 생겼습니다. 다시 시도해 주세요.",
   },
   form: {
+    confirmRequired: "이메일을 인증해야 등록이 완료되고 출시 알림을 받을 수 있어요.",
     emailPlaceholder: "이메일 주소",
     phonePlaceholder: "휴대폰 번호 (선택) — 오픈 당일 문자용",
     saving: "저장 중…",
     smsConsent:
       "Kickstarter가 열리면 문자로도 알려 주세요. 선택 사항이며, 체크하지 않아도 이메일 신청은 그대로 됩니다.",
     step1: "이메일 입력",
-    step2: "받은 인증 링크 열기",
+    step2: "이메일 인증하기",
     step3: "하루 전, 한 시간 전 알림",
   },
   heroProof: {
@@ -248,7 +263,7 @@ const ko: FrozenLandingMessages = {
   value: {
     kicker: "왜 Watch Dive인가",
     h2: "선착순 100명, 20만 원대.",
-    imageAlt: "수영장 가장자리에서 Watch Dive 하우징을 착용한 다이버",
+    imageAlt: "물속에서 손목에 착용한 Watch Dive",
     overlayKicker: "손목에서",
     overlayText: "쓰던 스마트워치 위에 하우징과 센서를 더했습니다.",
     lead: "스마트워치는 그대로 둡니다. 하우징을 끼우고, 기록은 앱에 남깁니다.",
@@ -283,7 +298,7 @@ const ko: FrozenLandingMessages = {
     step1Alt: "스마트워치를 Watch Dive 하우징에 넣는 손",
     step2Title: "하우징이 측정합니다.",
     step2Body: "다이빙하는 동안 수압 센서와 수온 센서가 측정값을 Bluetooth로 워치 앱에 보냅니다.",
-    step2Alt: "수영장 가장자리에서 Watch Dive를 착용한 프리다이버",
+    step2Alt: "수영장에서 다이버가 손목에 착용한 Watch Dive",
     step3Title: "수면에서 동기화.",
     step3Body: "다이브 프로필이 앱으로 넘어갑니다. 로그북에서 확인하세요.",
     step3Alt: "수영장 옆에서 연동 앱으로 다이브 로그를 확인하는 다이버",
@@ -366,7 +381,7 @@ const ko: FrozenLandingMessages = {
       "Watch Dive는 다이빙 보조 장비입니다. 교육을 대신하지 않습니다. 자격과 한계 안에서 다이빙하고, 표준 안전 절차를 지키고, 백업 다이브컴퓨터를 함께 쓰세요.",
   },
   offer: {
-    imageAlt: "Watch Dive Kickstarter 오픈 배너",
+    imageAlt: "수영장 가장자리에 놓인 Watch Dive 하우징",
     kicker: "선착순 100명 · 50% 할인",
     headline: "40만 원대 20만 원대 — 50% 할인.",
     headlineStrike: "40만 원대",
@@ -470,7 +485,8 @@ const ko: FrozenLandingMessages = {
   },
   privacy: {
     metaTitle: "개인정보처리방침 — Watch Dive",
-    metaDescription: "Watch Dive 프리런칭 페이지에서 소식 신청과 선택적 페이지 측정을 Diveroid Ltd가 처리하는 방법.",
+    metaDescription:
+      "Watch Dive 프리런칭 페이지에서 소식 신청과 선택적 페이지 측정을 Diveroid Ltd가 처리하는 방법.",
     back: "← 홈으로 돌아가기",
     h1: "개인정보처리방침 — Watch Dive 프리런칭",
     effectiveLabel: "시행일:",
@@ -598,8 +614,22 @@ const zhCN: FrozenLandingMessages = {
     shareText:
       "Watch Dive 是给我手上这块 Apple Watch / Galaxy Watch 配的 DIVEROID 传感器外壳。Kickstarter 前 100 名支持者早鸟价约 1,000 元，用我的链接一起加入名单吧。",
   },
+  gallery: {
+    black: "黑色",
+    white: "白色",
+    blackAlt: "黑色 Watch Dive 外壳",
+    whiteAlt: "白色 Watch Dive 外壳",
+    label: "选择颜色",
+  },
   inbox: {
-    title: "还差一步，确认一下邮箱。",
+    stepLabel: "第 2 步，共 2 步",
+    action1: "打开邮箱应用",
+    action2: "点击邮件中的按钮",
+    requirement: "验证邮箱后，才能完成注册并接收上线通知。",
+    help: "没收到？请查看垃圾邮件或推广邮件。链接在 24 小时内有效。",
+    countdown: "{seconds} 秒后重新发送",
+
+    title: "请查看邮箱，完成注册。",
     note: "请找到主题为“请确认您的 Watch Dive 候补名单邮箱”的邮件，点击确认邮箱。一分钟内没收到，就看看垃圾邮件和促销邮件。链接 24 小时内有效，本页会自动刷新。",
     noteSubject: "“请确认您的 Watch Dive 候补名单邮箱”",
     noteButton: "确认邮箱",
@@ -623,16 +653,17 @@ const zhCN: FrozenLandingMessages = {
     closed: "上线前的名单已满。Watch Dive 将于 12 月在 Kickstarter 上线。",
   },
   toasts: {
-    resent: "已重新发送，请查收邮箱。",
+    resent: "已请求重新发送，请查看邮箱。",
     error: "出了点问题，请再试一次。",
   },
   form: {
+    confirmRequired: "验证邮箱后，才能完成注册并接收上线通知。",
     emailPlaceholder: "you@email.com",
     phonePlaceholder: "手机号（选填）— 开启当天发短信",
     saving: "保存中…",
     smsConsent: "Kickstarter 开启时也用短信通知我。选填，不勾选也不影响邮箱报名。",
     step1: "填写邮箱",
-    step2: "打开我们发去的确认链接",
+    step2: "验证邮箱",
     step3: "开启前 1 天和 1 小时各提醒一次",
   },
   heroProof: {
@@ -674,7 +705,7 @@ const zhCN: FrozenLandingMessages = {
   value: {
     kicker: "为什么选 Watch Dive",
     h2: "前 100 名约 1,000 元。",
-    imageAlt: "在泳池边佩戴 Watch Dive 外壳的潜水员",
+    imageAlt: "在水下佩戴于手腕的 Watch Dive",
     overlayKicker: "戴在手上",
     overlayText: "外壳和传感器，装在你原本就戴的那块智能手表上。",
     lead: "智能手表不用换。装上外壳，记录留在 App 里。",
@@ -709,7 +740,7 @@ const zhCN: FrozenLandingMessages = {
     step1Alt: "把智能手表放入 Watch Dive 外壳的双手",
     step2Title: "外壳负责测量",
     step2Body: "下潜过程中，压力传感器和水温传感器通过蓝牙把读数发给手表 App。",
-    step2Alt: "在泳池边佩戴 Watch Dive 的自由潜水员",
+    step2Alt: "潜水员在泳池中佩戴的 Watch Dive",
     step3Title: "出水就同步",
     step3Body: "潜水曲线进入 App，在潜水日志里回看。",
     step3Alt: "在泳池边用互联 App 查看潜水日志的潜水员",
@@ -790,7 +821,7 @@ const zhCN: FrozenLandingMessages = {
       "Watch Dive 是潜水辅助工具，不能替代正规训练。请在证书与能力范围内潜水，遵守标准安全规程，并携带备用潜水电脑。",
   },
   offer: {
-    imageAlt: "Watch Dive Kickstarter 上线横幅",
+    imageAlt: "泳池边的 Watch Dive 外壳",
     kicker: "前 100 名 · 5 折",
     headline: "约 2,000 元 约 1,000 元 — 5 折。",
     headlineStrike: "约 2,000 元",
@@ -1015,8 +1046,22 @@ const zhTW: FrozenLandingMessages = {
     shareText:
       "Watch Dive 是為我手上這支 Apple Watch / Galaxy Watch 配的 DIVEROID 感測器外殼。Kickstarter 前 100 名贊助者早鳥價約 NT$5,000，用我的連結一起加入名單吧。",
   },
+  gallery: {
+    black: "黑色",
+    white: "白色",
+    blackAlt: "黑色 Watch Dive 保護殼",
+    whiteAlt: "白色 Watch Dive 保護殼",
+    label: "選擇顏色",
+  },
   inbox: {
-    title: "剩最後一步，確認一下信箱。",
+    stepLabel: "第 2 步，共 2 步",
+    action1: "開啟電子郵件 App",
+    action2: "點選信件中的按鈕",
+    requirement: "驗證電子郵件後，才能完成登記並收到上線通知。",
+    help: "沒收到？請查看垃圾郵件或促銷分類。連結在 24 小時內有效。",
+    countdown: "{seconds} 秒後重新寄送",
+
+    title: "請查看信箱，完成登記。",
     note: "請找到主旨為「請確認您的 Watch Dive 等候名單電子郵件」的郵件，點一下確認電子郵件。一分鐘內沒收到，就看看垃圾郵件與推廣郵件。連結 24 小時內有效，本頁會自動更新。",
     noteSubject: "「請確認您的 Watch Dive 等候名單電子郵件」",
     noteButton: "確認電子郵件",
@@ -1040,16 +1085,17 @@ const zhTW: FrozenLandingMessages = {
     closed: "開賣前的名單已滿。Watch Dive 將於 12 月在 Kickstarter 上線。",
   },
   toasts: {
-    resent: "已重新寄送，請查看收件匣。",
+    resent: "已要求重新寄送，請查看信箱。",
     error: "出了點狀況，請再試一次。",
   },
   form: {
+    confirmRequired: "驗證電子郵件後，才能完成登記並收到上線通知。",
     emailPlaceholder: "you@email.com",
     phonePlaceholder: "手機號碼（選填）— 開賣當天傳簡訊",
     saving: "儲存中…",
     smsConsent: "Kickstarter 開賣時也用簡訊通知我。選填，不勾也不影響信箱報名。",
     step1: "填寫信箱",
-    step2: "開啟我們寄出的確認連結",
+    step2: "驗證電子郵件",
     step3: "開賣前 1 天與 1 小時各提醒一次",
   },
   heroProof: {
@@ -1091,7 +1137,7 @@ const zhTW: FrozenLandingMessages = {
   value: {
     kicker: "為什麼選 Watch Dive",
     h2: "前 100 名約 NT$5,000。",
-    imageAlt: "在泳池邊配戴 Watch Dive 外殼的潛水員",
+    imageAlt: "在水下戴於手腕的 Watch Dive",
     overlayKicker: "戴在手上",
     overlayText: "外殼與感測器，裝在你本來就戴的那支智慧手錶上。",
     lead: "智慧手錶不用換。裝上外殼，紀錄留在 App 裡。",
@@ -1126,7 +1172,7 @@ const zhTW: FrozenLandingMessages = {
     step1Alt: "把智慧手錶放入 Watch Dive 外殼的雙手",
     step2Title: "外殼負責量測",
     step2Body: "下潛過程中，壓力感測器與水溫感測器透過藍牙把讀值送到手錶 App。",
-    step2Alt: "在泳池邊配戴 Watch Dive 的自由潛水員",
+    step2Alt: "潛水員在泳池中佩戴的 Watch Dive",
     step3Title: "上岸就同步",
     step3Body: "潛水剖面進入 App，在潛水日誌裡回顧。",
     step3Alt: "在泳池邊用連動 App 查看潛水日誌的潛水員",
@@ -1207,7 +1253,7 @@ const zhTW: FrozenLandingMessages = {
       "Watch Dive 是潛水輔助工具，不能取代正規訓練。請在證照與能力範圍內潛水，遵守標準安全程序，並攜帶備用潛水電腦。",
   },
   offer: {
-    imageAlt: "Watch Dive Kickstarter 開賣橫幅",
+    imageAlt: "泳池邊的 Watch Dive 保護殼",
     kicker: "前 100 名 · 5 折",
     headline: "約 NT$10,000 約 NT$5,000 — 5 折。",
     headlineStrike: "約 NT$10,000",
@@ -1432,8 +1478,22 @@ const ja: FrozenLandingMessages = {
     shareText:
       "Watch Dive は、いつもの Apple Watch や Galaxy Watch に装着する DIVEROIDセンサー内蔵のハウジングです。Kickstarter の早割は先着100名で2万円台。私のリンクから一緒に登録しませんか。",
   },
+  gallery: {
+    black: "ブラック",
+    white: "ホワイト",
+    blackAlt: "ブラックの Watch Dive ハウジング",
+    whiteAlt: "ホワイトの Watch Dive ハウジング",
+    label: "カラーを選択",
+  },
   inbox: {
-    title: "あと一歩。メールアドレスの確認をお願いします。",
+    stepLabel: "ステップ 2 / 2",
+    action1: "メールアプリを開く",
+    action2: "メール内のボタンを押す",
+    requirement: "メール認証が完了すると登録され、発売のお知らせを受け取れます。",
+    help: "届かない場合は迷惑メールやプロモーションをご確認ください。リンクの有効期限は24時間です。",
+    countdown: "{seconds}秒後に再送信",
+
+    title: "メールを確認して登録を完了。",
     note: "件名「Watch Diveウェイトリストのメールアドレスをご確認ください」のメールを探して、メールアドレスを確認を押してください。1分たっても届かない場合は、迷惑メールとプロモーションのフォルダをご確認ください。リンクの有効期限は24時間。このページは自動で切り替わります。",
     noteSubject: "「Watch Diveウェイトリストのメールアドレスをご確認ください」",
     noteButton: "メールアドレスを確認",
@@ -1458,17 +1518,18 @@ const ja: FrozenLandingMessages = {
     closed: "事前登録リストは満員です。Watch Dive は12月に Kickstarter でローンチします。",
   },
   toasts: {
-    resent: "再送しました。受信トレイをご確認ください。",
+    resent: "再送信をリクエストしました。メールをご確認ください。",
     error: "問題が発生しました。もう一度お試しください。",
   },
   form: {
+    confirmRequired: "メール認証が完了すると登録され、発売のお知らせを受け取れます。",
     emailPlaceholder: "you@email.com",
     phonePlaceholder: "電話番号（任意）— 開始日の SMS 用",
     saving: "保存中…",
     smsConsent:
       "Kickstarter の開始を SMS でも知らせてください。任意です。チェックしなくてもメール登録はそのまま完了します。",
     step1: "メールアドレスを入力",
-    step2: "届いた確認リンクを開く",
+    step2: "メールを認証する",
     step3: "前日と1時間前にお知らせ",
   },
   heroProof: {
@@ -1510,7 +1571,7 @@ const ja: FrozenLandingMessages = {
   value: {
     kicker: "Watch Dive を選ぶ理由",
     h2: "先着100名は2万円台。",
-    imageAlt: "プールサイドで Watch Dive ハウジングを着けたダイバー",
+    imageAlt: "水中で手首に装着した Watch Dive",
     overlayKicker: "手首の上で",
     overlayText: "いつものスマートウォッチに、ハウジングとセンサーを。",
     lead: "スマートウォッチはそのまま。ハウジングを足して、記録はアプリに残す。",
@@ -1547,7 +1608,7 @@ const ja: FrozenLandingMessages = {
     step2Title: "ハウジングが計測する。",
     step2Body:
       "潜水中、水圧センサーと水温センサーが測定値を Bluetooth でウォッチアプリへ送ります。",
-    step2Alt: "プールサイドで Watch Dive を着けたフリーダイバー",
+    step2Alt: "プールでダイバーの手首に装着した Watch Dive",
     step3Title: "浮上したら同期。",
     step3Body: "ダイブプロファイルがアプリへ。ログブックで振り返れます。",
     step3Alt: "プールサイドで連携アプリのダイブログを確認するダイバー",
@@ -1631,7 +1692,7 @@ const ja: FrozenLandingMessages = {
       "Watch Dive はダイビングの補助器具です。トレーニングの代わりにはなりません。資格と限界の範囲で潜り、標準の安全手順に従い、バックアップのダイブコンピューターを携行してください。",
   },
   offer: {
-    imageAlt: "Watch Dive Kickstarter ローンチバナー",
+    imageAlt: "プールサイドの Watch Dive ハウジング",
     kicker: "先着100名 · 50% オフ",
     headline: "4万円台 2万円台 — 50% オフ。",
     headlineStrike: "4万円台",
@@ -1767,7 +1828,8 @@ const ja: FrozenLandingMessages = {
     s3Item2: "Watch Dive が Kickstarter でローンチした際の通知の送信;",
     s3Item3: "早割価格やローンチ関連情報の共有;",
     s3Item4: "フォームとメール配信サービスの不正利用からの保護;",
-    s3Item5: "ページのどの部分が使われているかを把握し、改善するため（許可が必要な地域では、許可された場合のみ）。",
+    s3Item5:
+      "ページのどの部分が使われているかを把握し、改善するため（許可が必要な地域では、許可された場合のみ）。",
     s3Outro: "無関係な目的でお客様の情報を利用することはありません。",
     s4Title: "4. 法的根拠",
     s4Body:
@@ -1865,8 +1927,23 @@ const es: FrozenLandingMessages = {
     shareText:
       "Watch Dive es una carcasa con sensor DIVEROID para el Apple Watch o Galaxy Watch que ya llevo. El early bird ronda los 140 € para los 100 primeros patrocinadores en Kickstarter. Únete con mi enlace.",
   },
+  gallery: {
+    black: "Negro",
+    white: "Blanco",
+    blackAlt: "Carcasa Watch Dive negra",
+    whiteAlt: "Carcasa Watch Dive blanca",
+    label: "Elegir color",
+  },
   inbox: {
-    title: "Un paso más. Confirma tu correo.",
+    stepLabel: "Paso 2 de 2",
+    action1: "Abre tu aplicación de correo",
+    action2: "Pulsa el botón del correo",
+    requirement:
+      "Confirma tu correo para completar el registro y recibir los avisos de lanzamiento.",
+    help: "¿No llega? Revisa Spam o Promociones. El enlace caduca en 24 horas.",
+    countdown: "Reenviar en {seconds}s",
+
+    title: "Revisa tu correo para terminar.",
     note: "Busca el asunto “Confirma tu correo para la lista de espera de Watch Dive” y pulsa Confirmar mi correo. Mira en spam o promociones si no llega en un minuto. El enlace dura 24 horas y esta página se actualiza sola.",
     noteSubject: "“Confirma tu correo para la lista de espera de Watch Dive”",
     noteButton: "Confirmar mi correo",
@@ -1892,17 +1969,19 @@ const es: FrozenLandingMessages = {
       "La lista de prelanzamiento está llena. Watch Dive se lanza en Kickstarter en diciembre.",
   },
   toasts: {
-    resent: "Enviado otra vez. Mira tu bandeja de entrada.",
+    resent: "Reenvío solicitado. Revisa tu correo.",
     error: "Algo ha fallado. Inténtalo de nuevo.",
   },
   form: {
+    confirmRequired:
+      "Confirma tu correo para completar el registro y recibir los avisos de lanzamiento.",
     emailPlaceholder: "tu@correo.com",
     phonePlaceholder: "Teléfono (opcional) — para un SMS el día que abra",
     saving: "Guardando…",
     smsConsent:
       "Avisadme por SMS cuando abra Watch Dive en Kickstarter. Es opcional: tu registro por correo funciona igual sin esto.",
     step1: "Escribe tu correo",
-    step2: "Abre el enlace de confirmación",
+    step2: "Confirma tu correo",
     step3: "Aviso 1 día y 1 hora antes",
   },
   heroProof: {
@@ -1913,7 +1992,8 @@ const es: FrozenLandingMessages = {
     h1: "Watch Dive. Tu smartwatch de siempre, bajo el agua.",
     h1Highlight: "bajo el agua",
     sub: "Un sensor DIVEROID dentro de la carcasa mide la profundidad y la temperatura del agua. Tu Apple Watch o Galaxy Watch las muestra mientras buceas.",
-    priceLine: "Early bird por unos 140 € para los 100 primeros en Kickstarter. Lanzamiento en diciembre.",
+    priceLine:
+      "Early bird por unos 140 € para los 100 primeros en Kickstarter. Lanzamiento en diciembre.",
     backgroundAlt: "Buceador explorando un arrecife de coral lleno de vida",
     sideImageAlt: "Foto submarina del producto Watch Dive",
     stat1Label: "Carcasa · 60 m",
@@ -1945,7 +2025,7 @@ const es: FrozenLandingMessages = {
   value: {
     kicker: "Por qué Watch Dive",
     h2: "Unos 140 € para los 100 primeros.",
-    imageAlt: "Buceador al borde de la piscina con la carcasa Watch Dive",
+    imageAlt: "Watch Dive en la muñeca bajo el agua",
     overlayKicker: "En la muñeca",
     overlayText: "La carcasa y su sensor, sobre el smartwatch que ya llevas.",
     lead: "Quédate con tu smartwatch. Añade la carcasa. La inmersión acaba en la app.",
@@ -1984,7 +2064,7 @@ const es: FrozenLandingMessages = {
     step2Title: "La carcasa mide",
     step2Body:
       "Durante la inmersión, los sensores de presión y de temperatura del agua envían las lecturas a la app del smartwatch por Bluetooth.",
-    step2Alt: "Apneísta con Watch Dive al borde de la piscina",
+    step2Alt: "Watch Dive en la muñeca de un buceador en la piscina",
     step3Title: "Sincroniza en superficie",
     step3Body: "El perfil de la inmersión pasa a la app. Lo lees en tu bitácora.",
     step3Alt: "Buceador revisando su bitácora en la app conectada junto a la piscina",
@@ -2068,7 +2148,7 @@ const es: FrozenLandingMessages = {
       "Watch Dive es una ayuda al buceo y no sustituye a la formación. Bucea dentro de tu certificación y de tus límites, sigue los procedimientos de seguridad habituales y lleva un ordenador de buceo de respaldo.",
   },
   offer: {
-    imageAlt: "Banner de lanzamiento de Watch Dive en Kickstarter",
+    imageAlt: "Carcasa Watch Dive junto a la piscina",
     kicker: "Los 100 primeros · 50 % dto.",
     headline: "De unos 280 € a unos 140 € — 50 % de descuento.",
     headlineStrike: "unos 280 €",
@@ -2206,7 +2286,8 @@ const es: FrozenLandingMessages = {
     s3Item2: "notificarte cuando Watch Dive se lance en Kickstarter;",
     s3Item3: "compartir el precio early bird y novedades relacionadas con el lanzamiento;",
     s3Item4: "proteger el formulario y nuestro servicio de envío de email frente a abusos;",
-    s3Item5: "ver qué partes de la página se usan para poder mejorarla (después de que permitas la medición, donde se requiere Permitir).",
+    s3Item5:
+      "ver qué partes de la página se usan para poder mejorarla (después de que permitas la medición, donde se requiere Permitir).",
     s3Outro: "No usaremos tu información para fines no relacionados.",
     s4Title: "4. Base legal",
     s4Body:
@@ -2306,8 +2387,23 @@ const fr: FrozenLandingMessages = {
     shareText:
       "Watch Dive, c’est un caisson à capteur DIVEROID pour l’Apple Watch ou la Galaxy Watch que je porte déjà. L’early bird est à environ 140 € pour les 100 premiers contributeurs Kickstarter. Rejoignez la liste avec mon lien.",
   },
+  gallery: {
+    black: "Noir",
+    white: "Blanc",
+    blackAlt: "Boîtier Watch Dive noir",
+    whiteAlt: "Boîtier Watch Dive blanc",
+    label: "Choisir une couleur",
+  },
   inbox: {
-    title: "Encore une étape. Confirmez votre e-mail.",
+    stepLabel: "Étape 2 sur 2",
+    action1: "Ouvrez votre messagerie",
+    action2: "Appuyez sur le bouton dans l’e-mail",
+    requirement:
+      "Confirmez votre e-mail pour terminer l’inscription et recevoir les annonces du lancement.",
+    help: "Rien reçu ? Vérifiez les spams ou l’onglet Promotions. Le lien expire après 24 heures.",
+    countdown: "Renvoyer dans {seconds}s",
+
+    title: "Vérifiez vos e-mails pour terminer.",
     note: "Cherchez l’objet « Confirmez votre adresse e-mail pour la liste d’attente Watch Dive » et appuyez sur Confirmer mon adresse. Regardez dans les spams ou l’onglet Promotions s’il n’arrive pas dans la minute. Le lien est valable 24 heures et cette page se met à jour toute seule.",
     noteSubject: "« Confirmez votre adresse e-mail pour la liste d’attente Watch Dive »",
     noteButton: "Confirmer mon adresse",
@@ -2333,17 +2429,19 @@ const fr: FrozenLandingMessages = {
       "La liste de prélancement est complète. Watch Dive sera lancé sur Kickstarter en décembre.",
   },
   toasts: {
-    resent: "Renvoyé. Regardez votre boîte de réception.",
+    resent: "Renvoi demandé. Vérifiez vos e-mails.",
     error: "Un problème est survenu. Veuillez réessayer.",
   },
   form: {
+    confirmRequired:
+      "Confirmez votre e-mail pour terminer l’inscription et recevoir les annonces du lancement.",
     emailPlaceholder: "vous@email.com",
     phonePlaceholder: "Téléphone (facultatif) — pour un SMS le jour de l’ouverture",
     saving: "Enregistrement…",
     smsConsent:
       "Prévenez-moi par SMS à l’ouverture de Watch Dive sur Kickstarter. Facultatif : votre inscription par e-mail fonctionne sans.",
     step1: "Saisissez votre e-mail",
-    step2: "Ouvrez le lien de confirmation",
+    step2: "Confirmez votre e-mail",
     step3: "Rappel 1 jour et 1 heure avant",
   },
   heroProof: {
@@ -2354,7 +2452,8 @@ const fr: FrozenLandingMessages = {
     h1: "Watch Dive. Votre montre connectée, sous l’eau.",
     h1Highlight: "sous l’eau",
     sub: "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau. Votre Apple Watch ou Galaxy Watch les affiche pendant la plongée.",
-    priceLine: "Early bird à environ 140 € pour les 100 premiers sur Kickstarter. Lancement en décembre.",
+    priceLine:
+      "Early bird à environ 140 € pour les 100 premiers sur Kickstarter. Lancement en décembre.",
     backgroundAlt: "Plongeur explorant un récif corallien éclatant",
     sideImageAlt: "Visuel produit sous-marin de Watch Dive",
     stat1Label: "Caisson · 60 m",
@@ -2386,7 +2485,7 @@ const fr: FrozenLandingMessages = {
   value: {
     kicker: "Pourquoi Watch Dive",
     h2: "Environ 140 € pour les 100 premiers.",
-    imageAlt: "Plongeur au bord du bassin portant le caisson Watch Dive",
+    imageAlt: "Watch Dive au poignet sous l’eau",
     overlayKicker: "Au poignet",
     overlayText: "Le caisson et son capteur, sur la montre connectée que vous portez déjà.",
     lead: "Gardez la montre connectée. Ajoutez le caisson. La plongée finit dans l’appli.",
@@ -2425,7 +2524,7 @@ const fr: FrozenLandingMessages = {
     step2Title: "Le caisson mesure",
     step2Body:
       "Pendant la plongée, les capteurs de pression et de température de l’eau envoient les relevés à l’appli de la montre connectée en Bluetooth.",
-    step2Alt: "Apnéiste portant Watch Dive au bord du bassin",
+    step2Alt: "Watch Dive au poignet d’un plongeur en piscine",
     step3Title: "Synchronisez à la remontée",
     step3Body: "Le profil de plongée passe dans l’appli. Vous le relisez dans votre carnet.",
     step3Alt: "Plongeur consultant son carnet de plongée dans l’appli connectée au bord du bassin",
@@ -2509,7 +2608,7 @@ const fr: FrozenLandingMessages = {
       "Watch Dive est une aide à la plongée : il ne remplace pas une formation. Plongez dans les limites de votre certification, respectez les procédures de sécurité habituelles et gardez un ordinateur de plongée de secours.",
   },
   offer: {
-    imageAlt: "Bannière de lancement Kickstarter de Watch Dive",
+    imageAlt: "Boîtier Watch Dive au bord de la piscine",
     kicker: "Les 100 premiers · −50 %",
     headline: "D’environ 280 € à environ 140 € — 50 % de réduction.",
     headlineStrike: "environ 280 €",
@@ -2648,7 +2747,8 @@ const fr: FrozenLandingMessages = {
     s3Item2: "vous notifier quand Watch Dive sera lancé sur Kickstarter ;",
     s3Item3: "partager le tarif early bird et les actualités liées au lancement ;",
     s3Item4: "protéger le formulaire et notre service d’envoi d’e-mails contre les abus ;",
-    s3Item5: "comprendre quelles parties de la page sont utilisées afin de l’améliorer (après votre autorisation, là où Autoriser est requis).",
+    s3Item5:
+      "comprendre quelles parties de la page sont utilisées afin de l’améliorer (après votre autorisation, là où Autoriser est requis).",
     s3Outro: "Nous n’utiliserons pas vos informations à des fins sans rapport.",
     s4Title: "4. Base légale",
     s4Body:
@@ -2749,8 +2849,23 @@ const de: FrozenLandingMessages = {
     shareText:
       "Watch Dive ist ein Gehäuse mit DIVEROID-Sensor für die Apple Watch oder Galaxy Watch, die ich ohnehin trage. Für die ersten 100 Unterstützer liegt der Early Bird auf Kickstarter bei rund 140 €. Komm über meinen Link auf die Liste.",
   },
+  gallery: {
+    black: "Schwarz",
+    white: "Weiß",
+    blackAlt: "Watch Dive Gehäuse in Schwarz",
+    whiteAlt: "Watch Dive Gehäuse in Weiß",
+    label: "Farbe wählen",
+  },
   inbox: {
-    title: "Noch ein Schritt. Bestätige deine E-Mail.",
+    stepLabel: "Schritt 2 von 2",
+    action1: "Öffne deine E-Mail-App",
+    action2: "Tippe auf den Button in der E-Mail",
+    requirement:
+      "Bestätige deine E-Mail, um die Anmeldung abzuschließen und Launch-Updates zu erhalten.",
+    help: "Keine E-Mail? Prüfe Spam oder Werbung. Der Link ist 24 Stunden gültig.",
+    countdown: "Erneut senden in {seconds}s",
+
+    title: "Jetzt dein Postfach öffnen.",
     note: "Such nach dem Betreff „Bestätige deine E-Mail für die Watch-Dive-Warteliste“ und klick auf E-Mail-Adresse bestätigen. Schau in Spam oder Werbung, falls binnen einer Minute nichts ankommt. Der Link gilt 24 Stunden, und diese Seite aktualisiert sich von selbst.",
     noteSubject: "„Bestätige deine E-Mail für die Watch-Dive-Warteliste“",
     noteButton: "E-Mail-Adresse bestätigen",
@@ -2775,17 +2890,19 @@ const de: FrozenLandingMessages = {
     closed: "Die Vorstart-Liste ist voll. Watch Dive startet im Dezember auf Kickstarter.",
   },
   toasts: {
-    resent: "Erneut gesendet. Sieh in deinem Posteingang nach.",
+    resent: "Erneuter Versand angefragt. Prüfe dein Postfach.",
     error: "Da ist etwas schiefgelaufen. Bitte versuch es erneut.",
   },
   form: {
+    confirmRequired:
+      "Bestätige deine E-Mail, um die Anmeldung abzuschließen und Launch-Updates zu erhalten.",
     emailPlaceholder: "du@email.com",
     phonePlaceholder: "Telefon (optional) — für eine SMS am Starttag",
     saving: "Wird gespeichert…",
     smsConsent:
       "Schick mir eine SMS, wenn Watch Dive auf Kickstarter startet. Optional — deine Anmeldung per E-Mail funktioniert auch ohne.",
     step1: "E-Mail eingeben",
-    step2: "Bestätigungslink öffnen",
+    step2: "E-Mail bestätigen",
     step3: "Erinnerung 1 Tag und 1 Stunde vorher",
   },
   heroProof: {
@@ -2828,7 +2945,7 @@ const de: FrozenLandingMessages = {
   value: {
     kicker: "Warum Watch Dive",
     h2: "Rund 140 € für die ersten 100.",
-    imageAlt: "Taucher am Beckenrand mit dem Watch Dive Gehäuse",
+    imageAlt: "Watch Dive am Handgelenk unter Wasser",
     overlayKicker: "Am Handgelenk",
     overlayText: "Gehäuse und Sensor, auf der Smartwatch, die du schon trägst.",
     lead: "Die Smartwatch bleibt. Das Gehäuse kommt dazu. Der Tauchgang landet in der App.",
@@ -2867,7 +2984,7 @@ const de: FrozenLandingMessages = {
     step2Title: "Das Gehäuse misst",
     step2Body:
       "Während des Tauchgangs schicken Druck- und Wassertemperatursensoren die Messwerte per Bluetooth an die Watch-App.",
-    step2Alt: "Apnoetaucherin mit Watch Dive am Beckenrand",
+    step2Alt: "Watch Dive am Handgelenk eines Tauchers im Pool",
     step3Title: "Oben synchronisieren",
     step3Body: "Das Tiefenprofil geht in die App. Du liest es in deinem Logbuch nach.",
     step3Alt: "Taucher prüft sein Tauch-Logbuch in der vernetzten App am Beckenrand",
@@ -2951,7 +3068,7 @@ const de: FrozenLandingMessages = {
       "Watch Dive ist eine Tauchhilfe und kein Ersatz für eine Ausbildung. Tauche im Rahmen deiner Zertifizierung und deiner Grenzen, halte dich an die üblichen Sicherheitsverfahren und nimm einen Backup-Tauchcomputer mit.",
   },
   offer: {
-    imageAlt: "Watch Dive Kickstarter-Start-Banner",
+    imageAlt: "Watch Dive Gehäuse am Beckenrand",
     kicker: "Die ersten 100 · 50 % Rabatt",
     headline: "Von rund 280 € auf rund 140 € — 50 % Rabatt.",
     headlineStrike: "rund 280 €",
@@ -3089,7 +3206,8 @@ const de: FrozenLandingMessages = {
     s3Item2: "dich zu benachrichtigen, wenn Watch Dive auf Kickstarter startet;",
     s3Item3: "Early-Bird-Preise und startbezogene Updates zu teilen;",
     s3Item4: "das Formular und unseren E-Mail-Versanddienst vor Missbrauch zu schützen;",
-    s3Item5: "zu sehen, welche Teile der Seite genutzt werden, um sie zu verbessern (wo Erlauben erforderlich ist, erst nach deiner Zustimmung).",
+    s3Item5:
+      "zu sehen, welche Teile der Seite genutzt werden, um sie zu verbessern (wo Erlauben erforderlich ist, erst nach deiner Zustimmung).",
     s3Outro: "Wir verwenden deine Daten nicht für sachfremde Zwecke.",
     s4Title: "4. Rechtsgrundlage",
     s4Body:
@@ -3188,8 +3306,22 @@ const ptBR: FrozenLandingMessages = {
     shareText:
       "Watch Dive é uma caixa com sensor DIVEROID para o Apple Watch ou Galaxy Watch que eu já uso. O early bird sai por cerca de R$ 800 para os 100 primeiros apoiadores no Kickstarter. Entra na lista pelo meu link.",
   },
+  gallery: {
+    black: "Preto",
+    white: "Branco",
+    blackAlt: "Caixa Watch Dive preta",
+    whiteAlt: "Caixa Watch Dive branca",
+    label: "Escolher cor",
+  },
   inbox: {
-    title: "Falta um passo. Confirme seu e-mail.",
+    stepLabel: "Etapa 2 de 2",
+    action1: "Abra seu aplicativo de e-mail",
+    action2: "Toque no botão dentro do e-mail",
+    requirement: "Confirme seu e-mail para concluir o cadastro e receber os avisos de lançamento.",
+    help: "Não chegou? Confira Spam ou Promoções. O link expira em 24 horas.",
+    countdown: "Reenviar em {seconds}s",
+
+    title: "Confira seu e-mail para concluir.",
     note: "Procure o assunto “Confirme seu e-mail para a lista de espera do Watch Dive” e toque em Confirmar meu e-mail. Se não chegar em um minuto, olhe no spam ou em promoções. O link vale 24 horas e esta página se atualiza sozinha.",
     noteSubject: "“Confirme seu e-mail para a lista de espera do Watch Dive”",
     noteButton: "Confirmar meu e-mail",
@@ -3215,17 +3347,19 @@ const ptBR: FrozenLandingMessages = {
       "A lista de pré-lançamento está cheia. O Watch Dive será lançado no Kickstarter em dezembro.",
   },
   toasts: {
-    resent: "Enviado de novo. Confira sua caixa de entrada.",
+    resent: "Reenvio solicitado. Confira seu e-mail.",
     error: "Deu algo errado. Tente de novo.",
   },
   form: {
+    confirmRequired:
+      "Confirme seu e-mail para concluir o cadastro e receber os avisos de lançamento.",
     emailPlaceholder: "voce@email.com",
     phonePlaceholder: "Telefone (opcional) — para um SMS no dia da abertura",
     saving: "Salvando…",
     smsConsent:
       "Quero um SMS quando o Watch Dive abrir no Kickstarter. Opcional — seu cadastro por e-mail funciona sem isso.",
     step1: "Escreva seu e-mail",
-    step2: "Abra o link de confirmação",
+    step2: "Confirme seu e-mail",
     step3: "Lembrete 1 dia e 1 hora antes",
   },
   heroProof: {
@@ -3236,7 +3370,8 @@ const ptBR: FrozenLandingMessages = {
     h1: "Watch Dive. Seu smartwatch de sempre, debaixo d'água.",
     h1Highlight: "debaixo d'água",
     sub: "Um sensor DIVEROID dentro da caixa mede a profundidade e a temperatura da água. Seu Apple Watch ou Galaxy Watch mostra os números durante o mergulho.",
-    priceLine: "Early bird por cerca de R$ 800 para os 100 primeiros no Kickstarter. Lançamento em dezembro.",
+    priceLine:
+      "Early bird por cerca de R$ 800 para os 100 primeiros no Kickstarter. Lançamento em dezembro.",
     backgroundAlt: "Mergulhador explorando um recife de coral vibrante",
     sideImageAlt: "Foto subaquática do produto Watch Dive",
     stat1Label: "Caixa · 60 m",
@@ -3268,7 +3403,7 @@ const ptBR: FrozenLandingMessages = {
   value: {
     kicker: "Por que Watch Dive",
     h2: "Cerca de R$ 800 para os 100 primeiros.",
-    imageAlt: "Mergulhador na beira da piscina usando a caixa Watch Dive",
+    imageAlt: "Watch Dive no pulso debaixo d’água",
     overlayKicker: "No pulso",
     overlayText: "A caixa e o sensor, sobre o smartwatch que você já usa.",
     lead: "O smartwatch fica. A caixa entra. O mergulho termina no app.",
@@ -3306,7 +3441,7 @@ const ptBR: FrozenLandingMessages = {
     step2Title: "A caixa mede",
     step2Body:
       "Durante o mergulho, os sensores de pressão e de temperatura da água mandam as leituras para o app do smartwatch por Bluetooth.",
-    step2Alt: "Mergulhadora livre usando o Watch Dive na beira da piscina",
+    step2Alt: "Watch Dive no pulso de um mergulhador na piscina",
     step3Title: "Sincronize na superfície",
     step3Body: "O perfil do mergulho vai para o app. Você lê no seu logbook.",
     step3Alt: "Mergulhador revendo o log de mergulho no app conectado à beira da piscina",
@@ -3390,7 +3525,7 @@ const ptBR: FrozenLandingMessages = {
       "O Watch Dive é um auxílio ao mergulho e não substitui treinamento. Mergulhe dentro da sua certificação e dos seus limites, siga os procedimentos de segurança de sempre e leve um computador de mergulho reserva.",
   },
   offer: {
-    imageAlt: "Banner de lançamento do Watch Dive no Kickstarter",
+    imageAlt: "Caixa Watch Dive na borda da piscina",
     kicker: "Os 100 primeiros · 50% off",
     headline: "De cerca de R$ 1.600 para cerca de R$ 800 — 50% de desconto.",
     headlineStrike: "cerca de R$ 1.600",
@@ -3527,7 +3662,8 @@ const ptBR: FrozenLandingMessages = {
     s3Item2: "avisar quando o Watch Dive lançar no Kickstarter;",
     s3Item3: "compartilhar o preço early bird e novidades relacionadas ao lançamento;",
     s3Item4: "proteger o formulário e nosso serviço de envio de e-mails contra abuso;",
-    s3Item5: "ver quais partes da página são usadas para melhorá-la (depois que você permite a medição, onde Permitir é exigido).",
+    s3Item5:
+      "ver quais partes da página são usadas para melhorá-la (depois que você permite a medição, onde Permitir é exigido).",
     s3Outro: "Não usaremos suas informações para fins não relacionados.",
     s4Title: "4. Base legal",
     s4Body:
