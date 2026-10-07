@@ -113,10 +113,17 @@ html:root :focus-visible {
   outline-offset: 3px !important;
 }
 
-/* Gradients flatten to solid brand blocks. */
-html:root [class*="bg-gradient"] {
+/* Gradients: section backgrounds flatten to solid brand blocks; decorative
+   fades (absolutely positioned overlays, e.g. the review ticker's edges) are
+   dropped — a flattened fade would become a solid slab over the content. */
+html:root section[class*="bg-gradient"],
+html:root header[class*="bg-gradient"] {
   background-image: none !important;
   background-color: #201748 !important;
+}
+html:root [class*="bg-gradient"][class*="absolute"],
+html:root [class*="bg-gradient"][class*="pointer-events-none"] {
+  display: none !important;
 }
 
 /* Brutalism variant — first screen. */
