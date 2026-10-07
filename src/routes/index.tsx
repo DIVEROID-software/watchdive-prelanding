@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import {
   getReferralCount,
   loadWaitlistCount,
 } from "@/lib/api/waitlist.functions";
+import { HeroPhoto } from "@/components/hero-photo";
 import { ProductGallery } from "@/components/product-gallery";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LaunchNotice } from "@/components/launch-notice";
@@ -40,6 +41,8 @@ import {
   trackGoogleSubmit,
 } from "@/lib/googleTag";
 import { landingHead } from "@/lib/i18n/seo";
+import { readLiteMediaHint, useLiteMedia } from "@/lib/liteMedia";
+import { spamFolderHintFor } from "@/lib/spamFolderHint";
 import { privacyPath, termsPath } from "@/lib/i18n/locale";
 import {
   useCurrentLocale,
@@ -74,7 +77,6 @@ import awsLogo from "../assets/live/aws-logo.png";
 import watchdiveClip from "../assets/live/watchdive-clip.mp4";
 import clipPoster from "../assets/live/watchdive-clip-poster.webp";
 import watchScreen from "../assets/live/watch-screen.png";
-import housingImage from "../assets/live/housing.webp";
 import samsungFeature from "../assets/live/samsung-feature.webp";
 import samsungLogo from "../assets/live/samsung-logo.svg";
 import wordmarkWhite from "../assets/brand/diveroid-wordmark-white.png";
@@ -90,7 +92,6 @@ import kickstarter800 from "../assets/live/refresh/poolside-640.webp";
 import kickstarter1200 from "../assets/live/refresh/poolside-1000.webp";
 import samsungFeature800 from "../assets/live/responsive/samsung-feature-800.webp";
 import samsungFeature1200 from "../assets/live/responsive/samsung-feature-1200.webp";
-import housing800 from "../assets/live/responsive/housing-800.webp";
 import watchScreen400 from "../assets/live/responsive/watch-screen-400.webp";
 import watchdiveClip720 from "../assets/live/responsive/watchdive-clip-720.mp4";
 
@@ -102,7 +103,6 @@ const stepSrcSets = {
 };
 const kickstarterSrcSet = `${kickstarter800} 640w, ${kickstarter1200} 1000w, ${kickstarterImage} 1600w`;
 const samsungFeatureSrcSet = `${samsungFeature800} 800w, ${samsungFeature1200} 1200w, ${samsungFeature} 1600w`;
-const housingSrcSet = `${housing800} 800w, ${housingImage} 1600w`;
 const watchScreenSrcSet = `${watchScreen400} 400w, ${watchScreen} 1440w`;
 
 // Inlines an App 3.0 icon SVG (imported ?raw) so it inherits the current text
@@ -119,8 +119,12 @@ function AppIcon({ svg, className }: { svg: string; className?: string }) {
 
 export const Route = createFileRoute("/")({
   // The list figure is part of the server render, so it does not change a
-  // second after load (see WaitlistProgress).
-  loader: async () => ({ waitlistCount: await loadWaitlistCount() }),
+  // second after load (see WaitlistProgress). `liteMedia` is the Save-Data
+  // hint, read once here so the server render and hydration agree on it.
+  loader: async () => ({
+    waitlistCount: await loadWaitlistCount(),
+    liteMedia: readLiteMediaHint(),
+  }),
   head: () => landingHead("en"),
   component: DesignFrozenLanding,
 });
@@ -210,7 +214,7 @@ function splitTwoHighlights(
 function LaunchBanner() {
   const m = useFrozenLandingMessages();
   return (
-    <div className="relative z-20 border-b border-white/10 bg-[#201748] text-white">
+    <div className="wd-top-bar relative z-20 border-b border-white/10 text-white">
       <div className="wd-top mx-auto max-w-6xl">
         <img src={wordmarkWhite} alt="DIVEROID" className="wd-top-mark shrink-0" />
         <p className="wd-top-line text-caption uppercase">
@@ -239,6 +243,8 @@ function LaunchBanner() {
  * `sizes` must be at least the CSS width the image paints at each breakpoint;
  * the browser then picks the smallest srcset cut that covers it at the device
  * pixel ratio. `fetchPriority` is "high" only for what is on the first screen.
+ * On a data-saving or 3g-or-slower connection only the first (smallest) cut is
+ * offered; these photos are lazy, so the swap lands before they are fetched.
  */
 function SectionImage({
   src,
@@ -257,10 +263,11 @@ function SectionImage({
   sizes?: string;
   fetchPriority?: "high" | "low" | "auto";
 }) {
+  const lite = useLiteMedia();
   return (
     <img
       src={src}
-      srcSet={srcSet}
+      srcSet={lite && srcSet ? srcSet.split(",")[0] : srcSet}
       sizes={sizes}
       alt={alt}
       loading={priority ? "eager" : "lazy"}
@@ -279,6 +286,9 @@ function SectionImage({
  * down. Now the poster arrives at lazy-image distance and the clip only loads
  * and plays while it is on screen, so the frame a visitor sees is unchanged.
  * `mobileSrc`, when given, is a 720p cut of the same clip for narrow screens.
+ * On a data-saving or 3g-or-slower connection nothing plays or downloads on
+ * its own: the poster stays, with a play button, and the clip loads on a tap.
+ * The parent must be positioned (the button covers the frame).
  */
 function LazyVideo({
   src,
@@ -293,13 +303,18 @@ function LazyVideo({
   className: string;
   ariaLabel?: string;
 }) {
+  const m = useFrozenLandingMessages();
   const ref = useRef<HTMLVideoElement>(null);
   const [near, setNear] = useState(false);
+  const lite = useLiteMedia();
+  const [tapped, setTapped] = useState(false);
+  const autoplay = !lite;
 
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
     const play = () => {
+      if (!autoplay) return;
       video.play().catch(() => {
         // Low-power or data-saver modes refuse muted autoplay; the poster stays,
         // exactly as it did with the autoplay attribute.
@@ -331,22 +346,38 @@ function LazyVideo({
       posterObserver.disconnect();
       playObserver.disconnect();
     };
-  }, []);
+  }, [autoplay]);
 
   return (
-    <video
-      ref={ref}
-      poster={near ? poster : undefined}
-      muted
-      loop
-      playsInline
-      preload="none"
-      aria-label={ariaLabel}
-      className={className}
-    >
-      {mobileSrc && <source src={src} media="(min-width: 768px)" />}
-      <source src={mobileSrc ?? src} />
-    </video>
+    <>
+      <video
+        ref={ref}
+        poster={near ? poster : undefined}
+        muted
+        loop
+        playsInline
+        preload="none"
+        controls={lite && tapped}
+        aria-label={ariaLabel}
+        className={className}
+      >
+        {mobileSrc && <source src={src} media="(min-width: 768px)" />}
+        <source src={mobileSrc ?? src} />
+      </video>
+      {lite && !tapped && (
+        <button
+          type="button"
+          onClick={() => {
+            setTapped(true);
+            ref.current?.play().catch(() => {});
+          }}
+          className="wd-play"
+        >
+          <span aria-hidden>▶</span>
+          <span className="sr-only">{m.media.play}</span>
+        </button>
+      )}
+    </>
   );
 }
 
@@ -623,6 +654,7 @@ function CheckInboxCard({
   }, []);
 
   const webmail = webmailFor(email);
+  const spamHint = spamFolderHintFor(email);
   const [inApp, setInApp] = useState(false);
   useEffect(() => setInApp(isInAppBrowser()), []);
 
@@ -658,6 +690,7 @@ function CheckInboxCard({
           </div>
         </li>
       </ol>
+      {spamHint && <p className="wd-provider-hint">{m.inbox[spamHint]}</p>}
       {inApp && <p className="wd-inapp-hint">{m.inbox.inAppHint}</p>}
       {webmail && !inApp && (
         <a href={webmail.url} target="_blank" rel="noopener noreferrer" className="wd-open-mail">
@@ -733,6 +766,34 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  // On a slow phone the server-rendered form is on screen seconds before the
+  // script that runs it. Left alone, a submit in that window reloads the page
+  // and drops the address. HOLD_EARLY_SUBMIT_JS (inline in <Hero>) holds that
+  // submit and marks the form `data-wd-queued`. When React takes over, keep
+  // what was typed, mark the form ready, and send the held submit once.
+  // `ready` is a prop, not a DOM write, so the form that returns after "Wrong
+  // address?" is ready too.
+  const [ready, setReady] = useState(false);
+  const [queued, setQueued] = useState(false);
+  useLayoutEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    const typedEmail = form.querySelector<HTMLInputElement>(`#${id}-email`)?.value ?? "";
+    if (typedEmail) setEmail(typedEmail);
+    const typedPhone = form.querySelector<HTMLInputElement>('input[type="tel"]')?.value ?? "";
+    if (typedPhone) setPhone(typedPhone);
+    setReady(true);
+    if (form.hasAttribute("data-wd-queued")) {
+      form.removeAttribute("data-wd-queued");
+      setQueued(true);
+    }
+  }, [id]);
+  useEffect(() => {
+    if (!queued) return;
+    setQueued(false);
+    formRef.current?.requestSubmit();
+  }, [queued]);
 
   // Waits for the confirmation, which may never arrive in this tab — the link
   // can be opened on another device entirely. So the wait is deliberately
@@ -895,6 +956,8 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   return (
     <form
       ref={formRef}
+      data-wd-signup=""
+      data-wd-ready={ready ? "" : undefined}
       onSubmit={async (e) => {
         e.preventDefault();
         if (loading) return;
@@ -1005,6 +1068,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         </label>
       )}
 
+      <p role="status" className="wd-queued-note">
+        {m.form.queued}
+      </p>
       <p className="wd-signup-steps text-xs text-white/80">
         <span>
           <b>1</b> {m.form.step1}
@@ -1054,11 +1120,27 @@ function HeroProof() {
   );
 }
 
+/**
+ * Holds a signup submitted before the bundle hydrates (see EmailForm). Capture
+ * phase on the document, registered while the HTML is still parsing, so it
+ * runs before React's own listener on the same node. Until a form carries
+ * `data-wd-ready` it stops the native reload and marks the form queued; after
+ * that it does nothing.
+ */
+const HOLD_EARLY_SUBMIT_JS = `document.addEventListener("submit",function(e){var f=e.target;if(!f||!f.hasAttribute||!f.hasAttribute("data-wd-signup")||f.hasAttribute("data-wd-ready"))return;e.preventDefault();e.stopImmediatePropagation();f.setAttribute("data-wd-queued","")},true);`;
+
+/**
+ * The first screen answers what this is before anything loads: the headline
+ * names the outcome (your smartwatch becomes a dive computer), the sub-line
+ * says how, the photo shows it on a wrist in water, then the price and the
+ * form. Text and form are server-rendered; the photo has an instant preview.
+ */
 function Hero() {
   const m = useFrozenLandingMessages();
   const [before, highlight, after] = splitHighlightedCopy(m.hero.h1, m.hero.h1Highlight);
   return (
     <header className="wd-hero-new text-white">
+      <script dangerouslySetInnerHTML={{ __html: HOLD_EARLY_SUBMIT_JS }} />
       <LaunchBanner />
       <div className="wd-hero-layout mx-auto max-w-6xl px-5">
         <div className="wd-hero-heading">
@@ -1067,12 +1149,12 @@ function Hero() {
             <span className="text-[#65ceee]">{highlight}</span>
             {after}
           </h1>
+          <p className="wd-hero-sub text-body text-[#F6FAFC]">{m.hero.sub}</p>
         </div>
         <div className="wd-hero-media">
-          <ProductGallery />
+          <HeroPhoto />
         </div>
         <div className="wd-hero-signup">
-          <p className="text-body text-[#F6FAFC]">{m.hero.sub}</p>
           <div className="wd-hero-price">
             <span className="text-white/65 line-through">{m.hero.wasPrice}</span>
             <span className="text-subhead">{m.hero.nowPrice}</span>
@@ -1089,22 +1171,7 @@ function Hero() {
           <ReferralWelcome />
         </div>
         <div className="wd-hero-proof">
-          <div className="wd-product-facts">
-            <div>
-              <AppIcon svg={maxDepthIcon} className="size-7" />
-              <p>
-                {m.hero.stat1Label}
-                <small>{m.hero.stat1Desc}</small>
-              </p>
-            </div>
-            <div>
-              <AppIcon svg={scubaFigureIcon} className="size-7" />
-              <p>
-                {m.hero.stat2Label}
-                <small>{m.hero.stat2Desc}</small>
-              </p>
-            </div>
-          </div>
+          <UspStrip />
           <HeroProof />
         </div>
       </div>
@@ -1112,11 +1179,84 @@ function Hero() {
   );
 }
 
+/**
+ * Three reasons, in the order a diver's doubts arrive: will it work with my
+ * watch (most assume they need an Ultra), what does it cost, what does it do.
+ * Only claims already made further down the page; the model list is linked.
+ */
+function UspStrip() {
+  const m = useFrozenLandingMessages();
+  return (
+    <ul className="wd-usp" aria-label={m.usp.label}>
+      <li>
+        <span className="wd-usp-icon">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <circle cx="12" cy="12" r="6" />
+            <polyline points="12 10 12 12 13 13" />
+            <path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 4.05" />
+            <path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05" />
+          </svg>
+        </span>
+        <div>
+          <p className="wd-usp-title">{m.usp.compatTitle}</p>
+          <p className="wd-usp-body">{m.usp.compatBody}</p>
+          <a href="#compatibility" className="wd-usp-link">
+            {m.usp.compatLink} <span aria-hidden>↓</span>
+          </a>
+        </div>
+      </li>
+      <li>
+        <span className="wd-usp-icon">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.42l8.7 8.7a2.43 2.43 0 0 0 3.42 0l6.58-6.58a2.43 2.43 0 0 0 0-3.42z" />
+            <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
+          </svg>
+        </span>
+        <div>
+          <p className="wd-usp-title">
+            {formatMessage(m.usp.priceTitle, { price: m.hero.nowPrice })}
+          </p>
+          <p className="wd-usp-body">{formatMessage(m.usp.priceBody, { was: m.hero.wasPrice })}</p>
+        </div>
+      </li>
+      <li>
+        <span className="wd-usp-icon">
+          <AppIcon svg={maxDepthIcon} className="size-[22px]" />
+        </span>
+        <div>
+          <p className="wd-usp-title">{m.usp.wristTitle}</p>
+          <p className="wd-usp-body">{m.usp.wristBody}</p>
+        </div>
+      </li>
+    </ul>
+  );
+}
+
 function ValueSection() {
   const m = useFrozenLandingMessages();
   return (
     <section>
-      <div aria-hidden className="h-10 bg-gradient-to-b from-[#201748] to-background sm:h-20" />
+      <div aria-hidden className="h-10 bg-gradient-to-b from-[#07131c] to-background sm:h-20" />
       <div className="mx-auto max-w-6xl px-5 pb-20 pt-2 sm:pb-28">
         <div className="lg:hidden">
           <p className="mb-4 text-caption uppercase text-primary">{m.value.kicker}</p>
@@ -1583,7 +1723,7 @@ function AppEcosystem() {
 function Compatibility() {
   const m = useFrozenLandingMessages();
   return (
-    <section className="wd-section">
+    <section id="compatibility" className="wd-section">
       <div className="mx-auto max-w-6xl">
         <div className="overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
           <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
@@ -1605,9 +1745,15 @@ function Compatibility() {
         {/* The housing is the path almost everyone arriving here is on: a depth
             sensor is rare, and a visitor whose watch has none is the person this
             section has to answer first. Sizing the two cards equally sent the
-            opposite message — that the Ultra route was the main one. */}
+            opposite message — that the Ultra route was the main one.
+            The whole housing is shown, contained: the old square crop cut its
+            edge, and beside the text it squeezed the model list to half a
+            phone. It stacks above the text until there is room beside it. */}
         <div className="mt-8 grid gap-4 sm:grid-cols-5">
-          <div className="flex items-start gap-5 min-w-0 rounded-2xl border-2 border-primary/35 bg-card p-6 shadow-[0_16px_40px_-12px_oklch(0.2_0.03_260/0.28)] sm:col-span-3">
+          <div className="wd-launch-card min-w-0 rounded-2xl border-2 border-primary/35 bg-card p-6 shadow-[0_16px_40px_-12px_oklch(0.2_0.03_260/0.28)] sm:col-span-3">
+            <div className="wd-launch-media">
+              <ProductGallery sizes="(min-width: 1024px) 260px, (min-width: 640px) 600px, calc(100vw - 92px)" />
+            </div>
             <div className="min-w-0 flex-1">
               <span className="inline-flex min-h-11 max-w-full items-center rounded-full bg-primary/10 px-3 text-caption uppercase text-primary hyphens-auto [overflow-wrap:anywhere]">
                 {m.compat.housingBadge}
@@ -1623,19 +1769,12 @@ function Compatibility() {
                   m.compat.housingModel4,
                 ].map((model) => (
                   <li key={model} className="flex items-center gap-2">
-                    <span className="size-1.5 rounded-full bg-primary" />
+                    <span className="size-1.5 shrink-0 rounded-full bg-primary" />
                     {model}
                   </li>
                 ))}
               </ul>
             </div>
-            <SectionImage
-              src={housingImage}
-              srcSet={housingSrcSet}
-              sizes="(min-width: 640px) 214px, 150px"
-              alt={m.compat.housingAlt}
-              className="size-28 shrink-0 self-center rounded-xl object-cover sm:size-40"
-            />
           </div>
 
           {/* App Only is not available yet. Keep this card visually secondary
@@ -1688,7 +1827,7 @@ function ActionCameras() {
             </span>
           ))}
         </div>
-        <div className="mx-auto mt-10 max-w-3xl overflow-hidden rounded-[2rem] border border-border shadow-sm">
+        <div className="relative mx-auto mt-10 max-w-3xl overflow-hidden rounded-[2rem] border border-border shadow-sm">
           <LazyVideo
             src={connectedAppVideo}
             poster={connectedAppPoster}

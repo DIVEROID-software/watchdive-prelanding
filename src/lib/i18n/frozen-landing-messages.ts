@@ -199,6 +199,10 @@ const ko: FrozenLandingMessages = {
     openYahoo: "Yahoo 메일 열기",
     openNaver: "네이버 메일 열기",
     openDaum: "다음 메일 열기",
+    providerYahoo: "Yahoo·AOL 메일이라면 스팸함을 열고 ‘스팸 아님’을 눌러 주세요.",
+    providerApple: "iCloud 메일이라면 정크 메일함을 확인하고 받은 편지함으로 옮겨 주세요.",
+    providerOutlook:
+      "Outlook·Hotmail이라면 정크 메일함을 확인하고 ‘정크 메일 아님’으로 표시해 주세요.",
   },
   closed: {
     title: "명단이 찼습니다",
@@ -222,18 +226,33 @@ const ko: FrozenLandingMessages = {
     step1: "이메일 입력",
     step2: "이메일 인증하기",
     step3: "하루 전, 한 시간 전 알림",
+    queued: "아직 불러오는 중이에요. 잠시 후 신청이 자동으로 전송됩니다.",
   },
   heroProof: {
     readAll: "베타 후기 {count}개 모두 보기 · 일부는 번역 ↓",
   },
+  usp: {
+    label: "Watch Dive 핵심",
+    compatTitle: "지금 쓰는 스마트워치 그대로",
+    compatBody: "Apple Watch(Ultra는 추후 지원) · Galaxy Watch4–9",
+    compatLink: "내 모델 확인하기",
+    priceTitle: "선착순 100명 {price}",
+    priceBody: "정가 {was}. 12월 Kickstarter 런칭.",
+    wristTitle: "수심·시간·수온을 손목 위에서",
+    wristBody:
+      "하우징 60m 방수 테스트 완료. 스쿠버도 프리다이빙도. 다이빙 기록은 DIVEROID 앱에 남습니다.",
+  },
+  media: {
+    play: "영상 재생",
+  },
   hero: {
     badge: "Kickstarter",
-    h1: "Watch Dive. 쓰던 스마트워치 그대로, 바닷속으로.",
-    h1Highlight: "쓰던 스마트워치 그대로",
-    sub: "수심과 수온은 하우징 안의 DIVEROID 센서가 읽습니다. 숫자는 Apple Watch나 Galaxy Watch 화면에 뜹니다.",
+    h1: "Watch Dive. 쓰던 스마트워치가 다이브 컴퓨터로, 그대로 바닷속으로.",
+    h1Highlight: "다이브 컴퓨터",
+    sub: "차고 있던 Apple Watch나 Galaxy Watch를 하우징에 끼우면, 안의 DIVEROID 센서가 수심과 수온을 잽니다. 다이브 컴퓨터를 따로 사고 익힐 필요가 없습니다.",
     priceLine: "Kickstarter 선착순 100명 얼리버드 20만 원대. 12월 킥스타터 런칭.",
     backgroundAlt: "화려한 산호초를 탐험하는 스쿠버 다이버",
-    sideImageAlt: "물속에서 촬영한 Watch Dive 제품 컷",
+    sideImageAlt: "산호초 위, 다이버 손목에 찬 Watch Dive. 화면에 수심과 다이브 타임이 보입니다",
     stat1Label: "하우징 · 60m",
     stat1Desc: "방수 테스트 완료",
     stat2Label: "스쿠버 + 프리다이빙",
@@ -644,6 +663,9 @@ const zhCN: FrozenLandingMessages = {
     openYahoo: "打开 Yahoo 邮箱",
     openNaver: "네이버 메일 열기",
     openDaum: "다음 메일 열기",
+    providerYahoo: "用 Yahoo 或 AOL 邮箱？请打开“垃圾邮件”文件夹，点“不是垃圾邮件”。",
+    providerApple: "用 iCloud 邮箱？请查看“垃圾邮件”文件夹，再把邮件移到收件箱。",
+    providerOutlook: "用 Outlook 或 Hotmail？请查看“垃圾邮件”文件夹，并标记为“非垃圾邮件”。",
   },
   closed: {
     title: "名单已满",
@@ -665,18 +687,32 @@ const zhCN: FrozenLandingMessages = {
     step1: "填写邮箱",
     step2: "验证邮箱",
     step3: "开启前 1 天和 1 小时各提醒一次",
+    queued: "页面还在加载，稍后会自动提交。",
   },
   heroProof: {
     readAll: "查看全部 {count} 条内测评价 · 部分为译文 ↓",
   },
+  usp: {
+    label: "Watch Dive 要点",
+    compatTitle: "就用你现在的智能手表",
+    compatBody: "Apple Watch（Ultra 后续支持）· Galaxy Watch4–9",
+    compatLink: "查看支持机型",
+    priceTitle: "前 100 名{price}",
+    priceBody: "公开价格{was}。12 月在 Kickstarter 上线。",
+    wristTitle: "水深、时间、水温，戴在手腕上",
+    wristBody: "外壳已完成 60 米防水测试。水肺、自由潜都能用。潜水记录同步到 DIVEROID App。",
+  },
+  media: {
+    play: "播放视频",
+  },
   hero: {
     badge: "Kickstarter",
-    h1: "Watch Dive。手上那块智能手表，跟你一起下水。",
-    h1Highlight: "手上那块智能手表",
-    sub: "水深和水温，由外壳里的 DIVEROID 传感器测量。数值显示在你的 Apple Watch 或 Galaxy Watch 上。",
+    h1: "Watch Dive，让手上的智能手表变身潜水电脑。",
+    h1Highlight: "潜水电脑",
+    sub: "把你现在戴的 Apple Watch 或 Galaxy Watch 装进外壳，里面的 DIVEROID 传感器测量水深和水温。不用再买一台潜水电脑，也不用从头学。",
     priceLine: "Kickstarter 前 100 名早鸟价约 1,000 元。12 月上线。",
     backgroundAlt: "在缤纷珊瑚礁间探索的水肺潜水员",
-    sideImageAlt: "Watch Dive 水下产品实拍",
+    sideImageAlt: "珊瑚礁上方，潜水员手腕上的 Watch Dive，屏幕显示水深和潜水时间",
     stat1Label: "外壳 · 60 米",
     stat1Desc: "防水测试已完成",
     stat2Label: "水肺 + 自由潜",
@@ -1076,6 +1112,9 @@ const zhTW: FrozenLandingMessages = {
     openYahoo: "開啟 Yahoo 信箱",
     openNaver: "네이버 메일 열기",
     openDaum: "다음 메일 열기",
+    providerYahoo: "用 Yahoo 或 AOL 信箱？請打開「垃圾郵件」資料夾，點「不是垃圾郵件」。",
+    providerApple: "用 iCloud 信箱？請查看「垃圾郵件」資料夾，再把郵件移到收件匣。",
+    providerOutlook: "用 Outlook 或 Hotmail？請查看「垃圾郵件」資料夾，並標記為「不是垃圾郵件」。",
   },
   closed: {
     title: "名單已滿",
@@ -1097,18 +1136,32 @@ const zhTW: FrozenLandingMessages = {
     step1: "填寫信箱",
     step2: "驗證電子郵件",
     step3: "開賣前 1 天與 1 小時各提醒一次",
+    queued: "頁面還在載入，稍後會自動送出。",
   },
   heroProof: {
     readAll: "閱讀全部 {count} 則 Beta 心得 · 部分為譯文 ↓",
   },
+  usp: {
+    label: "Watch Dive 重點",
+    compatTitle: "就用你現在的智慧手錶",
+    compatBody: "Apple Watch（Ultra 後續支援）· Galaxy Watch4–9",
+    compatLink: "查看支援機型",
+    priceTitle: "前 100 名{price}",
+    priceBody: "公開售價{was}。12 月在 Kickstarter 上線。",
+    wristTitle: "水深、時間、水溫，戴在手腕上",
+    wristBody: "外殼已完成 60 公尺防水測試。水肺、自由潛都能用。潛水紀錄同步到 DIVEROID App。",
+  },
+  media: {
+    play: "播放影片",
+  },
   hero: {
     badge: "Kickstarter",
-    h1: "Watch Dive。手上那支智慧手錶，陪你一起下水。",
-    h1Highlight: "手上那支智慧手錶",
-    sub: "水深與水溫，由外殼裡的 DIVEROID 感測器量測。數值顯示在你的 Apple Watch 或 Galaxy Watch 上。",
+    h1: "Watch Dive，讓手上的智慧手錶變身潛水電腦。",
+    h1Highlight: "潛水電腦",
+    sub: "把你現在戴的 Apple Watch 或 Galaxy Watch 裝進外殼，裡面的 DIVEROID 感測器量測水深與水溫。不必再買一台潛水電腦，也不必從頭學。",
     priceLine: "Kickstarter 前 100 名早鳥價約 NT$5,000。12 月上線。",
     backgroundAlt: "在繽紛珊瑚礁間探索的水肺潛水員",
-    sideImageAlt: "Watch Dive 水下產品實拍",
+    sideImageAlt: "珊瑚礁上方，潛水員手腕上的 Watch Dive，螢幕顯示水深與潛水時間",
     stat1Label: "外殼 · 60 公尺",
     stat1Desc: "防水測試已完成",
     stat2Label: "水肺 + 自由潛",
@@ -1508,6 +1561,12 @@ const ja: FrozenLandingMessages = {
     openYahoo: "Yahoo!メールを開く",
     openNaver: "네이버 메일 열기",
     openDaum: "다음 메일 열기",
+    providerYahoo:
+      "Yahoo!メール・AOLメールの方は「迷惑メール」フォルダを開き、「迷惑メールではない」を押してください。",
+    providerApple:
+      "iCloudメールの方は「迷惑メール」フォルダを確認し、受信ボックスへ移動してください。",
+    providerOutlook:
+      "Outlook・Hotmailの方は「迷惑メール」フォルダを確認し、「迷惑メールではない」に設定してください。",
   },
   closed: {
     title: "リストは満員です",
@@ -1531,18 +1590,33 @@ const ja: FrozenLandingMessages = {
     step1: "メールアドレスを入力",
     step2: "メールを認証する",
     step3: "前日と1時間前にお知らせ",
+    queued: "読み込み中です。まもなく自動で送信されます。",
   },
   heroProof: {
     readAll: "ベータレビュー {count} 件をすべて読む · 一部は翻訳 ↓",
   },
+  usp: {
+    label: "Watch Dive のポイント",
+    compatTitle: "いま使っているスマートウォッチで",
+    compatBody: "Apple Watch（Ultra は後日対応）· Galaxy Watch4–9",
+    compatLink: "対応機種を確認",
+    priceTitle: "先着100名は{price}",
+    priceBody: "一般価格は{was}。12月に Kickstarter でローンチ。",
+    wristTitle: "水深・時間・水温を手首に",
+    wristBody:
+      "ハウジングは60m防水テスト完了。スキューバにもフリーダイビングにも。ログは DIVEROID アプリへ。",
+  },
+  media: {
+    play: "動画を再生",
+  },
   hero: {
     badge: "Kickstarter",
-    h1: "Watch Dive. いつものスマートウォッチで、潜る。",
-    h1Highlight: "いつものスマートウォッチで",
-    sub: "水深と水温は、ハウジング内蔵のDIVEROIDセンサーが計測。数値は Apple Watch や Galaxy Watch の画面に表示されます。",
+    h1: "Watch Dive で、いつものスマートウォッチがダイブコンピューターに。",
+    h1Highlight: "ダイブコンピューター",
+    sub: "今つけている Apple Watch や Galaxy Watch をハウジングに入れるだけ。内蔵の DIVEROID センサーが水深と水温を計測します。ダイブコンピューターを別に買って覚え直す必要はありません。",
     priceLine: "Kickstarter 先着100名の早割は2万円台。12月ローンチ。",
     backgroundAlt: "色鮮やかなサンゴ礁を探索するスキューバダイバー",
-    sideImageAlt: "水中で撮影した Watch Dive の製品写真",
+    sideImageAlt: "サンゴ礁の上、ダイバーの手首の Watch Dive。画面に水深と潜水時間",
     stat1Label: "ハウジング · 60m",
     stat1Desc: "防水テスト完了",
     stat2Label: "スキューバ + フリーダイビング",
@@ -1958,6 +2032,11 @@ const es: FrozenLandingMessages = {
     openYahoo: "Abrir Yahoo Mail",
     openNaver: "네이버 메일 열기",
     openDaum: "다음 메일 열기",
+    providerYahoo: "¿Usas Yahoo o AOL Mail? Mira en Spam y pulsa “No es spam”.",
+    providerApple:
+      "¿Usas iCloud Mail? Mira en “Correo no deseado” y mueve el correo a la bandeja de entrada.",
+    providerOutlook:
+      "¿Usas Outlook o Hotmail? Mira en “Correo no deseado” y márcalo como “No es correo no deseado”.",
   },
   closed: {
     title: "La lista está llena",
@@ -1983,19 +2062,35 @@ const es: FrozenLandingMessages = {
     step1: "Escribe tu correo",
     step2: "Confirma tu correo",
     step3: "Aviso 1 día y 1 hora antes",
+    queued: "Aún está cargando. Tu registro se enviará solo en un momento.",
   },
   heroProof: {
     readAll: "Lee las {count} reseñas beta · algunas traducidas ↓",
   },
+  usp: {
+    label: "Por qué Watch Dive",
+    compatTitle: "Funciona con el smartwatch que ya tienes",
+    compatBody: "Apple Watch, salvo Ultra (más adelante) · Galaxy Watch4–9",
+    compatLink: "Comprueba tu modelo",
+    priceTitle: "{price} para los 100 primeros",
+    priceBody: "Precio público: {was}. En Kickstarter en diciembre.",
+    wristTitle: "Profundidad, tiempo y temperatura en la muñeca",
+    wristBody:
+      "Prueba de resistencia al agua de la carcasa a 60 m completada. Buceo y apnea. Tus inmersiones, en la app DIVEROID.",
+  },
+  media: {
+    play: "Reproducir vídeo",
+  },
   hero: {
     badge: "Kickstarter",
-    h1: "Watch Dive. Tu smartwatch de siempre, bajo el agua.",
-    h1Highlight: "bajo el agua",
-    sub: "Un sensor DIVEROID dentro de la carcasa mide la profundidad y la temperatura del agua. Tu Apple Watch o Galaxy Watch las muestra mientras buceas.",
+    h1: "Watch Dive convierte tu smartwatch en un ordenador de buceo.",
+    h1Highlight: "ordenador de buceo",
+    sub: "Mete el Apple Watch o Galaxy Watch que ya llevas en la carcasa: su sensor DIVEROID mide la profundidad y la temperatura del agua. Sin un segundo ordenador de buceo que comprar ni aprender.",
     priceLine:
       "Early bird por unos 140 € para los 100 primeros en Kickstarter. Lanzamiento en diciembre.",
     backgroundAlt: "Buceador explorando un arrecife de coral lleno de vida",
-    sideImageAlt: "Foto submarina del producto Watch Dive",
+    sideImageAlt:
+      "Watch Dive en la muñeca de un buceador sobre un arrecife de coral, con la profundidad y el tiempo de inmersión en pantalla",
     stat1Label: "Carcasa · 60 m",
     stat1Desc: "Prueba de resistencia al agua completada",
     stat2Label: "Buceo + Apnea",
@@ -2418,6 +2513,11 @@ const fr: FrozenLandingMessages = {
     openYahoo: "Ouvrir Yahoo Mail",
     openNaver: "네이버 메일 열기",
     openDaum: "다음 메일 열기",
+    providerYahoo: "Yahoo ou AOL Mail ? Ouvrez le dossier Spam et choisissez « Pas un spam ».",
+    providerApple:
+      "iCloud Mail ? Regardez dans « Indésirables », puis déplacez l’e-mail vers la boîte de réception.",
+    providerOutlook:
+      "Outlook ou Hotmail ? Regardez dans « Courrier indésirable », puis marquez l’e-mail comme légitime.",
   },
   closed: {
     title: "La liste est complète",
@@ -2443,19 +2543,35 @@ const fr: FrozenLandingMessages = {
     step1: "Saisissez votre e-mail",
     step2: "Confirmez votre e-mail",
     step3: "Rappel 1 jour et 1 heure avant",
+    queued: "Chargement en cours. Votre inscription partira toute seule dans un instant.",
   },
   heroProof: {
     readAll: "Lire les {count} avis bêta · certains traduits ↓",
   },
+  usp: {
+    label: "Pourquoi Watch Dive",
+    compatTitle: "Avec la montre connectée que vous avez",
+    compatBody: "Apple Watch, sauf Ultra (plus tard) · Galaxy Watch4–9",
+    compatLink: "Vérifier mon modèle",
+    priceTitle: "{price} pour les 100 premiers",
+    priceBody: "Tarif public : {was}. Sur Kickstarter en décembre.",
+    wristTitle: "Profondeur, temps et température au poignet",
+    wristBody:
+      "Test d’étanchéité du caisson à 60 m terminé. Plongée bouteille et apnée. Vos plongées rejoignent l’appli DIVEROID.",
+  },
+  media: {
+    play: "Lire la vidéo",
+  },
   hero: {
     badge: "Kickstarter",
-    h1: "Watch Dive. Votre montre connectée, sous l’eau.",
-    h1Highlight: "sous l’eau",
-    sub: "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau. Votre Apple Watch ou Galaxy Watch les affiche pendant la plongée.",
+    h1: "Watch Dive transforme votre montre connectée en ordinateur de plongée.",
+    h1Highlight: "ordinateur de plongée",
+    sub: "Glissez l’Apple Watch ou la Galaxy Watch que vous portez déjà dans le caisson : son capteur DIVEROID mesure la profondeur et la température de l’eau. Pas de second ordinateur de plongée à acheter ni à apprivoiser.",
     priceLine:
       "Early bird à environ 140 € pour les 100 premiers sur Kickstarter. Lancement en décembre.",
     backgroundAlt: "Plongeur explorant un récif corallien éclatant",
-    sideImageAlt: "Visuel produit sous-marin de Watch Dive",
+    sideImageAlt:
+      "Watch Dive au poignet d’un plongeur au-dessus d’un récif corallien, profondeur et temps de plongée à l’écran",
     stat1Label: "Caisson · 60 m",
     stat1Desc: "Test d’étanchéité terminé",
     stat2Label: "Plongée bouteille + apnée",
@@ -2880,6 +2996,11 @@ const de: FrozenLandingMessages = {
     openYahoo: "Yahoo Mail öffnen",
     openNaver: "네이버 메일 열기",
     openDaum: "다음 메일 열기",
+    providerYahoo: "Yahoo oder AOL Mail? Schau im Spam-Ordner nach und tippe auf „Kein Spam“.",
+    providerApple:
+      "iCloud Mail? Schau im Ordner „Werbung“ nach und verschiebe die E-Mail in den Posteingang.",
+    providerOutlook:
+      "Outlook oder Hotmail? Schau unter „Junk-E-Mail“ nach und markiere sie als „Keine Junk-E-Mail“.",
   },
   closed: {
     title: "Die Liste ist voll",
@@ -2904,18 +3025,34 @@ const de: FrozenLandingMessages = {
     step1: "E-Mail eingeben",
     step2: "E-Mail bestätigen",
     step3: "Erinnerung 1 Tag und 1 Stunde vorher",
+    queued: "Lädt noch. Deine Anmeldung wird gleich automatisch gesendet.",
   },
   heroProof: {
     readAll: "Alle {count} Beta-Bewertungen lesen · teils übersetzt ↓",
   },
+  usp: {
+    label: "Warum Watch Dive",
+    compatTitle: "Mit der Smartwatch, die du hast",
+    compatBody: "Apple Watch außer Ultra (später) · Galaxy Watch4–9",
+    compatLink: "Modell prüfen",
+    priceTitle: "{price} für die ersten 100",
+    priceBody: "Öffentlicher Preis: {was}. Start auf Kickstarter im Dezember.",
+    wristTitle: "Tiefe, Zeit und Temperatur am Handgelenk",
+    wristBody:
+      "Dichtigkeitstest des Gehäuses bei 60 m abgeschlossen. Gerätetauchen und Apnoe. Deine Tauchgänge landen in der DIVEROID App.",
+  },
+  media: {
+    play: "Video abspielen",
+  },
   hero: {
     badge: "Kickstarter",
-    h1: "Watch Dive. Deine Smartwatch, auch unter Wasser.",
-    h1Highlight: "auch unter Wasser",
-    sub: "Tiefe und Wassertemperatur misst ein DIVEROID-Sensor im Gehäuse. Deine Apple Watch oder Galaxy Watch zeigt beides beim Tauchen an.",
+    h1: "Watch Dive macht deine Smartwatch zum Tauchcomputer.",
+    h1Highlight: "Tauchcomputer",
+    sub: "Die Apple Watch oder Galaxy Watch, die du schon trägst, kommt ins Gehäuse. Sein DIVEROID-Sensor misst Tiefe und Wassertemperatur. Kein zweiter Tauchcomputer, den du kaufen und lernen musst.",
     priceLine: "Early Bird für die ersten 100 auf Kickstarter: rund 140 €. Start im Dezember.",
     backgroundAlt: "Taucher erkundet ein farbenprächtiges Korallenriff",
-    sideImageAlt: "Watch Dive Unterwasser-Produktaufnahme",
+    sideImageAlt:
+      "Watch Dive am Handgelenk eines Tauchers über einem Korallenriff, mit Tiefe und Tauchzeit auf dem Display",
     stat1Label: "Gehäuse · 60 m",
     stat1Desc: "Dichtigkeitstest abgeschlossen",
     stat2Label: "Gerätetauchen + Apnoe",
@@ -3336,6 +3473,11 @@ const ptBR: FrozenLandingMessages = {
     openYahoo: "Abrir Yahoo Mail",
     openNaver: "네이버 메일 열기",
     openDaum: "다음 메일 열기",
+    providerYahoo: "Usa Yahoo ou AOL Mail? Abra a pasta Spam e toque em “Não é spam”.",
+    providerApple:
+      "Usa o e-mail do iCloud? Veja em “Lixo” e mova a mensagem para a Caixa de Entrada.",
+    providerOutlook:
+      "Usa Outlook ou Hotmail? Veja em “Lixo Eletrônico” e marque como “Não é lixo eletrônico”.",
   },
   closed: {
     title: "A lista está cheia",
@@ -3361,19 +3503,35 @@ const ptBR: FrozenLandingMessages = {
     step1: "Escreva seu e-mail",
     step2: "Confirme seu e-mail",
     step3: "Lembrete 1 dia e 1 hora antes",
+    queued: "Ainda carregando. Seu cadastro é enviado sozinho em instantes.",
   },
   heroProof: {
     readAll: "Leia as {count} avaliações beta · algumas traduzidas ↓",
   },
+  usp: {
+    label: "Por que Watch Dive",
+    compatTitle: "Funciona com o smartwatch que você já tem",
+    compatBody: "Apple Watch, exceto Ultra (mais adiante) · Galaxy Watch4–9",
+    compatLink: "Confira seu modelo",
+    priceTitle: "{price} para os 100 primeiros",
+    priceBody: "Preço público: {was}. No Kickstarter em dezembro.",
+    wristTitle: "Profundidade, tempo e temperatura no pulso",
+    wristBody:
+      "Teste de resistência à água da caixa a 60 m concluído. Cilindro e apneia. Seus mergulhos vão para o app DIVEROID.",
+  },
+  media: {
+    play: "Reproduzir vídeo",
+  },
   hero: {
     badge: "Kickstarter",
-    h1: "Watch Dive. Seu smartwatch de sempre, debaixo d'água.",
-    h1Highlight: "debaixo d'água",
-    sub: "Um sensor DIVEROID dentro da caixa mede a profundidade e a temperatura da água. Seu Apple Watch ou Galaxy Watch mostra os números durante o mergulho.",
+    h1: "Watch Dive transforma seu smartwatch em um computador de mergulho.",
+    h1Highlight: "computador de mergulho",
+    sub: "Encaixe o Apple Watch ou Galaxy Watch que você já usa na caixa: o sensor DIVEROID mede a profundidade e a temperatura da água. Nada de comprar e aprender um segundo computador de mergulho.",
     priceLine:
       "Early bird por cerca de R$ 800 para os 100 primeiros no Kickstarter. Lançamento em dezembro.",
     backgroundAlt: "Mergulhador explorando um recife de coral vibrante",
-    sideImageAlt: "Foto subaquática do produto Watch Dive",
+    sideImageAlt:
+      "Watch Dive no pulso de um mergulhador sobre um recife de coral, com profundidade e tempo de mergulho na tela",
     stat1Label: "Caixa · 60 m",
     stat1Desc: "Teste de resistência à água concluído",
     stat2Label: "Cilindro + Apneia",

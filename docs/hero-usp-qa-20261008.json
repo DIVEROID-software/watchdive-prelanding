@@ -1,0 +1,32 @@
+{
+  "requested": "2026-10-08 owner: hero must show what the product is (in water, on a wrist), work on slow internet, replace the cropped THIS LAUNCH render, land the USP, reduce first-screen leakage",
+  "base_commit": "39fa140",
+  "assets": {
+    "source": "src/assets/live/watchdive-image10.webp (1600x1920, TCF archive underwater wrist shot)",
+    "processing": "wide = 3:2 crop (y 450-1517) at 480/720/1080; tall = full 5:6 frame at 640/960/1280; Lanczos, AVIF q56 + WebP q78; product pixels unretouched",
+    "largest_phone_cut_bytes": { "avif": 26838, "webp": 31566 }
+  },
+  "slow_network_390x844_median": {
+    "method": "Playwright + CDP, local Vercel-output server, cache off, CPU 4x; times in ms from navigation; 5 runs (Save-Data 3 runs)",
+    "slow4g_1.6Mbps_150ms": {
+      "before": { "first_paint_headline": 708, "hero_image": 887, "hydrated": 2390, "kb_before_scroll": 374 },
+      "after": { "first_paint_headline": 608, "hero_image": 778, "hydrated": 2421, "submit_accepted": 616, "kb_before_scroll": 322 }
+    },
+    "3g_0.4Mbps_400ms": {
+      "before": { "first_paint_headline": 1868, "hero_image": 6639, "hydrated": 9025, "kb_before_scroll": 408 },
+      "after": { "first_paint_headline": 1820, "hero_image": 3073, "hydrated": 7341, "submit_accepted": 1829, "kb_before_scroll": 343 }
+    },
+    "3g_save_data": {
+      "before": { "hero_image": 6758, "hydrated": 9028, "kb_before_scroll": 408 },
+      "after": { "hero_image": 1854, "hydrated": 6606, "kb_before_scroll": 283 }
+    },
+    "pre_hydration_submit": "before: page reloads to /?company=, address lost, no signup call; after: submit held, note shown, exactly one signup call with the typed address after hydration (call intercepted and aborted in test)"
+  },
+  "layout_qa": "fv-layoutqa 9 locales x 320/390/430/1440 x pre/post consent x scroll 0/900/1800: no horizontal overflow, no tap target < 44px, no JS errors, no first-screen failures; remaining flags are the existing fixed notify/cookie bars over mid-page text while scrolling (54 states before, 47 after)",
+  "email_field_bottom_390x844_px": { "en": 742, "ko": 755, "ja": 779, "zh-CN": 697, "zh-TW": 723, "de": 769, "fr": 827, "es": 791, "pt-BR": 827 },
+  "not_verified": [
+    "Physical devices and real carrier networks (Chrome emulation only)",
+    "Spam-folder labels per provider UI language (written from provider UI conventions; native review recommended)",
+    "Conversion effect: a shared landing change applies to all ad arms; compare cohorts across the release, not before/after totals"
+  ]
+}

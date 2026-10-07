@@ -91,8 +91,18 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // gallery, product before signup on mobile, real underwater/pool/app photos,
   // clearer two-step email confirmation, address display and resend cooldown.
   // Both forms, section IDs/order, consent and tracking contracts remain.
+  // 2026-10-08: owner-requested hero/USP/conversion pass. The hero shows the
+  // housing on a wrist underwater (<picture>, AVIF/WebP, preloaded) and says
+  // "your smartwatch becomes a dive computer"; the studio gallery moves into
+  // the "This launch" card, uncropped and stacked on phones; a three-item
+  // proof strip (compatibility with a link to the new #compatibility anchor,
+  // the first-100 price, what it does) replaces the two hero facts; Yahoo,
+  // iCloud and Outlook addresses get a spam-folder line in the inbox card; a
+  // submit made before hydration is held and sent once React is ready; on
+  // Save-Data or slow connections videos wait for a tap. Both forms, #offer-form,
+  // section order, consent and tracking calls are unchanged.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "fa9070353c342a9e882c0ae95d2a1f97aa37c27fdc3622efd8966f2b6e8bb49b");
+  assert.equal(digest, "a2e4dcb8ae0dbc000d05ea2a0c2affc3193950973d6d37c593f077621a96b47b");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -139,9 +149,14 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // cut for 한국어 in the picker); Hangul renders pixel-identical.
   // 2026-10-07: owner-authorized mobile content/verification refresh, visually
   // inspected at 320, 390 and 1440px. Old reef styling retired; brand retained.
+  // 2026-10-08: owner-requested hero pass. Ocean ground mixed from brand cyan
+  // and the abyss token (text contrast >= 5.3:1 at the lightest stop), photo
+  // frame with an inlined 24px preview, proof strip, uncropped launch-card
+  // gallery, held-submit note, spam-folder line and tap-to-play. Measured with
+  // fv-layoutqa at 320/390/430/1440, 9 locales, pre/post consent.
   assert.equal(
     sha256(read("src/styles.css")),
-    "7e3b4326fafbd191723756d585743071fc19c9611d46afafd041b2c635c0097c",
+    "3a16d904846892444f186d2020043cf7bc8751ea53a17a6861d9a2a472a4bc3d",
   );
 });
 

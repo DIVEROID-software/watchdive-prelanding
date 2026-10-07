@@ -781,8 +781,15 @@ html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
 .wd-scroll form { scroll-margin-block: 1rem var(--wd-bar-space); }
 
 /* Owner-requested mobile content refresh, 2026-10-07. Product first, then
-   one explicit email-confirmation action. Existing section/tracking IDs stay. */
-.wd-hero-new { background: #201748; }
+   one explicit email-confirmation action. Existing section/tracking IDs stay.
+   2026-10-08 (owner): the hero shows the product in use, in water, and says
+   what it is. The ground is ocean, not flat violet: the brand cyan (#36a9e1)
+   mixed into the abyss (#07131c) of --dv-gradient-abyss at 34% and 16%,
+   lightest at the surface. At the lightest stop white text is 10.1:1, #65ceee
+   5.6:1 and white at 65% 5.3:1; everything below sits on darker water. */
+.wd-hero-new { background: linear-gradient(180deg, #17465f 0%, #0f2b3c 38%, #07131c 100%); }
+/* The bar keeps the cyan kicker at 6:1. */
+.wd-top-bar { background: rgb(7 19 28 / 0.6); }
 .wd-hero-layout {
   display: grid;
   grid-template-areas: "heading" "media" "signup" "proof";
@@ -793,10 +800,40 @@ html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
 .wd-hero-heading { grid-area: heading; }
 .wd-hero-media { grid-area: media; min-width: 0; }
 .wd-hero-signup { grid-area: signup; min-width: 0; }
-.wd-hero-heading h1 { max-width: 16ch; }
-.wd-hero-price { display: flex; align-items: center; gap: .75rem; margin: 1rem 0; }
-.wd-hero-proof { grid-area: proof; display: grid; gap: 1.5rem; border-top: 1px solid #ffffff25; padding-top: 1.5rem; margin-top: .5rem; }
-.wd-product-gallery { overflow: hidden; border-radius: 1.25rem; background: #fff; color: #201748; }
+.wd-hero-heading h1 { max-width: 18ch; }
+.wd-hero-sub { margin-top: .75rem; max-width: 34rem; }
+.wd-hero-price { display: flex; align-items: center; gap: .75rem; margin: 0 0 1rem; }
+.wd-hero-proof { grid-area: proof; display: grid; gap: 2rem; border-top: 1px solid #ffffff25; padding-top: 1.5rem; margin-top: .5rem; }
+/* The photo box takes its shape from CSS, so nothing moves when it arrives.
+   Until then a blurred 24px preview (inlined here, ~200 bytes) over the
+   photo's average colour stands in for it. */
+.wd-hero-photo {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  aspect-ratio: 3 / 2;
+  border-radius: 1.25rem;
+  background: #1d5474;
+}
+.wd-hero-photo::before {
+  content: "";
+  position: absolute;
+  inset: -6%;
+  background: url("data:image/webp;base64,UklGRrgAAABXRUJQVlA4IKwAAACwBACdASoYABAAPt1cpkyopSOiMAgBEBuJbACdMoGB/jN/0/GP/PozofBzaJuAAP653a3ePWzr9s3gNmISd9nLeTuonbBmr8L2nlI0RFMUk8SwhWvXkyTzs2A9Mlk7fkdr0i6VBVlCFNCKje+kq017lWJqGCPNHX6pFmSw+byxOVdtJVNmJdfh7qKDYgHm7/WzB836zQa7XitOgP4oGuhH+aLC9O/aW7+LhsAA") center / cover no-repeat;
+  filter: blur(12px);
+}
+.wd-hero-photo img { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Proof strip: compatibility, price, what it does. */
+.wd-usp { display: grid; gap: 1.125rem; }
+.wd-usp li { display: flex; gap: .875rem; align-items: flex-start; }
+.wd-usp-icon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: .75rem; background: #65ceee24; color: #65ceee; }
+.wd-usp-title { font-size: 1rem; font-weight: 500; line-height: 1.35; }
+.wd-usp-body { margin-top: .2rem; font-size: .875rem; line-height: 1.45; color: #d9eef7; }
+.wd-usp-link { display: inline-flex; align-items: center; gap: .35rem; min-height: 44px; font-size: .875rem; font-weight: 500; color: #65ceee; text-decoration: underline; text-underline-offset: 4px; }
+/* "This launch" card: the whole housing, contained, above the text on
+   phones and tablets and beside it from 1024px. */
+.wd-launch-card { display: grid; gap: 1.25rem; align-items: start; }
+.wd-product-gallery { overflow: hidden; border-radius: 1rem; border: 1px solid var(--border); background: #fff; color: #201748; }
 .wd-product-stage { aspect-ratio: 4 / 3; overflow: hidden; }
 .wd-product-stage img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .wd-product-caption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .25rem .5rem; padding: 0 .875rem .5rem; }
@@ -808,16 +845,18 @@ html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
 .wd-swatch { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #20174844; }
 .wd-swatch-black { background: #23252a; }
 .wd-swatch-white { background: #fff; }
-.wd-product-facts { display: grid; gap: 1rem; align-content: center; }
-.wd-product-facts > div { display: flex; gap: .875rem; align-items: center; }
-.wd-product-facts > div > span { color: #65ceee; flex-shrink: 0; }
-.wd-product-facts p { font-size: 1rem; font-weight: 500; }
-.wd-product-facts small { display: block; font-size: .75rem; font-weight: 400; color: #e2deef; margin-top: .25rem; }
 .wd-submit { background: #65ceee; color: #181238; border-color: #65ceee; box-shadow: 0 4px 20px #00000014; }
 .wd-submit:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+/* A submit made before the script arrives is held (see EmailForm) and says so. */
+.wd-queued-note { display: none; font-size: .8125rem; line-height: 1.4; color: #ddf5ff; }
+form[data-wd-queued] .wd-queued-note { display: block; }
+form[data-wd-queued] .wd-submit { cursor: progress; opacity: .85; }
+form[data-wd-queued] .wd-submit::after { content: ""; width: 1em; height: 1em; margin-left: .5rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: wd-spin .8s linear infinite; }
+@keyframes wd-spin { to { transform: rotate(360deg); } }
 .wd-signup-steps { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: .4rem .65rem; }
 .wd-signup-steps b { display: inline-flex; align-items: center; justify-content: center; width: 1.125rem; height: 1.125rem; background: #ffffff18; border-radius: 50%; margin-right: .125rem; }
 .wd-inbox-card { background: #30235c; border: 1px solid #65ceee80; border-radius: 1.25rem; padding: 1.25rem; color: #fff; scroll-margin: 1rem 0 calc(var(--wd-bar-space) + 1rem); }
+.wd-hero-new .wd-inbox-card { background: #0f2b3c; }
 .wd-inbox-card:focus-visible { outline: 2px solid #65ceee; outline-offset: 3px; }
 .wd-inbox-step { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #82def7; margin-bottom: .5rem; }
 .wd-inbox-address { border: 1px solid #ffffff25; background: #201748; padding: .7rem .8rem; border-radius: .65rem; font-size: 1rem; font-weight: 500; overflow-wrap: anywhere; margin: 1rem 0; }
@@ -829,30 +868,37 @@ html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
 .wd-open-mail { display: flex; align-items: center; justify-content: center; gap: .75rem; min-height: 48px; background: #65ceee; color: #201748; border-radius: .65rem; font-weight: 600; margin-top: 1rem; }
 .wd-resend { min-height: 44px; font-size: .875rem; font-weight: 500; text-decoration: underline; text-underline-offset: 4px; }
 .wd-resend:disabled { color: #c1bad4; text-decoration: none; }
-.wd-inapp-hint { border-left: 3px solid #65ceee; padding: .625rem .75rem; margin-top: 1rem; background: #201748; font-size: .875rem; }
+.wd-inapp-hint,
+.wd-provider-hint { border-left: 3px solid #65ceee; padding: .625rem .75rem; margin-top: 1rem; background: #201748; font-size: .875rem; }
+.wd-provider-hint { font-weight: 500; }
+.wd-hero-new :is(.wd-inbox-address, .wd-inapp-hint, .wd-provider-hint) { background: #07131c; }
+/* Tap-to-play over a poster, only on data-saving or slow connections. */
+.wd-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgb(7 19 28 / .2); color: #fff; }
+.wd-play > span:first-child { display: flex; align-items: center; justify-content: center; width: 4rem; height: 4rem; padding-left: .25rem; border-radius: 50%; border: 1px solid #ffffff80; background: rgb(7 19 28 / .72); font-size: 1.25rem; }
+.wd-play:focus-visible > span:first-child { outline: 3px solid #65ceee; outline-offset: 3px; }
 @media (min-width: 640px) and (max-width: 1023px) {
   .wd-hero-layout { max-width: 640px; }
   .wd-hero-heading h1 { max-width: none; }
 }
 @media (min-width: 1024px) {
-  .wd-hero-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "heading media" "signup media" "proof proof"; column-gap: 3.5rem; padding-top: 3rem; padding-bottom: 4rem; }
+  .wd-hero-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr auto; grid-template-areas: "heading media" "signup media" "proof proof"; column-gap: 3.5rem; row-gap: 1.75rem; padding-top: 3rem; padding-bottom: 4rem; }
   .wd-hero-media { align-self: start; }
-  .wd-product-stage { aspect-ratio: 1 / 1; }
-  .wd-product-caption { padding: 0 1.5rem 1.25rem; }
-  .wd-product-name { font-size: .875rem; }
-  .wd-color-options button { font-size: .875rem; }
-  .wd-hero-proof { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 3.5rem; padding-top: 2rem; margin-top: 1rem; }
+  .wd-hero-photo { aspect-ratio: 5 / 6; border-radius: 1.5rem; }
+  .wd-hero-photo::before { background-image: url("data:image/webp;base64,UklGRsAAAABXRUJQVlA4ILQAAACQBQCdASoUABgAPt1ipk6opaMiKA1REBuJbACdMzQ6atIAZX0ry0ZwZBzA0Ig87dpz0/15cAD+PZplYVg2wczEK56lkuRlkg4gsTsdtb1SIC1KiSGY/n7gr99SP3v0YGlUTL0p0QRO8untEOjyk6X8T5wvONsbh7dxcjSTPSXbG9g4u+8u6rOb/cbeeEOSUFy/PCDYpayLmryu+5WMIukat9TW3NfPDTcmGdh8g2kr6kgAAAA="); }
+  .wd-hero-proof { gap: 2.5rem; padding-top: 2rem; margin-top: 1rem; }
+  .wd-usp { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; }
+  .wd-launch-card { grid-template-columns: minmax(0, 1fr) minmax(0, 15rem); align-items: center; }
+  .wd-launch-media { order: 2; }
 }
 @media (max-width: 639px) {
   .wd-hero-layout { padding-top: 1.25rem; gap: 1rem; }
   .wd-hero-heading h1 { font-size: clamp(1.875rem, 8.2vw, 2.5rem); line-height: 1.13; max-width: 19ch; }
-  .wd-product-stage { aspect-ratio: 1.65; }
-  .wd-product-caption { padding-bottom: .5rem; }
-  .wd-hero-signup > p { font-size: .875rem; }
-  .wd-hero-price { margin: .875rem 0; }
-  .wd-product-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
-  .wd-product-facts > div { align-items: flex-start; gap: .5rem; }
-  .wd-product-facts p { font-size: .875rem; }
+  .wd-hero-sub { margin-top: .5rem; }
+  /* Full-bleed on phones: the water reaches the screen edges. 16:9 keeps the
+     whole housing and hand and lifts the email field into the first screen
+     at 390x844 in every locale. */
+  .wd-hero-photo { margin-inline: -1.25rem; border-radius: 0; aspect-ratio: 16 / 9; }
+  .wd-hero-price { margin: .25rem 0 .875rem; }
   .wd-inbox-card { padding: 1rem; }
 }
 
