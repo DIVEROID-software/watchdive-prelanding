@@ -466,6 +466,39 @@ test("every early-bird price mention says it is for the first 100 backers", () =
   assert.equal(FROZEN_LANDING_MESSAGES.en.hero.wasPrice, "$299");
 });
 
+test("the hero proof strip states the early-bird price only with its first-100 condition", () => {
+  // 2026-10-08: the strip interpolates the hero's own price strings, so the
+  // amounts cannot drift, but its sentence must carry the qualifier itself.
+  const firstHundred: Record<Locale, RegExp> = {
+    en: /first 100/i,
+    ko: /선착순 100명/,
+    "zh-CN": /前 100 名/,
+    "zh-TW": /前 100 名/,
+    ja: /先着100名/,
+    es: /100 primeros/i,
+    fr: /100 premiers/i,
+    de: /ersten 100/i,
+    "pt-BR": /100 primeiros/i,
+  };
+  for (const locale of SUPPORTED_LOCALES) {
+    const { usp, hero } = FROZEN_LANDING_MESSAGES[locale];
+    assert.ok(usp.priceTitle.includes("{price}"), `${locale}: strip price is not the hero price`);
+    assert.ok(usp.priceBody.includes("{was}"), `${locale}: strip public price is not the hero's`);
+    assert.match(
+      usp.priceTitle,
+      firstHundred[locale],
+      `${locale}: strip price without "first 100"`,
+    );
+    assert.match(usp.compatBody, /Ultra/, `${locale}: strip hides that Ultra is later`);
+    assert.doesNotMatch(
+      flattenedText(usp),
+      /cheapest|most affordable|최저가|最便宜|最安|más barato|moins cher|günstigste|mais barato/iu,
+      `${locale}: unverified price comparison`,
+    );
+    assert.ok(hero.nowPrice && hero.wasPrice);
+  }
+});
+
 test("the CTA label stays short enough for the 320px button and the sticky bar", () => {
   // Measured 2026-10-07 at 320/390/768/1440: at this length every locale fits
   // the full-width phone button in at most two lines, and on desktop the

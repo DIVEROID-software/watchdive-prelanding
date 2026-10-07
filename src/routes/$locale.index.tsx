@@ -4,6 +4,7 @@ import { loadLocalizedBetaReviewBodies } from "@/data/beta-reviews.loader";
 import { loadWaitlistCount } from "@/lib/api/waitlist.functions";
 import { localeFromPathSegment, type Locale } from "@/lib/i18n/locale";
 import { landingHead } from "@/lib/i18n/seo";
+import { readLiteMediaHint } from "@/lib/liteMedia";
 import { LocalizedBetaReviewBodiesProvider } from "@/lib/i18n/use-current-locale";
 import { DesignFrozenLanding } from "@/routes/index";
 
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/$locale/")({
       // Rendered on the server so the list figure does not change after load.
       loadWaitlistCount(),
     ]);
-    return { reviewBodies, waitlistCount };
+    return { reviewBodies, waitlistCount, liteMedia: readLiteMediaHint() };
   },
   head: ({ match, params }) => {
     const locale = localeFromPathSegment(params.locale);

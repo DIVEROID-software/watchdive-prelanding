@@ -201,6 +201,8 @@ test("197 ft and 60 m values stay confined to housing water-resistance test cont
     "hero.stat1Label",
     "safety.point1Body",
     "safety.point1Title",
+    // 2026-10-08: the hero proof strip repeats the housing test, in its own words.
+    "usp.wristBody",
   ];
 
   for (const locale of SUPPORTED_LOCALES) {
@@ -219,6 +221,7 @@ test("197 ft and 60 m values stay confined to housing water-resistance test cont
       ["hero.stat1", `${messages.hero.stat1Label} ${messages.hero.stat1Desc}`],
       ["safety.point1", `${messages.safety.point1Title} ${messages.safety.point1Body}`],
       ["faq.a2", messages.faq.a2],
+      ["usp.wristBody", messages.usp.wristBody],
     ] as const) {
       assert.match(copy, PRIMARY_TERMS[locale].housing, `${locale}.${path}: housing missing`);
       assert.match(copy, WATER_RESISTANCE_TEST[locale], `${locale}.${path}: test context missing`);

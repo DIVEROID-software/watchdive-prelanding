@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
+import { useLiteMedia } from "@/lib/liteMedia";
 import black640 from "@/assets/live/refresh/studio-black-640.webp";
 import black1000 from "@/assets/live/refresh/studio-black-1000.webp";
 import black1600 from "@/assets/live/refresh/studio-black-1600.webp";
@@ -12,21 +13,27 @@ const images = {
   white: { src: white640, srcSet: `${white640} 640w, ${white1000} 1000w, ${white1600} 1600w` },
 };
 
-/** One responsive image, shared by mobile and desktop. No duplicate eager downloads. */
-export function ProductGallery() {
+/**
+ * The whole housing in either finish, contained rather than cropped. It sits in
+ * the "This launch" compatibility card, well below the first screen, so it
+ * loads lazily and, on a constrained connection, only in its smallest cut.
+ */
+export function ProductGallery({ sizes }: { sizes: string }) {
   const m = useFrozenLandingMessages();
+  const lite = useLiteMedia();
   const [color, setColor] = useState<"black" | "white">("black");
   return (
     <figure className="wd-product-gallery">
       <div className="wd-product-stage">
         <img
-          {...images[color]}
-          sizes="(min-width: 1024px) 540px, (min-width: 640px) 600px, calc(100vw - 40px)"
+          src={images[color].src}
+          srcSet={lite ? `${images[color].src} 640w` : images[color].srcSet}
+          sizes={sizes}
           alt={color === "black" ? m.gallery.blackAlt : m.gallery.whiteAlt}
           width={640}
           height={480}
-          loading="eager"
-          fetchPriority="high"
+          loading="lazy"
+          decoding="async"
         />
       </div>
       <figcaption className="wd-product-caption">
