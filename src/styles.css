@@ -4,7 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Official DIVEROID faces. Pangram has no Hangul, so Korean falls through to Spoqa. */
+/* Official DIVEROID faces. Pangram has no Hangul, so Korean falls through to Spoqa.
+ * Spoqa is only ever reached for Hangul, so its faces declare the Hangul ranges
+ * they hold (a phone on an English page no longer pulls ~450 KB for a glyph
+ * Pangram lacks). The language picker spells 한국어 on every locale, so those
+ * three syllables come from a 1 KB cut of the same file, same outlines. */
 @font-face {
   font-family: "Pangram Sans";
   src: url("./assets/brand/fonts/PPPangramSans-Regular.woff2") format("woff2");
@@ -32,6 +36,15 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+3131-318E, U+AC00-AD6C, U+AD6E-C5B3, U+C5B5-D55B, U+D55D-D7A3;
+}
+@font-face {
+  font-family: "Spoqa Han Sans Neo";
+  src: url("./assets/brand/fonts/SpoqaHanSansNeo-Regular-switcher.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+AD6D, U+C5B4, U+D55C;
 }
 @font-face {
   font-family: "Spoqa Han Sans Neo";
@@ -39,6 +52,15 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+3131-318E, U+AC00-AD6C, U+AD6E-C5B3, U+C5B5-D55B, U+D55D-D7A3;
+}
+@font-face {
+  font-family: "Spoqa Han Sans Neo";
+  src: url("./assets/brand/fonts/SpoqaHanSansNeo-Medium-switcher.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+AD6D, U+C5B4, U+D55C;
 }
 @font-face {
   font-family: "Spoqa Han Sans Neo";
@@ -46,6 +68,15 @@
   font-weight: 600 700;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+3131-318E, U+AC00-AD6C, U+AD6E-C5B3, U+C5B5-D55B, U+D55D-D7A3;
+}
+@font-face {
+  font-family: "Spoqa Han Sans Neo";
+  src: url("./assets/brand/fonts/SpoqaHanSansNeo-Bold-switcher.woff2") format("woff2");
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+AD6D, U+C5B4, U+D55C;
 }
 
 /*

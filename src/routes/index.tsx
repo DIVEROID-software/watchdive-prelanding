@@ -69,6 +69,37 @@ import housingImage from "../assets/live/housing.webp";
 import samsungFeature from "../assets/live/samsung-feature.webp";
 import samsungLogo from "../assets/live/samsung-logo.svg";
 import wordmarkWhite from "../assets/brand/diveroid-wordmark-white.png";
+// Smaller cuts of the same photographs (Lanczos, WebP q86), offered through
+// srcset so a phone fetches the width it paints instead of the 1600px master.
+import heroSide800 from "../assets/live/responsive/watchdive-image10-800.webp";
+import heroSide1200 from "../assets/live/responsive/watchdive-image10-1200.webp";
+import why800 from "../assets/live/responsive/watchdive-why-new-800.webp";
+import why1200 from "../assets/live/responsive/watchdive-why-new-1200.webp";
+import step1_800 from "../assets/live/responsive/watchdive-step1-800.webp";
+import step1_1200 from "../assets/live/responsive/watchdive-step1-1200.webp";
+import step2_800 from "../assets/live/responsive/watchdive-step2-800.webp";
+import step2_1200 from "../assets/live/responsive/watchdive-step2-1200.webp";
+import sync800 from "../assets/live/responsive/watchdive-sync-800.webp";
+import sync1200 from "../assets/live/responsive/watchdive-sync-1200.webp";
+import kickstarter800 from "../assets/live/responsive/kickstarter-crop-800.webp";
+import kickstarter1200 from "../assets/live/responsive/kickstarter-crop-1200.webp";
+import samsungFeature800 from "../assets/live/responsive/samsung-feature-800.webp";
+import samsungFeature1200 from "../assets/live/responsive/samsung-feature-1200.webp";
+import housing800 from "../assets/live/responsive/housing-800.webp";
+import watchScreen400 from "../assets/live/responsive/watch-screen-400.webp";
+import watchdiveClip720 from "../assets/live/responsive/watchdive-clip-720.mp4";
+
+const heroSideSrcSet = `${heroSide800} 800w, ${heroSide1200} 1200w, ${heroSideImage} 1600w`;
+const whySrcSet = `${why800} 800w, ${why1200} 1200w, ${whyImage} 1600w`;
+const stepSrcSets = {
+  step1: `${step1_800} 800w, ${step1_1200} 1200w, ${step1Image} 1600w`,
+  step2: `${step2_800} 800w, ${step2_1200} 1200w, ${step2Image} 1600w`,
+  sync: `${sync800} 800w, ${sync1200} 1200w, ${syncImage} 1600w`,
+};
+const kickstarterSrcSet = `${kickstarter800} 800w, ${kickstarter1200} 1200w, ${kickstarterImage} 1600w`;
+const samsungFeatureSrcSet = `${samsungFeature800} 800w, ${samsungFeature1200} 1200w, ${samsungFeature} 1600w`;
+const housingSrcSet = `${housing800} 800w, ${housingImage} 1600w`;
+const watchScreenSrcSet = `${watchScreen400} 400w, ${watchScreen} 1440w`;
 
 // Inlines an App 3.0 icon SVG (imported ?raw) so it inherits the current text
 // color via currentColor — real product icons match our accent, any size.
@@ -197,18 +228,119 @@ function LaunchBanner() {
   );
 }
 
+/**
+ * `sizes` must be at least the CSS width the image paints at each breakpoint;
+ * the browser then picks the smallest srcset cut that covers it at the device
+ * pixel ratio. `fetchPriority` is "high" only for what is on the first screen.
+ */
 function SectionImage({
   src,
   alt,
   className = "",
   priority = false,
+  srcSet,
+  sizes,
+  fetchPriority,
 }: {
   src: string;
   alt: string;
   className?: string;
   priority?: boolean;
+  srcSet?: string;
+  sizes?: string;
+  fetchPriority?: "high" | "low" | "auto";
 }) {
-  return <img src={src} alt={alt} loading={priority ? "eager" : "lazy"} className={className} />;
+  return (
+    <img
+      src={src}
+      srcSet={srcSet}
+      sizes={sizes}
+      alt={alt}
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={fetchPriority}
+      decoding={priority ? undefined : "async"}
+      className={className}
+    />
+  );
+}
+
+/**
+ * A looping, muted product clip that costs nothing until it is near the screen.
+ *
+ * With `autoPlay` every phone fetched all three clips (about 3.5 MB) during the
+ * first paint, ahead of the form, even though they sit thousands of pixels
+ * down. Now the poster arrives at lazy-image distance and the clip only loads
+ * and plays while it is on screen, so the frame a visitor sees is unchanged.
+ * `mobileSrc`, when given, is a 720p cut of the same clip for narrow screens.
+ */
+function LazyVideo({
+  src,
+  mobileSrc,
+  poster,
+  className,
+  ariaLabel,
+}: {
+  src: string;
+  mobileSrc?: string;
+  poster: string;
+  className: string;
+  ariaLabel?: string;
+}) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    const play = () => {
+      video.play().catch(() => {
+        // Low-power or data-saver modes refuse muted autoplay; the poster stays,
+        // exactly as it did with the autoplay attribute.
+      });
+    };
+    if (typeof IntersectionObserver === "undefined") {
+      setNear(true);
+      play();
+      return;
+    }
+    const posterObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setNear(true);
+        posterObserver.disconnect();
+      },
+      { rootMargin: "1250px 0px" },
+    );
+    const playObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) play();
+        else video.pause();
+      },
+      { rootMargin: "200px 0px" },
+    );
+    posterObserver.observe(video);
+    playObserver.observe(video);
+    return () => {
+      posterObserver.disconnect();
+      playObserver.disconnect();
+    };
+  }, []);
+
+  return (
+    <video
+      ref={ref}
+      poster={near ? poster : undefined}
+      muted
+      loop
+      playsInline
+      preload="none"
+      aria-label={ariaLabel}
+      className={className}
+    >
+      {mobileSrc && <source src={src} media="(min-width: 768px)" />}
+      <source src={mobileSrc ?? src} />
+    </video>
+  );
 }
 
 /**
@@ -932,8 +1064,11 @@ function Hero() {
             <div className="wd-hero-frame overflow-hidden rounded-[1.5rem] lg:hidden">
               <SectionImage
                 src={heroSideImage}
+                srcSet={heroSideSrcSet}
+                sizes="(min-width: 1024px) 520px, calc(100vw - 40px)"
                 alt={m.hero.sideImageAlt}
                 priority
+                fetchPriority="high"
                 className="wd-hero-shot aspect-[4/3] max-h-[34svh] w-full object-cover"
               />
             </div>
@@ -1078,8 +1213,11 @@ function Hero() {
           <div className="relative overflow-hidden rounded-[1.5rem]">
             <SectionImage
               src={heroSideImage}
+              srcSet={heroSideSrcSet}
+              sizes="(min-width: 1024px) 520px, calc(100vw - 40px)"
               alt={m.hero.sideImageAlt}
               priority
+              fetchPriority="high"
               className="aspect-[5/6] w-full object-cover"
             />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#201748] via-[#201748]/88 to-transparent px-6 pb-6 pt-16">
@@ -1115,6 +1253,8 @@ function ValueSection() {
         <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
           <SectionImage
             src={whyImage}
+            srcSet={whySrcSet}
+            sizes="(min-width: 1024px) 520px, calc(100vw - 40px)"
             alt={m.value.imageAlt}
             className="aspect-[4/5] w-full object-cover"
           />
@@ -1262,15 +1402,10 @@ function FunctionsSection() {
         </div>
 
         <div className="mt-12 relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
-          <video
+          <LazyVideo
             src={functionsVideo}
             poster={functionsPoster}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            aria-label={m.functions.videoAria}
+            ariaLabel={m.functions.videoAria}
             className="aspect-video w-full object-cover"
           />
         </div>
@@ -1322,6 +1457,7 @@ function HowItWorks() {
       t: m.how.step1Title,
       d: m.how.step1Body,
       image: step1Image,
+      srcSet: stepSrcSets.step1,
       alt: m.how.step1Alt,
       iconSvg: gearBagIcon,
     },
@@ -1330,6 +1466,7 @@ function HowItWorks() {
       t: m.how.step2Title,
       d: m.how.step2Body,
       image: step2Image,
+      srcSet: stepSrcSets.step2,
       alt: m.how.step2Alt,
       iconSvg: scubaFigureIcon,
     },
@@ -1338,6 +1475,7 @@ function HowItWorks() {
       t: m.how.step3Title,
       d: m.how.step3Body,
       image: syncImage,
+      srcSet: stepSrcSets.sync,
       alt: m.how.step3Alt,
       iconSvg: autoSyncIcon,
     },
@@ -1368,8 +1506,11 @@ function HowItWorks() {
               {/* Eager: a lazy 4/3 box paints as empty space until the card is near the viewport. */}
               <SectionImage
                 src={s.image}
+                srcSet={s.srcSet}
+                sizes="(min-width: 768px) 340px, calc(112vw - 98px)"
                 alt={s.alt}
                 priority
+                fetchPriority="low"
                 className="block aspect-[4/3] w-full rounded-xl object-cover"
               />
             </div>
@@ -1582,14 +1723,10 @@ function Compatibility() {
       <div className="mx-auto max-w-6xl">
         <div className="overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
           <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
-            <video
+            <LazyVideo
               src={watchdiveClip}
+              mobileSrc={watchdiveClip720}
               poster={clipPoster}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
               className="absolute inset-0 h-full w-full object-cover"
             />
           </div>
@@ -1632,6 +1769,8 @@ function Compatibility() {
             </div>
             <SectionImage
               src={housingImage}
+              srcSet={housingSrcSet}
+              sizes="(min-width: 640px) 214px, 150px"
               alt={m.compat.housingAlt}
               className="size-28 shrink-0 self-center rounded-xl object-cover sm:size-40"
             />
@@ -1656,6 +1795,8 @@ function Compatibility() {
             </div>
             <SectionImage
               src={watchScreen}
+              srcSet={watchScreenSrcSet}
+              sizes="(min-width: 640px) 96px, 80px"
               alt={m.compat.watchScreenAlt}
               className="size-20 shrink-0 self-center rounded-xl object-cover grayscale opacity-50 sm:size-24"
             />
@@ -1688,15 +1829,10 @@ function ActionCameras() {
           ))}
         </div>
         <div className="mx-auto mt-10 max-w-3xl overflow-hidden rounded-[2rem] border border-border shadow-sm">
-          <video
+          <LazyVideo
             src={connectedAppVideo}
             poster={connectedAppPoster}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            aria-label={m.cameras.videoAria}
+            ariaLabel={m.cameras.videoAria}
             className="aspect-video w-full object-cover"
           />
         </div>
@@ -1784,6 +1920,8 @@ function OfferSection() {
       <div className="relative z-10 mx-auto max-w-4xl text-center">
         <SectionImage
           src={kickstarterImage}
+          srcSet={kickstarterSrcSet}
+          sizes="(min-width: 808px) 770px, calc(100vw - 36px)"
           alt={m.offer.imageAlt}
           className="mx-auto mb-8 aspect-video w-full max-w-3xl rounded-[2rem] border border-white/10 object-cover object-top shadow-[0_30px_90px_-35px_oklch(0.8_0.11_232/0.45)]"
         />
@@ -1889,6 +2027,8 @@ function Credentials() {
             <div className="relative aspect-video w-full overflow-hidden">
               <img
                 src={samsungFeature}
+                srcSet={samsungFeatureSrcSet}
+                sizes="(min-width: 768px) 380px, calc(100vw - 40px)"
                 alt={m.creds.samsungAlt}
                 loading="lazy"
                 className="absolute inset-0 h-full w-full object-cover"

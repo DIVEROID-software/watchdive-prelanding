@@ -33,5 +33,11 @@ export default defineConfig({
   nitro: { preset: "vercel" },
   vite: {
     plugins: [verificationEnvPreflight()],
+    build: {
+      // Fonts stay files. The 1 KB Hangul cut for the language picker would
+      // otherwise be base64'd into the render-blocking stylesheet of every
+      // locale, though only a page that shows Hangul ever fetches it.
+      assetsInlineLimit: (filePath: string) => (filePath.endsWith(".woff2") ? false : undefined),
+    },
   },
 });
