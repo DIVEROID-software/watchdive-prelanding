@@ -1,0 +1,168 @@
+/* ======================================================================
+   BRUTALISM VARIANT — active only under html:root
+   (VITE_DESIGN_THEME=brutal at build time; production builds omit it).
+   Structure from ui-ux-pro-max "Brutalism" (variance 9): 0px corners,
+   no transitions, 700-weight type, visible 2–4px borders, visible grid,
+   large blocks, hard offset shadows. Colours and type stay DIVEROID:
+   deep violet #201748, mid violet #3D2683, surface blue #36A9E1,
+   foam #EEF9FF, CTA cyan #65ceee, Pangram Sans (600–700 face).
+   Borders and shadows use currentColor so the same rule reads dark on
+   light sections and foam on dark ones.
+   ====================================================================== */
+html:root {
+  --wd-b: 3px;
+  --wd-b-thin: 2px;
+  --wd-shadow: 6px;
+}
+html:root *,
+html:root *::before,
+html:root *::after {
+  border-radius: 0 !important;
+  transition: none !important;
+}
+html:root body {
+  background-color: #eef9ff;
+}
+
+/* Type: heavy, tight, large. */
+html:root h1,
+html:root h2 {
+  font-weight: 700 !important;
+  letter-spacing: -0.035em !important;
+  line-height: 0.98 !important;
+}
+html:root h1 { font-size: clamp(2.75rem, 7vw, 5.25rem) !important; }
+html:root h2 { font-size: clamp(2rem, 4.6vw, 3.5rem) !important; }
+html:root h3,
+html:root h4,
+html:root strong {
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+}
+
+/* Section labels become solid tags. */
+html:root .text-caption.uppercase {
+  display: inline-block;
+  border: var(--wd-b-thin) solid currentColor;
+  padding: 0.2rem 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+html:root .wd-top-line.text-caption.uppercase { border: 0; padding: 0; }
+
+/* Visible grid: every section is ruled off. */
+html:root .wd-section {
+  border-top: var(--wd-b) solid currentColor;
+}
+html:root .wd-top {
+  border-bottom: var(--wd-b) solid #eef9ff;
+}
+
+/* Blocks: cards, media, chips and pills get a visible frame. */
+html:root [class*="rounded-xl"],
+html:root [class*="rounded-2xl"],
+html:root [class*="rounded-3xl"],
+html:root [class*="rounded-lg"],
+html:root .wd-inbox-card,
+html:root .wd-launch-card,
+html:root .wd-hero-media {
+  border: var(--wd-b) solid currentColor !important;
+}
+html:root [class*="rounded-2xl"],
+html:root [class*="rounded-3xl"],
+html:root .wd-inbox-card,
+html:root .wd-launch-card,
+html:root .wd-hero-media {
+  box-shadow: var(--wd-shadow) var(--wd-shadow) 0 currentColor !important;
+}
+html:root [class*="rounded-full"] {
+  border: var(--wd-b-thin) solid currentColor !important;
+}
+html:root img,
+html:root video { border-radius: 0 !important; }
+
+/* Controls: thick frames, hard shadows, instant press. */
+html:root input[type="email"],
+html:root input[type="tel"],
+html:root input[type="text"]:not([name="company"]) {
+  border: var(--wd-b) solid #201748 !important;
+  background: #ffffff !important;
+  box-shadow: 4px 4px 0 #eef9ff !important;
+  font-weight: 600;
+}
+html:root .wd-submit {
+  background: #65ceee !important;
+  color: #181238 !important;
+  border: var(--wd-b) solid #eef9ff !important;
+  box-shadow: 4px 4px 0 #eef9ff !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+html:root button,
+html:root a[class*="rounded"] {
+  font-weight: 700;
+}
+html:root button:active,
+html:root .wd-submit:active {
+  transform: translate(4px, 4px);
+  box-shadow: none !important;
+}
+html:root :focus-visible {
+  outline: 3px solid #65ceee !important;
+  outline-offset: 3px !important;
+}
+
+/* Gradients flatten to solid brand blocks. */
+html:root [class*="bg-gradient"] {
+  background-image: none !important;
+  background-color: #201748 !important;
+}
+
+/* Brutalism variant — first screen. */
+html:root .wd-hero-new {
+  background: #201748 !important;
+}
+html:root .wd-hero-price {
+  display: inline-flex;
+  border: var(--wd-b) solid #eef9ff;
+  background: #3d2683;
+  padding: 0.5rem 0.9rem;
+  box-shadow: var(--wd-shadow) var(--wd-shadow) 0 #65ceee;
+}
+html:root .wd-hero-price > :first-child + * {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+html:root .wd-hero-proof {
+  border-top: var(--wd-b) solid #eef9ff;
+}
+html:root .wd-usp {
+  gap: 0;
+  border: var(--wd-b) solid #eef9ff;
+}
+html:root .wd-usp li {
+  padding: 1rem;
+}
+html:root .wd-usp li + li {
+  border-top: var(--wd-b) solid #eef9ff;
+}
+@media (min-width: 1024px) {
+  html:root .wd-usp li + li {
+    border-top: 0;
+    border-left: var(--wd-b) solid #eef9ff;
+  }
+}
+html:root .wd-usp-icon {
+  background: #65ceee;
+  color: #181238;
+  border: var(--wd-b-thin) solid #eef9ff;
+}
+html:root .wd-usp-title { font-weight: 700; }
+
+/* Stark body copy. */
+html:root p,
+html:root li {
+  font-weight: 500;
+}
