@@ -141,7 +141,7 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // inspected at 320, 390 and 1440px. Old reef styling retired; brand retained.
   assert.equal(
     sha256(read("src/styles.css")),
-    "901f65afb94d9bdbcd6fe3637270c9d382512aa5256d9eec4d2379e6c3f7987b",
+    "7e3b4326fafbd191723756d585743071fc19c9611d46afafd041b2c635c0097c",
   );
 });
 

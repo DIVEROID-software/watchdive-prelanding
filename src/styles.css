@@ -856,7 +856,7 @@ html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
   .wd-inbox-card { padding: 1rem; }
 }
 
-.wd-hero-new .wd-top-kicker { display: inline; }
+.wd-hero-new .wd-top-kicker { display: inline; margin-right: .5rem; }
 
 /* Avoid focus zoom on iPad as well as narrow iPhone viewports. */
 .wd-scroll input:not([type="checkbox"]) { font-size: 1rem; }
