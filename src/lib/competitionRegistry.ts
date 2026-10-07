@@ -1,6 +1,6 @@
 /** Public, operator-owned attribution configuration. Never put customer data here. */
 export type CompetitionAd = Readonly<{
-  armId: "A" | "B" | "C";
+  armId: "A" | "B" | "C" | "D" | "E";
   strategyVersion: string;
   adsetId: string;
   adId: string;
@@ -105,6 +105,64 @@ export const competitionRegistry: readonly CompetitionRound[] = [
         "strategyVersion": "2",
         "adsetId": "120251451213980215",
         "adId": "120251451226040215"
+      }
+    ]
+  },
+  {
+    "experimentId": "WD20261007",
+    "roundId": "R1_ADD",
+    "campaignId": "120251471022480215",
+    "captureStartsAt": "2026-10-07T07:15:00Z",
+    "signupStartsAt": "2026-10-07T07:45:00Z",
+    "signupEndsAt": "2026-10-10T07:45:00Z",
+    "ads": [
+      {
+        "armId": "D",
+        "strategyVersion": "D-v2",
+        "adsetId": "120251471099270215",
+        "adId": "120251471161360215"
+      },
+      {
+        "armId": "D",
+        "strategyVersion": "D-v2",
+        "adsetId": "120251471099270215",
+        "adId": "120251471161350215"
+      },
+      {
+        "armId": "D",
+        "strategyVersion": "D-v2",
+        "adsetId": "120251471099270215",
+        "adId": "120251471161330215"
+      },
+      {
+        "armId": "D",
+        "strategyVersion": "D-v2",
+        "adsetId": "120251471099270215",
+        "adId": "120251471161340215"
+      },
+      {
+        "armId": "E",
+        "strategyVersion": "E3",
+        "adsetId": "120251471100650215",
+        "adId": "120251471161400215"
+      },
+      {
+        "armId": "E",
+        "strategyVersion": "E3",
+        "adsetId": "120251471100650215",
+        "adId": "120251471161380215"
+      },
+      {
+        "armId": "E",
+        "strategyVersion": "E3",
+        "adsetId": "120251471100650215",
+        "adId": "120251471161390215"
+      },
+      {
+        "armId": "E",
+        "strategyVersion": "E3",
+        "adsetId": "120251471100650215",
+        "adId": "120251471161370215"
       }
     ]
   }

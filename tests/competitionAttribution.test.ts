@@ -379,3 +379,40 @@ test("expired competition IDs in the legacy key are not revived", () => {
     env.restore();
   }
 });
+
+test("all eight D/E ads resolve and accept signups only within their own flight", () => {
+  const added = competitionRegistry.find(r => r.experimentId === "WD20261007")!;
+  assert.equal(added.ads.length, 8);
+  assert.deepEqual([...new Set(added.ads.map(a => a.armId))].sort(), ["D", "E"]);
+  const start = Date.parse(added.signupStartsAt);
+  for (const ad of added.ads) {
+    const tuple = { utmCampaign: added.campaignId, utmTerm: ad.adsetId, utmContent: ad.adId };
+    assert.equal(resolve(storage(), tuple, start, competitionRegistry as CompetitionRound[]).kind, "competition");
+    assert.equal(acceptsCompetitionSignup(tuple, start, competitionRegistry), true);
+    assert.equal(acceptsCompetitionSignup(tuple, start - 1, competitionRegistry), false);
+    assert.equal(acceptsCompetitionSignup(tuple, Date.parse(added.signupEndsAt), competitionRegistry), false);
+    assert.equal(acceptsCompetitionSignup({ ...tuple, utmCampaign: competitionRegistry[0].campaignId }, start, competitionRegistry), false);
+  }
+});
+
+test("overlapping cohorts retain separate first touches while D then E remains D", () => {
+  const old = competitionRegistry.find(r => r.experimentId === "WD20261006")!;
+  const added = competitionRegistry.find(r => r.experimentId === "WD20261007")!;
+  assert.equal(old.ads.length, 12);
+  assert.equal(old.signupStartsAt, "2026-10-05T23:30:00Z");
+  assert.equal(old.signupEndsAt, "2026-10-08T23:30:00Z");
+  const tuple = (r: CompetitionRound, arm: string) => {
+    const a = r.ads.find(a => a.armId === arm)!;
+    return { utmCampaign: r.campaignId, utmTerm: a.adsetId, utmContent: a.adId };
+  };
+  const store = storage(), now = Date.parse(added.signupStartsAt), registry = competitionRegistry as CompetitionRound[];
+  assert.equal(resolve(store, tuple(old, "A"), now, registry).kind, "competition");
+  const d = resolve(store, tuple(added, "D"), now + 1, registry);
+  assert.equal(d.kind, "competition");
+  const e = resolve(store, tuple(added, "E"), now + 2, registry);
+  assert.equal(e.kind, "competition");
+  if (e.kind === "competition") assert.equal(e.attribution.utmContent, tuple(added, "D").utmContent);
+  assert.notEqual(competitionStorageKey(old), competitionStorageKey(added));
+  assert.ok(store.getItem(competitionStorageKey(old)));
+  assert.ok(store.getItem(competitionStorageKey(added)));
+});

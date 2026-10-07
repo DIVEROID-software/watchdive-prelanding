@@ -62,7 +62,7 @@ function validRound(round: CompetitionRound): boolean {
     if (
       !numericId(ad.adId) ||
       !numericId(ad.adsetId) ||
-      !["A", "B", "C"].includes(ad.armId) ||
+      !["A", "B", "C", "D", "E"].includes(ad.armId) ||
       !LABEL.test(ad.strategyVersion) ||
       ids.has(ad.adId) ||
       (adsets.has(ad.adsetId) && adsets.get(ad.adsetId) !== ad.armId) ||
