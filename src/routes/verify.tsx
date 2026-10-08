@@ -167,10 +167,10 @@ export function VerifyPage() {
       try {
         const res = await withdrawConfirmationMeasurement({ data: { token: token.current } });
         if (res.recorded) {
-          // The browser-wide receipt only once every signup this browser
-          // kept a handle for has the refusal too.
-          await withdrawEverySignup();
-          return true;
+          // Done only once every signup this browser kept a handle for has
+          // the refusal too; otherwise the card stays on Try again (a later
+          // click re-sends this token, already recorded, and the rest).
+          return await withdrawEverySignup();
         }
       } catch {
         // A dropped call is not a recorded refusal.
@@ -269,7 +269,10 @@ export function VerifyPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[color:var(--color-deep-2)] px-5 py-14">
       <div className="w-full max-w-xl">
-        <Link to={homePath(locale)} className="mb-5 inline-flex min-h-11 items-center text-body text-white/70 underline">
+        <Link
+          to={homePath(locale)}
+          className="mb-5 inline-flex min-h-11 items-center text-body text-white/70 underline"
+        >
           {copy.back}
         </Link>
 
@@ -318,7 +321,11 @@ export function VerifyPage() {
             )}
 
             {askMeasurement && (
-              <MeasurementAsk tone="card" onAllow={grantMeasurement} onDecline={declineMeasurement} />
+              <MeasurementAsk
+                tone="card"
+                onAllow={grantMeasurement}
+                onDecline={declineMeasurement}
+              />
             )}
 
             <a

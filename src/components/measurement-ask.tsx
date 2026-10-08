@@ -1,10 +1,8 @@
 // The contextual measurement question, asked at the two moments a visitor in
 // the EU/EEA/UK/CH is most likely to say yes: right after the submit (the inbox
-// card) and right after the confirmation. The passive cookie bar rarely gets
-// seen there — it waits for a scroll and steps aside while a form is on screen,
-// and on this page the form is the first screen — so before this, almost no
-// one in those countries was ever asked, and their signups were invisible to
-// the ad delivery that brought them.
+// card) and right after the confirmation. Before this (and before the banner
+// was shown on arrival), almost no one in those countries was ever asked, and
+// their signups were invisible to the ad delivery that brought them.
 //
 // It stays a real choice: both answers are the same size and weight, nothing
 // is pre-selected, the signup works either way, and the footer link still

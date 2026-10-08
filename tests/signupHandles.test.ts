@@ -84,4 +84,15 @@ test("the browser-wide refusal receipt is set only when every kept signup was re
     assert.equal(source.includes("markWithdrawalRecorded()"), false, file);
     assert.ok(source.includes("withdrawEverySignup("), file);
   }
+  // Every caller that reports success uses the helper's own result.
+  assert.ok(
+    readFileSync("src/routes/verify.tsx", "utf8").includes("return await withdrawEverySignup();"),
+  );
+  assert.ok(readFileSync("src/routes/index.tsx", "utf8").includes("return withdrawEverySignup("));
+  assert.equal(
+    /await withdrawEverySignup\(\);\s*return true/.test(
+      readFileSync("src/routes/verify.tsx", "utf8"),
+    ),
+    false,
+  );
 });
