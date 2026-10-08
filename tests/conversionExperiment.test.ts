@@ -528,7 +528,7 @@ test("optional column loss does not drop a real signup or its first touch", asyn
       expiresAt: new Date(NOW + 86_400_000).toISOString(),
       attribution: { utmSource: "meta", utmCampaign: "launch", landingPath: "/", fbclid: "click123" },
       metaFbc: FBC,
-      measurementGranted: true,
+      measurementState: "WD-AD-MEASUREMENT-CONSENT-V1:granted",
       experiment: context(),
     });
     assert.equal(record.pageId, "page-1");
@@ -576,7 +576,7 @@ test("a click-column validation keeps the experiment, and a 5xx is not retried",
       leadId: "aaaaaaaa-bbbb-4ccc-8ddd-000000000001",
       expiresAt: new Date(NOW + 86_400_000).toISOString(),
       metaFbc: FBC,
-      measurementGranted: true,
+      measurementState: "WD-AD-MEASUREMENT-CONSENT-V1:granted",
       experiment: context(),
     });
     assert.equal(kept.length, 2);
@@ -600,7 +600,7 @@ test("a click-column validation keeps the experiment, and a 5xx is not retried",
         leadId: "aaaaaaaa-bbbb-4ccc-8ddd-000000000001",
         expiresAt: new Date(NOW + 86_400_000).toISOString(),
         metaFbc: FBC,
-        measurementGranted: true,
+        measurementState: "WD-AD-MEASUREMENT-CONSENT-V1:granted",
         experiment: context(),
       }),
     );
@@ -667,7 +667,7 @@ test("first touch and experiment context are written once, and the response stay
     { ...deps(), store: gpcStore, gpc: true },
   );
   assert.equal(gpcStore.createPendingInputs[0].experiment, undefined);
-  assert.equal(gpcStore.createPendingInputs[0].measurementGranted, undefined);
+  assert.equal(gpcStore.createPendingInputs[0].measurementState, "WD-AD-MEASUREMENT-CONSENT-V1:withheld");
 
   const suspectStore = new FakeLeadStore();
   await requestVerificationService(
@@ -841,7 +841,7 @@ test("a signup without experiment context does not duplicate an ambiguous page c
         leadId: "aaaaaaaa-bbbb-4ccc-8ddd-000000000001",
         expiresAt: new Date(NOW + 86_400_000).toISOString(),
         metaFbc: FBC,
-        measurementGranted: true,
+        measurementState: "WD-AD-MEASUREMENT-CONSENT-V1:granted",
       }),
       /socket hang up/,
     );

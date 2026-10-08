@@ -28,7 +28,6 @@ import type {
   LeadStore,
   MarkSentInput,
   MarkVerifiedInput,
-  MeasurementGrantInput,
   StartAttemptInput,
   VerificationStatus,
 } from "./contracts.ts";
@@ -53,7 +52,6 @@ import {
   FIELD_VERIFICATION_STATUS,
   FIELD_VERIFIED_AT,
   FLAG_MEASUREMENT_WITHDRAWN,
-  MEASUREMENT_CONSENT_GRANTED,
   MEASUREMENT_CONSENT_WITHDRAWN,
   STATUS_PENDING,
   STATUS_UNSUBSCRIBED,
@@ -448,8 +446,8 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
               [FIELD_LEAD_ID]: textProp(input.leadId),
               [FIELD_VERIFICATION_EXPIRES]: { date: { start: input.expiresAt } },
               [FIELD_VERIFICATION_SENDS]: { number: 1 },
-              ...(input.measurementGranted
-                ? { [FIELD_MEASUREMENT_CONSENT]: textProp(MEASUREMENT_CONSENT_GRANTED) }
+              ...(input.measurementState
+                ? { [FIELD_MEASUREMENT_CONSENT]: textProp(input.measurementState) }
                 : {}),
               ...(options.fbc && fbcColumn && input.metaFbc
                 ? { [fbcColumn]: textProp(input.metaFbc) }
@@ -504,10 +502,10 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
       });
     },
 
-    async recordMeasurementGrant(pageId: string, _input?: MeasurementGrantInput) {
-      // Consent on its own: an optional column can never take it down with it.
+    async recordMeasurementState(pageId: string, state: string) {
+      // The consent cell on its own: an optional column can never take it down.
       await request("PATCH", `pages/${pageId}`, {
-        properties: { [FIELD_MEASUREMENT_CONSENT]: textProp(MEASUREMENT_CONSENT_GRANTED) },
+        properties: { [FIELD_MEASUREMENT_CONSENT]: textProp(state) },
       });
     },
 

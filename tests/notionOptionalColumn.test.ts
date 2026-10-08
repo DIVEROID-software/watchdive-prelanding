@@ -27,7 +27,7 @@ const input: CreatePendingInput = {
   leadId: "aaaaaaaa-bbbb-4ccc-8ddd-000000000001",
   expiresAt: "2026-10-09T00:00:00.000Z",
   metaFbc: FBC,
-  measurementGranted: true,
+  measurementState: "WD-AD-MEASUREMENT-CONSENT-V1:granted",
 };
 
 function notionError(status: number, code: string, message: string): NotionRequestError {

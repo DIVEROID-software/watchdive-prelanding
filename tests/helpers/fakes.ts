@@ -105,29 +105,34 @@ export class FakeLeadStore implements LeadStore {
       expiresAt: input.expiresAt,
       sends: 1,
       ...(input.metaFbc ? { metaFbc: input.metaFbc } : {}),
-      ...(input.measurementGranted
-        ? { measurementConsent: "WD-AD-MEASUREMENT-CONSENT-V1:granted" }
-        : {}),
+      ...(input.measurementState ? { measurementConsent: input.measurementState } : {}),
     });
   }
 
-  measurementGrants: string[] = [];
   measurementFbcs: { pageId: string; metaFbc: string }[] = [];
   withdrawals: string[] = [];
-  /** Test hook: runs inside the grant write, before it lands. */
-  onGrantWrite?: (pageId: string) => void;
-  failGrantWrite = false;
+  /** Every consent-cell write, in order: [pageId, state]. */
+  measurementStates: [string, string][] = [];
+  /** Test hook: runs inside a consent-cell write, before it lands. */
+  onStateWrite?: (pageId: string, state: string) => void;
+  failStateWrite = false;
+  /** Test hook: runs inside the click-cookie write, before it lands. */
+  onFbcWrite?: (pageId: string) => void;
 
-  async recordMeasurementGrant(pageId: string): Promise<void> {
-    this.onGrantWrite?.(pageId);
-    if (this.failGrantWrite) throw new Error("notion down");
-    this.measurementGrants.push(pageId);
+  get measurementGrants(): string[] {
+    return this.measurementStates.map(([pageId]) => pageId);
+  }
+
+  async recordMeasurementState(pageId: string, state: string): Promise<void> {
+    this.onStateWrite?.(pageId, state);
+    if (this.failStateWrite) throw new Error("notion down");
+    this.measurementStates.push([pageId, state]);
     const row = this.rows.get(pageId);
-    if (row)
-      this.rows.set(pageId, { ...row, measurementConsent: "WD-AD-MEASUREMENT-CONSENT-V1:granted" });
+    if (row) this.rows.set(pageId, { ...row, measurementConsent: state });
   }
 
   async recordMeasurementFbc(pageId: string, metaFbc: string): Promise<void> {
+    this.onFbcWrite?.(pageId);
     this.measurementFbcs.push({ pageId, metaFbc });
     const row = this.rows.get(pageId);
     if (row) this.rows.set(pageId, { ...row, metaFbc });

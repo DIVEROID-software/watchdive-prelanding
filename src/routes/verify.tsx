@@ -19,7 +19,6 @@ import {
   initMetaPixel,
   measurementPermitted,
   trackMetaEmailVerified,
-  trackMetaLead,
   trackMetaPhoneLead,
 } from "@/lib/metaPixel";
 import type { BrowserLead } from "@/lib/verification/contracts";
@@ -124,12 +123,8 @@ export function VerifyPage() {
    * event ids so each pair dedupes. The pixel starts here and only here — after
    * every request that carries the token has already been made.
    */
-  const fireConversions = (sent: {
-    browserLead?: BrowserLead;
-    submitLead?: { eventId: string; source: string };
-  }) => {
+  const fireConversions = (sent: { browserLead?: BrowserLead }) => {
     initMetaPixel();
-    if (sent.submitLead) trackMetaLead(sent.submitLead.eventId, sent.submitLead.source);
     if (sent.browserLead) {
       trackMetaEmailVerified(sent.browserLead.eventId, sent.browserLead.source);
       if (sent.browserLead.hasPhone) {
@@ -197,6 +192,7 @@ export function VerifyPage() {
       const result = await confirmVerification({
         data: {
           token: token.current,
+          ...(getMetaMeasurementConsent() === "denied" ? { refused: true } : {}),
           ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
           ...(cookies.fbc ? { fbc: cookies.fbc } : {}),
         },

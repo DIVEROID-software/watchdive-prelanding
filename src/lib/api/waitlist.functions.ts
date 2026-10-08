@@ -444,6 +444,8 @@ export const confirmVerification = createServerFn({ method: "POST" })
       // Only sent when this browser already allows measurement.
       fbp: z.string().max(META_COOKIE_MAX).optional(),
       fbc: z.string().max(META_COOKIE_MAX).optional(),
+      // This browser has a refusal stored: record it before anything is sent.
+      refused: z.boolean().optional(),
     }),
   )
   .handler(async ({ data }) => {
@@ -456,6 +458,7 @@ export const confirmVerification = createServerFn({ method: "POST" })
         data.token,
         serviceDependencies(requestMeta()),
         { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
+        { localRefusal: data.refused === true },
       );
     } catch (error) {
       throw sanitizeServerError("verification-confirm", error);

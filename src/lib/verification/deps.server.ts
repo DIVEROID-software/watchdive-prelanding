@@ -44,20 +44,18 @@ export function createServiceDependencies(
     ...(request.gpc ? { gpc: true as const } : {}),
     onDeliveryFailure: (error) => deliveryAlerter.record(error),
     dispatchVerifiedLead: async (input) => {
-      await sendMetaEmailVerified({ ...input, ...client });
+      const sent = await sendMetaEmailVerified({ ...input, ...client });
       // The CRM leg of the Conversion Leads integration rides the same gate:
       // it only fires for a consented, non-abusive confirmation, and its own
       // failure never un-confirms the lead.
       await sendMetaCrmQualifiedLead(input);
+      return sent;
     },
     // The submit Lead, sent by the server when measurement is allowed after
-    // the submit. The attempt response does not carry a browser id. A
-    // confirmation may return the same id so the pixel can dedupe against it.
+    // the submit. This late Lead is server-only on every surface.
     dispatchSubmitLead: async (input) => {
-      const outcome = await deliverMetaLead({ ...input, ...client });
-      // The service records successful delivery for retry deduplication.
-      // Meta's handled error response must not look like a successful send.
-      if (outcome !== "sent") throw new Error("Submit measurement not delivered");
+      // Acknowledged only when Meta took it; anything else stays pending.
+      return (await deliverMetaLead({ ...input, ...client })) === "sent";
     },
   };
 }
