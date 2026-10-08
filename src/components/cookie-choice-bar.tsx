@@ -34,7 +34,9 @@ type ChoiceCopy = {
   /** What the cookies are for, and that the page works either way. */
   body: string;
   /**
-   * The same facts for a phone screen (same vendors, purpose and "optional"),
+   * The same facts for a phone screen: the same vendors, the same "similar
+   * tools" category, BOTH purposes (which ads bring divers, how the page is
+   * used) and "optional" — only the wording is tighter,
    * so the bar does not cover the headline on a 320px screen.
    */
   bodyShort: string;
@@ -53,7 +55,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
     title: "Your privacy choices",
     body: "We'd like to use cookies and similar tools from Meta, Google and Microsoft Clarity, plus our own click and scroll measurement, to see which ads bring divers here and how this page is used. Optional: your signup works either way.",
     bodyShort:
-      "Meta, Google and Microsoft Clarity cookies, plus our own click and scroll measurement, show which ads bring divers here. Optional: your signup works either way.",
+      "Cookies and similar tools from Meta, Google and Microsoft Clarity, plus our own click and scroll measurement, show which ads bring divers here and how this page is used. Optional: your signup works either way.",
     allow: "Accept all",
     decline: "Reject all",
     privacy: "Privacy Policy",
@@ -66,7 +68,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
     title: "개인정보 선택",
     body: "Meta, Google, Microsoft Clarity의 쿠키·유사 기술과 자체 클릭·스크롤 측정으로 어떤 광고가 다이버를 데려오는지, 페이지가 어떻게 쓰이는지 보고 싶어요. 선택 사항이며, 가입은 그대로 유지돼요.",
     bodyShort:
-      "Meta·Google·Microsoft Clarity 쿠키와 자체 클릭·스크롤 측정으로 어떤 광고가 다이버를 데려오는지 봐요. 선택 사항이며, 가입은 그대로 유지돼요.",
+      "Meta·Google·Microsoft Clarity의 쿠키·유사 기술과 자체 클릭·스크롤 측정으로 어떤 광고가 다이버를 데려오는지, 페이지가 어떻게 쓰이는지 봐요. 선택 사항이며, 가입은 그대로 유지돼요.",
     allow: "모두 허용",
     decline: "모두 거부",
     privacy: "개인정보처리방침",
@@ -79,7 +81,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
     title: "您的隐私选择",
     body: "我们希望使用 Meta、Google 和 Microsoft Clarity 的 Cookie 及类似工具，以及我们自己的点击和滚动统计，了解哪些广告带来了潜水员、页面如何被使用。可选：不影响您的报名。",
     bodyShort:
-      "使用 Meta、Google、Microsoft Clarity 的 Cookie 及我们自己的点击和滚动统计，了解哪些广告带来了潜水员。可选：不影响您的报名。",
+      "使用 Meta、Google、Microsoft Clarity 的 Cookie 及类似工具，以及我们自己的点击和滚动统计，了解哪些广告带来了潜水员、页面如何被使用。可选：不影响您的报名。",
     allow: "全部接受",
     decline: "全部拒绝",
     privacy: "隐私政策",
@@ -91,7 +93,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
     title: "您的隱私選擇",
     body: "我們希望使用 Meta、Google 和 Microsoft Clarity 的 Cookie 及類似工具，以及我們自己的點擊和捲動統計，了解哪些廣告帶來了潛水員、頁面如何被使用。可選：不影響您的報名。",
     bodyShort:
-      "使用 Meta、Google、Microsoft Clarity 的 Cookie 及我們自己的點擊和捲動統計，了解哪些廣告帶來了潛水員。可選：不影響您的報名。",
+      "使用 Meta、Google、Microsoft Clarity 的 Cookie 及類似工具，以及我們自己的點擊和捲動統計，了解哪些廣告帶來了潛水員、頁面如何被使用。可選：不影響您的報名。",
     allow: "全部接受",
     decline: "全部拒絕",
     privacy: "隱私權政策",
@@ -103,7 +105,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
     title: "プライバシーの選択",
     body: "Meta・Google・Microsoft Clarity のクッキーや類似技術と、自社のクリック・スクロール計測で、どの広告からダイバーが来たか、ページがどう使われたかを知りたいと考えています。任意です。登録はそのまま有効です。",
     bodyShort:
-      "Meta・Google・Microsoft Clarity のクッキーと自社のクリック・スクロール計測で、どの広告からダイバーが来たかを把握します。任意です。登録はそのまま有効です。",
+      "Meta・Google・Microsoft Clarity のクッキーや類似技術と自社のクリック・スクロール計測で、どの広告からダイバーが来たか、ページがどう使われたかを把握します。任意です。登録はそのまま有効です。",
     allow: "すべて許可",
     decline: "すべて拒否",
     privacy: "プライバシーポリシー",
@@ -115,7 +117,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
     title: "Tus opciones de privacidad",
     body: "Queremos usar cookies y herramientas similares de Meta, Google y Microsoft Clarity, además de nuestra propia medición de clics y desplazamiento, para saber qué anuncios traen buceadores y cómo se usa esta página. Es opcional: tu registro funciona igual.",
     bodyShort:
-      "Cookies de Meta, Google y Microsoft Clarity, más nuestra medición de clics y desplazamiento, para saber qué anuncios traen buceadores. Opcional: tu registro funciona igual.",
+      "Cookies y herramientas similares de Meta, Google y Microsoft Clarity, más nuestra medición de clics y desplazamiento, para saber qué anuncios traen buceadores y cómo se usa esta página. Opcional: tu registro funciona igual.",
     allow: "Aceptar todo",
     decline: "Rechazar todo",
     privacy: "Política de privacidad",
@@ -128,7 +130,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
     title: "Vos choix de confidentialité",
     body: "Nous aimerions utiliser des cookies et outils similaires de Meta, Google et Microsoft Clarity, ainsi que notre propre mesure des clics et du défilement, pour savoir quelles annonces amènent des plongeurs et comment la page est utilisée. Facultatif : votre inscription reste valable.",
     bodyShort:
-      "Cookies de Meta, Google et Microsoft Clarity, et notre mesure des clics et du défilement, pour savoir quelles annonces amènent des plongeurs. Facultatif : votre inscription reste valable.",
+      "Cookies et outils similaires de Meta, Google et Microsoft Clarity, et notre mesure des clics et du défilement, pour savoir quelles annonces amènent des plongeurs et comment la page est utilisée. Facultatif : votre inscription reste valable.",
     allow: "Tout accepter",
     decline: "Tout refuser",
     privacy: "Politique de confidentialité",
@@ -141,7 +143,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
     title: "Deine Datenschutz-Einstellungen",
     body: "Wir möchten Cookies und ähnliche Tools von Meta, Google und Microsoft Clarity sowie unsere eigene Klick- und Scroll-Messung nutzen, um zu sehen, welche Anzeigen Taucher herbringen und wie die Seite genutzt wird. Freiwillig: deine Anmeldung gilt so oder so.",
     bodyShort:
-      "Cookies von Meta, Google und Microsoft Clarity plus unsere Klick- und Scroll-Messung zeigen, welche Anzeigen Taucher herbringen. Freiwillig: deine Anmeldung gilt so oder so.",
+      "Cookies und ähnliche Tools von Meta, Google und Microsoft Clarity plus unsere Klick- und Scroll-Messung zeigen, welche Anzeigen Taucher herbringen und wie die Seite genutzt wird. Freiwillig: deine Anmeldung gilt so oder so.",
     allow: "Alle akzeptieren",
     decline: "Alle ablehnen",
     privacy: "Datenschutzerklärung",
@@ -154,7 +156,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
     title: "Suas escolhas de privacidade",
     body: "Queremos usar cookies e ferramentas semelhantes da Meta, do Google e do Microsoft Clarity, além da nossa própria medição de cliques e rolagem, para saber quais anúncios trazem mergulhadores e como a página é usada. Opcional: seu cadastro vale de qualquer jeito.",
     bodyShort:
-      "Cookies da Meta, do Google e do Microsoft Clarity, mais nossa medição de cliques e rolagem, para saber quais anúncios trazem mergulhadores. Opcional: seu cadastro vale de qualquer jeito.",
+      "Cookies e ferramentas semelhantes da Meta, do Google e do Microsoft Clarity, mais nossa medição de cliques e rolagem, para saber quais anúncios trazem mergulhadores e como a página é usada. Opcional: seu cadastro vale de qualquer jeito.",
     allow: "Aceitar tudo",
     decline: "Rejeitar tudo",
     privacy: "Política de privacidade",

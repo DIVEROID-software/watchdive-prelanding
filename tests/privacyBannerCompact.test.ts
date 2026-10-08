@@ -30,6 +30,30 @@ test("every locale has a phone body that is shorter and names the same vendors",
   }
 });
 
+// Accept starts ad attribution AND page measurement (GA4, Clarity, first-party
+// behaviour), so the phone text must name both purposes and the "similar
+// tools" category, exactly as the full text does (QA round 14).
+const PURPOSES: Record<string, string[]> = {
+  en: ["similar tools", "which ads bring divers", "how this page is used"],
+  ko: ["유사 기술", "어떤 광고가", "페이지가 어떻게 쓰이는지"],
+  "zh-CN": ["类似工具", "哪些广告", "页面如何被使用"],
+  "zh-TW": ["類似工具", "哪些廣告", "頁面如何被使用"],
+  ja: ["類似技術", "どの広告", "ページがどう使われたか"],
+  es: ["herramientas similares", "qué anuncios", "cómo se usa esta página"],
+  fr: ["outils similaires", "quelles annonces", "comment la page est utilisée"],
+  de: ["ähnliche Tools", "welche Anzeigen", "wie die Seite genutzt wird"],
+  "pt-BR": ["ferramentas semelhantes", "quais anúncios", "como a página é usada"],
+};
+
+test("the phone text names both purposes and the similar-tools category, like the full text", () => {
+  for (const { locale, body, bodyShort } of copyBlocks()) {
+    for (const phrase of PURPOSES[locale]) {
+      assert.ok(body.includes(phrase), `${locale} full: ${phrase}`);
+      assert.ok(bodyShort.includes(phrase), `${locale} phone: ${phrase}`);
+    }
+  }
+});
+
 test("the phone body shows below sm, the full body from sm up", () => {
   assert.ok(source.includes('<span className="sm:hidden">{copy.bodyShort}</span>'));
   assert.ok(source.includes('<span className="hidden sm:inline">{copy.body}</span>'));
