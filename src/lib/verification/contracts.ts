@@ -371,6 +371,12 @@ export type ConfirmResponse = {
    * written: nothing was sent, and the page must keep Try again.
    */
   refusalRecorded?: false;
+  /**
+   * A withdraw-only credential for this signup (a poll handle carrying the
+   * sealed address), kept by the page so a later refusal still lands after a
+   * resend replaced the attempt id. Present on verified and already_verified.
+   */
+  refusalHandle?: string;
 };
 
 /**

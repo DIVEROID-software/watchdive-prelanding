@@ -13,6 +13,7 @@ import {
   withdrawalNeedsRetry,
 } from "@/components/measurement-ask";
 import { withdrawEverySignup } from "@/lib/signupHandleWithdrawal";
+import { rememberSignupHandle } from "@/lib/signupHandles";
 import { resolveGeoCountry } from "@/lib/consentRegion";
 import {
   getMetaCookies,
@@ -117,6 +118,8 @@ export function VerifyPage() {
       : "";
   const token = useRef<string | undefined>(undefined);
   const started = useRef(false);
+  // Withdraw-only credential for this signup, from the confirm response.
+  const refusalHandle = useRef<string | undefined>(undefined);
   const [askMeasurement, setAskMeasurement] = useState(false);
 
   /**
@@ -164,21 +167,25 @@ export function VerifyPage() {
   /** Refused here: recorded on the signup so nothing is sent for it later. */
   const declineMeasurement = async (): Promise<boolean> => {
     if (!token.current) return false;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    let tokenRecorded = false;
+    for (let attempt = 0; attempt < 3 && !tokenRecorded; attempt++) {
       try {
-        const res = await withdrawConfirmationMeasurement({ data: { token: token.current } });
-        if (res.recorded) {
-          // Done only once every signup this browser kept a handle for has
-          // the refusal too; otherwise the card stays on Try again (a later
-          // click re-sends this token, already recorded, and the rest).
-          return await withdrawEverySignup();
-        }
+        tokenRecorded = (await withdrawConfirmationMeasurement({ data: { token: token.current } }))
+          .recorded;
       } catch {
         // A dropped call is not a recorded refusal.
       }
-      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+      if (!tokenRecorded && attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+      }
     }
-    return false;
+    // Done only once every signup this browser kept a handle for has the
+    // refusal too — including this one through its refusal handle, which
+    // still finds the row after a resend replaced the token's attempt id.
+    // Otherwise the card stays on Try again.
+    const extra = refusalHandle.current ? [refusalHandle.current] : [];
+    const everywhere = await withdrawEverySignup(extra).catch(() => false);
+    return everywhere && (tokenRecorded || extra.length > 0);
   };
 
   const confirm = async () => {
@@ -204,12 +211,19 @@ export function VerifyPage() {
       if (result.status === "verified" || result.status === "already_verified") {
         setRefCode(result.refCode ?? "");
         setState("verified");
+        if (result.refusalHandle) {
+          refusalHandle.current = result.refusalHandle;
+          rememberSignupHandle(result.refusalHandle);
+        }
         if (refused) {
           // This browser refused earlier. The server recorded it on this
           // signup before anything else; make sure every other signup this
           // browser kept has it too. Anything unrecorded keeps Try again.
           const everywhere =
-            result.refusalRecorded !== false && (await withdrawEverySignup().catch(() => false));
+            result.refusalRecorded !== false &&
+            (await withdrawEverySignup(result.refusalHandle ? [result.refusalHandle] : []).catch(
+              () => false,
+            ));
           if (!everywhere) {
             clearWithdrawalRecorded();
             setAskMeasurement(true);

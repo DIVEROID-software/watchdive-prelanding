@@ -88,7 +88,9 @@ test("the browser-wide refusal receipt is set only when every kept signup was re
   }
   // Every caller that reports success uses the helper's own result.
   assert.ok(
-    readFileSync("src/routes/verify.tsx", "utf8").includes("return await withdrawEverySignup();"),
+    readFileSync("src/routes/verify.tsx", "utf8").includes(
+      "const everywhere = await withdrawEverySignup(",
+    ),
   );
   assert.ok(readFileSync("src/routes/index.tsx", "utf8").includes("return withdrawEverySignup("));
   assert.equal(

@@ -956,8 +956,64 @@ test("a confirmation whose stored refusal could not be written says so", async (
 });
 
 test("the confirmation page keeps Try again unless the refusal reached every kept signup", () => {
-  const verify = readFileSync("src/routes/verify.tsx", "utf8");
+  const verify = readFileSync("src/routes/verify.tsx", "utf8").replace(/\s+/g, " ");
   const confirm = verify.slice(verify.indexOf("const confirm = async"));
-  assert.ok(confirm.includes("result.refusalRecorded !== false && (await withdrawEverySignup()"));
+  assert.ok(confirm.includes("result.refusalRecorded !== false && (await withdrawEverySignup("));
   assert.ok(confirm.includes("setAskMeasurement(true)"));
+  const decline = verify.slice(
+    verify.indexOf("const declineMeasurement"),
+    verify.indexOf("const confirm = async"),
+  );
+  assert.ok(decline.includes("return everywhere && (tokenRecorded || extra.length > 0);"));
+});
+
+// ---- QA round 11 ----------------------------------------------------------
+
+test("a stored refusal on confirm lands on the row even if a resend replaced its attempt id", async () => {
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  clock = new Date(clock.getTime() + 60_000);
+  const lookup = store.findByLeadId.bind(store);
+  let first = true;
+  store.findByLeadId = async (leadId: string) => {
+    const row = await lookup(leadId);
+    if (first && row) {
+      first = false;
+      // A resend commits a new attempt id right after the confirm's read.
+      await store.startAttempt(row.pageId, {
+        leadId: "aaaaaaaa-bbbb-4ccc-8ddd-0000000000ee",
+        expiresAt: new Date(clock.getTime() + 86_400_000).toISOString(),
+        sends: 2,
+      });
+    }
+    return row;
+  };
+  const confirmed = await confirmVerificationService(
+    mailer.sent[0].token,
+    deps(),
+    {},
+    { localRefusal: true },
+  );
+  assert.equal(confirmed.refusalRecorded, undefined);
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
+  assert.ok(confirmed.refusalHandle);
+});
+
+test("a confirmation-token refusal whose attempt id no longer exists is not reported recorded, and the refusal handle still lands", async () => {
+  await requestVerificationService(submit(false), deps());
+  clock = new Date(clock.getTime() + 60_000);
+  const confirmed = await confirmVerificationService(mailer.sent[0].token, deps());
+  await store.startAttempt(onlyRow().pageId, {
+    leadId: "aaaaaaaa-bbbb-4ccc-8ddd-0000000000ef",
+    expiresAt: new Date(clock.getTime() + 86_400_000).toISOString(),
+    sends: 2,
+  });
+  assert.deepEqual(await withdrawConfirmationMeasurementService(mailer.sent[0].token, deps()), {
+    ok: true,
+    recorded: false,
+  });
+  assert.deepEqual(await withdrawAttemptMeasurementService(confirmed.refusalHandle!, deps()), {
+    ok: true,
+    recorded: true,
+  });
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
 });

@@ -39,6 +39,7 @@ import {
 } from "../conversionExperimentContract.ts";
 import type { PollGate } from "./pollGate.ts";
 import type { VerificationMailer } from "./resend.ts";
+import { canonicalEmail } from "../api/abuse.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
 import type { TokenEnvironment } from "./token.ts";
 import {
@@ -441,11 +442,24 @@ export async function confirmVerificationService(
   // Try again instead of showing it as saved.
   let refusalUnrecorded = false;
   if (options.localRefusal) {
-    refusalUnrecorded = !(await withdraw(parsed.leadId, dependencies));
+    // The row this call just read, by page: a resend that replaced `Lead ID`
+    // in between must not make the refusal miss.
+    refusalUnrecorded = !(await withdrawRecord(record, dependencies));
     // Even an unavailable CRM cannot override this request's explicit refusal.
     dependencies = { ...dependencies, gpc: true };
   }
-  const refusal = refusalUnrecorded ? { refusalRecorded: false as const } : {};
+  const refusal = {
+    ...(refusalUnrecorded ? { refusalRecorded: false as const } : {}),
+    // A refusal credential for this signup that survives a resend: the sealed
+    // address finds the row even after `Lead ID` changes. Withdrawals only.
+    refusalHandle: signPollHandle(
+      parsed.leadId,
+      now.getTime(),
+      false,
+      secret,
+      canonicalEmail(record.email),
+    ),
+  };
 
   const metaEventId = deterministicMetaEventId(parsed.leadId, secret);
 
@@ -829,6 +843,7 @@ async function withdrawWithinBudget(
   leadId: string,
   dependencies: ServiceDependencies,
   refusalCanonical?: string,
+  missIsRecorded = true,
 ): Promise<boolean> {
   const gate = dependencies.withdrawGate ?? processWithdrawGate;
   let saturated = saturatedRefusals.get(gate);
@@ -837,7 +852,7 @@ async function withdrawWithinBudget(
     saturatedRefusals.set(gate, saturated);
   }
   if (saturated.has(leadId)) return true;
-  const recorded = await withdraw(leadId, dependencies, refusalCanonical);
+  const recorded = await withdraw(leadId, dependencies, refusalCanonical, missIsRecorded);
   if (recorded && !gate(leadId)) {
     if (saturated.size > 10_000) saturated.clear();
     saturated.add(leadId);
@@ -1009,6 +1024,13 @@ async function withdraw(
   leadId: string,
   dependencies: ServiceDependencies,
   refusalCanonical?: string,
+  /**
+   * Whether "no row for this id" counts as recorded. True for poll handles (a
+   * decoy names no row, and its sealed address was already tried). False for
+   * a confirmation token: it named a real row, and a resend that replaced
+   * `Lead ID` must not turn a refusal into a silent no-op.
+   */
+  missIsRecorded = true,
 ): Promise<boolean> {
   let record: LeadRecord | undefined;
   try {
@@ -1023,7 +1045,16 @@ async function withdraw(
   } catch {
     return false;
   }
-  if (!record || measurementWithdrawn(record)) return true;
+  if (!record) return missIsRecorded;
+  return withdrawRecord(record, dependencies);
+}
+
+/** Writes the refusal onto a row already in hand, and confirms it by re-reading. */
+async function withdrawRecord(
+  record: LeadRecord,
+  dependencies: ServiceDependencies,
+): Promise<boolean> {
+  if (measurementWithdrawn(record)) return true;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       await dependencies.store.recordMeasurementWithdrawal(record.pageId);
@@ -1065,7 +1096,9 @@ export async function withdrawConfirmationMeasurementService(
   const parsed = isVerificationTokenShape(rawToken)
     ? parseVerificationToken(rawToken, secret, now.getTime())
     : undefined;
-  const recorded = parsed ? await withdrawWithinBudget(parsed.leadId, dependencies) : false;
+  const recorded = parsed
+    ? await withdrawWithinBudget(parsed.leadId, dependencies, undefined, false)
+    : false;
   return floor({ ok: true as const, recorded });
 }
 
