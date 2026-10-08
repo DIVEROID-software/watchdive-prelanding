@@ -107,8 +107,11 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // the DOM changes; the form, sections and order are untouched.
   // 2026-10-08 (QA round): the inbox card also wires the refusal path, so a
   // "No thanks" after the submit is recorded on the signup. Props only.
+  // 2026-10-08: owner accepted the form-first 50:50 conversion experiment.
+  // Both existing forms and all sections remain; the treatment moves signup
+  // before media, clarifies the offer/confirmation and fixes sticky visibility.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "e977a19b7ff28ae2f335a433b236b2efc61a5e264eaf16b73d9f7f137874d5f6");
+  assert.equal(digest, "580be116290bccc5a079306ddf5384607806697cd23743f73765cb4ed778300a");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -162,7 +165,7 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // fv-layoutqa at 320/390/430/1440, 9 locales, pre/post consent.
   assert.equal(
     sha256(read("src/styles.css")),
-    "3a16d904846892444f186d2020043cf7bc8751ea53a17a6861d9a2a472a4bc3d",
+    "a636610d43b9d28701f87057fbb8b3a7c8d22e4d0935f4ef2431164fbe310727",
   );
 });
 

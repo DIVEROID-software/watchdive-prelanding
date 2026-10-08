@@ -22,6 +22,7 @@
 // behaviour database cannot crowd out signups.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
+import { encodeBehaviorSections } from "../conversionExperimentContract.ts";
 import type { PageBehaviorSummary } from "../pageBehaviorSummary.ts";
 import {
   createNotionRequest,
@@ -33,7 +34,8 @@ export type BehaviorTarget = "database" | "data_source";
 
 /** What the browser is told. Never a status, a code, or an id. */
 export type BehaviorWriteResult =
-  { stored: true } | { stored: false; reason: "unconfigured" | "failed" };
+  | { stored: true }
+  | { stored: false; reason: "unconfigured" | "failed" | "ignored" };
 
 export type BehaviorEnv = { NOTION_API_KEY?: string; NOTION_UX_DB_ID?: string };
 
@@ -95,7 +97,9 @@ export function behaviorProperties(summary: PageBehaviorSummary, country: string
     Viewport: rich(`${summary.viewportW}x${summary.viewportH}`),
     Referrer: rich(summary.referrerHost),
     Campaign: rich(campaignLine(summary)),
-    Sections: rich(line(summary.sections, true)),
+    Sections: rich(
+      encodeBehaviorSections(line(summary.sections, true), summary.experiment, summary.funnel),
+    ),
     Clicks: rich(line(summary.clicks, false)),
   };
 }
@@ -186,6 +190,21 @@ export function createBehaviorNotion(
     if (isClientError(last)) pausedUntil = now() + PAUSE_MS;
     log(`[page-behavior] ${op} failed — ${attempts.join("; ")}`);
     return { failure: "failed" };
+  }
+
+  async function queryDetailed(body: Record<string, unknown>) {
+    const outcome = await run("read", (target) =>
+      requestFor(target)(
+        "POST",
+        target === "database"
+          ? `databases/${config()!.id}/query`
+          : `data_sources/${config()!.id}/query`,
+        body,
+      ),
+    );
+    return "failure" in outcome
+      ? { ok: false as const, reason: outcome.failure }
+      : { ok: true as const, page: outcome.value };
   }
 
   return {
@@ -279,17 +298,10 @@ export function createBehaviorNotion(
       return { status: "done", archived };
     },
 
-    async query(body: Record<string, unknown>) {
-      const outcome = await run("read", (target) =>
-        requestFor(target)(
-          "POST",
-          target === "database"
-            ? `databases/${config()!.id}/query`
-            : `data_sources/${config()!.id}/query`,
-          body,
-        ),
-      );
-      return "failure" in outcome ? null : outcome.value;
+    query(body: Record<string, unknown>) {
+      return queryDetailed(body).then((detailed) => (detailed.ok ? detailed.page : null));
     },
+
+    queryDetailed,
   };
 }

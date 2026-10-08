@@ -509,7 +509,7 @@ const ko: FrozenLandingMessages = {
     back: "← 홈으로 돌아가기",
     h1: "개인정보처리방침 — WatchDive 프리런칭",
     effectiveLabel: "시행일:",
-    effectiveDate: "2026년 10월 7일",
+    effectiveDate: "2026년 10월 8일",
     intro1:
       '본 개인정보처리방침은 Diveroid Ltd("회사", "당사", "DIVEROID")가 WatchDive 프리런칭 페이지에서 예정된 Kickstarter 캠페인 소식을 받기 위해 신청하실 때 정보를 어떻게 처리하는지 설명합니다.',
     intro2:
@@ -527,7 +527,7 @@ const ko: FrozenLandingMessages = {
     s2Security:
       "보안 신호 — 자동화되거나 반복적인 요청을 제한하기 위해 서버 메모리에서 사용하는 악용 플래그와 단기 키 기반 네트워크 버킷. 리드 기록에는 원본 IP 주소, 네트워크 버킷, 전체 브라우저 user-agent를 보존하지 않습니다.",
     s2Usage:
-      "페이지 측정 — 기기 종류(휴대폰, 태블릿, 데스크톱), 브라우저 창 크기, 페이지 언어, 시간대, 국가 코드, 머문 시간, 스크롤한 깊이, 구역별로 화면에 보인 시간, 그리고 가입 버튼처럼 이름이 있는 클릭과 그 클릭의 대략적인 화면 위치. 들어온 사이트의 도메인과 링크에 붙은 캠페인 태그(source, medium, campaign)도 기록하며, 이 기록은 해당 브라우저 탭에서만 유지되는 무작위 세션 식별자로 묶입니다. EU/EEA, 영국, 스위스에서 접속했거나 국가를 알 수 없으면 허용을 선택한 경우에만 동작하고, 그 밖의 지역에서는 기본으로 동작하며 페이지 하단 쿠키 설정에서 끌 수 있습니다. 이 기록에는 이메일 주소, 전화번호, IP 주소, 브라우저의 전체 사용자 에이전트, 입력한 글, 정확한 위치, 추정한 나이와 성별이 들어가지 않으며, 대기명단 기록과 연결하지 않습니다. 식별자가 설정된 경우 Google Analytics 4, Google Ads, Meta 픽셀, Microsoft Clarity 히트맵도 같은 기준을 따릅니다. 지원 채팅과 Vercel Web Analytics는 페이지와 함께 로드될 수 있습니다.",
+      "페이지 측정 — 기기 종류(휴대폰, 태블릿, 데스크톱), 브라우저 창 크기, 페이지 언어, 시간대, 국가 코드, 머문 시간, 스크롤한 깊이, 구역별로 화면에 보인 시간, 그리고 가입 버튼처럼 이름이 있는 클릭과 그 클릭의 대략적인 화면 위치. 들어온 사이트의 도메인과 링크에 붙은 캠페인 태그(source, medium, campaign)도 기록하며, 이 기록은 해당 브라우저 탭에서만 유지되는 무작위 세션 식별자로 묶입니다. EU/EEA, 영국, 스위스에서 접속했거나 국가를 알 수 없으면 허용을 선택한 경우에만 동작하고, 그 밖의 지역에서는 기본으로 동작하며 페이지 하단 쿠키 설정에서 끌 수 있습니다. 이 기록에는 이메일 주소, 전화번호, IP 주소, 브라우저의 전체 사용자 에이전트, 입력한 글, 정확한 위치, 추정한 나이와 성별이 들어가지 않습니다. 측정이 허용된 경우 재방문 시 같은 화면을 보여주기 위해 실험 버전을 최대 30일 보관하고, 무작위 세션 식별자와 실험 버전을 신규 가입 기록에 연결하여 실제 저장·인증된 이메일 수를 비교합니다. 집계 보고서에는 이메일 주소를 표시하지 않습니다. 식별자가 설정된 경우 Google Analytics 4, Google Ads, Meta 픽셀, Microsoft Clarity 히트맵도 같은 기준을 따릅니다. 지원 채팅과 Vercel Web Analytics는 페이지와 함께 로드될 수 있습니다.",
     s2NoPayment: "이 페이지에서는 결제 정보를 수집하지 않습니다.",
     s3Title: "3. 이용 목적",
     s3Intro: "제공하신 정보는 다음 용도로 사용합니다:",
@@ -962,7 +962,7 @@ const zhCN: FrozenLandingMessages = {
     back: "← 返回首页",
     h1: "隐私政策 — WatchDive 预启动",
     effectiveLabel: "生效日期：",
-    effectiveDate: "2026 年 10 月 7 日",
+    effectiveDate: "2026 年 10 月 8 日",
     intro1:
       "本隐私政策说明 Diveroid Ltd（“我们”，“DIVEROID”）在你于 WatchDive 预启动页面报名接收即将开启的 Kickstarter 众筹消息时，如何处理你的信息。",
     intro2: "本页面仅用于收集上线意向。它不是商店，不处理任何付款。",
@@ -978,7 +978,7 @@ const zhCN: FrozenLandingMessages = {
     s2Security:
       "安全信号 — 用于限制自动化或重复请求、在服务器内存中使用的滥用标记与短时效的加密网络分桶。潜在客户记录中不保留原始 IP 地址、网络分桶或完整的浏览器 user-agent。",
     s2Usage:
-      "页面测量 — 设备类型（手机、平板或电脑）、浏览器窗口尺寸、页面语言、时区、国家代码、停留时间、滚动深度、各区块在屏幕上停留的时间，以及报名按钮这类有名称的点击及其在屏幕上的大致位置。我们还会记录来源网站的域名和链接中的活动标记（source、medium、campaign），这些记录归在一个只在当前浏览器标签页中保留的随机会话标识下。在欧盟/欧洲经济区、英国和瑞士，或无法判断你所在的国家时，仅在你选择“允许”后运行；在其他地区默认运行，你可以通过页面底部的“Cookie 设置”关闭。该记录不包含你的电子邮箱、电话号码、IP 地址、完整的浏览器用户代理（User-Agent）、你输入的文字、精确位置，也不推断年龄或性别，并且不会与你的候补名单记录关联。Google Analytics 4、Google Ads、Meta Pixel 和 Microsoft Clarity 热图在标识已配置时遵循同样的规则。支持聊天和 Vercel Web Analytics 可能随页面加载。",
+      "页面测量 — 设备类型（手机、平板或电脑）、浏览器窗口尺寸、页面语言、时区、国家代码、停留时间、滚动深度、各区块在屏幕上停留的时间，以及报名按钮这类有名称的点击及其在屏幕上的大致位置。我们还会记录来源网站的域名和链接中的活动标记（source、medium、campaign），这些记录归在一个只在当前浏览器标签页中保留的随机会话标识下。在欧盟/欧洲经济区、英国和瑞士，或无法判断你所在的国家时，仅在你选择“允许”后运行；在其他地区默认运行，你可以通过页面底部的“Cookie 设置”关闭。该记录不包含你的电子邮箱、电话号码、IP 地址、完整的浏览器用户代理（User-Agent）、你输入的文字、精确位置，也不推断年龄或性别。允许测量时，我们将实验版本保存最多 30 天，以便回访时显示相同页面，并将随机会话标识和实验版本关联到新报名记录，以比较实际保存和确认的邮箱数量。汇总报告不包含邮箱地址。Google Analytics 4、Google Ads、Meta Pixel 和 Microsoft Clarity 热图在标识已配置时遵循同样的规则。支持聊天和 Vercel Web Analytics 可能随页面加载。",
     s2NoPayment: "本页面不收集任何付款信息。",
     s3Title: "3. 使用目的",
     s3Intro: "你提供的信息用于：",
@@ -1411,7 +1411,7 @@ const zhTW: FrozenLandingMessages = {
     back: "← 回到首頁",
     h1: "隱私權政策 — WatchDive 預先啟動",
     effectiveLabel: "生效日期：",
-    effectiveDate: "2026 年 10 月 7 日",
+    effectiveDate: "2026 年 10 月 8 日",
     intro1:
       "本隱私權政策說明 Diveroid Ltd（「我們」，「DIVEROID」）在你於 WatchDive 預先啟動頁面報名接收即將開啟的 Kickstarter 募資消息時，如何處理你的資訊。",
     intro2: "本頁面僅用於蒐集上線意向。它不是商店，也不處理任何付款。",
@@ -1427,7 +1427,7 @@ const zhTW: FrozenLandingMessages = {
     s2Security:
       "安全訊號 — 用於限制自動化或重複請求、在伺服器記憶體中使用的濫用旗標與短效的金鑰式網路分桶。潛在名單紀錄中不保留原始 IP 位址、網路分桶或完整的瀏覽器 user-agent。",
     s2Usage:
-      "頁面測量 — 裝置類型（手機、平板或電腦）、瀏覽器視窗大小、頁面語言、時區、國家代碼、停留時間、捲動深度、各區塊在畫面上停留的時間，以及報名按鈕這類有名稱的點擊與其在畫面上的大致位置。我們也會記錄來源網站的網域與連結中的活動標記（source、medium、campaign），這些紀錄歸在一個只在目前瀏覽器分頁中保留的隨機工作階段識別碼之下。在歐盟／歐洲經濟區、英國與瑞士，或無法判斷你所在的國家時，僅在你選擇「允許」後執行；在其他地區預設執行，你可以透過頁面底部的「Cookie 設定」關閉。這份紀錄不包含你的電子郵件、電話號碼、IP 位址、完整的瀏覽器使用者代理（User-Agent）、你輸入的文字、精確位置，也不推斷年齡或性別，並且不會與你的候補名單紀錄連結。Google Analytics 4、Google Ads、Meta Pixel 與 Microsoft Clarity 熱圖在識別碼已設定時遵循相同規則。支援聊天與 Vercel Web Analytics 可能隨頁面載入。",
+      "頁面測量 — 裝置類型（手機、平板或電腦）、瀏覽器視窗大小、頁面語言、時區、國家代碼、停留時間、捲動深度、各區塊在畫面上停留的時間，以及報名按鈕這類有名稱的點擊與其在畫面上的大致位置。我們也會記錄來源網站的網域與連結中的活動標記（source、medium、campaign），這些紀錄歸在一個只在目前瀏覽器分頁中保留的隨機工作階段識別碼之下。在歐盟／歐洲經濟區、英國與瑞士，或無法判斷你所在的國家時，僅在你選擇「允許」後執行；在其他地區預設執行，你可以透過頁面底部的「Cookie 設定」關閉。這份紀錄不包含你的電子郵件、電話號碼、IP 位址、完整的瀏覽器使用者代理（User-Agent）、你輸入的文字、精確位置，也不推斷年齡或性別。允許測量時，我們將實驗版本保留最多 30 天，讓回訪時顯示相同頁面，並將隨機工作階段識別碼與實驗版本連結到新報名紀錄，以比較實際儲存和確認的信箱數量。彙總報告不包含信箱地址。Google Analytics 4、Google Ads、Meta Pixel 與 Microsoft Clarity 熱圖在識別碼已設定時遵循相同規則。支援聊天與 Vercel Web Analytics 可能隨頁面載入。",
     s2NoPayment: "本頁面不蒐集任何付款資訊。",
     s3Title: "3. 使用目的",
     s3Intro: "你提供的資訊用於：",
@@ -1876,7 +1876,7 @@ const ja: FrozenLandingMessages = {
     back: "← ホームに戻る",
     h1: "プライバシーポリシー — WatchDive 事前登録",
     effectiveLabel: "発効日:",
-    effectiveDate: "2026 年 10 月 7 日",
+    effectiveDate: "2026 年 10 月 8 日",
     intro1:
       "本プライバシーポリシーは、Diveroid Ltd（「当社」、「DIVEROID」）が、WatchDive 事前登録ページで今後の Kickstarter キャンペーン情報の受け取りにお申し込みいただいた際に、お客様の情報をどのように取り扱うかを説明するものです。",
     intro2:
@@ -1894,7 +1894,7 @@ const ja: FrozenLandingMessages = {
     s2Security:
       "セキュリティシグナル — 自動化された、または繰り返しのリクエストを制限するためにサーバーメモリ上で使う不正利用フラグと短命の鍵付きネットワークバケット。リード記録には、生の IP アドレス、ネットワークバケット、ブラウザーの完全な user-agent を保持しません。",
     s2Usage:
-      "ページ計測 — 端末の種類（スマホ、タブレット、パソコン）、ブラウザのウィンドウサイズ、ページの言語、タイムゾーン、国コード、滞在時間、スクロールした深さ、各セクションが画面に表示されていた時間、そして登録ボタンのような名前のあるクリックと、その画面上のおおよその位置を記録します。参照元サイトのドメインと、リンクに付いたキャンペーンタグ（source・medium・campaign）も記録し、これらはそのブラウザタブの中だけで保たれるランダムなセッション識別子にまとめられます。EU/EEA、英国、スイスから、または国が判別できない場合は「許可する」を選んだときだけ動き、それ以外の地域では最初から動きます。ページ下部の「クッキー設定」からいつでも止められます。この記録には、メールアドレス、電話番号、IP アドレス、ブラウザのユーザーエージェント全文、入力した文字、正確な位置、推定した年齢や性別は含まれず、ウェイトリストの登録情報とも結び付けません。Google Analytics 4、Google Ads、Meta ピクセル、Microsoft Clarity のヒートマップも、識別子が設定されている場合は同じルールに従います。サポートチャットと Vercel Web Analytics はページと一緒に読み込まれることがあります。",
+      "ページ計測 — 端末の種類（スマホ、タブレット、パソコン）、ブラウザのウィンドウサイズ、ページの言語、タイムゾーン、国コード、滞在時間、スクロールした深さ、各セクションが画面に表示されていた時間、そして登録ボタンのような名前のあるクリックと、その画面上のおおよその位置を記録します。参照元サイトのドメインと、リンクに付いたキャンペーンタグ（source・medium・campaign）も記録し、これらはそのブラウザタブの中だけで保たれるランダムなセッション識別子にまとめられます。EU/EEA、英国、スイスから、または国が判別できない場合は「許可する」を選んだときだけ動き、それ以外の地域では最初から動きます。ページ下部の「クッキー設定」からいつでも止められます。この記録には、メールアドレス、電話番号、IP アドレス、ブラウザのユーザーエージェント全文、入力した文字、正確な位置、推定した年齢や性別は含まれません。計測が許可された場合、再訪時に同じ画面を表示するため実験バージョンを最大30日間保存し、ランダムなセッション識別子と実験バージョンを新規登録情報に関連付けて、実際に保存・確認されたメールアドレスの件数を比較します。集計レポートにメールアドレスは含めません。Google Analytics 4、Google Ads、Meta ピクセル、Microsoft Clarity のヒートマップも、識別子が設定されている場合は同じルールに従います。サポートチャットと Vercel Web Analytics はページと一緒に読み込まれることがあります。",
     s2NoPayment: "このページでは決済情報を収集しません。",
     s3Title: "3. 利用目的",
     s3Intro: "ご提供いただいた情報は次の目的で利用します:",
@@ -2354,7 +2354,7 @@ const es: FrozenLandingMessages = {
     back: "← Volver al inicio",
     h1: "Política de privacidad — Prelanzamiento de WatchDive",
     effectiveLabel: "Fecha de entrada en vigor:",
-    effectiveDate: "7 de octubre de 2026",
+    effectiveDate: "8 de octubre de 2026",
     intro1:
       'Esta Política de privacidad explica cómo Diveroid Ltd ("nosotros", "DIVEROID") trata tu información cuando te registras en la página de prelanzamiento de WatchDive para recibir novedades sobre nuestra próxima campaña de Kickstarter.',
     intro2:
@@ -2373,7 +2373,7 @@ const es: FrozenLandingMessages = {
     s2Security:
       "Señales de seguridad — indicadores de abuso y un bucket de red cifrado y de corta vida usado en la memoria del servidor para limitar solicitudes automatizadas o repetidas. No conservamos la dirección IP en bruto, el bucket de red ni el user-agent completo del navegador en el registro del lead.",
     s2Usage:
-      "Medición de la página — tipo de dispositivo (teléfono, tableta u ordenador), tamaño de la ventana del navegador, idioma de la página, zona horaria, código de país, tiempo en la página, hasta dónde te desplazas, cuánto tiempo estuvo cada sección en pantalla y clics con nombre, como el botón de registro, con su posición aproximada en la pantalla. También registra el dominio del sitio desde el que llegas y las etiquetas de campaña del enlace (source, medium y campaign), agrupados bajo un identificador de sesión aleatorio que solo se conserva en esa pestaña del navegador. En la UE/EEE, el Reino Unido y Suiza, o cuando no podemos saber tu país, solo funciona después de que elijas Permitir; en el resto funciona por defecto y puedes desactivarla desde Cookies, al pie de la página. Este registro no incluye tu email, tu número de teléfono, tu dirección IP, el agente de usuario completo del navegador, el texto que escribes, tu ubicación precisa ni una edad o un género inferidos, y no se vincula con tu registro en la lista de espera. Cuando sus identificadores están configurados, Google Analytics 4, Google Ads, el píxel de Meta y los mapas de calor de Microsoft Clarity siguen la misma regla. El chat de soporte y Vercel Web Analytics pueden cargarse con la página.",
+      "Medición de la página — tipo de dispositivo (teléfono, tableta u ordenador), tamaño de la ventana del navegador, idioma de la página, zona horaria, código de país, tiempo en la página, hasta dónde te desplazas, cuánto tiempo estuvo cada sección en pantalla y clics con nombre, como el botón de registro, con su posición aproximada en la pantalla. También registra el dominio del sitio desde el que llegas y las etiquetas de campaña del enlace (source, medium y campaign), agrupados bajo un identificador de sesión aleatorio que solo se conserva en esa pestaña del navegador. En la UE/EEE, el Reino Unido y Suiza, o cuando no podemos saber tu país, solo funciona después de que elijas Permitir; en el resto funciona por defecto y puedes desactivarla desde Cookies, al pie de la página. Este registro no incluye tu email, tu número de teléfono, tu dirección IP, el agente de usuario completo del navegador, el texto que escribes, tu ubicación precisa ni una edad o un género inferidos. Cuando la medición está permitida, guardamos la versión del experimento hasta 30 días para mostrarte la misma versión al volver y vinculamos el identificador de sesión y la variante al nuevo registro, para comparar correos guardados y confirmados. El informe agregado no incluye direcciones de correo. Cuando sus identificadores están configurados, Google Analytics 4, Google Ads, el píxel de Meta y los mapas de calor de Microsoft Clarity siguen la misma regla. El chat de soporte y Vercel Web Analytics pueden cargarse con la página.",
     s2NoPayment: "No recopilamos datos de pago en esta página.",
     s3Title: "3. Para qué la usamos",
     s3Intro: "Usamos la información que proporcionas para:",
@@ -2836,7 +2836,7 @@ const fr: FrozenLandingMessages = {
     back: "← Retour à l’accueil",
     h1: "Politique de confidentialité — Prélancement WatchDive",
     effectiveLabel: "Date d’entrée en vigueur :",
-    effectiveDate: "7 octobre 2026",
+    effectiveDate: "8 octobre 2026",
     intro1:
       "La présente Politique de confidentialité explique comment Diveroid Ltd (« nous », « DIVEROID ») traite vos informations lorsque vous vous inscrivez sur la page de prélancement de WatchDive pour recevoir des nouvelles de notre prochaine campagne Kickstarter.",
     intro2:
@@ -2855,7 +2855,7 @@ const fr: FrozenLandingMessages = {
     s2Security:
       "Signaux de sécurité — indicateurs d’abus et compartiment réseau chiffré à courte durée de vie, utilisés en mémoire serveur pour limiter les requêtes automatisées ou répétées. Nous ne conservons ni l’adresse IP brute, ni le compartiment réseau, ni le user-agent complet du navigateur dans la fiche du prospect.",
     s2Usage:
-      "Mesure de la page — type d’appareil (téléphone, tablette ou ordinateur), taille de la fenêtre du navigateur, langue de la page, fuseau horaire, code pays, temps passé sur la page, profondeur de défilement, durée d’affichage de chaque section à l’écran et clics nommés, comme le bouton d’inscription, avec leur position approximative à l’écran. Elle enregistre aussi le domaine du site d’origine et les balises de campagne du lien (source, medium et campaign), regroupés sous un identifiant de session aléatoire conservé uniquement dans cet onglet du navigateur. Dans l’UE/EEE, au Royaume-Uni et en Suisse, ou lorsque nous ne pouvons pas déterminer votre pays, elle ne fonctionne qu’après Autoriser ; ailleurs, elle est active par défaut et vous pouvez la désactiver via Cookies, en bas de la page. Cet enregistrement ne contient ni votre adresse e-mail, ni votre numéro de téléphone, ni votre adresse IP, ni l’agent utilisateur complet du navigateur, ni le texte saisi, ni votre position précise, ni un âge ou un genre déduit, et il n’est pas relié à votre inscription sur la liste d’attente. Lorsque leurs identifiants sont configurés, Google Analytics 4, Google Ads, le pixel Meta et les cartes de chaleur Microsoft Clarity suivent la même règle. Le chat d’assistance et Vercel Web Analytics peuvent se charger avec la page.",
+      "Mesure de la page — type d’appareil (téléphone, tablette ou ordinateur), taille de la fenêtre du navigateur, langue de la page, fuseau horaire, code pays, temps passé sur la page, profondeur de défilement, durée d’affichage de chaque section à l’écran et clics nommés, comme le bouton d’inscription, avec leur position approximative à l’écran. Elle enregistre aussi le domaine du site d’origine et les balises de campagne du lien (source, medium et campaign), regroupés sous un identifiant de session aléatoire conservé uniquement dans cet onglet du navigateur. Dans l’UE/EEE, au Royaume-Uni et en Suisse, ou lorsque nous ne pouvons pas déterminer votre pays, elle ne fonctionne qu’après Autoriser ; ailleurs, elle est active par défaut et vous pouvez la désactiver via Cookies, en bas de la page. Cet enregistrement ne contient ni votre adresse e-mail, ni votre numéro de téléphone, ni votre adresse IP, ni l’agent utilisateur complet du navigateur, ni le texte saisi, ni votre position précise, ni un âge ou un genre déduit. Lorsque la mesure est autorisée, nous conservons la version de l’expérience pendant 30 jours maximum pour vos prochaines visites et relions l’identifiant de session et la variante à une nouvelle inscription, afin de comparer les e-mails enregistrés et confirmés. Le rapport agrégé ne contient aucune adresse e-mail. Lorsque leurs identifiants sont configurés, Google Analytics 4, Google Ads, le pixel Meta et les cartes de chaleur Microsoft Clarity suivent la même règle. Le chat d’assistance et Vercel Web Analytics peuvent se charger avec la page.",
     s2NoPayment: "Nous ne collectons aucune donnée de paiement sur cette page.",
     s3Title: "3. Pourquoi nous les utilisons",
     s3Intro: "Nous utilisons les informations que vous fournissez pour :",
@@ -3316,7 +3316,7 @@ const de: FrozenLandingMessages = {
     back: "← Zur Startseite",
     h1: "Datenschutzerklärung — WatchDive Vorstart",
     effectiveLabel: "Gültig ab:",
-    effectiveDate: "7. Oktober 2026",
+    effectiveDate: "8. Oktober 2026",
     intro1:
       "Diese Datenschutzerklärung erläutert, wie Diveroid Ltd („wir“, „uns“, „DIVEROID“) deine Daten behandelt, wenn du dich auf der WatchDive-Vorstart-Seite anmeldest, um Updates zu unserer kommenden Kickstarter-Kampagne zu erhalten.",
     intro2:
@@ -3334,7 +3334,7 @@ const de: FrozenLandingMessages = {
     s2Security:
       "Sicherheitssignale — Missbrauchs-Flags und ein kurzlebiger, verschlüsselter Netzwerk-Bucket im Serverspeicher, um automatisierte oder wiederholte Anfragen zu begrenzen. Rohe IP-Adresse, Netzwerk-Bucket oder den vollständigen Browser-User-Agent bewahren wir im Lead-Datensatz nicht auf.",
     s2Usage:
-      "Seitenmessung — Geräteklasse (Telefon, Tablet oder Computer), Größe des Browserfensters, Seitensprache, Zeitzone, Ländercode, Verweildauer, Scrolltiefe, wie lange jeder Abschnitt auf dem Bildschirm war, und benannte Klicks wie der Anmeldebutton samt ihrer ungefähren Position auf dem Bildschirm. Außerdem erfasst sie die Domain der verweisenden Website und die Kampagnen-Tags im Link (source, medium und campaign), zusammengefasst unter einer zufälligen Sitzungskennung, die nur in diesem Browser-Tab erhalten bleibt. In der EU/im EWR, im Vereinigten Königreich und in der Schweiz oder wenn wir dein Land nicht erkennen können, läuft sie erst, nachdem du Erlauben gewählt hast; anderswo läuft sie standardmäßig, und du kannst sie über die Cookie-Einstellungen unten auf der Seite abschalten. Dieser Datensatz enthält weder deine E-Mail-Adresse noch deine Telefonnummer, deine IP-Adresse, den vollständigen User-Agent deines Browsers, eingegebenen Text, deinen genauen Standort oder ein geschätztes Alter oder Geschlecht, und er wird nicht mit deinem Wartelisten-Eintrag verknüpft. Wenn ihre Kennungen gesetzt sind, folgen Google Analytics 4, Google Ads, das Meta-Pixel und Microsoft-Clarity-Heatmaps derselben Regel. Der Support-Chat und Vercel Web Analytics können mit der Seite laden.",
+      "Seitenmessung — Geräteklasse (Telefon, Tablet oder Computer), Größe des Browserfensters, Seitensprache, Zeitzone, Ländercode, Verweildauer, Scrolltiefe, wie lange jeder Abschnitt auf dem Bildschirm war, und benannte Klicks wie der Anmeldebutton samt ihrer ungefähren Position auf dem Bildschirm. Außerdem erfasst sie die Domain der verweisenden Website und die Kampagnen-Tags im Link (source, medium und campaign), zusammengefasst unter einer zufälligen Sitzungskennung, die nur in diesem Browser-Tab erhalten bleibt. In der EU/im EWR, im Vereinigten Königreich und in der Schweiz oder wenn wir dein Land nicht erkennen können, läuft sie erst, nachdem du Erlauben gewählt hast; anderswo läuft sie standardmäßig, und du kannst sie über die Cookie-Einstellungen unten auf der Seite abschalten. Dieser Datensatz enthält weder deine E-Mail-Adresse noch deine Telefonnummer, deine IP-Adresse, den vollständigen User-Agent deines Browsers, eingegebenen Text, deinen genauen Standort oder ein geschätztes Alter oder Geschlecht. Wenn die Messung erlaubt ist, speichern wir die Testvariante bis zu 30 Tage für einheitliche Wiederbesuche und verknüpfen die zufällige Sitzungskennung und Variante mit einer neuen Anmeldung, um gespeicherte und bestätigte E-Mails zu vergleichen. Der aggregierte Bericht enthält keine E-Mail-Adressen. Wenn ihre Kennungen gesetzt sind, folgen Google Analytics 4, Google Ads, das Meta-Pixel und Microsoft-Clarity-Heatmaps derselben Regel. Der Support-Chat und Vercel Web Analytics können mit der Seite laden.",
     s2NoPayment: "Zahlungsdaten erheben wir auf dieser Seite nicht.",
     s3Title: "3. Wofür wir sie nutzen",
     s3Intro: "Wir nutzen die von dir angegebenen Daten, um:",
@@ -3793,7 +3793,7 @@ const ptBR: FrozenLandingMessages = {
     back: "← Voltar ao início",
     h1: "Política de Privacidade — Pré-lançamento WatchDive",
     effectiveLabel: "Data de vigência:",
-    effectiveDate: "7 de outubro de 2026",
+    effectiveDate: "8 de outubro de 2026",
     intro1:
       'Esta Política de Privacidade explica como a Diveroid Ltd ("nós", "DIVEROID") trata suas informações quando você se cadastra na página de pré-lançamento do WatchDive para receber novidades sobre nossa próxima campanha no Kickstarter.',
     intro2:
@@ -3812,7 +3812,7 @@ const ptBR: FrozenLandingMessages = {
     s2Security:
       "Sinais de segurança — marcadores de abuso e um bucket de rede com chave e vida curta, usados na memória do servidor para limitar solicitações automatizadas ou repetidas. Não retemos o endereço IP bruto, o bucket de rede nem o user-agent completo do navegador no registro do lead.",
     s2Usage:
-      "Medição da página — tipo de aparelho (telefone, tablet ou computador), tamanho da janela do navegador, idioma da página, fuso horário, código do país, tempo na página, até onde você rolou, quanto tempo cada seção ficou na tela e cliques nomeados, como o botão de cadastro, com a posição aproximada na tela. Também registra o domínio do site de onde você veio e as tags de campanha do link (source, medium e campaign), reunidos sob um identificador de sessão aleatório que só fica guardado naquela aba do navegador. Na UE/EEE, no Reino Unido e na Suíça, ou quando não conseguimos identificar seu país, ela só funciona depois que você escolhe Permitir; nos demais lugares, funciona por padrão e você pode desativá-la em Cookies, no rodapé da página. Esse registro não inclui seu e-mail, seu número de telefone, seu endereço IP, o user-agent completo do navegador, o texto digitado, sua localização precisa nem idade ou gênero inferidos, e não é vinculado ao seu cadastro na lista de espera. Quando os identificadores estão configurados, Google Analytics 4, Google Ads, o pixel da Meta e os mapas de calor do Microsoft Clarity seguem a mesma regra. O chat de suporte e o Vercel Web Analytics podem carregar com a página.",
+      "Medição da página — tipo de aparelho (telefone, tablet ou computador), tamanho da janela do navegador, idioma da página, fuso horário, código do país, tempo na página, até onde você rolou, quanto tempo cada seção ficou na tela e cliques nomeados, como o botão de cadastro, com a posição aproximada na tela. Também registra o domínio do site de onde você veio e as tags de campanha do link (source, medium e campaign), reunidos sob um identificador de sessão aleatório que só fica guardado naquela aba do navegador. Na UE/EEE, no Reino Unido e na Suíça, ou quando não conseguimos identificar seu país, ela só funciona depois que você escolhe Permitir; nos demais lugares, funciona por padrão e você pode desativá-la em Cookies, no rodapé da página. Esse registro não inclui seu e-mail, seu número de telefone, seu endereço IP, o user-agent completo do navegador, o texto digitado, sua localização precisa nem idade ou gênero inferidos. Quando a medição é permitida, guardamos a versão do teste por até 30 dias para manter a mesma página nas próximas visitas e vinculamos o identificador de sessão e a variante ao novo cadastro, para comparar e-mails salvos e confirmados. O relatório agregado não contém endereços de e-mail. Quando os identificadores estão configurados, Google Analytics 4, Google Ads, o pixel da Meta e os mapas de calor do Microsoft Clarity seguem a mesma regra. O chat de suporte e o Vercel Web Analytics podem carregar com a página.",
     s2NoPayment: "Não coletamos dados de pagamento nesta página.",
     s3Title: "3. Por que usamos",
     s3Intro: "Usamos as informações que você fornece para:",

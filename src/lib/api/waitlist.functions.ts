@@ -11,6 +11,7 @@ import {
 } from "@/lib/attribution";
 import { createServiceDependencies, sanitizeServerError } from "@/lib/verification/deps.server";
 import { COUNTABLE_STATUS_FILTER, createNotionRequest } from "@/lib/verification/notionLead";
+import { persistableExperimentContext } from "@/lib/conversionExperimentContract";
 import { conversionBlocked, WAITLIST_CLOSED_MESSAGE } from "@/lib/verification/contracts";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { waitlistClosed } from "@/lib/waitlistProgress";
@@ -260,6 +261,9 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       // browser one. Never stored — they go to Meta and nowhere else.
       fbp: z.string().max(META_COOKIE_MAX).optional(),
       fbc: z.string().max(META_COOKIE_MAX).optional(),
+      // Same-session experiment context. A bad object is ignored below so it
+      // cannot reject the signup or change this response.
+      experiment: z.unknown().optional(),
     }),
   )
   .handler(async ({ data }) => {
@@ -329,6 +333,26 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           ...(data.measurementConsent && submitFbc ? { metaFbc: submitFbc } : {}),
           locale: data.locale,
           networkSendBlocked: verdict.blocked,
+          // New consented rows only. The service drops it again for repeats,
+          // suspect rows, and blocked sends. The response stays generic.
+          ...(() => {
+            const experiment = persistableExperimentContext(data.experiment, {
+              measurementConsent: data.measurementConsent,
+              suspect: flags.length > 0,
+              blocked: conversionBlocked(flags) || verdict.blocked,
+            });
+            if (
+              data.experiment != null &&
+              data.measurementConsent &&
+              flags.length === 0 &&
+              !verdict.blocked &&
+              !conversionBlocked(flags) &&
+              !experiment
+            ) {
+              console.error("[conversion-experiment] ignored malformed context");
+            }
+            return experiment ? { experiment } : {};
+          })(),
         },
         createServiceDependencies({ ...(ip ? { ip } : {}), ...(ua ? { ua } : {}) }),
       );

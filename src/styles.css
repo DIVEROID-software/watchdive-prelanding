@@ -906,3 +906,25 @@ form[data-wd-queued] .wd-submit::after { content: ""; width: 1em; height: 1em; m
 
 /* Avoid focus zoom on iPad as well as narrow iPhone viewports. */
 .wd-scroll input:not([type="checkbox"]) { font-size: 1rem; }
+
+/* 2026-10-08 controlled conversion test. The control keeps the current layout.
+   The head bootstrap sets this before paint; no photo-to-form layout flash. */
+.wd-experiment-copy { display: none; }
+html[data-wd-landing="form_first"] .wd-control-copy { display: none; }
+html[data-wd-landing="form_first"] .wd-experiment-copy { display: block; }
+html:root[data-wd-landing="form_first"] .wd-hero-price { display: none; }
+html[data-wd-landing="form_first"] .wd-experiment-benefit { font-size: 1rem; line-height: 1.4; font-weight: 600; color: #fff; }
+html[data-wd-landing="form_first"] .wd-experiment-note { font-size: .8125rem; line-height: 1.45; color: #e1f3fa; }
+html[data-wd-landing="form_first"] .wd-experiment-note p + p { margin-top: .25rem; }
+html[data-wd-landing="form_first"] .wd-experiment-terms { color: #bdd9e6; }
+html[data-wd-landing="form_first"] .wd-experiment-compatibility { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; color: #82def7; font-size: .875rem; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 1023px) {
+  html[data-wd-landing="form_first"] .wd-hero-layout { grid-template-areas: "heading" "signup" "media" "proof"; gap: 1rem; padding-top: 1rem; }
+  html[data-wd-landing="form_first"] .wd-hero-heading h1 { font-size: clamp(1.6rem, 6.8vw, 2.25rem) !important; line-height: 1.1 !important; max-width: 24ch; }
+  html[data-wd-landing="form_first"] .wd-hero-sub { font-size: .875rem; line-height: 1.45; margin-top: .5rem; }
+  html[data-wd-landing="form_first"] .wd-hero-heading .wd-experiment-compatibility { display: none; }
+  html[data-wd-landing="form_first"] .wd-hero-signup form { gap: .625rem; }
+  html[data-wd-landing="form_first"] .wd-hero-signup :is(input[type="email"], .wd-submit) { min-height: 50px; height: 50px; }
+  html[data-wd-landing="form_first"] .wd-hero-signup .wd-submit { height: auto; padding: .625rem .75rem; line-height: 1.25; }
+  html[data-wd-landing="form_first"] .wd-hero-photo { margin-inline: 0; aspect-ratio: 16 / 9; }
+}

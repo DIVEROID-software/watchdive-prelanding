@@ -46,6 +46,14 @@ import {
   trackMetaPhoneLead,
 } from "@/lib/metaPixel";
 import { getAttribution } from "@/lib/attribution";
+import {
+  currentLandingVariant,
+  getConversionExperiment,
+  markConversionMilestone,
+  closeExperimentEnrollmentOnSubmit,
+} from "@/lib/conversionExperimentClient";
+import { conversionCopy } from "@/lib/conversionCopy";
+import { signupActionsVisible } from "@/lib/signupVisibility";
 import { trackClarity } from "@/lib/clarity";
 import {
   trackGoogleFormStart,
@@ -404,35 +412,47 @@ function LazyVideo({
  */
 function StickyLaunchBanner() {
   const m = useFrozenLandingMessages();
+  const copy = conversionCopy[useCurrentLocale()];
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    const forms = [...document.querySelectorAll("form")];
-    const visibleForms = new Set<Element>();
     const viewport = window.visualViewport;
     const update = () => {
       const focused = document.activeElement;
       const editing = focused instanceof HTMLElement && !!focused.closest("form, #dc-win");
       const keyboardOpen = !!viewport && viewport.height < window.innerHeight * 0.75;
-      const hide = visibleForms.size > 0 || editing || keyboardOpen;
+      const forms = [...document.querySelectorAll("form[data-wd-signup]")];
+      const height = viewport?.height ?? window.innerHeight;
+      const improved = currentLandingVariant() === "form_first";
+      const actionable = forms.some((form) => {
+        if (!improved) {
+          const r = form.getBoundingClientRect();
+          return r.top < height && r.bottom > 0;
+        }
+        return signupActionsVisible(form);
+      });
+      const hide = actionable || editing || keyboardOpen;
       setHidden(hide);
       document.documentElement.dataset.wdForm = hide ? "active" : "";
     };
-    const observer = new IntersectionObserver((entries) => {
-      // Entries contain only changed targets, not every observed form.
-      for (const entry of entries) {
-        if (entry.isIntersecting) visibleForms.add(entry.target);
-        else visibleForms.delete(entry.target);
-      }
-      update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.querySelector(".wd-scroll") ?? document.body, {
+      childList: true,
+      subtree: true,
     });
-    forms.forEach((form) => observer.observe(form));
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    const afterChoice = () => requestAnimationFrame(update);
+    window.addEventListener(MEASUREMENT_CHOICE_EVENT, afterChoice);
     document.addEventListener("focusin", update);
     document.addEventListener("focusout", update);
     viewport?.addEventListener("resize", update);
     update();
     return () => {
       observer.disconnect();
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      window.removeEventListener(MEASUREMENT_CHOICE_EVENT, afterChoice);
       document.removeEventListener("focusin", update);
       document.removeEventListener("focusout", update);
       viewport?.removeEventListener("resize", update);
@@ -450,12 +470,31 @@ function StickyLaunchBanner() {
   const bar = (
     <a
       href="#offer-form"
+      onClick={(event) => {
+        if (currentLandingVariant() !== "form_first") return;
+        const inputs = [
+          ...document.querySelectorAll<HTMLInputElement>(
+            'form[data-wd-signup] input[type="email"]',
+          ),
+        ];
+        const nearest = inputs.sort(
+          (a, b) =>
+            Math.abs(a.getBoundingClientRect().top) - Math.abs(b.getBoundingClientRect().top),
+        )[0];
+        if (!nearest) return;
+        event.preventDefault();
+        nearest.scrollIntoView({ block: "center", behavior: "auto" });
+        nearest.focus({ preventScroll: true });
+      }}
       className="wd-notify fixed inset-x-0 bottom-0 z-40 flex h-[var(--wd-bar-space)] items-center justify-center gap-3 border-t border-white/15 bg-[#201748] px-4 pb-[env(safe-area-inset-bottom)] text-[#F6FAFC] sm:inset-x-auto sm:bottom-4 sm:right-4 sm:h-11 sm:w-auto sm:rounded-full sm:border sm:px-4 sm:pb-0"
     >
       <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#3D2683]">
         ↓
       </span>
-      <span className="min-w-0 text-body font-medium leading-tight">{m.cta.label}</span>
+      <span className="min-w-0 text-body font-medium leading-tight">
+        <span className="wd-control-copy">{m.cta.label}</span>
+        <span className="wd-experiment-copy">{copy.cta}</span>
+      </span>
     </a>
   );
   return portalRoot ? createPortal(bar, portalRoot) : bar;
@@ -752,6 +791,7 @@ type FormPlacement = "hero" | "offer";
 function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePhone?: boolean }) {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
+  const copy = conversionCopy[locale];
   const [pending, setPending] = useState<string | null>(null);
   const [closed, setClosed] = useState<string | null>(null);
   const [handle, setHandle] = useState("");
@@ -772,6 +812,30 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const formRef = useRef<HTMLFormElement>(null);
   const [ring, setRing] = useState(false);
   const ringShown = useRef(false);
+
+  useEffect(() => {
+    const check = () => {
+      const form = formRef.current;
+      if (form && signupActionsVisible(form)) markConversionMilestone("formVisible");
+    };
+    const observer = new ResizeObserver(check);
+    if (formRef.current) observer.observe(formRef.current);
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    window.addEventListener("watchdive:experiment-ready", check);
+    const afterChoice = () => requestAnimationFrame(check);
+    window.addEventListener(MEASUREMENT_CHOICE_EVENT, afterChoice);
+    window.visualViewport?.addEventListener("resize", check);
+    check();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+      window.removeEventListener("watchdive:experiment-ready", check);
+      window.removeEventListener(MEASUREMENT_CHOICE_EVENT, afterChoice);
+      window.visualViewport?.removeEventListener("resize", check);
+    };
+  }, [pending]);
 
   useEffect(() => {
     const element = formRef.current;
@@ -937,6 +1001,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         attribution: getAttribution(),
         honeypot: hp,
         measurementConsent: hasMetaMeasurementConsent(),
+        experiment: getConversionExperiment(),
         locale,
         ...(submitEventId ? { submitEventId } : {}),
         ...getMetaCookies(),
@@ -1052,6 +1117,8 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       onSubmit={async (e) => {
         e.preventDefault();
         if (loading) return;
+        closeExperimentEnrollmentOnSubmit();
+        markConversionMilestone("submitAttempted");
         setLoading(true);
         try {
           // Captured here, in the browser that actually chose it, and carried
@@ -1100,7 +1167,11 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         />
       )}
 
-      <p id={`${id}-confirm-note`} className="text-sm leading-relaxed text-white/90">
+      <p className="wd-experiment-copy wd-experiment-benefit">{copy.benefit}</p>
+      <p
+        id={`${id}-confirm-note`}
+        className="wd-control-copy text-sm leading-relaxed text-white/90"
+      >
         {m.form.confirmRequired}
       </p>
       <div className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -1112,11 +1183,12 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           autoCapitalize="none"
           spellCheck={false}
           aria-label={m.form.step1}
-          aria-describedby={`${id}-confirm-note`}
+          aria-describedby={`${id}-confirm-note ${id}-experiment-note`}
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onFocus={() => {
+            markConversionMilestone("formFocused");
             if (!formStartSent.current) {
               formStartSent.current = true;
               trackMetaCustom("FormStart", { source: id });
@@ -1143,8 +1215,21 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           disabled={loading}
           className="wd-submit order-3 inline-flex min-h-14 items-center justify-center rounded-xl border border-white/45 bg-[#3D2683] px-5 py-3 font-semibold text-[#F6FAFC] hover:brightness-110 active:scale-[0.99] transition sm:order-2"
         >
-          {loading ? m.form.saving : m.cta.label}
+          {loading ? (
+            m.form.saving
+          ) : (
+            <>
+              <span className="wd-control-copy">{m.cta.label}</span>
+              <span className="wd-experiment-copy">{copy.cta}</span>
+            </>
+          )}
         </button>
+      </div>
+
+      <div id={`${id}-experiment-note`} className="wd-experiment-copy wd-experiment-note">
+        <p className="font-semibold">{copy.reassurance}</p>
+        <p>{copy.confirmation}</p>
+        <p className="wd-experiment-terms">{copy.terms}</p>
       </div>
 
       {/* Never pre-ticked, and separate from the email signup: WD-SMS-CONSENT-V1. */}
@@ -1163,7 +1248,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       <p role="status" className="wd-queued-note">
         {m.form.queued}
       </p>
-      <p className="wd-signup-steps text-xs text-white/80">
+      <p className="wd-control-copy wd-signup-steps text-xs text-white/80">
         <span>
           <b>1</b> {m.form.step1}
         </span>
@@ -1229,6 +1314,7 @@ const HOLD_EARLY_SUBMIT_JS = `document.addEventListener("submit",function(e){var
  */
 function Hero() {
   const m = useFrozenLandingMessages();
+  const copy = conversionCopy[useCurrentLocale()];
   const [before, highlight, after] = splitHighlightedCopy(m.hero.h1, m.hero.h1Highlight);
   return (
     <header className="wd-hero-new text-white">
@@ -1242,6 +1328,9 @@ function Hero() {
             {after}
           </h1>
           <p className="wd-hero-sub text-body text-[#F6FAFC]">{m.hero.sub}</p>
+          <a href="#compatibility" className="wd-experiment-copy wd-experiment-compatibility">
+            {copy.compatibility} <span aria-hidden>↗</span>
+          </a>
         </div>
         <div className="wd-hero-media">
           <HeroPhoto />

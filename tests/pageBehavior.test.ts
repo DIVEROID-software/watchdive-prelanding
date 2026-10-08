@@ -60,16 +60,21 @@ test("email, phone and addresses never fit a behavior summary", () => {
   );
 });
 
-test("the behavior store does not read an address or a raw user agent", () => {
-  // The store is split: the request handler reads headers, behaviorNotion
-  // reads the env and builds the row. The guard covers both.
-  const source = ["../src/lib/api/pageBehavior.server.ts", "../src/lib/api/behaviorNotion.ts"]
-    .map((file) => readFileSync(new URL(file, import.meta.url), "utf8"))
-    .join("\n");
+test("the behavior store does not keep an address or a raw user agent", () => {
+  // The request handler may classify a crawler from the user-agent header.
+  // That string is not logged and is not a column. behaviorNotion never sees it.
+  const server = readFileSync(new URL("../src/lib/api/pageBehavior.server.ts", import.meta.url), "utf8");
+  const notion = readFileSync(new URL("../src/lib/api/behaviorNotion.ts", import.meta.url), "utf8");
+  const audience = readFileSync(new URL("../src/lib/api/behaviorAudience.ts", import.meta.url), "utf8");
+  const source = `${server}\n${notion}\n${audience}`;
   assert.equal(source.includes("x-forwarded-for"), false);
-  assert.equal(source.includes("user-agent"), false);
+  assert.equal(notion.includes("user-agent"), false);
   assert.equal(source.includes("NOTION_WAITLIST_DB_ID"), false);
   assert.ok(source.includes("NOTION_UX_DB_ID"));
+  assert.match(server, /shouldDiscardBehaviorUserAgent\(getRequestHeader\("user-agent"\)\)/);
+  assert.equal(server.includes("console."), false);
+  assert.equal(audience.includes("console."), false);
+  assert.equal(audience.includes("rich_text"), false);
 });
 
 // ---- Notion write path ------------------------------------------------------

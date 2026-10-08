@@ -1,0 +1,122 @@
+{
+  "experimentId": "wd-form-first-20261008",
+  "worktree": "/Users/diveroid/orca/projects/디지털마케팅-WatchDive/landing/watchdive-conversion-experiment-20261008",
+  "headAtStart": "167aa4b",
+  "generatedAt": "2026-10-08",
+  "runtime": {
+    "agent": "Grok 4.7",
+    "evidence": "This continuation is the same dispatched session. System identity is Grok 4.7. Earlier in the dispatch the terminal preview read Grok 4.7 (high), worker-show provider was grok, and the launch receipt model field was null. A null model field is not a different model.",
+    "sessionId": "01a118f7-1520-7352-9e0e-bd067db115cd",
+    "taskId": "task_7ca79b350115",
+    "dispatchId": "ctx_78222737ac43"
+  },
+  "notDoneByThisWorker": [
+    "No commit.",
+    "No deploy, no push, no merge.",
+    "No Meta or budget change.",
+    "No Vercel secret read or write. WATCHDIVE_EXPERIMENT_REPORT_TOKEN was not printed.",
+    "No edit to root-owned UI: src/routes/index.tsx, src/styles.css, src/lib/pageBehavior.ts, src/lib/conversionExperimentClient.ts, src/lib/conversionCopy.ts, src/lib/signupVisibility.ts, design-freeze digests.",
+    "No full vite build and no npm ci. npx tsc --noEmit exited 0."
+  ],
+  "contract": {
+    "module": "src/lib/conversionExperimentContract.ts",
+    "context": {
+      "experimentId": "wd-form-first-20261008",
+      "variant": ["control", "form_first"],
+      "sessionId": "uuid",
+      "assignedAt": "integer milliseconds, permission plus actual exposure",
+      "team": ["A", "B", "C", "D", "E", "organic"],
+      "qa": "boolean"
+    },
+    "funnel": ["exposed", "formVisible", "formFocused", "submitAttempted"],
+    "milestonesAreIndependent": "monotonicFunnel and unionFunnels keep each boolean as observed. OR across duplicate rows does not fill an earlier step. Focus does not prove the form was visible. A submit does not prove focus. A saved email does not set a frontend flag. Exposed must be explicit or the session stays out of the denominator (quality.contextWithoutExposure). A later step without an earlier one increments quality.milestoneGaps.",
+    "diagnosticRates": "formVisiblePerExposed, formFocusedPerExposed, and submitAttemptedPerExposed each divide that observed stage by exposed sessions. They are not conditional on the previous stage, so they do not chain and they do not hide a later stage when an earlier one is missing.",
+    "measuredCohort": "A consented landing exposure stored before the first submit. Root closes experiment enrollment on submit: if no context exists then, a later inbox consent does not enroll that visit. The server also refuses to invent an exposure from a saved email. Legacy page measurement can still run without experiment context."
+  },
+  "outOfScopeBaseQa": {
+    "instruction": "Coordinator reported an independent round-2 QA of base 167aa4b failed (consent races, swallowed withdrawal, grant oracle, GPC, lost late Lead) and assigned those fixes to a separate worktree. This worker did not patch them.",
+    "reports": "The named paths qa1-report.md and qa3-report.md were not on disk under /tmp when this worker looked. Findings here are from the coordinator message, not from those files.",
+    "production": "Not deployed by this worker."
+  },
+  "rootWiringAlreadyPresent": [
+    "src/lib/pageBehavior.ts sends experiment and funnel from getConversionExperiment() / getConversionFunnel() after permission. Do not edit that file from this worker.",
+    "src/routes/index.tsx passes experiment: getConversionExperiment() into joinWaitlist. The server ignores it unless measurement consent is on and the lead is a new non-suspect, non-blocked row.",
+    "Optional CRM column 'Conversion experiment' and WATCHDIVE_EXPERIMENT_REPORT_TOKEN were provisioned by root for production and preview. This worker did not read the token."
+  ],
+  "rootStillNeedsToWire": [
+    "In src/lib/pageBehavior.ts, treat { stored: false, reason: 'ignored' } as terminal. Today any stored:false clears lastSent, so an obvious crawler retries on the next client event. Those retries do not write Notion and do not log the user-agent, but they are wasted calls until root skips the retry.",
+    "Deploy only after auditing this diff. measure.py should poll GET /api/experiment-report with Authorization: Bearer <WATCHDIVE_EXPERIMENT_REPORT_TOKEN>.",
+    "Read decision.matureCohortAvailable and the distinct-session rates. decision.ready is always false and decision.winner is always null. Do not wait for ready:true, and do not name a winner from this JSON.",
+    "If a later TanStack router regen rewrites src/routeTree.gen.ts, keep the /api/experiment-report registration. The route file is src/routes/api.experiment-report.ts."
+  ],
+  "behaviorWrite": {
+    "gate": "src/lib/api/pageBehavior.server.ts calls shouldDiscardBehaviorUserAgent and returns { stored: false, reason: 'ignored' } before any Notion write.",
+    "userAgent": "Read once to classify, then dropped. Not logged, not stored, not a column. behaviorNotion.ts does not mention user-agent.",
+    "kept": "Ordinary browsers, and Facebook or Instagram in-app webviews (FBAN, FBAV, FB_IAB, Instagram), even if another token is also present.",
+    "dropped": "isHeadlessUA (empty UA, HeadlessChrome, curl, wget, and the existing bot/crawler/spider pattern) and isCrawlerUserAgent from src/lib/i18n/auto-locale.ts (googlebot, bingbot, facebookexternalhit, twitterbot, slackbot, and the rest of that existing expression).",
+    "whatsapp": "The existing crawler expression matches WhatsApp. WhatsApp in-app visits are omitted from the behavior store. This is a known limit of reusing that helper, not a claim that those people are bots.",
+    "falsePositive": "isHeadlessUA treats a UA ending in the letters bot as automation. A device brand such as Cubot can be dropped. The signup abuse helper was not changed.",
+    "residual": "A client with an ordinary browser UA is stored. The denominator is not a count of humans and is not the historical Clarity denominator. Clarity sign_up is not a new email."
+  },
+  "leadWrite": {
+    "when": "createPending only, for a new row with measurement consent, not suspect, and not conversion-blocked or network-send-blocked. Repeats use startAttempt and do not rewrite the experiment cell.",
+    "column": "Conversion experiment, optional rich_text, bounded JSON from encodeLeadExperiment.",
+    "missingColumn": "A validation 400 that names Conversion experiment drops only that property and retries the create. UTM and a valid Meta FBC stay. The signup response stays { ok, status, message, handle } plus the existing capi field. No assignedAt, no new-email flag.",
+    "otherOptional400": "A validation 400 that names Meta FBC or FBCLID drops only the named column and keeps the experiment JSON.",
+    "networkOr5xxWithExperiment": "Not retried. The first request may already have created the row.",
+    "networkWithoutExperiment": "The older click-cookie path still retries once with fbc omitted. Covered by test.",
+    "malformedContext": "Logged as [conversion-experiment] ignored malformed context with no payload. The signup is not rejected.",
+    "withdrawal": "recordMeasurementWithdrawal and the revocation scan clear Conversion experiment in a second PATCH. A missing column cannot undo the consent clear. Exposure rows are not deleted."
+  },
+  "report": {
+    "route": "GET /api/experiment-report",
+    "auth": "WATCHDIVE_EXPERIMENT_REPORT_TOKEN trimmed length must be at least 32. Authorization is compared as sha256(header) versus sha256('Bearer ' + secret) with timingSafeEqual. Failure is 401 { error: 'unauthorized' } with Cache-Control: private, no-store, max-age=0 before any Notion client or query.",
+    "body": "Aggregates, generatedAt, quality gaps, and caveats. No email, session id, page id, IP, or click id.",
+    "denominator": "Consented sessions whose stored funnel has exposed true. Nonconsent sessions are not written and are not backfilled. QA sessions and QA leads are excluded. Inconsistent variant or team across duplicate rows is excluded. Duplicate rows are one session: earliest assignedAt, OR of observed flags.",
+    "counts": "newEmails is the raw count of distinct canonical emails that match an eligible exposure and were saved inside 48 hours. sessionsWithNewEmail and sessionsWithVerifiedEmail are distinct sessions. Two emails on one session increment newEmails by 2 and sessionsWithNewEmail by 1. Primary visit conversion is rates.newEmailSessionsPerSession.",
+    "mature": "A session is mature when now - earliest assignedAt is at least 48 hours. Verified counts only when verifiedAt is inside 48 hours of that exposure, verifiedAt is not before signedUp beyond 2 minutes of clock skew, and neither timestamp is more than 10 minutes in the future. rates.matureNewEmailPerSession and rates.matureVerifiedEmailPerSession use distinct mature sessions. rates.savedEmailSessionsPerSession is the immature cohort only and is descriptive.",
+    "decision": {
+      "winner": null,
+      "ready": false,
+      "matureCohortAvailable": "true only when both reads finished, the column is present, nothing was truncated, and matureSessions > 0. Ongoing traffic does not turn this off. It is not a statistical result."
+    },
+    "unavailable": "Missing config, a failed read, or a missing Conversion experiment column sets the affected counts to null and complete to false. A true zero is only after a successful read of a present source.",
+    "identity": "A lead with no canonical email and no email title is malformed and excluded. It is not given a synthetic untagged key.",
+    "noCpa": "Both variants share the same ads after the click. The report does not compute CPA.",
+    "balance": "50:50 is the assignment expectation inside each paid team. A finite sample is not exactly balanced."
+  },
+  "tests": {
+    "command": "node --experimental-strip-types --test tests/conversionExperiment.test.ts tests/pageBehavior.test.ts tests/measurementRevocationRegistry.test.ts tests/verificationFlow.test.ts tests/autoLocaleRedirect.test.ts",
+    "node": "v22.17.0",
+    "conversionExperiment": "21 pass, 0 fail, after the review fixes. Covers independent milestones, duplicate rows, withdrawn/suspect/duplicate/mismatch/unmatched exclusion, 48h cohort, distinct sessions versus raw emails, missing identity, future timestamps, verification before signup, missing-column 400 as null leads, auth 401 before reads, optional-column retry, 5xx not retried when experiment is present, legacy fbc retry when experiment is absent, first-touch idempotence, generic pending response, withdrawal clear, crawler versus FB/IG UA.",
+    "pageBehavior": "pass, including the live column list and the rule that the user-agent is classified and not stored.",
+    "measurementRevocationRegistry": "pass. The fake now expects two patches on the withdrawn page: consent clear, then experiment clear.",
+    "verificationFlow": "pass on the service code before the final caveat string edit. That edit does not change verification.",
+    "autoLocaleRedirect": "11 pass after exporting isCrawlerUserAgent. Empty UA still stays on the canonical locale path.",
+    "tsc": "npx tsc --noEmit --pretty false exited 0 after the final report edit."
+  },
+  "workerFiles": {
+    "created": [
+      "src/lib/conversionExperimentContract.ts",
+      "src/lib/experimentReport.ts",
+      "src/lib/api/behaviorAudience.ts",
+      "src/routes/api.experiment-report.ts",
+      "tests/conversionExperiment.test.ts",
+      "docs/conversion-experiment-server-qa.json"
+    ],
+    "modified": [
+      "src/lib/api/behaviorNotion.ts",
+      "src/lib/api/pageBehavior.server.ts",
+      "src/lib/api/waitlist.functions.ts",
+      "src/lib/i18n/auto-locale.ts",
+      "src/lib/pageBehaviorSummary.ts",
+      "src/lib/verification/contracts.ts",
+      "src/lib/verification/measurementRevocationRegistry.server.ts",
+      "src/lib/verification/notionLead.ts",
+      "src/lib/verification/service.ts",
+      "src/routeTree.gen.ts",
+      "tests/measurementRevocationRegistry.test.ts",
+      "tests/pageBehavior.test.ts"
+    ]
+  }
+}

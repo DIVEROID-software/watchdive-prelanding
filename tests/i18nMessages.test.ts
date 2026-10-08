@@ -951,6 +951,6 @@ test("the document language follows the localized path instead of staying hard-c
   const rootSource = readFileSync(new URL("../src/routes/__root.tsx", import.meta.url), "utf8");
 
   assert.match(rootSource, /localeFromPathname\(pathname\)/);
-  assert.match(rootSource, /<html\s+lang=\{locale\}>/);
+  assert.match(rootSource, /<html\s+lang=\{locale\}(?:\s+suppressHydrationWarning)?>/);
   assert.doesNotMatch(rootSource, /<html\s+lang=["']en["']/);
 });

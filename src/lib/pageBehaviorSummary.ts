@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+import {
+  experimentContextSchema,
+  experimentFunnelSchema,
+  lenientOptional,
+} from "./conversionExperimentContract.ts";
 import { SUPPORTED_LOCALES } from "./i18n/locale.ts";
 
 const safeId = /^[a-z0-9-]{1,40}$/;
@@ -38,6 +43,10 @@ export const pageBehaviorSummarySchema = z.object({
   utmCampaign: z.string().regex(safeToken),
   sections: z.array(sectionSchema).max(16),
   clicks: z.array(clickSchema).max(30),
+  // Present only after measurement permission. A bad object is dropped so the
+  // rest of this summary — device, sections, clicks — still stores.
+  experiment: lenientOptional(experimentContextSchema),
+  funnel: lenientOptional(experimentFunnelSchema),
 });
 
 export type PageBehaviorSummary = z.infer<typeof pageBehaviorSummarySchema>;

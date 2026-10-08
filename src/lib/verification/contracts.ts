@@ -12,6 +12,7 @@
 // Mail-bomb protection lives in `networkGate.ts`, entirely in process memory.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
+import type { ExperimentContext } from "../conversionExperimentContract.ts";
 
 /** Confirmation links last 24 hours. */
 export const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
@@ -256,6 +257,11 @@ export type CreatePendingInput = {
   metaFbc?: string;
   /** The submitting browser allowed measurement: recorded on the row. */
   measurementGranted?: true;
+  /**
+   * Set only for a brand-new consented, non-suspect lead. Repeats go through
+   * `startAttempt`, which must not receive this.
+   */
+  experiment?: ExperimentContext;
 };
 
 /** Written when a new attempt is minted — this is what kills the previous link. */

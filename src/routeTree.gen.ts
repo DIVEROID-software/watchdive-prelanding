@@ -19,6 +19,7 @@ import { Route as LocalePrivacyRouteImport } from './routes/$locale.privacy'
 import { Route as LocaleTermsRouteImport } from './routes/$locale.terms'
 import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
 import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
+import { Route as ApiExperimentReportRouteImport } from './routes/api.experiment-report'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
@@ -74,6 +75,11 @@ const AdminBehaviorRoute = AdminBehaviorRouteImport.update({
   path: '/admin/behavior',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiExperimentReportRoute = ApiExperimentReportRouteImport.update({
+  id: '/api/experiment-report',
+  path: '/api/experiment-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RCodeRoute = RCodeRouteImport.update({
   id: '/r/$code',
   path: '/r/$code',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
+  '/api/experiment-report': typeof ApiExperimentReportRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
+  '/api/experiment-report': typeof ApiExperimentReportRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale': typeof LocaleIndexRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
+  '/api/experiment-report': typeof ApiExperimentReportRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
+    | '/api/experiment-report'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale/'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
+    | '/api/experiment-report'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
+    | '/api/experiment-report'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale/'
@@ -201,6 +213,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   VerifyRoute: typeof VerifyRoute
   AdminBehaviorRoute: typeof AdminBehaviorRoute
+  ApiExperimentReportRoute: typeof ApiExperimentReportRoute
   RCodeRoute: typeof RCodeRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
@@ -278,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBehaviorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/experiment-report': {
+      id: '/api/experiment-report'
+      path: '/api/experiment-report'
+      fullPath: '/api/experiment-report'
+      preLoaderRoute: typeof ApiExperimentReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/r/$code': {
       id: '/r/$code'
       path: '/r/$code'
@@ -335,6 +355,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   VerifyRoute: VerifyRoute,
   AdminBehaviorRoute: AdminBehaviorRoute,
+  ApiExperimentReportRoute: ApiExperimentReportRoute,
   RCodeRoute: RCodeRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,

@@ -16,6 +16,10 @@ import {
   canonicalEmailProperties,
   withCanonicalEmailShape,
 } from "../api/notionCanonicalEmail.ts";
+import {
+  encodeLeadExperiment,
+  FIELD_CONVERSION_EXPERIMENT,
+} from "../conversionExperimentContract.ts";
 import type { ReminderStore } from "./reminder.ts";
 import type {
   CreatePendingInput,
@@ -138,6 +142,11 @@ export class NotionRequestError extends Error {
   readonly status: number;
   readonly code: string;
   readonly detail: string;
+  /**
+   * Optional column names Notion's raw 400 named. Only names this server itself
+   * might write are kept. The body is not stored.
+   */
+  readonly rejectedOptionalColumns: readonly string[];
 
   constructor(status: number, rawBody: string) {
     super(describeNotionFailure(status, rawBody));
@@ -145,8 +154,9 @@ export class NotionRequestError extends Error {
     this.status = status;
     let code = "";
     let detail = "";
+    const bounded = rawBody.slice(0, 4096);
     try {
-      const parsed = JSON.parse(rawBody.slice(0, 4096)) as { code?: unknown; message?: unknown };
+      const parsed = JSON.parse(bounded) as { code?: unknown; message?: unknown };
       if (typeof parsed.code === "string" && /^[a-z_]{1,64}$/.test(parsed.code)) code = parsed.code;
       if (typeof parsed.message === "string") detail = sanitizeNotionMessage(parsed.message);
     } catch {
@@ -154,7 +164,18 @@ export class NotionRequestError extends Error {
     }
     this.code = code;
     this.detail = detail;
+    this.rejectedOptionalColumns =
+      status === 400 && code === "validation_error" ? optionalColumnsMentioned(bounded) : [];
   }
+}
+
+function optionalColumnsMentioned(rawBody: string): string[] {
+  const names = [
+    FIELD_CONVERSION_EXPERIMENT,
+    process.env.NOTION_META_FBC_PROPERTY?.trim() ?? "",
+    process.env.NOTION_FBCLID_PROPERTY?.trim() ?? "",
+  ].filter((name) => name.length > 0);
+  return names.filter((name) => rawBody.includes(name));
 }
 
 export type NotionRequest = (
@@ -310,6 +331,53 @@ export function attributionProperties(
   );
 }
 
+type OptionalLeadWrite = { fbc: boolean; experiment: boolean; fbclid: boolean };
+
+function omitFbclid(attribution: LeadAttribution): LeadAttribution {
+  const { fbclid: _ignored, ...rest } = attribution;
+  return rest;
+}
+
+/**
+ * A missing optional column is a validation 400 that names that column. Retry
+ * only then, and only by dropping the named column. A timeout or a 5xx is not
+ * retried: the first request may already have created the row.
+ * Signups that do not carry experiment context keep the older click-cookie
+ * retry, including a non-400, so that path does not change.
+ */
+async function createLeadPage(
+  create: (options: OptionalLeadWrite) => Promise<Record<string, unknown>>,
+  options: OptionalLeadWrite,
+  columns: { fbcColumn?: string; fbclidColumn?: string },
+  legacyFbcRetry = !options.experiment,
+): Promise<Record<string, unknown>> {
+  try {
+    return await create(options);
+  } catch (error) {
+    const named =
+      error instanceof NotionRequestError && error.status === 400 && error.code === "validation_error"
+        ? new Set(error.rejectedOptionalColumns)
+        : new Set<string>();
+    const next: OptionalLeadWrite = { ...options };
+    if (options.experiment && named.has(FIELD_CONVERSION_EXPERIMENT)) next.experiment = false;
+    if (options.fbc && columns.fbcColumn && named.has(columns.fbcColumn)) next.fbc = false;
+    if (options.fbclid && columns.fbclidColumn && named.has(columns.fbclidColumn)) next.fbclid = false;
+    const dropped =
+      next.experiment !== options.experiment || next.fbc !== options.fbc || next.fbclid !== options.fbclid;
+    if (dropped) {
+      if (options.experiment && !next.experiment) {
+        console.error("[conversion-experiment] optional context omitted", {
+          status: error instanceof NotionRequestError ? error.status : 0,
+          code: error instanceof NotionRequestError ? error.code : "",
+        });
+      }
+      return createLeadPage(create, next, columns, false);
+    }
+    if (legacyFbcRetry && options.fbc) return create({ ...options, fbc: false });
+    throw error;
+  }
+}
+
 export const COUNTABLE_STATUS_FILTER = {
   or: [
     { property: FIELD_VERIFICATION_STATUS, select: { equals: STATUS_VERIFIED } },
@@ -348,8 +416,20 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
 
     async createPending(input: CreatePendingInput) {
       const fbcColumn = input.metaFbc && isMetaFbc(input.metaFbc) ? metaFbcColumn() : undefined;
-      const create = (withFbc: boolean) =>
-        withCanonicalEmailShape(() =>
+      const fbclidColumn = process.env.NOTION_FBCLID_PROPERTY?.trim() || undefined;
+      const experimentJson = input.experiment ? encodeLeadExperiment(input.experiment) : null;
+      const base: OptionalLeadWrite = {
+        fbc: Boolean(fbcColumn),
+        experiment: Boolean(experimentJson),
+        fbclid: Boolean(fbclidColumn && input.attribution?.fbclid),
+      };
+      const create = (options: OptionalLeadWrite) => {
+        const attribution = input.attribution
+          ? options.fbclid
+            ? input.attribution
+            : omitFbclid(input.attribution)
+          : undefined;
+        return withCanonicalEmailShape(() =>
           request("POST", "pages", {
             parent: { database_id: databaseId },
             properties: {
@@ -366,7 +446,7 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
                 ? { Flags: { multi_select: input.flags.map((name) => ({ name })) } }
                 : {}),
               Suspect: { checkbox: input.suspect },
-              ...attributionProperties(input.attribution),
+              ...attributionProperties(attribution),
               [FIELD_VERIFICATION_STATUS]: { select: { name: STATUS_PENDING } },
               [FIELD_EMAIL_VERIFIED]: { checkbox: false },
               [FIELD_LEAD_ID]: textProp(input.leadId),
@@ -375,22 +455,20 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
               ...(input.measurementGranted
                 ? { [FIELD_MEASUREMENT_CONSENT]: textProp(MEASUREMENT_CONSENT_GRANTED) }
                 : {}),
-              ...(withFbc && fbcColumn && input.metaFbc
+              ...(options.fbc && fbcColumn && input.metaFbc
                 ? { [fbcColumn]: textProp(input.metaFbc) }
+                : {}),
+              ...(options.experiment && experimentJson
+                ? { [FIELD_CONVERSION_EXPERIMENT]: textProp(experimentJson) }
                 : {}),
             },
           }),
         );
-      // The click-cookie column is optional measurement context. If Notion
-      // rejects the write because of it (renamed, deleted, wrong type), the
-      // signup must still land: retry once without it.
-      let page;
-      try {
-        page = await create(Boolean(fbcColumn));
-      } catch (error) {
-        if (!fbcColumn) throw error;
-        page = await create(false);
-      }
+      };
+      const page = await createLeadPage(create, base, {
+        fbcColumn,
+        fbclidColumn,
+      });
       const record = toLeadRecord(page);
       if (!record) throw new Error("Notion page create returned no usable row");
       return record;
@@ -464,6 +542,11 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
           // The click cookie is never sent once withdrawn either way.
         });
       }
+      // The experiment cell is optional measurement context. Clearing it must
+      // not undo the consent withdrawal above when the column is absent.
+      await request("PATCH", `pages/${pageId}`, {
+        properties: { [FIELD_CONVERSION_EXPERIMENT]: { rich_text: [] } },
+      }).catch(() => {});
     },
 
     async markWelcomeScheduled(pageId: string, input) {

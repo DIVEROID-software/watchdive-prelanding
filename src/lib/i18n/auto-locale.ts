@@ -113,10 +113,17 @@ export function localeFromAcceptLanguage(value: string | null): Locale | undefin
   return undefined;
 }
 
+/** Known link-unfurlers and crawlers. An empty string is not a crawler here; callers decide that. */
+export function isCrawlerUserAgent(userAgent: string | null | undefined): boolean {
+  const value = userAgent?.trim().slice(0, 1_024) ?? "";
+  if (!value) return false;
+  return CRAWLER_USER_AGENT.test(value);
+}
+
 function isCrawlerOrUnknownClient(request: Request): boolean {
   const userAgent = request.headers.get("user-agent")?.trim().slice(0, 1_024) ?? "";
   if (!userAgent) return true;
-  return CRAWLER_USER_AGENT.test(userAgent);
+  return isCrawlerUserAgent(userAgent);
 }
 
 function isDocumentRequest(request: Request): boolean {

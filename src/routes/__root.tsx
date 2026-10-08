@@ -22,6 +22,7 @@ import { googleTagBootstrap, initGoogleTag, readGoogleTagConfig } from "@/lib/go
 import { initMetaPixel } from "@/lib/metaPixel";
 import { INLINE_MEASUREMENT_ALLOWED_JS, resolveGeoCountry } from "@/lib/consentRegion";
 import { startPageBehavior } from "@/lib/pageBehavior";
+import { experimentBootstrap, EXPERIMENT_ENABLED } from "@/lib/conversionExperimentClient";
 import { allowsThirdPartyScripts, SUPPORT_WIDGET_SRC } from "@/lib/thirdPartyScripts";
 import { CookieChoiceBar } from "@/components/cookie-choice-bar";
 
@@ -139,9 +140,12 @@ function RootShell({ children }: { children: ReactNode }) {
   const locale = localeFromPathname(pathname);
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <HeadContent />
+        {thirdParty && EXPERIMENT_ENABLED && (
+          <script dangerouslySetInnerHTML={{ __html: experimentBootstrap(true) }} />
+        )}
         {thirdParty && META_PIXEL_READY && (
           <script dangerouslySetInnerHTML={{ __html: metaPixelBootstrap(META_PIXEL_ID) }} />
         )}

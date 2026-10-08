@@ -30,6 +30,10 @@ import {
   VERIFICATION_RESEND_COOLDOWN_MS,
   VERIFICATION_TTL_MS,
 } from "./contracts.ts";
+import {
+  persistableExperimentContext,
+  type ExperimentContext,
+} from "../conversionExperimentContract.ts";
 import type { PollGate } from "./pollGate.ts";
 import type { VerificationMailer } from "./resend.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
@@ -103,6 +107,11 @@ export type RequestVerificationInput = {
   locale?: Locale;
   /** True when this network has produced too many recent signups to keep mailing. */
   networkSendBlocked: boolean;
+  /**
+   * Optional same-session experiment context. Stored only when this call creates
+   * a new consented, non-suspect row. A resend cannot rewrite it.
+   */
+  experiment?: ExperimentContext;
 };
 
 export type ServiceDependencies = {
@@ -127,6 +136,15 @@ export type ServiceDependencies = {
    */
   onDeliveryFailure?: (error: unknown) => Promise<void> | void;
 };
+
+function leadExperiment(input: RequestVerificationInput): { experiment?: ExperimentContext } {
+  const experiment = persistableExperimentContext(input.experiment, {
+    measurementConsent: input.measurementConsent,
+    suspect: input.suspect,
+    blocked: conversionBlocked(input.flags) || input.networkSendBlocked,
+  });
+  return experiment ? { experiment } : {};
+}
 
 function pendingResponse(handle: string): PendingResponse {
   return { ok: true, status: "pending", message: GENERIC_PENDING_MESSAGE, handle };
@@ -295,6 +313,7 @@ export async function requestVerificationService(
       expiresAt,
       ...(input.measurementConsent && input.metaFbc ? { metaFbc: input.metaFbc } : {}),
       ...(input.measurementConsent ? { measurementGranted: true as const } : {}),
+      ...leadExperiment(input),
     });
   }
 

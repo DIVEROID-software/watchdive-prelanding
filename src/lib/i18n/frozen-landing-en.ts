@@ -384,7 +384,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     back: "← Back to home",
     h1: "Privacy Policy — WatchDive Pre-Launch",
     effectiveLabel: "Effective date:",
-    effectiveDate: "October 7, 2026",
+    effectiveDate: "October 8, 2026",
     intro1:
       'This Privacy Policy explains how Diveroid Ltd ("we", "us", "DIVEROID") handles your information when you sign up on the WatchDive pre-launch page to receive updates about our upcoming Kickstarter campaign.',
     intro2:
@@ -402,7 +402,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s2Security:
       "Security signals — abuse flags and a short-lived, keyed network bucket used in server memory to limit automated or repeated requests. We do not retain the raw IP address, the network bucket, or the full browser user-agent in the lead record.",
     s2Usage:
-      "Page measurement — device class (phone, tablet, or desktop), browser window size, page language, time zone, country code, time on the page, how far you scrolled, how long each section was on screen, and named clicks such as a signup button, with their approximate position on the screen. It also records the referring site's domain and the campaign tags in the link (source, medium, and campaign), grouped under a random session identifier that is kept only in that browser tab. In the EU/EEA, the UK and Switzerland, or when we cannot tell your country, it runs only after you choose Allow; elsewhere it runs by default and you can turn it off with Cookie settings at the bottom of the page. This record does not contain your email address, phone number, IP address, full browser user-agent, the text you type, your precise location, or an inferred age or gender, and it is not linked to your waitlist record. When their identifiers are configured, Google Analytics 4, Google Ads, the Meta pixel, and Microsoft Clarity heatmaps follow the same rule. Our support chat and Vercel Web Analytics can load with the page.",
+      "Page measurement — device class (phone, tablet, or desktop), browser window size, page language, time zone, country code, time on the page, how far you scrolled, how long each section was on screen, and named clicks such as a signup button, with their approximate position on the screen. It also records the referring site's domain and the campaign tags in the link (source, medium, and campaign), grouped under a random session identifier that is kept only in that browser tab. In the EU/EEA, the UK and Switzerland, or when we cannot tell your country, it runs only after you choose Allow; elsewhere it runs by default and you can turn it off with Cookie settings at the bottom of the page. This record does not contain your email address, phone number, IP address, full browser user-agent, the text you type, your precise location, or an inferred age or gender. When measurement is allowed, a page experiment stores its version for up to 30 days to keep return visits consistent and links the random session ID and experiment variant to a new signup, so we can compare saved and confirmed emails. The aggregate report contains no email addresses. When their identifiers are configured, Google Analytics 4, Google Ads, the Meta pixel, and Microsoft Clarity heatmaps follow the same rule. Our support chat and Vercel Web Analytics can load with the page.",
     s2NoPayment: "We do not collect payment details on this page.",
     s3Title: "3. Why we use it",
     s3Intro: "We use the information you provide to:",

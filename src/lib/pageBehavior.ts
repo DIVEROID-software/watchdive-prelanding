@@ -3,25 +3,20 @@ import type { Locale } from "@/lib/i18n/locale";
 import { localeFromPathname } from "@/lib/i18n/locale";
 
 import { recordPageBehavior } from "@/lib/api/pageBehavior.functions";
-
-const SESSION_KEY = "watchdive.behavior-session.v1";
+import {
+  behaviorSessionId,
+  getConversionExperiment,
+  getConversionFunnel,
+  initializeConversionExperiment,
+  revokeConversionExperiment,
+  EXPERIMENT_CHANGED,
+  FUNNEL_CHANGED,
+} from "./conversionExperimentClient";
 
 type ClickMark = { id: string; x: number; y: number };
 type SectionMark = { id: string; dwellSec: number };
 
 let started = false;
-
-function sessionId(): string {
-  try {
-    const existing = sessionStorage.getItem(SESSION_KEY);
-    if (existing) return existing;
-    const next = crypto.randomUUID();
-    sessionStorage.setItem(SESSION_KEY, next);
-    return next;
-  } catch {
-    return crypto.randomUUID();
-  }
-}
 
 function deviceClass(): "phone" | "tablet" | "desktop" {
   const width = window.innerWidth;
@@ -92,15 +87,18 @@ function clickId(target: Element): string | null {
 export function startPageBehavior(): void {
   if (started || typeof window === "undefined" || !measurementAllowed()) return;
   started = true;
+  initializeConversionExperiment();
+  let active = true;
 
   const began = Date.now();
-  const id = sessionId();
+  const id = behaviorSessionId();
   const dwell = new Map<Element, { label: string; ms: number; since: number | null }>();
   const clicks: ClickMark[] = [];
   let maxScroll = 0;
 
   const regions = document.querySelectorAll("header, section, footer");
   const observer = new IntersectionObserver((entries) => {
+    if (!active || !measurementAllowed()) return;
     const now = Date.now();
     for (const entry of entries) {
       const state = dwell.get(entry.target) ?? {
@@ -119,11 +117,13 @@ export function startPageBehavior(): void {
   regions.forEach((region) => observer.observe(region));
 
   const onScroll = () => {
+    if (!active || !measurementAllowed()) return;
     const height = document.documentElement.scrollHeight - window.innerHeight;
     const next = height <= 0 ? 100 : Math.round((window.scrollY / height) * 100);
     maxScroll = Math.max(maxScroll, Math.min(100, next));
   };
   const onClick = (event: MouseEvent) => {
+    if (!active || !measurementAllowed()) return;
     const target = event.target;
     if (!(target instanceof Element) || clicks.length >= 30) return;
     const mark = clickId(target);
@@ -140,8 +140,15 @@ export function startPageBehavior(): void {
   onScroll();
 
   let lastSent = "";
+  let inFlight = false;
+  let sendAgain = false;
+  let ignored = false;
   const send = () => {
-    if (!measurementAllowed()) return;
+    if (!active || ignored || !measurementAllowed()) return;
+    if (inFlight) {
+      sendAgain = true;
+      return;
+    }
     const now = Date.now();
     const sections: SectionMark[] = [];
     for (const state of dwell.values()) {
@@ -152,7 +159,7 @@ export function startPageBehavior(): void {
     }
     const locale = localeFromPathname(window.location.pathname) as Locale;
     const data = {
-      sessionId: id,
+      sessionId: getConversionExperiment()?.sessionId ?? id,
       locale,
       device: deviceClass(),
       viewportW: window.innerWidth,
@@ -166,20 +173,76 @@ export function startPageBehavior(): void {
       utmCampaign: utm("utm_campaign"),
       sections,
       clicks,
+      ...(getConversionExperiment()
+        ? { experiment: getConversionExperiment(), funnel: getConversionFunnel() }
+        : {}),
     };
     // Duration always moves, so compare everything else: a tab switched back
     // and forth without reading or clicking adds no Notion write.
     const fingerprint = JSON.stringify({ ...data, durationSec: 0 });
     if (fingerprint === lastSent) return;
     lastSent = fingerprint;
-    void recordPageBehavior({ data }).catch(() => undefined);
+    inFlight = true;
+    void recordPageBehavior({ data })
+      .then((result) => {
+        if (!result.stored && result.reason === "ignored") {
+          ignored = true;
+          return;
+        }
+        if (!result.stored && lastSent === fingerprint) lastSent = "";
+      })
+      .catch(() => {
+        if (lastSent === fingerprint) lastSent = "";
+      })
+      .finally(() => {
+        inFlight = false;
+        if (sendAgain) {
+          sendAgain = false;
+          send();
+        }
+      });
   };
 
-  // Sent when the page is hidden or left, not on a timer: the Notion
-  // integration is shared with the waitlist and its ~3 requests a second
-  // must stay free for signups.
-  document.addEventListener("visibilitychange", () => {
+  // A visit must be saved before an unload, otherwise the short visits we
+  // want to understand disappear. Coalesce at most the four funnel stages;
+  // retries are bounded and optional measurement never delays the signup.
+  let milestoneTimer: ReturnType<typeof setTimeout> | undefined;
+  const queueMilestone = () => {
+    if (milestoneTimer) return;
+    milestoneTimer = setTimeout(() => {
+      milestoneTimer = undefined;
+      send();
+    }, 1200);
+  };
+  window.addEventListener(EXPERIMENT_CHANGED, queueMilestone);
+  window.addEventListener(FUNNEL_CHANGED, queueMilestone);
+  const onChoice = () => {
+    if (!measurementAllowed()) {
+      active = false;
+      started = false;
+      revokeConversionExperiment();
+      if (milestoneTimer) clearTimeout(milestoneTimer);
+      milestoneTimer = undefined;
+      observer.disconnect();
+      dwell.clear();
+      clicks.length = 0;
+      document.removeEventListener("scroll", onScroll);
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", send);
+      window.removeEventListener(EXPERIMENT_CHANGED, queueMilestone);
+      window.removeEventListener(FUNNEL_CHANGED, queueMilestone);
+      window.removeEventListener("watchdive:measurement-choice", onChoice);
+    }
+  };
+  window.addEventListener("watchdive:measurement-choice", onChoice);
+  send();
+  setTimeout(send, 6000); // One bounded retry also captures early form exposure.
+
+  // Final summary supplements the initial visit and bounded milestones.
+  const onVisibility = () => {
     if (document.visibilityState === "hidden") send();
-  });
+  };
+  document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("pagehide", send);
 }
