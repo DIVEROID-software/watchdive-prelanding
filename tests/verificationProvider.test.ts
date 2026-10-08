@@ -18,7 +18,7 @@ import { TEST_ORIGIN, TEST_SECRET } from "./helpers/fakes.ts";
 
 const ENV = {
   RESEND_API_KEY: "re_test_key",
-  WATCHDIVE_EMAIL_FROM: "Watch Dive <hello@watchdive.example>",
+  WATCHDIVE_EMAIL_FROM: "WatchDive <hello@watchdive.example>",
   WATCHDIVE_EMAIL_REPLY_TO: "help@watchdive.example",
 };
 

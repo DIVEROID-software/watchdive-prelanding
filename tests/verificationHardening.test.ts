@@ -255,7 +255,7 @@ const COMPLETE_ENV = {
   NOTION_API_KEY: "secret_notion",
   NOTION_WAITLIST_DB_ID: "db-1",
   RESEND_API_KEY: "re_key",
-  WATCHDIVE_EMAIL_FROM: "Watch Dive <hello@watchdive.example>",
+  WATCHDIVE_EMAIL_FROM: "WatchDive <hello@watchdive.example>",
   WATCHDIVE_PUBLIC_ORIGIN: TEST_ORIGIN,
   WATCHDIVE_VERIFICATION_SECRET: "a-verification-secret-of-32-bytes!!",
 };
@@ -304,7 +304,7 @@ test("a too-short signing secret is caught before deployment", () => {
 });
 
 test("a malformed sender is caught before deployment", () => {
-  for (const bad of ["not-an-email", "Watch Dive <not-an-email>", "a@b"]) {
+  for (const bad of ["not-an-email", "WatchDive <not-an-email>", "a@b"]) {
     const problems = checkVerificationEnv({ ...COMPLETE_ENV, WATCHDIVE_EMAIL_FROM: bad });
     assert.equal(problems.length, 1, `accepted sender: ${bad}`);
   }

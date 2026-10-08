@@ -120,7 +120,7 @@ test("headlines carry the product name and the explanation names the housing and
     };
 
     for (const [path, copy] of Object.entries(headlines)) {
-      assert.match(copy, /Watch Dive/u, `${locale}.${path}: product name missing`);
+      assert.match(copy, /WatchDive/u, `${locale}.${path}: product name missing`);
     }
     for (const [path, copy] of Object.entries(explanations)) {
       assert.match(copy, PRIMARY_TERMS[locale].housing, `${locale}.${path}: housing missing`);

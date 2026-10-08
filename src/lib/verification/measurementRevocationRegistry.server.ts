@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+import { FIELD_CONVERSION_EXPERIMENT } from "../conversionExperimentContract.ts";
 import {
   FIELD_ACQUISITION_PATH,
   FIELD_EMAIL_VERIFIED,
@@ -157,6 +158,11 @@ export function createNotionMeasurementRevocationRegistry(input: {
               [FIELD_MEASUREMENT_CONSENT]: richText(MEASUREMENT_CONSENT_WITHDRAWN),
             },
           });
+          // Separate from the provisioned measurement clear. A database that
+          // does not have this optional column yet must still finish revocation.
+          await request("PATCH", `pages/${pageId}`, {
+            properties: { [FIELD_CONVERSION_EXPERIMENT]: { rich_text: [] } },
+          }).catch(() => {});
         }
         return matchedPageIds.length;
       }

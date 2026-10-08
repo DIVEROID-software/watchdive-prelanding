@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   googleConsentChoice,
   googleTagBootstrap,
+  isGoogleEventId,
   isGoogleTagConfigured,
   readGoogleTagConfig,
 } from "../src/lib/googleTag.ts";
@@ -60,6 +61,15 @@ test("the bootstrap is empty without ids and refuses a denied browser", () => {
   assert.match(snippet, /G-ABC123XY/);
   assert.match(snippet, /AW-123456789/);
   assert.equal(snippet.includes("generate_lead"), false);
+});
+
+test("a 64-hex id and its :phone suffix are event ids; 81 characters is not", () => {
+  const id = "a".repeat(64);
+  assert.equal(isGoogleEventId(id), true);
+  assert.equal(isGoogleEventId(`${id}:phone`), true);
+  assert.equal(`${id}:phone`.length, 70);
+  assert.equal(isGoogleEventId("a".repeat(81)), false);
+  assert.equal(isGoogleEventId("short"), false);
 });
 
 test("the confirmation page still loads no third-party tag", () => {

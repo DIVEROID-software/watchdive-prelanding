@@ -11,6 +11,7 @@ import {
 } from "@/lib/attribution";
 import { createServiceDependencies, sanitizeServerError } from "@/lib/verification/deps.server";
 import { COUNTABLE_STATUS_FILTER, createNotionRequest } from "@/lib/verification/notionLead";
+import { persistableExperimentContext } from "@/lib/conversionExperimentContract";
 import { conversionBlocked, WAITLIST_CLOSED_MESSAGE } from "@/lib/verification/contracts";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { waitlistClosed } from "@/lib/waitlistProgress";
@@ -19,7 +20,11 @@ import { createNetworkGate } from "@/lib/verification/networkGate";
 import { networkKey, requireSecret } from "@/lib/verification/token";
 import {
   confirmVerificationService,
+  grantAttemptMeasurementService,
+  grantConfirmationMeasurementService,
   pollVerificationService,
+  withdrawAttemptMeasurementService,
+  withdrawConfirmationMeasurementService,
   requestVerificationService,
 } from "@/lib/verification/service";
 
@@ -106,6 +111,27 @@ function requestMeta(): { ip: string; ua: string } {
   } catch {
     return { ip: "", ua: "" };
   }
+}
+
+/**
+ * Global Privacy Control. Only the `Sec-GPC` request header counts, and only
+ * the value `1`. A JSON field cannot turn it off: browsers forbid scripts
+ * from setting this header, so a caller who can set it is the browser itself.
+ */
+function requestHasGpc(): boolean {
+  try {
+    return getRequestHeader("sec-gpc") === "1";
+  } catch {
+    return false;
+  }
+}
+
+function serviceDependencies(meta: { ip?: string; ua?: string } = {}) {
+  return createServiceDependencies({
+    ...(meta.ip ? { ip: meta.ip } : {}),
+    ...(meta.ua ? { ua: meta.ua } : {}),
+    ...(requestHasGpc() ? { gpc: true } : {}),
+  });
 }
 
 // Real (non-suspect) rows only — the number the counters and social proof show.
@@ -256,6 +282,9 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       // browser one. Never stored — they go to Meta and nowhere else.
       fbp: z.string().max(META_COOKIE_MAX).optional(),
       fbc: z.string().max(META_COOKIE_MAX).optional(),
+      // Same-session experiment context. A bad object is ignored below so it
+      // cannot reject the signup or change this response.
+      experiment: z.unknown().optional(),
     }),
   )
   .handler(async ({ data }) => {
@@ -291,6 +320,15 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // capture applies the same bounds, but nothing stops a caller posting
     // straight to this function with whatever it likes.
     const attribution = sanitizeSignupAttribution(data.attribution);
+    // The pixel derives `_fbc` from an `fbclid` landing, but only if it ran at
+    // all. When an ad blocker stopped it, the click id kept from that same
+    // landing rebuilds the value in Meta's documented shape — which is the
+    // difference between a matched click and an unattributed one.
+    const submitFbc =
+      sanitizeMetaCookie(data.fbc) ||
+      (attribution.fbclid && attribution.capturedAt
+        ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
+        : "");
 
     let result;
     try {
@@ -311,10 +349,33 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           flags,
           suspect: flags.length > 0,
           measurementConsent: data.measurementConsent,
+          // Kept with the lead only when measurement was allowed, so the
+          // confirmation — usually opened in a mail app — can name the click.
+          ...(data.measurementConsent && submitFbc ? { metaFbc: submitFbc } : {}),
           locale: data.locale,
           networkSendBlocked: verdict.blocked,
+          // New consented rows only. The service drops it again for repeats,
+          // suspect rows, and blocked sends. The response stays generic.
+          ...(() => {
+            const experiment = persistableExperimentContext(data.experiment, {
+              measurementConsent: data.measurementConsent,
+              suspect: flags.length > 0,
+              blocked: conversionBlocked(flags) || verdict.blocked,
+            });
+            if (
+              data.experiment != null &&
+              data.measurementConsent &&
+              flags.length === 0 &&
+              !verdict.blocked &&
+              !conversionBlocked(flags) &&
+              !experiment
+            ) {
+              console.error("[conversion-experiment] ignored malformed context");
+            }
+            return experiment ? { experiment } : {};
+          })(),
         },
-        createServiceDependencies(),
+        serviceDependencies({ ...(ip ? { ip } : {}), ...(ua ? { ua } : {}) }),
       );
     } catch (error) {
       throw sanitizeServerError("verification-request", error);
@@ -331,17 +392,17 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // depends only on configuration, consent and Meta's answer — never on
     // whether the address was new — so it does not reopen the existence oracle.
     let capi: MetaCapiDelivery | "skipped" = "skipped";
-    if (data.submitEventId && data.measurementConsent && !conversionBlocked(flags)) {
+    // The header wins over the body's consent bit. A late grant is refused
+    // the same way inside the service; this is the submit-time leg.
+    const globalPrivacyControl = requestHasGpc();
+    if (
+      data.submitEventId &&
+      data.measurementConsent &&
+      !globalPrivacyControl &&
+      !conversionBlocked(flags)
+    ) {
       const fbp = sanitizeMetaCookie(data.fbp);
-      // The pixel derives `_fbc` from an `fbclid` landing, but only if it ran at
-      // all. When an ad blocker stopped it, the click id kept from that same
-      // landing rebuilds the value in Meta's documented shape — which is the
-      // difference between a matched click and an unattributed one.
-      const fbc =
-        sanitizeMetaCookie(data.fbc) ||
-        (attribution.fbclid && attribution.capturedAt
-          ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
-          : "");
+      const fbc = submitFbc;
 
       capi = await deliverMetaLead({
         eventId: data.submitEventId,
@@ -364,7 +425,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     } else if (data.submitEventId) {
       console.log(
         `[meta-capi] Lead skipped event_id=${data.submitEventId}: ${
-          !data.measurementConsent ? "no measurement consent" : "abuse flag"
+          globalPrivacyControl || !data.measurementConsent ? "no measurement consent" : "abuse flag"
         }`,
       );
     }
@@ -377,10 +438,28 @@ export const joinWaitlist = createServerFn({ method: "POST" })
 // and the page hands it over from memory on a same-origin request the CSRF
 // middleware has already validated.
 export const confirmVerification = createServerFn({ method: "POST" })
-  .validator(z.object({ token: z.string().min(16).max(400) }))
+  .validator(
+    z.object({
+      token: z.string().min(16).max(400),
+      // Only sent when this browser already allows measurement.
+      fbp: z.string().max(META_COOKIE_MAX).optional(),
+      fbc: z.string().max(META_COOKIE_MAX).optional(),
+      // This browser has a refusal stored: record it before anything is sent.
+      refused: z.boolean().optional(),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
-      return await confirmVerificationService(data.token, createServiceDependencies());
+      // The confirming request's own IP and user agent: a website conversion
+      // without a user agent is one Meta cannot match to the person.
+      const fbp = sanitizeMetaCookie(data.fbp);
+      const fbc = sanitizeMetaCookie(data.fbc);
+      return await confirmVerificationService(
+        data.token,
+        serviceDependencies(requestMeta()),
+        { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
+        { localRefusal: data.refused === true },
+      );
     } catch (error) {
       throw sanitizeServerError("verification-confirm", error);
     }
@@ -391,8 +470,84 @@ export const pollVerification = createServerFn({ method: "POST" })
   .validator(z.object({ handle: z.string().min(16).max(400) }))
   .handler(async ({ data }) => {
     try {
-      return await pollVerificationService(data.handle, createServiceDependencies());
+      return await pollVerificationService(data.handle, serviceDependencies());
     } catch (error) {
       throw sanitizeServerError("verification-poll", error);
+    }
+  });
+
+// Measurement allowed after the submit — the inbox card in the submitting tab.
+// Only that tab holds the signed poll handle. The answer is uniform.
+export const grantAttemptMeasurement = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      handle: z.string().min(16).max(400),
+      // Accepted and ignored. The response never echoes it: echoing the caller's
+      // label, or the row's source, told a decoy apart from a real attempt.
+      source: z.enum(["hero", "offer"]).optional(),
+      fbp: z.string().max(META_COOKIE_MAX).optional(),
+      fbc: z.string().max(META_COOKIE_MAX).optional(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const fbp = sanitizeMetaCookie(data.fbp);
+      const fbc = sanitizeMetaCookie(data.fbc);
+      return await grantAttemptMeasurementService(
+        data.handle,
+        {
+          ...(fbp ? { fbp } : {}),
+          ...(fbc ? { fbc } : {}),
+        },
+        serviceDependencies(requestMeta()),
+      );
+    } catch (error) {
+      throw sanitizeServerError("measurement-grant-attempt", error);
+    }
+  });
+
+// Measurement allowed on the confirmation page, which still holds the token in
+// memory. The lead must already be confirmed.
+export const grantConfirmationMeasurement = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      token: z.string().min(16).max(400),
+      fbp: z.string().max(META_COOKIE_MAX).optional(),
+      fbc: z.string().max(META_COOKIE_MAX).optional(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const fbp = sanitizeMetaCookie(data.fbp);
+      const fbc = sanitizeMetaCookie(data.fbc);
+      return await grantConfirmationMeasurementService(
+        data.token,
+        { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
+        serviceDependencies(requestMeta()),
+      );
+    } catch (error) {
+      throw sanitizeServerError("measurement-grant-confirmation", error);
+    }
+  });
+
+// A refusal after the submit, while this browser still holds the attempt's
+// handle (inbox card or the banner) or its token (confirmation page).
+export const withdrawAttemptMeasurement = createServerFn({ method: "POST" })
+  .validator(z.object({ handle: z.string().min(16).max(400) }))
+  .handler(async ({ data }) => {
+    try {
+      return await withdrawAttemptMeasurementService(data.handle, serviceDependencies());
+    } catch (error) {
+      throw sanitizeServerError("measurement-withdraw-attempt", error);
+    }
+  });
+
+export const withdrawConfirmationMeasurement = createServerFn({ method: "POST" })
+  .validator(z.object({ token: z.string().min(16).max(400) }))
+  .handler(async ({ data }) => {
+    try {
+      return await withdrawConfirmationMeasurementService(data.token, serviceDependencies());
+    } catch (error) {
+      throw sanitizeServerError("measurement-withdraw-confirmation", error);
     }
   });

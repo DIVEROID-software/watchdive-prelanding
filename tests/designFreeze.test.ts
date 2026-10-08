@@ -101,8 +101,17 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // submit made before hydration is held and sent once React is ready; on
   // Save-Data or slow connections videos wait for a tap. Both forms, #offer-form,
   // section order, consent and tracking calls are unchanged.
+  // 2026-10-08: the inbox card (after a submit) may show one optional
+  // measurement question to visitors in opt-in countries who have not answered
+  // the cookie bar — which on this page they almost never saw. Nothing else in
+  // the DOM changes; the form, sections and order are untouched.
+  // 2026-10-08 (QA round): the inbox card also wires the refusal path, so a
+  // "No thanks" after the submit is recorded on the signup. Props only.
+  // 2026-10-08: owner accepted the form-first 50:50 conversion experiment.
+  // Both existing forms and all sections remain; the treatment moves signup
+  // before media, clarifies the offer/confirmation and fixes sticky visibility.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "a2e4dcb8ae0dbc000d05ea2a0c2affc3193950973d6d37c593f077621a96b47b");
+  assert.equal(digest, "580be116290bccc5a079306ddf5384607806697cd23743f73765cb4ed778300a");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -156,7 +165,7 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // fv-layoutqa at 320/390/430/1440, 9 locales, pre/post consent.
   assert.equal(
     sha256(read("src/styles.css")),
-    "3a16d904846892444f186d2020043cf7bc8751ea53a17a6861d9a2a472a4bc3d",
+    "a636610d43b9d28701f87057fbb8b3a7c8d22e4d0935f4ef2431164fbe310727",
   );
 });
 

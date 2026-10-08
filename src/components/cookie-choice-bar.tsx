@@ -12,80 +12,121 @@ import {
 } from "@/lib/metaPixel";
 import { browserConsentRegion, resolveGeoCountry } from "@/lib/consentRegion";
 import { cookieBarShouldYield } from "@/lib/cookieBarPlacement";
+import {
+  announceMeasurementChoice,
+  clearWithdrawalRecorded,
+  MEASUREMENT_CHOICE_EVENT,
+  MEASUREMENT_SETTLED_EVENT,
+  takeServerWithdrawalExpected,
+  type MeasurementChoiceDetail,
+  type MeasurementSettledDetail,
+} from "@/components/measurement-ask";
 
 type ChoiceCopy = {
-  /** One short line of text; Privacy and the two choices share the row below. */
+  /** Banner heading. */
+  title: string;
+  /** What the cookies are for, and that the page works either way. */
   body: string;
   allow: string;
   decline: string;
   privacy: string;
   /** Footer link that reopens the choice (opt-out outside EU/EEA/UK/CH). */
   settings: string;
+  /** Shown on the reject button while a refusal still needs to be written. */
+  retry: string;
+  retryBody: string;
 };
 
 const COPY: Record<Locale, ChoiceCopy> = {
   en: {
-    body: "We use cookies to measure this page.",
-    allow: "Allow",
-    decline: "Not now",
-    privacy: "Privacy",
+    title: "Your privacy choices",
+    body: "We'd like to use cookies and similar tools from Meta, Google and Microsoft Clarity, plus our own click and scroll measurement, to see which ads bring divers here and how this page is used. Optional: your signup works either way.",
+    allow: "Accept all",
+    decline: "Reject all",
+    privacy: "Privacy Policy",
     settings: "Cookie settings",
+    retry: "Try again",
+    retryBody: "Measurement is off in this browser. We couldn’t confirm your choice was saved. Please try again.",
   },
   ko: {
-    body: "페이지 측정을 위해 쿠키를 사용해요.",
-    allow: "허용",
-    decline: "나중에",
-    privacy: "개인정보",
+    title: "개인정보 선택",
+    body: "Meta, Google, Microsoft Clarity의 쿠키·유사 기술과 자체 클릭·스크롤 측정으로 어떤 광고가 다이버를 데려오는지, 페이지가 어떻게 쓰이는지 보고 싶어요. 선택 사항이며, 가입은 그대로 유지돼요.",
+    allow: "모두 허용",
+    decline: "모두 거부",
+    privacy: "개인정보처리방침",
     settings: "쿠키 설정",
+    retry: "다시 시도",
+    retryBody: "이 브라우저의 측정은 꺼져 있어요. 선택 사항 저장을 확인하지 못했어요. 다시 시도해 주세요.",
   },
   "zh-CN": {
-    body: "我们用 Cookie 统计本页访问。",
-    allow: "允许",
-    decline: "暂时不要",
-    privacy: "隐私",
+    title: "您的隐私选择",
+    body: "我们希望使用 Meta、Google 和 Microsoft Clarity 的 Cookie 及类似工具，以及我们自己的点击和滚动统计，了解哪些广告带来了潜水员、页面如何被使用。可选：不影响您的报名。",
+    allow: "全部接受",
+    decline: "全部拒绝",
+    privacy: "隐私政策",
     settings: "Cookie 设置",
+    retry: "再试一次",
+    retryBody: "此浏览器已关闭统计。报名记录里还没有这次拒绝。",
   },
   "zh-TW": {
-    body: "我們用 Cookie 統計本頁造訪。",
-    allow: "允許",
-    decline: "暫時不要",
-    privacy: "隱私",
+    title: "您的隱私選擇",
+    body: "我們希望使用 Meta、Google 和 Microsoft Clarity 的 Cookie 及類似工具，以及我們自己的點擊和捲動統計，了解哪些廣告帶來了潛水員、頁面如何被使用。可選：不影響您的報名。",
+    allow: "全部接受",
+    decline: "全部拒絕",
+    privacy: "隱私權政策",
     settings: "Cookie 設定",
+    retry: "再試一次",
+    retryBody: "此瀏覽器已關閉統計。報名記錄裡還沒有這次拒絕。",
   },
   ja: {
-    body: "ページ計測にクッキーを使います。",
-    allow: "許可する",
-    decline: "今はしない",
-    privacy: "プライバシー",
+    title: "プライバシーの選択",
+    body: "Meta・Google・Microsoft Clarity のクッキーや類似技術と、自社のクリック・スクロール計測で、どの広告からダイバーが来たか、ページがどう使われたかを知りたいと考えています。任意です。登録はそのまま有効です。",
+    allow: "すべて許可",
+    decline: "すべて拒否",
+    privacy: "プライバシーポリシー",
     settings: "クッキー設定",
+    retry: "もう一度試す",
+    retryBody: "このブラウザでは計測を切っています。登録の記録には、まだ拒否が残っていません。",
   },
   es: {
-    body: "Usamos cookies para medir esta página.",
-    allow: "Permitir",
-    decline: "Ahora no",
-    privacy: "Privacidad",
+    title: "Tus opciones de privacidad",
+    body: "Queremos usar cookies y herramientas similares de Meta, Google y Microsoft Clarity, además de nuestra propia medición de clics y desplazamiento, para saber qué anuncios traen buceadores y cómo se usa esta página. Es opcional: tu registro funciona igual.",
+    allow: "Aceptar todo",
+    decline: "Rechazar todo",
+    privacy: "Política de privacidad",
     settings: "Cookies",
+    retry: "Intentar de nuevo",
+    retryBody: "En este navegador la medición está desactivada. El registro aún no tiene el rechazo.",
   },
   fr: {
-    body: "Nous utilisons des cookies de mesure.",
-    allow: "Autoriser",
-    decline: "Pas maintenant",
-    privacy: "Confidentialité",
+    title: "Vos choix de confidentialité",
+    body: "Nous aimerions utiliser des cookies et outils similaires de Meta, Google et Microsoft Clarity, ainsi que notre propre mesure des clics et du défilement, pour savoir quelles annonces amènent des plongeurs et comment la page est utilisée. Facultatif : votre inscription reste valable.",
+    allow: "Tout accepter",
+    decline: "Tout refuser",
+    privacy: "Politique de confidentialité",
     settings: "Cookies",
+    retry: "Réessayer",
+    retryBody: "La mesure est coupée dans ce navigateur. Le refus n'est pas encore sur l'inscription.",
   },
   de: {
-    body: "Wir nutzen Cookies zur Messung.",
-    allow: "Erlauben",
-    decline: "Jetzt nicht",
-    privacy: "Datenschutz",
+    title: "Deine Datenschutz-Einstellungen",
+    body: "Wir möchten Cookies und ähnliche Tools von Meta, Google und Microsoft Clarity sowie unsere eigene Klick- und Scroll-Messung nutzen, um zu sehen, welche Anzeigen Taucher herbringen und wie die Seite genutzt wird. Freiwillig: deine Anmeldung gilt so oder so.",
+    allow: "Alle akzeptieren",
+    decline: "Alle ablehnen",
+    privacy: "Datenschutzerklärung",
     settings: "Cookie-Einstellungen",
+    retry: "Erneut versuchen",
+    retryBody: "In diesem Browser ist die Messung aus. Die Absage steht noch nicht bei der Anmeldung.",
   },
   "pt-BR": {
-    body: "Usamos cookies para medir esta página.",
-    allow: "Permitir",
-    decline: "Agora não",
-    privacy: "Privacidade",
+    title: "Suas escolhas de privacidade",
+    body: "Queremos usar cookies e ferramentas semelhantes da Meta, do Google e do Microsoft Clarity, além da nossa própria medição de cliques e rolagem, para saber quais anúncios trazem mergulhadores e como a página é usada. Opcional: seu cadastro vale de qualquer jeito.",
+    allow: "Aceitar tudo",
+    decline: "Rejeitar tudo",
+    privacy: "Política de privacidade",
     settings: "Cookies",
+    retry: "Tentar de novo",
+    retryBody: "Neste navegador a medição está desligada. A recusa ainda não está no cadastro.",
   },
 };
 
@@ -117,12 +158,31 @@ export function CookieChoiceBar() {
   const locale = useCurrentLocale();
   const copy = COPY[locale];
   const [open, setOpen] = useState(false);
+  const [withdrawPending, setWithdrawPending] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let alive = true;
     const reopen = () => setOpen(true);
+    const onSettled = (event: Event) => {
+      const detail = (event as CustomEvent<MeasurementSettledDetail>).detail;
+      if (!detail || detail.choice !== "denied") return;
+      if (detail.recorded) {
+        setWithdrawPending(false);
+        setOpen(false);
+      } else {
+        setWithdrawPending(true);
+        setOpen(true);
+      }
+    };
+    // Answered on the inbox card or the confirmation page: nothing left to ask.
+    const answered = (event: Event) => {
+      if ((event as CustomEvent<MeasurementChoiceDetail>).detail?.origin !== "banner")
+        setOpen(false);
+    };
     window.addEventListener(OPEN_EVENT, reopen);
+    window.addEventListener(MEASUREMENT_CHOICE_EVENT, answered);
+    window.addEventListener(MEASUREMENT_SETTLED_EVENT, onSettled);
     // The server hands down the country (`wd_geo`); outside EU/EEA/UK/CH the
     // tags start by default and no bar is shown. Inside it, or with an unknown
     // country, the bar asks once. GPC is an opt-out already: never ask.
@@ -137,13 +197,15 @@ export function CookieChoiceBar() {
     return () => {
       alive = false;
       window.removeEventListener(OPEN_EVENT, reopen);
+      window.removeEventListener(MEASUREMENT_CHOICE_EVENT, answered);
+      window.removeEventListener(MEASUREMENT_SETTLED_EVENT, onSettled);
     };
   }, []);
 
   // While this bar is open it owns the bottom edge. The space it takes up,
   // from its top edge to the bottom of the viewport, is published so page
-  // padding matches the bar, and the notify link stays hidden. It never covers
-  // the first screen and steps aside while a signup form is on screen (see
+  // padding matches the bar, and the notify link stays hidden. It steps aside
+  // only while someone types or the inline measurement question is on screen (see
   // `cookieBarShouldYield`): it stays laid out but is not painted or tappable.
   const [yielding, setYielding] = useState(false);
   useLayoutEffect(() => {
@@ -168,9 +230,12 @@ export function CookieChoiceBar() {
       const focused = document.activeElement;
       setYielding(
         cookieBarShouldYield({
-          forms: [...document.querySelectorAll("form")].map((form) => form.getBoundingClientRect()),
+          // The inline measurement question asks the same thing; the banner
+          // must not sit on that card's own two buttons.
+          asks: [...document.querySelectorAll("[data-measurement-ask]")].map((ask) =>
+            ask.getBoundingClientRect(),
+          ),
           viewportHeight: window.innerHeight,
-          scrollY: window.scrollY,
           editing: focused instanceof HTMLElement && !!focused.closest("form"),
           keyboardOpen: !!viewport && viewport.height < window.innerHeight * 0.75,
         }),
@@ -203,56 +268,92 @@ export function CookieChoiceBar() {
   if (!open) return null;
 
   function choose(choice: "granted" | "denied") {
-    setMetaMeasurementConsent(choice);
     if (choice === "granted") {
+      // Global Privacy Control wins over Accept. Do not store Allow, tell the
+      // page it was granted, or start tags.
+      if (globalPrivacyControlOn()) return;
+      clearWithdrawalRecorded();
+      setMetaMeasurementConsent("granted");
+      announceMeasurementChoice({ choice, origin: "banner" });
       initMetaPixel();
       initGoogleTag();
       initClarity();
       startPageBehavior();
-    } else if (typeof window !== "undefined" && window.clarity) {
+      setWithdrawPending(false);
+      setOpen(false);
+      return;
+    }
+    setMetaMeasurementConsent("denied");
+    if (typeof window !== "undefined" && window.clarity) {
       window.clarity("consentv2", { ad_Storage: "denied", analytics_Storage: "denied" });
     }
-    setOpen(false);
+    announceMeasurementChoice({ choice: "denied", origin: "banner" });
+    // Listeners run before this returns. A pending signup sets the flag; with
+    // no signup, the local refusal is the whole record and the bar can close.
+    if (!takeServerWithdrawalExpected()) {
+      setWithdrawPending(false);
+      setOpen(false);
+      return;
+    }
+    setWithdrawPending(true);
   }
 
   return (
-    // Phones: a full-width strip on the bottom edge. From `sm` up: a card in
-    // the notify link's bottom-right slot, beside the hero copy on a desktop
-    // first screen rather than across it.
+    // A full-width bottom sheet on every viewport, shown on arrival in opt-in
+    // countries. Reject all and Accept all are the same size and both plainly
+    // visible: refusing has to be as easy as accepting. Accept carries the
+    // page's primary button colour; that emphasis is the only difference.
     <div
       ref={barRef}
       aria-hidden={yielding || undefined}
-      className={`fixed inset-x-0 bottom-0 z-[10000] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-[23rem] sm:px-0 sm:pb-[env(safe-area-inset-bottom)] ${
+      className={`fixed inset-x-0 bottom-0 z-[10000] border-t border-white/15 bg-[#201748] text-white shadow-[0_-12px_40px_rgba(7,19,28,0.55)] ${
         yielding ? "invisible pointer-events-none" : ""
       }`}
     >
       <div
         role="dialog"
-        aria-label={copy.body}
-        className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-[#201748]/95 px-3 py-1.5 text-white shadow-lg sm:px-4 sm:py-3"
+        aria-labelledby="wd-privacy-title"
+        aria-describedby="wd-privacy-body"
+        className="mx-auto flex max-w-6xl flex-col gap-2.5 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:gap-3 sm:px-6 sm:pt-5 lg:flex-row lg:items-end lg:gap-10 lg:pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:pt-6"
       >
-        <p className="min-w-0 basis-full text-xs leading-snug text-[#EDE6FF] sm:text-sm">
-          {copy.body}
-        </p>
-        {/* On the action row, so its 44px tap target is a real box beside the
-            buttons instead of a hit area spilling over them from the text. */}
-        <a
-          href={privacyPath(locale)}
-          className="-ml-0.5 inline-flex min-h-11 min-w-11 items-center justify-center px-0.5 text-xs text-[#36A9E1] underline sm:text-sm"
-        >
-          {copy.privacy}
-        </a>
-        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <div className="min-w-0 lg:flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <h2
+              id="wd-privacy-title"
+              className="text-base font-semibold leading-tight tracking-tight text-white sm:text-xl"
+            >
+              {copy.title}
+            </h2>
+            <a
+              href={privacyPath(locale)}
+              className="-my-2 inline-flex min-h-11 shrink-0 items-center text-xs text-[#36A9E1] underline sm:text-sm"
+            >
+              {copy.privacy}
+            </a>
+          </div>
+          <p
+            id="wd-privacy-body"
+            role={withdrawPending ? "alert" : undefined}
+            className="mt-1 text-[0.8125rem] leading-snug text-[#EDE6FF] sm:text-[0.9375rem] sm:leading-relaxed"
+          >
+            {withdrawPending ? copy.retryBody : copy.body}
+          </p>
+        </div>
+        <div className="grid shrink-0 grid-cols-2 gap-2.5 lg:w-[26rem]">
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[#EDE6FF]/70 px-2.5 text-xs font-medium text-[#EDE6FF] sm:px-3 sm:text-sm"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/60 px-3 text-sm font-semibold text-white sm:text-[0.9375rem]"
+            disabled={yielding}
+            tabIndex={yielding ? -1 : undefined}
             onClick={() => choose("denied")}
           >
-            {copy.decline}
+            {withdrawPending ? copy.retry : copy.decline}
           </button>
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-[#3D2683] px-2.5 text-xs font-medium text-white sm:px-3 sm:text-sm"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#65ceee] bg-[#65ceee] px-3 text-sm font-semibold text-[#181238] sm:text-[0.9375rem]"
+            disabled={yielding}
+            tabIndex={yielding ? -1 : undefined}
             onClick={() => choose("granted")}
           >
             {copy.allow}

@@ -12,6 +12,7 @@
 // Mail-bomb protection lives in `networkGate.ts`, entirely in process memory.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
+import type { ExperimentContext } from "../conversionExperimentContract.ts";
 
 /** Confirmation links last 24 hours. */
 export const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
@@ -100,6 +101,22 @@ export const LAUNCHOS_REPLAY_METADATA_MAX_LENGTH = 1_980;
 
 export const MEASUREMENT_CONSENT_GRANTED = "WD-AD-MEASUREMENT-CONSENT-V1:granted" as const;
 export const MEASUREMENT_CONSENT_WITHDRAWN = "WD-AD-MEASUREMENT-CONSENT-V1:withdrawn" as const;
+/**
+ * The `Measurement consent` cell is a small state machine (2026-10-08):
+ *
+ *   withheld ──grant──▶ granted-lead-pending ──Lead acknowledged by Meta──▶ granted
+ *       │                       │                                            │
+ *       └─────────── any refusal ▶ withdrawn (+ `measurement-withdrawn` flag) ◀┘
+ *
+ * `withheld`: the submit carried no consent, so its `Lead` was never sent.
+ * `granted-lead-pending`: consent given later; that `Lead` still has to go out
+ * (and is retried by the next grant, resend or confirmation until Meta takes it).
+ * `granted`: consent, and the submit `Lead` is done (or went out at submit).
+ * An empty cell is a row from before this release: never read as "withheld".
+ */
+export const MEASUREMENT_CONSENT_WITHHELD = "WD-AD-MEASUREMENT-CONSENT-V1:withheld" as const;
+export const MEASUREMENT_CONSENT_LEAD_PENDING =
+  "WD-AD-MEASUREMENT-CONSENT-V1:granted-lead-pending" as const;
 
 // Measurement-only reconciliation context already provisioned on the live
 // waitlist database. Withdrawal clears these without touching operational CRM
@@ -155,6 +172,22 @@ export type LeadRecord = {
   reminder?: string;
   /** First-touch landing path, read only to pick the reminder's language. */
   landingPath?: string;
+  /**
+   * Raw `Measurement consent` cell. `MEASUREMENT_CONSENT_GRANTED` is written
+   * when the person allows advertising measurement after submitting (the inbox
+   * card or the confirmation page); `MEASUREMENT_CONSENT_WITHDRAWN` by the
+   * withdrawal registry. Withdrawn always wins over every other signal.
+   */
+  measurementConsent?: string;
+  /**
+   * Meta click cookie value (`fb.1.<ms>.<fbclid>`), stored only once measurement
+   * was allowed and only when `NOTION_META_FBC_PROPERTY` names the column. It is
+   * what lets the confirmation, usually opened in a different browser than the
+   * ad click, be attributed to that click.
+   */
+  metaFbc?: string;
+  /** First-touch campaign tags, read back for the late submit `Lead`. */
+  utm?: { source?: string; medium?: string; campaign?: string; content?: string; term?: string };
 };
 
 /**
@@ -236,6 +269,12 @@ export type CreatePendingInput = {
   leadId: string;
   expiresAt: string;
   attribution?: LeadAttribution;
+  /** Present only when the submitting browser allowed measurement. */
+  metaFbc?: string;
+  /** Initial `Measurement consent` state: granted, or withheld. */
+  measurementState?: string;
+  /** New consented, non-suspect row only; never rewritten on resend. */
+  experiment?: ExperimentContext;
 };
 
 /** Written when a new attempt is minted — this is what kills the previous link. */
@@ -267,6 +306,12 @@ export interface LeadStore {
   markSent(pageId: string, input: MarkSentInput): Promise<void>;
   markVerified(pageId: string, input: MarkVerifiedInput): Promise<void>;
   markWelcomeScheduled(pageId: string, input: MarkWelcomeInput): Promise<void>;
+  /** Writes only the `Measurement consent` cell. */
+  recordMeasurementState(pageId: string, state: string): Promise<void>;
+  /** Writes only the click-cookie column, when it is configured. */
+  recordMeasurementFbc(pageId: string, metaFbc: string): Promise<void>;
+  /** `Measurement consent` = withdrawn, adds the withdrawal flag, clears the click cookie. */
+  recordMeasurementWithdrawal(pageId: string): Promise<void>;
   reread(pageId: string): Promise<LeadRecord | undefined>;
 }
 
@@ -289,7 +334,7 @@ export type ClosedResponse = {
 };
 
 export const WAITLIST_CLOSED_MESSAGE =
-  "The pre-launch list is full. Watch Dive launches on Kickstarter in December.";
+  "The pre-launch list is full. WatchDive launches on Kickstarter in December.";
 
 export type ConfirmStatus = "verified" | "expired" | "already_verified" | "invalid";
 
@@ -304,7 +349,35 @@ export type ConfirmResponse = {
   ok: true;
   status: ConfirmStatus;
   refCode?: string;
-  /** Present only when the attempt's signed consent bit permits measurement. */
+  /** Present only when measurement is permitted for this lead. */
+  browserLead?: BrowserLead;
+  /**
+   * The lead is confirmed but nobody has allowed advertising measurement for
+   * it yet (and nobody withdrew it). The page may ask once; the answer goes to
+   * `grantConfirmationMeasurement`. Never set for abuse-flagged rows.
+   */
+  measurementAsk?: true;
+};
+
+/**
+ * The answer to a measurement grant.
+ *
+ * An attempt grant (poll handle) is exactly `{ ok: true }` for a real row, a
+ * decoy, an invalid or expired handle, a withdrawal, and an abuse flag. The
+ * late Lead is sent server-side only. A confirmation-token grant may include
+ * the verification browser half, because presenting the token already proves the caller
+ * received the mail. `status: "retry"` is only that confirmation path, and
+ * only when the consent write could not be confirmed.
+ */
+export type MeasurementGrantResponse = {
+  ok: true;
+  /** Confirmation token only: the server could not confirm the grant. */
+  status?: "retry";
+  /**
+   * The confirmation's browser half — only on the confirmation-page grant,
+   * whose caller holds the token, and only when it was actually sent. The
+   * late submit `Lead` is server-only and never has a browser half.
+   */
   browserLead?: BrowserLead;
 };
 
@@ -321,5 +394,18 @@ export type PollResponse = {
  * confirmed lead, which is how the public counters already treat it.
  */
 export function conversionBlocked(flags: string[]): boolean {
-  return flags.some((flag) => flag !== "ip-repeat");
+  return flags.some((flag) => flag !== "ip-repeat" && flag !== FLAG_MEASUREMENT_WITHDRAWN);
+}
+
+/**
+ * Written to `Flags` when someone refuses advertising measurement after their
+ * submit. A grant only ever writes `Measurement consent`, never `Flags`, so a
+ * refusal recorded here cannot be overwritten by a grant racing it. It is not
+ * an abuse signal: operational mail (reminder, welcome) ignores it.
+ */
+export const FLAG_MEASUREMENT_WITHDRAWN = "measurement-withdrawn";
+
+/** Flags that say something about abuse or review, not about measurement. */
+export function reviewFlags(flags: string[]): string[] {
+  return flags.filter((flag) => flag !== FLAG_MEASUREMENT_WITHDRAWN);
 }

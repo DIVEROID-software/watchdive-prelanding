@@ -171,6 +171,20 @@ export function deterministicMetaEventId(leadId: string, secret: string): string
   return createHmac("sha256", secret).update(`meta-event:v1:${leadId.toLowerCase()}`).digest("hex");
 }
 
+/**
+ * The submit `Lead` sent late, after someone allows measurement post-submit.
+ * Derived from the attempt like the confirmation id (never chosen by the
+ * caller), so however many times a grant is replayed, Meta sees one Lead.
+ */
+export function deterministicSubmitEventId(rowId: string, secret: string): string {
+  // Keyed on the CRM row, not the attempt: a resend rotates the attempt, and a
+  // retry of a Lead whose first send was not acknowledged must reuse the id.
+  if (!rowId) throw new Error("Invalid row id");
+  return createHmac("sha256", secret)
+    .update(`meta-submit-event:v2:${rowId.toLowerCase()}`)
+    .digest("hex");
+}
+
 // --- poll handle -----------------------------------------------------------
 
 export type ParsedHandle = { leadId: string; issuedAtMs: number; measurementConsent: boolean };

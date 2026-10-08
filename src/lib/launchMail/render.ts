@@ -102,7 +102,7 @@ export function renderLaunchMail(input: LaunchMailInput): RenderedLaunchMail {
       `margin:0 0 14px;color:${CYAN};font-size:11px;font-weight:700;letter-spacing:2.4px;line-height:16px;`,
       "DIVEROID · KICKSTARTER",
     ),
-    `<p class="wd-brand" style="margin:0;color:#ffffff;font-family:${FONT};font-size:36px;font-weight:800;letter-spacing:-1.3px;line-height:42px;">Watch Dive<span style="color:${CYAN};">.</span></p>`,
+    `<p class="wd-brand" style="margin:0;color:#ffffff;font-family:${FONT};font-size:36px;font-weight:800;letter-spacing:-1.3px;line-height:42px;">WatchDive<span style="color:${CYAN};">.</span></p>`,
     "</td></tr>",
     // Card
     '<tr><td class="wd-pad" bgcolor="#ffffff" style="padding:36px 40px 32px;background-color:#ffffff;">',
@@ -141,7 +141,7 @@ export function renderLaunchMail(input: LaunchMailInput): RenderedLaunchMail {
     ),
     p(
       `color:${DEEP};font-size:12px;font-weight:700;line-height:20px;`,
-      "DIVEROID LTD &nbsp;·&nbsp; Watch Dive",
+      "DIVEROID LTD &nbsp;·&nbsp; WatchDive",
     ),
     ...(input.postalAddress
       ? [
@@ -177,7 +177,7 @@ export function renderLaunchMail(input: LaunchMailInput): RenderedLaunchMail {
     "—",
     copy.reason,
     `${copy.unsubscribe}${sep}${input.unsubscribeUrl}`,
-    "DIVEROID LTD · Watch Dive",
+    "DIVEROID LTD · WatchDive",
     ...(input.postalAddress ? [input.postalAddress] : []),
     copy.help,
   ].join("\n");

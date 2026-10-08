@@ -7,7 +7,7 @@ import { getBehaviorReport, signInBehaviorAdmin } from "@/lib/api/adminBehavior.
 export const Route = createFileRoute("/admin/behavior")({
   head: () => ({
     meta: [
-      { title: "Watch Dive 페이지 측정" },
+      { title: "WatchDive 페이지 측정" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -40,7 +40,7 @@ function BehaviorAdminPage() {
   return (
     <main className="min-h-screen bg-background px-5 py-12 text-foreground">
       <div className="mx-auto max-w-5xl">
-        <p className="text-sm text-muted-foreground">Watch Dive</p>
+        <p className="text-sm text-muted-foreground">WatchDive</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">페이지 측정</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           허용을 누른 방문만 표시합니다. 이메일, 전화번호, IP, 나이, 성별은 여기 없습니다.

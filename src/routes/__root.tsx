@@ -12,6 +12,7 @@ import { type ReactNode, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
 import appCss from "../styles.css?url";
+import brutalCss from "../styles-brutal.css?url";
 import { NotFoundPage } from "@/components/not-found-page";
 import { Toaster } from "@/components/ui/sonner";
 import { homePath, localeFromPathname } from "@/lib/i18n/locale";
@@ -21,6 +22,7 @@ import { googleTagBootstrap, initGoogleTag, readGoogleTagConfig } from "@/lib/go
 import { initMetaPixel } from "@/lib/metaPixel";
 import { INLINE_MEASUREMENT_ALLOWED_JS, resolveGeoCountry } from "@/lib/consentRegion";
 import { startPageBehavior } from "@/lib/pageBehavior";
+import { experimentBootstrap, EXPERIMENT_ENABLED } from "@/lib/conversionExperimentClient";
 import { allowsThirdPartyScripts, SUPPORT_WIDGET_SRC } from "@/lib/thirdPartyScripts";
 import { CookieChoiceBar } from "@/components/cookie-choice-bar";
 
@@ -63,12 +65,19 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
+// Design variant switch, fixed at build time. Only an allowlisted name turns
+// a theme on; production builds leave VITE_DESIGN_THEME unset.
+const DESIGN_THEME =
+  (import.meta.env.VITE_DESIGN_THEME as string | undefined)?.trim() === "brutal"
+    ? "brutal"
+    : undefined;
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "author", content: "Watch Dive" },
+      { name: "author", content: "WatchDive" },
     ],
     links: [
       {
@@ -80,6 +89,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      // The design variant, only when the build names it (see DESIGN_THEME).
+      ...(DESIGN_THEME === "brutal" ? [{ rel: "stylesheet", href: brutalCss }] : []),
     ],
   }),
   shellComponent: RootShell,
@@ -129,9 +140,12 @@ function RootShell({ children }: { children: ReactNode }) {
   const locale = localeFromPathname(pathname);
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <HeadContent />
+        {thirdParty && EXPERIMENT_ENABLED && (
+          <script dangerouslySetInnerHTML={{ __html: experimentBootstrap(true) }} />
+        )}
         {thirdParty && META_PIXEL_READY && (
           <script dangerouslySetInnerHTML={{ __html: metaPixelBootstrap(META_PIXEL_ID) }} />
         )}

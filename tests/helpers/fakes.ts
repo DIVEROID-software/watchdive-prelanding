@@ -71,6 +71,8 @@ export class FakeLeadStore implements LeadStore {
       ...(record.welcomeAt ? { welcomeAt: record.welcomeAt } : {}),
       ...(record.reminder ? { reminder: record.reminder } : {}),
       ...(record.landingPath ? { landingPath: record.landingPath } : {}),
+      ...(record.measurementConsent ? { measurementConsent: record.measurementConsent } : {}),
+      ...(record.metaFbc ? { metaFbc: record.metaFbc } : {}),
     };
     this.rows.set(row.pageId, row);
     this.byCanonical.set(record.canonical, row.pageId);
@@ -102,6 +104,52 @@ export class FakeLeadStore implements LeadStore {
       leadId: input.leadId,
       expiresAt: input.expiresAt,
       sends: 1,
+      ...(input.metaFbc ? { metaFbc: input.metaFbc } : {}),
+      ...(input.measurementState ? { measurementConsent: input.measurementState } : {}),
+    });
+  }
+
+  measurementFbcs: { pageId: string; metaFbc: string }[] = [];
+  withdrawals: string[] = [];
+  /** Every consent-cell write, in order: [pageId, state]. */
+  measurementStates: [string, string][] = [];
+  /** Test hook: runs inside a consent-cell write, before it lands. */
+  onStateWrite?: (pageId: string, state: string) => void;
+  failStateWrite = false;
+  /** Test hook: runs inside the click-cookie write, before it lands. */
+  onFbcWrite?: (pageId: string) => void;
+
+  get measurementGrants(): string[] {
+    return this.measurementStates.map(([pageId]) => pageId);
+  }
+
+  async recordMeasurementState(pageId: string, state: string): Promise<void> {
+    this.onStateWrite?.(pageId, state);
+    if (this.failStateWrite) throw new Error("notion down");
+    this.measurementStates.push([pageId, state]);
+    const row = this.rows.get(pageId);
+    if (row) this.rows.set(pageId, { ...row, measurementConsent: state });
+  }
+
+  async recordMeasurementFbc(pageId: string, metaFbc: string): Promise<void> {
+    this.onFbcWrite?.(pageId);
+    this.measurementFbcs.push({ pageId, metaFbc });
+    const row = this.rows.get(pageId);
+    if (row) this.rows.set(pageId, { ...row, metaFbc });
+  }
+
+  async recordMeasurementWithdrawal(pageId: string): Promise<void> {
+    this.withdrawals.push(pageId);
+    const row = this.rows.get(pageId);
+    if (!row) return;
+    const flags = row.flags.includes("measurement-withdrawn")
+      ? row.flags
+      : [...row.flags, "measurement-withdrawn"];
+    const { metaFbc: _drop, ...rest } = row;
+    this.rows.set(pageId, {
+      ...rest,
+      flags,
+      measurementConsent: "WD-AD-MEASUREMENT-CONSENT-V1:withdrawn",
     });
   }
 

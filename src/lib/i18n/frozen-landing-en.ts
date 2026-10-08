@@ -8,13 +8,13 @@
 
 export const EN_FROZEN_LANDING_MESSAGES = {
   meta: {
-    title: "Watch Dive — depth on the smartwatch you already wear",
+    title: "WatchDive — depth on the smartwatch you already wear",
     description:
       "A DIVEROID sensor housing turns a supported Apple Watch or Galaxy Watch into a dive computer. Depth, time, water temperature, no-deco. Early bird $149 for the first 100 Kickstarter backers.",
-    ogTitle: "Watch Dive — depth on the smartwatch you already wear",
+    ogTitle: "WatchDive — depth on the smartwatch you already wear",
     ogDescription:
       "A DIVEROID sensor housing turns a supported Apple Watch or Galaxy Watch into a dive computer. Depth, time, water temperature, no-deco. Early bird $149 for the first 100 Kickstarter backers.",
-    twitterTitle: "Watch Dive — depth on the smartwatch you already wear",
+    twitterTitle: "WatchDive — depth on the smartwatch you already wear",
     twitterDescription:
       "A DIVEROID sensor housing for the Apple Watch or Galaxy Watch you already wear. Early bird $149 for the first 100 Kickstarter backers.",
   },
@@ -30,7 +30,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     welcome: "A friend invited you — you're on their list. Confirm your email to join them.",
     welcomeHighlight: "you're on their list",
     successTitle: "You're on the list.",
-    successBody: "We'll email you the moment Watch Dive opens on Kickstarter.",
+    successBody: "We'll email you the moment WatchDive opens on Kickstarter.",
     buddyTitle: "Bring a buddy",
     buddyBody:
       "Send your link to the divers who'd want this. Everyone who joins through it is counted, and the Kickstarter link reaches you the moment the campaign opens.",
@@ -39,13 +39,13 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     copied: "Copied",
     shareButton: "Send to your dive buddy",
     shareText:
-      "Watch Dive is a DIVEROID sensor housing for the Apple Watch or Galaxy Watch I already wear. The first 100 Kickstarter backers get it for $149. Join with my link.",
+      "WatchDive is a DIVEROID sensor housing for the Apple Watch or Galaxy Watch I already wear. The first 100 Kickstarter backers get it for $149. Join with my link.",
   },
   gallery: {
     black: "Black",
     white: "White",
-    blackAlt: "Watch Dive housing, black",
-    whiteAlt: "Watch Dive housing, white",
+    blackAlt: "WatchDive housing, black",
+    whiteAlt: "WatchDive housing, white",
     label: "Choose a color",
   },
   inbox: {
@@ -57,15 +57,15 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     countdown: "Resend in {seconds}s",
 
     title: "Check your inbox to finish.",
-    note: "Look for the subject “Confirm your Watch Dive waitlist email” and press Confirm my email. Check spam or promotions if it is not there within a minute. The link lasts 24 hours, and this page updates on its own.",
-    noteSubject: "“Confirm your Watch Dive waitlist email”",
+    note: "Look for the subject “Confirm your WatchDive waitlist email” and press Confirm my email. Check spam or promotions if it is not there within a minute. The link lasts 24 hours, and this page updates on its own.",
+    noteSubject: "“Confirm your WatchDive waitlist email”",
     noteButton: "Confirm my email",
     resendIdle: "Didn't get it? Resend",
     resendWait: "Resend in a moment",
     resendBusy: "Sending…",
     wrongAddress: "Wrong address?",
-    inAppHint: "Open your mail app and search for Watch Dive.",
-    inAppHintHighlight: "Watch Dive",
+    inAppHint: "Open your mail app and search for WatchDive.",
+    inAppHintHighlight: "WatchDive",
     openGmail: "Open Gmail",
     openOutlook: "Open Outlook",
     openYahoo: "Open Yahoo Mail",
@@ -81,7 +81,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   server: {
     pending:
       "If this address can receive email, a confirmation link is on its way. Open it to finish.",
-    closed: "The pre-launch list is full. Watch Dive launches on Kickstarter in December.",
+    closed: "The pre-launch list is full. WatchDive launches on Kickstarter in December.",
   },
   toasts: {
     resent: "Resend requested — check your inbox.",
@@ -93,7 +93,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     phonePlaceholder: "Phone (optional) — for a launch-day text",
     saving: "Saving…",
     smsConsent:
-      "Text me when the Watch Dive Kickstarter opens. Optional — your email signup works without it.",
+      "Text me when the WatchDive Kickstarter opens. Optional — your email signup works without it.",
     step1: "Enter your email",
     step2: "Confirm via email",
     step3: "Get a reminder 1 day and 1 hour before",
@@ -103,7 +103,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     readAll: "Read all {count} beta reviews, some translated ↓",
   },
   usp: {
-    label: "Why Watch Dive",
+    label: "Why WatchDive",
     compatTitle: "Works with the smartwatch you have",
     compatBody: "Apple Watch, except Ultra (later) · Galaxy Watch4–9",
     compatLink: "Check your model",
@@ -118,12 +118,12 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   },
   hero: {
     badge: "Kickstarter",
-    h1: "Watch Dive turns your smartwatch into a dive computer.",
+    h1: "WatchDive turns your smartwatch into a dive computer.",
     h1Highlight: "a dive computer",
     sub: "Your Apple Watch or Galaxy Watch goes into the housing, and its DIVEROID sensor reads depth and water temperature. No second dive computer to buy or learn.",
     priceLine: "Early bird $149 for the first 100 backers on Kickstarter. Launching in December.",
     backgroundAlt: "Scuba diver exploring a vibrant coral reef",
-    sideImageAlt: "Watch Dive on a diver’s wrist over a coral reef, showing depth and dive time",
+    sideImageAlt: "WatchDive on a diver’s wrist over a coral reef, showing depth and dive time",
     stat1Label: "Housing · 197 ft (60 m)",
     stat1Desc: "Water-resistance test completed",
     stat2Label: "Scuba + Freedive",
@@ -143,7 +143,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     nvidiaAlt: "NVIDIA Inception",
     awsAlt: "Amazon Web Services",
     samsungAlt: "Samsung",
-    promiseKicker: "Watch Dive",
+    promiseKicker: "WatchDive",
     promiseText: "Depth, time, temperature. On the smartwatch you already wear.",
     cardKicker: "Kickstarter",
     cardHeadline: "Depth. Time. No-deco.",
@@ -151,9 +151,9 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     cardPrice: "$149",
   },
   value: {
-    kicker: "Why Watch Dive",
+    kicker: "Why WatchDive",
     h2: "$149 for the first 100 backers.",
-    imageAlt: "Watch Dive worn on a wrist underwater",
+    imageAlt: "WatchDive worn on a wrist underwater",
     overlayKicker: "On the wrist",
     overlayText: "The housing and its sensor, on the smartwatch you already wear.",
     lead: "Keep the smartwatch. Add the housing. The dive ends up in the app.",
@@ -171,7 +171,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     kicker: "On the wrist",
     h2: "The numbers you check underwater.",
     sub: "Depth, dive time, water temperature, ascent, the safety stop, no-deco time. One screen.",
-    videoAria: "Watch Dive functions in action",
+    videoAria: "WatchDive functions in action",
     item1Title: "One screen.",
     item1Body: "Depth, dive time and water temperature, where your eye already goes.",
     item2Title: "No-deco time.",
@@ -179,18 +179,18 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     item3Title: "Safety stop. Ascent.",
     item3Body: "A prompt for the safety stop. An alert if you come up too fast.",
     item4Title: "Scuba. Freedive.",
-    item4Body: "Switch modes in the Watch Dive app.",
+    item4Body: "Switch modes in the WatchDive app.",
   },
   how: {
     kicker: "How it works",
     h2: "Three steps.",
     step1Title: "Fit the smartwatch.",
     step1Body: "A supported Apple Watch or Galaxy Watch goes into the housing before you get in.",
-    step1Alt: "Hands placing a smartwatch into the Watch Dive housing",
+    step1Alt: "Hands placing a smartwatch into the WatchDive housing",
     step2Title: "The housing measures.",
     step2Body:
       "Pressure and water-temperature sensors send readings to the watch app over Bluetooth while you dive.",
-    step2Alt: "Watch Dive on a diver’s wrist in the pool",
+    step2Alt: "WatchDive on a diver’s wrist in the pool",
     step3Title: "Sync at the surface.",
     step3Body: "The dive profile goes to the app. Read it in your logbook.",
     step3Alt: "Diver reviewing a dive log in the connected app poolside",
@@ -198,7 +198,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   app: {
     kicker: "App · DIVEROID 3.0",
     h2: "Saved the moment you surface.",
-    lead: "Watch Dive syncs to the DIVEROID App 3.0. The log writes itself. Your footage carries the dive. Nearby sites live in the same app.",
+    lead: "WatchDive syncs to the DIVEROID App 3.0. The log writes itself. Your footage carries the dive. Nearby sites live in the same app.",
     leadHighlight: "DIVEROID App 3.0",
     tab1: "Auto",
     tab1Desc: "Logbook & gallery",
@@ -242,14 +242,14 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     housingModel3:
       "Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra",
     housingModel4: "Galaxy Watch8, Galaxy Watch8 Classic, Galaxy Watch9",
-    housingAlt: "Watch Dive waterproof housing",
+    housingAlt: "WatchDive waterproof housing",
     appOnlyTitle: "App Only · Later",
     appOnlyBody:
       "This path is not in this launch. It is planned for the few smartwatches that already measure depth and water temperature.",
     appOnlyModel1: "Apple Watch Ultra",
     appOnlyModel2: "Apple Watch Ultra 2, Apple Watch Ultra 3",
     appOnlyModel3: "Galaxy Watch Ultra2",
-    watchScreenAlt: "Watch Dive app running on a smartwatch",
+    watchScreenAlt: "WatchDive app running on a smartwatch",
     footnote:
       "More Housing + App models are being checked — join the waitlist and the final list reaches you at launch.",
   },
@@ -263,23 +263,23 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   safety: {
     kicker: "In the water",
     h2: "Tested in water. With limits.",
-    point1Title: "Watch Dive housing · 197 ft (60 m) water-resistance test completed",
-    point1Body: "The Watch Dive housing completed a water-resistance test at 197 ft (60 m).",
+    point1Title: "WatchDive housing · 197 ft (60 m) water-resistance test completed",
+    point1Body: "The WatchDive housing completed a water-resistance test at 197 ft (60 m).",
     point2Title: "Ocean beta dives completed",
     point2Body: "Product beta testing was completed on real ocean dives.",
     point3Title: "Pressure and temperature, measured in the housing",
     point3Body:
       "Built-in pressure and water-temperature sensors send readings to the watch app over Bluetooth.",
     disclaimer:
-      "Watch Dive is a dive aid. It does not replace training. Dive within your certification and your limits, follow standard safety procedures, and carry a backup dive computer.",
+      "WatchDive is a dive aid. It does not replace training. Dive within your certification and your limits, follow standard safety procedures, and carry a backup dive computer.",
   },
   offer: {
-    imageAlt: "Watch Dive housing at the pool edge",
+    imageAlt: "WatchDive housing at the pool edge",
     kicker: "First 100 backers · 50% off",
     headline: "$299 $149 — 50% off.",
     headlineStrike: "$299",
     headlineNew: "$149",
-    lead: "Hear first when Watch Dive opens on Kickstarter. The first 100 backers get $149, before the $299 public price.",
+    lead: "Hear first when WatchDive opens on Kickstarter. The first 100 backers get $149, before the $299 public price.",
     leadHighlight: "Hear first",
   },
   creds: {
@@ -298,10 +298,10 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   faq: {
     kicker: "Questions",
     h2: "Questions and answers.",
-    q1: "Is Watch Dive a dive computer on its own?",
+    q1: "Is WatchDive a dive computer on its own?",
     a1: "No. It is a housing, a sensor and an app, for a compatible smartwatch.",
     q2: "How deep has the housing been tested?",
-    a2: "The Watch Dive housing has completed a water-resistance test at 197 ft (60 m). That test is not an independent certification, and it is not a promise for every environment. Dive within your training and the conditions of the day.",
+    a2: "The WatchDive housing has completed a water-resistance test at 197 ft (60 m). That test is not an independent certification, and it is not a promise for every environment. Dive within your training and the conditions of the day.",
     q3: "Does it show a safety stop and no-decompression time?",
     a3: "Yes. A safety stop, an ascent alert, depth, dive time, water temperature and no-decompression time.",
     q4: "Does it work for freediving?",
@@ -309,16 +309,16 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     q5: "When does Kickstarter open?",
     a5: "Launching on Kickstarter in December. The exact day is not set yet. Leave your email and we send the link when it is live.",
     q6: "Will my smartwatch work?",
-    a6: "This launch: Housing + App supports all other Apple Watch models and these Samsung smartwatches: Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro, Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra, Galaxy Watch8, Galaxy Watch8 Classic, and Galaxy Watch9. The Watch Dive housing uses its built-in DIVEROID pressure and water-temperature sensor with the app. Later, and not in this launch: App Only is planned for Apple Watch Ultra, Apple Watch Ultra 2, Apple Watch Ultra 3, and Galaxy Watch Ultra2, which have built-in depth (pressure) and water-temperature sensors.",
+    a6: "This launch: Housing + App supports all other Apple Watch models and these Samsung smartwatches: Galaxy Watch4, Galaxy Watch4 Classic, Galaxy Watch5, Galaxy Watch5 Pro, Galaxy Watch6, Galaxy Watch6 Classic, Galaxy Watch FE, Galaxy Watch7, Galaxy Watch Ultra, Galaxy Watch8, Galaxy Watch8 Classic, and Galaxy Watch9. The WatchDive housing uses its built-in DIVEROID pressure and water-temperature sensor with the app. Later, and not in this launch: App Only is planned for Apple Watch Ultra, Apple Watch Ultra 2, Apple Watch Ultra 3, and Galaxy Watch Ultra2, which have built-in depth (pressure) and water-temperature sensors.",
     q7: "How does it work?",
     a7: "The housing reads pressure and water temperature. Bluetooth carries the readings to the app on your smartwatch.",
     q8: "How long does the battery last, and can it be replaced?",
-    a8: "The battery warranty runs for two years or 1,000 dives, whichever comes first. After that, an authorized Watch Dive service center can replace a worn battery for a fee.",
+    a8: "The battery warranty runs for two years or 1,000 dives, whichever comes first. After that, an authorized WatchDive service center can replace a worn battery for a fee.",
   },
   footer: {
-    brand: "Watch Dive",
+    brand: "WatchDive",
     legal:
-      "© {year} Watch Dive, operated by DIVEROID LTD (company no. 16343651, registered in England). Launching soon on Kickstarter.",
+      "© {year} WatchDive, operated by DIVEROID LTD (company no. 16343651, registered in England). Launching soon on Kickstarter.",
     terms: "Terms",
     privacy: "Privacy Policy",
     nvidiaTrademark:
@@ -343,9 +343,9 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     aria: "Pre-launch waitlist places taken",
   },
   verify: {
-    metaTitle: "Confirm your email — Watch Dive",
-    metaDescription: "Confirm your Watch Dive waitlist email.",
-    back: "← Watch Dive",
+    metaTitle: "Confirm your email — WatchDive",
+    metaDescription: "Confirm your WatchDive waitlist email.",
+    back: "← WatchDive",
     confirmingTitle: "Confirming your email…",
     confirmingBody: "One moment while we confirm this address.",
     waitingTitle: "Confirm your email",
@@ -356,13 +356,13 @@ export const EN_FROZEN_LANDING_MESSAGES = {
       "You're on the list. We'll email you the Kickstarter link the moment the campaign opens in December.",
     buddyTitle: "Bring a buddy",
     buddyBody: "Send your link to the divers who'd want this.",
-    backHome: "Back to Watch Dive",
+    backHome: "Back to WatchDive",
     expiredTitle: "This link has expired",
     expiredBody:
-      "Confirmation links last 24 hours. Go back to the Watch Dive page and submit the form again for a fresh one.",
+      "Confirmation links last 24 hours. Go back to the WatchDive page and submit the form again for a fresh one.",
     invalidTitle: "This link is not valid",
     invalidBody:
-      "A newer confirmation email may have replaced it. Go back to the Watch Dive page and submit the form again.",
+      "A newer confirmation email may have replaced it. Go back to the WatchDive page and submit the form again.",
     errorTitle: "We could not confirm just now",
     errorBody: "Your link is still valid. Please try again.",
     tryAgain: "Try again",
@@ -378,15 +378,15 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     tryAgain: "Try again",
   },
   privacy: {
-    metaTitle: "Privacy Policy — Watch Dive",
+    metaTitle: "Privacy Policy — WatchDive",
     metaDescription:
-      "How Diveroid Ltd handles signup details and optional page measurement on the Watch Dive pre-launch page.",
+      "How Diveroid Ltd handles signup details and optional page measurement on the WatchDive pre-launch page.",
     back: "← Back to home",
-    h1: "Privacy Policy — Watch Dive Pre-Launch",
+    h1: "Privacy Policy — WatchDive Pre-Launch",
     effectiveLabel: "Effective date:",
-    effectiveDate: "October 7, 2026",
+    effectiveDate: "October 8, 2026",
     intro1:
-      'This Privacy Policy explains how Diveroid Ltd ("we", "us", "DIVEROID") handles your information when you sign up on the Watch Dive pre-launch page to receive updates about our upcoming Kickstarter campaign.',
+      'This Privacy Policy explains how Diveroid Ltd ("we", "us", "DIVEROID") handles your information when you sign up on the WatchDive pre-launch page to receive updates about our upcoming Kickstarter campaign.',
     intro2:
       "This page is for collecting launch interest only. It is not a store and does not process any payment.",
     s1Title: "1. Who we are",
@@ -397,17 +397,17 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s1Contact: "Privacy contact: help@diveroid.com",
     s2Title: "2. What we collect",
     s2Email:
-      "Email address (required) — to send the confirmation you request and, after you confirm, Watch Dive launch updates.",
+      "Email address (required) — to send the confirmation you request and, after you confirm, WatchDive launch updates.",
     s2Phone: "Phone number (optional) — only if you choose to receive a VIP SMS launch alert.",
     s2Security:
       "Security signals — abuse flags and a short-lived, keyed network bucket used in server memory to limit automated or repeated requests. We do not retain the raw IP address, the network bucket, or the full browser user-agent in the lead record.",
     s2Usage:
-      "Page measurement — device class (phone, tablet, or desktop), browser window size, page language, time zone, country code, time on the page, how far you scrolled, how long each section was on screen, and named clicks such as a signup button, with their approximate position on the screen. It also records the referring site's domain and the campaign tags in the link (source, medium, and campaign), grouped under a random session identifier that is kept only in that browser tab. In the EU/EEA, the UK and Switzerland, or when we cannot tell your country, it runs only after you choose Allow; elsewhere it runs by default and you can turn it off with Cookie settings at the bottom of the page. This record does not contain your email address, phone number, IP address, full browser user-agent, the text you type, your precise location, or an inferred age or gender, and it is not linked to your waitlist record. When their identifiers are configured, Google Analytics 4, Google Ads, the Meta pixel, and Microsoft Clarity heatmaps follow the same rule. Our support chat and Vercel Web Analytics can load with the page.",
+      "Page measurement — device class (phone, tablet, or desktop), browser window size, page language, time zone, country code, time on the page, how far you scrolled, how long each section was on screen, and named clicks such as a signup button, with their approximate position on the screen. It also records the referring site's domain and the campaign tags in the link (source, medium, and campaign), grouped under a random session identifier that is kept only in that browser tab. In the EU/EEA, the UK and Switzerland, or when we cannot tell your country, it runs only after you choose Allow; elsewhere it runs by default and you can turn it off with Cookie settings at the bottom of the page. This record does not contain your email address, phone number, IP address, full browser user-agent, the text you type, your precise location, or an inferred age or gender. When measurement is allowed, a page experiment stores its version for up to 30 days to keep return visits consistent and links the random session ID and experiment variant to a new signup, so we can compare saved and confirmed emails. The aggregate report contains no email addresses. When their identifiers are configured, Google Analytics 4, Google Ads, the Meta pixel, and Microsoft Clarity heatmaps follow the same rule. Our support chat and Vercel Web Analytics can load with the page.",
     s2NoPayment: "We do not collect payment details on this page.",
     s3Title: "3. Why we use it",
     s3Intro: "We use the information you provide to:",
     s3Item1: "send a one-time link to confirm that you control the email address;",
-    s3Item2: "send you a notification when Watch Dive launches on Kickstarter;",
+    s3Item2: "send you a notification when WatchDive launches on Kickstarter;",
     s3Item3: "share early-bird pricing and launch-related updates;",
     s3Item4: "protect the form and our email delivery service from abuse;",
     s3Item5:
@@ -421,7 +421,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
       "We use processors to run this page: Vercel for hosting and Web Analytics, Resend for confirmation and update email, Notion for waitlist records and, separately, page-measurement summaries, our own support chat, and Google and Meta only when those tags are enabled and measurement is on for you (see Section 4). An SMS provider is used only if you opt into a text alert. These providers may store data outside Korea, including in the United States. We share only what the service needs, and we never sell your personal information.",
     s6Title: "6. How long we keep it",
     s6Body:
-      "We keep waitlist details until the Watch Dive launch campaign ends, or until you ask us to delete them or unsubscribe, whichever comes first. Page-measurement summaries are kept for up to 12 months and then deleted. After a deletion request, we delete the matching records without undue delay.",
+      "We keep waitlist details until the WatchDive launch campaign ends, or until you ask us to delete them or unsubscribe, whichever comes first. Page-measurement summaries are kept for up to 12 months and then deleted. After a deletion request, we delete the matching records without undue delay.",
     s7Title: "7. Your rights",
     s7Intro: "You can at any time:",
     s7Item1: "ask what information we hold about you;",
@@ -440,30 +440,30 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     footerLine: "Diveroid Ltd · Registered in England · Company no. 16343651",
   },
   terms: {
-    metaTitle: "Terms of Use — Watch Dive",
-    metaDescription: "Terms of Use for the Watch Dive pre-launch page, operated by Diveroid Ltd",
+    metaTitle: "Terms of Use — WatchDive",
+    metaDescription: "Terms of Use for the WatchDive pre-launch page, operated by Diveroid Ltd",
     back: "← Back to home",
-    h1: "Terms of Use — Watch Dive Pre-Launch",
+    h1: "Terms of Use — WatchDive Pre-Launch",
     effectiveLabel: "Effective date:",
     effectiveDate: "July 30, 2026",
     intro:
-      'Welcome to the Watch Dive pre-launch page, operated by Diveroid Ltd ("we", "us", "DIVEROID"). By using this page and signing up, you agree to the following terms.',
+      'Welcome to the WatchDive pre-launch page, operated by Diveroid Ltd ("we", "us", "DIVEROID"). By using this page and signing up, you agree to the following terms.',
     s1Title: "1. What this page is",
     s1Body:
-      "This page lets you register your interest in Watch Dive and receive updates about our upcoming Kickstarter campaign. It is not a store. No purchase is made and no payment is taken here.",
+      "This page lets you register your interest in WatchDive and receive updates about our upcoming Kickstarter campaign. It is not a store. No purchase is made and no payment is taken here.",
     s2Title: "2. Pre-launch information",
     s2Body:
-      "Watch Dive is still in development. All details shown here — including features, compatibility, specifications, pricing (such as the early-bird price), and the launch date — are provided for information only and may change before or during the Kickstarter campaign. Signing up does not reserve a unit or guarantee a specific price.",
+      "WatchDive is still in development. All details shown here — including features, compatibility, specifications, pricing (such as the early-bird price), and the launch date — are provided for information only and may change before or during the Kickstarter campaign. Signing up does not reserve a unit or guarantee a specific price.",
     s3Title: "3. Email and SMS updates",
     s3Body:
       "Submitting the form requests one operational email containing a confirmation link. Your waitlist registration and agreement to receive launch and marketing updates are completed only when you use that link. If you also provide a phone number, you agree to the optional SMS update described beside that field. You can unsubscribe from future marketing at any time using the link in a marketing email or by contacting us. How we handle your data is described in our Privacy Policy.",
     s3PrivacyLink: "Privacy Policy",
     s4Title: "4. Intellectual property",
     s4Body:
-      "All content on this page — including the Watch Dive and DIVEROID names, logos, text, images, and videos — belongs to Diveroid Ltd or its licensors. You may not copy or reuse it without our permission.",
+      "All content on this page — including the WatchDive and DIVEROID names, logos, text, images, and videos — belongs to Diveroid Ltd or its licensors. You may not copy or reuse it without our permission.",
     s5Title: "5. Disclaimer",
     s5Body1:
-      "Watch Dive is a dive aid designed to work with a compatible smartwatch. When released, it is intended to support — not replace — proper dive training, certification, and a backup dive computer. Always dive within your training and follow safe diving practices.",
+      "WatchDive is a dive aid designed to work with a compatible smartwatch. When released, it is intended to support — not replace — proper dive training, certification, and a backup dive computer. Always dive within your training and follow safe diving practices.",
     s5Body2:
       'This page is provided "as is" without warranties of any kind. We are not liable for any damages arising from your use of this page.',
     s6Title: "6. Governing law",

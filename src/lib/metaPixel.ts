@@ -144,7 +144,8 @@ function canTrackStandardEvent(eventId: string): boolean {
     hasMetaMeasurementConsent() &&
     Boolean(window.fbq) &&
     window.__watchDiveMetaPixelId === META_PIXEL_ID &&
-    /^[A-Za-z0-9._:-]{8,64}$/.test(eventId)
+    // 64 hex chars plus a short suffix such as `:phone`.
+    /^[A-Za-z0-9._:-]{8,80}$/.test(eventId)
   );
 }
 

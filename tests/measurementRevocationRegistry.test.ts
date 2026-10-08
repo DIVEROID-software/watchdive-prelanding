@@ -223,7 +223,7 @@ test("source revocation creates an excluded PII-free tombstone and clears only e
     occurredAt: "2026-08-02T09:00:00.000Z",
   });
   assert.equal(result.matchedRows, 1);
-  assert.deepEqual(fake.patchCalls, ["target"]);
+  assert.deepEqual(fake.patchCalls, ["target", "target"]);
   assert.equal(await sourceRegistry.isRevoked(AUTHORITY), true);
   assert.equal(await sourceRegistry.isRevoked(OTHER_AUTHORITY), false);
 

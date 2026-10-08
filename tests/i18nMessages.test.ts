@@ -204,7 +204,7 @@ test("transactional email copy contains no unapproved hard claims", () => {
     ],
     [
       "product certification claim",
-      /\bcertified\b|(?:제품|기기|Watch Dive).{0,20}인증(?:된|받은|완료)|(?:产品|產品|设备|裝置|Watch Dive).{0,20}(?:已认证|已認證|认证通过|認證通過)|(?:製品|機器|Watch Dive).{0,20}(?:認証済み|認定済み)|(?:producto|dispositivo|produit|appareil|Produkt|Gerät|produto|dispositivo|Watch Dive).{0,24}(?:certificad[oa]|certifié|zertifiziert|certificado)/iu,
+      /\bcertified\b|(?:제품|기기|WatchDive).{0,20}인증(?:된|받은|완료)|(?:产品|產品|设备|裝置|WatchDive).{0,20}(?:已认证|已認證|认证通过|認證通過)|(?:製品|機器|WatchDive).{0,20}(?:認証済み|認定済み)|(?:producto|dispositivo|produit|appareil|Produkt|Gerät|produto|dispositivo|WatchDive).{0,24}(?:certificad[oa]|certifié|zertifiziert|certificado)/iu,
     ],
     [
       "all-model compatibility claim",
@@ -640,15 +640,15 @@ test("owner-confirmed proof cards state bounded completion in every locale", () 
 
   assert.deepEqual(FROZEN_LANDING_MESSAGES.ko.safety, {
     ...FROZEN_LANDING_MESSAGES.ko.safety,
-    point1Title: "Watch Dive 하우징 · 60m 방수 테스트 완료",
-    point1Body: "Watch Dive 하우징은 60m 방수 테스트를 완료했습니다.",
+    point1Title: "WatchDive 하우징 · 60m 방수 테스트 완료",
+    point1Body: "WatchDive 하우징은 60m 방수 테스트를 완료했습니다.",
     point2Title: "해양 다이빙 베타 테스트 완료",
     point2Body: "실제 바다에서 제품 베타 테스트를 완료했습니다.",
   });
   assert.deepEqual(FROZEN_LANDING_MESSAGES.en.safety, {
     ...FROZEN_LANDING_MESSAGES.en.safety,
-    point1Title: "Watch Dive housing · 197 ft (60 m) water-resistance test completed",
-    point1Body: "The Watch Dive housing completed a water-resistance test at 197 ft (60 m).",
+    point1Title: "WatchDive housing · 197 ft (60 m) water-resistance test completed",
+    point1Body: "The WatchDive housing completed a water-resistance test at 197 ft (60 m).",
     point2Title: "Ocean beta dives completed",
     point2Body: "Product beta testing was completed on real ocean dives.",
   });
@@ -951,6 +951,6 @@ test("the document language follows the localized path instead of staying hard-c
   const rootSource = readFileSync(new URL("../src/routes/__root.tsx", import.meta.url), "utf8");
 
   assert.match(rootSource, /localeFromPathname\(pathname\)/);
-  assert.match(rootSource, /<html\s+lang=\{locale\}>/);
+  assert.match(rootSource, /<html\s+lang=\{locale\}(?:\s+suppressHydrationWarning)?>/);
   assert.doesNotMatch(rootSource, /<html\s+lang=["']en["']/);
 });

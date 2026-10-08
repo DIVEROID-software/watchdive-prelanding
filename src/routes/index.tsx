@@ -7,7 +7,9 @@ import { toast } from "sonner";
 
 import { track } from "@vercel/analytics";
 import {
+  grantAttemptMeasurement,
   joinWaitlist,
+  withdrawAttemptMeasurement,
   pollVerification,
   getReferralCount,
   loadWaitlistCount,
@@ -17,6 +19,20 @@ import { ProductGallery } from "@/components/product-gallery";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LaunchNotice } from "@/components/launch-notice";
 import { CookieSettingsLink } from "@/components/cookie-choice-bar";
+import {
+  expectServerWithdrawal,
+  markWithdrawalRecorded,
+  MEASUREMENT_CHOICE_EVENT,
+  clearWithdrawalRecorded,
+  MeasurementAsk,
+  measurementAskEligible,
+  noteMeasurementSettled,
+  withdrawalNeedsRetry,
+  type MeasurementChoiceDetail,
+} from "@/components/measurement-ask";
+import { initGoogleTag } from "@/lib/googleTag";
+import { initClarity } from "@/lib/clarity";
+import { startPageBehavior } from "@/lib/pageBehavior";
 import { ReviewAvatar } from "@/components/review-avatar";
 import { ReviewTicker } from "@/components/review-ticker";
 import { WaitlistProgress } from "@/components/waitlist-progress";
@@ -26,6 +42,8 @@ import { nextPollDelayMs, VERIFY_POLL_MAX_ATTEMPTS } from "@/lib/verifyPolling";
 import {
   getMetaCookies,
   hasMetaMeasurementConsent,
+  initMetaPixel,
+  measurementPermitted,
   newMetaEventId,
   trackMetaCustom,
   trackMetaEmailVerified,
@@ -33,6 +51,14 @@ import {
   trackMetaPhoneLead,
 } from "@/lib/metaPixel";
 import { getAttribution } from "@/lib/attribution";
+import {
+  currentLandingVariant,
+  getConversionExperiment,
+  markConversionMilestone,
+  closeExperimentEnrollmentOnSubmit,
+} from "@/lib/conversionExperimentClient";
+import { conversionCopy } from "@/lib/conversionCopy";
+import { signupActionsVisible } from "@/lib/signupVisibility";
 import { trackClarity } from "@/lib/clarity";
 import {
   trackGoogleFormStart,
@@ -391,35 +417,47 @@ function LazyVideo({
  */
 function StickyLaunchBanner() {
   const m = useFrozenLandingMessages();
+  const copy = conversionCopy[useCurrentLocale()];
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    const forms = [...document.querySelectorAll("form")];
-    const visibleForms = new Set<Element>();
     const viewport = window.visualViewport;
     const update = () => {
       const focused = document.activeElement;
       const editing = focused instanceof HTMLElement && !!focused.closest("form, #dc-win");
       const keyboardOpen = !!viewport && viewport.height < window.innerHeight * 0.75;
-      const hide = visibleForms.size > 0 || editing || keyboardOpen;
+      const forms = [...document.querySelectorAll("form[data-wd-signup]")];
+      const height = viewport?.height ?? window.innerHeight;
+      const improved = currentLandingVariant() === "form_first";
+      const actionable = forms.some((form) => {
+        if (!improved) {
+          const r = form.getBoundingClientRect();
+          return r.top < height && r.bottom > 0;
+        }
+        return signupActionsVisible(form);
+      });
+      const hide = actionable || editing || keyboardOpen;
       setHidden(hide);
       document.documentElement.dataset.wdForm = hide ? "active" : "";
     };
-    const observer = new IntersectionObserver((entries) => {
-      // Entries contain only changed targets, not every observed form.
-      for (const entry of entries) {
-        if (entry.isIntersecting) visibleForms.add(entry.target);
-        else visibleForms.delete(entry.target);
-      }
-      update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.querySelector(".wd-scroll") ?? document.body, {
+      childList: true,
+      subtree: true,
     });
-    forms.forEach((form) => observer.observe(form));
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    const afterChoice = () => requestAnimationFrame(update);
+    window.addEventListener(MEASUREMENT_CHOICE_EVENT, afterChoice);
     document.addEventListener("focusin", update);
     document.addEventListener("focusout", update);
     viewport?.addEventListener("resize", update);
     update();
     return () => {
       observer.disconnect();
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      window.removeEventListener(MEASUREMENT_CHOICE_EVENT, afterChoice);
       document.removeEventListener("focusin", update);
       document.removeEventListener("focusout", update);
       viewport?.removeEventListener("resize", update);
@@ -437,12 +475,31 @@ function StickyLaunchBanner() {
   const bar = (
     <a
       href="#offer-form"
+      onClick={(event) => {
+        if (currentLandingVariant() !== "form_first") return;
+        const inputs = [
+          ...document.querySelectorAll<HTMLInputElement>(
+            'form[data-wd-signup] input[type="email"]',
+          ),
+        ];
+        const nearest = inputs.sort(
+          (a, b) =>
+            Math.abs(a.getBoundingClientRect().top) - Math.abs(b.getBoundingClientRect().top),
+        )[0];
+        if (!nearest) return;
+        event.preventDefault();
+        nearest.scrollIntoView({ block: "center", behavior: "auto" });
+        nearest.focus({ preventScroll: true });
+      }}
       className="wd-notify fixed inset-x-0 bottom-0 z-40 flex h-[var(--wd-bar-space)] items-center justify-center gap-3 border-t border-white/15 bg-[#201748] px-4 pb-[env(safe-area-inset-bottom)] text-[#F6FAFC] sm:inset-x-auto sm:bottom-4 sm:right-4 sm:h-11 sm:w-auto sm:rounded-full sm:border sm:px-4 sm:pb-0"
     >
       <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#3D2683]">
         ↓
       </span>
-      <span className="min-w-0 text-body font-medium leading-tight">{m.cta.label}</span>
+      <span className="min-w-0 text-body font-medium leading-tight">
+        <span className="wd-control-copy">{m.cta.label}</span>
+        <span className="wd-experiment-copy">{copy.cta}</span>
+      </span>
     </a>
   );
   return portalRoot ? createPortal(bar, portalRoot) : bar;
@@ -555,7 +612,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
                 try {
                   if (navigator.share) {
                     await navigator.share({
-                      title: "Watch Dive",
+                      title: "WatchDive",
                       text: m.referral.shareText,
                       url: shareUrl,
                     });
@@ -625,12 +682,17 @@ function CheckInboxCard({
   onResend,
   onStartOver,
   resending,
+  onAllowMeasurement,
+  onDeclineMeasurement,
 }: {
   message: string;
   email: string;
   onResend: () => void;
   onStartOver: () => void;
   resending: boolean;
+  /** Present when this browser may still be asked about measurement. */
+  onAllowMeasurement?: () => boolean | void | Promise<boolean | void>;
+  onDeclineMeasurement?: () => boolean | void | Promise<boolean | void>;
 }) {
   const m = useFrozenLandingMessages();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -720,6 +782,9 @@ function CheckInboxCard({
         </button>
       </div>
       <p className="mt-2 text-xs leading-relaxed text-white/65">{message}</p>
+      {onAllowMeasurement && (
+        <MeasurementAsk onAllow={onAllowMeasurement} onDecline={onDeclineMeasurement} />
+      )}
     </div>
   );
 }
@@ -731,6 +796,7 @@ type FormPlacement = "hero" | "offer";
 function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePhone?: boolean }) {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
+  const copy = conversionCopy[locale];
   const [pending, setPending] = useState<string | null>(null);
   const [closed, setClosed] = useState<string | null>(null);
   const [handle, setHandle] = useState("");
@@ -742,12 +808,39 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
   const formStartSent = useRef(false); // FormStart once per form instance
+  // Decided once, when the inbox card appears: asking is for browsers that
+  // have not answered yet in a country where measurement is opt-in.
+  const [askMeasurement, setAskMeasurement] = useState(false);
   // A ring that expands once, the first time the form is actually on screen.
   // It points at the next action after an anchor jump; it never repeats, so it
   // guides rather than nags.
   const formRef = useRef<HTMLFormElement>(null);
   const [ring, setRing] = useState(false);
   const ringShown = useRef(false);
+
+  useEffect(() => {
+    const check = () => {
+      const form = formRef.current;
+      if (form && signupActionsVisible(form)) markConversionMilestone("formVisible");
+    };
+    const observer = new ResizeObserver(check);
+    if (formRef.current) observer.observe(formRef.current);
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    window.addEventListener("watchdive:experiment-ready", check);
+    const afterChoice = () => requestAnimationFrame(check);
+    window.addEventListener(MEASUREMENT_CHOICE_EVENT, afterChoice);
+    window.visualViewport?.addEventListener("resize", check);
+    check();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+      window.removeEventListener("watchdive:experiment-ready", check);
+      window.removeEventListener(MEASUREMENT_CHOICE_EVENT, afterChoice);
+      window.visualViewport?.removeEventListener("resize", check);
+    };
+  }, [pending]);
 
   useEffect(() => {
     const element = formRef.current;
@@ -800,7 +893,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // cheap: twelve polls on a jittered backoff over about five minutes, paused
   // whenever the tab is hidden, and never more than one request in flight. The
   // lead is confirmed server-side either way; this only drives the live
-  // hand-off and the `EmailVerified` pixel leg. `Lead` already fired at submit.
+  // hand-off and the `EmailVerified` pixel leg. The submit `Lead` fires here
+  // only when this browser already allows measurement. A later Allow sends it
+  // from the server, under the server's own id.
   useEffect(() => {
     if (!handle || verified) return;
 
@@ -839,7 +934,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           setRefCode(res.refCode ?? "");
           setVerified(true);
           track("waitlist_verified", { source: id });
-          if (res.browserLead) {
+          if (res.browserLead && measurementPermitted()) {
             trackMetaEmailVerified(res.browserLead.eventId, res.browserLead.source);
             trackGoogleLead(res.browserLead.eventId, res.browserLead.source);
             trackClarity("generate_lead", res.browserLead.source);
@@ -875,6 +970,30 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     return stop;
   }, [handle, verified, id]);
 
+  // The banner can also be answered while this signup is pending. Its answer
+  // applies to this signup just like the inbox card's.
+  useEffect(() => {
+    if (!handle) return;
+    const onChoice = (event: Event) => {
+      const detail = (event as CustomEvent<MeasurementChoiceDetail>).detail;
+      if (!detail || detail.origin !== "banner") return;
+      if (detail.choice === "granted") {
+        if (!measurementPermitted()) return;
+        void allowMeasurementAfterSubmit().then((recorded) => {
+          noteMeasurementSettled({ choice: "granted", recorded });
+        });
+      } else {
+        expectServerWithdrawal();
+        void declineMeasurementAfterSubmit().then((recorded) => {
+          noteMeasurementSettled({ choice: "denied", recorded });
+        });
+      }
+    };
+    window.addEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
+    return () => window.removeEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handle]);
+
   if (verified) {
     return <ReferralSuccess refCode={refCode} />;
   }
@@ -898,6 +1017,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         attribution: getAttribution(),
         honeypot: hp,
         measurementConsent: hasMetaMeasurementConsent(),
+        experiment: getConversionExperiment(),
         locale,
         ...(submitEventId ? { submitEventId } : {}),
         ...getMetaCookies(),
@@ -907,10 +1027,85 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       setClosed(res.message);
       return res;
     }
+    clearWithdrawalRecorded();
     setHandle(res.handle);
     setPending(res.message);
     return res;
   };
+
+  // Allowed after the submit (inbox card, or the banner while the inbox card
+  // is up): start the tags this browser now permits and record the grant.
+  // The attempt answer is always `{ ok: true }`, so it cannot carry the Lead.
+  // The server sends that Lead. This calls the grant a few times so a write
+  // whose confirming read failed gets another chance at the same server id,
+  // then polls once for the EmailVerified pixel if the link was already opened.
+  async function allowMeasurementAfterSubmit(): Promise<boolean> {
+    if (!measurementPermitted()) return false;
+    initMetaPixel();
+    initGoogleTag();
+    initClarity();
+    startPageBehavior();
+    if (!handle) return false;
+    const attribution = getAttribution();
+    const cookies = getMetaCookies();
+    const fbc =
+      cookies.fbc ||
+      (attribution.fbclid && attribution.capturedAt
+        ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
+        : undefined);
+    let accepted = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await grantAttemptMeasurement({
+          data: {
+            handle,
+            ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
+            ...(fbc ? { fbc } : {}),
+          },
+        });
+        accepted = true;
+      } catch {
+        // A thrown grant is not `{ ok: true }`. Keep the remaining tries.
+      }
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+    }
+    if (!accepted || !measurementPermitted()) return false;
+    try {
+      const polled = await pollVerification({ data: { handle } });
+      if (polled.browserLead && measurementPermitted()) {
+        trackMetaEmailVerified(polled.browserLead.eventId, polled.browserLead.source);
+        trackGoogleLead(polled.browserLead.eventId, polled.browserLead.source);
+        if (polled.browserLead.hasPhone) {
+          trackMetaPhoneLead(`${polled.browserLead.eventId}:phone`, polled.browserLead.source);
+          trackGooglePhone(`${polled.browserLead.eventId}:phone`, polled.browserLead.source);
+        }
+      }
+    } catch {
+      // The grant calls already landed. The poll effect retries EmailVerified.
+    }
+    return true;
+  }
+
+  // Refused after the submit: recorded on the signup, so a confirmation opened
+  // anywhere later sends nothing. `nextHandle` is the handle a resend just
+  // returned; the React state still holds the previous attempt until paint.
+  async function declineMeasurementAfterSubmit(nextHandle?: string): Promise<boolean> {
+    const current = nextHandle || handle;
+    if (!current) return true;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await withdrawAttemptMeasurement({ data: { handle: current } });
+        if (res.recorded) {
+          markWithdrawalRecorded();
+          return true;
+        }
+      } catch {
+        // A dropped call is not a recorded refusal.
+      }
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+    }
+    return false;
+  }
 
   if (closed) {
     return (
@@ -935,7 +1130,10 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           if (loading) return;
           setLoading(true);
           try {
-            await submit();
+            const res = await submit();
+            if (res?.status === "pending" && res.handle && withdrawalNeedsRetry()) {
+              await declineMeasurementAfterSubmit(res.handle);
+            }
             toast.success(m.toasts.resent);
           } catch {
             toast.error(m.toasts.error);
@@ -943,6 +1141,8 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
             setLoading(false);
           }
         }}
+        onAllowMeasurement={askMeasurement ? allowMeasurementAfterSubmit : undefined}
+        onDeclineMeasurement={askMeasurement ? declineMeasurementAfterSubmit : undefined}
         onStartOver={() => {
           // A typo is otherwise unrecoverable without a page reload.
           setPending(null);
@@ -961,6 +1161,8 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       onSubmit={async (e) => {
         e.preventDefault();
         if (loading) return;
+        closeExperimentEnrollmentOnSubmit();
+        markConversionMilestone("submitAttempted");
         setLoading(true);
         try {
           // Captured here, in the browser that actually chose it, and carried
@@ -968,6 +1170,11 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // must not be able to widen it.
           const submitEventId = newMetaEventId();
           const res = await submit(submitEventId);
+          setAskMeasurement(
+            res.status === "pending" &&
+              !hp.trim() &&
+              (measurementAskEligible() || withdrawalNeedsRetry()),
+          );
           // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });
@@ -976,7 +1183,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // server sent the Conversions API leg under the same event id, so
           // Meta counts one Lead. A tripped honeypot is knowable right here,
           // and a bot is not something to optimise for.
-          if (res.status === "pending" && !hp.trim()) {
+          if (res.status === "pending" && !hp.trim() && measurementPermitted()) {
             trackMetaLead(submitEventId, id);
             trackGoogleSubmit(submitEventId, id);
             trackClarity("sign_up", id);
@@ -1008,7 +1215,11 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         />
       )}
 
-      <p id={`${id}-confirm-note`} className="text-sm leading-relaxed text-white/90">
+      <p className="wd-experiment-copy wd-experiment-benefit">{copy.benefit}</p>
+      <p
+        id={`${id}-confirm-note`}
+        className="wd-control-copy text-sm leading-relaxed text-white/90"
+      >
         {m.form.confirmRequired}
       </p>
       <div className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -1020,11 +1231,12 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           autoCapitalize="none"
           spellCheck={false}
           aria-label={m.form.step1}
-          aria-describedby={`${id}-confirm-note`}
+          aria-describedby={`${id}-confirm-note ${id}-experiment-note`}
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onFocus={() => {
+            markConversionMilestone("formFocused");
             if (!formStartSent.current) {
               formStartSent.current = true;
               trackMetaCustom("FormStart", { source: id });
@@ -1051,8 +1263,21 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           disabled={loading}
           className="wd-submit order-3 inline-flex min-h-14 items-center justify-center rounded-xl border border-white/45 bg-[#3D2683] px-5 py-3 font-semibold text-[#F6FAFC] hover:brightness-110 active:scale-[0.99] transition sm:order-2"
         >
-          {loading ? m.form.saving : m.cta.label}
+          {loading ? (
+            m.form.saving
+          ) : (
+            <>
+              <span className="wd-control-copy">{m.cta.label}</span>
+              <span className="wd-experiment-copy">{copy.cta}</span>
+            </>
+          )}
         </button>
+      </div>
+
+      <div id={`${id}-experiment-note`} className="wd-experiment-copy wd-experiment-note">
+        <p className="font-semibold">{copy.reassurance}</p>
+        <p>{copy.confirmation}</p>
+        <p className="wd-experiment-terms">{copy.terms}</p>
       </div>
 
       {/* Never pre-ticked, and separate from the email signup: WD-SMS-CONSENT-V1. */}
@@ -1071,7 +1296,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       <p role="status" className="wd-queued-note">
         {m.form.queued}
       </p>
-      <p className="wd-signup-steps text-xs text-white/80">
+      <p className="wd-control-copy wd-signup-steps text-xs text-white/80">
         <span>
           <b>1</b> {m.form.step1}
         </span>
@@ -1137,6 +1362,7 @@ const HOLD_EARLY_SUBMIT_JS = `document.addEventListener("submit",function(e){var
  */
 function Hero() {
   const m = useFrozenLandingMessages();
+  const copy = conversionCopy[useCurrentLocale()];
   const [before, highlight, after] = splitHighlightedCopy(m.hero.h1, m.hero.h1Highlight);
   return (
     <header className="wd-hero-new text-white">
@@ -1150,6 +1376,9 @@ function Hero() {
             {after}
           </h1>
           <p className="wd-hero-sub text-body text-[#F6FAFC]">{m.hero.sub}</p>
+          <a href="#compatibility" className="wd-experiment-copy wd-experiment-compatibility">
+            {copy.compatibility} <span aria-hidden>↗</span>
+          </a>
         </div>
         <div className="wd-hero-media">
           <HeroPhoto />
