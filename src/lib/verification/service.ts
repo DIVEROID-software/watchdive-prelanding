@@ -72,6 +72,11 @@ export type VerifiedLeadDispatch = (
     phone?: string;
     source: string;
     landingPath?: string;
+    /**
+     * Re-reads the row. The dispatcher calls it between the website event and
+     * the CRM event, so a refusal that commits during the first stops the second.
+     */
+    stillAllowed?: () => Promise<boolean>;
   } & ConversionContext,
 ) => Promise<void | boolean>;
 
@@ -738,6 +743,8 @@ async function sendConfirmation(
   if (!dependencies.dispatchVerifiedLead) return false;
   const row = await rowAllowsSend(pageId, signedConsent, dependencies);
   if (!row || !(row.emailVerified || row.status === "verified")) return false;
+  const stillAllowed = async () =>
+    Boolean(await rowAllowsSend(pageId, signedConsent, dependencies));
   const acknowledged = await dependencies
     .dispatchVerifiedLead({
       eventId,
@@ -746,11 +753,12 @@ async function sendConfirmation(
       source: row.source,
       ...(row.landingPath ? { landingPath: row.landingPath } : {}),
       ...conversionContext(row, context),
+      stillAllowed,
     })
     .catch(() => false);
   // Legacy injected dispatchers return void; production returns Meta's receipt.
   if (acknowledged === false) return false;
-  return Boolean(await rowAllowsSend(pageId, signedConsent, dependencies));
+  return stillAllowed();
 }
 
 /**

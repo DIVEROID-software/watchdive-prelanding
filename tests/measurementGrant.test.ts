@@ -854,3 +854,22 @@ test("under Global Privacy Control a consented submit sends no server Lead, new 
   assert.equal(submits.length, 0);
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHHELD);
 });
+
+test("a refusal committed during the website call stops the CRM leg (stillAllowed)", async () => {
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  clock = new Date(clock.getTime() + 60_000);
+  const crm: string[] = [];
+  const confirmed = await confirmVerificationService(mailer.sent[0].token, {
+    ...deps(),
+    dispatchVerifiedLead: async (input: Record<string, unknown>) => {
+      verified.push(input);
+      await store.recordMeasurementWithdrawal(onlyRow().pageId);
+      const allowed = input.stillAllowed as () => Promise<boolean>;
+      if (await allowed()) crm.push("LeadVerified");
+      return true;
+    },
+  });
+  assert.equal(verified.length, 1, "the website event had already left");
+  assert.equal(crm.length, 0);
+  assert.equal(confirmed.browserLead, undefined);
+});

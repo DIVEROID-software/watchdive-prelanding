@@ -15,12 +15,18 @@ import { cookieBarShouldYield } from "@/lib/cookieBarPlacement";
 import {
   announceMeasurementChoice,
   clearWithdrawalRecorded,
+  expectServerWithdrawal,
+  markWithdrawalRecorded,
   MEASUREMENT_CHOICE_EVENT,
   MEASUREMENT_SETTLED_EVENT,
+  noteMeasurementSettled,
   takeServerWithdrawalExpected,
+  withdrawalNeedsRetry,
   type MeasurementChoiceDetail,
   type MeasurementSettledDetail,
 } from "@/components/measurement-ask";
+import { storedSignupHandles } from "@/lib/signupHandles";
+import { withdrawStoredSignups } from "@/lib/signupHandleWithdrawal";
 
 type ChoiceCopy = {
   /** Banner heading. */
@@ -46,7 +52,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     privacy: "Privacy Policy",
     settings: "Cookie settings",
     retry: "Try again",
-    retryBody: "Measurement is off in this browser. We couldn’t confirm your choice was saved. Please try again.",
+    retryBody:
+      "Measurement is off in this browser. We couldn’t confirm your choice was saved. Please try again.",
   },
   ko: {
     title: "개인정보 선택",
@@ -56,7 +63,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     privacy: "개인정보처리방침",
     settings: "쿠키 설정",
     retry: "다시 시도",
-    retryBody: "이 브라우저의 측정은 꺼져 있어요. 선택 사항 저장을 확인하지 못했어요. 다시 시도해 주세요.",
+    retryBody:
+      "이 브라우저의 측정은 꺼져 있어요. 선택 사항 저장을 확인하지 못했어요. 다시 시도해 주세요.",
   },
   "zh-CN": {
     title: "您的隐私选择",
@@ -96,7 +104,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     privacy: "Política de privacidad",
     settings: "Cookies",
     retry: "Intentar de nuevo",
-    retryBody: "En este navegador la medición está desactivada. El registro aún no tiene el rechazo.",
+    retryBody:
+      "En este navegador la medición está desactivada. El registro aún no tiene el rechazo.",
   },
   fr: {
     title: "Vos choix de confidentialité",
@@ -106,7 +115,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     privacy: "Politique de confidentialité",
     settings: "Cookies",
     retry: "Réessayer",
-    retryBody: "La mesure est coupée dans ce navigateur. Le refus n'est pas encore sur l'inscription.",
+    retryBody:
+      "La mesure est coupée dans ce navigateur. Le refus n'est pas encore sur l'inscription.",
   },
   de: {
     title: "Deine Datenschutz-Einstellungen",
@@ -116,7 +126,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     privacy: "Datenschutzerklärung",
     settings: "Cookie-Einstellungen",
     retry: "Erneut versuchen",
-    retryBody: "In diesem Browser ist die Messung aus. Die Absage steht noch nicht bei der Anmeldung.",
+    retryBody:
+      "In diesem Browser ist die Messung aus. Die Absage steht noch nicht bei der Anmeldung.",
   },
   "pt-BR": {
     title: "Suas escolhas de privacidade",
@@ -160,6 +171,19 @@ export function CookieChoiceBar() {
   const [open, setOpen] = useState(false);
   const [withdrawPending, setWithdrawPending] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
+
+  // A refusal stored here whose server write was never confirmed (the page
+  // was reloaded, or "Wrong address?" dropped the inbox card's handle): try
+  // again with the handles this browser kept, so a confirmation opened in a
+  // mail app cannot convert past it.
+  useEffect(() => {
+    if (!withdrawalNeedsRetry()) return;
+    const handles = storedSignupHandles();
+    if (handles.length === 0) return;
+    void withdrawStoredSignups(handles).then((recorded) => {
+      if (recorded) markWithdrawalRecorded();
+    });
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -287,6 +311,10 @@ export function CookieChoiceBar() {
     if (typeof window !== "undefined" && window.clarity) {
       window.clarity("consentv2", { ad_Storage: "denied", analytics_Storage: "denied" });
     }
+    // Every signup this browser made and still holds a handle for gets the
+    // refusal on its row, not only the one an inbox card has on screen.
+    const kept = storedSignupHandles();
+    if (kept.length > 0) expectServerWithdrawal();
     announceMeasurementChoice({ choice: "denied", origin: "banner" });
     // Listeners run before this returns. A pending signup sets the flag; with
     // no signup, the local refusal is the whole record and the bar can close.
@@ -294,6 +322,12 @@ export function CookieChoiceBar() {
       setWithdrawPending(false);
       setOpen(false);
       return;
+    }
+    if (kept.length > 0) {
+      void withdrawStoredSignups(kept).then((recorded) => {
+        if (recorded) markWithdrawalRecorded();
+        noteMeasurementSettled({ choice: "denied", recorded });
+      });
     }
     setWithdrawPending(true);
   }

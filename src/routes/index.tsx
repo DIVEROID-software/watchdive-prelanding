@@ -30,6 +30,7 @@ import {
   withdrawalNeedsRetry,
   type MeasurementChoiceDetail,
 } from "@/components/measurement-ask";
+import { rememberSignupHandle } from "@/lib/signupHandles";
 import { initGoogleTag } from "@/lib/googleTag";
 import { initClarity } from "@/lib/clarity";
 import { startPageBehavior } from "@/lib/pageBehavior";
@@ -1029,6 +1030,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     }
     clearWithdrawalRecorded();
     setHandle(res.handle);
+    // Kept past a reload or "Wrong address?", so a later refusal (footer
+    // Cookie settings included) still reaches this signup's row.
+    rememberSignupHandle(res.handle);
     setPending(res.message);
     return res;
   };
