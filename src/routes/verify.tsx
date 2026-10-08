@@ -14,7 +14,6 @@ import {
   initMetaPixel,
   measurementPermitted,
   trackMetaEmailVerified,
-  trackMetaLead,
   trackMetaPhoneLead,
 } from "@/lib/metaPixel";
 import type { BrowserLead } from "@/lib/verification/contracts";
@@ -119,12 +118,8 @@ export function VerifyPage() {
    * event ids so each pair dedupes. The pixel starts here and only here — after
    * every request that carries the token has already been made.
    */
-  const fireConversions = (sent: {
-    browserLead?: BrowserLead;
-    submitLead?: { eventId: string; source: string };
-  }) => {
+  const fireConversions = (sent: { browserLead?: BrowserLead }) => {
     initMetaPixel();
-    if (sent.submitLead) trackMetaLead(sent.submitLead.eventId, sent.submitLead.source);
     if (sent.browserLead) {
       trackMetaEmailVerified(sent.browserLead.eventId, sent.browserLead.source);
       if (sent.browserLead.hasPhone) {
@@ -149,15 +144,16 @@ export function VerifyPage() {
   };
 
   /** Refused here: recorded on the signup so nothing is sent for it later. */
-  const declineMeasurement = async () => {
-    if (!token.current) return;
+  const declineMeasurement = async (): Promise<boolean> => {
+    if (!token.current) return true;
     for (let attempt = 0; attempt < 4; attempt++) {
       const res = await withdrawConfirmationMeasurement({ data: { token: token.current } }).catch(
         () => undefined,
       );
-      if (res?.recorded) return;
+      if (res?.recorded) return true;
       await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
     }
+    return false;
   };
 
   const confirm = async () => {
@@ -174,6 +170,7 @@ export function VerifyPage() {
       const result = await confirmVerification({
         data: {
           token: token.current,
+          ...(getMetaMeasurementConsent() === "denied" ? { refused: true } : {}),
           ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
           ...(cookies.fbc ? { fbc: cookies.fbc } : {}),
         },

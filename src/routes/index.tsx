@@ -648,7 +648,7 @@ function CheckInboxCard({
   resending: boolean;
   /** Present when this browser may still be asked about measurement. */
   onAllowMeasurement?: () => void | Promise<void>;
-  onDeclineMeasurement?: () => void | Promise<void>;
+  onDeclineMeasurement?: () => Promise<boolean | void>;
 }) {
   const m = useFrozenLandingMessages();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -971,7 +971,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       (attribution.fbclid && attribution.capturedAt
         ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
         : undefined);
-    const res = await grantAttemptMeasurement({
+    // Conversions for this grant are sent by the server only; the answer
+    // carries nothing to fire.
+    await grantAttemptMeasurement({
       data: {
         handle,
         source: id,
@@ -979,26 +981,19 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         ...(fbc ? { fbc } : {}),
       },
     });
-    if (res.submitLead) {
-      trackMetaLead(res.submitLead.eventId, res.submitLead.source);
-      trackGoogleSubmit(res.submitLead.eventId, res.submitLead.source);
-    }
-    if (res.browserLead) {
-      trackMetaEmailVerified(res.browserLead.eventId, res.browserLead.source);
-      trackGoogleLead(res.browserLead.eventId, res.browserLead.source);
-    }
   }
 
   // Refused after the submit: recorded on the signup, so a confirmation opened
   // anywhere later sends nothing.
-  async function declineMeasurementAfterSubmit() {
-    if (!handle) return;
+  async function declineMeasurementAfterSubmit(): Promise<boolean> {
+    if (!handle) return true;
     // Retried until the server says the refusal is on the signup.
     for (let attempt = 0; attempt < 4; attempt++) {
       const res = await withdrawAttemptMeasurement({ data: { handle } }).catch(() => undefined);
-      if (res?.recorded) return;
+      if (res?.recorded) return true;
       await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
     }
+    return false;
   }
 
   if (closed) {

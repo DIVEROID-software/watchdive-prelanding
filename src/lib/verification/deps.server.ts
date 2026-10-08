@@ -52,7 +52,8 @@ export function createServiceDependencies(
     // The submit `Lead`, sent late when the person allows measurement on the
     // inbox card. Same event id as the browser leg fired at that moment.
     dispatchSubmitLead: async (input) => {
-      await deliverMetaLead({ ...input, ...client });
+      // Acknowledged only when Meta took it; anything else stays pending.
+      return (await deliverMetaLead({ ...input, ...client })) === "sent";
     },
   };
 }

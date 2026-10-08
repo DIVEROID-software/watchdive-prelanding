@@ -27,6 +27,10 @@ type AskCopy = {
   decline: string;
   privacy: string;
   thanks: string;
+  /** Shown while a refusal is being recorded, and if it could not be. */
+  saving: string;
+  failed: string;
+  retry: string;
 };
 
 const COPY: Record<Locale, AskCopy> = {
@@ -37,6 +41,9 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "No thanks",
     privacy: "Privacy",
     thanks: "Thank you. That genuinely helps.",
+    saving: "Saving your choice…",
+    failed: "We could not save your choice yet.",
+    retry: "Try again",
   },
   ko: {
     title: "선택 사항 하나만 부탁드려요",
@@ -45,6 +52,9 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "괜찮아요",
     privacy: "개인정보",
     thanks: "고마워요. 정말 큰 도움이 돼요.",
+    saving: "선택을 저장하는 중이에요…",
+    failed: "아직 선택을 저장하지 못했어요.",
+    retry: "다시 시도",
   },
   "zh-CN": {
     title: "一个可选的小请求",
@@ -53,6 +63,9 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "不用了",
     privacy: "隐私",
     thanks: "谢谢，这对我们很有帮助。",
+    saving: "正在保存您的选择…",
+    failed: "暂时未能保存您的选择。",
+    retry: "重试",
   },
   "zh-TW": {
     title: "一個可選的小請求",
@@ -61,6 +74,9 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "不用了",
     privacy: "隱私",
     thanks: "謝謝，這對我們很有幫助。",
+    saving: "正在儲存您的選擇…",
+    failed: "暫時未能儲存您的選擇。",
+    retry: "重試",
   },
   ja: {
     title: "任意のお願いをひとつ",
@@ -69,6 +85,9 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "許可しない",
     privacy: "プライバシー",
     thanks: "ありがとうございます。本当に助かります。",
+    saving: "選択を保存しています…",
+    failed: "選択をまだ保存できていません。",
+    retry: "もう一度試す",
   },
   es: {
     title: "Un favor opcional",
@@ -77,6 +96,9 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "No, gracias",
     privacy: "Privacidad",
     thanks: "Gracias. Nos ayuda de verdad.",
+    saving: "Guardando tu elección…",
+    failed: "Aún no pudimos guardar tu elección.",
+    retry: "Intentar de nuevo",
   },
   fr: {
     title: "Un petit service, facultatif",
@@ -85,6 +107,9 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "Non merci",
     privacy: "Confidentialité",
     thanks: "Merci, cela nous aide vraiment.",
+    saving: "Enregistrement de votre choix…",
+    failed: "Votre choix n'a pas encore pu être enregistré.",
+    retry: "Réessayer",
   },
   de: {
     title: "Eine freiwillige Bitte",
@@ -93,6 +118,9 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "Nein, danke",
     privacy: "Datenschutz",
     thanks: "Danke, das hilft uns wirklich.",
+    saving: "Deine Auswahl wird gespeichert…",
+    failed: "Deine Auswahl konnte noch nicht gespeichert werden.",
+    retry: "Erneut versuchen",
   },
   "pt-BR": {
     title: "Um favor opcional",
@@ -101,6 +129,9 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "Não, obrigado",
     privacy: "Privacidade",
     thanks: "Obrigado. Isso ajuda de verdade.",
+    saving: "Salvando sua escolha…",
+    failed: "Ainda não conseguimos salvar sua escolha.",
+    retry: "Tentar de novo",
   },
 };
 
@@ -145,15 +176,49 @@ export function MeasurementAsk({
 }: {
   /** Runs after the choice is stored; starts the tags and sends what was withheld. */
   onAllow: () => void | Promise<void>;
-  /** Runs after a refusal is stored; records it on the signup. */
-  onDecline?: () => void | Promise<void>;
+  /**
+   * Records a refusal on the signup. Resolve `false` when the server could not
+   * record it: the card then stays, with a retry, instead of vanishing.
+   */
+  onDecline?: () => Promise<boolean | void>;
   tone?: "dark" | "card";
 }) {
   const locale = useCurrentLocale();
   const copy = COPY[locale];
   const [answered, setAnswered] = useState<"granted" | "denied" | null>(null);
+  const [refusal, setRefusal] = useState<"saving" | "failed" | null>(null);
 
-  if (answered === "denied") return null;
+  const recordRefusal = async () => {
+    if (!onDecline) return;
+    setRefusal("saving");
+    const recorded = await Promise.resolve(onDecline()).catch(() => false);
+    setRefusal(recorded === false ? "failed" : null);
+  };
+
+  if (answered === "denied") {
+    if (refusal === "saving") {
+      return (
+        <p role="status" className="mt-4 text-sm leading-relaxed text-white/80">
+          {copy.saving}
+        </p>
+      );
+    }
+    if (refusal === "failed") {
+      return (
+        <div role="alert" className="mt-4 flex flex-wrap items-center gap-3 text-sm text-white/90">
+          <span>{copy.failed}</span>
+          <button
+            type="button"
+            onClick={() => void recordRefusal()}
+            className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-3 font-medium"
+          >
+            {copy.retry}
+          </button>
+        </div>
+      );
+    }
+    return null;
+  }
   if (answered === "granted") {
     return (
       <p role="status" className="mt-4 text-sm leading-relaxed text-[#EDE6FF]">
@@ -167,7 +232,7 @@ export function MeasurementAsk({
     setAnswered(choice);
     announceMeasurementChoice({ choice, origin: "card" });
     if (choice === "granted") void Promise.resolve(onAllow()).catch(() => {});
-    else if (onDecline) void Promise.resolve(onDecline()).catch(() => {});
+    else void recordRefusal();
   };
 
   return (

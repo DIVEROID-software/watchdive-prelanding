@@ -100,6 +100,22 @@ export const LAUNCHOS_REPLAY_METADATA_MAX_LENGTH = 1_980;
 
 export const MEASUREMENT_CONSENT_GRANTED = "WD-AD-MEASUREMENT-CONSENT-V1:granted" as const;
 export const MEASUREMENT_CONSENT_WITHDRAWN = "WD-AD-MEASUREMENT-CONSENT-V1:withdrawn" as const;
+/**
+ * The `Measurement consent` cell is a small state machine (2026-10-08):
+ *
+ *   withheld ──grant──▶ granted-lead-pending ──Lead acknowledged by Meta──▶ granted
+ *       │                       │                                            │
+ *       └─────────── any refusal ▶ withdrawn (+ `measurement-withdrawn` flag) ◀┘
+ *
+ * `withheld`: the submit carried no consent, so its `Lead` was never sent.
+ * `granted-lead-pending`: consent given later; that `Lead` still has to go out
+ * (and is retried by the next grant, resend or confirmation until Meta takes it).
+ * `granted`: consent, and the submit `Lead` is done (or went out at submit).
+ * An empty cell is a row from before this release: never read as "withheld".
+ */
+export const MEASUREMENT_CONSENT_WITHHELD = "WD-AD-MEASUREMENT-CONSENT-V1:withheld" as const;
+export const MEASUREMENT_CONSENT_LEAD_PENDING =
+  "WD-AD-MEASUREMENT-CONSENT-V1:granted-lead-pending" as const;
 
 // Measurement-only reconciliation context already provisioned on the live
 // waitlist database. Withdrawal clears these without touching operational CRM
@@ -254,8 +270,8 @@ export type CreatePendingInput = {
   attribution?: LeadAttribution;
   /** Present only when the submitting browser allowed measurement. */
   metaFbc?: string;
-  /** The submitting browser allowed measurement: recorded on the row. */
-  measurementGranted?: true;
+  /** Initial `Measurement consent` state: granted, or withheld. */
+  measurementState?: string;
 };
 
 /** Written when a new attempt is minted — this is what kills the previous link. */
@@ -279,9 +295,6 @@ export type MarkVerifiedInput = {
   metaEventId: string;
 };
 
-/** Written when someone allows measurement after the submit itself. */
-export type MeasurementGrantInput = Record<string, never>;
-
 export interface LeadStore {
   findByEmail(canonical: string, email: string): Promise<LeadRecord | undefined>;
   findByLeadId(leadId: string): Promise<LeadRecord | undefined>;
@@ -290,8 +303,8 @@ export interface LeadStore {
   markSent(pageId: string, input: MarkSentInput): Promise<void>;
   markVerified(pageId: string, input: MarkVerifiedInput): Promise<void>;
   markWelcomeScheduled(pageId: string, input: MarkWelcomeInput): Promise<void>;
-  /** Writes only `Measurement consent` = granted. */
-  recordMeasurementGrant(pageId: string, input?: MeasurementGrantInput): Promise<void>;
+  /** Writes only the `Measurement consent` cell. */
+  recordMeasurementState(pageId: string, state: string): Promise<void>;
   /** Writes only the click-cookie column, when it is configured. */
   recordMeasurementFbc(pageId: string, metaFbc: string): Promise<void>;
   /** `Measurement consent` = withdrawn, adds the withdrawal flag, clears the click cookie. */
@@ -346,10 +359,12 @@ export type ConfirmResponse = {
 /** The answer to a measurement grant. Uniform for real and decoy attempts. */
 export type MeasurementGrantResponse = {
   ok: true;
-  /** The confirmation's browser half, when the lead is already confirmed. */
+  /**
+   * The confirmation's browser half — only on the confirmation-page grant,
+   * whose caller holds the token, and only when it was actually sent. The
+   * late submit `Lead` is server-only and never has a browser half.
+   */
   browserLead?: BrowserLead;
-  /** The withheld submit `Lead`'s browser half, under the server's own id. */
-  submitLead?: { eventId: string; source: string };
 };
 
 export type PollResponse = {
