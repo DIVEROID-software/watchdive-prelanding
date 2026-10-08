@@ -444,16 +444,25 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
     },
 
     async recordMeasurementWithdrawal(pageId: string) {
-      // The flag is the part a racing grant cannot overwrite (grants never
-      // write Flags). Read-merge-write keeps the abuse flags already there.
-      const current = toLeadRecord(await request("GET", `pages/${pageId}`));
-      const flags = new Set([...(current?.flags ?? []), FLAG_MEASUREMENT_WITHDRAWN]);
+      // The cell first and on its own: a Flags write Notion rejects (an option
+      // it will not create, say) must not take the refusal down with it.
       await request("PATCH", `pages/${pageId}`, {
         properties: {
           [FIELD_MEASUREMENT_CONSENT]: textProp(MEASUREMENT_CONSENT_WITHDRAWN),
-          Flags: { multi_select: [...flags].map((name) => ({ name })) },
         },
       });
+      // Then the flag — the part a racing grant cannot overwrite (grants never
+      // write Flags). Read-merge-write keeps the abuse flags already there. A
+      // failure here still leaves the refusal recorded in the cell, and the
+      // caller's re-read and retry run it again.
+      const current = toLeadRecord(await request("GET", `pages/${pageId}`));
+      const flags = new Set([...(current?.flags ?? []), FLAG_MEASUREMENT_WITHDRAWN]);
+      const flagged = await request("PATCH", `pages/${pageId}`, {
+        properties: { Flags: { multi_select: [...flags].map((name) => ({ name })) } },
+      }).then(
+        () => true,
+        () => false,
+      );
       const column = metaFbcColumn();
       if (column) {
         await request("PATCH", `pages/${pageId}`, {
@@ -462,6 +471,7 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
           // The click cookie is never sent once withdrawn either way.
         });
       }
+      if (!flagged) throw new Error("measurement-withdrawn flag not written");
     },
 
     async markWelcomeScheduled(pageId: string, input) {

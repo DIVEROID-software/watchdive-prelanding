@@ -321,9 +321,11 @@ export async function runVerificationReminders(
       const locale = reminderLocale(fresh);
       let outcome: string;
       try {
-        // Measurement consent is not stored (it travels only inside the first
-        // token), so the reminder link is minted without it. Confirming through
-        // it still confirms the signup; it just sends no Meta conversion.
+        // The token's consent bit stays false. The row's `Measurement consent`
+        // cell, not the bit, decides what a confirmation through this link
+        // sends; the bit only matters for a pre-release row with an empty
+        // cell, and false is the safe reading there. A grant on the
+        // confirmation page never reads it as "the submit Lead was withheld".
         const token = createVerificationToken(fresh.leadId, expiresAtMs, false, secret, locale);
         await dependencies.mailer.send({
           to: fresh.email,

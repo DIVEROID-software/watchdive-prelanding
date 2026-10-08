@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse";
-import { deliverMetaLead, type MetaCapiDelivery } from "./metaCapi";
 import {
   ATTRIBUTION_VALUE_MAX,
   FBCLID_MAX,
@@ -11,7 +10,7 @@ import {
 } from "@/lib/attribution";
 import { createServiceDependencies, sanitizeServerError } from "@/lib/verification/deps.server";
 import { COUNTABLE_STATUS_FILTER, createNotionRequest } from "@/lib/verification/notionLead";
-import { conversionBlocked, WAITLIST_CLOSED_MESSAGE } from "@/lib/verification/contracts";
+import { WAITLIST_CLOSED_MESSAGE } from "@/lib/verification/contracts";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { waitlistClosed } from "@/lib/waitlistProgress";
 import { COUNT_RENDER_BUDGET_MS, createCountReader } from "@/lib/waitlistCount";
@@ -327,6 +326,14 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           // Kept with the lead only when measurement was allowed, so the
           // confirmation — usually opened in a mail app — can name the click.
           ...(data.measurementConsent && submitFbc ? { metaFbc: submitFbc } : {}),
+          // The submit Lead's server leg is sent inside the service, after it
+          // has read the row: one id per consent change, never past a refusal.
+          ...(data.measurementConsent && sanitizeMetaCookie(data.fbp)
+            ? { metaFbp: sanitizeMetaCookie(data.fbp) }
+            : {}),
+          ...(data.measurementConsent && data.submitEventId
+            ? { submitEventId: data.submitEventId }
+            : {}),
           locale: data.locale,
           networkSendBlocked: verdict.blocked,
         },
@@ -336,48 +343,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       throw sanitizeServerError("verification-request", error);
     }
 
-    // The `Lead` server leg (optimisation event, fired at submit since
-    // 2026-09-26). Sent for every accepted submit that carries measurement
-    // permission and no abuse signal — a brand-new address, one already
-    // pending, one already confirmed alike — so the latency it adds cannot say
-    // which of those happened. That uniformity is the property the response
-    // floor inside the service exists to protect, and this must not undo it.
-    //
-    // `capi` in the response is a non-secret diagnostic of the server leg. It
-    // depends only on configuration, consent and Meta's answer — never on
-    // whether the address was new — so it does not reopen the existence oracle.
-    let capi: MetaCapiDelivery | "skipped" = "skipped";
-    if (data.submitEventId && data.measurementConsent && !conversionBlocked(flags)) {
-      const fbp = sanitizeMetaCookie(data.fbp);
-      const fbc = submitFbc;
-
-      capi = await deliverMetaLead({
-        eventId: data.submitEventId,
-        email,
-        ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
-        ...(ip ? { ip } : {}),
-        ...(ua ? { ua } : {}),
-        ...(fbp ? { fbp } : {}),
-        ...(fbc ? { fbc } : {}),
-        source: data.source,
-        utm: {
-          source: attribution.utmSource,
-          medium: attribution.utmMedium,
-          campaign: attribution.utmCampaign,
-          content: attribution.utmContent,
-          term: attribution.utmTerm,
-        },
-        ...(attribution.landingPath ? { landingPath: attribution.landingPath } : {}),
-      });
-    } else if (data.submitEventId) {
-      console.log(
-        `[meta-capi] Lead skipped event_id=${data.submitEventId}: ${
-          !data.measurementConsent ? "no measurement consent" : "abuse flag"
-        }`,
-      );
-    }
-
-    return { ...result, capi };
+    return result;
   });
 
 // The confirmation POST. The token reaches the server only here — it travelled

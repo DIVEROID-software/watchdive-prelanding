@@ -29,7 +29,7 @@ import {
   withdrawConfirmationMeasurementService,
 } from "../src/lib/verification/service.ts";
 import { deterministicSubmitEventId, signPollHandle } from "../src/lib/verification/token.ts";
-import { isMetaFbc } from "../src/lib/verification/notionLead.ts";
+import { createNotionLeadStore, isMetaFbc } from "../src/lib/verification/notionLead.ts";
 import {
   FakeLeadStore,
   FakeMailer,
@@ -516,4 +516,156 @@ test("a refusal landing during the confirmation's Meta call keeps the browser ha
   assert.equal(verified.length, 1, "the in-flight website event cannot be recalled");
   assert.equal(crmSent, false, "the second (CRM) call is stopped");
   assert.equal(grant.browserLead, undefined, "no pixel for a refusal that landed meanwhile");
+});
+
+// ---- QA round 5 -----------------------------------------------------------
+
+const BROWSER_ID = "browser-lead-0001";
+
+test("a brand-new consented submit sends its Lead once, under the browser's id", async () => {
+  await requestVerificationService(
+    submit(true, { submitEventId: BROWSER_ID, metaFbc: FBC }),
+    deps(),
+  );
+  assert.equal(submits.length, 1);
+  assert.equal(submits[0].eventId, BROWSER_ID);
+  assert.equal(submits[0].fbc, FBC);
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
+  clock = new Date(clock.getTime() + 60_000);
+  await confirmVerificationService(mailer.sent[0].token, deps());
+  assert.equal(submits.length, 1, "the confirmation does not add a second submit Lead");
+});
+
+test("a consented re-submit of a withheld row is one Lead, under the browser's id only", async () => {
+  await requestVerificationService(submit(false), deps());
+  clock = new Date(clock.getTime() + 61_000);
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  assert.deepEqual(
+    submits.map((s) => s.eventId),
+    [BROWSER_ID],
+  );
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
+  const handle = signPollHandle(onlyRow().leadId, clock.getTime(), true, TEST_SECRET);
+  await grantAttemptMeasurementService(handle, {}, deps());
+  clock = new Date(clock.getTime() + 60_000);
+  await confirmVerificationService(mailer.sent.at(-1)!.token, deps());
+  assert.equal(submits.length, 1, "no second id from a later grant or the confirmation");
+});
+
+test("inside the resend cooldown the consented re-submit still settles its one Lead", async () => {
+  await requestVerificationService(submit(false), deps());
+  clock = new Date(clock.getTime() + 5_000);
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  assert.deepEqual(
+    submits.map((s) => s.eventId),
+    [BROWSER_ID],
+  );
+  assert.equal(mailer.sent.length, 1, "the cooldown still holds for mail");
+  clock = new Date(clock.getTime() + 60_000);
+  await grantConfirmationMeasurementService(mailer.sent[0].token, {}, deps());
+  assert.equal(submits.length, 1, "the confirmation page does not send a second id");
+});
+
+test("a Meta failure on the browser-id Lead does not leave a second id pending", async () => {
+  await requestVerificationService(submit(false), deps());
+  clock = new Date(clock.getTime() + 61_000);
+  metaAcks = false;
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  metaAcks = true;
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
+  clock = new Date(clock.getTime() + 60_000);
+  await confirmVerificationService(mailer.sent.at(-1)!.token, deps());
+  assert.deepEqual(
+    submits.map((s) => s.eventId),
+    [BROWSER_ID],
+  );
+});
+
+test("a consented re-submit after a recorded refusal sends nothing server-side", async () => {
+  const pending = await requestVerificationService(submit(true), deps());
+  await withdrawAttemptMeasurementService(pending.handle, deps());
+  clock = new Date(clock.getTime() + 61_000);
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  clock = new Date(clock.getTime() + 5_000);
+  await requestVerificationService(submit(true, { submitEventId: "browser-lead-0002" }), deps());
+  assert.equal(submits.length, 0);
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
+});
+
+test("an already-granted row gets no second submit Lead from a re-submit", async () => {
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  clock = new Date(clock.getTime() + 61_000);
+  await requestVerificationService(submit(true, { submitEventId: "browser-lead-0002" }), deps());
+  assert.deepEqual(
+    submits.map((s) => s.eventId),
+    [BROWSER_ID],
+  );
+});
+
+test("an abuse-flagged stored row gets no submit Lead even from a clean request", async () => {
+  await requestVerificationService(submit(false, { flags: ["disposable"], suspect: true }), deps());
+  clock = new Date(clock.getTime() + 61_000);
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  assert.equal(submits.length, 0);
+});
+
+test("a refusal landing before a new row's Lead leaves stops it", async () => {
+  store.onStateWrite = undefined;
+  const original = store.createPending.bind(store);
+  store.createPending = async (input) => {
+    const row = await original(input);
+    await store.recordMeasurementWithdrawal(row.pageId);
+    return row;
+  };
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  assert.equal(submits.length, 0);
+});
+
+test("a reminder-link grant on a pre-release empty row does not send a submit Lead", async () => {
+  store.seed({
+    email: EMAIL,
+    canonical: CANONICAL,
+    status: "pending",
+    leadId: "aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab",
+    sends: 1,
+    sentAt: new Date(clock.getTime() - 3_600_000).toISOString(),
+    expiresAt: new Date(clock.getTime() + 3_600_000).toISOString(),
+  });
+  // Reminder tokens are minted consent-false.
+  const handle = signPollHandle(onlyRow().leadId, clock.getTime(), false, TEST_SECRET);
+  await grantAttemptMeasurementService(handle, {}, deps());
+  assert.equal(submits.length, 0);
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
+});
+
+test("an expired or forged handle does not report a refusal as recorded", async () => {
+  const pending = await requestVerificationService(submit(true), deps());
+  clock = new Date(clock.getTime() + 30 * 24 * 3_600_000);
+  assert.deepEqual(await withdrawAttemptMeasurementService(pending.handle, deps()), {
+    ok: true,
+    recorded: false,
+  });
+  assert.deepEqual(await withdrawAttemptMeasurementService("x".repeat(40), deps()), {
+    ok: true,
+    recorded: false,
+  });
+  assert.deepEqual(await withdrawConfirmationMeasurementService("x".repeat(40), deps()), {
+    ok: true,
+    recorded: false,
+  });
+});
+
+test("Notion: the withdrawal cell is written alone, before (and despite) the Flags write", async () => {
+  const patches: Record<string, unknown>[] = [];
+  const notionStore = createNotionLeadStore(async (method, _path, body) => {
+    if (method === "PATCH") {
+      const properties = (body as { properties: Record<string, unknown> }).properties;
+      patches.push(properties);
+      if ("Flags" in properties) throw new Error("validation_error");
+    }
+    return { id: "notion-page-1", properties: {} };
+  }, "database-1");
+  await assert.rejects(notionStore.recordMeasurementWithdrawal("notion-page-1"));
+  assert.deepEqual(Object.keys(patches[0]), ["Measurement consent"]);
+  assert.ok("Flags" in patches[1]);
 });
