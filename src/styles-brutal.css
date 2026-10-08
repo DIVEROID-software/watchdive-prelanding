@@ -28,8 +28,8 @@ html:root body {
 html:root h1,
 html:root h2 {
   font-weight: 700 !important;
-  letter-spacing: -0.035em !important;
-  line-height: 0.98 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.1 !important;
 }
 html:root h1 { font-size: clamp(2.75rem, 7vw, 5.25rem) !important; }
 html:root h2 { font-size: clamp(2rem, 4.6vw, 3.5rem) !important; }
@@ -183,4 +183,43 @@ html:root [role="dialog"] h2 {
 }
 @media (max-width: 639px) {
   html:root [role="dialog"] h2 { font-size: 1.0625rem !important; }
+}
+
+/* Readability (owner feedback 2026-10-08): body copy breathes. Headings keep
+   the heavy brutalist scale but at 1.1 leading; running text gets 1.65, small
+   print 1.6, and Hangul (which reads denser) 1.75. The privacy banner keeps
+   its compact spacing so it does not grow over the first screen. */
+html:root h3,
+html:root h4 {
+  line-height: 1.3 !important;
+}
+html:root p,
+html:root li,
+html:root dd,
+html:root blockquote,
+html:root footer p {
+  line-height: 1.65 !important;
+}
+html:root [class*="text-xs"],
+html:root [class*="text-sm"],
+html:root [class*="text-caption"] {
+  line-height: 1.6 !important;
+}
+html:root p + p {
+  margin-top: 0.75em;
+}
+html:lang(ko) p,
+html:lang(ko) li,
+html:lang(ko) dd {
+  line-height: 1.75 !important;
+}
+html:lang(ja) p,
+html:lang(zh-CN) p,
+html:lang(zh-TW) p {
+  line-height: 1.75 !important;
+}
+html:root [role="dialog"] p,
+html:root [role="dialog"] [class*="text-"] {
+  line-height: 1.4 !important;
+  margin-top: 0.25rem;
 }
