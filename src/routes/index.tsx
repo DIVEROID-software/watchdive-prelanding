@@ -38,6 +38,7 @@ import {
   getMetaCookies,
   hasMetaMeasurementConsent,
   initMetaPixel,
+  measurementPermitted,
   newMetaEventId,
   trackMetaCustom,
   trackMetaEmailVerified,
@@ -959,7 +960,10 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     initGoogleTag();
     initClarity();
     startPageBehavior();
-    if (!handle) return;
+    // The browser's own rule decides (Global Privacy Control wins over a
+    // stored Allow): nothing is granted server-side that this browser would
+    // not measure itself.
+    if (!handle || !measurementPermitted()) return;
     const attribution = getAttribution();
     const cookies = getMetaCookies();
     const fbc =
@@ -970,6 +974,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     const res = await grantAttemptMeasurement({
       data: {
         handle,
+        source: id,
         ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
         ...(fbc ? { fbc } : {}),
       },
@@ -987,7 +992,13 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // Refused after the submit: recorded on the signup, so a confirmation opened
   // anywhere later sends nothing.
   async function declineMeasurementAfterSubmit() {
-    if (handle) await withdrawAttemptMeasurement({ data: { handle } });
+    if (!handle) return;
+    // Retried until the server says the refusal is on the signup.
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const res = await withdrawAttemptMeasurement({ data: { handle } }).catch(() => undefined);
+      if (res?.recorded) return;
+      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+    }
   }
 
   if (closed) {

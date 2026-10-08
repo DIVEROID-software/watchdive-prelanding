@@ -135,7 +135,8 @@ export function VerifyPage() {
 
   /** Records the grant server-side; the server sends what was withheld. */
   const grantMeasurement = async () => {
-    if (!token.current) return;
+    // Global Privacy Control (or a refusal) wins over a click here.
+    if (!token.current || !measurementPermitted()) return;
     const cookies = getMetaCookies();
     const res = await grantConfirmationMeasurement({
       data: {
@@ -150,7 +151,13 @@ export function VerifyPage() {
   /** Refused here: recorded on the signup so nothing is sent for it later. */
   const declineMeasurement = async () => {
     if (!token.current) return;
-    await withdrawConfirmationMeasurement({ data: { token: token.current } });
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const res = await withdrawConfirmationMeasurement({ data: { token: token.current } }).catch(
+        () => undefined,
+      );
+      if (res?.recorded) return;
+      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+    }
   };
 
   const confirm = async () => {

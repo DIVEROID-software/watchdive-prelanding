@@ -330,7 +330,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           locale: data.locale,
           networkSendBlocked: verdict.blocked,
         },
-        createServiceDependencies(),
+        createServiceDependencies({ ...(ip ? { ip } : {}), ...(ua ? { ua } : {}) }),
       );
     } catch (error) {
       throw sanitizeServerError("verification-request", error);
@@ -426,6 +426,8 @@ export const grantAttemptMeasurement = createServerFn({ method: "POST" })
   .validator(
     z.object({
       handle: z.string().min(16).max(400),
+      // The form the browser used; only a label for the Lead it fires.
+      source: z.enum(["hero", "offer"]).optional(),
       fbp: z.string().max(META_COOKIE_MAX).optional(),
       fbc: z.string().max(META_COOKIE_MAX).optional(),
     }),
@@ -436,7 +438,11 @@ export const grantAttemptMeasurement = createServerFn({ method: "POST" })
       const fbc = sanitizeMetaCookie(data.fbc);
       return await grantAttemptMeasurementService(
         data.handle,
-        { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
+        {
+          ...(data.source ? { source: data.source } : {}),
+          ...(fbp ? { fbp } : {}),
+          ...(fbc ? { fbc } : {}),
+        },
         createServiceDependencies(requestMeta()),
       );
     } catch (error) {

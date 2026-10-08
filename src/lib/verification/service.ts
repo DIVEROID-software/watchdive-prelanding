@@ -252,6 +252,33 @@ export async function requestVerificationService(
     // be used to keep re-arming a send.
     await store.startAttempt(existing.pageId, { leadId, expiresAt, sends: existing.sends + 1 });
     record = existing;
+    // A resend that now carries consent, for a row whose submit never did:
+    // record the grant and send the withheld Lead under this attempt's
+    // server id. A row already granted sent its Lead before; do not double it.
+    if (
+      input.measurementConsent &&
+      existing.measurementConsent !== MEASUREMENT_CONSENT_GRANTED &&
+      !measurementWithdrawn(existing) &&
+      !conversionBlocked(existing.flags)
+    ) {
+      try {
+        await store.recordMeasurementGrant(existing.pageId);
+        if (dependencies.dispatchSubmitLead) {
+          await dependencies
+            .dispatchSubmitLead({
+              eventId: deterministicSubmitEventId(leadId, secret),
+              email: existing.email,
+              ...(existing.phone ? { phone: existing.phone } : {}),
+              source: existing.source,
+              ...(existing.landingPath ? { landingPath: existing.landingPath } : {}),
+              ...(existing.utm ? { utm: existing.utm } : {}),
+            })
+            .catch(() => {});
+        }
+      } catch {
+        // Measurement never fails a resend.
+      }
+    }
   } else {
     record = await store.createPending({
       email: input.email,
@@ -576,7 +603,8 @@ async function applyGrant(
     return "refused";
   }
   const after = await store.reread(record.pageId).catch(() => undefined);
-  if (!after) return "refused";
+  // The write landed; an unreadable row afterwards is not a refusal.
+  if (!after) return "granted";
   if (measurementWithdrawn(after)) {
     await store.recordMeasurementWithdrawal(record.pageId).catch(() => {});
     return "refused";
@@ -593,47 +621,49 @@ function grantFloor(dependencies: ServiceDependencies) {
 }
 
 /**
- * After a grant: the submit `Lead` that was withheld (only if the submit
- * itself did not carry consent, and only on the first grant), under an id the
- * server derives from the attempt; and the confirmation, if it has happened.
+ * After a grant: the submit `Lead` that was withheld (when the submit itself
+ * did not carry consent) and the confirmation, if it has happened. Both use
+ * ids derived from the attempt, so sending again on a retry ("already")
+ * collapses into the same conversion at Meta — which is what lets a retry
+ * recover a dispatch an earlier failure dropped. Right before sending, the row
+ * is read once more: a refusal that landed meanwhile stops everything.
  */
 async function dispatchAfterGrant(
   record: LeadRecord,
   leadId: string,
   signedConsent: boolean,
-  outcome: GrantOutcome,
+  outcome: Exclude<GrantOutcome, "refused">,
   context: ConversionContext,
   dependencies: ServiceDependencies,
   secret: string,
-): Promise<MeasurementGrantResponse> {
-  const response: MeasurementGrantResponse = { ok: true };
-  const conversion = conversionContext(record, context);
+): Promise<Pick<MeasurementGrantResponse, "browserLead">> {
+  const latest = await dependencies.store.reread(record.pageId).catch(() => undefined);
+  if (latest && measurementWithdrawn(latest)) return {};
+  const current = latest ?? record;
+  const conversion = conversionContext(current, context);
   if (outcome === "granted" && conversion.fbc) {
     await dependencies.store.recordMeasurementFbc(record.pageId, conversion.fbc).catch(() => {});
   }
-  if (!signedConsent && outcome === "granted" && dependencies.dispatchSubmitLead) {
-    const eventId = deterministicSubmitEventId(leadId, secret);
+  if (!signedConsent && dependencies.dispatchSubmitLead) {
     await dependencies
       .dispatchSubmitLead({
-        eventId,
-        email: record.email,
-        ...(record.phone ? { phone: record.phone } : {}),
-        source: record.source,
-        ...(record.landingPath ? { landingPath: record.landingPath } : {}),
-        ...(record.utm ? { utm: record.utm } : {}),
+        eventId: deterministicSubmitEventId(leadId, secret),
+        email: current.email,
+        ...(current.phone ? { phone: current.phone } : {}),
+        source: current.source,
+        ...(current.landingPath ? { landingPath: current.landingPath } : {}),
+        ...(current.utm ? { utm: current.utm } : {}),
         ...conversion,
       })
       .catch(() => {});
-    response.submitLead = { eventId, source: record.source };
   }
-  if (record.emailVerified || record.status === "verified") {
-    const eventId = record.metaEventId || deterministicMetaEventId(leadId, secret);
-    if (outcome === "granted") {
-      await dispatchIfPermitted(record, eventId, true, dependencies, context);
-    }
-    Object.assign(response, browserLead(record, eventId, true));
+  if (current.emailVerified || current.status === "verified") {
+    const eventId =
+      record.metaEventId || current.metaEventId || deterministicMetaEventId(leadId, secret);
+    await dispatchIfPermitted(current, eventId, true, dependencies, context);
+    return browserLead(current, eventId, true);
   }
-  return response;
+  return {};
 }
 
 /**
@@ -644,7 +674,7 @@ async function dispatchAfterGrant(
  */
 export async function grantAttemptMeasurementService(
   handle: string,
-  input: AttemptGrantInput,
+  input: AttemptGrantInput & { source?: string },
   dependencies: ServiceDependencies,
 ): Promise<MeasurementGrantResponse> {
   const floor = grantFloor(dependencies);
@@ -652,26 +682,41 @@ export async function grantAttemptMeasurementService(
   const secret = requireSecret(env);
   const now = (dependencies.now ?? (() => new Date()))();
   const parsed = verifyPollHandle(handle, secret, now.getTime(), POLL_HANDLE_TTL_MS);
-  if (!parsed || !(dependencies.grantGate ?? processGrantGate)(parsed.leadId))
-    return floor({ ok: true });
+  if (!parsed) return floor({ ok: true });
+
+  // One body for every valid handle, real or decoy: the browser half of the
+  // withheld Lead, under an id derived from the handle's attempt, labelled
+  // with the form the caller says it used. Nothing here depends on whether
+  // the address exists, is granted, or was refused — so the body is no oracle.
+  // (For a decoy the server sends nothing to Meta; the browser fires a Lead
+  // for a real Allow click in that browser, which is what it is.)
+  const uniform: MeasurementGrantResponse = parsed.measurementConsent
+    ? { ok: true }
+    : {
+        ok: true,
+        submitLead: {
+          eventId: deterministicSubmitEventId(parsed.leadId, secret),
+          source: input.source === "offer" ? "offer" : "hero",
+        },
+      };
+  if (!(dependencies.grantGate ?? processGrantGate)(parsed.leadId)) return floor(uniform);
 
   const record = await dependencies.store.findByLeadId(parsed.leadId);
-  if (!record || record.status === "unsubscribed") return floor({ ok: true });
-  if (measurementWithdrawn(record) || conversionBlocked(record.flags)) return floor({ ok: true });
+  if (!record || record.status === "unsubscribed") return floor(uniform);
+  if (measurementWithdrawn(record) || conversionBlocked(record.flags)) return floor(uniform);
 
   const outcome = await applyGrant(record, dependencies);
-  if (outcome === "refused") return floor({ ok: true });
-  return floor(
-    await dispatchAfterGrant(
-      record,
-      parsed.leadId,
-      parsed.measurementConsent,
-      outcome,
-      input,
-      dependencies,
-      secret,
-    ),
+  if (outcome === "refused") return floor(uniform);
+  const sent = await dispatchAfterGrant(
+    record,
+    parsed.leadId,
+    parsed.measurementConsent,
+    outcome,
+    { ...(input.fbp ? { fbp: input.fbp } : {}), ...(input.fbc ? { fbc: input.fbc } : {}) },
+    dependencies,
+    secret,
   );
+  return floor({ ...uniform, ...sent });
 }
 
 /**
@@ -690,8 +735,9 @@ export async function grantConfirmationMeasurementService(
   const now = (dependencies.now ?? (() => new Date()))();
   if (!isVerificationTokenShape(rawToken)) return floor({ ok: true });
   const parsed = parseVerificationToken(rawToken, secret, now.getTime());
-  if (!parsed || !(dependencies.grantGate ?? processGrantGate)(parsed.leadId))
+  if (!parsed || !(dependencies.grantGate ?? processGrantGate)(parsed.leadId)) {
     return floor({ ok: true });
+  }
 
   const record = await dependencies.store.findByLeadId(parsed.leadId);
   if (!record || record.status === "unsubscribed") return floor({ ok: true });
@@ -700,17 +746,28 @@ export async function grantConfirmationMeasurementService(
 
   const outcome = await applyGrant(record, dependencies);
   if (outcome === "refused") return floor({ ok: true });
-  return floor(
-    await dispatchAfterGrant(
-      { ...record, metaEventId: deterministicMetaEventId(parsed.leadId, secret) },
-      parsed.leadId,
-      parsed.measurementConsent,
-      outcome,
-      input,
-      dependencies,
-      secret,
-    ),
+  const sent = await dispatchAfterGrant(
+    { ...record, metaEventId: deterministicMetaEventId(parsed.leadId, secret) },
+    parsed.leadId,
+    parsed.measurementConsent,
+    outcome,
+    input,
+    dependencies,
+    secret,
   );
+  // The token holder is the person: their own lead's source is no secret.
+  return floor({
+    ok: true,
+    ...sent,
+    ...(parsed.measurementConsent
+      ? {}
+      : {
+          submitLead: {
+            eventId: deterministicSubmitEventId(parsed.leadId, secret),
+            source: record.source,
+          },
+        }),
+  });
 }
 
 /**
@@ -718,38 +775,49 @@ export async function grantConfirmationMeasurementService(
  * this browser still holds the attempt's handle or token. Recorded on the row,
  * so a later confirmation in any browser sends nothing.
  */
-async function withdraw(leadId: string, dependencies: ServiceDependencies): Promise<void> {
-  const record = await dependencies.store.findByLeadId(leadId);
-  if (!record || measurementWithdrawn(record)) return;
-  await dependencies.store.recordMeasurementWithdrawal(record.pageId).catch(() => {});
+async function withdraw(leadId: string, dependencies: ServiceDependencies): Promise<boolean> {
+  const record = await dependencies.store.findByLeadId(leadId).catch(() => undefined);
+  // No row (decoy, rotated, gone) or already refused: nothing to undo.
+  if (!record || measurementWithdrawn(record)) return true;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await dependencies.store.recordMeasurementWithdrawal(record.pageId);
+    } catch {
+      // Re-read below decides; the write may have landed before the error.
+    }
+    const after = await dependencies.store.reread(record.pageId).catch(() => undefined);
+    if (after && measurementWithdrawn(after)) return true;
+  }
+  return false;
 }
+
+/** `recorded: false` only when a real refusal could not be written; retry. */
+export type WithdrawResponse = { ok: true; recorded: boolean };
 
 export async function withdrawAttemptMeasurementService(
   handle: string,
   dependencies: ServiceDependencies,
-): Promise<{ ok: true }> {
+): Promise<WithdrawResponse> {
   const floor = grantFloor(dependencies);
   const secret = requireSecret(dependencies.env ?? process.env);
   const now = (dependencies.now ?? (() => new Date()))();
   const parsed = verifyPollHandle(handle, secret, now.getTime(), POLL_HANDLE_TTL_MS);
-  if (parsed && (dependencies.grantGate ?? processGrantGate)(parsed.leadId))
-    await withdraw(parsed.leadId, dependencies);
-  return floor({ ok: true as const });
+  const recorded = parsed ? await withdraw(parsed.leadId, dependencies) : true;
+  return floor({ ok: true as const, recorded });
 }
 
 export async function withdrawConfirmationMeasurementService(
   rawToken: string,
   dependencies: ServiceDependencies,
-): Promise<{ ok: true }> {
+): Promise<WithdrawResponse> {
   const floor = grantFloor(dependencies);
   const secret = requireSecret(dependencies.env ?? process.env);
   const now = (dependencies.now ?? (() => new Date()))();
   const parsed = isVerificationTokenShape(rawToken)
     ? parseVerificationToken(rawToken, secret, now.getTime())
     : undefined;
-  if (parsed && (dependencies.grantGate ?? processGrantGate)(parsed.leadId))
-    await withdraw(parsed.leadId, dependencies);
-  return floor({ ok: true as const });
+  const recorded = parsed ? await withdraw(parsed.leadId, dependencies) : true;
+  return floor({ ok: true as const, recorded });
 }
 
 function defaultRefCode(): string {
