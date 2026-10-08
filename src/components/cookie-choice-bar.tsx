@@ -15,7 +15,10 @@ import { cookieBarShouldYield } from "@/lib/cookieBarPlacement";
 import {
   announceMeasurementChoice,
   MEASUREMENT_CHOICE_EVENT,
+  MEASUREMENT_SETTLED_EVENT,
+  takeServerWithdrawalExpected,
   type MeasurementChoiceDetail,
+  type MeasurementSettledDetail,
 } from "@/components/measurement-ask";
 
 type ChoiceCopy = {
@@ -28,6 +31,9 @@ type ChoiceCopy = {
   privacy: string;
   /** Footer link that reopens the choice (opt-out outside EU/EEA/UK/CH). */
   settings: string;
+  /** Shown on the reject button while a refusal still needs to be written. */
+  retry: string;
+  retryBody: string;
 };
 
 const COPY: Record<Locale, ChoiceCopy> = {
@@ -38,6 +44,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     decline: "Reject all",
     privacy: "Privacy Policy",
     settings: "Cookie settings",
+    retry: "Try again",
+    retryBody: "This browser is opted out. The refusal is not on the signup yet.",
   },
   ko: {
     title: "개인정보 선택",
@@ -46,6 +54,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     decline: "모두 거부",
     privacy: "개인정보처리방침",
     settings: "쿠키 설정",
+    retry: "다시 시도",
+    retryBody: "이 브라우저에서는 측정을 껐어요. 가입 기록에는 아직 거부가 남지 않았어요.",
   },
   "zh-CN": {
     title: "您的隐私选择",
@@ -54,6 +64,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     decline: "全部拒绝",
     privacy: "隐私政策",
     settings: "Cookie 设置",
+    retry: "再试一次",
+    retryBody: "此浏览器已关闭统计。报名记录里还没有这次拒绝。",
   },
   "zh-TW": {
     title: "您的隱私選擇",
@@ -62,6 +74,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     decline: "全部拒絕",
     privacy: "隱私權政策",
     settings: "Cookie 設定",
+    retry: "再試一次",
+    retryBody: "此瀏覽器已關閉統計。報名記錄裡還沒有這次拒絕。",
   },
   ja: {
     title: "プライバシーの選択",
@@ -70,6 +84,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     decline: "すべて拒否",
     privacy: "プライバシーポリシー",
     settings: "クッキー設定",
+    retry: "もう一度試す",
+    retryBody: "このブラウザでは計測を切っています。登録の記録には、まだ拒否が残っていません。",
   },
   es: {
     title: "Tus opciones de privacidad",
@@ -78,6 +94,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     decline: "Rechazar todo",
     privacy: "Política de privacidad",
     settings: "Cookies",
+    retry: "Intentar de nuevo",
+    retryBody: "En este navegador la medición está desactivada. El registro aún no tiene el rechazo.",
   },
   fr: {
     title: "Vos choix de confidentialité",
@@ -86,6 +104,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     decline: "Tout refuser",
     privacy: "Politique de confidentialité",
     settings: "Cookies",
+    retry: "Réessayer",
+    retryBody: "La mesure est coupée dans ce navigateur. Le refus n'est pas encore sur l'inscription.",
   },
   de: {
     title: "Deine Datenschutz-Einstellungen",
@@ -94,6 +114,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     decline: "Alle ablehnen",
     privacy: "Datenschutzerklärung",
     settings: "Cookie-Einstellungen",
+    retry: "Erneut versuchen",
+    retryBody: "In diesem Browser ist die Messung aus. Die Absage steht noch nicht bei der Anmeldung.",
   },
   "pt-BR": {
     title: "Suas escolhas de privacidade",
@@ -102,6 +124,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
     decline: "Rejeitar tudo",
     privacy: "Política de privacidade",
     settings: "Cookies",
+    retry: "Tentar de novo",
+    retryBody: "Neste navegador a medição está desligada. A recusa ainda não está no cadastro.",
   },
 };
 
@@ -133,11 +157,23 @@ export function CookieChoiceBar() {
   const locale = useCurrentLocale();
   const copy = COPY[locale];
   const [open, setOpen] = useState(false);
+  const [withdrawPending, setWithdrawPending] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let alive = true;
     const reopen = () => setOpen(true);
+    const onSettled = (event: Event) => {
+      const detail = (event as CustomEvent<MeasurementSettledDetail>).detail;
+      if (!detail || detail.choice !== "denied") return;
+      if (detail.recorded) {
+        setWithdrawPending(false);
+        setOpen(false);
+      } else {
+        setWithdrawPending(true);
+        setOpen(true);
+      }
+    };
     // Answered on the inbox card or the confirmation page: nothing left to ask.
     const answered = (event: Event) => {
       if ((event as CustomEvent<MeasurementChoiceDetail>).detail?.origin !== "banner")
@@ -145,6 +181,7 @@ export function CookieChoiceBar() {
     };
     window.addEventListener(OPEN_EVENT, reopen);
     window.addEventListener(MEASUREMENT_CHOICE_EVENT, answered);
+    window.addEventListener(MEASUREMENT_SETTLED_EVENT, onSettled);
     // The server hands down the country (`wd_geo`); outside EU/EEA/UK/CH the
     // tags start by default and no bar is shown. Inside it, or with an unknown
     // country, the bar asks once. GPC is an opt-out already: never ask.
@@ -160,6 +197,7 @@ export function CookieChoiceBar() {
       alive = false;
       window.removeEventListener(OPEN_EVENT, reopen);
       window.removeEventListener(MEASUREMENT_CHOICE_EVENT, answered);
+      window.removeEventListener(MEASUREMENT_SETTLED_EVENT, onSettled);
     };
   }, []);
 
@@ -229,17 +267,33 @@ export function CookieChoiceBar() {
   if (!open) return null;
 
   function choose(choice: "granted" | "denied") {
-    setMetaMeasurementConsent(choice);
-    announceMeasurementChoice({ choice, origin: "banner" });
     if (choice === "granted") {
+      // Global Privacy Control wins over Accept. Do not store Allow, tell the
+      // page it was granted, or start tags.
+      if (globalPrivacyControlOn()) return;
+      setMetaMeasurementConsent("granted");
+      announceMeasurementChoice({ choice, origin: "banner" });
       initMetaPixel();
       initGoogleTag();
       initClarity();
       startPageBehavior();
-    } else if (typeof window !== "undefined" && window.clarity) {
+      setWithdrawPending(false);
+      setOpen(false);
+      return;
+    }
+    setMetaMeasurementConsent("denied");
+    if (typeof window !== "undefined" && window.clarity) {
       window.clarity("consentv2", { ad_Storage: "denied", analytics_Storage: "denied" });
     }
-    setOpen(false);
+    announceMeasurementChoice({ choice: "denied", origin: "banner" });
+    // Listeners run before this returns. A pending signup sets the flag; with
+    // no signup, the local refusal is the whole record and the bar can close.
+    if (!takeServerWithdrawalExpected()) {
+      setWithdrawPending(false);
+      setOpen(false);
+      return;
+    }
+    setWithdrawPending(true);
   }
 
   return (
@@ -277,9 +331,10 @@ export function CookieChoiceBar() {
           </div>
           <p
             id="wd-privacy-body"
+            role={withdrawPending ? "alert" : undefined}
             className="mt-1 text-[0.8125rem] leading-snug text-[#EDE6FF] sm:text-[0.9375rem] sm:leading-relaxed"
           >
-            {copy.body}
+            {withdrawPending ? copy.retryBody : copy.body}
           </p>
         </div>
         <div className="grid shrink-0 grid-cols-2 gap-2.5 lg:w-[26rem]">
@@ -290,7 +345,7 @@ export function CookieChoiceBar() {
             tabIndex={yielding ? -1 : undefined}
             onClick={() => choose("denied")}
           >
-            {copy.decline}
+            {withdrawPending ? copy.retry : copy.decline}
           </button>
           <button
             type="button"

@@ -321,9 +321,9 @@ export async function runVerificationReminders(
       const locale = reminderLocale(fresh);
       let outcome: string;
       try {
-        // Measurement consent is not stored (it travels only inside the first
-        // token), so the reminder link is minted without it. Confirming through
-        // it still confirms the signup; it just sends no Meta conversion.
+        // The reminder link is minted without a consent bit, so opening it
+        // cannot grant measurement. Consent already stored on the row still
+        // converts at confirmation; a withdrawal on the row still blocks it.
         const token = createVerificationToken(fresh.leadId, expiresAtMs, false, secret, locale);
         await dependencies.mailer.send({
           to: fresh.email,

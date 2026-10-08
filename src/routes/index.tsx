@@ -20,9 +20,13 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { LaunchNotice } from "@/components/launch-notice";
 import { CookieSettingsLink } from "@/components/cookie-choice-bar";
 import {
+  expectServerWithdrawal,
+  markWithdrawalRecorded,
   MEASUREMENT_CHOICE_EVENT,
   MeasurementAsk,
   measurementAskEligible,
+  noteMeasurementSettled,
+  withdrawalNeedsRetry,
   type MeasurementChoiceDetail,
 } from "@/components/measurement-ask";
 import { initGoogleTag } from "@/lib/googleTag";
@@ -686,8 +690,8 @@ function CheckInboxCard({
   onStartOver: () => void;
   resending: boolean;
   /** Present when this browser may still be asked about measurement. */
-  onAllowMeasurement?: () => void | Promise<void>;
-  onDeclineMeasurement?: () => void | Promise<void>;
+  onAllowMeasurement?: () => boolean | void | Promise<boolean | void>;
+  onDeclineMeasurement?: () => boolean | void | Promise<boolean | void>;
 }) {
   const m = useFrozenLandingMessages();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -888,7 +892,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // cheap: twelve polls on a jittered backoff over about five minutes, paused
   // whenever the tab is hidden, and never more than one request in flight. The
   // lead is confirmed server-side either way; this only drives the live
-  // hand-off and the `EmailVerified` pixel leg. `Lead` already fired at submit.
+  // hand-off and the `EmailVerified` pixel leg. The submit `Lead` fires here
+  // only when this browser already allows measurement. A later Allow sends it
+  // from the server, under the server's own id.
   useEffect(() => {
     if (!handle || verified) return;
 
@@ -927,7 +933,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           setRefCode(res.refCode ?? "");
           setVerified(true);
           track("waitlist_verified", { source: id });
-          if (res.browserLead) {
+          if (res.browserLead && measurementPermitted()) {
             trackMetaEmailVerified(res.browserLead.eventId, res.browserLead.source);
             trackGoogleLead(res.browserLead.eventId, res.browserLead.source);
             trackClarity("generate_lead", res.browserLead.source);
@@ -970,8 +976,17 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     const onChoice = (event: Event) => {
       const detail = (event as CustomEvent<MeasurementChoiceDetail>).detail;
       if (!detail || detail.origin !== "banner") return;
-      if (detail.choice === "granted") void allowMeasurementAfterSubmit().catch(() => {});
-      else void declineMeasurementAfterSubmit().catch(() => {});
+      if (detail.choice === "granted") {
+        if (!measurementPermitted()) return;
+        void allowMeasurementAfterSubmit().then((recorded) => {
+          noteMeasurementSettled({ choice: "granted", recorded });
+        });
+      } else {
+        expectServerWithdrawal();
+        void declineMeasurementAfterSubmit().then((recorded) => {
+          noteMeasurementSettled({ choice: "denied", recorded });
+        });
+      }
     };
     window.addEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
     return () => window.removeEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
@@ -1018,17 +1033,17 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
 
   // Allowed after the submit (inbox card, or the banner while the inbox card
   // is up): start the tags this browser now permits and record the grant.
-  // The server sends the submit `Lead` that was withheld under an id it
-  // derives itself, and hands back that id so this pixel dedupes against it.
-  async function allowMeasurementAfterSubmit() {
+  // The attempt answer is always `{ ok: true }`, so it cannot carry the Lead.
+  // The server sends that Lead. This calls the grant a few times so a write
+  // whose confirming read failed gets another chance at the same server id,
+  // then polls once for the EmailVerified pixel if the link was already opened.
+  async function allowMeasurementAfterSubmit(): Promise<boolean> {
+    if (!measurementPermitted()) return false;
     initMetaPixel();
     initGoogleTag();
     initClarity();
     startPageBehavior();
-    // The browser's own rule decides (Global Privacy Control wins over a
-    // stored Allow): nothing is granted server-side that this browser would
-    // not measure itself.
-    if (!handle || !measurementPermitted()) return;
+    if (!handle) return false;
     const attribution = getAttribution();
     const cookies = getMetaCookies();
     const fbc =
@@ -1036,34 +1051,58 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       (attribution.fbclid && attribution.capturedAt
         ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
         : undefined);
-    const res = await grantAttemptMeasurement({
-      data: {
-        handle,
-        source: id,
-        ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
-        ...(fbc ? { fbc } : {}),
-      },
-    });
-    if (res.submitLead) {
-      trackMetaLead(res.submitLead.eventId, res.submitLead.source);
-      trackGoogleSubmit(res.submitLead.eventId, res.submitLead.source);
+    let accepted = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await grantAttemptMeasurement({
+          data: {
+            handle,
+            ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
+            ...(fbc ? { fbc } : {}),
+          },
+        });
+        accepted = true;
+      } catch {
+        // A thrown grant is not `{ ok: true }`. Keep the remaining tries.
+      }
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
     }
-    if (res.browserLead) {
-      trackMetaEmailVerified(res.browserLead.eventId, res.browserLead.source);
-      trackGoogleLead(res.browserLead.eventId, res.browserLead.source);
+    if (!accepted || !measurementPermitted()) return false;
+    try {
+      const polled = await pollVerification({ data: { handle } });
+      if (polled.browserLead && measurementPermitted()) {
+        trackMetaEmailVerified(polled.browserLead.eventId, polled.browserLead.source);
+        trackGoogleLead(polled.browserLead.eventId, polled.browserLead.source);
+        if (polled.browserLead.hasPhone) {
+          trackMetaPhoneLead(`${polled.browserLead.eventId}:phone`, polled.browserLead.source);
+          trackGooglePhone(`${polled.browserLead.eventId}:phone`, polled.browserLead.source);
+        }
+      }
+    } catch {
+      // The grant calls already landed. The poll effect retries EmailVerified.
     }
+    return true;
   }
 
   // Refused after the submit: recorded on the signup, so a confirmation opened
-  // anywhere later sends nothing.
-  async function declineMeasurementAfterSubmit() {
-    if (!handle) return;
-    // Retried until the server says the refusal is on the signup.
-    for (let attempt = 0; attempt < 4; attempt++) {
-      const res = await withdrawAttemptMeasurement({ data: { handle } }).catch(() => undefined);
-      if (res?.recorded) return;
-      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+  // anywhere later sends nothing. `nextHandle` is the handle a resend just
+  // returned; the React state still holds the previous attempt until paint.
+  async function declineMeasurementAfterSubmit(nextHandle?: string): Promise<boolean> {
+    const current = nextHandle || handle;
+    if (!current) return true;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await withdrawAttemptMeasurement({ data: { handle: current } });
+        if (res.recorded) {
+          markWithdrawalRecorded();
+          return true;
+        }
+      } catch {
+        // A dropped call is not a recorded refusal.
+      }
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
     }
+    return false;
   }
 
   if (closed) {
@@ -1089,7 +1128,10 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           if (loading) return;
           setLoading(true);
           try {
-            await submit();
+            const res = await submit();
+            if (res?.status === "pending" && res.handle && withdrawalNeedsRetry()) {
+              await declineMeasurementAfterSubmit(res.handle);
+            }
             toast.success(m.toasts.resent);
           } catch {
             toast.error(m.toasts.error);
@@ -1126,7 +1168,11 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // must not be able to widen it.
           const submitEventId = newMetaEventId();
           const res = await submit(submitEventId);
-          setAskMeasurement(res.status === "pending" && !hp.trim() && measurementAskEligible());
+          setAskMeasurement(
+            res.status === "pending" &&
+              !hp.trim() &&
+              (measurementAskEligible() || withdrawalNeedsRetry()),
+          );
           // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });
@@ -1135,7 +1181,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // server sent the Conversions API leg under the same event id, so
           // Meta counts one Lead. A tripped honeypot is knowable right here,
           // and a bot is not something to optimise for.
-          if (res.status === "pending" && !hp.trim()) {
+          if (res.status === "pending" && !hp.trim() && measurementPermitted()) {
             trackMetaLead(submitEventId, id);
             trackGoogleSubmit(submitEventId, id);
             trackClarity("sign_up", id);

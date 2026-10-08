@@ -349,13 +349,24 @@ export type ConfirmResponse = {
   measurementAsk?: true;
 };
 
-/** The answer to a measurement grant. Uniform for real and decoy attempts. */
+/**
+ * The answer to a measurement grant.
+ *
+ * An attempt grant (poll handle) is exactly `{ ok: true }` for a real row, a
+ * decoy, an invalid or expired handle, a withdrawal, and an abuse flag. The
+ * late Lead is sent server-side only. A confirmation-token grant may include
+ * the browser halves, because presenting the token already proves the caller
+ * received the mail. `status: "retry"` is only that confirmation path, and
+ * only when the consent write could not be confirmed.
+ */
 export type MeasurementGrantResponse = {
   ok: true;
   /** The confirmation's browser half, when the lead is already confirmed. */
   browserLead?: BrowserLead;
   /** The withheld submit `Lead`'s browser half, under the server's own id. */
   submitLead?: { eventId: string; source: string };
+  /** Confirmation grant only. The write could not be confirmed; try again. */
+  status?: "retry";
 };
 
 export type PollResponse = {

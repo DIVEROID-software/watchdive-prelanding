@@ -15,7 +15,13 @@ import {
 const GA_ID_PATTERN = /^G-[A-Z0-9]{4,20}$/;
 const ADS_ID_PATTERN = /^AW-\d{6,20}$/;
 const ADS_LABEL_PATTERN = /^[A-Za-z0-9_-]{1,40}$/;
-const EVENT_ID_PATTERN = /^[A-Za-z0-9._:-]{8,64}$/;
+// 64 hex chars plus a short suffix such as `:phone` (70). The pixel accepts
+// the same width; a 64-char ceiling dropped the phone conversion.
+const EVENT_ID_PATTERN = /^[A-Za-z0-9._:-]{8,80}$/;
+
+export function isGoogleEventId(eventId: string): boolean {
+  return EVENT_ID_PATTERN.test(eventId);
+}
 
 export const GOOGLE_CONSENT_STORAGE_KEY = CONSENT_STORAGE_KEY;
 
@@ -168,7 +174,7 @@ export function trackGoogleFormStart(placement: string) {
 }
 
 export function trackGoogleSubmit(eventId: string, placement: string) {
-  if (!canTrack() || !readGoogleTagConfig().gaId || !EVENT_ID_PATTERN.test(eventId)) return;
+  if (!canTrack() || !readGoogleTagConfig().gaId || !isGoogleEventId(eventId)) return;
   window.gtag!("event", "sign_up", {
     method: "email",
     form_id: placement,
@@ -177,7 +183,7 @@ export function trackGoogleSubmit(eventId: string, placement: string) {
 }
 
 export function trackGoogleLead(eventId: string, placement: string) {
-  if (!canTrack() || !EVENT_ID_PATTERN.test(eventId)) return;
+  if (!canTrack() || !isGoogleEventId(eventId)) return;
   const config = readGoogleTagConfig();
   if (config.gaId) {
     window.gtag!("event", "generate_lead", {
@@ -194,7 +200,7 @@ export function trackGoogleLead(eventId: string, placement: string) {
 }
 
 export function trackGooglePhone(eventId: string, placement: string) {
-  if (!canTrack() || !readGoogleTagConfig().gaId || !EVENT_ID_PATTERN.test(eventId)) return;
+  if (!canTrack() || !readGoogleTagConfig().gaId || !isGoogleEventId(eventId)) return;
   window.gtag!("event", "watchdive_phone", {
     form_id: placement,
     event_id: eventId,

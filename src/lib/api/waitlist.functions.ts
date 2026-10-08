@@ -113,6 +113,27 @@ function requestMeta(): { ip: string; ua: string } {
   }
 }
 
+/**
+ * Global Privacy Control. Only the `Sec-GPC` request header counts, and only
+ * the value `1`. A JSON field cannot turn it off: browsers forbid scripts
+ * from setting this header, so a caller who can set it is the browser itself.
+ */
+function requestHasGpc(): boolean {
+  try {
+    return getRequestHeader("sec-gpc") === "1";
+  } catch {
+    return false;
+  }
+}
+
+function serviceDependencies(meta: { ip?: string; ua?: string } = {}) {
+  return createServiceDependencies({
+    ...(meta.ip ? { ip: meta.ip } : {}),
+    ...(meta.ua ? { ua: meta.ua } : {}),
+    ...(requestHasGpc() ? { gpc: true } : {}),
+  });
+}
+
 // Real (non-suspect) rows only — the number the counters and social proof show.
 const NOT_SUSPECT = { property: "Suspect", checkbox: { equals: false } } as const;
 
@@ -354,7 +375,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
             return experiment ? { experiment } : {};
           })(),
         },
-        createServiceDependencies({ ...(ip ? { ip } : {}), ...(ua ? { ua } : {}) }),
+        serviceDependencies({ ...(ip ? { ip } : {}), ...(ua ? { ua } : {}) }),
       );
     } catch (error) {
       throw sanitizeServerError("verification-request", error);
@@ -371,7 +392,15 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     // depends only on configuration, consent and Meta's answer — never on
     // whether the address was new — so it does not reopen the existence oracle.
     let capi: MetaCapiDelivery | "skipped" = "skipped";
-    if (data.submitEventId && data.measurementConsent && !conversionBlocked(flags)) {
+    // The header wins over the body's consent bit. A late grant is refused
+    // the same way inside the service; this is the submit-time leg.
+    const globalPrivacyControl = requestHasGpc();
+    if (
+      data.submitEventId &&
+      data.measurementConsent &&
+      !globalPrivacyControl &&
+      !conversionBlocked(flags)
+    ) {
       const fbp = sanitizeMetaCookie(data.fbp);
       const fbc = submitFbc;
 
@@ -396,7 +425,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     } else if (data.submitEventId) {
       console.log(
         `[meta-capi] Lead skipped event_id=${data.submitEventId}: ${
-          !data.measurementConsent ? "no measurement consent" : "abuse flag"
+          globalPrivacyControl || !data.measurementConsent ? "no measurement consent" : "abuse flag"
         }`,
       );
     }
@@ -425,7 +454,7 @@ export const confirmVerification = createServerFn({ method: "POST" })
       const fbc = sanitizeMetaCookie(data.fbc);
       return await confirmVerificationService(
         data.token,
-        createServiceDependencies(requestMeta()),
+        serviceDependencies(requestMeta()),
         { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
       );
     } catch (error) {
@@ -438,7 +467,7 @@ export const pollVerification = createServerFn({ method: "POST" })
   .validator(z.object({ handle: z.string().min(16).max(400) }))
   .handler(async ({ data }) => {
     try {
-      return await pollVerificationService(data.handle, createServiceDependencies());
+      return await pollVerificationService(data.handle, serviceDependencies());
     } catch (error) {
       throw sanitizeServerError("verification-poll", error);
     }
@@ -450,7 +479,8 @@ export const grantAttemptMeasurement = createServerFn({ method: "POST" })
   .validator(
     z.object({
       handle: z.string().min(16).max(400),
-      // The form the browser used; only a label for the Lead it fires.
+      // Accepted and ignored. The response never echoes it: echoing the caller's
+      // label, or the row's source, told a decoy apart from a real attempt.
       source: z.enum(["hero", "offer"]).optional(),
       fbp: z.string().max(META_COOKIE_MAX).optional(),
       fbc: z.string().max(META_COOKIE_MAX).optional(),
@@ -463,11 +493,10 @@ export const grantAttemptMeasurement = createServerFn({ method: "POST" })
       return await grantAttemptMeasurementService(
         data.handle,
         {
-          ...(data.source ? { source: data.source } : {}),
           ...(fbp ? { fbp } : {}),
           ...(fbc ? { fbc } : {}),
         },
-        createServiceDependencies(requestMeta()),
+        serviceDependencies(requestMeta()),
       );
     } catch (error) {
       throw sanitizeServerError("measurement-grant-attempt", error);
@@ -491,7 +520,7 @@ export const grantConfirmationMeasurement = createServerFn({ method: "POST" })
       return await grantConfirmationMeasurementService(
         data.token,
         { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
-        createServiceDependencies(requestMeta()),
+        serviceDependencies(requestMeta()),
       );
     } catch (error) {
       throw sanitizeServerError("measurement-grant-confirmation", error);
@@ -504,7 +533,7 @@ export const withdrawAttemptMeasurement = createServerFn({ method: "POST" })
   .validator(z.object({ handle: z.string().min(16).max(400) }))
   .handler(async ({ data }) => {
     try {
-      return await withdrawAttemptMeasurementService(data.handle, createServiceDependencies());
+      return await withdrawAttemptMeasurementService(data.handle, serviceDependencies());
     } catch (error) {
       throw sanitizeServerError("measurement-withdraw-attempt", error);
     }
@@ -514,7 +543,7 @@ export const withdrawConfirmationMeasurement = createServerFn({ method: "POST" }
   .validator(z.object({ token: z.string().min(16).max(400) }))
   .handler(async ({ data }) => {
     try {
-      return await withdrawConfirmationMeasurementService(data.token, createServiceDependencies());
+      return await withdrawConfirmationMeasurementService(data.token, serviceDependencies());
     } catch (error) {
       throw sanitizeServerError("measurement-withdraw-confirmation", error);
     }

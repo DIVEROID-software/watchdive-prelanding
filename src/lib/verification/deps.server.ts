@@ -29,7 +29,7 @@ const deliveryAlerter = createDeliveryAlerter({ post: createSlackPoster() });
  * Meta cannot match without a user agent — and are never stored.
  */
 export function createServiceDependencies(
-  request: { ip?: string; ua?: string } = {},
+  request: { ip?: string; ua?: string; gpc?: boolean } = {},
 ): ServiceDependencies {
   const client = {
     ...(request.ip ? { ip: request.ip } : {}),
@@ -41,6 +41,7 @@ export function createServiceDependencies(
     store: createNotionLeadStore(createNotionRequest(), databaseId),
     mailer: createResendMailer(),
     pollGate,
+    ...(request.gpc ? { gpc: true as const } : {}),
     onDeliveryFailure: (error) => deliveryAlerter.record(error),
     dispatchVerifiedLead: async (input) => {
       await sendMetaEmailVerified({ ...input, ...client });
@@ -49,8 +50,9 @@ export function createServiceDependencies(
       // failure never un-confirms the lead.
       await sendMetaCrmQualifiedLead(input);
     },
-    // The submit `Lead`, sent late when the person allows measurement on the
-    // inbox card. Same event id as the browser leg fired at that moment.
+    // The submit Lead, sent by the server when measurement is allowed after
+    // the submit. The attempt response does not carry a browser id. A
+    // confirmation may return the same id so the pixel can dedupe against it.
     dispatchSubmitLead: async (input) => {
       await deliverMetaLead({ ...input, ...client });
     },

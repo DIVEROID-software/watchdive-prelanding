@@ -6,7 +6,12 @@ import {
   grantConfirmationMeasurement,
   withdrawConfirmationMeasurement,
 } from "@/lib/api/waitlist.functions";
-import { MeasurementAsk, measurementAskEligible } from "@/components/measurement-ask";
+import {
+  markWithdrawalRecorded,
+  MeasurementAsk,
+  measurementAskEligible,
+  withdrawalNeedsRetry,
+} from "@/components/measurement-ask";
 import { resolveGeoCountry } from "@/lib/consentRegion";
 import {
   getMetaCookies,
@@ -133,31 +138,49 @@ export function VerifyPage() {
     }
   };
 
-  /** Records the grant server-side; the server sends what was withheld. */
-  const grantMeasurement = async () => {
+  /**
+   * Records the grant server-side; the server sends what was withheld and may
+   * return the browser halves. `status: "retry"` means the write was not
+   * confirmed, so the same call is repeated a few times. False leaves a retry
+   * on the card instead of thanking the visitor.
+   */
+  const grantMeasurement = async (): Promise<boolean> => {
     // Global Privacy Control (or a refusal) wins over a click here.
-    if (!token.current || !measurementPermitted()) return;
+    if (!token.current || !measurementPermitted()) return false;
     const cookies = getMetaCookies();
-    const res = await grantConfirmationMeasurement({
+    const payload = {
       data: {
         token: token.current,
         ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
         ...(cookies.fbc ? { fbc: cookies.fbc } : {}),
       },
-    });
+    };
+    let res = await grantConfirmationMeasurement(payload);
+    for (let attempt = 1; attempt < 3 && res.status === "retry"; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+      res = await grantConfirmationMeasurement(payload);
+    }
+    if (res.status === "retry" || !measurementPermitted()) return false;
     fireConversions(res);
+    return true;
   };
 
   /** Refused here: recorded on the signup so nothing is sent for it later. */
-  const declineMeasurement = async () => {
-    if (!token.current) return;
-    for (let attempt = 0; attempt < 4; attempt++) {
-      const res = await withdrawConfirmationMeasurement({ data: { token: token.current } }).catch(
-        () => undefined,
-      );
-      if (res?.recorded) return;
-      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+  const declineMeasurement = async (): Promise<boolean> => {
+    if (!token.current) return false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await withdrawConfirmationMeasurement({ data: { token: token.current } });
+        if (res.recorded) {
+          markWithdrawalRecorded();
+          return true;
+        }
+      } catch {
+        // A dropped call is not a recorded refusal.
+      }
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
     }
+    return false;
   };
 
   const confirm = async () => {
@@ -186,11 +209,16 @@ export function VerifyPage() {
           // too: the pixel leg, deduplicated against the server leg by id.
           fireConversions({ browserLead: result.browserLead });
         } else if (result.measurementAsk) {
-          if (getMetaMeasurementConsent() === "granted") {
+          if (getMetaMeasurementConsent() === "granted" && measurementPermitted()) {
             // This browser already said yes (on the page, before or after the
             // submit): no need to ask again, only to record it for this lead.
-            void grantMeasurement().catch(() => {});
-          } else if (measurementAskEligible()) {
+            // A grant the server could not confirm leaves the retry on screen.
+            void grantMeasurement()
+              .then((recorded) => {
+                if (!recorded) setAskMeasurement(true);
+              })
+              .catch(() => setAskMeasurement(true));
+          } else if (measurementAskEligible() || withdrawalNeedsRetry()) {
             setAskMeasurement(true);
           }
         }

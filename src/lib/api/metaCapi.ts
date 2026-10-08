@@ -301,8 +301,9 @@ export async function sendMetaLead(args: MetaEventArgs): Promise<boolean> {
 /**
  * The confirmation click, mirrored from the browser `EmailVerified` custom
  * event under the deterministic verification event id. Deliberately not a
- * second `Lead`: the Lead already fired at submit. A confirmed phone number
- * adds the standard `Contact` event.
+ * second `Lead`. The submit Lead uses its own id: the browser's, when consent
+ * was already given, or the server id, when consent arrives later. A confirmed
+ * phone number adds the standard `Contact` event.
  */
 export async function sendMetaEmailVerified(args: MetaEventArgs): Promise<boolean> {
   const config = metaCapiConfig();
