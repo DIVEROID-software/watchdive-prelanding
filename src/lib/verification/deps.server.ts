@@ -51,8 +51,10 @@ export function createServiceDependencies(
       // failure never un-confirms the lead.
       await sendMetaCrmQualifiedLead(input);
     },
-    // The submit `Lead`, sent late when the person allows measurement on the
-    // inbox card. Same event id as the browser leg fired at that moment.
+    // The submit `Lead`: for a brand-new consented signup and a re-submit
+    // that newly allows measurement, under the browser pixel's id; when
+    // allowed later (inbox card, confirmation page), server-only under the
+    // row-derived id.
     dispatchSubmitLead: async (input) => {
       // Acknowledged only when Meta took it; anything else stays pending.
       return (await deliverMetaLead({ ...input, ...client })) === "sent";

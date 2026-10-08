@@ -952,7 +952,10 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       const detail = (event as CustomEvent<MeasurementChoiceDetail>).detail;
       if (!detail || detail.origin !== "banner") return;
       if (detail.choice === "granted") void allowMeasurementAfterSubmit().catch(() => {});
-      else void declineMeasurementAfterSubmit().catch(() => setBannerRefusalFailed(true));
+      else
+        void declineMeasurementAfterSubmit()
+          .then((recorded) => setBannerRefusalFailed(!recorded))
+          .catch(() => setBannerRefusalFailed(true));
     };
     window.addEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
     return () => window.removeEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
@@ -998,8 +1001,8 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
 
   // Allowed after the submit (inbox card, or the banner while the inbox card
   // is up): start the tags this browser now permits and record the grant.
-  // The server sends the submit `Lead` that was withheld under an id it
-  // derives itself, and hands back that id so this pixel dedupes against it.
+  // The server sends the submit `Lead` that was withheld, server-side only,
+  // under an id it derives itself; this browser fires no conversion for it.
   async function allowMeasurementAfterSubmit() {
     initMetaPixel();
     initGoogleTag();
@@ -1032,8 +1035,10 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // anywhere later sends nothing.
   async function declineMeasurementAfterSubmit(): Promise<boolean> {
     if (!handle) return true;
+    // The card shows its own retry; only the banner path (above) sets the
+    // separate one, so one refusal never shows two "Try again" controls.
     const recorded = await recordRefusal(handle);
-    setBannerRefusalFailed(!recorded);
+    if (recorded) setBannerRefusalFailed(false);
     return recorded;
   }
 
@@ -1103,10 +1108,13 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });
           // `Lead` fires here, at the accepted submit (2026-09-26): one
-          // confirmation a week is too little for delivery to optimise on. The
-          // server sent the Conversions API leg under the same event id, so
-          // Meta counts one Lead. A tripped honeypot is knowable right here,
-          // and a bot is not something to optimise for.
+          // confirmation a week is too little for delivery to optimise on. When
+          // this submit was the one that allowed measurement for the signup,
+          // the server sent the Conversions API leg under the same event id,
+          // so Meta counts one Lead. It fires the same way for a new or a known
+          // address, so it says nothing about which this was. A tripped
+          // honeypot is knowable right here, and a bot is not something to
+          // optimise for.
           if (res.status === "pending" && !hp.trim()) {
             trackMetaLead(submitEventId, id);
             trackGoogleSubmit(submitEventId, id);

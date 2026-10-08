@@ -655,7 +655,89 @@ test("an expired or forged handle does not report a refusal as recorded", async 
   });
 });
 
-test("Notion: the withdrawal cell is written alone, before (and despite) the Flags write", async () => {
+// ---- QA round 6 -----------------------------------------------------------
+
+test("a refusal through a decoy handle (cooldown re-submit) lands on the real row", async () => {
+  // One id factory across both submits, as in a real process.
+  const d = deps();
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), d);
+  clock = new Date(clock.getTime() + 5_000);
+  const decoy = await requestVerificationService(submit(true), d);
+  assert.notEqual(decoy.handle.split(".")[0], onlyRow().leadId, "it is a decoy");
+  const answer = await withdrawAttemptMeasurementService(decoy.handle, deps());
+  assert.deepEqual(answer, { ok: true, recorded: true });
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
+  clock = new Date(clock.getTime() + 60_000);
+  const confirmed = await confirmVerificationService(mailer.sent[0].token, deps());
+  assert.equal(confirmed.browserLead, undefined);
+  assert.equal(verified.length, 0);
+});
+
+test("a refusal through an already-confirmed decoy handle lands on the row", async () => {
+  const d = deps();
+  await requestVerificationService(submit(false), d);
+  clock = new Date(clock.getTime() + 60_000);
+  await confirmVerificationService(mailer.sent[0].token, deps());
+  clock = new Date(clock.getTime() + 5_000);
+  const decoy = await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), d);
+  assert.notEqual(decoy.handle.split(".")[0], onlyRow().leadId, "it is a decoy");
+  await withdrawAttemptMeasurementService(decoy.handle, deps());
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
+  await confirmVerificationService(mailer.sent[0].token, deps());
+  assert.equal(verified.length, 0);
+});
+
+test("a decoy for an unknown address still answers recorded, like a real one", async () => {
+  const handle = signPollHandle(
+    "aaaaaaaa-bbbb-4ccc-8ddd-0000000000ff",
+    clock.getTime(),
+    true,
+    TEST_SECRET,
+    "nobody@example.com",
+  );
+  assert.deepEqual(await withdrawAttemptMeasurementService(handle, deps()), {
+    ok: true,
+    recorded: true,
+  });
+});
+
+test("a handle's sealed address is unreadable and tamper-evident", async () => {
+  const pending = await requestVerificationService(submit(false), deps());
+  assert.equal(pending.handle.includes("diver"), false);
+  const parts = pending.handle.split(".");
+  assert.equal(parts.length, 5);
+  const tampered = [...parts.slice(0, 3), parts[3].slice(0, -2) + "AA", parts[4]].join(".");
+  assert.deepEqual(await withdrawAttemptMeasurementService(tampered, deps()), {
+    ok: true,
+    recorded: false,
+  });
+});
+
+test("a pending Lead retried by a form re-submit keeps the row's id and waits for Meta", async () => {
+  const pending = await requestVerificationService(submit(false), deps());
+  metaAcks = false;
+  await grantAttemptMeasurementService(pending.handle, {}, deps());
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_LEAD_PENDING);
+  clock = new Date(clock.getTime() + 61_000);
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  assert.deepEqual(
+    submits.map((s) => s.eventId),
+    [rowLeadId(), rowLeadId()],
+    "never a second id",
+  );
+  assert.equal(
+    onlyRow().measurementConsent,
+    MEASUREMENT_CONSENT_LEAD_PENDING,
+    "not closed unacked",
+  );
+  metaAcks = true;
+  clock = new Date(clock.getTime() + 61_000);
+  await requestVerificationService(submit(true, { submitEventId: "browser-lead-0003" }), deps());
+  assert.equal(submits.at(-1)!.eventId, rowLeadId());
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
+});
+
+test("Notion: the withdrawal flag is written before the cell, and the cell even if the flag fails", async () => {
   const patches: Record<string, unknown>[] = [];
   const notionStore = createNotionLeadStore(async (method, _path, body) => {
     if (method === "PATCH") {
@@ -666,6 +748,6 @@ test("Notion: the withdrawal cell is written alone, before (and despite) the Fla
     return { id: "notion-page-1", properties: {} };
   }, "database-1");
   await assert.rejects(notionStore.recordMeasurementWithdrawal("notion-page-1"));
-  assert.deepEqual(Object.keys(patches[0]), ["Measurement consent"]);
-  assert.ok("Flags" in patches[1]);
+  assert.ok("Flags" in patches[0]);
+  assert.deepEqual(Object.keys(patches[1]), ["Measurement consent"]);
 });

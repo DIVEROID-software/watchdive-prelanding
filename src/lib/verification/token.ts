@@ -8,7 +8,15 @@
 // cannot be turned back into a working confirmation URL.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  createHmac,
+  randomBytes,
+  randomUUID,
+  timingSafeEqual,
+} from "node:crypto";
 
 import { DEFAULT_LOCALE, isLocale, type Locale, verifyPath } from "../i18n/locale.ts";
 import { isVerificationTokenShape, verificationTokenLocale } from "./tokenShape.ts";
@@ -173,8 +181,8 @@ export function deterministicMetaEventId(leadId: string, secret: string): string
 
 /**
  * The submit `Lead` sent late, after someone allows measurement post-submit.
- * Derived from the attempt like the confirmation id (never chosen by the
- * caller), so however many times a grant is replayed, Meta sees one Lead.
+ * Derived from the CRM row (never chosen by the caller), so however many
+ * times a grant is replayed or retried, Meta sees one Lead.
  */
 export function deterministicSubmitEventId(rowId: string, secret: string): string {
   // Keyed on the CRM row, not the attempt: a resend rotates the attempt, and a
@@ -187,23 +195,69 @@ export function deterministicSubmitEventId(rowId: string, secret: string): strin
 
 // --- poll handle -----------------------------------------------------------
 
-export type ParsedHandle = { leadId: string; issuedAtMs: number; measurementConsent: boolean };
+export type ParsedHandle = {
+  leadId: string;
+  issuedAtMs: number;
+  measurementConsent: boolean;
+  /**
+   * The canonical address the submit named, sealed inside the handle. Read
+   * only to record a refusal when the attempt id names no row (a decoy handle
+   * from a cooldown, send-ceiling or already-confirmed submit): the refusal
+   * must reach the row the person's mail will confirm. Never used to grant.
+   */
+  refusalCanonical?: string;
+};
+
+// The address travels sealed (AES-256-GCM, key derived from the signing
+// secret), so the handle still says nothing readable about the person.
+const SEAL_PATTERN = /^[A-Za-z0-9_-]{40,700}$/;
+
+function sealKey(secret: string): Buffer {
+  return createHash("sha256").update(`poll-seal:v1:${secret}`).digest();
+}
+
+function sealCanonical(canonical: string, secret: string): string {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", sealKey(secret), iv);
+  const body = Buffer.concat([cipher.update(canonical, "utf8"), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), body]).toString("base64url");
+}
+
+function openCanonical(sealed: string, secret: string): string | undefined {
+  try {
+    const raw = Buffer.from(sealed, "base64url");
+    if (raw.length < 29) return undefined;
+    const decipher = createDecipheriv("aes-256-gcm", sealKey(secret), raw.subarray(0, 12));
+    decipher.setAuthTag(raw.subarray(12, 28));
+    const text = Buffer.concat([decipher.update(raw.subarray(28)), decipher.final()]).toString(
+      "utf8",
+    );
+    return text && text.length <= 320 ? text : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * What the original tab holds while it waits. It names an attempt, not a
- * person: no address, no page id, nothing that outlives the attempt. A submit
- * that deliberately started no attempt still gets a well-formed handle, so
- * polling cannot tell "already confirmed" or "suppressed" from "waiting".
+ * person: no readable address, no page id. A submit that deliberately started
+ * no attempt still gets a well-formed handle, so polling cannot tell "already
+ * confirmed" or "suppressed" from "waiting". Every handle a submit returns
+ * also carries the address sealed (see `ParsedHandle.refusalCanonical`), used
+ * only to land a refusal on the row when the attempt id names none.
  */
 export function signPollHandle(
   leadId: string,
   issuedAtMs: number,
   measurementConsent: boolean,
   secret: string,
+  canonical?: string,
 ): string {
   if (!isLeadId(leadId)) throw new Error("Invalid lead id");
-  const payload = `${leadId.toLowerCase()}.${issuedAtMs}.${consentFlag(measurementConsent)}`;
-  return `${payload}.${sign(secret, `poll:v1:${payload}`)}`;
+  const base = `${leadId.toLowerCase()}.${issuedAtMs}.${consentFlag(measurementConsent)}`;
+  if (!canonical) return `${base}.${sign(secret, `poll:v1:${base}`)}`;
+  const payload = `${base}.${sealCanonical(canonical, secret)}`;
+  return `${payload}.${sign(secret, `poll:v2:${payload}`)}`;
 }
 
 export function verifyPollHandle(
@@ -213,27 +267,40 @@ export function verifyPollHandle(
   ttlMs: number,
 ): ParsedHandle | undefined {
   const parts = handle.split(".");
-  if (parts.length !== 4) return undefined;
-  const [leadId, issuedAt, consent, mac] = parts;
+  // v1: four parts. v2 adds the sealed address before the MAC.
+  if (parts.length !== 4 && parts.length !== 5) return undefined;
+  const [leadId, issuedAt, consent] = parts;
+  const mac = parts[parts.length - 1];
+  const sealed = parts.length === 5 ? parts[3] : undefined;
   if (
     !UUID_PATTERN.test(leadId) ||
     !/^\d{1,15}$/.test(issuedAt) ||
     (consent !== CONSENT_GRANTED && consent !== CONSENT_DENIED) ||
-    !MAC_PATTERN.test(mac)
+    !MAC_PATTERN.test(mac) ||
+    (sealed !== undefined && !SEAL_PATTERN.test(sealed))
   ) {
     return undefined;
   }
-  const payload = `${leadId.toLowerCase()}.${issuedAt}.${consent}`;
-  if (!safeEqual(mac, sign(secret, `poll:v1:${payload}`))) return undefined;
+  const base = `${leadId.toLowerCase()}.${issuedAt}.${consent}`;
+  const expected =
+    sealed === undefined
+      ? sign(secret, `poll:v1:${base}`)
+      : sign(secret, `poll:v2:${base}.${sealed}`);
+  if (!safeEqual(mac, expected)) return undefined;
   const issuedAtMs = Number(issuedAt);
   if (!Number.isSafeInteger(issuedAtMs)) return undefined;
   // A forged or clock-skewed issue time must not buy an unbounded window.
   if (issuedAtMs > nowMs + 60_000 || nowMs - issuedAtMs > ttlMs) return undefined;
-  return {
+  const parsedHandle: ParsedHandle = {
     leadId: leadId.toLowerCase(),
     issuedAtMs,
     measurementConsent: consent === CONSENT_GRANTED,
   };
+  if (sealed !== undefined) {
+    const canonical = openCanonical(sealed, secret);
+    if (canonical) parsedHandle.refusalCanonical = canonical;
+  }
+  return parsedHandle;
 }
 
 // --- network key -----------------------------------------------------------

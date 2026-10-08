@@ -380,7 +380,7 @@ export const confirmVerification = createServerFn({ method: "POST" })
 
 // The original tab waits here. The handle names an attempt, never a person.
 export const pollVerification = createServerFn({ method: "POST" })
-  .validator(z.object({ handle: z.string().min(16).max(400) }))
+  .validator(z.object({ handle: z.string().min(16).max(900) }))
   .handler(async ({ data }) => {
     try {
       return await pollVerificationService(data.handle, createServiceDependencies());
@@ -394,7 +394,7 @@ export const pollVerification = createServerFn({ method: "POST" })
 export const grantAttemptMeasurement = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      handle: z.string().min(16).max(400),
+      handle: z.string().min(16).max(900),
       // The form the browser used; only a label for the Lead it fires.
       source: z.enum(["hero", "offer"]).optional(),
       fbp: z.string().max(META_COOKIE_MAX).optional(),
@@ -446,7 +446,7 @@ export const grantConfirmationMeasurement = createServerFn({ method: "POST" })
 // A refusal after the submit, while this browser still holds the attempt's
 // handle (inbox card or the banner) or its token (confirmation page).
 export const withdrawAttemptMeasurement = createServerFn({ method: "POST" })
-  .validator(z.object({ handle: z.string().min(16).max(400) }))
+  .validator(z.object({ handle: z.string().min(16).max(900) }))
   .handler(async ({ data }) => {
     try {
       return await withdrawAttemptMeasurementService(data.handle, createServiceDependencies());
