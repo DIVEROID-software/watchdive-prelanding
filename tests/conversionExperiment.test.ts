@@ -805,7 +805,7 @@ test("obvious crawlers are discarded and Facebook or Instagram in-app browsers a
   );
 });
 
-test("a signup without experiment context still retries one click-cookie network failure", async () => {
+test("a signup without experiment context does not duplicate an ambiguous page creation", async () => {
   const previous = process.env.NOTION_META_FBC_PROPERTY;
   process.env.NOTION_META_FBC_PROPERTY = "Meta FBC";
   try {
@@ -821,21 +821,23 @@ test("a signup without experiment context still retries one click-cookie network
       assert.equal(FIELD_CONVERSION_EXPERIMENT in properties, false);
       return { id: "page-legacy", properties: { Email: { title: [{ plain_text: "diver@example.com" }] } } };
     };
-    const record = await createNotionLeadStore(request, "wait-db").createPending({
-      email: "diver@example.com",
-      canonical: "diver@example.com",
-      source: "hero",
-      refCode: "abcd1234",
-      flags: [],
-      suspect: false,
-      signedUpAt: new Date(NOW).toISOString(),
-      leadId: "aaaaaaaa-bbbb-4ccc-8ddd-000000000001",
-      expiresAt: new Date(NOW + 86_400_000).toISOString(),
-      metaFbc: FBC,
-      measurementGranted: true,
-    });
-    assert.equal(record.pageId, "page-legacy");
-    assert.equal(calls, 2);
+    await assert.rejects(
+      createNotionLeadStore(request, "wait-db").createPending({
+        email: "diver@example.com",
+        canonical: "diver@example.com",
+        source: "hero",
+        refCode: "abcd1234",
+        flags: [],
+        suspect: false,
+        signedUpAt: new Date(NOW).toISOString(),
+        leadId: "aaaaaaaa-bbbb-4ccc-8ddd-000000000001",
+        expiresAt: new Date(NOW + 86_400_000).toISOString(),
+        metaFbc: FBC,
+        measurementGranted: true,
+      }),
+      /socket hang up/,
+    );
+    assert.equal(calls, 1);
   } finally {
     if (previous === undefined) delete process.env.NOTION_META_FBC_PROPERTY;
     else process.env.NOTION_META_FBC_PROPERTY = previous;

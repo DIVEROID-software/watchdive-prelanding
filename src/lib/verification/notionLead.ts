@@ -342,14 +342,11 @@ function omitFbclid(attribution: LeadAttribution): LeadAttribution {
  * A missing optional column is a validation 400 that names that column. Retry
  * only then, and only by dropping the named column. A timeout or a 5xx is not
  * retried: the first request may already have created the row.
- * Signups that do not carry experiment context keep the older click-cookie
- * retry, including a non-400, so that path does not change.
  */
 async function createLeadPage(
   create: (options: OptionalLeadWrite) => Promise<Record<string, unknown>>,
   options: OptionalLeadWrite,
   columns: { fbcColumn?: string; fbclidColumn?: string },
-  legacyFbcRetry = !options.experiment,
 ): Promise<Record<string, unknown>> {
   try {
     return await create(options);
@@ -371,9 +368,8 @@ async function createLeadPage(
           code: error instanceof NotionRequestError ? error.code : "",
         });
       }
-      return createLeadPage(create, next, columns, false);
+      return createLeadPage(create, next, columns);
     }
-    if (legacyFbcRetry && options.fbc) return create({ ...options, fbc: false });
     throw error;
   }
 }
