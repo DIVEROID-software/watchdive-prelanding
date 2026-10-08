@@ -105,6 +105,46 @@ beforeEach(() => {
   clock = new Date("2026-10-08T09:00:00.000Z");
 });
 
+test("a newly blocked row is rechecked after the click-cookie write", async () => {
+  const pending = await requestVerificationService(submit(false), deps());
+  const write = store.recordMeasurementFbc.bind(store);
+  store.recordMeasurementFbc = async (pageId, fbc) => {
+    await write(pageId, fbc);
+    const row = store.rows.get(pageId)!;
+    store.rows.set(pageId, { ...row, flags: [...row.flags, "honeypot"] });
+  };
+  await grantAttemptMeasurementService(pending.handle, { fbc: FBC }, deps());
+  assert.equal(submits.length, 0);
+});
+
+test("a swallowed verified-event outage is retryable under the same event id", async () => {
+  await requestVerificationService(submit(false), deps());
+  const token = mailer.sent[0].token;
+  await confirmVerificationService(token, deps());
+  const attempted: string[] = [];
+  const dispatchVerifiedLead = async (input: Record<string, unknown>) => {
+    attempted.push(String(input.eventId));
+    if (attempted.length === 1) throw new Error("Meta temporarily unavailable");
+  };
+  await grantConfirmationMeasurementService(token, {}, deps({ dispatchVerifiedLead }));
+  await grantConfirmationMeasurementService(token, {}, deps({ dispatchVerifiedLead }));
+  assert.equal(attempted.length, 2);
+  assert.equal(new Set(attempted).size, 1);
+});
+
+test("a withdrawal during verified dispatch prevents a subsequent browser conversion", async () => {
+  await requestVerificationService(submit(false), deps());
+  const token = mailer.sent[0].token;
+  await confirmVerificationService(token, deps());
+  const result = await grantConfirmationMeasurementService(token, {}, deps({
+    dispatchVerifiedLead: async () => {
+      await store.recordMeasurementWithdrawal(onlyRow().pageId);
+    },
+  }));
+  assert.equal(result.browserLead, undefined);
+  assert.equal(result.submitLead, undefined);
+});
+
 test("without any consent the confirmation converts nothing and asks once", async () => {
   await requestVerificationService(submit(false), deps());
   clock = new Date(clock.getTime() + 60_000);

@@ -54,7 +54,10 @@ export function createServiceDependencies(
     // the submit. The attempt response does not carry a browser id. A
     // confirmation may return the same id so the pixel can dedupe against it.
     dispatchSubmitLead: async (input) => {
-      await deliverMetaLead({ ...input, ...client });
+      const outcome = await deliverMetaLead({ ...input, ...client });
+      // The service records successful delivery for retry deduplication.
+      // Meta's handled error response must not look like a successful send.
+      if (outcome !== "sent") throw new Error("Submit measurement not delivered");
     },
   };
 }

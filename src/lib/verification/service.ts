@@ -622,7 +622,7 @@ const processWithdrawGate = createGrantGate();
 const processSubmitLeadLedger = new Set<string>();
 
 type GrantOutcome = "granted" | "already" | "refused" | "uncertain";
-type MeasurementView = "granted" | "withdrawn" | "open" | "unknown";
+type MeasurementView = "granted" | "withdrawn" | "blocked" | "open" | "unknown";
 
 function leadLedger(dependencies: ServiceDependencies): Set<string> {
   return dependencies.submitLeadLedger ?? processSubmitLeadLedger;
@@ -637,6 +637,7 @@ async function readMeasurementState(store: LeadStore, pageId: string): Promise<M
     const row = await store.reread(pageId);
     if (!row) return "unknown";
     if (measurementWithdrawn(row)) return "withdrawn";
+    if (row.status === "unsubscribed" || conversionBlocked(row.flags)) return "blocked";
     if (row.measurementConsent === MEASUREMENT_CONSENT_GRANTED) return "granted";
     return "open";
   } catch {
@@ -674,7 +675,7 @@ async function applyGrant(
   const { store } = dependencies;
   const fresh = await readMeasurementState(store, record.pageId);
   if (fresh === "unknown") return "uncertain";
-  if (fresh === "withdrawn") return "refused";
+  if (fresh === "withdrawn" || fresh === "blocked") return "refused";
   if (fresh === "granted") return "already";
   try {
     await store.recordMeasurementGrant(record.pageId);
@@ -771,6 +772,9 @@ async function sendSubmitLeadOnce(
       ...(record.utm ? { utm: record.utm } : {}),
       ...context,
     });
+    // Eviction only permits replay of the same deterministic id, which Meta
+    // deduplicates; process memory must not grow for the life of a warm server.
+    if (ledger.size >= 5000) ledger.delete(ledger.values().next().value!);
     ledger.add(eventId);
     return true;
   } catch {
@@ -834,8 +838,9 @@ async function dispatchAfterGrant(
   if (oweLead) {
     const sent = await sendSubmitLeadOnce(record, leadId, conversion, dependencies, secret);
     const now = await readMeasurementState(dependencies.store, record.pageId);
-    if (now === "withdrawn") return quiet();
-    if (!sent && now !== "granted") return retry();
+    if (now === "unknown") return retry();
+    if (now !== "granted") return quiet();
+    if (!sent) return retry();
     if (sent && surface === "confirmation") {
       response.submitLead = { eventId: submitEventId, source: record.source };
     }
@@ -847,10 +852,13 @@ async function dispatchAfterGrant(
   if (emailView !== "granted") return quiet();
   const emailEventId =
     record.metaEventId || deterministicMetaEventId(leadId, secret);
-  if (!ledger.has(emailEventId)) {
-    await dispatchIfPermitted(record, emailEventId, true, dependencies, context);
-    ledger.add(emailEventId);
-  }
+  // The verification dispatcher deliberately absorbs outages so signup stays
+  // successful. It cannot serve as a delivery receipt. Replay the stable id
+  // on retry instead of recording a swallowed failure as a success.
+  await dispatchIfPermitted(record, emailEventId, true, dependencies, context);
+  const afterVerified = await readMeasurementState(dependencies.store, record.pageId);
+  if (afterVerified === "unknown") return retry();
+  if (afterVerified !== "granted") return quiet();
   if (surface === "confirmation") {
     Object.assign(response, browserLead(record, emailEventId, true));
   }

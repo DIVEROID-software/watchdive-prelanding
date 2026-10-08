@@ -14,6 +14,7 @@ import { browserConsentRegion, resolveGeoCountry } from "@/lib/consentRegion";
 import { cookieBarShouldYield } from "@/lib/cookieBarPlacement";
 import {
   announceMeasurementChoice,
+  clearWithdrawalRecorded,
   MEASUREMENT_CHOICE_EVENT,
   MEASUREMENT_SETTLED_EVENT,
   takeServerWithdrawalExpected,
@@ -45,7 +46,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
     privacy: "Privacy Policy",
     settings: "Cookie settings",
     retry: "Try again",
-    retryBody: "This browser is opted out. The refusal is not on the signup yet.",
+    retryBody: "Measurement is off in this browser. We couldn’t confirm your choice was saved. Please try again.",
   },
   ko: {
     title: "개인정보 선택",
@@ -55,7 +56,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
     privacy: "개인정보처리방침",
     settings: "쿠키 설정",
     retry: "다시 시도",
-    retryBody: "이 브라우저에서는 측정을 껐어요. 가입 기록에는 아직 거부가 남지 않았어요.",
+    retryBody: "이 브라우저의 측정은 꺼져 있어요. 선택 사항 저장을 확인하지 못했어요. 다시 시도해 주세요.",
   },
   "zh-CN": {
     title: "您的隐私选择",
@@ -271,6 +272,7 @@ export function CookieChoiceBar() {
       // Global Privacy Control wins over Accept. Do not store Allow, tell the
       // page it was granted, or start tags.
       if (globalPrivacyControlOn()) return;
+      clearWithdrawalRecorded();
       setMetaMeasurementConsent("granted");
       announceMeasurementChoice({ choice, origin: "banner" });
       initMetaPixel();

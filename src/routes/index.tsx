@@ -23,6 +23,7 @@ import {
   expectServerWithdrawal,
   markWithdrawalRecorded,
   MEASUREMENT_CHOICE_EVENT,
+  clearWithdrawalRecorded,
   MeasurementAsk,
   measurementAskEligible,
   noteMeasurementSettled,
@@ -1026,6 +1027,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       setClosed(res.message);
       return res;
     }
+    clearWithdrawalRecorded();
     setHandle(res.handle);
     setPending(res.message);
     return res;

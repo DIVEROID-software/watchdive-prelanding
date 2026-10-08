@@ -10,6 +10,7 @@
 // is pre-selected, the signup works either way, and the footer link still
 // reopens the choice. Asked once per browser — any answer is remembered.
 import { useEffect, useState } from "react";
+import { createWithdrawalBatch } from "@/lib/measurementSettlement";
 
 import { browserConsentRegion, browserGpc } from "@/lib/consentRegion";
 import { privacyPath, type Locale } from "@/lib/i18n/locale";
@@ -43,9 +44,9 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "No thanks",
     privacy: "Privacy",
     thanks: "Thank you. That genuinely helps.",
-    withdrawRetry: "Measurement stays off in this browser. The signup does not have that refusal yet.",
-    withdrawRetryButton: "Record the refusal again",
-    grantRetry: "Measurement is on in this browser. The signup does not have that permission yet.",
+    withdrawRetry: "Measurement is off in this browser. We couldn’t confirm your choice was saved. Please try again.",
+    withdrawRetryButton: "Try again",
+    grantRetry: "Your browser choice is saved. We couldn’t confirm it for this signup. Please try again.",
     grantRetryButton: "Try again",
   },
   ko: {
@@ -55,9 +56,9 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "괜찮아요",
     privacy: "개인정보",
     thanks: "고마워요. 정말 큰 도움이 돼요.",
-    withdrawRetry: "이 브라우저에서는 측정을 껐어요. 가입 기록에는 아직 거부가 남지 않았어요.",
-    withdrawRetryButton: "거부를 다시 기록",
-    grantRetry: "이 브라우저에서는 측정을 켰어요. 가입 기록에는 아직 허용이 남지 않았어요.",
+    withdrawRetry: "이 브라우저의 측정은 꺼져 있어요. 선택 사항 저장을 확인하지 못했어요. 다시 시도해 주세요.",
+    withdrawRetryButton: "다시 시도",
+    grantRetry: "브라우저에 선택 사항을 저장했지만, 이번 가입에 적용됐는지 확인하지 못했어요. 다시 시도해 주세요.",
     grantRetryButton: "다시 시도",
   },
   "zh-CN": {
@@ -193,16 +194,28 @@ export function markWithdrawalRecorded(): void {
   }
 }
 
+/** A receipt for a previous attempt or choice says nothing about a new one. */
+export function clearWithdrawalRecorded(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(WITHDRAWAL_RECORDED_KEY);
+  } catch {
+    // The current callback still verifies the server result directly.
+  }
+}
+
 /** Local deny with no confirmed write on a signup. The refusal can still be retried. */
 export function withdrawalNeedsRetry(): boolean {
   return getMetaMeasurementConsent() === "denied" && !withdrawalRecorded();
 }
 
 let serverWithdrawalExpected = false;
+const withdrawalBatch = createWithdrawalBatch();
 
 /** The banner listener calls this synchronously while it still has a signup handle. */
 export function expectServerWithdrawal(): void {
   serverWithdrawalExpected = true;
+  withdrawalBatch.begin();
 }
 
 /** The banner reads this in the same turn, after the choice event's listeners run. */
@@ -214,7 +227,10 @@ export function takeServerWithdrawalExpected(): boolean {
 
 export function noteMeasurementSettled(detail: MeasurementSettledDetail): void {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent<MeasurementSettledDetail>(MEASUREMENT_SETTLED_EVENT, { detail }));
+  const settled = detail.choice === "denied"
+    ? { ...detail, recorded: withdrawalBatch.settle(detail.recorded) }
+    : detail;
+  window.dispatchEvent(new CustomEvent<MeasurementSettledDetail>(MEASUREMENT_SETTLED_EVENT, { detail: settled }));
 }
 
 function stopClarity(): void {
@@ -292,6 +308,7 @@ export function MeasurementAsk({
       // Global Privacy Control wins over this click. Do not store Allow,
       // announce it, or start tags.
       if (browserGpc()) return;
+      clearWithdrawalRecorded();
       setMetaMeasurementConsent("granted");
       announceMeasurementChoice({ choice, origin: "card" });
       setBusy(true);

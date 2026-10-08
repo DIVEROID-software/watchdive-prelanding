@@ -661,6 +661,14 @@ test("first touch and experiment context are written once, and the response stay
   );
   assert.equal(noConsent.createPendingInputs[0].experiment, undefined);
 
+  const gpcStore = new FakeLeadStore();
+  await requestVerificationService(
+    { ...base, measurementConsent: true, experiment },
+    { ...deps(), store: gpcStore, gpc: true },
+  );
+  assert.equal(gpcStore.createPendingInputs[0].experiment, undefined);
+  assert.equal(gpcStore.createPendingInputs[0].measurementGranted, undefined);
+
   const suspectStore = new FakeLeadStore();
   await requestVerificationService(
     {
