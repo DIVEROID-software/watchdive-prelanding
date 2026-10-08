@@ -309,19 +309,20 @@ export function CookieChoiceBar() {
     if (typeof window !== "undefined" && window.clarity) {
       window.clarity("consentv2", { ad_Storage: "denied", analytics_Storage: "denied" });
     }
-    // Every signup this browser made and still holds a handle for gets the
-    // refusal on its row, not only the one an inbox card has on screen.
-    const kept = storedSignupHandles();
-    if (kept.length > 0) expectServerWithdrawal();
     announceMeasurementChoice({ choice: "denied", origin: "banner" });
-    // Listeners run before this returns. A pending signup sets the flag; with
-    // no signup, the local refusal is the whole record and the bar can close.
+    // Listeners run before this returns. A pending signup on screen takes the
+    // refusal itself (its call covers every kept signup too). Otherwise every
+    // signup this browser kept a handle for gets it from here; with none, the
+    // local refusal is the whole record and the bar can close.
     if (!takeServerWithdrawalExpected()) {
-      setWithdrawPending(false);
-      setOpen(false);
-      return;
-    }
-    if (kept.length > 0) {
+      const kept = storedSignupHandles();
+      if (kept.length === 0) {
+        setWithdrawPending(false);
+        setOpen(false);
+        return;
+      }
+      expectServerWithdrawal();
+      takeServerWithdrawalExpected();
       void withdrawEverySignup(kept).then((recorded) => {
         noteMeasurementSettled({ choice: "denied", recorded });
       });

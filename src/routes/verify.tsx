@@ -7,6 +7,7 @@ import {
   withdrawConfirmationMeasurement,
 } from "@/lib/api/waitlist.functions";
 import {
+  clearWithdrawalRecorded,
   MeasurementAsk,
   measurementAskEligible,
   withdrawalNeedsRetry,
@@ -191,10 +192,11 @@ export function VerifyPage() {
       // so the server's confirmation names the click that brought them here.
       await resolveGeoCountry();
       const cookies = measurementPermitted() ? getMetaCookies() : {};
+      const refused = getMetaMeasurementConsent() === "denied";
       const result = await confirmVerification({
         data: {
           token: token.current,
-          ...(getMetaMeasurementConsent() === "denied" ? { refused: true } : {}),
+          ...(refused ? { refused: true } : {}),
           ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
           ...(cookies.fbc ? { fbc: cookies.fbc } : {}),
         },
@@ -202,6 +204,18 @@ export function VerifyPage() {
       if (result.status === "verified" || result.status === "already_verified") {
         setRefCode(result.refCode ?? "");
         setState("verified");
+        if (refused) {
+          // This browser refused earlier. The server recorded it on this
+          // signup before anything else; make sure every other signup this
+          // browser kept has it too. Anything unrecorded keeps Try again.
+          const everywhere =
+            result.refusalRecorded !== false && (await withdrawEverySignup().catch(() => false));
+          if (!everywhere) {
+            clearWithdrawalRecorded();
+            setAskMeasurement(true);
+          }
+          return;
+        }
         if (result.browserLead && measurementPermitted()) {
           // Measurement was allowed for this lead and this browser allows it
           // too: the pixel leg, deduplicated against the server leg by id.

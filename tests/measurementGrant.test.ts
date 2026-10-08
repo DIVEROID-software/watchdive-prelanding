@@ -5,6 +5,7 @@
 // under an id derived from the row; every send re-reads the row right before
 // it leaves and fails closed. These pin each scenario the QA rounds raised.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { beforeEach, test } from "node:test";
 
 import { canonicalEmail } from "../src/lib/api/abuse.ts";
@@ -912,4 +913,51 @@ test("a send-blocked create is withheld, so the later real submit opens its one 
     ["browser-lead-0002"],
   );
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
+});
+
+// ---- QA round 10 ----------------------------------------------------------
+
+test("failed refusal writes never spend the refusal budget", async () => {
+  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  const handle = signPollHandle(onlyRow().leadId, clock.getTime(), true, TEST_SECRET);
+  const write = store.recordMeasurementWithdrawal.bind(store);
+  store.recordMeasurementWithdrawal = async () => {
+    throw new Error("unavailable");
+  };
+  const limited = { ...deps(), withdrawGate: createGrantGate(1) };
+  for (let i = 0; i < 8; i++) {
+    assert.equal((await withdrawAttemptMeasurementService(handle, limited)).recorded, false);
+  }
+  store.recordMeasurementWithdrawal = write;
+  assert.equal((await withdrawAttemptMeasurementService(handle, limited)).recorded, true);
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
+  clock = new Date(clock.getTime() + 61_000);
+  const confirmed = await confirmVerificationService(mailer.sent[0].token, deps());
+  assert.equal(confirmed.browserLead, undefined);
+  assert.equal(verified.length, 0);
+});
+
+test("a confirmation whose stored refusal could not be written says so", async () => {
+  await requestVerificationService(submit(true), deps());
+  store.recordMeasurementWithdrawal = async () => {
+    throw new Error("unavailable");
+  };
+  clock = new Date(clock.getTime() + 60_000);
+  const confirmed = await confirmVerificationService(
+    mailer.sent[0].token,
+    deps(),
+    {},
+    { localRefusal: true },
+  );
+  assert.equal(confirmed.status, "verified");
+  assert.equal(confirmed.refusalRecorded, false);
+  assert.equal(confirmed.browserLead, undefined);
+  assert.equal(verified.length, 0);
+});
+
+test("the confirmation page keeps Try again unless the refusal reached every kept signup", () => {
+  const verify = readFileSync("src/routes/verify.tsx", "utf8");
+  const confirm = verify.slice(verify.indexOf("const confirm = async"));
+  assert.ok(confirm.includes("result.refusalRecorded !== false && (await withdrawEverySignup()"));
+  assert.ok(confirm.includes("setAskMeasurement(true)"));
 });

@@ -437,11 +437,15 @@ export async function confirmVerificationService(
 
   // The confirming browser has a refusal stored (a No thanks or Reject all
   // whose server write may not have landed): record it before anything is sent.
+  // A refusal that could not be written is reported back, so the page keeps
+  // Try again instead of showing it as saved.
+  let refusalUnrecorded = false;
   if (options.localRefusal) {
-    await withdraw(parsed.leadId, dependencies);
+    refusalUnrecorded = !(await withdraw(parsed.leadId, dependencies));
     // Even an unavailable CRM cannot override this request's explicit refusal.
     dependencies = { ...dependencies, gpc: true };
   }
+  const refusal = refusalUnrecorded ? { refusalRecorded: false as const } : {};
 
   const metaEventId = deterministicMetaEventId(parsed.leadId, secret);
 
@@ -465,6 +469,7 @@ export async function confirmVerificationService(
       refCode: record.refCode,
       ...(sent ? browserLead(record, metaEventId) : {}),
       ...measurementAsk(record, parsed.measurementConsent, options.localRefusal),
+      ...refusal,
     };
   }
 
@@ -495,6 +500,7 @@ export async function confirmVerificationService(
     refCode: record.refCode,
     ...(sent ? browserLead(record, metaEventId) : {}),
     ...measurementAsk(record, parsed.measurementConsent, options.localRefusal),
+    ...refusal,
   };
 }
 
@@ -814,6 +820,31 @@ export function createGrantGate(limit = GRANT_CALLS_PER_ATTEMPT): (leadId: strin
 const processGrantGate = createGrantGate();
 const processWithdrawGate = createGrantGate();
 
+// The refusal budget is spent only by refusals that were recorded: replays of
+// a refusal this process has already seen land `limit` times are answered
+// from memory (a grant can never undo a recorded refusal, so that answer stays
+// true). A failed write never spends it, so Try again always reaches Notion.
+const saturatedRefusals = new WeakMap<(leadId: string) => boolean, Set<string>>();
+async function withdrawWithinBudget(
+  leadId: string,
+  dependencies: ServiceDependencies,
+  refusalCanonical?: string,
+): Promise<boolean> {
+  const gate = dependencies.withdrawGate ?? processWithdrawGate;
+  let saturated = saturatedRefusals.get(gate);
+  if (!saturated) {
+    saturated = new Set();
+    saturatedRefusals.set(gate, saturated);
+  }
+  if (saturated.has(leadId)) return true;
+  const recorded = await withdraw(leadId, dependencies, refusalCanonical);
+  if (recorded && !gate(leadId)) {
+    if (saturated.size > 10_000) saturated.clear();
+    saturated.add(leadId);
+  }
+  return recorded;
+}
+
 /**
  * Records a grant so that a refusal always wins. Notion has no
  * compare-and-set, so: re-read, refuse if withdrawn; write only the consent
@@ -1018,10 +1049,9 @@ export async function withdrawAttemptMeasurementService(
   // Longer than a poll or a grant may use it: a refusal has to land for as
   // long as any confirmation link for the signup can still be opened.
   const parsed = verifyPollHandle(handle, secret, now.getTime(), WITHDRAW_HANDLE_TTL_MS);
-  const recorded =
-    parsed && (dependencies.withdrawGate ?? processWithdrawGate)(parsed.leadId)
-      ? await withdraw(parsed.leadId, dependencies, parsed.refusalCanonical)
-      : false;
+  const recorded = parsed
+    ? await withdrawWithinBudget(parsed.leadId, dependencies, parsed.refusalCanonical)
+    : false;
   return floor({ ok: true as const, recorded });
 }
 
@@ -1035,10 +1065,7 @@ export async function withdrawConfirmationMeasurementService(
   const parsed = isVerificationTokenShape(rawToken)
     ? parseVerificationToken(rawToken, secret, now.getTime())
     : undefined;
-  const recorded =
-    parsed && (dependencies.withdrawGate ?? processWithdrawGate)(parsed.leadId)
-      ? await withdraw(parsed.leadId, dependencies)
-      : false;
+  const recorded = parsed ? await withdrawWithinBudget(parsed.leadId, dependencies) : false;
   return floor({ ok: true as const, recorded });
 }
 

@@ -366,6 +366,11 @@ export type ConfirmResponse = {
    * `grantConfirmationMeasurement`. Never set for abuse-flagged rows.
    */
   measurementAsk?: true;
+  /**
+   * The confirming browser sent its stored refusal and it could not be
+   * written: nothing was sent, and the page must keep Try again.
+   */
+  refusalRecorded?: false;
 };
 
 /**

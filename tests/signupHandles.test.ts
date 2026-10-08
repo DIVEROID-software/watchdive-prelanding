@@ -48,7 +48,9 @@ test("expired and malformed entries are dropped", () => {
 test("the footer's Reject all withdraws every kept signup handle and waits for the result", () => {
   const bar = readFileSync("src/components/cookie-choice-bar.tsx", "utf8");
   const reject = bar.slice(bar.indexOf('setMetaMeasurementConsent("denied")'));
-  assert.ok(reject.indexOf("storedSignupHandles()") < reject.indexOf("announceMeasurementChoice"));
+  // One caller per Reject all: the on-screen signup's listener, or the bar.
+  assert.ok(reject.indexOf("announceMeasurementChoice") < reject.indexOf("storedSignupHandles()"));
+  assert.ok(reject.includes("if (!takeServerWithdrawalExpected())"));
   assert.ok(reject.includes("expectServerWithdrawal()"));
   assert.ok(reject.includes("withdrawEverySignup(kept)"));
   assert.ok(reject.includes('noteMeasurementSettled({ choice: "denied", recorded })'));
