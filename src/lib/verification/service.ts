@@ -452,7 +452,15 @@ export async function confirmVerificationService(
     ...(refusalUnrecorded ? { refusalRecorded: false as const } : {}),
     // A refusal credential for this signup that survives a resend: the sealed
     // address finds the row even after `Lead ID` changes. Withdrawals only.
-    refusalHandle: signPollHandle(parsed.leadId, now.getTime(), false, secret, record.email),
+    // Under a fresh attempt id no row carries, so it can never poll or grant;
+    // a withdrawal finds the row through the sealed address alone.
+    refusalHandle: signPollHandle(
+      (dependencies.leadId ?? newLeadId)(),
+      now.getTime(),
+      false,
+      secret,
+      record.email,
+    ),
   };
 
   const metaEventId = deterministicMetaEventId(parsed.leadId, secret);
@@ -484,7 +492,13 @@ export async function confirmVerificationService(
   // Notion is the authority on the attempt window, not the signed expiry.
   const expiresAt = record.expiresAt ? Date.parse(record.expiresAt) : Number.NaN;
   if (!Number.isFinite(expiresAt) || expiresAt <= now.getTime()) {
-    return { ok: true, status: "expired" };
+    // A stored refusal that could not be written is still reported, so the
+    // page does not show it as saved; no refusal handle for a dead link.
+    return {
+      ok: true,
+      status: "expired",
+      ...(refusalUnrecorded ? { refusalRecorded: false as const } : {}),
+    };
   }
 
   const verifiedAt = now.toISOString();

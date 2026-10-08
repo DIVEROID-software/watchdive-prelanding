@@ -76,7 +76,7 @@ test("the browser keeps handles exactly as long as the server lets them refuse",
 
 test("the browser-wide refusal receipt is set only when every kept signup was recorded", () => {
   const helper = readFileSync("src/lib/signupHandleWithdrawal.ts", "utf8");
-  assert.ok(helper.includes("if (all) markWithdrawalRecorded();"));
+  assert.ok(helper.includes("if (all && handles.length > 0) markWithdrawalRecorded();"));
   for (const file of [
     "src/routes/index.tsx",
     "src/routes/verify.tsx",
@@ -99,4 +99,10 @@ test("the browser-wide refusal receipt is set only when every kept signup was re
     ),
     false,
   );
+});
+
+test("a handle that is not a real issued handle is never kept", () => {
+  const storage = memory();
+  rememberSignupHandle("H".repeat(60), storage, NOW);
+  assert.deepEqual(storedSignupHandles(storage, NOW), []);
 });

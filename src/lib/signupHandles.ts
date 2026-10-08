@@ -61,7 +61,7 @@ export function rememberSignupHandle(
   storage: StorageLike | undefined = defaultStorage(),
   nowMs = Date.now(),
 ): void {
-  if (!storage || !handle) return;
+  if (!storage || !handle || live([handle], nowMs).length === 0) return;
   const next = [handle, ...storedSignupHandles(storage, nowMs).filter((h) => h !== handle)];
   try {
     storage.setItem(SIGNUP_HANDLES_KEY, JSON.stringify(next.slice(0, MAX_HANDLES)));
