@@ -60,7 +60,7 @@ export function unsubscribePage(state: PageState, locale: Locale): string {
     "h1{font-size:24px;line-height:1.3;margin:0 0 12px}p{color:#49566a;line-height:1.7;margin:0 0 20px}",
     "button{width:100%;min-height:52px;border:0;border-radius:12px;background:#6dcaf8;color:#08021f;font-size:16px;font-weight:700;cursor:pointer}",
     `${locale === "ko" ? "h1,p{word-break:keep-all}" : ""}</style></head>`,
-    `<body><main><header>Watch Dive<span>.</span></header><section><h1>${escapeHtml(heading)}</h1><p>${escapeHtml(body)}</p>${form}</section></main></body></html>`,
+    `<body><main><header>WatchDive<span>.</span></header><section><h1>${escapeHtml(heading)}</h1><p>${escapeHtml(body)}</p>${form}</section></main></body></html>`,
   ].join("");
 }
 

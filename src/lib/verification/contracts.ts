@@ -318,7 +318,7 @@ export type ClosedResponse = {
 };
 
 export const WAITLIST_CLOSED_MESSAGE =
-  "The pre-launch list is full. Watch Dive launches on Kickstarter in December.";
+  "The pre-launch list is full. WatchDive launches on Kickstarter in December.";
 
 export type ConfirmStatus = "verified" | "expired" | "already_verified" | "invalid";
 

@@ -567,7 +567,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
                 try {
                   if (navigator.share) {
                     await navigator.share({
-                      title: "Watch Dive",
+                      title: "WatchDive",
                       text: m.referral.shareText,
                       url: shareUrl,
                     });

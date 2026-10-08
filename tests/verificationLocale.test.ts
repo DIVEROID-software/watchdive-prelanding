@@ -25,7 +25,7 @@ const EXPIRES_AT = Date.parse("2026-08-02T00:00:00.000Z");
 const NOW = Date.parse("2026-08-01T00:00:00.000Z");
 const ENV = {
   RESEND_API_KEY: "re_test_key",
-  WATCHDIVE_EMAIL_FROM: "Watch Dive <hello@watchdive.example>",
+  WATCHDIVE_EMAIL_FROM: "WatchDive <hello@watchdive.example>",
   WATCHDIVE_EMAIL_REPLY_TO: "help@watchdive.example",
 };
 
