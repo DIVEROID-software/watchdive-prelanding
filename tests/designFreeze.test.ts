@@ -107,8 +107,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // the DOM changes; the form, sections and order are untouched.
   // 2026-10-08 (QA round): the inbox card also wires the refusal path, so a
   // "No thanks" after the submit is recorded on the signup. Props only.
+  // 2026-10-08 (QA round 4): the inbox card can show a "could not save your
+  // choice yet" retry for a banner refusal whose server write did not land.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "e977a19b7ff28ae2f335a433b236b2efc61a5e264eaf16b73d9f7f137874d5f6");
+  assert.equal(digest, "e9d5dcbe50eb245708dd27b7e834e2af7d0449065f47e53a989613245addcdc6");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

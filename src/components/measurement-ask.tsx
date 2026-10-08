@@ -169,6 +169,34 @@ export function measurementAskEligible(): boolean {
   );
 }
 
+/** "Could not save your choice yet" with a retry — card and banner alike. */
+export function RefusalRetry({ onRetry }: { onRetry: () => void }) {
+  const copy = COPY[useCurrentLocale()];
+  return (
+    <div
+      role="alert"
+      data-measurement-ask
+      className="mt-4 flex flex-wrap items-center gap-3 text-sm text-white/90"
+    >
+      <span>{copy.failed}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-3 font-medium"
+      >
+        {copy.retry}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * A refusal made after a submit whose server write has not been confirmed yet.
+ * Kept in this browser (the attempt's handle only — no address) so the next
+ * visit retries it until the signup shows it.
+ */
+export const PENDING_REFUSAL_KEY = "watchdive.measurement-refusal-pending";
+
 export function MeasurementAsk({
   onAllow,
   onDecline,
@@ -197,31 +225,23 @@ export function MeasurementAsk({
 
   if (answered === "denied") {
     if (refusal === "saving") {
+      // Still marked as the measurement question, so the banner stays aside.
       return (
-        <p role="status" className="mt-4 text-sm leading-relaxed text-white/80">
+        <p
+          role="status"
+          data-measurement-ask
+          className="mt-4 text-sm leading-relaxed text-white/80"
+        >
           {copy.saving}
         </p>
       );
     }
-    if (refusal === "failed") {
-      return (
-        <div role="alert" className="mt-4 flex flex-wrap items-center gap-3 text-sm text-white/90">
-          <span>{copy.failed}</span>
-          <button
-            type="button"
-            onClick={() => void recordRefusal()}
-            className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-3 font-medium"
-          >
-            {copy.retry}
-          </button>
-        </div>
-      );
-    }
+    if (refusal === "failed") return <RefusalRetry onRetry={() => void recordRefusal()} />;
     return null;
   }
   if (answered === "granted") {
     return (
-      <p role="status" className="mt-4 text-sm leading-relaxed text-[#EDE6FF]">
+      <p role="status" data-measurement-ask className="mt-4 text-sm leading-relaxed text-[#EDE6FF]">
         {copy.thanks}
       </p>
     );

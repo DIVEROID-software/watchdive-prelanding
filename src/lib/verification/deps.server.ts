@@ -42,8 +42,10 @@ export function createServiceDependencies(
     mailer: createResendMailer(),
     pollGate,
     onDeliveryFailure: (error) => deliveryAlerter.record(error),
-    dispatchVerifiedLead: async (input) => {
+    dispatchVerifiedLead: async ({ stillAllowed, ...input }) => {
       await sendMetaEmailVerified({ ...input, ...client });
+      // A refusal that landed during the website call stops the CRM call.
+      if (stillAllowed && !(await stillAllowed())) return;
       // The CRM leg of the Conversion Leads integration rides the same gate:
       // it only fires for a consented, non-abusive confirmation, and its own
       // failure never un-confirms the lead.

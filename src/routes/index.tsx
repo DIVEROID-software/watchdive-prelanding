@@ -23,6 +23,8 @@ import {
   MEASUREMENT_CHOICE_EVENT,
   MeasurementAsk,
   measurementAskEligible,
+  PENDING_REFUSAL_KEY,
+  RefusalRetry,
   type MeasurementChoiceDetail,
 } from "@/components/measurement-ask";
 import { initGoogleTag } from "@/lib/googleTag";
@@ -640,6 +642,7 @@ function CheckInboxCard({
   resending,
   onAllowMeasurement,
   onDeclineMeasurement,
+  onRetryRefusal,
 }: {
   message: string;
   email: string;
@@ -649,6 +652,8 @@ function CheckInboxCard({
   /** Present when this browser may still be asked about measurement. */
   onAllowMeasurement?: () => void | Promise<void>;
   onDeclineMeasurement?: () => Promise<boolean | void>;
+  /** A banner refusal that could not be recorded yet: offer the retry here. */
+  onRetryRefusal?: () => void;
 }) {
   const m = useFrozenLandingMessages();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -741,6 +746,7 @@ function CheckInboxCard({
       {onAllowMeasurement && (
         <MeasurementAsk onAllow={onAllowMeasurement} onDecline={onDeclineMeasurement} />
       )}
+      {onRetryRefusal && <RefusalRetry onRetry={onRetryRefusal} />}
     </div>
   );
 }
@@ -748,6 +754,32 @@ function CheckInboxCard({
 // The two placements the server accepts as a Source. Keeping the union here
 // means a new placement is a type error rather than a rejected submit.
 type FormPlacement = "hero" | "offer";
+
+/**
+ * Records a refusal for this attempt, retried until the server says it is on
+ * the signup. Until then the attempt's handle is kept in this browser so a
+ * later visit retries it (the handle names an attempt, never an address).
+ */
+async function recordRefusal(handle: string): Promise<boolean> {
+  const remember = (keep: boolean) => {
+    try {
+      if (keep) window.localStorage.setItem(PENDING_REFUSAL_KEY, handle);
+      else window.localStorage.removeItem(PENDING_REFUSAL_KEY);
+    } catch {
+      // Storage can be unavailable; the in-page retry still stands.
+    }
+  };
+  remember(true);
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await withdrawAttemptMeasurement({ data: { handle } }).catch(() => undefined);
+    if (res?.recorded) {
+      remember(false);
+      return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+  }
+  return false;
+}
 
 function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePhone?: boolean }) {
   const locale = useCurrentLocale();
@@ -766,6 +798,19 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // Decided once, when the inbox card appears: asking is for browsers that
   // have not answered yet in a country where measurement is opt-in.
   const [askMeasurement, setAskMeasurement] = useState(false);
+  // A banner refusal (not the card) whose server write is not confirmed yet.
+  const [bannerRefusalFailed, setBannerRefusalFailed] = useState(false);
+
+  // An unconfirmed refusal from an earlier visit: retry it in the background.
+  useEffect(() => {
+    let pending: string | null = null;
+    try {
+      pending = window.localStorage.getItem(PENDING_REFUSAL_KEY);
+    } catch {
+      return;
+    }
+    if (pending) void recordRefusal(pending);
+  }, []);
   // A ring that expands once, the first time the form is actually on screen.
   // It points at the next action after an anchor jump; it never repeats, so it
   // guides rather than nags.
@@ -907,7 +952,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       const detail = (event as CustomEvent<MeasurementChoiceDetail>).detail;
       if (!detail || detail.origin !== "banner") return;
       if (detail.choice === "granted") void allowMeasurementAfterSubmit().catch(() => {});
-      else void declineMeasurementAfterSubmit().catch(() => {});
+      else void declineMeasurementAfterSubmit().catch(() => setBannerRefusalFailed(true));
     };
     window.addEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
     return () => window.removeEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
@@ -987,13 +1032,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // anywhere later sends nothing.
   async function declineMeasurementAfterSubmit(): Promise<boolean> {
     if (!handle) return true;
-    // Retried until the server says the refusal is on the signup.
-    for (let attempt = 0; attempt < 4; attempt++) {
-      const res = await withdrawAttemptMeasurement({ data: { handle } }).catch(() => undefined);
-      if (res?.recorded) return true;
-      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
-    }
-    return false;
+    const recorded = await recordRefusal(handle);
+    setBannerRefusalFailed(!recorded);
+    return recorded;
   }
 
   if (closed) {
@@ -1029,6 +1070,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         }}
         onAllowMeasurement={askMeasurement ? allowMeasurementAfterSubmit : undefined}
         onDeclineMeasurement={askMeasurement ? declineMeasurementAfterSubmit : undefined}
+        onRetryRefusal={
+          bannerRefusalFailed ? () => void declineMeasurementAfterSubmit() : undefined
+        }
         onStartOver={() => {
           // A typo is otherwise unrecoverable without a page reload.
           setPending(null);

@@ -458,3 +458,62 @@ test("only Meta's documented click-cookie shape is stored", () => {
   assert.ok(!isMetaFbc("<script>"));
   assert.ok(!isMetaFbc(undefined));
 });
+
+test("a stored refusal whose write never lands: the confirmation sends nothing (and still completes)", async () => {
+  // Already-granted cell plus a pending Lead: the worst case the QA found.
+  const pending = await requestVerificationService(submit(false), deps());
+  metaAcks = false;
+  await grantAttemptMeasurementService(pending.handle, {}, deps());
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_LEAD_PENDING);
+  const before = submits.length;
+  store.recordMeasurementWithdrawal = async () => {
+    throw new Error("notion down");
+  };
+  metaAcks = true;
+  clock = new Date(clock.getTime() + 60_000);
+  const confirmed = await confirmVerificationService(
+    mailer.sent[0].token,
+    deps(),
+    {},
+    {
+      localRefusal: true,
+    },
+  );
+  assert.equal(confirmed.status, "verified", "the signup still completes");
+  assert.equal(confirmed.browserLead, undefined);
+  assert.equal(submits.length, before, "no Lead");
+  assert.equal(verified.length, 0, "no confirmation");
+});
+
+test("a withdrawal whose row lookup fails is not reported as recorded", async () => {
+  const pending = await requestVerificationService(submit(true), deps());
+  const original = store.findByLeadId.bind(store);
+  store.findByLeadId = async () => {
+    throw new Error("timeout");
+  };
+  const res = await withdrawAttemptMeasurementService(pending.handle, deps());
+  assert.equal(res.recorded, false);
+  store.findByLeadId = original;
+});
+
+test("a refusal landing during the confirmation's Meta call keeps the browser half and the CRM leg quiet", async () => {
+  await requestVerificationService(submit(false), deps());
+  clock = new Date(clock.getTime() + 60_000);
+  const token = mailer.sent[0].token;
+  await confirmVerificationService(token, deps());
+  let crmSent = false;
+  const d = {
+    ...deps(),
+    dispatchVerifiedLead: async (input: Record<string, unknown>) => {
+      verified.push(input);
+      // The refusal commits while the website event is in flight.
+      await store.recordMeasurementWithdrawal(onlyRow().pageId);
+      const still = input.stillAllowed as () => Promise<boolean>;
+      if (await still()) crmSent = true;
+    },
+  };
+  const grant = await grantConfirmationMeasurementService(token, {}, d);
+  assert.equal(verified.length, 1, "the in-flight website event cannot be recalled");
+  assert.equal(crmSent, false, "the second (CRM) call is stopped");
+  assert.equal(grant.browserLead, undefined, "no pixel for a refusal that landed meanwhile");
+});

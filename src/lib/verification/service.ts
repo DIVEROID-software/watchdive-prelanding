@@ -68,6 +68,8 @@ export type VerifiedLeadDispatch = (
     phone?: string;
     source: string;
     landingPath?: string;
+    /** Re-checks the row between the website event and the CRM event. */
+    stillAllowed?: () => Promise<boolean>;
   } & ConversionContext,
 ) => Promise<void>;
 
@@ -399,7 +401,10 @@ export async function confirmVerificationService(
 
   // The confirming browser has a refusal stored (a No thanks or Reject all
   // whose server write may not have landed): record it before anything is sent.
-  if (options.localRefusal) await withdraw(parsed.leadId, dependencies);
+  // If that write could not be confirmed, this request sends nothing at all:
+  // the signup still completes (status, welcome mail), measurement does not.
+  const refusalUnrecorded =
+    options.localRefusal === true && !(await withdraw(parsed.leadId, dependencies));
 
   const metaEventId = deterministicMetaEventId(parsed.leadId, secret);
 
@@ -408,14 +413,16 @@ export async function confirmVerificationService(
     // both land here. Re-dispatching is the right move rather than a wasteful
     // one: the first attempt may have been the one that failed, and the event
     // ids are derived, so a duplicate collapses into the same conversion.
-    const sent = await sendConversions(
-      record,
-      metaEventId,
-      parsed.measurementConsent,
-      context,
-      dependencies,
-      secret,
-    );
+    const sent =
+      !refusalUnrecorded &&
+      (await sendConversions(
+        record,
+        metaEventId,
+        parsed.measurementConsent,
+        context,
+        dependencies,
+        secret,
+      ));
     await scheduleWelcome(record, dependencies, now, parsed.locale);
     return {
       ok: true,
@@ -437,14 +444,16 @@ export async function confirmVerificationService(
 
   // Notion has no compare-and-set, so two racing confirmations can both reach
   // this line. Both emit the identical ids, so Meta collapses them.
-  const sent = await sendConversions(
-    { ...record, emailVerified: true, status: "verified" },
-    metaEventId,
-    parsed.measurementConsent,
-    context,
-    dependencies,
-    secret,
-  );
+  const sent =
+    !refusalUnrecorded &&
+    (await sendConversions(
+      { ...record, emailVerified: true, status: "verified" },
+      metaEventId,
+      parsed.measurementConsent,
+      context,
+      dependencies,
+      secret,
+    ));
   await scheduleWelcome(record, dependencies, now, parsed.locale);
 
   return {
@@ -614,6 +623,8 @@ async function sendConfirmation(
   if (!dependencies.dispatchVerifiedLead) return false;
   const row = await rowAllowsSend(pageId, signedConsent, dependencies);
   if (!row || !(row.emailVerified || row.status === "verified")) return false;
+  const stillAllowed = async () =>
+    Boolean(await rowAllowsSend(pageId, signedConsent, dependencies));
   await dependencies
     .dispatchVerifiedLead({
       eventId,
@@ -622,11 +633,16 @@ async function sendConfirmation(
       source: row.source,
       ...(row.landingPath ? { landingPath: row.landingPath } : {}),
       ...conversionContext(row, context),
+      // Between its two Meta calls the dispatcher asks again, so a refusal
+      // that lands during the first call stops the second.
+      stillAllowed,
     })
     .catch(() => {
       // A measurement outage never un-confirms a confirmed lead.
     });
-  return true;
+  // The browser half only if the row still allows it after the send: a
+  // refusal that landed during the HTTP call keeps the pixel quiet.
+  return stillAllowed();
 }
 
 /**
@@ -815,7 +831,13 @@ export async function grantConfirmationMeasurementService(
  * no row to refuse for).
  */
 async function withdraw(leadId: string, dependencies: ServiceDependencies): Promise<boolean> {
-  const record = await dependencies.store.findByLeadId(leadId).catch(() => undefined);
+  let record: LeadRecord | undefined;
+  try {
+    record = await dependencies.store.findByLeadId(leadId);
+  } catch {
+    // Unknown is not recorded: the browser keeps retrying.
+    return false;
+  }
   if (!record || measurementWithdrawn(record)) return true;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
