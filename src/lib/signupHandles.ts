@@ -14,8 +14,9 @@
 
 export const SIGNUP_HANDLES_KEY = "watchdive.signup-handles.v1";
 const MAX_HANDLES = 10;
-// Matches the server's POLL_HANDLE_TTL_MS (the verification TTL, 24 hours).
-export const SIGNUP_HANDLE_TTL_MS = 24 * 60 * 60 * 1000;
+// Matches the server's WITHDRAW_HANDLE_TTL_MS: as long as a reminder link for
+// the signup can still confirm it (7 days + 24 hours + 1 hour).
+export const SIGNUP_HANDLE_TTL_MS = 7 * 24 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000 + 60 * 60 * 1000;
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 

@@ -21,7 +21,6 @@ import { LaunchNotice } from "@/components/launch-notice";
 import { CookieSettingsLink } from "@/components/cookie-choice-bar";
 import {
   expectServerWithdrawal,
-  markWithdrawalRecorded,
   MEASUREMENT_CHOICE_EVENT,
   clearWithdrawalRecorded,
   MeasurementAsk,
@@ -31,6 +30,7 @@ import {
   type MeasurementChoiceDetail,
 } from "@/components/measurement-ask";
 import { rememberSignupHandle } from "@/lib/signupHandles";
+import { withdrawEverySignup } from "@/lib/signupHandleWithdrawal";
 import { initGoogleTag } from "@/lib/googleTag";
 import { initClarity } from "@/lib/clarity";
 import { startPageBehavior } from "@/lib/pageBehavior";
@@ -1094,21 +1094,10 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // anywhere later sends nothing. `nextHandle` is the handle a resend just
   // returned; the React state still holds the previous attempt until paint.
   async function declineMeasurementAfterSubmit(nextHandle?: string): Promise<boolean> {
+    // Every signup this browser kept, not only the one on screen: the receipt
+    // that stops the reload retry is set only when all of them are recorded.
     const current = nextHandle || handle;
-    if (!current) return true;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const res = await withdrawAttemptMeasurement({ data: { handle: current } });
-        if (res.recorded) {
-          markWithdrawalRecorded();
-          return true;
-        }
-      } catch {
-        // A dropped call is not a recorded refusal.
-      }
-      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
-    }
-    return false;
+    return withdrawEverySignup(current ? [current] : []);
   }
 
   if (closed) {

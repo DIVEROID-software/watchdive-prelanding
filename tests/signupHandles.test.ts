@@ -50,7 +50,7 @@ test("the footer's Reject all withdraws every kept signup handle and waits for t
   const reject = bar.slice(bar.indexOf('setMetaMeasurementConsent("denied")'));
   assert.ok(reject.indexOf("storedSignupHandles()") < reject.indexOf("announceMeasurementChoice"));
   assert.ok(reject.includes("expectServerWithdrawal()"));
-  assert.ok(reject.includes("withdrawStoredSignups(kept)"));
+  assert.ok(reject.includes("withdrawEverySignup(kept)"));
   assert.ok(reject.includes('noteMeasurementSettled({ choice: "denied", recorded })'));
   const form = readFileSync("src/routes/index.tsx", "utf8");
   assert.ok(form.includes("rememberSignupHandle(res.handle)"));
@@ -62,4 +62,26 @@ test("the CRM leg re-reads the row after the website call", () => {
   const check = deps.indexOf("await stillAllowed()");
   const crm = deps.indexOf("await sendMetaCrmQualifiedLead");
   assert.ok(website > 0 && website < check && check < crm);
+});
+
+test("the browser keeps handles exactly as long as the server lets them refuse", async () => {
+  const { WITHDRAW_HANDLE_TTL_MS, VERIFICATION_TTL_MS } =
+    await import("../src/lib/verification/contracts.ts");
+  const { VERIFICATION_REMINDER_MAX_AGE_MS } = await import("../src/lib/verification/reminder.ts");
+  assert.equal(SIGNUP_HANDLE_TTL_MS, WITHDRAW_HANDLE_TTL_MS);
+  assert.ok(WITHDRAW_HANDLE_TTL_MS >= VERIFICATION_REMINDER_MAX_AGE_MS + VERIFICATION_TTL_MS);
+});
+
+test("the browser-wide refusal receipt is set only when every kept signup was recorded", () => {
+  const helper = readFileSync("src/lib/signupHandleWithdrawal.ts", "utf8");
+  assert.ok(helper.includes("if (all) markWithdrawalRecorded();"));
+  for (const file of [
+    "src/routes/index.tsx",
+    "src/routes/verify.tsx",
+    "src/components/cookie-choice-bar.tsx",
+  ]) {
+    const source = readFileSync(file, "utf8");
+    assert.equal(source.includes("markWithdrawalRecorded()"), false, file);
+    assert.ok(source.includes("withdrawEverySignup("), file);
+  }
 });

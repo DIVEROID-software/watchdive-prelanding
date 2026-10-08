@@ -1,4 +1,5 @@
 import { withdrawAttemptMeasurement } from "@/lib/api/waitlist.functions";
+import { markWithdrawalRecorded } from "@/components/measurement-ask";
 import { storedSignupHandles } from "@/lib/signupHandles";
 
 /**
@@ -25,5 +26,17 @@ export async function withdrawStoredSignups(
     }
     all &&= recorded;
   }
+  return all;
+}
+
+/**
+ * A refusal in this browser, recorded on every signup it kept a handle for
+ * (plus any handle still only in memory). The browser-wide receipt is set only
+ * when every one of them was recorded, so a reload retries whatever was not.
+ */
+export async function withdrawEverySignup(extra: readonly string[] = []): Promise<boolean> {
+  const handles = [...new Set([...extra.filter(Boolean), ...storedSignupHandles()])];
+  const all = await withdrawStoredSignups(handles);
+  if (all) markWithdrawalRecorded();
   return all;
 }

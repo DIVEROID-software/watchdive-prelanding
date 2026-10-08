@@ -7,11 +7,11 @@ import {
   withdrawConfirmationMeasurement,
 } from "@/lib/api/waitlist.functions";
 import {
-  markWithdrawalRecorded,
   MeasurementAsk,
   measurementAskEligible,
   withdrawalNeedsRetry,
 } from "@/components/measurement-ask";
+import { withdrawEverySignup } from "@/lib/signupHandleWithdrawal";
 import { resolveGeoCountry } from "@/lib/consentRegion";
 import {
   getMetaCookies,
@@ -167,7 +167,9 @@ export function VerifyPage() {
       try {
         const res = await withdrawConfirmationMeasurement({ data: { token: token.current } });
         if (res.recorded) {
-          markWithdrawalRecorded();
+          // The browser-wide receipt only once every signup this browser
+          // kept a handle for has the refusal too.
+          await withdrawEverySignup();
           return true;
         }
       } catch {

@@ -26,7 +26,7 @@ import {
   type MeasurementSettledDetail,
 } from "@/components/measurement-ask";
 import { storedSignupHandles } from "@/lib/signupHandles";
-import { withdrawStoredSignups } from "@/lib/signupHandleWithdrawal";
+import { withdrawEverySignup } from "@/lib/signupHandleWithdrawal";
 
 type ChoiceCopy = {
   /** Banner heading. */
@@ -180,9 +180,7 @@ export function CookieChoiceBar() {
     if (!withdrawalNeedsRetry()) return;
     const handles = storedSignupHandles();
     if (handles.length === 0) return;
-    void withdrawStoredSignups(handles).then((recorded) => {
-      if (recorded) markWithdrawalRecorded();
-    });
+    void withdrawEverySignup(handles);
   }, []);
 
   useEffect(() => {
@@ -324,8 +322,7 @@ export function CookieChoiceBar() {
       return;
     }
     if (kept.length > 0) {
-      void withdrawStoredSignups(kept).then((recorded) => {
-        if (recorded) markWithdrawalRecorded();
+      void withdrawEverySignup(kept).then((recorded) => {
         noteMeasurementSettled({ choice: "denied", recorded });
       });
     }

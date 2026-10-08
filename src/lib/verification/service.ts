@@ -27,6 +27,7 @@ import {
   GENERIC_PENDING_MESSAGE,
   MIN_RESPONSE_MS,
   POLL_HANDLE_TTL_MS,
+  WITHDRAW_HANDLE_TTL_MS,
   VERIFICATION_MAX_SENDS,
   WELCOME_DELAY_MS,
   VERIFICATION_RESEND_COOLDOWN_MS,
@@ -284,6 +285,9 @@ export async function requestVerificationService(
         signedUpAt: now.toISOString(),
         leadId,
         expiresAt,
+        // Nothing was sent for it: a later consented, non-abusive submit can
+        // still open its one submit Lead. Empty is only for pre-release rows.
+        measurementState: MEASUREMENT_CONSENT_WITHHELD,
       });
     }
     return floor(pendingResponse(decoyHandle()));
@@ -1011,7 +1015,9 @@ export async function withdrawAttemptMeasurementService(
   const floor = grantFloor(dependencies);
   const secret = requireSecret(dependencies.env ?? process.env);
   const now = (dependencies.now ?? (() => new Date()))();
-  const parsed = verifyPollHandle(handle, secret, now.getTime(), POLL_HANDLE_TTL_MS);
+  // Longer than a poll or a grant may use it: a refusal has to land for as
+  // long as any confirmation link for the signup can still be opened.
+  const parsed = verifyPollHandle(handle, secret, now.getTime(), WITHDRAW_HANDLE_TTL_MS);
   const recorded =
     parsed && (dependencies.withdrawGate ?? processWithdrawGate)(parsed.leadId)
       ? await withdraw(parsed.leadId, dependencies, parsed.refusalCanonical)

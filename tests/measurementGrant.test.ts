@@ -532,7 +532,8 @@ test("withdrawal lookup failure, invalid handles and expired handles never claim
   );
   store.findByLeadId = lookup;
   assert.equal((await withdrawAttemptMeasurementService("invalid", deps())).recorded, false);
-  clock = new Date(clock.getTime() + 7 * 86400_000);
+  // A refusal handle lives as long as a reminder link can (WITHDRAW_HANDLE_TTL_MS).
+  clock = new Date(clock.getTime() + 9 * 86400_000);
   assert.equal((await withdrawAttemptMeasurementService(pending.handle, deps())).recorded, false);
 });
 
@@ -872,4 +873,43 @@ test("a refusal committed during the website call stops the CRM leg (stillAllowe
   assert.equal(verified.length, 1, "the website event had already left");
   assert.equal(crm.length, 0);
   assert.equal(confirmed.browserLead, undefined);
+});
+
+// ---- QA round 8 -----------------------------------------------------------
+
+test("a refusal still lands through a handle older than a day, while a reminder link can live", async () => {
+  const pending = await requestVerificationService(
+    submit(true, { submitEventId: BROWSER_ID }),
+    deps(),
+  );
+  clock = new Date(clock.getTime() + 25 * 3_600_000);
+  // Too old to poll or grant with…
+  await grantAttemptMeasurementService(pending.handle, {}, deps());
+  // …but not to refuse with.
+  assert.deepEqual(await withdrawAttemptMeasurementService(pending.handle, deps()), {
+    ok: true,
+    recorded: true,
+  });
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
+  clock = new Date(clock.getTime() + 8 * 24 * 3_600_000);
+  assert.deepEqual(await withdrawAttemptMeasurementService(pending.handle, deps()), {
+    ok: true,
+    recorded: false,
+  });
+});
+
+test("a send-blocked create is withheld, so the later real submit opens its one Lead", async () => {
+  await requestVerificationService(
+    submit(true, { submitEventId: BROWSER_ID, networkSendBlocked: true }),
+    deps(),
+  );
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHHELD);
+  assert.equal(submits.length, 0);
+  clock = new Date(clock.getTime() + 61_000);
+  await requestVerificationService(submit(true, { submitEventId: "browser-lead-0002" }), deps());
+  assert.deepEqual(
+    submits.map((s) => s.eventId),
+    ["browser-lead-0002"],
+  );
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
 });
