@@ -173,3 +173,14 @@ html:root p,
 html:root li {
   font-weight: 500;
 }
+
+/* Dialogs (the privacy banner) keep their own compact heading size: the
+   display scale above is for page sections only. */
+html:root [role="dialog"] h2 {
+  font-size: 1.25rem !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.02em !important;
+}
+@media (max-width: 639px) {
+  html:root [role="dialog"] h2 { font-size: 1.0625rem !important; }
+}
