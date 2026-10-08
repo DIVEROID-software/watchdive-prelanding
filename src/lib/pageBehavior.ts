@@ -241,7 +241,9 @@ export function startPageBehavior(): void {
 
   // Final summary supplements the initial visit and bounded milestones.
   const onVisibility = () => {
-    if (document.visibilityState === "hidden") send();
+    // Showing a tab that was opened in the background starts its exposure;
+    // hiding an already viewed tab saves its final observed milestones.
+    send();
   };
   document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("pagehide", send);

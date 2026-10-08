@@ -93,6 +93,9 @@ export function initializeConversionExperiment(): void {
   if (!EXPERIMENT_ENABLED || typeof window === "undefined" || !window.__wdLandingVariant) return;
   if (!measurementAllowed()) return;
   if (context || revoked || enrollmentClosed) return;
+  // Opening a background tab is not an exposure. Begin the observation
+  // window only when the visitor can actually see this document.
+  if (document.visibilityState === "hidden") return;
   const qa = window.__wdLandingQa === true || location.hostname !== "watchdive.diveroid.com";
   const variant = currentLandingVariant();
   const now = Date.now();

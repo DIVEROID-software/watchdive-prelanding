@@ -101,7 +101,7 @@ test("only registered campaign/adset/ad combinations receive paid team labels", 
 
 // Execute the actual browser module with its build flag enabled, isolated per
 // visitor. Storage and permission are the browser boundaries under test.
-function visitor(initialPermission: boolean) {
+function visitor(initialPermission: boolean, initiallyVisible = true) {
   let permitted = initialPermission;
   const local = new Map<string, string>();
   const session = new Map<string, string>();
@@ -122,6 +122,7 @@ function visitor(initialPermission: boolean) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
   const exports: Record<string, (...args: unknown[]) => unknown> = {};
+  const document = { visibilityState: initiallyVisible ? "visible" : "hidden" };
   vm.runInNewContext(code, {
     exports,
     require: (name: string) =>
@@ -129,6 +130,7 @@ function visitor(initialPermission: boolean) {
         ? { measurementAllowed: () => permitted, INLINE_MEASUREMENT_ALLOWED_JS: "true" }
         : { competitionRegistry },
     window: browser,
+    document,
     location: { hostname: "watchdive.diveroid.com", search: "" },
     localStorage: storage(local),
     sessionStorage: storage(session),
@@ -140,11 +142,25 @@ function visitor(initialPermission: boolean) {
     api: exports,
     local,
     session,
+    show: () => {
+      document.visibilityState = "visible";
+    },
     permit: (value: boolean) => {
       permitted = value;
     },
   };
 }
+
+test("a background tab joins the measured cohort only when it becomes visible", () => {
+  const v = visitor(true, false);
+  assert.equal(v.api.getConversionExperiment(), undefined);
+  assert.equal(v.local.size + v.session.size, 0);
+  v.show();
+  const context = v.api.getConversionExperiment();
+  assert.ok(context);
+  assert.equal(v.api.getConversionExperiment(), context);
+  assert.equal((v.api.getConversionFunnel() as { exposed: boolean }).exposed, true);
+});
 
 test("inbox permission cannot enroll a visitor whose first submit was unmeasured", () => {
   const v = visitor(false);
