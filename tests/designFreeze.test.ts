@@ -105,8 +105,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // measurement question to visitors in opt-in countries who have not answered
   // the cookie bar — which on this page they almost never saw. Nothing else in
   // the DOM changes; the form, sections and order are untouched.
+  // 2026-10-08 (QA round): the inbox card also wires the refusal path, so a
+  // "No thanks" after the submit is recorded on the signup. Props only.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "a7420ffd68016a9788634ef0b553a30ceadaa638d15051745260c7b026250b91");
+  assert.equal(digest, "e977a19b7ff28ae2f335a433b236b2efc61a5e264eaf16b73d9f7f137874d5f6");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

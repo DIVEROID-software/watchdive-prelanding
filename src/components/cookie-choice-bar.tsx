@@ -12,7 +12,11 @@ import {
 } from "@/lib/metaPixel";
 import { browserConsentRegion, resolveGeoCountry } from "@/lib/consentRegion";
 import { cookieBarShouldYield } from "@/lib/cookieBarPlacement";
-import { MEASUREMENT_CHOICE_EVENT } from "@/components/measurement-ask";
+import {
+  announceMeasurementChoice,
+  MEASUREMENT_CHOICE_EVENT,
+  type MeasurementChoiceDetail,
+} from "@/components/measurement-ask";
 
 type ChoiceCopy = {
   /** Banner heading. */
@@ -29,7 +33,7 @@ type ChoiceCopy = {
 const COPY: Record<Locale, ChoiceCopy> = {
   en: {
     title: "Your privacy choices",
-    body: "We'd like cookies to see which ads bring divers here, so a small team spends less reaching the next one. Optional: your signup works either way.",
+    body: "We'd like to use cookies and similar tools from Meta, Google and Microsoft Clarity, plus our own click and scroll measurement, to see which ads bring divers here and how this page is used. Optional: your signup works either way.",
     allow: "Accept all",
     decline: "Reject all",
     privacy: "Privacy Policy",
@@ -37,7 +41,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
   },
   ko: {
     title: "개인정보 선택",
-    body: "어떤 광고가 다이버를 데려오는지 알기 위해 쿠키를 쓰고 싶어요. 작은 팀이 다음 다이버를 만나는 비용을 줄일 수 있어요. 선택 사항이며, 가입은 그대로 유지돼요.",
+    body: "Meta, Google, Microsoft Clarity의 쿠키·유사 기술과 자체 클릭·스크롤 측정으로 어떤 광고가 다이버를 데려오는지, 페이지가 어떻게 쓰이는지 보고 싶어요. 선택 사항이며, 가입은 그대로 유지돼요.",
     allow: "모두 허용",
     decline: "모두 거부",
     privacy: "개인정보처리방침",
@@ -45,7 +49,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
   },
   "zh-CN": {
     title: "您的隐私选择",
-    body: "我们希望用 Cookie 了解哪些广告带来了潜水员，让小团队用更少预算找到下一位。可选：不影响您的报名。",
+    body: "我们希望使用 Meta、Google 和 Microsoft Clarity 的 Cookie 及类似工具，以及我们自己的点击和滚动统计，了解哪些广告带来了潜水员、页面如何被使用。可选：不影响您的报名。",
     allow: "全部接受",
     decline: "全部拒绝",
     privacy: "隐私政策",
@@ -53,7 +57,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
   },
   "zh-TW": {
     title: "您的隱私選擇",
-    body: "我們希望用 Cookie 了解哪些廣告帶來了潛水員，讓小團隊用更少預算找到下一位。可選：不影響您的報名。",
+    body: "我們希望使用 Meta、Google 和 Microsoft Clarity 的 Cookie 及類似工具，以及我們自己的點擊和捲動統計，了解哪些廣告帶來了潛水員、頁面如何被使用。可選：不影響您的報名。",
     allow: "全部接受",
     decline: "全部拒絕",
     privacy: "隱私權政策",
@@ -61,7 +65,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
   },
   ja: {
     title: "プライバシーの選択",
-    body: "どの広告がダイバーに届いたかを知るためにクッキーを使わせてください。小さなチームの費用を抑えられます。任意です。登録はそのまま有効です。",
+    body: "Meta・Google・Microsoft Clarity のクッキーや類似技術と、自社のクリック・スクロール計測で、どの広告からダイバーが来たか、ページがどう使われたかを知りたいと考えています。任意です。登録はそのまま有効です。",
     allow: "すべて許可",
     decline: "すべて拒否",
     privacy: "プライバシーポリシー",
@@ -69,7 +73,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
   },
   es: {
     title: "Tus opciones de privacidad",
-    body: "Queremos usar cookies para saber qué anuncios traen buceadores, y así un equipo pequeño gasta menos. Es opcional: tu registro funciona igual.",
+    body: "Queremos usar cookies y herramientas similares de Meta, Google y Microsoft Clarity, además de nuestra propia medición de clics y desplazamiento, para saber qué anuncios traen buceadores y cómo se usa esta página. Es opcional: tu registro funciona igual.",
     allow: "Aceptar todo",
     decline: "Rechazar todo",
     privacy: "Política de privacidad",
@@ -77,7 +81,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
   },
   fr: {
     title: "Vos choix de confidentialité",
-    body: "Des cookies nous diraient quelles annonces amènent des plongeurs, pour qu'une petite équipe dépense moins. Facultatif : votre inscription reste valable.",
+    body: "Nous aimerions utiliser des cookies et outils similaires de Meta, Google et Microsoft Clarity, ainsi que notre propre mesure des clics et du défilement, pour savoir quelles annonces amènent des plongeurs et comment la page est utilisée. Facultatif : votre inscription reste valable.",
     allow: "Tout accepter",
     decline: "Tout refuser",
     privacy: "Politique de confidentialité",
@@ -85,7 +89,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
   },
   de: {
     title: "Deine Datenschutz-Einstellungen",
-    body: "Mit Cookies sehen wir, welche Anzeigen Taucher herbringen – so gibt ein kleines Team weniger aus. Freiwillig: deine Anmeldung gilt so oder so.",
+    body: "Wir möchten Cookies und ähnliche Tools von Meta, Google und Microsoft Clarity sowie unsere eigene Klick- und Scroll-Messung nutzen, um zu sehen, welche Anzeigen Taucher herbringen und wie die Seite genutzt wird. Freiwillig: deine Anmeldung gilt so oder so.",
     allow: "Alle akzeptieren",
     decline: "Alle ablehnen",
     privacy: "Datenschutzerklärung",
@@ -93,7 +97,7 @@ const COPY: Record<Locale, ChoiceCopy> = {
   },
   "pt-BR": {
     title: "Suas escolhas de privacidade",
-    body: "Com cookies sabemos quais anúncios trazem mergulhadores, e uma equipe pequena gasta menos. Opcional: seu cadastro vale de qualquer jeito.",
+    body: "Queremos usar cookies e ferramentas semelhantes da Meta, do Google e do Microsoft Clarity, além da nossa própria medição de cliques e rolagem, para saber quais anúncios trazem mergulhadores e como a página é usada. Opcional: seu cadastro vale de qualquer jeito.",
     allow: "Aceitar tudo",
     decline: "Rejeitar tudo",
     privacy: "Política de privacidade",
@@ -135,7 +139,10 @@ export function CookieChoiceBar() {
     let alive = true;
     const reopen = () => setOpen(true);
     // Answered on the inbox card or the confirmation page: nothing left to ask.
-    const answered = () => setOpen(false);
+    const answered = (event: Event) => {
+      if ((event as CustomEvent<MeasurementChoiceDetail>).detail?.origin !== "banner")
+        setOpen(false);
+    };
     window.addEventListener(OPEN_EVENT, reopen);
     window.addEventListener(MEASUREMENT_CHOICE_EVENT, answered);
     // The server hands down the country (`wd_geo`); outside EU/EEA/UK/CH the
@@ -223,6 +230,7 @@ export function CookieChoiceBar() {
 
   function choose(choice: "granted" | "denied") {
     setMetaMeasurementConsent(choice);
+    announceMeasurementChoice({ choice, origin: "banner" });
     if (choice === "granted") {
       initMetaPixel();
       initGoogleTag();
@@ -278,6 +286,8 @@ export function CookieChoiceBar() {
           <button
             type="button"
             className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/60 px-3 text-sm font-semibold text-white sm:text-[0.9375rem]"
+            disabled={yielding}
+            tabIndex={yielding ? -1 : undefined}
             onClick={() => choose("denied")}
           >
             {copy.decline}
@@ -285,6 +295,8 @@ export function CookieChoiceBar() {
           <button
             type="button"
             className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#65ceee] bg-[#65ceee] px-3 text-sm font-semibold text-[#181238] sm:text-[0.9375rem]"
+            disabled={yielding}
+            tabIndex={yielding ? -1 : undefined}
             onClick={() => choose("granted")}
           >
             {copy.allow}

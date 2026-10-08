@@ -30,7 +30,7 @@
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
 import type { LeadRecord } from "./contracts.ts";
-import { VERIFICATION_MAX_SENDS, VERIFICATION_TTL_MS } from "./contracts.ts";
+import { reviewFlags, VERIFICATION_MAX_SENDS, VERIFICATION_TTL_MS } from "./contracts.ts";
 import { classifyDeliveryFailure, type VerificationMailer } from "./resend.ts";
 import {
   createVerificationToken,
@@ -165,7 +165,7 @@ export function reminderSkipReason(
   if (record.emailVerified) return "verified";
   // Suspect covers every abuse flag, including a shared network.
   if (record.suspect) return "suspect";
-  if (record.flags.length > 0) return "flagged";
+  if (reviewFlags(record.flags).length > 0) return "flagged";
   if (record.reminder) return "already_reminded";
   // No recorded send means the first mail never left or was deliberately
   // suppressed (abuse, network block). The submit path refused to mail it, so
@@ -311,7 +311,7 @@ export async function runVerificationReminders(
         fresh.status !== "pending" ||
         fresh.emailVerified ||
         fresh.suspect ||
-        fresh.flags.length > 0 ||
+        reviewFlags(fresh.flags).length > 0 ||
         fresh.leadId !== record.leadId
       ) {
         result.notClaimed += 1;

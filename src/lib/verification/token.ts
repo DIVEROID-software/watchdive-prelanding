@@ -171,6 +171,18 @@ export function deterministicMetaEventId(leadId: string, secret: string): string
   return createHmac("sha256", secret).update(`meta-event:v1:${leadId.toLowerCase()}`).digest("hex");
 }
 
+/**
+ * The submit `Lead` sent late, after someone allows measurement post-submit.
+ * Derived from the attempt like the confirmation id (never chosen by the
+ * caller), so however many times a grant is replayed, Meta sees one Lead.
+ */
+export function deterministicSubmitEventId(leadId: string, secret: string): string {
+  if (!isLeadId(leadId)) throw new Error("Invalid lead id");
+  return createHmac("sha256", secret)
+    .update(`meta-submit-event:v1:${leadId.toLowerCase()}`)
+    .digest("hex");
+}
+
 // --- poll handle -----------------------------------------------------------
 
 export type ParsedHandle = { leadId: string; issuedAtMs: number; measurementConsent: boolean };

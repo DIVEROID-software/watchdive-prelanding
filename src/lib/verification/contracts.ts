@@ -169,6 +169,8 @@ export type LeadRecord = {
    * ad click, be attributed to that click.
    */
   metaFbc?: string;
+  /** First-touch campaign tags, read back for the late submit `Lead`. */
+  utm?: { source?: string; medium?: string; campaign?: string; content?: string; term?: string };
 };
 
 /**
@@ -252,6 +254,8 @@ export type CreatePendingInput = {
   attribution?: LeadAttribution;
   /** Present only when the submitting browser allowed measurement. */
   metaFbc?: string;
+  /** The submitting browser allowed measurement: recorded on the row. */
+  measurementGranted?: true;
 };
 
 /** Written when a new attempt is minted — this is what kills the previous link. */
@@ -276,10 +280,7 @@ export type MarkVerifiedInput = {
 };
 
 /** Written when someone allows measurement after the submit itself. */
-export type MeasurementGrantInput = {
-  /** Only kept when the column exists (`NOTION_META_FBC_PROPERTY`). */
-  metaFbc?: string;
-};
+export type MeasurementGrantInput = Record<string, never>;
 
 export interface LeadStore {
   findByEmail(canonical: string, email: string): Promise<LeadRecord | undefined>;
@@ -289,7 +290,12 @@ export interface LeadStore {
   markSent(pageId: string, input: MarkSentInput): Promise<void>;
   markVerified(pageId: string, input: MarkVerifiedInput): Promise<void>;
   markWelcomeScheduled(pageId: string, input: MarkWelcomeInput): Promise<void>;
-  recordMeasurementGrant(pageId: string, input: MeasurementGrantInput): Promise<void>;
+  /** Writes only `Measurement consent` = granted. */
+  recordMeasurementGrant(pageId: string, input?: MeasurementGrantInput): Promise<void>;
+  /** Writes only the click-cookie column, when it is configured. */
+  recordMeasurementFbc(pageId: string, metaFbc: string): Promise<void>;
+  /** `Measurement consent` = withdrawn, adds the withdrawal flag, clears the click cookie. */
+  recordMeasurementWithdrawal(pageId: string): Promise<void>;
   reread(pageId: string): Promise<LeadRecord | undefined>;
 }
 
@@ -340,7 +346,10 @@ export type ConfirmResponse = {
 /** The answer to a measurement grant. Uniform for real and decoy attempts. */
 export type MeasurementGrantResponse = {
   ok: true;
+  /** The confirmation's browser half, when the lead is already confirmed. */
   browserLead?: BrowserLead;
+  /** The withheld submit `Lead`'s browser half, under the server's own id. */
+  submitLead?: { eventId: string; source: string };
 };
 
 export type PollResponse = {
@@ -356,5 +365,18 @@ export type PollResponse = {
  * confirmed lead, which is how the public counters already treat it.
  */
 export function conversionBlocked(flags: string[]): boolean {
-  return flags.some((flag) => flag !== "ip-repeat");
+  return flags.some((flag) => flag !== "ip-repeat" && flag !== FLAG_MEASUREMENT_WITHDRAWN);
+}
+
+/**
+ * Written to `Flags` when someone refuses advertising measurement after their
+ * submit. A grant only ever writes `Measurement consent`, never `Flags`, so a
+ * refusal recorded here cannot be overwritten by a grant racing it. It is not
+ * an abuse signal: operational mail (reminder, welcome) ignores it.
+ */
+export const FLAG_MEASUREMENT_WITHDRAWN = "measurement-withdrawn";
+
+/** Flags that say something about abuse or review, not about measurement. */
+export function reviewFlags(flags: string[]): string[] {
+  return flags.filter((flag) => flag !== FLAG_MEASUREMENT_WITHDRAWN);
 }

@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
-import { confirmVerification, grantConfirmationMeasurement } from "@/lib/api/waitlist.functions";
+import {
+  confirmVerification,
+  grantConfirmationMeasurement,
+  withdrawConfirmationMeasurement,
+} from "@/lib/api/waitlist.functions";
 import { MeasurementAsk, measurementAskEligible } from "@/components/measurement-ask";
 import { resolveGeoCountry } from "@/lib/consentRegion";
 import {
@@ -10,6 +14,7 @@ import {
   initMetaPixel,
   measurementPermitted,
   trackMetaEmailVerified,
+  trackMetaLead,
   trackMetaPhoneLead,
 } from "@/lib/metaPixel";
 import type { BrowserLead } from "@/lib/verification/contracts";
@@ -109,17 +114,28 @@ export function VerifyPage() {
   const started = useRef(false);
   const [askMeasurement, setAskMeasurement] = useState(false);
 
-  /** The browser half of the confirmation, under the server leg's event id. */
-  const fireBrowserLead = (lead: BrowserLead) => {
+  /**
+   * The browser halves of whatever the server just sent, under the server's own
+   * event ids so each pair dedupes. The pixel starts here and only here — after
+   * every request that carries the token has already been made.
+   */
+  const fireConversions = (sent: {
+    browserLead?: BrowserLead;
+    submitLead?: { eventId: string; source: string };
+  }) => {
     initMetaPixel();
-    trackMetaEmailVerified(lead.eventId, lead.source);
-    if (lead.hasPhone) trackMetaPhoneLead(`${lead.eventId}:phone`, lead.source);
+    if (sent.submitLead) trackMetaLead(sent.submitLead.eventId, sent.submitLead.source);
+    if (sent.browserLead) {
+      trackMetaEmailVerified(sent.browserLead.eventId, sent.browserLead.source);
+      if (sent.browserLead.hasPhone) {
+        trackMetaPhoneLead(`${sent.browserLead.eventId}:phone`, sent.browserLead.source);
+      }
+    }
   };
 
-  /** Records the grant server-side and sends the confirmation that was withheld. */
+  /** Records the grant server-side; the server sends what was withheld. */
   const grantMeasurement = async () => {
     if (!token.current) return;
-    initMetaPixel();
     const cookies = getMetaCookies();
     const res = await grantConfirmationMeasurement({
       data: {
@@ -128,7 +144,13 @@ export function VerifyPage() {
         ...(cookies.fbc ? { fbc: cookies.fbc } : {}),
       },
     });
-    if (res.browserLead) fireBrowserLead(res.browserLead);
+    fireConversions(res);
+  };
+
+  /** Refused here: recorded on the signup so nothing is sent for it later. */
+  const declineMeasurement = async () => {
+    if (!token.current) return;
+    await withdrawConfirmationMeasurement({ data: { token: token.current } });
   };
 
   const confirm = async () => {
@@ -138,15 +160,24 @@ export function VerifyPage() {
     }
     setState("confirming");
     try {
-      const result = await confirmVerification({ data: { token: token.current } });
+      // This browser's Meta cookies, only when it already allows measurement,
+      // so the server's confirmation names the click that brought them here.
+      await resolveGeoCountry();
+      const cookies = measurementPermitted() ? getMetaCookies() : {};
+      const result = await confirmVerification({
+        data: {
+          token: token.current,
+          ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
+          ...(cookies.fbc ? { fbc: cookies.fbc } : {}),
+        },
+      });
       if (result.status === "verified" || result.status === "already_verified") {
         setRefCode(result.refCode ?? "");
         setState("verified");
-        await resolveGeoCountry();
         if (result.browserLead && measurementPermitted()) {
           // Measurement was allowed for this lead and this browser allows it
           // too: the pixel leg, deduplicated against the server leg by id.
-          fireBrowserLead(result.browserLead);
+          fireConversions({ browserLead: result.browserLead });
         } else if (result.measurementAsk) {
           if (getMetaMeasurementConsent() === "granted") {
             // This browser already said yes (on the page, before or after the
@@ -253,7 +284,9 @@ export function VerifyPage() {
               </div>
             )}
 
-            {askMeasurement && <MeasurementAsk tone="card" onAllow={grantMeasurement} />}
+            {askMeasurement && (
+              <MeasurementAsk tone="card" onAllow={grantMeasurement} onDecline={declineMeasurement} />
+            )}
 
             <a
               href={homePath(locale)}

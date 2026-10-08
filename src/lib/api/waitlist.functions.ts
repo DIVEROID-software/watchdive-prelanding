@@ -22,6 +22,8 @@ import {
   grantAttemptMeasurementService,
   grantConfirmationMeasurementService,
   pollVerificationService,
+  withdrawAttemptMeasurementService,
+  withdrawConfirmationMeasurementService,
   requestVerificationService,
 } from "@/lib/verification/service";
 
@@ -383,12 +385,25 @@ export const joinWaitlist = createServerFn({ method: "POST" })
 // and the page hands it over from memory on a same-origin request the CSRF
 // middleware has already validated.
 export const confirmVerification = createServerFn({ method: "POST" })
-  .validator(z.object({ token: z.string().min(16).max(400) }))
+  .validator(
+    z.object({
+      token: z.string().min(16).max(400),
+      // Only sent when this browser already allows measurement.
+      fbp: z.string().max(META_COOKIE_MAX).optional(),
+      fbc: z.string().max(META_COOKIE_MAX).optional(),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
       // The confirming request's own IP and user agent: a website conversion
       // without a user agent is one Meta cannot match to the person.
-      return await confirmVerificationService(data.token, createServiceDependencies(requestMeta()));
+      const fbp = sanitizeMetaCookie(data.fbp);
+      const fbc = sanitizeMetaCookie(data.fbc);
+      return await confirmVerificationService(
+        data.token,
+        createServiceDependencies(requestMeta()),
+        { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
+      );
     } catch (error) {
       throw sanitizeServerError("verification-confirm", error);
     }
@@ -411,10 +426,6 @@ export const grantAttemptMeasurement = createServerFn({ method: "POST" })
   .validator(
     z.object({
       handle: z.string().min(16).max(400),
-      submitEventId: z
-        .string()
-        .regex(/^[A-Za-z0-9._:-]{8,64}$/)
-        .optional(),
       fbp: z.string().max(META_COOKIE_MAX).optional(),
       fbc: z.string().max(META_COOKIE_MAX).optional(),
     }),
@@ -425,11 +436,7 @@ export const grantAttemptMeasurement = createServerFn({ method: "POST" })
       const fbc = sanitizeMetaCookie(data.fbc);
       return await grantAttemptMeasurementService(
         data.handle,
-        {
-          ...(data.submitEventId ? { submitEventId: data.submitEventId } : {}),
-          ...(fbp ? { fbp } : {}),
-          ...(fbc ? { fbc } : {}),
-        },
+        { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
         createServiceDependencies(requestMeta()),
       );
     } catch (error) {
@@ -458,5 +465,27 @@ export const grantConfirmationMeasurement = createServerFn({ method: "POST" })
       );
     } catch (error) {
       throw sanitizeServerError("measurement-grant-confirmation", error);
+    }
+  });
+
+// A refusal after the submit, while this browser still holds the attempt's
+// handle (inbox card or the banner) or its token (confirmation page).
+export const withdrawAttemptMeasurement = createServerFn({ method: "POST" })
+  .validator(z.object({ handle: z.string().min(16).max(400) }))
+  .handler(async ({ data }) => {
+    try {
+      return await withdrawAttemptMeasurementService(data.handle, createServiceDependencies());
+    } catch (error) {
+      throw sanitizeServerError("measurement-withdraw-attempt", error);
+    }
+  });
+
+export const withdrawConfirmationMeasurement = createServerFn({ method: "POST" })
+  .validator(z.object({ token: z.string().min(16).max(400) }))
+  .handler(async ({ data }) => {
+    try {
+      return await withdrawConfirmationMeasurementService(data.token, createServiceDependencies());
+    } catch (error) {
+      throw sanitizeServerError("measurement-withdraw-confirmation", error);
     }
   });

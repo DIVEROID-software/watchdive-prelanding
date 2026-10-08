@@ -9,6 +9,7 @@ import { track } from "@vercel/analytics";
 import {
   grantAttemptMeasurement,
   joinWaitlist,
+  withdrawAttemptMeasurement,
   pollVerification,
   getReferralCount,
   loadWaitlistCount,
@@ -18,7 +19,12 @@ import { ProductGallery } from "@/components/product-gallery";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LaunchNotice } from "@/components/launch-notice";
 import { CookieSettingsLink } from "@/components/cookie-choice-bar";
-import { MeasurementAsk, measurementAskEligible } from "@/components/measurement-ask";
+import {
+  MEASUREMENT_CHOICE_EVENT,
+  MeasurementAsk,
+  measurementAskEligible,
+  type MeasurementChoiceDetail,
+} from "@/components/measurement-ask";
 import { initGoogleTag } from "@/lib/googleTag";
 import { initClarity } from "@/lib/clarity";
 import { startPageBehavior } from "@/lib/pageBehavior";
@@ -632,6 +638,7 @@ function CheckInboxCard({
   onStartOver,
   resending,
   onAllowMeasurement,
+  onDeclineMeasurement,
 }: {
   message: string;
   email: string;
@@ -640,6 +647,7 @@ function CheckInboxCard({
   resending: boolean;
   /** Present when this browser may still be asked about measurement. */
   onAllowMeasurement?: () => void | Promise<void>;
+  onDeclineMeasurement?: () => void | Promise<void>;
 }) {
   const m = useFrozenLandingMessages();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -729,7 +737,9 @@ function CheckInboxCard({
         </button>
       </div>
       <p className="mt-2 text-xs leading-relaxed text-white/65">{message}</p>
-      {onAllowMeasurement && <MeasurementAsk onAllow={onAllowMeasurement} />}
+      {onAllowMeasurement && (
+        <MeasurementAsk onAllow={onAllowMeasurement} onDecline={onDeclineMeasurement} />
+      )}
     </div>
   );
 }
@@ -752,9 +762,6 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
   const formStartSent = useRef(false); // FormStart once per form instance
-  // The first submit's `Lead` event id, kept so a measurement grant on the
-  // inbox card can send the conversion that was withheld at submit time.
-  const submitEventIdRef = useRef<string | undefined>(undefined);
   // Decided once, when the inbox card appears: asking is for browsers that
   // have not answered yet in a country where measurement is opt-in.
   const [askMeasurement, setAskMeasurement] = useState(false);
@@ -891,6 +898,21 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     return stop;
   }, [handle, verified, id]);
 
+  // The banner can also be answered while this signup is pending. Its answer
+  // applies to this signup just like the inbox card's.
+  useEffect(() => {
+    if (!handle) return;
+    const onChoice = (event: Event) => {
+      const detail = (event as CustomEvent<MeasurementChoiceDetail>).detail;
+      if (!detail || detail.origin !== "banner") return;
+      if (detail.choice === "granted") void allowMeasurementAfterSubmit().catch(() => {});
+      else void declineMeasurementAfterSubmit().catch(() => {});
+    };
+    window.addEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
+    return () => window.removeEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handle]);
+
   if (verified) {
     return <ReferralSuccess refCode={refCode} />;
   }
@@ -928,20 +950,15 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     return res;
   };
 
-  // Allowed on the inbox card: start the tags this browser now permits, fire
-  // the submit `Lead` that was withheld under the same event id the server
-  // leg uses, and record the grant so the confirmation — wherever it is
-  // opened — is reported too.
+  // Allowed after the submit (inbox card, or the banner while the inbox card
+  // is up): start the tags this browser now permits and record the grant.
+  // The server sends the submit `Lead` that was withheld under an id it
+  // derives itself, and hands back that id so this pixel dedupes against it.
   async function allowMeasurementAfterSubmit() {
     initMetaPixel();
     initGoogleTag();
     initClarity();
     startPageBehavior();
-    const submitEventId = submitEventIdRef.current;
-    if (submitEventId) {
-      trackMetaLead(submitEventId, id);
-      trackGoogleSubmit(submitEventId, id);
-    }
     if (!handle) return;
     const attribution = getAttribution();
     const cookies = getMetaCookies();
@@ -953,15 +970,24 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     const res = await grantAttemptMeasurement({
       data: {
         handle,
-        ...(submitEventId ? { submitEventId } : {}),
         ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
         ...(fbc ? { fbc } : {}),
       },
     });
+    if (res.submitLead) {
+      trackMetaLead(res.submitLead.eventId, res.submitLead.source);
+      trackGoogleSubmit(res.submitLead.eventId, res.submitLead.source);
+    }
     if (res.browserLead) {
       trackMetaEmailVerified(res.browserLead.eventId, res.browserLead.source);
       trackGoogleLead(res.browserLead.eventId, res.browserLead.source);
     }
+  }
+
+  // Refused after the submit: recorded on the signup, so a confirmation opened
+  // anywhere later sends nothing.
+  async function declineMeasurementAfterSubmit() {
+    if (handle) await withdrawAttemptMeasurement({ data: { handle } });
   }
 
   if (closed) {
@@ -996,6 +1022,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           }
         }}
         onAllowMeasurement={askMeasurement ? allowMeasurementAfterSubmit : undefined}
+        onDeclineMeasurement={askMeasurement ? declineMeasurementAfterSubmit : undefined}
         onStartOver={() => {
           // A typo is otherwise unrecoverable without a page reload.
           setPending(null);
@@ -1020,7 +1047,6 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // signed from now on: the browser that opens the confirmation link
           // must not be able to widen it.
           const submitEventId = newMetaEventId();
-          submitEventIdRef.current = submitEventId;
           const res = await submit(submitEventId);
           setAskMeasurement(res.status === "pending" && !hp.trim() && measurementAskEligible());
           // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.

@@ -105,19 +105,46 @@ export class FakeLeadStore implements LeadStore {
       expiresAt: input.expiresAt,
       sends: 1,
       ...(input.metaFbc ? { metaFbc: input.metaFbc } : {}),
+      ...(input.measurementGranted
+        ? { measurementConsent: "WD-AD-MEASUREMENT-CONSENT-V1:granted" }
+        : {}),
     });
   }
 
-  measurementGrants: { pageId: string; metaFbc?: string }[] = [];
+  measurementGrants: string[] = [];
+  measurementFbcs: { pageId: string; metaFbc: string }[] = [];
+  withdrawals: string[] = [];
+  /** Test hook: runs inside the grant write, before it lands. */
+  onGrantWrite?: (pageId: string) => void;
+  failGrantWrite = false;
 
-  async recordMeasurementGrant(pageId: string, input: { metaFbc?: string }): Promise<void> {
-    this.measurementGrants.push({ pageId, ...input });
+  async recordMeasurementGrant(pageId: string): Promise<void> {
+    this.onGrantWrite?.(pageId);
+    if (this.failGrantWrite) throw new Error("notion down");
+    this.measurementGrants.push(pageId);
+    const row = this.rows.get(pageId);
+    if (row)
+      this.rows.set(pageId, { ...row, measurementConsent: "WD-AD-MEASUREMENT-CONSENT-V1:granted" });
+  }
+
+  async recordMeasurementFbc(pageId: string, metaFbc: string): Promise<void> {
+    this.measurementFbcs.push({ pageId, metaFbc });
+    const row = this.rows.get(pageId);
+    if (row) this.rows.set(pageId, { ...row, metaFbc });
+  }
+
+  async recordMeasurementWithdrawal(pageId: string): Promise<void> {
+    this.withdrawals.push(pageId);
     const row = this.rows.get(pageId);
     if (!row) return;
+    const flags = row.flags.includes("measurement-withdrawn")
+      ? row.flags
+      : [...row.flags, "measurement-withdrawn"];
+    const { metaFbc: _drop, ...rest } = row;
     this.rows.set(pageId, {
-      ...row,
-      measurementConsent: "WD-AD-MEASUREMENT-CONSENT-V1:granted",
-      ...(input.metaFbc ? { metaFbc: input.metaFbc } : {}),
+      ...rest,
+      flags,
+      measurementConsent: "WD-AD-MEASUREMENT-CONSENT-V1:withdrawn",
     });
   }
 

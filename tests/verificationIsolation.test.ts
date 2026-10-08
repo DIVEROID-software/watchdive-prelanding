@@ -74,13 +74,17 @@ test("the verify surface imports no analytics or widget", () => {
 // itself is only ever called after `history.replaceState`.
 test("the verify page starts the pixel only after a confirmation, never on load", () => {
   const source = read("src/routes/verify.tsx");
-  const starts = source.split("initMetaPixel()").length - 1;
-  assert.equal(starts, 2, "initMetaPixel must be called from exactly two places");
-  const fire = source.indexOf("const fireBrowserLead");
-  const grant = source.indexOf("const grantMeasurement");
-  assert.ok(fire > 0 && grant > fire, "the pixel starts only inside the post-confirmation helpers");
-  const firstStart = source.indexOf("initMetaPixel()");
-  assert.ok(firstStart > fire, "no pixel start before the helpers are defined");
+  // One place starts the pixel, and it is the helper that fires conversions
+  // the server has already sent (so every token-bearing request is done).
+  assert.equal(source.split("initMetaPixel()").length - 1, 1, "one pixel start");
+  const fire = source.indexOf("const fireConversions");
+  assert.ok(fire > 0 && source.indexOf("initMetaPixel()") > fire, "the start is inside fireConversions");
+  // The grant posts the token first, then fires.
+  const grant = source.slice(source.indexOf("const grantMeasurement"));
+  assert.ok(
+    grant.indexOf("await grantConfirmationMeasurement") < grant.indexOf("fireConversions(res)"),
+    "the token request completes before the pixel starts",
+  );
   const strip = source.indexOf("window.history.replaceState");
   const firstConfirmCall = source.indexOf("void confirm()");
   assert.ok(strip > 0 && firstConfirmCall > strip, "the token is stripped before any confirmation");

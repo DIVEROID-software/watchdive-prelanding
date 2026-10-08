@@ -48,7 +48,9 @@ import {
   FIELD_VERIFICATION_REMINDER,
   FIELD_VERIFICATION_STATUS,
   FIELD_VERIFIED_AT,
+  FLAG_MEASUREMENT_WITHDRAWN,
   MEASUREMENT_CONSENT_GRANTED,
+  MEASUREMENT_CONSENT_WITHDRAWN,
   STATUS_PENDING,
   STATUS_UNSUBSCRIBED,
   STATUS_VERIFIED,
@@ -233,6 +235,14 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
   const measurementConsent = readText(properties[FIELD_MEASUREMENT_CONSENT]);
   const fbcColumn = metaFbcColumn();
   const metaFbc = fbcColumn ? readText(properties[fbcColumn]) : "";
+  const utm = {
+    source: readText(properties[FIELD_UTM_SOURCE]),
+    medium: readText(properties[FIELD_UTM_MEDIUM]),
+    campaign: readText(properties[FIELD_UTM_CAMPAIGN]),
+    content: readText(properties[FIELD_UTM_CONTENT]),
+    term: readText(properties[FIELD_UTM_TERM]),
+  };
+  const hasUtm = Object.values(utm).some(Boolean);
 
   return {
     pageId,
@@ -261,6 +271,7 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     ...(landingPath ? { landingPath } : {}),
     ...(measurementConsent ? { measurementConsent } : {}),
     ...(isMetaFbc(metaFbc) ? { metaFbc } : {}),
+    ...(hasUtm ? { utm } : {}),
   };
 }
 
@@ -336,35 +347,50 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
     },
 
     async createPending(input: CreatePendingInput) {
-      const page = await withCanonicalEmailShape(() =>
-        request("POST", "pages", {
-          parent: { database_id: databaseId },
-          properties: {
-            Email: { title: [{ text: { content: input.email } }] },
-            ...canonicalEmailProperties(input.canonical),
-            ...(input.phone?.trim() ? { Phone: textProp(input.phone.trim()) } : {}),
-            Source: { select: { name: input.source } },
-            "Signed up": { date: { start: input.signedUpAt } },
-            "Ref code": textProp(input.refCode),
-            ...(input.referredBy && input.referredBy !== input.refCode
-              ? { "Referred by": textProp(input.referredBy) }
-              : {}),
-            ...(input.flags.length
-              ? { Flags: { multi_select: input.flags.map((name) => ({ name })) } }
-              : {}),
-            Suspect: { checkbox: input.suspect },
-            ...attributionProperties(input.attribution),
-            [FIELD_VERIFICATION_STATUS]: { select: { name: STATUS_PENDING } },
-            [FIELD_EMAIL_VERIFIED]: { checkbox: false },
-            [FIELD_LEAD_ID]: textProp(input.leadId),
-            [FIELD_VERIFICATION_EXPIRES]: { date: { start: input.expiresAt } },
-            [FIELD_VERIFICATION_SENDS]: { number: 1 },
-            ...(input.metaFbc && isMetaFbc(input.metaFbc) && metaFbcColumn()
-              ? { [metaFbcColumn() as string]: textProp(input.metaFbc) }
-              : {}),
-          },
-        }),
-      );
+      const fbcColumn = input.metaFbc && isMetaFbc(input.metaFbc) ? metaFbcColumn() : undefined;
+      const create = (withFbc: boolean) =>
+        withCanonicalEmailShape(() =>
+          request("POST", "pages", {
+            parent: { database_id: databaseId },
+            properties: {
+              Email: { title: [{ text: { content: input.email } }] },
+              ...canonicalEmailProperties(input.canonical),
+              ...(input.phone?.trim() ? { Phone: textProp(input.phone.trim()) } : {}),
+              Source: { select: { name: input.source } },
+              "Signed up": { date: { start: input.signedUpAt } },
+              "Ref code": textProp(input.refCode),
+              ...(input.referredBy && input.referredBy !== input.refCode
+                ? { "Referred by": textProp(input.referredBy) }
+                : {}),
+              ...(input.flags.length
+                ? { Flags: { multi_select: input.flags.map((name) => ({ name })) } }
+                : {}),
+              Suspect: { checkbox: input.suspect },
+              ...attributionProperties(input.attribution),
+              [FIELD_VERIFICATION_STATUS]: { select: { name: STATUS_PENDING } },
+              [FIELD_EMAIL_VERIFIED]: { checkbox: false },
+              [FIELD_LEAD_ID]: textProp(input.leadId),
+              [FIELD_VERIFICATION_EXPIRES]: { date: { start: input.expiresAt } },
+              [FIELD_VERIFICATION_SENDS]: { number: 1 },
+              ...(input.measurementGranted
+                ? { [FIELD_MEASUREMENT_CONSENT]: textProp(MEASUREMENT_CONSENT_GRANTED) }
+                : {}),
+              ...(withFbc && fbcColumn && input.metaFbc
+                ? { [fbcColumn]: textProp(input.metaFbc) }
+                : {}),
+            },
+          }),
+        );
+      // The click-cookie column is optional measurement context. If Notion
+      // rejects the write because of it (renamed, deleted, wrong type), the
+      // signup must still land: retry once without it.
+      let page;
+      try {
+        page = await create(Boolean(fbcColumn));
+      } catch (error) {
+        if (!fbcColumn) throw error;
+        page = await create(false);
+      }
       const record = toLeadRecord(page);
       if (!record) throw new Error("Notion page create returned no usable row");
       return record;
@@ -404,16 +430,40 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
       });
     },
 
-    async recordMeasurementGrant(pageId: string, input: MeasurementGrantInput) {
+    async recordMeasurementGrant(pageId: string, _input?: MeasurementGrantInput) {
+      // Consent on its own: an optional column can never take it down with it.
+      await request("PATCH", `pages/${pageId}`, {
+        properties: { [FIELD_MEASUREMENT_CONSENT]: textProp(MEASUREMENT_CONSENT_GRANTED) },
+      });
+    },
+
+    async recordMeasurementFbc(pageId: string, metaFbc: string) {
       const column = metaFbcColumn();
+      if (!column || !isMetaFbc(metaFbc)) return;
+      await request("PATCH", `pages/${pageId}`, {
+        properties: { [column]: textProp(metaFbc) },
+      });
+    },
+
+    async recordMeasurementWithdrawal(pageId: string) {
+      // The flag is the part a racing grant cannot overwrite (grants never
+      // write Flags). Read-merge-write keeps the abuse flags already there.
+      const current = toLeadRecord(await request("GET", `pages/${pageId}`));
+      const flags = new Set([...(current?.flags ?? []), FLAG_MEASUREMENT_WITHDRAWN]);
       await request("PATCH", `pages/${pageId}`, {
         properties: {
-          [FIELD_MEASUREMENT_CONSENT]: textProp(MEASUREMENT_CONSENT_GRANTED),
-          ...(column && input.metaFbc && isMetaFbc(input.metaFbc)
-            ? { [column]: textProp(input.metaFbc) }
-            : {}),
+          [FIELD_MEASUREMENT_CONSENT]: textProp(MEASUREMENT_CONSENT_WITHDRAWN),
+          Flags: { multi_select: [...flags].map((name) => ({ name })) },
         },
       });
+      const column = metaFbcColumn();
+      if (column) {
+        await request("PATCH", `pages/${pageId}`, {
+          properties: { [column]: { rich_text: [] } },
+        }).catch(() => {
+          // The click cookie is never sent once withdrawn either way.
+        });
+      }
     },
 
     async markWelcomeScheduled(pageId: string, input) {
