@@ -200,7 +200,8 @@ export type ParsedHandle = {
   issuedAtMs: number;
   measurementConsent: boolean;
   /**
-   * The canonical address the submit named, sealed inside the handle. Read
+   * The address the submit named, as stored on the row (trimmed, lower-case),
+   * sealed inside the handle. (Field name kept from when it held the canonical.) Read
    * only to record a refusal when the attempt id names no row (a decoy handle
    * from a cooldown, send-ceiling or already-confirmed submit): the refusal
    * must reach the row the person's mail will confirm. Never used to grant.

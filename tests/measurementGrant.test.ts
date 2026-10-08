@@ -1017,3 +1017,31 @@ test("a confirmation-token refusal whose attempt id no longer exists is not repo
   });
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
 });
+
+// ---- QA round 12 ----------------------------------------------------------
+
+test("a decoy refusal lands for a long plus-tag address the canonical column cannot hold", async () => {
+  const longEmail = `${"a".repeat(190)}+tag@example.com`;
+  const longCanonical = canonicalEmail(longEmail);
+  assert.ok(longCanonical.length > 200);
+  // Production shape: the canonical column is empty past 200 characters, so
+  // only the title (the address as typed, trimmed and lower-cased) matches.
+  store.findByEmail = async (canonical: string, email: string) => {
+    for (const row of store.rows.values()) {
+      if (row.email === email) return row;
+      if (canonical.length <= 200 && canonicalEmail(row.email) === canonical) return row;
+    }
+    return undefined;
+  };
+  const d = deps();
+  const long = { email: longEmail, canonical: longCanonical };
+  await requestVerificationService(submit(true, { ...long, submitEventId: BROWSER_ID }), d);
+  clock = new Date(clock.getTime() + 5_000);
+  const decoy = await requestVerificationService(submit(true, long), d);
+  assert.notEqual(decoy.handle.split(".")[0], onlyRow().leadId);
+  assert.deepEqual(await withdrawAttemptMeasurementService(decoy.handle, deps()), {
+    ok: true,
+    recorded: true,
+  });
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
+});

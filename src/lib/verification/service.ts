@@ -229,7 +229,7 @@ export async function requestVerificationService(
   // Every early return still hands back a well-formed handle naming an attempt
   // no row carries. The caller cannot tell a skipped send from a real one.
   const decoyHandle = () =>
-    signPollHandle(mintLeadId(), now.getTime(), consentRequested, secret, input.canonical);
+    signPollHandle(mintLeadId(), now.getTime(), consentRequested, secret, input.email);
 
   const existing = await store.findByEmail(input.canonical, input.email);
 
@@ -264,7 +264,7 @@ export async function requestVerificationService(
 
   const leadId = mintLeadId();
   const expiresAt = new Date(now.getTime() + VERIFICATION_TTL_MS).toISOString();
-  const handle = signPollHandle(leadId, now.getTime(), consentRequested, secret, input.canonical);
+  const handle = signPollHandle(leadId, now.getTime(), consentRequested, secret, input.email);
 
   // A suppressed submit must not touch a row that already exists. Arming a new
   // attempt would replace `Lead ID` and kill a live confirmation link — which
@@ -452,13 +452,7 @@ export async function confirmVerificationService(
     ...(refusalUnrecorded ? { refusalRecorded: false as const } : {}),
     // A refusal credential for this signup that survives a resend: the sealed
     // address finds the row even after `Lead ID` changes. Withdrawals only.
-    refusalHandle: signPollHandle(
-      parsed.leadId,
-      now.getTime(),
-      false,
-      secret,
-      canonicalEmail(record.email),
-    ),
+    refusalHandle: signPollHandle(parsed.leadId, now.getTime(), false, secret, record.email),
   };
 
   const metaEventId = deterministicMetaEventId(parsed.leadId, secret);
@@ -1040,7 +1034,12 @@ async function withdraw(
     // Every handle a submit returns carries it, so this lookup says nothing
     // about which kind of handle it was, and the answer stays the same.
     if (!record && refusalCanonical) {
-      record = await dependencies.store.findByEmail(refusalCanonical, refusalCanonical);
+      // The seal holds the address as stored (the row's title); the canonical
+      // form is derived from it, so either column finds the row.
+      record = await dependencies.store.findByEmail(
+        canonicalEmail(refusalCanonical),
+        refusalCanonical,
+      );
     }
   } catch {
     return false;
