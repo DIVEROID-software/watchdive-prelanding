@@ -37,7 +37,7 @@ export function ProductGallery({ sizes }: { sizes: string }) {
         />
       </div>
       <figcaption className="wd-product-caption">
-        <span className="wd-product-name">WATCH DIVE</span>
+        <span className="wd-product-name">WATCHDIVE</span>
         <div role="group" aria-label={m.gallery.label} className="wd-color-options">
           {(["black", "white"] as const).map((option) => (
             <button

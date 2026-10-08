@@ -717,7 +717,9 @@ test("clearing experiment context is best-effort and does not undo withdrawal", 
     return { id: "page-1", properties };
   };
   await createNotionLeadStore(request, "wait-db").recordMeasurementWithdrawal("page-1");
-  assert.deepEqual(patches, ["pages/page-1"]);
+  // The withdrawal flag, then the consent cell; the failed experiment clear
+  // adds nothing and undoes neither.
+  assert.deepEqual(patches, ["pages/page-1", "pages/page-1"]);
 });
 
 test("malformed experiment text is ignored instead of counted", () => {

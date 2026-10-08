@@ -44,9 +44,11 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "No thanks",
     privacy: "Privacy",
     thanks: "Thank you. That genuinely helps.",
-    withdrawRetry: "Measurement is off in this browser. We couldn’t confirm your choice was saved. Please try again.",
+    withdrawRetry:
+      "Measurement is off in this browser. We couldn’t confirm your choice was saved. Please try again.",
     withdrawRetryButton: "Try again",
-    grantRetry: "Your browser choice is saved. We couldn’t confirm it for this signup. Please try again.",
+    grantRetry:
+      "Your browser choice is saved. We couldn’t confirm it for this signup. Please try again.",
     grantRetryButton: "Try again",
   },
   ko: {
@@ -56,9 +58,11 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "괜찮아요",
     privacy: "개인정보",
     thanks: "고마워요. 정말 큰 도움이 돼요.",
-    withdrawRetry: "이 브라우저의 측정은 꺼져 있어요. 선택 사항 저장을 확인하지 못했어요. 다시 시도해 주세요.",
+    withdrawRetry:
+      "이 브라우저의 측정은 꺼져 있어요. 선택 사항 저장을 확인하지 못했어요. 다시 시도해 주세요.",
     withdrawRetryButton: "다시 시도",
-    grantRetry: "브라우저에 선택 사항을 저장했지만, 이번 가입에 적용됐는지 확인하지 못했어요. 다시 시도해 주세요.",
+    grantRetry:
+      "브라우저에 선택 사항을 저장했지만, 이번 가입에 적용됐는지 확인하지 못했어요. 다시 시도해 주세요.",
     grantRetryButton: "다시 시도",
   },
   "zh-CN": {
@@ -94,7 +98,8 @@ const COPY: Record<Locale, AskCopy> = {
     thanks: "ありがとうございます。本当に助かります。",
     withdrawRetry: "このブラウザでは計測を切っています。登録の記録には、まだ拒否が残っていません。",
     withdrawRetryButton: "拒否を記録し直す",
-    grantRetry: "このブラウザでは計測をオンにしています。登録の記録には、まだ許可が残っていません。",
+    grantRetry:
+      "このブラウザでは計測をオンにしています。登録の記録には、まだ許可が残っていません。",
     grantRetryButton: "もう一度試す",
   },
   es: {
@@ -104,7 +109,8 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "No, gracias",
     privacy: "Privacidad",
     thanks: "Gracias. Nos ayuda de verdad.",
-    withdrawRetry: "En este navegador la medición está desactivada. El registro aún no tiene el rechazo.",
+    withdrawRetry:
+      "En este navegador la medición está desactivada. El registro aún no tiene el rechazo.",
     withdrawRetryButton: "Registrar el rechazo otra vez",
     grantRetry: "En este navegador la medición está activada. El registro aún no tiene el permiso.",
     grantRetryButton: "Intentar de nuevo",
@@ -116,9 +122,11 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "Non merci",
     privacy: "Confidentialité",
     thanks: "Merci, cela nous aide vraiment.",
-    withdrawRetry: "La mesure est coupée dans ce navigateur. Le refus n'est pas encore sur l'inscription.",
+    withdrawRetry:
+      "La mesure est coupée dans ce navigateur. Le refus n'est pas encore sur l'inscription.",
     withdrawRetryButton: "Enregistrer le refus à nouveau",
-    grantRetry: "La mesure est activée dans ce navigateur. L'autorisation n'est pas encore sur l'inscription.",
+    grantRetry:
+      "La mesure est activée dans ce navigateur. L'autorisation n'est pas encore sur l'inscription.",
     grantRetryButton: "Réessayer",
   },
   de: {
@@ -128,9 +136,11 @@ const COPY: Record<Locale, AskCopy> = {
     decline: "Nein, danke",
     privacy: "Datenschutz",
     thanks: "Danke, das hilft uns wirklich.",
-    withdrawRetry: "In diesem Browser ist die Messung aus. Die Absage steht noch nicht bei der Anmeldung.",
+    withdrawRetry:
+      "In diesem Browser ist die Messung aus. Die Absage steht noch nicht bei der Anmeldung.",
     withdrawRetryButton: "Absage erneut speichern",
-    grantRetry: "In diesem Browser ist die Messung an. Die Erlaubnis steht noch nicht bei der Anmeldung.",
+    grantRetry:
+      "In diesem Browser ist die Messung an. Die Erlaubnis steht noch nicht bei der Anmeldung.",
     grantRetryButton: "Erneut versuchen",
   },
   "pt-BR": {
@@ -227,10 +237,13 @@ export function takeServerWithdrawalExpected(): boolean {
 
 export function noteMeasurementSettled(detail: MeasurementSettledDetail): void {
   if (typeof window === "undefined") return;
-  const settled = detail.choice === "denied"
-    ? { ...detail, recorded: withdrawalBatch.settle(detail.recorded) }
-    : detail;
-  window.dispatchEvent(new CustomEvent<MeasurementSettledDetail>(MEASUREMENT_SETTLED_EVENT, { detail: settled }));
+  const settled =
+    detail.choice === "denied"
+      ? { ...detail, recorded: withdrawalBatch.settle(detail.recorded) }
+      : detail;
+  window.dispatchEvent(
+    new CustomEvent<MeasurementSettledDetail>(MEASUREMENT_SETTLED_EVENT, { detail: settled }),
+  );
 }
 
 function stopClarity(): void {
@@ -370,7 +383,7 @@ export function MeasurementAsk({
           type="button"
           disabled={busy}
           onClick={() => choose("denied")}
-          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 px-3 text-sm font-medium text-white"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 px-2 py-1.5 text-center text-sm leading-tight font-medium text-white [hyphens:auto] [overflow-wrap:anywhere]"
         >
           {copy.decline}
         </button>
@@ -378,7 +391,7 @@ export function MeasurementAsk({
           type="button"
           disabled={busy}
           onClick={() => choose("granted")}
-          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-[#3D2683] px-3 text-sm font-medium text-white"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-[#3D2683] px-2 py-1.5 text-center text-sm leading-tight font-medium text-white [hyphens:auto] [overflow-wrap:anywhere]"
         >
           {copy.allow}
         </button>

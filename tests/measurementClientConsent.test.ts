@@ -47,7 +47,10 @@ test("the inbox grant checks permission before tags and does not fire a browser 
 test("the server trusts Sec-GPC and not a body field", () => {
   const source = read("src/lib/api/waitlist.functions.ts");
   assert.ok(source.includes('getRequestHeader("sec-gpc") === "1"'));
-  assert.ok(source.includes("!globalPrivacyControl"));
+  // The header becomes the service's `gpc`, which refuses the submit Lead,
+  // every grant and every send; the handler itself sends nothing to Meta.
+  assert.ok(source.includes("requestHasGpc() ? { gpc: true } : {}"));
+  assert.equal(source.includes("deliverMetaLead"), false);
   assert.equal(source.includes("data.gpc"), false);
   assert.equal(source.includes("data.secGpc"), false);
 });

@@ -350,15 +350,20 @@ async function createLeadPage(
     return await create(options);
   } catch (error) {
     const named =
-      error instanceof NotionRequestError && error.status === 400 && error.code === "validation_error"
+      error instanceof NotionRequestError &&
+      error.status === 400 &&
+      error.code === "validation_error"
         ? new Set(error.rejectedOptionalColumns)
         : new Set<string>();
     const next: OptionalLeadWrite = { ...options };
     if (options.experiment && named.has(FIELD_CONVERSION_EXPERIMENT)) next.experiment = false;
     if (options.fbc && columns.fbcColumn && named.has(columns.fbcColumn)) next.fbc = false;
-    if (options.fbclid && columns.fbclidColumn && named.has(columns.fbclidColumn)) next.fbclid = false;
+    if (options.fbclid && columns.fbclidColumn && named.has(columns.fbclidColumn))
+      next.fbclid = false;
     const dropped =
-      next.experiment !== options.experiment || next.fbc !== options.fbc || next.fbclid !== options.fbclid;
+      next.experiment !== options.experiment ||
+      next.fbc !== options.fbc ||
+      next.fbclid !== options.fbclid;
     if (dropped) {
       if (options.experiment && !next.experiment) {
         console.error("[conversion-experiment] optional context omitted", {
@@ -518,14 +523,25 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
     },
 
     async recordMeasurementWithdrawal(pageId: string) {
-      // The flag is the part a racing grant cannot overwrite (grants never
-      // write Flags). Read-merge-write keeps the abuse flags already there.
-      const current = toLeadRecord(await request("GET", `pages/${pageId}`));
-      const flags = new Set([...(current?.flags ?? []), FLAG_MEASUREMENT_WITHDRAWN]);
+      // The flag first: a grant never writes Flags, so once it is there every
+      // grant's confirming read restores the refusal and every send stops —
+      // even a grant that read the row before this call started. Read-merge-
+      // write keeps the abuse flags already there.
+      const flagged = await (async () => {
+        const current = toLeadRecord(await request("GET", `pages/${pageId}`));
+        const flags = new Set([...(current?.flags ?? []), FLAG_MEASUREMENT_WITHDRAWN]);
+        await request("PATCH", `pages/${pageId}`, {
+          properties: { Flags: { multi_select: [...flags].map((name) => ({ name })) } },
+        });
+      })().then(
+        () => true,
+        () => false,
+      );
+      // Then the cell, on its own and regardless: a Flags write Notion rejects
+      // (an option it will not create, say) must not take the refusal with it.
       await request("PATCH", `pages/${pageId}`, {
         properties: {
           [FIELD_MEASUREMENT_CONSENT]: textProp(MEASUREMENT_CONSENT_WITHDRAWN),
-          Flags: { multi_select: [...flags].map((name) => ({ name })) },
         },
       });
       const column = metaFbcColumn();
@@ -541,6 +557,7 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
       await request("PATCH", `pages/${pageId}`, {
         properties: { [FIELD_CONVERSION_EXPERIMENT]: { rich_text: [] } },
       }).catch(() => {});
+      if (!flagged) throw new Error("measurement-withdrawn flag not written");
     },
 
     async markWelcomeScheduled(pageId: string, input) {

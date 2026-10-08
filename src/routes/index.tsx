@@ -1179,10 +1179,13 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });
           // `Lead` fires here, at the accepted submit (2026-09-26): one
-          // confirmation a week is too little for delivery to optimise on. The
-          // server sent the Conversions API leg under the same event id, so
-          // Meta counts one Lead. A tripped honeypot is knowable right here,
-          // and a bot is not something to optimise for.
+          // confirmation a week is too little for delivery to optimise on. When
+          // this submit was the one that allowed measurement for the signup,
+          // the server sent the Conversions API leg under the same event id,
+          // so Meta counts one Lead. It fires the same way for a new or a known
+          // address, so it says nothing about which this was. A tripped
+          // honeypot is knowable right here, and a bot is not something to
+          // optimise for.
           if (res.status === "pending" && !hp.trim() && measurementPermitted()) {
             trackMetaLead(submitEventId, id);
             trackGoogleSubmit(submitEventId, id);
