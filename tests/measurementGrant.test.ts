@@ -1045,3 +1045,27 @@ test("a decoy refusal lands for a long plus-tag address the canonical column can
   });
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
 });
+
+// ---- QA round 13 (non-blocking) -------------------------------------------
+
+test("the confirmation's refusal handle can refuse but never grant or poll", async () => {
+  // One id factory, as in a real process (production mints random UUIDs).
+  const d = deps();
+  await requestVerificationService(submit(false), d);
+  clock = new Date(clock.getTime() + 60_000);
+  const confirmed = await confirmVerificationService(mailer.sent[0].token, d);
+  assert.notEqual(confirmed.refusalHandle!.split(".")[0], onlyRow().leadId);
+  assert.ok(confirmed.refusalHandle);
+  await grantAttemptMeasurementService(confirmed.refusalHandle!, {}, deps());
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHHELD);
+  assert.equal(submits.length, 0);
+  assert.deepEqual(await pollVerificationService(confirmed.refusalHandle!, deps()), {
+    ok: true,
+    status: "pending",
+  });
+  assert.deepEqual(await withdrawAttemptMeasurementService(confirmed.refusalHandle!, deps()), {
+    ok: true,
+    recorded: true,
+  });
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
+});

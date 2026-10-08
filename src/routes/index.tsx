@@ -649,7 +649,7 @@ const WEBMAIL: { match: RegExp; label: WebmailLabel; url: string }[] = [
   {
     match: /@(gmail|googlemail)\.com$/i,
     label: "openGmail",
-    url: "https://mail.google.com/mail/u/0/#search/watch+dive",
+    url: "https://mail.google.com/mail/u/0/#search/WatchDive",
   },
   {
     match: /@(outlook|hotmail|live|msn)\./i,

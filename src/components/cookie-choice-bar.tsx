@@ -33,6 +33,11 @@ type ChoiceCopy = {
   title: string;
   /** What the cookies are for, and that the page works either way. */
   body: string;
+  /**
+   * The same facts for a phone screen (same vendors, purpose and "optional"),
+   * so the bar does not cover the headline on a 320px screen.
+   */
+  bodyShort: string;
   allow: string;
   decline: string;
   privacy: string;
@@ -47,6 +52,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
   en: {
     title: "Your privacy choices",
     body: "We'd like to use cookies and similar tools from Meta, Google and Microsoft Clarity, plus our own click and scroll measurement, to see which ads bring divers here and how this page is used. Optional: your signup works either way.",
+    bodyShort:
+      "Meta, Google and Microsoft Clarity cookies, plus our own click and scroll measurement, show which ads bring divers here. Optional: your signup works either way.",
     allow: "Accept all",
     decline: "Reject all",
     privacy: "Privacy Policy",
@@ -58,6 +65,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
   ko: {
     title: "개인정보 선택",
     body: "Meta, Google, Microsoft Clarity의 쿠키·유사 기술과 자체 클릭·스크롤 측정으로 어떤 광고가 다이버를 데려오는지, 페이지가 어떻게 쓰이는지 보고 싶어요. 선택 사항이며, 가입은 그대로 유지돼요.",
+    bodyShort:
+      "Meta·Google·Microsoft Clarity 쿠키와 자체 클릭·스크롤 측정으로 어떤 광고가 다이버를 데려오는지 봐요. 선택 사항이며, 가입은 그대로 유지돼요.",
     allow: "모두 허용",
     decline: "모두 거부",
     privacy: "개인정보처리방침",
@@ -69,6 +78,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
   "zh-CN": {
     title: "您的隐私选择",
     body: "我们希望使用 Meta、Google 和 Microsoft Clarity 的 Cookie 及类似工具，以及我们自己的点击和滚动统计，了解哪些广告带来了潜水员、页面如何被使用。可选：不影响您的报名。",
+    bodyShort:
+      "使用 Meta、Google、Microsoft Clarity 的 Cookie 及我们自己的点击和滚动统计，了解哪些广告带来了潜水员。可选：不影响您的报名。",
     allow: "全部接受",
     decline: "全部拒绝",
     privacy: "隐私政策",
@@ -79,6 +90,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
   "zh-TW": {
     title: "您的隱私選擇",
     body: "我們希望使用 Meta、Google 和 Microsoft Clarity 的 Cookie 及類似工具，以及我們自己的點擊和捲動統計，了解哪些廣告帶來了潛水員、頁面如何被使用。可選：不影響您的報名。",
+    bodyShort:
+      "使用 Meta、Google、Microsoft Clarity 的 Cookie 及我們自己的點擊和捲動統計，了解哪些廣告帶來了潛水員。可選：不影響您的報名。",
     allow: "全部接受",
     decline: "全部拒絕",
     privacy: "隱私權政策",
@@ -89,6 +102,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
   ja: {
     title: "プライバシーの選択",
     body: "Meta・Google・Microsoft Clarity のクッキーや類似技術と、自社のクリック・スクロール計測で、どの広告からダイバーが来たか、ページがどう使われたかを知りたいと考えています。任意です。登録はそのまま有効です。",
+    bodyShort:
+      "Meta・Google・Microsoft Clarity のクッキーと自社のクリック・スクロール計測で、どの広告からダイバーが来たかを把握します。任意です。登録はそのまま有効です。",
     allow: "すべて許可",
     decline: "すべて拒否",
     privacy: "プライバシーポリシー",
@@ -99,6 +114,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
   es: {
     title: "Tus opciones de privacidad",
     body: "Queremos usar cookies y herramientas similares de Meta, Google y Microsoft Clarity, además de nuestra propia medición de clics y desplazamiento, para saber qué anuncios traen buceadores y cómo se usa esta página. Es opcional: tu registro funciona igual.",
+    bodyShort:
+      "Cookies de Meta, Google y Microsoft Clarity, más nuestra medición de clics y desplazamiento, para saber qué anuncios traen buceadores. Opcional: tu registro funciona igual.",
     allow: "Aceptar todo",
     decline: "Rechazar todo",
     privacy: "Política de privacidad",
@@ -110,6 +127,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
   fr: {
     title: "Vos choix de confidentialité",
     body: "Nous aimerions utiliser des cookies et outils similaires de Meta, Google et Microsoft Clarity, ainsi que notre propre mesure des clics et du défilement, pour savoir quelles annonces amènent des plongeurs et comment la page est utilisée. Facultatif : votre inscription reste valable.",
+    bodyShort:
+      "Cookies de Meta, Google et Microsoft Clarity, et notre mesure des clics et du défilement, pour savoir quelles annonces amènent des plongeurs. Facultatif : votre inscription reste valable.",
     allow: "Tout accepter",
     decline: "Tout refuser",
     privacy: "Politique de confidentialité",
@@ -121,6 +140,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
   de: {
     title: "Deine Datenschutz-Einstellungen",
     body: "Wir möchten Cookies und ähnliche Tools von Meta, Google und Microsoft Clarity sowie unsere eigene Klick- und Scroll-Messung nutzen, um zu sehen, welche Anzeigen Taucher herbringen und wie die Seite genutzt wird. Freiwillig: deine Anmeldung gilt so oder so.",
+    bodyShort:
+      "Cookies von Meta, Google und Microsoft Clarity plus unsere Klick- und Scroll-Messung zeigen, welche Anzeigen Taucher herbringen. Freiwillig: deine Anmeldung gilt so oder so.",
     allow: "Alle akzeptieren",
     decline: "Alle ablehnen",
     privacy: "Datenschutzerklärung",
@@ -132,6 +153,8 @@ const COPY: Record<Locale, ChoiceCopy> = {
   "pt-BR": {
     title: "Suas escolhas de privacidade",
     body: "Queremos usar cookies e ferramentas semelhantes da Meta, do Google e do Microsoft Clarity, além da nossa própria medição de cliques e rolagem, para saber quais anúncios trazem mergulhadores e como a página é usada. Opcional: seu cadastro vale de qualquer jeito.",
+    bodyShort:
+      "Cookies da Meta, do Google e do Microsoft Clarity, mais nossa medição de cliques e rolagem, para saber quais anúncios trazem mergulhadores. Opcional: seu cadastro vale de qualquer jeito.",
     allow: "Aceitar tudo",
     decline: "Rejeitar tudo",
     privacy: "Política de privacidade",
@@ -288,6 +311,7 @@ export function CookieChoiceBar() {
   }, [open]);
 
   if (!open) return null;
+  const gpcOn = globalPrivacyControlOn();
 
   function choose(choice: "granted" | "denied") {
     if (choice === "granted") {
@@ -344,21 +368,25 @@ export function CookieChoiceBar() {
     >
       <div
         role="dialog"
+        aria-hidden={yielding || undefined}
         aria-labelledby="wd-privacy-title"
         aria-describedby="wd-privacy-body"
-        className="mx-auto flex max-w-6xl flex-col gap-2.5 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:gap-3 sm:px-6 sm:pt-5 lg:flex-row lg:items-end lg:gap-10 lg:pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:pt-6"
+        className="mx-auto flex max-w-6xl flex-col gap-2.5 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:gap-3 sm:px-6 sm:pt-4 lg:flex-row lg:items-center lg:gap-10 lg:pb-[max(1rem,env(safe-area-inset-bottom))] lg:pt-4"
       >
         <div className="min-w-0 lg:flex-1">
-          <div className="flex items-center justify-between gap-3">
+          {/* Below sm the heading row is visual only from sm up: the dialog
+              keeps its name for screen readers, and the policy link moves to
+              the end of the body, so the bar takes one row less on a phone. */}
+          <div className="flex items-center justify-between gap-3 max-sm:sr-only">
             <h2
               id="wd-privacy-title"
-              className="text-base font-semibold leading-tight tracking-tight text-white sm:text-xl"
+              className="text-[0.9375rem] font-semibold leading-tight tracking-tight text-white sm:text-lg"
             >
               {copy.title}
             </h2>
             <a
               href={privacyPath(locale)}
-              className="-my-2 inline-flex min-h-11 shrink-0 items-center text-xs text-[#36A9E1] underline sm:text-sm"
+              className="-my-2 hidden min-h-11 shrink-0 items-center text-sm text-[#36A9E1] underline sm:inline-flex"
             >
               {copy.privacy}
             </a>
@@ -366,9 +394,22 @@ export function CookieChoiceBar() {
           <p
             id="wd-privacy-body"
             role={withdrawPending ? "alert" : undefined}
-            className="mt-1 text-[0.8125rem] leading-snug text-[#EDE6FF] sm:text-[0.9375rem] sm:leading-relaxed"
+            className="text-[0.8125rem] leading-snug text-[#EDE6FF] sm:mt-1 sm:text-[0.9375rem] sm:leading-relaxed"
           >
-            {withdrawPending ? copy.retryBody : copy.body}
+            {withdrawPending ? (
+              copy.retryBody
+            ) : (
+              <>
+                <span className="sm:hidden">{copy.bodyShort}</span>
+                <span className="hidden sm:inline">{copy.body}</span>
+              </>
+            )}{" "}
+            <a
+              href={privacyPath(locale)}
+              className="whitespace-nowrap text-[#36A9E1] underline sm:hidden"
+            >
+              {copy.privacy}
+            </a>
           </p>
         </div>
         <div className="grid shrink-0 grid-cols-2 gap-2.5 lg:w-[26rem]">
@@ -384,7 +425,9 @@ export function CookieChoiceBar() {
           <button
             type="button"
             className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#65ceee] bg-[#65ceee] px-3 text-sm font-semibold text-[#181238] sm:text-[0.9375rem]"
-            disabled={yielding}
+            // Global Privacy Control already said no: Accept cannot apply, so
+            // it is shown but not offered (Reject still works).
+            disabled={yielding || gpcOn}
             tabIndex={yielding ? -1 : undefined}
             onClick={() => choose("granted")}
           >

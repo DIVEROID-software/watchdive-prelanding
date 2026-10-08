@@ -37,6 +37,8 @@ export async function withdrawStoredSignups(
 export async function withdrawEverySignup(extra: readonly string[] = []): Promise<boolean> {
   const handles = [...new Set([...extra.filter(Boolean), ...storedSignupHandles()])];
   const all = await withdrawStoredSignups(handles);
-  if (all) markWithdrawalRecorded();
+  // Nothing to withdraw is not a receipt: only a refusal that reached at
+  // least one signup row marks this browser as recorded.
+  if (all && handles.length > 0) markWithdrawalRecorded();
   return all;
 }
