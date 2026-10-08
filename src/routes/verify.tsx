@@ -7,11 +7,13 @@ import {
   withdrawConfirmationMeasurement,
 } from "@/lib/api/waitlist.functions";
 import {
-  markWithdrawalRecorded,
+  clearWithdrawalRecorded,
   MeasurementAsk,
   measurementAskEligible,
   withdrawalNeedsRetry,
 } from "@/components/measurement-ask";
+import { withdrawEverySignup } from "@/lib/signupHandleWithdrawal";
+import { rememberSignupHandle } from "@/lib/signupHandles";
 import { resolveGeoCountry } from "@/lib/consentRegion";
 import {
   getMetaCookies,
@@ -116,6 +118,8 @@ export function VerifyPage() {
       : "";
   const token = useRef<string | undefined>(undefined);
   const started = useRef(false);
+  // Withdraw-only credential for this signup, from the confirm response.
+  const refusalHandle = useRef<string | undefined>(undefined);
   const [askMeasurement, setAskMeasurement] = useState(false);
 
   /**
@@ -163,19 +167,25 @@ export function VerifyPage() {
   /** Refused here: recorded on the signup so nothing is sent for it later. */
   const declineMeasurement = async (): Promise<boolean> => {
     if (!token.current) return false;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    let tokenRecorded = false;
+    for (let attempt = 0; attempt < 3 && !tokenRecorded; attempt++) {
       try {
-        const res = await withdrawConfirmationMeasurement({ data: { token: token.current } });
-        if (res.recorded) {
-          markWithdrawalRecorded();
-          return true;
-        }
+        tokenRecorded = (await withdrawConfirmationMeasurement({ data: { token: token.current } }))
+          .recorded;
       } catch {
         // A dropped call is not a recorded refusal.
       }
-      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+      if (!tokenRecorded && attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+      }
     }
-    return false;
+    // Done only once every signup this browser kept a handle for has the
+    // refusal too — including this one through its refusal handle, which
+    // still finds the row after a resend replaced the token's attempt id.
+    // Otherwise the card stays on Try again.
+    const extra = refusalHandle.current ? [refusalHandle.current] : [];
+    const everywhere = await withdrawEverySignup(extra).catch(() => false);
+    return everywhere && (tokenRecorded || extra.length > 0);
   };
 
   const confirm = async () => {
@@ -189,10 +199,11 @@ export function VerifyPage() {
       // so the server's confirmation names the click that brought them here.
       await resolveGeoCountry();
       const cookies = measurementPermitted() ? getMetaCookies() : {};
+      const refused = getMetaMeasurementConsent() === "denied";
       const result = await confirmVerification({
         data: {
           token: token.current,
-          ...(getMetaMeasurementConsent() === "denied" ? { refused: true } : {}),
+          ...(refused ? { refused: true } : {}),
           ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
           ...(cookies.fbc ? { fbc: cookies.fbc } : {}),
         },
@@ -200,6 +211,25 @@ export function VerifyPage() {
       if (result.status === "verified" || result.status === "already_verified") {
         setRefCode(result.refCode ?? "");
         setState("verified");
+        if (result.refusalHandle) {
+          refusalHandle.current = result.refusalHandle;
+          rememberSignupHandle(result.refusalHandle);
+        }
+        if (refused) {
+          // This browser refused earlier. The server recorded it on this
+          // signup before anything else; make sure every other signup this
+          // browser kept has it too. Anything unrecorded keeps Try again.
+          const everywhere =
+            result.refusalRecorded !== false &&
+            (await withdrawEverySignup(result.refusalHandle ? [result.refusalHandle] : []).catch(
+              () => false,
+            ));
+          if (!everywhere) {
+            clearWithdrawalRecorded();
+            setAskMeasurement(true);
+          }
+          return;
+        }
         if (result.browserLead && measurementPermitted()) {
           // Measurement was allowed for this lead and this browser allows it
           // too: the pixel leg, deduplicated against the server leg by id.
@@ -267,7 +297,10 @@ export function VerifyPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[color:var(--color-deep-2)] px-5 py-14">
       <div className="w-full max-w-xl">
-        <Link to={homePath(locale)} className="mb-5 inline-flex min-h-11 items-center text-body text-white/70 underline">
+        <Link
+          to={homePath(locale)}
+          className="mb-5 inline-flex min-h-11 items-center text-body text-white/70 underline"
+        >
           {copy.back}
         </Link>
 
@@ -316,7 +349,11 @@ export function VerifyPage() {
             )}
 
             {askMeasurement && (
-              <MeasurementAsk tone="card" onAllow={grantMeasurement} onDecline={declineMeasurement} />
+              <MeasurementAsk
+                tone="card"
+                onAllow={grantMeasurement}
+                onDecline={declineMeasurement}
+              />
             )}
 
             <a

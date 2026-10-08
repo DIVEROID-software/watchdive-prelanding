@@ -44,15 +44,20 @@ export function createServiceDependencies(
     ...(request.gpc ? { gpc: true as const } : {}),
     onDeliveryFailure: (error) => deliveryAlerter.record(error),
     dispatchVerifiedLead: async (input) => {
-      const sent = await sendMetaEmailVerified({ ...input, ...client });
+      const { stillAllowed, ...event } = input;
+      const sent = await sendMetaEmailVerified({ ...event, ...client });
       // The CRM leg of the Conversion Leads integration rides the same gate:
       // it only fires for a consented, non-abusive confirmation, and its own
-      // failure never un-confirms the lead.
-      await sendMetaCrmQualifiedLead(input);
+      // failure never un-confirms the lead. The row is read again first: a
+      // refusal that committed while the website call was in flight stops it.
+      if (stillAllowed && !(await stillAllowed().catch(() => false))) return sent;
+      await sendMetaCrmQualifiedLead(event);
       return sent;
     },
-    // The submit Lead, sent by the server when measurement is allowed after
-    // the submit. This late Lead is server-only on every surface.
+    // The submit Lead: for a brand-new consented signup, and for a re-submit
+    // that newly allows measurement, under the browser pixel's id; when
+    // allowed later (inbox card, confirmation page), server-only under the
+    // row-derived id.
     dispatchSubmitLead: async (input) => {
       // Acknowledged only when Meta took it; anything else stays pending.
       return (await deliverMetaLead({ ...input, ...client })) === "sent";

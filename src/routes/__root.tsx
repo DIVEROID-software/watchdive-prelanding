@@ -66,7 +66,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 // Design variant switch, fixed at build time. Only an allowlisted name turns
-// a theme on; production builds leave VITE_DESIGN_THEME unset.
+// a theme on. Production sets VITE_DESIGN_THEME=brutal (2026-10-08 owner
+// decision); unset, the original design ships unchanged.
 const DESIGN_THEME =
   (import.meta.env.VITE_DESIGN_THEME as string | undefined)?.trim() === "brutal"
     ? "brutal"

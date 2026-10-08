@@ -1,6 +1,6 @@
 /* ======================================================================
    BRUTALISM VARIANT — active only under html:root
-   (VITE_DESIGN_THEME=brutal at build time; production builds omit it).
+   (VITE_DESIGN_THEME=brutal at build time; production sets it).
    Structure from ui-ux-pro-max "Brutalism" (variance 9): 0px corners,
    no transitions, 700-weight type, visible 2–4px borders, visible grid,
    large blocks, hard offset shadows. Colours and type stay DIVEROID:

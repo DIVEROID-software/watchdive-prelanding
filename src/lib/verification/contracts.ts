@@ -16,6 +16,15 @@ import type { ExperimentContext } from "../conversionExperimentContract.ts";
 
 /** Confirmation links last 24 hours. */
 export const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
+/**
+ * How long a poll handle can still record a refusal (never a grant or a poll):
+ * as long as any confirmation link for that signup can still be live — a
+ * reminder sent up to 7 days after the first mail (reminder.ts
+ * VERIFICATION_REMINDER_MAX_AGE_MS), valid for the TTL after the next hour
+ * boundary. The browser keeps its handles exactly this long (signupHandles.ts).
+ */
+export const WITHDRAW_HANDLE_TTL_MS =
+  7 * 24 * 60 * 60 * 1000 + VERIFICATION_TTL_MS + 60 * 60 * 1000;
 
 /** Shortest gap between two confirmation mails to one address. */
 export const VERIFICATION_RESEND_COOLDOWN_MS = 60 * 1000;
@@ -357,6 +366,17 @@ export type ConfirmResponse = {
    * `grantConfirmationMeasurement`. Never set for abuse-flagged rows.
    */
   measurementAsk?: true;
+  /**
+   * The confirming browser sent its stored refusal and it could not be
+   * written: nothing was sent, and the page must keep Try again.
+   */
+  refusalRecorded?: false;
+  /**
+   * A withdraw-only credential for this signup (a poll handle carrying the
+   * sealed address), kept by the page so a later refusal still lands after a
+   * resend replaced the attempt id. Present on verified and already_verified.
+   */
+  refusalHandle?: string;
 };
 
 /**

@@ -27,14 +27,19 @@ import {
   GENERIC_PENDING_MESSAGE,
   MIN_RESPONSE_MS,
   POLL_HANDLE_TTL_MS,
+  WITHDRAW_HANDLE_TTL_MS,
   VERIFICATION_MAX_SENDS,
   WELCOME_DELAY_MS,
   VERIFICATION_RESEND_COOLDOWN_MS,
   VERIFICATION_TTL_MS,
 } from "./contracts.ts";
-import { persistableExperimentContext, type ExperimentContext } from "../conversionExperimentContract.ts";
+import {
+  persistableExperimentContext,
+  type ExperimentContext,
+} from "../conversionExperimentContract.ts";
 import type { PollGate } from "./pollGate.ts";
 import type { VerificationMailer } from "./resend.ts";
+import { canonicalEmail } from "../api/abuse.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
 import type { TokenEnvironment } from "./token.ts";
 import {
@@ -69,6 +74,11 @@ export type VerifiedLeadDispatch = (
     phone?: string;
     source: string;
     landingPath?: string;
+    /**
+     * Re-reads the row. The dispatcher calls it between the website event and
+     * the CRM event, so a refusal that commits during the first stops the second.
+     */
+    stillAllowed?: () => Promise<boolean>;
   } & ConversionContext,
 ) => Promise<void | boolean>;
 
@@ -102,6 +112,14 @@ export type RequestVerificationInput = {
   measurementConsent: boolean;
   /** Meta click cookie, stored only when `measurementConsent` is true. */
   metaFbc?: string;
+  /** Meta browser cookie, forwarded (never stored) when `measurementConsent` is true. */
+  metaFbp?: string;
+  /**
+   * The id the browser's own `Lead` carried on this submit. When present it is
+   * the one id the server sends for the submit Lead of the consent change this
+   * request makes, so the two legs dedupe.
+   */
+  submitEventId?: string;
   /** Language selected on the page. Defaults to English for legacy callers. */
   locale?: Locale;
   /** True when this network has produced too many recent signups to keep mailing. */
@@ -211,7 +229,7 @@ export async function requestVerificationService(
   // Every early return still hands back a well-formed handle naming an attempt
   // no row carries. The caller cannot tell a skipped send from a real one.
   const decoyHandle = () =>
-    signPollHandle(mintLeadId(), now.getTime(), consentRequested, secret);
+    signPollHandle(mintLeadId(), now.getTime(), consentRequested, secret, input.email);
 
   const existing = await store.findByEmail(input.canonical, input.email);
 
@@ -220,6 +238,14 @@ export async function requestVerificationService(
   // message is produced.
   const abusive = conversionBlocked(input.flags);
   const suppressed = abusive || input.networkSendBlocked;
+
+  // Measurement allowed on this submit for an address that already has a row
+  // (in any of the paths below, decoys included): one grant, and at most one
+  // submit Lead for it — under the browser's id when this request is the one
+  // that moved the row from withheld. The response floor covers the time.
+  if (existing && !suppressed && consentRequested) {
+    await grantFromSubmit(existing, input, dependencies, secret);
+  }
 
   if (existing && existing.status !== "pending" && existing.status !== "legacy") {
     return floor(pendingResponse(decoyHandle()));
@@ -238,7 +264,7 @@ export async function requestVerificationService(
 
   const leadId = mintLeadId();
   const expiresAt = new Date(now.getTime() + VERIFICATION_TTL_MS).toISOString();
-  const handle = signPollHandle(leadId, now.getTime(), consentRequested, secret);
+  const handle = signPollHandle(leadId, now.getTime(), consentRequested, secret, input.email);
 
   // A suppressed submit must not touch a row that already exists. Arming a new
   // attempt would replace `Lead ID` and kill a live confirmation link — which
@@ -260,6 +286,9 @@ export async function requestVerificationService(
         signedUpAt: now.toISOString(),
         leadId,
         expiresAt,
+        // Nothing was sent for it: a later consented, non-abusive submit can
+        // still open its one submit Lead. Empty is only for pre-release rows.
+        measurementState: MEASUREMENT_CONSENT_WITHHELD,
       });
     }
     return floor(pendingResponse(decoyHandle()));
@@ -271,24 +300,6 @@ export async function requestVerificationService(
     // be used to keep re-arming a send.
     await store.startAttempt(existing.pageId, { leadId, expiresAt, sends: existing.sends + 1 });
     record = existing;
-    // A resend that now carries consent: the same grant path as the inbox
-    // card (re-read, refusal wins, the withheld Lead goes out only for a row
-    // whose cell says it was withheld). An empty cell is a pre-release row whose
-    // submit-time Lead already ran if it had consent: never read as withheld.
-    if (consentRequested && !conversionBlocked(existing.flags)) {
-      try {
-        if ((await applyGrant(existing, dependencies, false)) === "granted") {
-          await flushPendingLead(
-            existing.pageId,
-            input.metaFbc ? { fbc: input.metaFbc } : {},
-            dependencies,
-            secret,
-          );
-        }
-      } catch {
-        // Measurement never fails a resend.
-      }
-    }
   } else {
     record = await store.createPending({
       email: input.email,
@@ -309,6 +320,16 @@ export async function requestVerificationService(
         ? MEASUREMENT_CONSENT_GRANTED
         : MEASUREMENT_CONSENT_WITHHELD,
     });
+    // The server leg of the browser's submit Lead, same id, through the row
+    // gate (a No thanks may already have landed). Never fails the signup.
+    if (consentRequested && input.submitEventId) {
+      await dispatchSubmitLeadGated(
+        record.pageId,
+        input.submitEventId,
+        submitContext(input),
+        dependencies,
+      ).catch(() => false);
+    }
   }
 
   const token = createVerificationToken(
@@ -417,11 +438,22 @@ export async function confirmVerificationService(
 
   // The confirming browser has a refusal stored (a No thanks or Reject all
   // whose server write may not have landed): record it before anything is sent.
+  // A refusal that could not be written is reported back, so the page keeps
+  // Try again instead of showing it as saved.
+  let refusalUnrecorded = false;
   if (options.localRefusal) {
-    await withdraw(parsed.leadId, dependencies);
+    // The row this call just read, by page: a resend that replaced `Lead ID`
+    // in between must not make the refusal miss.
+    refusalUnrecorded = !(await withdrawRecord(record, dependencies));
     // Even an unavailable CRM cannot override this request's explicit refusal.
     dependencies = { ...dependencies, gpc: true };
   }
+  const refusal = {
+    ...(refusalUnrecorded ? { refusalRecorded: false as const } : {}),
+    // A refusal credential for this signup that survives a resend: the sealed
+    // address finds the row even after `Lead ID` changes. Withdrawals only.
+    refusalHandle: signPollHandle(parsed.leadId, now.getTime(), false, secret, record.email),
+  };
 
   const metaEventId = deterministicMetaEventId(parsed.leadId, secret);
 
@@ -445,6 +477,7 @@ export async function confirmVerificationService(
       refCode: record.refCode,
       ...(sent ? browserLead(record, metaEventId) : {}),
       ...measurementAsk(record, parsed.measurementConsent, options.localRefusal),
+      ...refusal,
     };
   }
 
@@ -475,6 +508,7 @@ export async function confirmVerificationService(
     refCode: record.refCode,
     ...(sent ? browserLead(record, metaEventId) : {}),
     ...measurementAsk(record, parsed.measurementConsent, options.localRefusal),
+    ...refusal,
   };
 }
 
@@ -501,7 +535,9 @@ export async function pollVerificationService(
       ok: true,
       status: "verified",
       refCode: record.refCode,
-      ...(!dependencies.gpc && record.metaEventId && measurementAllows(record, parsed.measurementConsent)
+      ...(!dependencies.gpc &&
+      record.metaEventId &&
+      measurementAllows(record, parsed.measurementConsent)
         ? browserLead(record, record.metaEventId)
         : {}),
     };
@@ -527,7 +563,12 @@ export function measurementWithdrawn(record: LeadRecord): boolean {
  * cell falls back to the attempt's signed consent bit.
  */
 export function measurementAllows(record: LeadRecord, signedConsent: boolean): boolean {
-  if (record.status === "unsubscribed" || measurementWithdrawn(record) || conversionBlocked(record.flags)) return false;
+  if (
+    record.status === "unsubscribed" ||
+    measurementWithdrawn(record) ||
+    conversionBlocked(record.flags)
+  )
+    return false;
   const cell = record.measurementConsent ?? "";
   if (cell === MEASUREMENT_CONSENT_GRANTED || cell === MEASUREMENT_CONSENT_LEAD_PENDING)
     return true;
@@ -600,13 +641,55 @@ async function flushPendingLead(
   context: ConversionContext,
   dependencies: ServiceDependencies,
   secret: string,
+  browserEventId?: string,
 ): Promise<void> {
   if (!dependencies.dispatchSubmitLead) return;
   const row = await rowAllowsSend(pageId, false, dependencies);
   if (!row || row.measurementConsent !== MEASUREMENT_CONSENT_LEAD_PENDING) return;
-  const acknowledged = await dependencies
+  const acknowledged = await sendSubmitLead(
+    row,
+    browserEventId || deterministicSubmitEventId(row.pageId, secret),
+    context,
+    dependencies,
+  );
+  // With a browser id the browser leg has already fired under it: this change
+  // of consent has had its one id, and a later retry under a different id
+  // would be a second Lead. Without one, only Meta's acknowledgement closes it.
+  if (!acknowledged && !browserEventId) return;
+  const after = await dependencies.store.reread(pageId).catch(() => undefined);
+  if (
+    after &&
+    !measurementWithdrawn(after) &&
+    after.measurementConsent === MEASUREMENT_CONSENT_LEAD_PENDING
+  ) {
+    await dependencies.store
+      .recordMeasurementState(pageId, MEASUREMENT_CONSENT_GRANTED)
+      .catch(() => {
+        // Stays pending: the next opportunity re-sends under the row's id.
+      });
+    // A refusal whose write landed between that read and this write must not
+    // be left overwritten.
+    const settled = await dependencies.store.reread(pageId).catch(() => undefined);
+    if (
+      settled &&
+      settled.flags.includes(FLAG_MEASUREMENT_WITHDRAWN) &&
+      settled.measurementConsent !== MEASUREMENT_CONSENT_WITHDRAWN
+    ) {
+      await dependencies.store.recordMeasurementWithdrawal(pageId).catch(() => {});
+    }
+  }
+}
+
+function sendSubmitLead(
+  row: LeadRecord,
+  eventId: string,
+  context: ConversionContext,
+  dependencies: ServiceDependencies,
+): Promise<boolean> {
+  if (!dependencies.dispatchSubmitLead) return Promise.resolve(false);
+  return dependencies
     .dispatchSubmitLead({
-      eventId: deterministicSubmitEventId(row.pageId, secret),
+      eventId,
       email: row.email,
       ...(row.phone ? { phone: row.phone } : {}),
       source: row.source,
@@ -615,14 +698,55 @@ async function flushPendingLead(
       ...conversionContext(row, context),
     })
     .catch(() => false);
-  if (!acknowledged) return;
-  const after = await dependencies.store.reread(pageId).catch(() => undefined);
-  if (after && !measurementWithdrawn(after) && after.measurementConsent === MEASUREMENT_CONSENT_LEAD_PENDING) {
-    await dependencies.store
-      .recordMeasurementState(pageId, MEASUREMENT_CONSENT_GRANTED)
-      .catch(() => {
-        // Stays pending: the next opportunity re-sends under the same id.
-      });
+}
+
+/** A brand-new row's submit Lead: re-read, then sent only if the row allows it. */
+async function dispatchSubmitLeadGated(
+  pageId: string,
+  eventId: string,
+  context: ConversionContext,
+  dependencies: ServiceDependencies,
+): Promise<boolean> {
+  const row = await rowAllowsSend(pageId, false, dependencies);
+  if (!row) return false;
+  return sendSubmitLead(row, eventId, context, dependencies);
+}
+
+function submitContext(input: RequestVerificationInput): ConversionContext {
+  return {
+    ...(input.metaFbp ? { fbp: input.metaFbp } : {}),
+    ...(input.metaFbc ? { fbc: input.metaFbc } : {}),
+  };
+}
+
+/**
+ * A consented submit for an address that already has a row: the same grant as
+ * the inbox card (re-read, refusal wins), then the submit Lead only if the
+ * row's cell says it is pending. The browser's id is used only when this call
+ * is the one that moved the cell from withheld; a cell already pending is a
+ * retry of an earlier send and keeps the row's id. A row already granted gets
+ * no second Lead. Legacy and unsubscribed rows are left alone.
+ */
+async function grantFromSubmit(
+  existing: LeadRecord,
+  input: RequestVerificationInput,
+  dependencies: ServiceDependencies,
+  secret: string,
+): Promise<void> {
+  if (conversionBlocked(existing.flags)) return;
+  if (existing.status !== "pending" && existing.status !== "verified") return;
+  try {
+    const outcome = await applyGrant(existing, dependencies);
+    if (outcome !== "granted" && outcome !== "opened") return;
+    await flushPendingLead(
+      existing.pageId,
+      submitContext(input),
+      dependencies,
+      secret,
+      outcome === "opened" ? input.submitEventId : undefined,
+    );
+  } catch {
+    // Measurement never fails a submit.
   }
 }
 
@@ -637,6 +761,8 @@ async function sendConfirmation(
   if (!dependencies.dispatchVerifiedLead) return false;
   const row = await rowAllowsSend(pageId, signedConsent, dependencies);
   if (!row || !(row.emailVerified || row.status === "verified")) return false;
+  const stillAllowed = async () =>
+    Boolean(await rowAllowsSend(pageId, signedConsent, dependencies));
   const acknowledged = await dependencies
     .dispatchVerifiedLead({
       eventId,
@@ -645,11 +771,12 @@ async function sendConfirmation(
       source: row.source,
       ...(row.landingPath ? { landingPath: row.landingPath } : {}),
       ...conversionContext(row, context),
+      stillAllowed,
     })
     .catch(() => false);
   // Legacy injected dispatchers return void; production returns Meta's receipt.
   if (acknowledged === false) return false;
-  return Boolean(await rowAllowsSend(pageId, signedConsent, dependencies));
+  return stillAllowed();
 }
 
 /**
@@ -701,32 +828,65 @@ export function createGrantGate(limit = GRANT_CALLS_PER_ATTEMPT): (leadId: strin
 const processGrantGate = createGrantGate();
 const processWithdrawGate = createGrantGate();
 
+// The refusal budget is spent only by refusals that were recorded: replays of
+// a refusal this process has already seen land `limit` times are answered
+// from memory (a grant can never undo a recorded refusal, so that answer stays
+// true). A failed write never spends it, so Try again always reaches Notion.
+const saturatedRefusals = new WeakMap<(leadId: string) => boolean, Set<string>>();
+async function withdrawWithinBudget(
+  leadId: string,
+  dependencies: ServiceDependencies,
+  refusalCanonical?: string,
+  missIsRecorded = true,
+): Promise<boolean> {
+  const gate = dependencies.withdrawGate ?? processWithdrawGate;
+  let saturated = saturatedRefusals.get(gate);
+  if (!saturated) {
+    saturated = new Set();
+    saturatedRefusals.set(gate, saturated);
+  }
+  if (saturated.has(leadId)) return true;
+  const recorded = await withdraw(leadId, dependencies, refusalCanonical, missIsRecorded);
+  if (recorded && !gate(leadId)) {
+    if (saturated.size > 10_000) saturated.clear();
+    saturated.add(leadId);
+  }
+  return recorded;
+}
+
 /**
  * Records a grant so that a refusal always wins. Notion has no
  * compare-and-set, so: re-read, refuse if withdrawn; write only the consent
  * cell; re-read again, and if a refusal landed meanwhile (the flag a grant
  * never writes), put the cell back and refuse. A failed write is a refusal.
  *
- * `emptyMeansWithheld`: whether a pre-release empty cell may be read as
- * "the submit Lead was withheld" — true only when the caller holds proof
- * (a handle or token signed consent-false).
+ * Only a cell that says `withheld` moves to `granted-lead-pending` ("opened":
+ * this call made that change). An empty cell is a row from before the cell
+ * existed: whatever its submit did is already done, and no signed bit can
+ * prove otherwise (reminder links are minted without one), so it moves
+ * straight to `granted` and no submit Lead follows. Losing that one
+ * pre-release Lead beats counting it twice.
  */
 async function applyGrant(
   record: LeadRecord,
   dependencies: ServiceDependencies,
-  emptyMeansWithheld: boolean,
-): Promise<"granted" | "refused" | "uncertain"> {
+): Promise<"granted" | "opened" | "refused" | "uncertain"> {
   if (dependencies.gpc) return "refused";
   const { store } = dependencies;
   const fresh = await store.reread(record.pageId).catch(() => undefined);
   if (!fresh) return "uncertain";
-  if (fresh.status === "unsubscribed" || measurementWithdrawn(fresh) || conversionBlocked(fresh.flags)) return "refused";
+  if (
+    fresh.status === "unsubscribed" ||
+    measurementWithdrawn(fresh) ||
+    conversionBlocked(fresh.flags)
+  )
+    return "refused";
   const cell = fresh.measurementConsent ?? "";
   if (cell === MEASUREMENT_CONSENT_GRANTED || cell === MEASUREMENT_CONSENT_LEAD_PENDING) {
     return "granted";
   }
   const target =
-    cell === MEASUREMENT_CONSENT_WITHHELD || (cell === "" && emptyMeansWithheld)
+    cell === MEASUREMENT_CONSENT_WITHHELD
       ? MEASUREMENT_CONSENT_LEAD_PENDING
       : MEASUREMENT_CONSENT_GRANTED;
   try {
@@ -741,7 +901,8 @@ async function applyGrant(
     return "refused";
   }
   if (after.status === "unsubscribed" || conversionBlocked(after.flags)) return "refused";
-  return measurementAllows(after, false) ? "granted" : "uncertain";
+  if (!measurementAllows(after, false)) return "uncertain";
+  return target === MEASUREMENT_CONSENT_LEAD_PENDING ? "opened" : "granted";
 }
 
 /** Same floor as submit: a decoy and a real attempt answer in the same time. */
@@ -777,8 +938,8 @@ export async function grantAttemptMeasurementService(
   const record = await dependencies.store.findByLeadId(parsed.leadId).catch(() => undefined);
   if (!record || record.status === "unsubscribed") return floor({ ok: true });
 
-  const outcome = await applyGrant(record, dependencies, !parsed.measurementConsent);
-  if (outcome === "granted") {
+  const outcome = await applyGrant(record, dependencies);
+  if (outcome === "granted" || outcome === "opened") {
     const context = {
       ...(input.fbp ? { fbp: input.fbp } : {}),
       ...(input.fbc ? { fbc: input.fbc } : {}),
@@ -818,14 +979,17 @@ export async function grantConfirmationMeasurementService(
   }
 
   let record: LeadRecord | undefined;
-  try { record = await dependencies.store.findByLeadId(parsed.leadId); }
-  catch { return floor({ ok: true, status: "retry" }); }
+  try {
+    record = await dependencies.store.findByLeadId(parsed.leadId);
+  } catch {
+    return floor({ ok: true, status: "retry" });
+  }
   if (!record || record.status === "unsubscribed") return floor({ ok: true });
   if (!(record.emailVerified || record.status === "verified")) return floor({ ok: true });
 
-  const outcome = await applyGrant(record, dependencies, !parsed.measurementConsent);
+  const outcome = await applyGrant(record, dependencies);
   if (outcome === "uncertain") return floor({ ok: true, status: "retry" });
-  if (outcome !== "granted") return floor({ ok: true });
+  if (outcome === "refused") return floor({ ok: true });
   const eventId = deterministicMetaEventId(parsed.leadId, secret);
   const sent = await sendConversions(
     record,
@@ -850,11 +1014,46 @@ export async function grantConfirmationMeasurementService(
  * `recorded` is true only when the row really shows the refusal (or there is
  * no row to refuse for).
  */
-async function withdraw(leadId: string, dependencies: ServiceDependencies): Promise<boolean> {
+async function withdraw(
+  leadId: string,
+  dependencies: ServiceDependencies,
+  refusalCanonical?: string,
+  /**
+   * Whether "no row for this id" counts as recorded. True for poll handles (a
+   * decoy names no row, and its sealed address was already tried). False for
+   * a confirmation token: it named a real row, and a resend that replaced
+   * `Lead ID` must not turn a refusal into a silent no-op.
+   */
+  missIsRecorded = true,
+): Promise<boolean> {
   let record: LeadRecord | undefined;
-  try { record = await dependencies.store.findByLeadId(leadId); }
-  catch { return false; }
-  if (!record || measurementWithdrawn(record)) return true;
+  try {
+    record = await dependencies.store.findByLeadId(leadId);
+    // A decoy handle (cooldown, send ceiling, already confirmed) names no row,
+    // but the person's mail still confirms one: find it by the sealed address.
+    // Every handle a submit returns carries it, so this lookup says nothing
+    // about which kind of handle it was, and the answer stays the same.
+    if (!record && refusalCanonical) {
+      // The seal holds the address as stored (the row's title); the canonical
+      // form is derived from it, so either column finds the row.
+      record = await dependencies.store.findByEmail(
+        canonicalEmail(refusalCanonical),
+        refusalCanonical,
+      );
+    }
+  } catch {
+    return false;
+  }
+  if (!record) return missIsRecorded;
+  return withdrawRecord(record, dependencies);
+}
+
+/** Writes the refusal onto a row already in hand, and confirms it by re-reading. */
+async function withdrawRecord(
+  record: LeadRecord,
+  dependencies: ServiceDependencies,
+): Promise<boolean> {
+  if (measurementWithdrawn(record)) return true;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       await dependencies.store.recordMeasurementWithdrawal(record.pageId);
@@ -877,9 +1076,12 @@ export async function withdrawAttemptMeasurementService(
   const floor = grantFloor(dependencies);
   const secret = requireSecret(dependencies.env ?? process.env);
   const now = (dependencies.now ?? (() => new Date()))();
-  const parsed = verifyPollHandle(handle, secret, now.getTime(), POLL_HANDLE_TTL_MS);
-  const recorded = parsed && (dependencies.withdrawGate ?? processWithdrawGate)(parsed.leadId)
-    ? await withdraw(parsed.leadId, dependencies) : false;
+  // Longer than a poll or a grant may use it: a refusal has to land for as
+  // long as any confirmation link for the signup can still be opened.
+  const parsed = verifyPollHandle(handle, secret, now.getTime(), WITHDRAW_HANDLE_TTL_MS);
+  const recorded = parsed
+    ? await withdrawWithinBudget(parsed.leadId, dependencies, parsed.refusalCanonical)
+    : false;
   return floor({ ok: true as const, recorded });
 }
 
@@ -893,8 +1095,9 @@ export async function withdrawConfirmationMeasurementService(
   const parsed = isVerificationTokenShape(rawToken)
     ? parseVerificationToken(rawToken, secret, now.getTime())
     : undefined;
-  const recorded = parsed && (dependencies.withdrawGate ?? processWithdrawGate)(parsed.leadId)
-    ? await withdraw(parsed.leadId, dependencies) : false;
+  const recorded = parsed
+    ? await withdrawWithinBudget(parsed.leadId, dependencies, undefined, false)
+    : false;
   return floor({ ok: true as const, recorded });
 }
 

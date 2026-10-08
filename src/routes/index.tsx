@@ -21,7 +21,6 @@ import { LaunchNotice } from "@/components/launch-notice";
 import { CookieSettingsLink } from "@/components/cookie-choice-bar";
 import {
   expectServerWithdrawal,
-  markWithdrawalRecorded,
   MEASUREMENT_CHOICE_EVENT,
   clearWithdrawalRecorded,
   MeasurementAsk,
@@ -30,6 +29,8 @@ import {
   withdrawalNeedsRetry,
   type MeasurementChoiceDetail,
 } from "@/components/measurement-ask";
+import { rememberSignupHandle } from "@/lib/signupHandles";
+import { withdrawEverySignup } from "@/lib/signupHandleWithdrawal";
 import { initGoogleTag } from "@/lib/googleTag";
 import { initClarity } from "@/lib/clarity";
 import { startPageBehavior } from "@/lib/pageBehavior";
@@ -1029,6 +1030,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     }
     clearWithdrawalRecorded();
     setHandle(res.handle);
+    // Kept past a reload or "Wrong address?", so a later refusal (footer
+    // Cookie settings included) still reaches this signup's row.
+    rememberSignupHandle(res.handle);
     setPending(res.message);
     return res;
   };
@@ -1090,21 +1094,10 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   // anywhere later sends nothing. `nextHandle` is the handle a resend just
   // returned; the React state still holds the previous attempt until paint.
   async function declineMeasurementAfterSubmit(nextHandle?: string): Promise<boolean> {
+    // Every signup this browser kept, not only the one on screen: the receipt
+    // that stops the reload retry is set only when all of them are recorded.
     const current = nextHandle || handle;
-    if (!current) return true;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const res = await withdrawAttemptMeasurement({ data: { handle: current } });
-        if (res.recorded) {
-          markWithdrawalRecorded();
-          return true;
-        }
-      } catch {
-        // A dropped call is not a recorded refusal.
-      }
-      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
-    }
-    return false;
+    return withdrawEverySignup(current ? [current] : []);
   }
 
   if (closed) {
@@ -1179,10 +1172,13 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });
           // `Lead` fires here, at the accepted submit (2026-09-26): one
-          // confirmation a week is too little for delivery to optimise on. The
-          // server sent the Conversions API leg under the same event id, so
-          // Meta counts one Lead. A tripped honeypot is knowable right here,
-          // and a bot is not something to optimise for.
+          // confirmation a week is too little for delivery to optimise on. When
+          // this submit was the one that allowed measurement for the signup,
+          // the server sent the Conversions API leg under the same event id,
+          // so Meta counts one Lead. It fires the same way for a new or a known
+          // address, so it says nothing about which this was. A tripped
+          // honeypot is knowable right here, and a bot is not something to
+          // optimise for.
           if (res.status === "pending" && !hp.trim() && measurementPermitted()) {
             trackMetaLead(submitEventId, id);
             trackGoogleSubmit(submitEventId, id);
