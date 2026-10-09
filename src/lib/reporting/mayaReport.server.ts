@@ -188,6 +188,9 @@ export async function handleMayaReport(
     return json({ ok: false, error: "invalid_action" }, 400);
   } catch (error) {
     // Never include request, auth values, upload URLs or upstream error bodies.
-    return json({ ok: false, error: safeError(error instanceof Error ? error.message : "") }, 502);
+    return json(
+      { ok: false, error: safeError(error instanceof Error ? error.message : ""), stage },
+      502,
+    );
   }
 }
