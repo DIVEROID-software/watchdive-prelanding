@@ -38,15 +38,22 @@ export async function handleMayaReport(
   if (!env.SLACK_BOT_TOKEN) return json({ ok: false, error: "maya_not_configured" }, 503);
   if (!["GET", "POST"].includes(request.method))
     return json({ ok: false, error: "method_not_allowed" }, 405);
+  let stage = "authentication";
   try {
     const api = async (method: string, body: object = {}) => {
+      stage = method;
       const response = await fetcher(`https://slack.com/api/${method}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${env.SLACK_BOT_TOKEN}`,
-          "Content-Type": "application/json; charset=utf-8",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: JSON.stringify(body),
+        body: new URLSearchParams(
+          Object.entries(body).map(([key, value]) => [
+            key,
+            typeof value === "object" ? JSON.stringify(value) : String(value),
+          ]),
+        ).toString(),
         signal: AbortSignal.timeout(20000),
       });
       const value = await response.json();
@@ -181,6 +188,9 @@ export async function handleMayaReport(
     return json({ ok: false, error: "invalid_action" }, 400);
   } catch (error) {
     // Never include request, auth values, upload URLs or upstream error bodies.
-    return json({ ok: false, error: safeError(error instanceof Error ? error.message : "") }, 502);
+    return json(
+      { ok: false, error: safeError(error instanceof Error ? error.message : ""), stage },
+      502,
+    );
   }
 }

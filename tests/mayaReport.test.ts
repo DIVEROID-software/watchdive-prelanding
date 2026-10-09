@@ -17,7 +17,9 @@ function transport(user = MAYA) {
   const calls: { url: string; body: any; headers: Headers }[] = [];
   const fetcher = (async (url: any, init: RequestInit) => {
     const u = String(url);
-    const body = u.includes("slack.com/api/") ? JSON.parse(init.body as string) : init.body;
+    const body = u.includes("slack.com/api/")
+      ? Object.fromEntries(new URLSearchParams(init.body as string))
+      : init.body;
     calls.push({ url: u, body, headers: new Headers(init.headers) });
     if (u.endsWith("auth.test"))
       return Response.json(
