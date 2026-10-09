@@ -20,6 +20,7 @@ import { Route as LocaleTermsRouteImport } from './routes/$locale.terms'
 import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
 import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
 import { Route as ApiExperimentReportRouteImport } from './routes/api.experiment-report'
+import { Route as ApiMayaReportRouteImport } from './routes/api.maya-report'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
@@ -80,6 +81,11 @@ const ApiExperimentReportRoute = ApiExperimentReportRouteImport.update({
   path: '/api/experiment-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMayaReportRoute = ApiMayaReportRouteImport.update({
+  id: '/api/maya-report',
+  path: '/api/maya-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RCodeRoute = RCodeRouteImport.update({
   id: '/r/$code',
   path: '/r/$code',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
+  '/api/maya-report': typeof ApiMayaReportRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
+  '/api/maya-report': typeof ApiMayaReportRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale': typeof LocaleIndexRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
+  '/api/maya-report': typeof ApiMayaReportRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/$locale/verify'
     | '/admin/behavior'
     | '/api/experiment-report'
+    | '/api/maya-report'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale/'
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/$locale/verify'
     | '/admin/behavior'
     | '/api/experiment-report'
+    | '/api/maya-report'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/$locale/verify'
     | '/admin/behavior'
     | '/api/experiment-report'
+    | '/api/maya-report'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale/'
@@ -214,6 +226,7 @@ export interface RootRouteChildren {
   VerifyRoute: typeof VerifyRoute
   AdminBehaviorRoute: typeof AdminBehaviorRoute
   ApiExperimentReportRoute: typeof ApiExperimentReportRoute
+  ApiMayaReportRoute: typeof ApiMayaReportRoute
   RCodeRoute: typeof RCodeRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
@@ -298,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiExperimentReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/maya-report': {
+      id: '/api/maya-report'
+      path: '/api/maya-report'
+      fullPath: '/api/maya-report'
+      preLoaderRoute: typeof ApiMayaReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/r/$code': {
       id: '/r/$code'
       path: '/r/$code'
@@ -356,6 +376,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyRoute: VerifyRoute,
   AdminBehaviorRoute: AdminBehaviorRoute,
   ApiExperimentReportRoute: ApiExperimentReportRoute,
+  ApiMayaReportRoute: ApiMayaReportRoute,
   RCodeRoute: RCodeRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
