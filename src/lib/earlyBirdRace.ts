@@ -28,7 +28,7 @@ export const earlyBirdRaceCopy: Record<Locale, string> = {
   es: "{price} solo para los 100 primeros en Kickstarter, al abrir.",
   fr: "{price} pour les 100 premiers sur Kickstarter, à l’ouverture.",
   de: "{price} nur für die ersten 100 auf Kickstarter, zum Start.",
-  "pt-BR": "{price} só para os 100 primeiros no Kickstarter, na abertura.",
+  "pt-BR": "{price}: só os 100 primeiros no Kickstarter, ao abrir.",
 };
 
 /** The sentence for a locale, capitalized when a price like "unos 140 €" opens it. */

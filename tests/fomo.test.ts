@@ -216,7 +216,7 @@ const AT_LAUNCH: Record<string, RegExp> = {
   es: /al abrir/,
   fr: /à l’ouverture/,
   de: /zum Start/,
-  "pt-BR": /na abertura/,
+  "pt-BR": /ao abrir/,
 };
 
 test("every locale names the price, the 100, Kickstarter and launch in one sentence", () => {
