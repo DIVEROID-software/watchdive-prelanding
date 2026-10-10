@@ -26,6 +26,7 @@ import {
   ReferralWelcome,
   StickyLaunchBanner,
 } from "@/routes/index";
+import brutalCss from "../styles-brutal.css?url";
 import storyCss from "../styles-story.css?url";
 
 /**
@@ -43,7 +44,12 @@ export const Route = createFileRoute("/story-sample")({
       { title: "WatchDive — story sample (preview)" },
       { name: "robots", content: "noindex, nofollow, noarchive" },
     ],
-    links: [{ rel: "stylesheet", href: storyCss }],
+    // Production builds with the brutal theme; preview builds do not set
+    // VITE_DESIGN_THEME, so the sample loads it itself to match production.
+    links: [
+      { rel: "stylesheet", href: brutalCss },
+      { rel: "stylesheet", href: storyCss },
+    ],
   }),
   component: StorySampleLanding,
 });
