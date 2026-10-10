@@ -207,7 +207,7 @@ export function DesignFrozenLanding() {
   );
 }
 
-function formatMessage(
+export function formatMessage(
   template: string,
   values: Readonly<Record<string, string | number>>,
 ): string {
@@ -239,7 +239,7 @@ function splitTwoHighlights(
   ];
 }
 
-function LaunchBanner() {
+export function LaunchBanner() {
   const m = useFrozenLandingMessages();
   return (
     <div className="wd-top-bar relative z-20 border-b border-white/10 text-white">
@@ -274,7 +274,7 @@ function LaunchBanner() {
  * On a data-saving or 3g-or-slower connection only the first (smallest) cut is
  * offered; these photos are lazy, so the swap lands before they are fetched.
  */
-function SectionImage({
+export function SectionImage({
   src,
   alt,
   className = "",
@@ -417,7 +417,7 @@ function LazyVideo({
  * the keyboard onto the email field. It hides whenever a signup form is on
  * screen or focused — at that point it is pure obstruction.
  */
-function StickyLaunchBanner() {
+export function StickyLaunchBanner() {
   const m = useFrozenLandingMessages();
   const copy = conversionCopy[useCurrentLocale()];
   const [hidden, setHidden] = useState(false);
@@ -536,7 +536,7 @@ function getRef(): string | undefined {
 }
 
 // Client-only welcome banner shown when a visitor arrives via a friend's link.
-function ReferralWelcome() {
+export function ReferralWelcome() {
   const m = useFrozenLandingMessages();
   const [ref, setRef] = useState<string | undefined>(undefined);
   const [before, highlight, after] = splitHighlightedCopy(
@@ -795,7 +795,7 @@ function CheckInboxCard({
 // means a new placement is a type error rather than a rejected submit.
 type FormPlacement = "hero" | "offer";
 
-function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePhone?: boolean }) {
+export function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePhone?: boolean }) {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const copy = conversionCopy[locale];
@@ -1356,7 +1356,7 @@ function HeroProof() {
  * `data-wd-ready` it stops the native reload and marks the form queued; after
  * that it does nothing.
  */
-const HOLD_EARLY_SUBMIT_JS = `document.addEventListener("submit",function(e){var f=e.target;if(!f||!f.hasAttribute||!f.hasAttribute("data-wd-signup")||f.hasAttribute("data-wd-ready"))return;e.preventDefault();e.stopImmediatePropagation();f.setAttribute("data-wd-queued","")},true);`;
+export const HOLD_EARLY_SUBMIT_JS = `document.addEventListener("submit",function(e){var f=e.target;if(!f||!f.hasAttribute||!f.hasAttribute("data-wd-signup")||f.hasAttribute("data-wd-ready"))return;e.preventDefault();e.stopImmediatePropagation();f.setAttribute("data-wd-queued","")},true);`;
 
 /**
  * The first screen answers what this is before anything loads: the headline
@@ -2136,7 +2136,7 @@ function SafetySection() {
   );
 }
 
-function OfferSection() {
+export function OfferSection() {
   const m = useFrozenLandingMessages();
   const [headlineBefore, headlineStrike, headlineMiddle, headlineNew, headlineAfter] =
     splitTwoHighlights(m.offer.headline, m.offer.headlineStrike, m.offer.headlineNew);
@@ -2285,7 +2285,7 @@ function Credentials() {
   );
 }
 
-function FAQ() {
+export function FAQ() {
   const m = useFrozenLandingMessages();
   const productFaqs = [
     { q: m.faq.q6, a: m.faq.a6 },
@@ -2338,7 +2338,7 @@ function FAQ() {
   );
 }
 
-function Footer() {
+export function Footer() {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const year = new Date().getFullYear();
