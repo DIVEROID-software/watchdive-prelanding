@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as StorySampleRouteImport } from './routes/story-sample'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as LocaleIndexRouteImport } from './routes/$locale.index'
@@ -39,6 +40,11 @@ const LocaleRoute = LocaleRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StorySampleRoute = StorySampleRouteImport.update({
+  id: '/story-sample',
+  path: '/story-sample',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteWithChildren
   '/privacy': typeof PrivacyRoute
+  '/story-sample': typeof StorySampleRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
+  '/story-sample': typeof StorySampleRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteWithChildren
   '/privacy': typeof PrivacyRoute
+  '/story-sample': typeof StorySampleRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$locale'
     | '/privacy'
+    | '/story-sample'
     | '/terms'
     | '/verify'
     | '/$locale/privacy'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/privacy'
+    | '/story-sample'
     | '/terms'
     | '/verify'
     | '/$locale/privacy'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$locale'
     | '/privacy'
+    | '/story-sample'
     | '/terms'
     | '/verify'
     | '/$locale/privacy'
@@ -222,6 +234,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LocaleRoute: typeof LocaleRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
+  StorySampleRoute: typeof StorySampleRoute
   TermsRoute: typeof TermsRoute
   VerifyRoute: typeof VerifyRoute
   AdminBehaviorRoute: typeof AdminBehaviorRoute
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/story-sample': {
+      id: '/story-sample'
+      path: '/story-sample'
+      fullPath: '/story-sample'
+      preLoaderRoute: typeof StorySampleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -372,6 +392,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LocaleRoute: LocaleRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
+  StorySampleRoute: StorySampleRoute,
   TermsRoute: TermsRoute,
   VerifyRoute: VerifyRoute,
   AdminBehaviorRoute: AdminBehaviorRoute,
