@@ -48,9 +48,10 @@ function cuts(lite: boolean) {
  * the stylesheet over the photo's average colour, so the hero never paints as
  * an empty box. The box keeps its aspect ratio from CSS, so nothing shifts.
  */
-export function HeroPhoto() {
+export function HeroPhoto({ desktopOnly = false }: { desktopOnly?: boolean } = {}) {
   const m = useFrozenLandingMessages();
   const c = cuts(useLiteMediaHint());
+  if (desktopOnly) return <DesktopHeroPhoto alt={m.hero.sideImageAlt} c={c} />;
   // React hoists these to the top of <head>, beside its own image preloads and
   // ahead of the stylesheet and scripts, so the photo is among the first
   // requests (a route-level head link landed after the module preloads and
@@ -89,6 +90,33 @@ export function HeroPhoto() {
           loading="eager"
           fetchPriority="high"
         />
+      </picture>
+    </figure>
+  );
+}
+
+/** A 1x1 transparent GIF: what a phone gets where the photo is not shown. */
+const BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+/**
+ * The /story-sample hero: the photo is only in the desktop column, so phones
+ * must not fetch it (an eager image under `display: none` still downloads).
+ */
+function DesktopHeroPhoto({ alt, c }: { alt: string; c: ReturnType<typeof cuts> }) {
+  preload(tall960Avif, {
+    as: "image",
+    type: "image/avif",
+    media: DESKTOP,
+    imageSrcSet: c.tallAvif,
+    imageSizes: TALL_SIZES,
+    fetchPriority: "high",
+  });
+  return (
+    <figure className="wd-hero-photo">
+      <picture>
+        <source media={DESKTOP} type="image/avif" srcSet={c.tallAvif} sizes={TALL_SIZES} />
+        <source media={DESKTOP} type="image/webp" srcSet={c.tallWebp} sizes={TALL_SIZES} />
+        <img src={BLANK} alt={alt} width={1080} height={720} loading="eager" fetchPriority="high" />
       </picture>
     </figure>
   );

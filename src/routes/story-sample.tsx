@@ -83,7 +83,7 @@ function StoryHero() {
         </div>
         {/* Desktop keeps the photo beside the form; phones go straight to Ch1. */}
         <div className="wd-hero-media wd-story-hero-media">
-          <HeroPhoto />
+          <HeroPhoto desktopOnly />
         </div>
         <div className="wd-hero-signup">
           <div className="wd-hero-price">
