@@ -112,9 +112,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // before media, clarifies the offer/confirmation and fixes sticky visibility.
   // 2026-10-10: owner-requested FOMO pass, placed from page-behaviour data
   // (81% phones, median phone scroll 7%, first-100 section reached by 27%).
-  // The hero form leads with a first-100 race line (price + live waitlist
-  // figure) in both layouts; the offer form keeps its benefit line, and the
-  // control price block drops its "first 100" note, which the race now says.
+  // The hero form leads with one first-100 sentence (price, Kickstarter, at
+  // launch) in both layouts; the offer form keeps its benefit line, and the
+  // control price block drops its "first 100 at launch" note, which the
+  // sentence now says in full.
   const digest = sha256(jsxStructure(source));
   assert.equal(digest, "ef223395a80a112685f4d9d3b30445b52716921ca235379a86222b47a43ffbb2");
 
@@ -168,11 +169,11 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // frame with an inlined 24px preview, proof strip, uncropped launch-card
   // gallery, held-submit note, spam-folder line and tap-to-play. Measured with
   // fv-layoutqa at 320/390/430/1440, 9 locales, pre/post consent.
-  // 2026-10-10: owner-requested FOMO pass adds the hero race line styles and
-  // a live-dot pulse that stops for reduced motion. Nothing else changes.
+  // 2026-10-10: owner-requested FOMO pass adds one rule for the hero
+  // first-100 line (the benefit line's size and leading). Nothing else changes.
   assert.equal(
     sha256(read("src/styles.css")),
-    "3fd6a436a490fa02cde9f8ded61a4f5b01b911055bdede99fc3869c04e8ae89f",
+    "42adce181f4dc58ee33a17a7077363f69b299865d55a9dca58ed589118530457",
   );
 });
 

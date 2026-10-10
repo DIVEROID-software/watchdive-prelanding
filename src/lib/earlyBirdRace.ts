@@ -1,78 +1,38 @@
-// The line that puts the two hard numbers on the page side by side: the
-// early-bird price goes to the first 100 backers, and the list already holds
-// tens of thousands. Each half is a claim the page already makes elsewhere (the
-// hero price and the progress bar); this only places them next to each other,
-// directly above the email field.
+// One sentence directly above the hero email field: the early-bird price, and
+// that only the first 100 Kickstarter backers at launch get it. Each part is a
+// claim the catalog already makes (hero price, `offNote`, `conversionCopy.terms`);
+// this states them together, with the limit inside the same sentence.
 //
 // Why there: page-behaviour rows from 2026-10-08 to 10-10 (183 consented
 // sessions, 81% phones) put the median phone scroll at 7% and a third of
 // visits never scroll, while the "first 100 backers" section further down was
-// reached by 27%. A reason to act has to sit inside the first screen, next to
-// the field, without pushing the field down.
+// reached by 27%. The reason to act has to sit in the first screen, next to
+// the field, and must not push the field down: in form-first it takes the
+// place of the benefit line and stays within its line count.
+//
+// Deliberately not here: the waitlist total. It is mostly a founder-stated
+// off-platform figure, and waitlist position does not allocate the 100
+// pledges, so "N already waiting" beside "first 100" would imply a queue that
+// does not exist. The progress bar shows the total with its own explanation.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
 import type { Locale } from "./i18n/locale.ts";
-import { formatCount } from "./waitlistProgress.ts";
 
-type RaceCopy = {
-  /** `{price}` is the hero's localized early-bird price. */
-  lead: string;
-  /** `{total}` is the public waitlist figure, the same one the progress bar shows. */
-  waiting: string;
+/** `{price}` is the hero's localized early-bird price (`hero.nowPrice`). */
+export const earlyBirdRaceCopy: Record<Locale, string> = {
+  en: "{price} for the first 100 Kickstarter backers at launch.",
+  ko: "{price} 얼리버드는 Kickstarter 오픈 선착순 100명뿐.",
+  "zh-CN": "{price} 早鸟价：Kickstarter 开启后仅限前 100 名。",
+  "zh-TW": "{price} 早鳥價：Kickstarter 開賣後僅限前 100 名。",
+  ja: "{price}の早期価格は、Kickstarter開始時の先着100名だけ。",
+  es: "{price} solo para los 100 primeros en Kickstarter, al abrir.",
+  fr: "{price} pour les 100 premiers sur Kickstarter, à l’ouverture.",
+  de: "{price} nur für die ersten 100 auf Kickstarter, zum Start.",
+  "pt-BR": "{price} só para os 100 primeiros no Kickstarter, na abertura.",
 };
 
-export const earlyBirdRaceCopy: Record<Locale, RaceCopy> = {
-  en: {
-    lead: "Only the first 100 backers get {price}.",
-    waiting: "{total} divers already waiting",
-  },
-  ko: {
-    lead: "{price} 얼리버드는 선착순 후원자 100명뿐.",
-    waiting: "이미 {total}명이 기다리는 중",
-  },
-  "zh-CN": {
-    lead: "{price} 早鸟价仅限前 100 位支持者。",
-    waiting: "已有 {total} 位潜水员在等候",
-  },
-  "zh-TW": {
-    lead: "{price} 早鳥價僅限前 100 位支持者。",
-    waiting: "已有 {total} 位潛水員在等候",
-  },
-  ja: {
-    lead: "{price}の早期価格は先着100名の支援者だけ。",
-    waiting: "すでに{total}人のダイバーが待っています",
-  },
-  es: {
-    lead: "Solo los primeros 100 patrocinadores lo tendrán por {price}.",
-    waiting: "{total} buceadores ya esperan",
-  },
-  fr: {
-    lead: "Seuls les 100 premiers contributeurs l’auront à {price}.",
-    waiting: "{total} plongeurs attendent déjà",
-  },
-  de: {
-    lead: "Nur die ersten 100 Unterstützer bekommen es für {price}.",
-    waiting: "{total} Taucher warten bereits",
-  },
-  "pt-BR": {
-    lead: "Só os primeiros 100 apoiadores pagam {price}.",
-    waiting: "{total} mergulhadores já esperam",
-  },
-};
-
-/**
- * The two halves for a locale. `waiting` is null when the count is unknown:
- * a figure built from the baseline alone is a claim the page cannot back, the
- * same rule the progress bar follows.
- */
-export function earlyBirdRace(
-  locale: Locale,
-  price: string,
-  total: number | undefined,
-): { lead: string; waiting: string | null } {
-  const copy = earlyBirdRaceCopy[locale] ?? earlyBirdRaceCopy.en;
-  return {
-    lead: copy.lead.replace("{price}", price),
-    waiting: total === undefined ? null : copy.waiting.replace("{total}", formatCount(total)),
-  };
+/** The sentence for a locale, capitalized when a price like "unos 140 €" opens it. */
+export function earlyBirdRace(locale: Locale, price: string): string {
+  const sentence = (earlyBirdRaceCopy[locale] ?? earlyBirdRaceCopy.en).replace("{price}", price);
+  return sentence.charAt(0).toLocaleUpperCase(locale) + sentence.slice(1);
 }

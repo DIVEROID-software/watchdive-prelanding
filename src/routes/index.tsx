@@ -1212,8 +1212,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         />
       )}
 
-      {/* The hero form leads with the first-100 race in both layouts; it says
-          what the benefit line says and adds why to act now. */}
+      {/* The hero form leads with the first-100 limit in both layouts: price,
+          Kickstarter, at launch, in one sentence (the offer form keeps the
+          benefit line). */}
       {id === "hero" ? (
         <EarlyBirdRace />
       ) : (
@@ -1390,7 +1391,7 @@ function Hero() {
           <div className="wd-hero-price">
             <span className="text-white/65 line-through">{m.hero.wasPrice}</span>
             <span className="text-subhead">{m.hero.nowPrice}</span>
-            {/* "first 100 backers" now leads the race line right below. */}
+            {/* "First 100 … at launch" is said in full by the line right below. */}
             <span className="text-sm font-semibold text-[#65ceee]">{m.hero.offBadge}</span>
           </div>
           <EmailForm id="hero" />
