@@ -110,8 +110,14 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // 2026-10-08: owner accepted the form-first 50:50 conversion experiment.
   // Both existing forms and all sections remain; the treatment moves signup
   // before media, clarifies the offer/confirmation and fixes sticky visibility.
+  // 2026-10-10: owner-requested FOMO pass, placed from page-behaviour data
+  // (81% phones, median phone scroll 7%, first-100 section reached by 27%).
+  // In form-first the hero form leads with one first-100 sentence (price,
+  // Kickstarter, at launch) in place of the benefit line, and the price chip's
+  // "first 100 at launch" note is hidden. Control renders as before: an added
+  // line there pushed the desktop submit button below a 900px fold.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "580be116290bccc5a079306ddf5384607806697cd23743f73765cb4ed778300a");
+  assert.equal(digest, "3405fb24e76497ba9ef50af20ca669e51738ac555845ea957bf936db75fc59fa");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -163,9 +169,11 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // frame with an inlined 24px preview, proof strip, uncropped launch-card
   // gallery, held-submit note, spam-folder line and tap-to-play. Measured with
   // fv-layoutqa at 320/390/430/1440, 9 locales, pre/post consent.
+  // 2026-10-10: owner-requested FOMO pass adds one rule for the hero
+  // first-100 line (the benefit line's size and leading). Nothing else changes.
   assert.equal(
     sha256(read("src/styles.css")),
-    "a636610d43b9d28701f87057fbb8b3a7c8d22e4d0935f4ef2431164fbe310727",
+    "42adce181f4dc58ee33a17a7077363f69b299865d55a9dca58ed589118530457",
   );
 });
 

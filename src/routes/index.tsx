@@ -14,6 +14,7 @@ import {
   getReferralCount,
   loadWaitlistCount,
 } from "@/lib/api/waitlist.functions";
+import { EarlyBirdRace } from "@/components/early-bird-race";
 import { HeroPhoto } from "@/components/hero-photo";
 import { ProductGallery } from "@/components/product-gallery";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -1211,7 +1212,14 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         />
       )}
 
-      <p className="wd-experiment-copy wd-experiment-benefit">{copy.benefit}</p>
+      {/* Form-first leads the hero form with the first-100 limit: price,
+          Kickstarter, at launch, in one sentence (the offer form keeps the
+          benefit line). Control keeps production's note in the price chip. */}
+      {id === "hero" ? (
+        <EarlyBirdRace />
+      ) : (
+        <p className="wd-experiment-copy wd-experiment-benefit">{copy.benefit}</p>
+      )}
       <p
         id={`${id}-confirm-note`}
         className="wd-control-copy text-sm leading-relaxed text-white/90"
@@ -1385,7 +1393,8 @@ function Hero() {
             <span className="text-subhead">{m.hero.nowPrice}</span>
             <div>
               <span className="text-sm font-semibold text-[#65ceee]">{m.hero.offBadge}</span>
-              <p className="text-xs text-white/85">{m.hero.offNote}</p>
+              {/* Form-first says this in full right above the field. */}
+              <p className="wd-control-copy text-xs text-white/85">{m.hero.offNote}</p>
             </div>
           </div>
           <EmailForm id="hero" />

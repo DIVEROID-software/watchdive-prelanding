@@ -803,6 +803,9 @@ html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
 .wd-hero-heading h1 { max-width: 18ch; }
 .wd-hero-sub { margin-top: .75rem; max-width: 34rem; }
 .wd-hero-price { display: flex; align-items: center; gap: .75rem; margin: 0 0 1rem; }
+/* First-100 line above the hero email field. Same size and leading as the
+   form-first benefit line it replaces, so the field does not move down. */
+.wd-race { font-size: 1rem; line-height: 1.4; font-weight: 600; color: #fff; }
 .wd-hero-proof { grid-area: proof; display: grid; gap: 2rem; border-top: 1px solid #ffffff25; padding-top: 1.5rem; margin-top: .5rem; }
 /* The photo box takes its shape from CSS, so nothing moves when it arrives.
    Until then a blurred 24px preview (inlined here, ~200 bytes) over the

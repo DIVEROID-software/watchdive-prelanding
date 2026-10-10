@@ -198,3 +198,60 @@ test("every declared reviewer photo exists, and every stored photo is declared",
     assert.ok(declared.has(file), `${file} is in ${AVATAR_DIR} but no review claims it`);
   }
 });
+
+// --- first-100 line above the hero field -----------------------------------
+
+import { earlyBirdRace, earlyBirdRaceCopy } from "../src/lib/earlyBirdRace.ts";
+import { SUPPORTED_LOCALES } from "../src/lib/i18n/locale.ts";
+import { FROZEN_LANDING_MESSAGES } from "../src/lib/i18n/frozen-landing-messages.ts";
+
+// The limit has to travel inside the sentence: the price, the 100, Kickstarter
+// and "at launch". It stands alone on the form-first first screen.
+const AT_LAUNCH: Record<string, RegExp> = {
+  en: /at launch/,
+  ko: /오픈/,
+  "zh-CN": /开启后/,
+  "zh-TW": /開賣後/,
+  ja: /開始時/,
+  es: /al abrir/,
+  fr: /à l’ouverture/,
+  de: /zum Start/,
+  "pt-BR": /ao abrir/,
+};
+
+test("every locale names the price, the 100, Kickstarter and launch in one sentence", () => {
+  for (const locale of SUPPORTED_LOCALES) {
+    const copy = earlyBirdRaceCopy[locale];
+    assert.ok(copy, `missing copy for ${locale}`);
+    assert.match(copy, /\{price\}/, locale);
+    assert.match(copy, /100/, locale);
+    assert.match(copy, /Kickstarter/, locale);
+    assert.match(copy, AT_LAUNCH[locale], locale);
+  }
+});
+
+test("the line uses the hero's localized price and never leaks dollars into other locales", () => {
+  assert.equal(earlyBirdRace("en", "$149"), "$149 for the first 100 Kickstarter backers at launch.");
+  assert.equal(
+    earlyBirdRace("es", "unos 140 €"),
+    "Unos 140 € solo para los 100 primeros en Kickstarter, al abrir.",
+  );
+  for (const locale of SUPPORTED_LOCALES) {
+    if (locale === "en") continue;
+    const price = (FROZEN_LANDING_MESSAGES as Record<string, { hero: { nowPrice: string } }>)[locale]
+      ?.hero.nowPrice;
+    if (!price) continue;
+    const line = earlyBirdRace(locale, price);
+    assert.ok(line.includes(price.slice(1)), `${locale}: ${line}`);
+    assert.doesNotMatch(line, /(?<![A-Z])\$\s?\d/, `${locale}: ${line}`);
+  }
+});
+
+test("the line states no waitlist figure, countdown, deadline or remaining places", () => {
+  for (const locale of SUPPORTED_LOCALES) {
+    const copy = earlyBirdRaceCopy[locale];
+    assert.doesNotMatch(copy, /\{total\}|wait|espera|attend|warten|기다|等候|待って/i, locale);
+    assert.doesNotMatch(copy, /\d+\s*(spots|places|plazas|Plätze|자리|席|名额|名額)/i, locale);
+    assert.doesNotMatch(copy, /hours?|minutes?|today|tonight|ends|시간|今天|今日/i, locale);
+  }
+});

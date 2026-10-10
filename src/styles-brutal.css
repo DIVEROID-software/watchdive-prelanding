@@ -223,3 +223,10 @@ html:root [role="dialog"] [class*="text-"] {
   line-height: 1.4 !important;
   margin-top: 0.25rem;
 }
+
+/* First-100 line above the hero email field: heavy, with the benefit line's
+   leading rather than the body copy's, so the field stays in a phone screen. */
+html:root .wd-race {
+  font-weight: 700;
+  line-height: 1.4 !important;
+}
