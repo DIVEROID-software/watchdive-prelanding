@@ -4,11 +4,12 @@ import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-curre
 /**
  * "$149 for the first 100 Kickstarter backers at launch."
  *
- * Sits directly above the hero email field in both layouts. In form-first it
- * replaces the benefit line; in control it follows the price block.
+ * Form-first only: sits directly above the hero email field in place of the
+ * benefit line. Control is left as on production, where an added line pushed
+ * the desktop submit button below a 900px fold.
  */
 export function EarlyBirdRace() {
   const m = useFrozenLandingMessages();
   const locale = useCurrentLocale();
-  return <p className="wd-race">{earlyBirdRace(locale, m.hero.nowPrice)}</p>;
+  return <p className="wd-experiment-copy wd-race">{earlyBirdRace(locale, m.hero.nowPrice)}</p>;
 }

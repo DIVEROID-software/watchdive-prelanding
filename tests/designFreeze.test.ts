@@ -112,12 +112,12 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // before media, clarifies the offer/confirmation and fixes sticky visibility.
   // 2026-10-10: owner-requested FOMO pass, placed from page-behaviour data
   // (81% phones, median phone scroll 7%, first-100 section reached by 27%).
-  // The hero form leads with one first-100 sentence (price, Kickstarter, at
-  // launch) in both layouts; the offer form keeps its benefit line, and the
-  // control price block drops its "first 100 at launch" note, which the
-  // sentence now says in full.
+  // In form-first the hero form leads with one first-100 sentence (price,
+  // Kickstarter, at launch) in place of the benefit line, and the price chip's
+  // "first 100 at launch" note is hidden. Control renders as before: an added
+  // line there pushed the desktop submit button below a 900px fold.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "ef223395a80a112685f4d9d3b30445b52716921ca235379a86222b47a43ffbb2");
+  assert.equal(digest, "3405fb24e76497ba9ef50af20ca669e51738ac555845ea957bf936db75fc59fa");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

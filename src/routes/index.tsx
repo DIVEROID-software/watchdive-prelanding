@@ -1212,9 +1212,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         />
       )}
 
-      {/* The hero form leads with the first-100 limit in both layouts: price,
+      {/* Form-first leads the hero form with the first-100 limit: price,
           Kickstarter, at launch, in one sentence (the offer form keeps the
-          benefit line). */}
+          benefit line). Control keeps production's note in the price chip. */}
       {id === "hero" ? (
         <EarlyBirdRace />
       ) : (
@@ -1391,8 +1391,11 @@ function Hero() {
           <div className="wd-hero-price">
             <span className="text-white/65 line-through">{m.hero.wasPrice}</span>
             <span className="text-subhead">{m.hero.nowPrice}</span>
-            {/* "First 100 … at launch" is said in full by the line right below. */}
-            <span className="text-sm font-semibold text-[#65ceee]">{m.hero.offBadge}</span>
+            <div>
+              <span className="text-sm font-semibold text-[#65ceee]">{m.hero.offBadge}</span>
+              {/* Form-first says this in full right above the field. */}
+              <p className="wd-control-copy text-xs text-white/85">{m.hero.offNote}</p>
+            </div>
           </div>
           <EmailForm id="hero" />
           <div className="mt-5">
