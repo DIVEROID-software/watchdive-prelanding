@@ -31,11 +31,11 @@ export const earlyBirdRaceCopy: Record<Locale, RaceCopy> = {
     waiting: "이미 {total}명이 기다리는 중",
   },
   "zh-CN": {
-    lead: "{price}早鸟价仅限前 100 位支持者。",
+    lead: "{price} 早鸟价仅限前 100 位支持者。",
     waiting: "已有 {total} 位潜水员在等候",
   },
   "zh-TW": {
-    lead: "{price}早鳥價僅限前 100 位支持者。",
+    lead: "{price} 早鳥價僅限前 100 位支持者。",
     waiting: "已有 {total} 位潛水員在等候",
   },
   ja: {
