@@ -15,3 +15,9 @@ Validation before deployment:
 - Final build/deployment evidence and the first production snapshot are recorded in the parent workspace at `ads/autopilot/competition/conversion-experiment-20261008/`.
 
 A read-only local collector is prepared to snapshot the authenticated report every 30 minutes. The server collects while the local computer is offline; local snapshot execution requires that computer to be running. No winner is selected automatically. The first comparable 48-hour cohorts are a timing threshold, not proof of sufficient sample size.
+
+## 2026-10-10 — phase boundary: first-100 race line
+
+Owner-requested FOMO pass. From this deployment both arms show, directly above the hero email field, "Only the first 100 backers get {price}" with the live public waitlist figure (the progress bar's number). In form-first it replaces the benefit line; in control it follows the price block, which drops its "first 100 backers at launch" note. Layout differences between arms are unchanged.
+
+Placement came from page-behaviour rows 2026-10-08 → 10-10 (183 consented sessions, 81% phones): median phone scroll 7%, a third of visits never scroll, the hero was seen by 77% and the "first 100 backers" section by 27%. Cohorts exposed before and after this deployment are different strategy phases and must be reported separately; the change is not randomized between arms.

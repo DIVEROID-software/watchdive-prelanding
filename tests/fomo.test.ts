@@ -198,3 +198,35 @@ test("every declared reviewer photo exists, and every stored photo is declared",
     assert.ok(declared.has(file), `${file} is in ${AVATAR_DIR} but no review claims it`);
   }
 });
+
+// --- first-100 race line ---------------------------------------------------
+
+import { earlyBirdRace, earlyBirdRaceCopy } from "../src/lib/earlyBirdRace.ts";
+import { SUPPORTED_LOCALES } from "../src/lib/i18n/locale.ts";
+
+test("every locale has a race line that names 100 and carries both slots", () => {
+  for (const locale of SUPPORTED_LOCALES) {
+    const copy = earlyBirdRaceCopy[locale];
+    assert.ok(copy, `missing race copy for ${locale}`);
+    assert.match(copy.lead, /\{price\}/, locale);
+    assert.match(copy.lead, /100/, locale);
+    assert.match(copy.waiting, /\{total\}/, locale);
+  }
+});
+
+test("the race line shows the public waitlist figure, never a baseline-only number", () => {
+  const total = waitlistProgress(51).total;
+  const race = earlyBirdRace("en", "$149", total);
+  assert.equal(race.lead, "Only the first 100 backers get $149.");
+  assert.equal(race.waiting, `${formatCount(OFF_PLATFORM_BASELINE + 51)} divers already waiting`);
+  // An unreadable count drops the figure; the price line alone remains.
+  assert.equal(earlyBirdRace("de", "rund 140 €", undefined).waiting, null);
+});
+
+test("the race line never states a countdown, a deadline or a remaining-spots number", () => {
+  for (const locale of SUPPORTED_LOCALES) {
+    const { lead, waiting } = earlyBirdRaceCopy[locale];
+    assert.doesNotMatch(`${lead} ${waiting}`, /\d+\s*(spots|places|plazas|Plätze|자리|席|个名额|個名額)/i);
+    assert.doesNotMatch(`${lead} ${waiting}`, /hours?|minutes?|today|tonight|ends|시간|분|今天|今日/i);
+  }
+});

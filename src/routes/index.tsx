@@ -14,6 +14,7 @@ import {
   getReferralCount,
   loadWaitlistCount,
 } from "@/lib/api/waitlist.functions";
+import { EarlyBirdRace } from "@/components/early-bird-race";
 import { HeroPhoto } from "@/components/hero-photo";
 import { ProductGallery } from "@/components/product-gallery";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -1211,7 +1212,13 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         />
       )}
 
-      <p className="wd-experiment-copy wd-experiment-benefit">{copy.benefit}</p>
+      {/* The hero form leads with the first-100 race in both layouts; it says
+          what the benefit line says and adds why to act now. */}
+      {id === "hero" ? (
+        <EarlyBirdRace />
+      ) : (
+        <p className="wd-experiment-copy wd-experiment-benefit">{copy.benefit}</p>
+      )}
       <p
         id={`${id}-confirm-note`}
         className="wd-control-copy text-sm leading-relaxed text-white/90"
@@ -1383,10 +1390,8 @@ function Hero() {
           <div className="wd-hero-price">
             <span className="text-white/65 line-through">{m.hero.wasPrice}</span>
             <span className="text-subhead">{m.hero.nowPrice}</span>
-            <div>
-              <span className="text-sm font-semibold text-[#65ceee]">{m.hero.offBadge}</span>
-              <p className="text-xs text-white/85">{m.hero.offNote}</p>
-            </div>
+            {/* "first 100 backers" now leads the race line right below. */}
+            <span className="text-sm font-semibold text-[#65ceee]">{m.hero.offBadge}</span>
           </div>
           <EmailForm id="hero" />
           <div className="mt-5">

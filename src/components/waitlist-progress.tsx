@@ -7,26 +7,11 @@ import { useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 import { formatCount, LOW_REMAINING_THRESHOLD, waitlistProgress } from "@/lib/waitlistProgress";
 
 /**
- * How full the pre-launch list is.
- *
- * The live count comes from the server; the off-platform baseline is a recorded
- * constant. The first figure arrives with the page (the route loader reads it
- * during the server render), so the number a visitor sees first is the one
- * that stays. `justJoined` bumps the figure by one for the person who just
- * confirmed, so their own signup is visible immediately instead of waiting for
- * the next poll — the server figure catches up on its own.
- *
- * When the count cannot be read the whole block is left out. A scarcity
- * number built from the baseline alone would be a claim the page cannot back.
+ * The live signup count: seeded from the route loader so the server render and
+ * the first client paint agree, then refreshed once a minute. Undefined while
+ * the count cannot be read.
  */
-export function WaitlistProgress({
-  justJoined = 0,
-  className = "",
-}: {
-  justJoined?: number;
-  className?: string;
-}) {
-  const messages = useFrozenLandingMessages().progress;
+export function useWaitlistCount(): number | undefined {
   const loaderData: unknown = useLoaderData({ strict: false });
   const rendered =
     loaderData && typeof loaderData === "object" && "waitlistCount" in loaderData
@@ -48,6 +33,31 @@ export function WaitlistProgress({
     refetchInterval: 60_000,
     retry: false,
   });
+  return liveCount;
+}
+
+/**
+ * How full the pre-launch list is.
+ *
+ * The live count comes from the server; the off-platform baseline is a recorded
+ * constant. The first figure arrives with the page (the route loader reads it
+ * during the server render), so the number a visitor sees first is the one
+ * that stays. `justJoined` bumps the figure by one for the person who just
+ * confirmed, so their own signup is visible immediately instead of waiting for
+ * the next poll — the server figure catches up on its own.
+ *
+ * When the count cannot be read the whole block is left out. A scarcity
+ * number built from the baseline alone would be a claim the page cannot back.
+ */
+export function WaitlistProgress({
+  justJoined = 0,
+  className = "",
+}: {
+  justJoined?: number;
+  className?: string;
+}) {
+  const messages = useFrozenLandingMessages().progress;
+  const liveCount = useWaitlistCount();
 
   // The bar fills once, on arrival, so the number reads as something that grew
   // rather than as decoration. Every later refresh just moves it a little, and

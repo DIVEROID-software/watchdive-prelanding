@@ -110,8 +110,13 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // 2026-10-08: owner accepted the form-first 50:50 conversion experiment.
   // Both existing forms and all sections remain; the treatment moves signup
   // before media, clarifies the offer/confirmation and fixes sticky visibility.
+  // 2026-10-10: owner-requested FOMO pass, placed from page-behaviour data
+  // (81% phones, median phone scroll 7%, first-100 section reached by 27%).
+  // The hero form leads with a first-100 race line (price + live waitlist
+  // figure) in both layouts; the offer form keeps its benefit line, and the
+  // control price block drops its "first 100" note, which the race now says.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "580be116290bccc5a079306ddf5384607806697cd23743f73765cb4ed778300a");
+  assert.equal(digest, "ef223395a80a112685f4d9d3b30445b52716921ca235379a86222b47a43ffbb2");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -163,9 +168,11 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // frame with an inlined 24px preview, proof strip, uncropped launch-card
   // gallery, held-submit note, spam-folder line and tap-to-play. Measured with
   // fv-layoutqa at 320/390/430/1440, 9 locales, pre/post consent.
+  // 2026-10-10: owner-requested FOMO pass adds the hero race line styles and
+  // a live-dot pulse that stops for reduced motion. Nothing else changes.
   assert.equal(
     sha256(read("src/styles.css")),
-    "a636610d43b9d28701f87057fbb8b3a7c8d22e4d0935f4ef2431164fbe310727",
+    "3fd6a436a490fa02cde9f8ded61a4f5b01b911055bdede99fc3869c04e8ae89f",
   );
 });
 
