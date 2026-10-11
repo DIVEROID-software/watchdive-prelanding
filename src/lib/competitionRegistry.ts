@@ -165,5 +165,63 @@ export const competitionRegistry: readonly CompetitionRound[] = [
         "adId": "120251471161370215"
       }
     ]
+  },
+  {
+    "experimentId": "WD20261012S",
+    "roundId": "R2_STRATEGY",
+    "campaignId": "120251534679960215",
+    "captureStartsAt": "2026-10-11T22:00:00Z",
+    "signupStartsAt": "2026-10-12T00:00:00Z",
+    "signupEndsAt": "2026-10-15T00:00:00Z",
+    "ads": [
+      {
+        "armId": "A",
+        "strategyVersion": "A-BROAD-EU8-20261012",
+        "adsetId": "120251534680150215",
+        "adId": "120251534680520215"
+      },
+      {
+        "armId": "A",
+        "strategyVersion": "A-BROAD-EU8-20261012",
+        "adsetId": "120251534680150215",
+        "adId": "120251534681670215"
+      },
+      {
+        "armId": "A",
+        "strategyVersion": "A-BROAD-EU8-20261012",
+        "adsetId": "120251534680150215",
+        "adId": "120251534681900215"
+      },
+      {
+        "armId": "A",
+        "strategyVersion": "A-BROAD-EU8-20261012",
+        "adsetId": "120251534680150215",
+        "adId": "120251534682020215"
+      },
+      {
+        "armId": "E",
+        "strategyVersion": "E-DIVE-GEAR-AND-EU8-20261012",
+        "adsetId": "120251534682300215",
+        "adId": "120251534682520215"
+      },
+      {
+        "armId": "E",
+        "strategyVersion": "E-DIVE-GEAR-AND-EU8-20261012",
+        "adsetId": "120251534682300215",
+        "adId": "120251534682670215"
+      },
+      {
+        "armId": "E",
+        "strategyVersion": "E-DIVE-GEAR-AND-EU8-20261012",
+        "adsetId": "120251534682300215",
+        "adId": "120251534682870215"
+      },
+      {
+        "armId": "E",
+        "strategyVersion": "E-DIVE-GEAR-AND-EU8-20261012",
+        "adsetId": "120251534682300215",
+        "adId": "120251534683120215"
+      }
+    ]
   }
 ];

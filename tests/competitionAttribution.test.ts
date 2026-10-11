@@ -416,3 +416,42 @@ test("overlapping cohorts retain separate first touches while D then E remains D
   assert.ok(store.getItem(competitionStorageKey(old)));
   assert.ok(store.getItem(competitionStorageKey(added)));
 });
+
+test("strategy round accepts all eight new ads only in its 72-hour signup window", () => {
+  const current = competitionRegistry.find(r => r.experimentId === "WD20261012S")!;
+  const start = Date.parse(current.signupStartsAt), end = Date.parse(current.signupEndsAt);
+  assert.equal(current.campaignId, "120251534679960215");
+  assert.equal(end - start, 72 * 60 * 60 * 1000);
+  assert.equal(current.ads.length, 8);
+  assert.deepEqual([...new Set(current.ads.map(ad => ad.armId))].sort(), ["A", "E"]);
+  for (const ad of current.ads) {
+    const tuple = { utmCampaign: current.campaignId, utmTerm: ad.adsetId, utmContent: ad.adId };
+    assert.equal(acceptsCompetitionCapture(tuple, Date.parse(current.captureStartsAt), competitionRegistry), true);
+    assert.equal(acceptsCompetitionSignup(tuple, start - 1, competitionRegistry), false);
+    assert.equal(acceptsCompetitionSignup(tuple, start, competitionRegistry), true);
+    assert.equal(acceptsCompetitionSignup(tuple, end - 1, competitionRegistry), true);
+    assert.equal(acceptsCompetitionSignup(tuple, end, competitionRegistry), false);
+    const other = current.ads.find(a => a.armId !== ad.armId)!;
+    assert.equal(acceptsCompetitionSignup({ ...tuple, utmTerm: other.adsetId }, start, competitionRegistry), false);
+    assert.equal(acceptsCompetitionSignup({ ...tuple, utmCampaign: competitionRegistry[0].campaignId }, start, competitionRegistry), false);
+  }
+});
+
+test("strategy attribution ignores old-round touches and preserves first E touch on later A visit", () => {
+  const old = competitionRegistry[0];
+  const current = competitionRegistry.find(r => r.experimentId === "WD20261012S")!;
+  const tuple = (r: CompetitionRound, arm: string) => {
+    const ad = r.ads.find(a => a.armId === arm)!;
+    return { utmCampaign: r.campaignId, utmTerm: ad.adsetId, utmContent: ad.adId };
+  };
+  const store = storage(), registry = [...competitionRegistry];
+  assert.equal(resolve(store, tuple(old, "A"), Date.parse(old.signupStartsAt), registry).kind, "competition");
+  const oldStorage = store.getItem(competitionStorageKey(old));
+  const now = Date.parse(current.signupStartsAt);
+  assert.equal(resolve(store, tuple(current, "E"), now, registry).kind, "competition");
+  const later = resolve(store, tuple(current, "A"), now + 1, registry);
+  assert.equal(later.kind, "competition");
+  if (later.kind === "competition") assert.equal(later.attribution.utmContent, tuple(current, "E").utmContent);
+  assert.equal(store.getItem(competitionStorageKey(old)), oldStorage);
+  assert.notEqual(competitionStorageKey(old), competitionStorageKey(current));
+});
