@@ -805,6 +805,27 @@ html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
   .wd-notify { min-height: var(--wd-bar-space); height: auto; }
   .wd-notify > span:first-child { width: 2rem; height: 2rem; }
 }
+/* Shared title/image/caption rows keep app screenshots aligned even when a
+   translated title wraps. The same tracks work in the phone swipe carousel. */
+.wd-app-screens {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 62%;
+  grid-template-rows: auto auto 1fr;
+  row-gap: 0;
+}
+.wd-app-screen {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  align-items: start;
+  justify-items: center;
+}
+.wd-app-screen-heading { text-wrap: balance; }
+@media (min-width: 640px) {
+  .wd-app-screens { grid-auto-columns: auto; }
+}
+
 /* Keep the header's compact two-row layout until all desktop actions fit. */
 @media (min-width: 640px) and (max-width: 1023px) {
   .wd-top { display: grid; }

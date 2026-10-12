@@ -119,8 +119,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // 2026-10-12: owner requested optional SMS capture after signup/verification
   // and country search by name or calling code. Reviewed at 320/390/1440px
   // across 9 locales. The existing first form, media and 50:50 experiment stay.
+  // 2026-10-12: owner requested aligned app screenshots. The three existing
+  // figures share title/image/caption rows, including in the swipe carousel.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "a3e5dbd10a5d0b36151e8b4f11684444ed586d1e36759f54c9ae040aaf43de8c");
+  assert.equal(digest, "54dc82076f36d94500a59dad3c18950235fc0266ba33f70c8b3824166fe187d8");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -176,9 +178,11 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // first-100 line (the benefit line's size and leading). Nothing else changes.
   // 2026-10-12: owner-requested optional SMS card and searchable country picker;
   // 16px mobile inputs, visible focus and a stacked narrow-screen layout.
+  // 2026-10-12: shared app-screen rows align images and captions across wrapped
+  // headings; 22 locale/viewport cases and mobile navigation were reviewed.
   assert.equal(
     sha256(read("src/styles.css")),
-    "7df6af430dd4db41c49cf051cef338b0d88621d357ae302a1bb936cc28728ab4",
+    "14e9f987912e12f15a74e6527ea8460af1627602c5c2fb074c034fff32a17074",
   );
 });
 

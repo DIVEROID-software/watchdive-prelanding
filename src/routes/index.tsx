@@ -1863,14 +1863,14 @@ function App3Carousel() {
       <div
         ref={scrollerRef}
         onScroll={onScroll}
-        className="mt-12 flex snap-x snap-mandatory gap-8 overflow-x-auto px-1 pb-2 sm:mx-auto sm:grid sm:max-w-3xl sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="wd-app-screens mt-12 snap-x snap-mandatory gap-8 overflow-x-auto px-1 pb-2 sm:mx-auto sm:max-w-3xl sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {APP3_SCREENS.map((s, i) => (
           <figure
             key={s.title}
-            className="flex w-[62%] shrink-0 snap-center flex-col items-center text-center sm:w-full sm:shrink"
+            className="wd-app-screen min-w-0 snap-center text-center"
           >
-            <div className="mb-4 flex flex-col items-center">
+            <div className="wd-app-screen-heading mb-4 flex flex-col items-center">
               <div className="text-caption tabular-nums text-[#36A9E1]">
                 {String(i + 1).padStart(2, "0")}
               </div>
