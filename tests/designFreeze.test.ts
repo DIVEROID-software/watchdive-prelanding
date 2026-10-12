@@ -116,8 +116,11 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // Kickstarter, at launch) in place of the benefit line, and the price chip's
   // "first 100 at launch" note is hidden. Control renders as before: an added
   // line there pushed the desktop submit button below a 900px fold.
+  // 2026-10-12: owner requested optional SMS capture after signup/verification
+  // and country search by name or calling code. Reviewed at 320/390/1440px
+  // across 9 locales. The existing first form, media and 50:50 experiment stay.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "3405fb24e76497ba9ef50af20ca669e51738ac555845ea957bf936db75fc59fa");
+  assert.equal(digest, "a3e5dbd10a5d0b36151e8b4f11684444ed586d1e36759f54c9ae040aaf43de8c");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -171,9 +174,11 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // fv-layoutqa at 320/390/430/1440, 9 locales, pre/post consent.
   // 2026-10-10: owner-requested FOMO pass adds one rule for the hero
   // first-100 line (the benefit line's size and leading). Nothing else changes.
+  // 2026-10-12: owner-requested optional SMS card and searchable country picker;
+  // 16px mobile inputs, visible focus and a stacked narrow-screen layout.
   assert.equal(
     sha256(read("src/styles.css")),
-    "42adce181f4dc58ee33a17a7077363f69b299865d55a9dca58ed589118530457",
+    "7df6af430dd4db41c49cf051cef338b0d88621d357ae302a1bb936cc28728ab4",
   );
 });
 

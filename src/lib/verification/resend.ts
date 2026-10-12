@@ -1,3 +1,4 @@
+import { phoneOptInCopy } from "../phoneOptInCopy.ts";
 // Direct Resend HTTP client. No SDK, so nothing can drag an API key into a
 // client bundle: this module is only ever reached from a server function.
 //
@@ -388,7 +389,7 @@ function body(url: string, locale: Locale): { subject: string; text: string; htm
   const safeUrl = escapeHtml(url);
   const copy = EMAIL_COPY[locale].verification;
   return {
-    text: [copy.heading, "", copy.intro, url, "", copy.expires, copy.ignore].join("\n"),
+    text: [copy.heading, "", copy.intro, url, "", phoneOptInCopy[locale].emailHint, "", copy.expires, copy.ignore].join("\n"),
     html: [
       `<div lang="${locale}" style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px">`,
       `<h1 style="font-size:20px;margin:0 0 12px">${copy.heading}</h1>`,
@@ -399,6 +400,7 @@ function body(url: string, locale: Locale): { subject: string; text: string; htm
       'style="display:inline-block;background:#0ea5e9;color:#04121f;font-weight:600;',
       'font-size:16px;padding:14px 28px;border-radius:12px;text-decoration:none">',
       `${copy.button}</a></p>`,
+      `<p style="font-size:14px;line-height:1.6;color:#334155;padding:16px;background:#f0f9ff;border-radius:12px">${escapeHtml(phoneOptInCopy[locale].emailHint)}</p>`,
       '<p style="font-size:13px;line-height:1.6;color:#64748b;margin:0 0 8px">',
       `${copy.fallback}<br>`,
       `<span style="word-break:break-all">${safeUrl}</span>`,

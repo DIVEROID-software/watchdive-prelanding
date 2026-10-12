@@ -174,6 +174,18 @@ test("the Meta event id is derived from the attempt, not the moment", async () =
   assert.match(expected, /^[a-f0-9]{64}$/);
 });
 
+test("confirmation exposes only phone presence and does not require measurement consent", async () => {
+  await requestVerificationService(submit({ phone: "+447700900123", measurementConsent: false }), deps());
+  const token = mailer.sent[0].token;
+  for (const expected of ["verified", "already_verified"]) {
+    const response = await confirmVerificationService(token, deps());
+    assert.equal(response.status, expected);
+    assert.equal(response.phoneAdded, true);
+    assert.equal(JSON.stringify(response).includes("447700900123"), false);
+  }
+  assert.equal(dispatched.length, 0);
+});
+
 test("a second click on the same link re-states the same conversion, never a new one", async () => {
   await requestVerificationService(submit(), deps());
   const token = mailer.sent[0].token;

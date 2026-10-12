@@ -169,6 +169,8 @@ export type LeadRecord = {
   suspect: boolean;
   flags: string[];
   phone: string;
+  /** Versioned, explicit SMS opt-in; separate from advertising measurement. */
+  smsConsent?: string;
   leadId: string;
   metaEventId: string;
   sends: number;
@@ -322,6 +324,7 @@ export interface LeadStore {
   /** `Measurement consent` = withdrawn, adds the withdrawal flag, clears the click cookie. */
   recordMeasurementWithdrawal(pageId: string): Promise<void>;
   reread(pageId: string): Promise<LeadRecord | undefined>;
+  recordPhoneOptIn?(pageId: string, phone: string, consent: string): Promise<void>;
 }
 
 export type PendingResponse = {
@@ -358,6 +361,8 @@ export type ConfirmResponse = {
   ok: true;
   status: ConfirmStatus;
   refCode?: string;
+  /** Operational preference only; returned to the email-link holder, never a number. */
+  phoneAdded?: true;
   /** Present only when measurement is permitted for this lead. */
   browserLead?: BrowserLead;
   /**

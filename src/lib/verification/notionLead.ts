@@ -279,6 +279,7 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
         ?.map((option) => option.name ?? "")
         .filter(Boolean) ?? [],
     phone: readText(properties.Phone),
+    smsConsent: readText(properties["SMS consent"]),
     leadId: readText(properties[FIELD_LEAD_ID]),
     metaEventId: readText(properties[FIELD_META_EVENT_ID]),
     sends: typeof sends === "number" && Number.isFinite(sends) ? sends : 0,
@@ -395,6 +396,12 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
   }
 
   return {
+    async recordPhoneOptIn(pageId, phone, consent) {
+      // Narrow PATCH: never change email status, attribution, dates, or measurement consent.
+      await request("PATCH", `pages/${pageId}`, {
+        properties: { Phone: textProp(phone), "SMS consent": textProp(consent) },
+      });
+    },
     async findByEmail(canonical, email) {
       // The dual-shape helper stays in the path: the live `Canonical email`
       // column has been both rich_text and email, and pinning either shape is

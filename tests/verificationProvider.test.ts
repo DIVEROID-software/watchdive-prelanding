@@ -154,7 +154,12 @@ test("the message links to the fragment URL and makes no unapproved claim", asyn
   // Price, discount and referral policy are all unconfirmed in product truth,
   // so a brand-new surface must not assert them.
   const copy = `${body.subject} ${body.text} ${body.html}`.toLowerCase();
-  for (const claim of ["149", "early bird", "early-bird", "50%", "referral", "$5", "free"]) {
+  // Owner-approved optional SMS prompt (2026-10-12). The first100 offer is
+  // allocated by Kickstarter backing, never by a phone or waitlist signup.
+  assert.ok(copy.includes("after confirming your email"));
+  assert.ok(copy.includes("optional launch-day text reminder"));
+  assert.ok(copy.includes("does not reserve or guarantee a spot"));
+  for (const claim of ["149", "50%", "referral", "$5", "free", "guaranteed spot", "reserved for you"]) {
     assert.ok(!copy.includes(claim), `email asserted an unapproved claim: ${claim}`);
   }
 });

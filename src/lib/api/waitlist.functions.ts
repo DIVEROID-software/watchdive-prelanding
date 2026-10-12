@@ -16,6 +16,7 @@ import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { waitlistClosed } from "@/lib/waitlistProgress";
 import { COUNT_RENDER_BUDGET_MS, createCountReader } from "@/lib/waitlistCount";
 import { createNetworkGate } from "@/lib/verification/networkGate";
+import { savePhoneOptInService } from "@/lib/verification/phoneOptIn";
 import { networkKey, requireSecret } from "@/lib/verification/token";
 import {
   confirmVerificationService,
@@ -431,6 +432,21 @@ export const pollVerification = createServerFn({ method: "POST" })
       return await pollVerificationService(data.handle, serviceDependencies());
     } catch (error) {
       throw sanitizeServerError("verification-poll", error);
+    }
+  });
+
+/** Explicit, optional SMS preference attached to the caller's signed signup. */
+export const savePhoneOptIn = createServerFn({ method: "POST" })
+  .validator(z.object({
+    credential: z.object({ kind: z.enum(["attempt", "confirmation"]), value: z.string().max(1000) }),
+    phone: z.string().max(40), country: z.string().length(2).optional(),
+    consent: z.boolean(), locale: z.enum(SUPPORTED_LOCALES),
+  }))
+  .handler(async ({ data }) => {
+    try {
+      return await savePhoneOptInService(data, serviceDependencies());
+    } catch (error) {
+      throw sanitizeServerError("phone-optin", error);
     }
   });
 

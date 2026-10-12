@@ -1,3 +1,4 @@
+import { PhoneOptInCard } from "@/components/phone-optin-card";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
@@ -110,6 +111,7 @@ export function VerifyPage() {
   // The share link is offered here because most people confirm on the phone
   // they signed up on, leaving the polling tab unseen.
   const [refCode, setRefCode] = useState("");
+  const [phoneAdded, setPhoneAdded] = useState(false);
   // Built from the origin actually serving this page, so no external URL is
   // written into a route that must not reference one.
   const shareUrl =
@@ -210,6 +212,7 @@ export function VerifyPage() {
       });
       if (result.status === "verified" || result.status === "already_verified") {
         setRefCode(result.refCode ?? "");
+        setPhoneAdded(result.phoneAdded === true);
         setState("verified");
         if (result.refusalHandle) {
           refusalHandle.current = result.refusalHandle;
@@ -329,6 +332,8 @@ export function VerifyPage() {
           <Card>
             <h1 className="text-heading">{copy.verifiedTitle}</h1>
             <p className="mt-3 text-body leading-relaxed text-white/75">{copy.verifiedBody}</p>
+
+            {token.current && <PhoneOptInCard credential={{ kind: "confirmation", value: token.current }} complete={phoneAdded} onSaved={() => setPhoneAdded(true)} />}
 
             {/* Most people confirm on the phone they signed up on, so the tab
                 that was polling is often never seen again. The share link has

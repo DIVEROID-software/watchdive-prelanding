@@ -62,6 +62,7 @@ export class FakeLeadStore implements LeadStore {
       suspect: record.suspect ?? false,
       flags: record.flags ?? [],
       phone: record.phone ?? "",
+      ...(record.smsConsent ? { smsConsent: record.smsConsent } : {}),
       leadId: record.leadId ?? "",
       metaEventId: record.metaEventId ?? "",
       sends: record.sends ?? 0,
@@ -82,6 +83,11 @@ export class FakeLeadStore implements LeadStore {
   async findByEmail(canonical: string): Promise<LeadRecord | undefined> {
     const pageId = this.byCanonical.get(canonical);
     return pageId ? this.rows.get(pageId) : undefined;
+  }
+
+  async recordPhoneOptIn(pageId: string, phone: string, consent: string): Promise<void> {
+    const row = this.rows.get(pageId);
+    if (row) this.rows.set(pageId, { ...row, phone, smsConsent: consent });
   }
 
   async findByLeadId(leadId: string): Promise<LeadRecord | undefined> {

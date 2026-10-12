@@ -1,3 +1,7 @@
+import { PhoneOptInCard } from "@/components/phone-optin-card";
+import { PhoneNumberFields } from "@/components/phone-number-fields";
+import { defaultPhoneCountry, normalizePhone } from "@/lib/phoneNumbers";
+import { phoneOptInCopy } from "@/lib/phoneOptInCopy";
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -686,7 +690,9 @@ function CheckInboxCard({
   resending,
   onAllowMeasurement,
   onDeclineMeasurement,
+  phoneOptIn,
 }: {
+  phoneOptIn?: React.ReactNode;
   message: string;
   email: string;
   onResend: () => void;
@@ -761,6 +767,7 @@ function CheckInboxCard({
           {m.inbox[webmail.label]} <span aria-hidden>↗</span>
         </a>
       )}
+      {phoneOptIn}
       <p className="mt-4 text-sm leading-relaxed text-white/85">{m.inbox.help}</p>
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
         <button
@@ -807,6 +814,8 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [smsConsent, setSmsConsent] = useState(false);
+  const [phoneCountry, setPhoneCountry] = useState<string>(defaultPhoneCountry(locale));
+  const [phoneAdded, setPhoneAdded] = useState(false);
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
   const formStartSent = useRef(false); // FormStart once per form instance
@@ -997,7 +1006,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   }, [handle]);
 
   if (verified) {
-    return <ReferralSuccess refCode={refCode} />;
+    return <><ReferralSuccess refCode={refCode} /><PhoneOptInCard credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} /></>;
   }
 
   // The server treats a repeat submit of the same address as a resend, under
@@ -1011,7 +1020,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       data: {
         email: email.trim().toLowerCase(),
         // A number is only ever sent with its own explicit consent.
-        phone: phone.trim() && smsConsent ? phone.trim() : undefined,
+        phone: phone.trim() && smsConsent ? normalizePhone(phone, phoneCountry) || undefined : undefined,
         source: id,
         referredBy: getRef(),
         // First touch, not this click: the URL here is whatever the visitor
@@ -1118,6 +1127,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     return (
       <CheckInboxCard
         message={pending}
+        phoneOptIn={<PhoneOptInCard key={handle} credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} />}
         email={email}
         resending={loading}
         onResend={async () => {
@@ -1141,6 +1151,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // A typo is otherwise unrecoverable without a page reload.
           setPending(null);
           setHandle("");
+          setPhoneAdded(false);
           requestAnimationFrame(() => document.getElementById(`${id}-email`)?.focus());
         }}
       />
@@ -1155,6 +1166,10 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       onSubmit={async (e) => {
         e.preventDefault();
         if (loading) return;
+        if (phone.trim() && smsConsent && !normalizePhone(phone, phoneCountry)) {
+          toast.error(phoneOptInCopy[locale].invalid);
+          return;
+        }
         closeExperimentEnrollmentOnSubmit();
         markConversionMilestone("submitAttempted");
         setLoading(true);
@@ -1252,15 +1267,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           className="order-1 h-14 w-full min-w-0 px-4 rounded-xl bg-gradient-to-b from-white to-[oklch(0.92_0.006_255)] text-[color:var(--color-deep-2)] placeholder:text-muted-foreground border border-white/50 shadow-[inset_0_1px_0_oklch(1_0_0/0.85),0_22px_48px_-8px_oklch(0.008_0.01_270/0.85),0_6px_16px_-3px_oklch(0.008_0.01_270/0.7)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)]"
         />
         {includePhone && (
-          <input
-            type="tel"
-            autoComplete="tel"
-            aria-label={m.form.phonePlaceholder}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder={m.form.phonePlaceholder}
-            className="order-2 h-14 w-full min-w-0 px-4 rounded-xl bg-gradient-to-b from-white to-[oklch(0.92_0.006_255)] text-[color:var(--color-deep-2)] placeholder:text-muted-foreground border border-white/50 shadow-[inset_0_1px_0_oklch(1_0_0/0.85),0_22px_48px_-8px_oklch(0.008_0.01_270/0.85),0_6px_16px_-3px_oklch(0.008_0.01_270/0.7)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)] sm:order-3 sm:col-span-2"
-          />
+          <div className="order-2 sm:order-3 sm:col-span-2">
+            <PhoneNumberFields locale={locale} phone={phone} onPhone={setPhone} country={phoneCountry} onCountry={setPhoneCountry} disabled={loading} />
+          </div>
         )}
         <button
           type="submit"
