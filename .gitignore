@@ -40,3 +40,7 @@ dist-ssr
 
 # Launch-mail dry-run samples (scripts/launch-mail.ts)
 .launch-mail-preview/
+
+# Reservation-invite samples and receipt ledger may contain signed links.
+.reservation-mail-preview/
+.reservation-mail-receipts/

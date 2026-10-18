@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.diveroid.watchdive-reservation-mail</string>
+	<key>Disabled</key>
+	<true/>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StartInterval</key>
+	<integer>1800</integer>
+	<key>WorkingDirectory</key>
+	<string>/Users/macm4/OrcaProjects/watchdive-marketing/ads/autopilot/reservation-20261018/implementation</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/sh</string>
+		<string>/Users/macm4/OrcaProjects/watchdive-marketing/ads/autopilot/reservation-20261018/implementation/scripts/reservation-mail-tick.sh</string>
+	</array>
+	<key>StandardOutPath</key>
+	<string>/Users/macm4/.config/watchdive-autopilot/reservation-mail/tick.stdout.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/macm4/.config/watchdive-autopilot/reservation-mail/tick.stderr.log</string>
+</dict>
+</plist>

@@ -190,7 +190,7 @@ issueReservationInvite({
 
 The email worker passes the verified row email server-side, `emailVerified: true`, and an explicit `expiresAtMs`. This module does not export `createReservationInviteToken` or `createReservationInviteUrl`. A loader that still calls those names will not bind.
 
-The mailed URL is `https://watchdive.diveroid.com/reservation?lang=ko#invite=TOKEN`. Supported language values are en, ko, zh-CN, zh-TW, ja, es, fr, de, and pt-BR. The saved signup language takes priority; trusted signup country is a fallback only when language is missing, otherwise English. The token is the fragment `#invite=`, not a query parameter. `/ko/reservation` does not exist. The page consumes `#invite`, strips the fragment, and keeps the token in `sessionStorage` for the return from Stripe. Checkout still posts the token as JSON `inviteToken`. This backend does not edit the page or the mailer.
+The mailed URL is `https://watchdive.diveroid.com/reservation?lang=ko#invite=TOKEN`. Supported language values are `en`, `ko`, `zh-CN`, `zh-TW`, `ja`, `es`, `fr`, `de`, or `pt-BR`. The saved signup language takes priority; trusted signup country is a fallback only when language is missing, otherwise English. The token is the fragment `#invite=`, not a query parameter. `/ko/reservation` does not exist. The page consumes `#invite`, strips the fragment, and keeps the token in `sessionStorage` for the return from Stripe. Checkout still posts the token as JSON `inviteToken`. This backend does not edit the page or the mailer.
 
 Token max length on verify is 4096. The signed token is base64url, so the address is not visible in the token text.
 

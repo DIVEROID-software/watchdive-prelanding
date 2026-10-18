@@ -558,7 +558,7 @@ export async function deliver(
   fetchImpl: typeof fetch,
   sleep: (ms: number) => Promise<void>,
   idempotencyKey: string,
-  operation: "verification" | "verification_reminder" | "welcome" | "launch_mail",
+  operation: "verification" | "verification_reminder" | "welcome" | "launch_mail" | "reservation_mail",
   payload: Record<string, unknown>,
 ): Promise<void> {
   try {
