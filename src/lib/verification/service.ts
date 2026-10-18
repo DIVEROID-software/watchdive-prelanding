@@ -268,6 +268,20 @@ export async function requestVerificationService(
     await grantFromSubmit(existing, input, dependencies, secret);
   }
 
+  // Owner-requested status disclosure. This is only a notice, never proof of
+  // inbox ownership. Keep the decoy handle and return no checkout credential.
+  if (
+    existing && !suppressed &&
+    (existing.status === "verified" || existing.emailVerified) &&
+    existing.status !== "unsubscribed"
+  ) {
+    return floor({
+      ...pendingResponse(decoyHandle()),
+      status: "already_verified" as const,
+      message: "This email address is already verified.",
+    });
+  }
+
   if (existing && existing.status !== "pending" && existing.status !== "legacy") {
     return floor(pendingResponse(decoyHandle()));
   }

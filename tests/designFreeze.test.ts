@@ -123,8 +123,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // figures share title/image/caption rows, including in the swipe carousel.
   // 2026-10-18: owner-requested underwater image quality improvement uses
   // original-master responsive exports in ValueSection; hero and layout stay.
+  // 2026-10-18: owner requested an explicit already-verified response card.
+  // It replaces the inbox prompt only after a repeat verified signup.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "966f597fec4169bf5cb61d2f48a769c030ac1b32137693647b1db1fd92d92566");
+  assert.equal(digest, "bd26c4e350e35d01509d52d33559aefc0e13eccd88413347f7f8842a2cb9c0b5");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

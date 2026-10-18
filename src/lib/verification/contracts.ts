@@ -375,7 +375,7 @@ export interface LeadStore {
 
 export type PendingResponse = {
   ok: true;
-  status: "pending";
+  status: "pending" | "already_verified";
   message: string;
   /** Opaque signed handle: attempt id and issue time, never an address. */
   handle: string;

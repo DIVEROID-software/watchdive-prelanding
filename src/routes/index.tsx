@@ -1,3 +1,4 @@
+import { alreadyVerifiedCopy } from "@/lib/i18n/already-verified";
 import { PhoneOptInCard } from "@/components/phone-optin-card";
 import { PhoneNumberFields } from "@/components/phone-number-fields";
 import { defaultPhoneCountry, normalizePhone } from "@/lib/phoneNumbers";
@@ -809,6 +810,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const m = useFrozenLandingMessages();
   const copy = conversionCopy[locale];
   const [pending, setPending] = useState<string | null>(null);
+  const [alreadyVerified, setAlreadyVerified] = useState(false);
   const [closed, setClosed] = useState<string | null>(null);
   const [handle, setHandle] = useState("");
   const [refCode, setRefCode] = useState("");
@@ -1007,6 +1009,18 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handle]);
 
+  if (alreadyVerified) {
+    const copy = alreadyVerifiedCopy[locale];
+    return <div role="status" aria-live="polite" className="rounded-2xl bg-white/10 p-5 text-white backdrop-blur">
+      <div className="text-base font-semibold">{copy.title}</div>
+      <p className="mt-2 text-sm text-white/80">{copy.body}</p>
+      <button type="button" className="mt-4 text-sm underline" onClick={() => {
+        setAlreadyVerified(false); setPending(null); setHandle("");
+        requestAnimationFrame(() => document.getElementById(`${id}-email`)?.focus());
+      }}>{copy.other}</button>
+    </div>;
+  }
+
   if (verified) {
     return <><ReferralSuccess refCode={refCode} /><PhoneOptInCard credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} /></>;
   }
@@ -1038,6 +1052,12 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     });
     if (res.status === "closed") {
       setClosed(res.message);
+      return res;
+    }
+    if (res.status === "already_verified") {
+      setAlreadyVerified(true);
+      setPending(null);
+      setHandle("");
       return res;
     }
     clearWithdrawalRecorded();
@@ -1140,7 +1160,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
             if (res?.status === "pending" && res.handle && withdrawalNeedsRetry()) {
               await declineMeasurementAfterSubmit(res.handle);
             }
-            toast.success(m.toasts.resent);
+            if (res.status === "pending") toast.success(m.toasts.resent);
           } catch {
             toast.error(m.toasts.error);
           } finally {
@@ -1186,6 +1206,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
               !hp.trim() &&
               (measurementAskEligible() || withdrawalNeedsRetry()),
           );
+          if (res.status !== "pending") return;
           // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });

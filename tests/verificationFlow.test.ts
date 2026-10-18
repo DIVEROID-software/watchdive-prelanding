@@ -385,7 +385,7 @@ test("a token signed with another secret is refused", async () => {
 // Enumeration safety
 // ---------------------------------------------------------------------------
 
-test("an already-confirmed address gets the same response and no new mail", async () => {
+test("an already-confirmed address gets an explicit notice but no mail or credential", async () => {
   store.seed({
     email: EMAIL,
     canonical: CANONICAL,
@@ -396,9 +396,26 @@ test("an already-confirmed address gets the same response and no new mail", asyn
 
   const res = await requestVerificationService(submit(), deps());
 
-  assert.equal(res.status, "pending");
-  assert.equal(res.message, GENERIC_PENDING_MESSAGE);
+  assert.equal(res.status, "already_verified");
+  assert.equal(res.message, "This email address is already verified.");
   assert.ok(res.handle);
+  assert.equal(mailer.sent.length, 0);
+});
+
+test("an already-verified notice cannot authenticate polling or disclose referral data", async () => {
+  store.seed({ email: EMAIL, canonical: CANONICAL, status: "verified", emailVerified: true });
+  const res = await requestVerificationService(submit(), deps());
+  assert.equal(res.status, "already_verified");
+  assert.equal((await pollVerificationService(res.handle, deps())).status, "pending");
+  assert.equal("refCode" in res, false);
+  assert.equal("browserLead" in res, false);
+  assert.equal(mailer.sent.length, 0);
+});
+
+test("abuse suppression retains its generic response even for a verified address", async () => {
+  store.seed({ email: EMAIL, canonical: CANONICAL, status: "verified", emailVerified: true });
+  const res = await requestVerificationService(submit({ networkSendBlocked: true }), deps());
+  assert.equal(res.status, "pending");
   assert.equal(mailer.sent.length, 0);
 });
 

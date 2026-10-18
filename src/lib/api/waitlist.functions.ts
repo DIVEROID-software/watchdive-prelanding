@@ -238,8 +238,9 @@ export async function loadWaitlistCount(): Promise<number | null> {
 }
 
 // Submitting arms a verification attempt and sends one transactional mail. The
-// response is identical for a new address, one already pending, one already
-// confirmed, and a provider failure, so the form is not an existence oracle.
+// pending response is shared by new/pending addresses and provider failures.
+// At the owner’s request, already-verified addresses get an explicit notice;
+// that notice does not grant inbox ownership or reservation access.
 export const joinWaitlist = createServerFn({ method: "POST" })
   .validator(
     z.object({
