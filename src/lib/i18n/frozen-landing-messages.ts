@@ -505,15 +505,15 @@ const ko: FrozenLandingMessages = {
   privacy: {
     metaTitle: "개인정보처리방침 — WatchDive",
     metaDescription:
-      "WatchDive 프리런칭 페이지에서 소식 신청과 선택적 페이지 측정을 Diveroid Ltd가 처리하는 방법.",
+      "WatchDive 프리런칭 페이지에서 소식 신청, 선택적 USD $3 가격 예약, 선택적 페이지 측정을 Diveroid Ltd가 처리하는 방법.",
     back: "← 홈으로 돌아가기",
     h1: "개인정보처리방침 — WatchDive 프리런칭",
     effectiveLabel: "시행일:",
-    effectiveDate: "2026년 10월 8일",
+    effectiveDate: "2026년 10월 18일",
     intro1:
       '본 개인정보처리방침은 Diveroid Ltd("회사", "당사", "DIVEROID")가 WatchDive 프리런칭 페이지에서 예정된 Kickstarter 캠페인 소식을 받기 위해 신청하실 때 정보를 어떻게 처리하는지 설명합니다.',
     intro2:
-      "이 페이지는 런칭 관심 등록만을 위한 것입니다. 스토어가 아니며 어떤 결제도 처리하지 않습니다.",
+      "이 페이지는 런칭 관심을 등록합니다. 무료 이메일 신청은 구매가 아니며 결제를 받지 않습니다. 선택적 가격 예약을 선택하면 Stripe hosted Checkout이 지금 정확히 USD $3을 청구합니다. 이 수수료는 제품 가격에 더해지며 제품 가격에서 공제되지 않습니다. 유료 가격 예약은 공개된 선착순 100명에 포함되는지와 관계없이 출시 시 제품을 USD $149에 구매할 수 있음을 보장합니다. USD $149는 나중에 구매를 선택할 때에만 청구하며 자동으로 청구하지 않습니다. 수수료와 제품 가격을 합하면 적용되는 제품 배송비와 세금 전 USD $152입니다. 제품 배송비나 세금이 적용되면 제품을 구매하기 전에 안내합니다. 수수료의 결제 조건은 이용약관에 있습니다.",
     s1Title: "1. 회사 소개",
     s1Company: "회사: Diveroid Ltd (브랜드: DIVEROID)",
     s1Rep: "대표: Jay Kim",
@@ -527,8 +527,8 @@ const ko: FrozenLandingMessages = {
     s2Security:
       "보안 신호 — 자동화되거나 반복적인 요청을 제한하기 위해 서버 메모리에서 사용하는 악용 플래그와 단기 키 기반 네트워크 버킷. 리드 기록에는 원본 IP 주소, 네트워크 버킷, 전체 브라우저 user-agent를 보존하지 않습니다.",
     s2Usage:
-      "페이지 측정 — 기기 종류(휴대폰, 태블릿, 데스크톱), 브라우저 창 크기, 페이지 언어, 시간대, 국가 코드, 머문 시간, 스크롤한 깊이, 구역별로 화면에 보인 시간, 그리고 가입 버튼처럼 이름이 있는 클릭과 그 클릭의 대략적인 화면 위치. 들어온 사이트의 도메인과 링크에 붙은 캠페인 태그(source, medium, campaign)도 기록하며, 이 기록은 해당 브라우저 탭에서만 유지되는 무작위 세션 식별자로 묶입니다. EU/EEA, 영국, 스위스에서 접속했거나 국가를 알 수 없으면 허용을 선택한 경우에만 동작하고, 그 밖의 지역에서는 기본으로 동작하며 페이지 하단 쿠키 설정에서 끌 수 있습니다. 이 기록에는 이메일 주소, 전화번호, IP 주소, 브라우저의 전체 사용자 에이전트, 입력한 글, 정확한 위치, 추정한 나이와 성별이 들어가지 않습니다. 측정이 허용된 경우 재방문 시 같은 화면을 보여주기 위해 실험 버전을 최대 30일 보관하고, 무작위 세션 식별자와 실험 버전을 신규 가입 기록에 연결하여 실제 저장·인증된 이메일 수를 비교합니다. 집계 보고서에는 이메일 주소를 표시하지 않습니다. 식별자가 설정된 경우 Google Analytics 4, Google Ads, Meta 픽셀, Microsoft Clarity 히트맵도 같은 기준을 따릅니다. 지원 채팅과 Vercel Web Analytics는 페이지와 함께 로드될 수 있습니다.",
-    s2NoPayment: "이 페이지에서는 결제 정보를 수집하지 않습니다.",
+      "페이지 측정 — 기기 종류(휴대폰, 태블릿, 데스크톱), 브라우저 창 크기, 페이지 언어, 시간대, 호스팅 네트워크가 IP 주소에서 도출한 국가 단위 코드, 머문 시간, 스크롤한 깊이, 구역별로 화면에 보인 시간, 그리고 가입 버튼처럼 이름이 있는 클릭과 그 클릭의 대략적인 화면 위치. 들어온 사이트의 도메인과 링크에 붙은 캠페인 태그(source, medium, campaign)도 기록하며, 이 기록은 해당 브라우저 탭에서만 유지되는 무작위 세션 식별자로 묶입니다. EU/EEA, 영국, 스위스에서 접속했거나 국가를 알 수 없으면 허용을 선택한 경우에만 동작하고, 그 밖의 지역에서는 기본으로 동작하며 페이지 하단 쿠키 설정에서 끌 수 있습니다. 이 기록에는 이메일 주소, 전화번호, IP 주소, 브라우저의 전체 사용자 에이전트, 입력한 글, 정확한 위치, 추정한 나이와 성별이 들어가지 않습니다. 측정이 허용된 경우 재방문 시 같은 화면을 보여주기 위해 실험 버전을 최대 30일 보관하고, 무작위 세션 식별자와 실험 버전을 신규 가입 기록에 연결하여 실제 저장·인증된 이메일 수를 비교합니다. 집계 보고서에는 이메일 주소를 표시하지 않습니다. 식별자가 설정된 경우 Google Analytics 4, Google Ads, Meta 픽셀, Microsoft Clarity 히트맵도 같은 기준을 따릅니다. 지원 채팅과 Vercel Web Analytics는 페이지와 함께 로드될 수 있습니다. 가입과 함께 대략적인 국가 코드를 저장할 수 있으며, 이는 선택적 페이지 측정과 별개입니다. 그 코드는 호스팅 네트워크가 IP 주소에서 도출하며, 그 코드가 그 네트워크에서 왔다는 사실과 읽은 시각을 함께 저장합니다. 그 신호를 쓸 수 없으면 국가는 알 수 없음으로 저장됩니다. 그 국가 코드와 함께 원본 IP 주소는 보관하지 않습니다.",
+    s2NoPayment: "선택적 가격 예약 — 선택한 경우에만. Stripe hosted Checkout이 카드 데이터를 처리하고 지금 정확히 USD $3을 청구합니다. 당사 서버는 결제 식별자, 결제 상태, 그 결제에 적용되는 예약 조건을 저장합니다. 전체 카드 번호, 카드 보안 코드, 그 밖의 전체 카드 정보는 저장하지 않습니다. 무료 이메일 신청에서는 결제 정보를 수집하지 않습니다. USD $3 수수료는 제품 가격에 더해지며 제품 가격에서 공제되지 않습니다. 유료 가격 예약은 공개된 선착순 100명에 포함되는지와 관계없이 출시 시 제품을 USD $149에 구매할 수 있음을 보장합니다. USD $149는 나중에 구매를 선택할 때에만 청구하며, 자동으로 청구하거나, 청구 일정을 잡거나, 결제를 승인하지 않습니다. 가입과 함께 저장하는 대략적인 국가 코드는 선택적 페이지 측정과 별개이며 원본 IP 주소가 아닙니다.",
     s3Title: "3. 이용 목적",
     s3Intro: "제공하신 정보는 다음 용도로 사용합니다:",
     s3Item1: "이메일 주소의 소유를 확인하는 1회용 링크 전송;",
@@ -536,16 +536,16 @@ const ko: FrozenLandingMessages = {
     s3Item3: "얼리버드 가격과 런칭 관련 소식 공유;",
     s3Item4: "폼과 이메일 발송 서비스를 악용으로부터 보호;",
     s3Item5: "페이지의 어느 부분이 쓰이는지 보고 개선(허용이 필요한 지역에서는 허용한 경우에만).",
-    s3Outro: "무관한 목적으로 정보를 사용하지 않습니다.",
+    s3Outro: "선택적 가격 예약을 선택하면 결제 식별자, 결제 상태, 예약 조건을 그 예약을 처리하는 데 사용합니다. 무관한 목적으로 정보를 사용하지 않습니다.",
     s4Title: "4. 법적 근거",
     s4Body:
-      "폼 제출은 운영상의 인증 메일을 요청하는 행위입니다. 대기명단 등록과 런칭 소식 수신 동의는 인증 링크를 사용하신 후에만 완료됩니다. 마케팅·페이지 측정 쿠키는 EU/EEA, 영국, 스위스에서 접속했거나 국가를 알 수 없으면 쿠키 창에서 허용을 선택한 뒤에만 동작합니다(동의). 그 밖의 지역에서는 광고 효과 측정이라는 정당한 이익에 근거해 기본으로 동작하며, 페이지 하단 쿠키 설정에서 언제든 끌 수 있습니다. 나중에를 선택하거나 브라우저의 Global Privacy Control이 켜져 있으면 어디서든 측정은 꺼집니다. 어떤 기준이 적용되는지 기록하는 단기 국가 쿠키를 저장합니다. 언어 선택 쿠키는 고른 언어를 유지하기 위해 저장합니다. 동의는 언제든 철회할 수 있습니다(7항 참조).",
+      "폼 제출은 운영상의 인증 메일을 요청하는 행위입니다. 대기명단 등록과 런칭 소식 수신 동의는 인증 링크를 사용하신 후에만 완료됩니다. 마케팅·페이지 측정 쿠키는 EU/EEA, 영국, 스위스에서 접속했거나 국가를 알 수 없으면 쿠키 창에서 허용을 선택한 뒤에만 동작합니다(동의). 그 밖의 지역에서는 광고 효과 측정이라는 정당한 이익에 근거해 기본으로 동작하며, 페이지 하단 쿠키 설정에서 언제든 끌 수 있습니다. 나중에를 선택하거나 브라우저의 Global Privacy Control이 켜져 있으면 어디서든 측정은 꺼집니다. 어떤 기준이 적용되는지 기록하는 단기 국가 쿠키를 저장합니다. 그 쿠키에는 호스팅 네트워크가 IP 주소에서 도출한 국가 단위 코드만 들어가며, 원본 IP 주소는 들어가지 않습니다. 언어 선택 쿠키는 고른 언어를 유지하기 위해 저장합니다. 동의는 언제든 철회할 수 있습니다(7항 참조).",
     s5Title: "5. 제3자 제공 및 국외 이전",
     s5Body:
-      "이 페이지를 운영하기 위해 처리자를 사용합니다. Vercel은 호스팅과 Web Analytics, Resend는 인증·소식 메일, Notion은 대기명단과 이와 분리된 측정 요약, 지원 채팅은 문의 응답에 쓰입니다. Google과 Meta는 해당 태그가 설정되어 있고 측정이 켜져 있는 경우에만 사용합니다(4항 참조). 문자 알림을 선택한 경우에만 SMS 발송사를 사용합니다. 이 제공자는 미국을 포함해 한국 밖 서버에 데이터를 저장할 수 있습니다. 서비스에 필요한 것만 공유하며, 개인정보를 판매하지 않습니다.",
+      "이 페이지를 운영하기 위해 처리자를 사용합니다. 선택적 USD $3 가격 예약에서는 Stripe가 Stripe hosted Checkout을 제공합니다. Vercel은 호스팅과 Web Analytics, Resend는 인증·소식 메일, Notion은 대기명단과 이와 분리된 측정 요약, 지원 채팅은 문의 응답에 쓰입니다. Google과 Meta는 해당 태그가 설정되어 있고 측정이 켜져 있는 경우에만 사용합니다(4항 참조). 문자 알림을 선택한 경우에만 SMS 발송사를 사용합니다. 이 제공자는 미국을 포함해 한국 밖 서버에 데이터를 저장할 수 있습니다. 서비스에 필요한 것만 공유하며, 개인정보를 판매하지 않습니다.",
     s6Title: "6. 보유 기간",
     s6Body:
-      "대기명단 정보는 WatchDive 런칭 캠페인이 끝날 때까지, 또는 삭제·수신거부를 요청하실 때까지 중 먼저 오는 시점까지 보관합니다. 페이지 측정 요약은 최대 12개월 보관 후 삭제합니다. 삭제 요청이 있으면 해당하는 기록을 지체 없이 삭제합니다.",
+      "대기명단 정보는 WatchDive 런칭 캠페인이 끝날 때까지, 또는 삭제·수신거부를 요청하실 때까지 중 먼저 오는 시점까지 보관합니다. 페이지 측정 요약은 최대 12개월 보관 후 삭제합니다. 삭제 요청이 있으면 해당하는 기록을 지체 없이 삭제합니다. 선택적 예약 수수료를 결제하면, 그 결제의 결제 식별자, 결제 상태, 예약 조건은 그 예약을 처리하고 적용되는 법률 및 회계 요건을 충족하기 위해서만 보관합니다.",
     s7Title: "7. 이용자의 권리",
     s7Intro: "언제든 다음을 할 수 있습니다:",
     s7Item1: "보유 중인 본인 정보에 대한 열람 요청;",
@@ -565,19 +565,19 @@ const ko: FrozenLandingMessages = {
   },
   terms: {
     metaTitle: "이용약관 — WatchDive",
-    metaDescription: "Diveroid Ltd가 운영하는 WatchDive 프리런칭 페이지의 이용약관.",
+    metaDescription: "Diveroid Ltd가 운영하는 WatchDive 프리런칭 페이지의 이용약관. 선택적 USD $3 가격 예약을 포함합니다.",
     back: "← 홈으로 돌아가기",
     h1: "이용약관 — WatchDive 프리런칭",
     effectiveLabel: "시행일:",
-    effectiveDate: "2026년 7월 30일",
+    effectiveDate: "2026년 10월 18일",
     intro:
-      'Diveroid Ltd("회사", "당사", "DIVEROID")가 운영하는 WatchDive 프리런칭 페이지에 오신 것을 환영합니다. 이 페이지를 이용하고 신청하시면 아래 약관에 동의하는 것입니다.',
+      'Diveroid Ltd("회사", "당사", "DIVEROID")가 운영하는 WatchDive 프리런칭 페이지에 오신 것을 환영합니다. 이 페이지를 이용하거나 신청하거나, 선택적 가격 예약 수수료를 결제하면 아래 약관에 동의하는 것입니다.',
     s1Title: "1. 이 페이지의 성격",
     s1Body:
-      "이 페이지는 WatchDive에 대한 관심을 등록하고 예정된 Kickstarter 캠페인 소식을 받는 곳입니다. 스토어가 아닙니다. 여기서는 어떤 구매도 이루어지지 않고 어떤 결제도 받지 않습니다.",
+      "이 페이지는 WatchDive에 대한 관심을 등록하고 예정된 Kickstarter 캠페인 소식을 받는 곳입니다. 무료 이메일 신청은 구매가 아니고, 결제를 받지 않으며, 제품을 예약하거나 특정 가격을 보장하지 않습니다. 이와 별도로 Stripe hosted Checkout에서 지금 정확히 USD $3을 한 번 내면 선택적 가격 예약을 할 수 있습니다. 이 수수료는 제품 가격에 더해지며 제품 가격에서 공제되지 않습니다. 유료 가격 예약은 공개된 선착순 100명에 포함되는지와 관계없이 출시 시 제품을 USD $149에 구매할 수 있음을 보장합니다. USD $149는 나중에 구매를 선택할 때에만 청구하며, 자동으로 청구하거나, 청구 일정을 잡거나, 결제를 승인하지 않습니다. USD $3 수수료와 USD $149 제품 가격을 합하면 적용되는 제품 배송비와 세금 전 USD $152입니다. 제품 배송비나 세금이 적용되면 제품을 구매하기 전에 안내합니다. USD $3 수수료는 환불되지 않습니다. 다만 당사가 제품 출시를 취소하면 그 수수료를 환불합니다. 본 약관은 적용 법률이 제한을 허용하지 않는 권리를 제한하지 않으며, 그러한 권리를 포기하라고 요구하지 않습니다.",
     s2Title: "2. 프리런칭 정보",
     s2Body:
-      "WatchDive는 아직 개발 중입니다. 기능, 호환성, 사양, 가격(얼리버드 가격 포함), 런칭 일정 등 여기 표시된 모든 내용은 정보 제공 목적이며 Kickstarter 캠페인 전이나 진행 중에 변경될 수 있습니다. 신청은 제품을 예약하거나 특정 가격을 보장하지 않습니다.",
+      "WatchDive는 아직 개발 중입니다. 기능, 호환성, 사양, 공개된 얼리버드 가격, 런칭 일정 등 이 페이지의 공개 정보는 정보 제공 목적이며 Kickstarter 캠페인 전이나 진행 중에 변경될 수 있습니다. 무료 이메일 신청은 제품을 예약하거나 특정 가격을 보장하지 않습니다. 유료 가격 예약은 공개된 선착순 100명에 포함되는지와 관계없이 출시 시 제품을 USD $149에 구매할 수 있음을 보장합니다.",
     s3Title: "3. 이메일 및 SMS 안내",
     s3Body:
       "폼 제출은 인증 링크가 담긴 운영 메일 1통을 요청하는 행위입니다. 대기명단 등록과 런칭·마케팅 소식 수신 동의는 그 링크를 사용하신 때에만 완료됩니다. 전화번호를 함께 제공하시면 해당 입력란 옆에 안내된 선택적 SMS 알림에 동의하는 것입니다. 마케팅 메일 내 링크나 문의를 통해 언제든 수신을 거부할 수 있습니다. 데이터 처리 방식은 개인정보처리방침에 설명되어 있습니다.",
@@ -589,7 +589,7 @@ const ko: FrozenLandingMessages = {
     s5Body1:
       "WatchDive는 호환 스마트워치와 함께 사용하도록 설계된 다이빙 보조 도구입니다. 출시 후에도 정식 다이빙 교육, 자격, 백업 다이브 컴퓨터를 대체하는 것이 아니라 보조하기 위한 것입니다. 항상 교육받은 범위 안에서 다이빙하고 안전 수칙을 따르세요.",
     s5Body2:
-      '이 페이지는 어떤 종류의 보증도 없이 "있는 그대로" 제공됩니다. 페이지 이용으로 발생하는 손해에 대해 당사는 책임지지 않습니다.',
+      '이 페이지는 어떤 종류의 보증도 없이 "있는 그대로" 제공됩니다. 페이지 이용으로 발생하는 손해에 대해 당사는 책임지지 않습니다. 이 제한은 적용 법률이 허용하지 않는 곳에는 미치지 않으며, 본 약관은 적용 법률이 인정하는 권리를 포기하라고 요구하지 않습니다.',
     s6Title: "6. 준거법",
     s6Body: "본 약관은 대한민국 법률의 적용을 받습니다.",
     s7Title: "7. 문의",
@@ -958,14 +958,14 @@ const zhCN: FrozenLandingMessages = {
   },
   privacy: {
     metaTitle: "隐私政策 — WatchDive",
-    metaDescription: "你报名接收 WatchDive 预启动消息时，Diveroid Ltd 如何处理你的信息。",
+    metaDescription: "你报名接收 WatchDive 预启动消息、选择可选的 USD $3 价格预约，以及选择页面测量时，Diveroid Ltd 如何处理你的信息。",
     back: "← 返回首页",
     h1: "隐私政策 — WatchDive 预启动",
     effectiveLabel: "生效日期：",
-    effectiveDate: "2026 年 10 月 8 日",
+    effectiveDate: "2026 年 10 月 18 日",
     intro1:
       "本隐私政策说明 Diveroid Ltd（“我们”，“DIVEROID”）在你于 WatchDive 预启动页面报名接收即将开启的 Kickstarter 众筹消息时，如何处理你的信息。",
-    intro2: "本页面仅用于收集上线意向。它不是商店，不处理任何付款。",
+    intro2: "本页面收集上线意向。免费的邮箱报名不是购买，也不收款。如果你选择可选的价格预约，Stripe hosted Checkout 现在收取正好 USD $3。该费用加在产品价格之上，不从产品价格中扣除。付费价格预约保证你能在发布时以 USD $149 购买该产品，无论你是否属于公开的前 100 名。USD $149 仅在你之后选择购买时收取，我们不会自动收取。费用与产品价格合计为适用的产品运费和税费之前的 USD $152。如果产品运费或税费适用，我们会在你购买产品之前告知。费用的付款条件见使用条款。",
     s1Title: "1. 我们是谁",
     s1Company: "公司：Diveroid Ltd（品牌：DIVEROID）",
     s1Rep: "代表人：Jay Kim",
@@ -978,8 +978,8 @@ const zhCN: FrozenLandingMessages = {
     s2Security:
       "安全信号 — 用于限制自动化或重复请求、在服务器内存中使用的滥用标记与短时效的加密网络分桶。潜在客户记录中不保留原始 IP 地址、网络分桶或完整的浏览器 user-agent。",
     s2Usage:
-      "页面测量 — 设备类型（手机、平板或电脑）、浏览器窗口尺寸、页面语言、时区、国家代码、停留时间、滚动深度、各区块在屏幕上停留的时间，以及报名按钮这类有名称的点击及其在屏幕上的大致位置。我们还会记录来源网站的域名和链接中的活动标记（source、medium、campaign），这些记录归在一个只在当前浏览器标签页中保留的随机会话标识下。在欧盟/欧洲经济区、英国和瑞士，或无法判断你所在的国家时，仅在你选择“允许”后运行；在其他地区默认运行，你可以通过页面底部的“Cookie 设置”关闭。该记录不包含你的电子邮箱、电话号码、IP 地址、完整的浏览器用户代理（User-Agent）、你输入的文字、精确位置，也不推断年龄或性别。允许测量时，我们将实验版本保存最多 30 天，以便回访时显示相同页面，并将随机会话标识和实验版本关联到新报名记录，以比较实际保存和确认的邮箱数量。汇总报告不包含邮箱地址。Google Analytics 4、Google Ads、Meta Pixel 和 Microsoft Clarity 热图在标识已配置时遵循同样的规则。支持聊天和 Vercel Web Analytics 可能随页面加载。",
-    s2NoPayment: "本页面不收集任何付款信息。",
+      "页面测量 — 设备类型（手机、平板或电脑）、浏览器窗口尺寸、页面语言、时区、由托管网络根据 IP 地址得出的粗略国家代码、停留时间、滚动深度、各区块在屏幕上停留的时间，以及报名按钮这类有名称的点击及其在屏幕上的大致位置。我们还会记录来源网站的域名和链接中的活动标记（source、medium、campaign），这些记录归在一个只在当前浏览器标签页中保留的随机会话标识下。在欧盟/欧洲经济区、英国和瑞士，或无法判断你所在的国家时，仅在你选择“允许”后运行；在其他地区默认运行，你可以通过页面底部的“Cookie 设置”关闭。该记录不包含你的电子邮箱、电话号码、IP 地址、完整的浏览器用户代理（User-Agent）、你输入的文字、精确位置，也不推断年龄或性别。允许测量时，我们将实验版本保存最多 30 天，以便回访时显示相同页面，并将随机会话标识和实验版本关联到新报名记录，以比较实际保存和确认的邮箱数量。汇总报告不包含邮箱地址。Google Analytics 4、Google Ads、Meta Pixel 和 Microsoft Clarity 热图在标识已配置时遵循同样的规则。支持聊天和 Vercel Web Analytics 可能随页面加载。报名时可能另行保存一个粗略国家代码，它不同于可选的页面测量。该代码由托管网络根据 IP 地址得出，并同时保存该代码来自该网络这一事实以及读取时间。如果无法使用该信号，国家会记为未知。我们不随该国家代码保留原始 IP 地址。",
+    s2NoPayment: "可选的价格预约 — 仅在你选择时。Stripe hosted Checkout 处理银行卡数据并现在收取正好 USD $3。我们的服务器保存付款标识、付款状态，以及适用于该付款的预约条款。我们不保存完整卡号、卡片安全码或其他完整卡片信息。免费的邮箱报名不收集付款信息。USD $3 费用加在产品价格之上，不从产品价格中扣除。付费价格预约保证你能在发布时以 USD $149 购买该产品，无论你是否属于公开的前 100 名。USD $149 仅在你之后选择购买时收取，我们不会自动收取、安排收取或授权收取。与报名一起保存的粗略国家代码不同于可选的页面测量，也不是原始 IP 地址。",
     s3Title: "3. 使用目的",
     s3Intro: "你提供的信息用于：",
     s3Item1: "发送一次性链接，确认你掌控该邮箱地址；",
@@ -987,16 +987,16 @@ const zhCN: FrozenLandingMessages = {
     s3Item3: "分享早鸟价格与上线相关消息；",
     s3Item4: "保护表单与邮件发送服务免受滥用；",
     s3Item5: "了解页面的哪些部分被使用，以便改进（在需要“允许”的地区，仅在你允许之后）。",
-    s3Outro: "我们不会将你的信息用于无关目的。",
+    s3Outro: "如果你选择可选的价格预约，我们使用付款标识、付款状态和预约条款来管理该预约。我们不会将你的信息用于无关目的。",
     s4Title: "4. 法律依据",
     s4Body:
-      "提交表单即请求一封运营性确认邮件。你的候补名单注册及接收上线消息的同意，仅在你使用确认链接后完成。营销和页面测量 Cookie：在欧盟/欧洲经济区、英国和瑞士，或无法判断你所在的国家时，仅在你选择“允许”后运行（同意）。在其他地区，基于我们衡量广告效果的正当利益默认运行，你可以随时通过页面底部的“Cookie 设置”关闭。选择“暂时不要”或浏览器发出 Global Privacy Control 信号时，在任何地区都保持关闭。我们会保存一个短期的国家 Cookie，记录适用哪条规则；还会保存语言偏好 Cookie，让页面保持你选择的语言。你可以随时撤回同意（见第 7 条）。",
+      "提交表单即请求一封运营性确认邮件。你的候补名单注册及接收上线消息的同意，仅在你使用确认链接后完成。营销和页面测量 Cookie：在欧盟/欧洲经济区、英国和瑞士，或无法判断你所在的国家时，仅在你选择“允许”后运行（同意）。在其他地区，基于我们衡量广告效果的正当利益默认运行，你可以随时通过页面底部的“Cookie 设置”关闭。选择“暂时不要”或浏览器发出 Global Privacy Control 信号时，在任何地区都保持关闭。我们会保存一个短期的国家 Cookie，记录适用哪条规则。该 Cookie 只保存由托管网络根据 IP 地址得出的粗略国家代码，不保存原始 IP 地址；还会保存语言偏好 Cookie，让页面保持你选择的语言。你可以随时撤回同意（见第 7 条）。",
     s5Title: "5. 共享与跨境传输",
     s5Body:
-      "我们使用以下处理方来运营本页面：Vercel 负责托管和 Web Analytics，Resend 负责确认邮件和消息邮件，Notion 保存候补名单记录以及与之分开的页面测量摘要，另有我们自己的支持聊天；Google 和 Meta 仅在相应标签已启用且你的测量处于开启状态时使用（见第 4 条）。只有在你选择短信提醒时才会使用短信服务商。这些提供商可能将数据存储在韩国境外，包括美国。我们只共享服务所必需的信息，绝不出售你的个人信息。",
+      "我们使用以下处理方来运营本页面：在你选择可选的 USD $3 价格预约时，Stripe 提供 Stripe hosted Checkout；Vercel 负责托管和 Web Analytics，Resend 负责确认邮件和消息邮件，Notion 保存候补名单记录以及与之分开的页面测量摘要，另有我们自己的支持聊天；Google 和 Meta 仅在相应标签已启用且你的测量处于开启状态时使用（见第 4 条）。只有在你选择短信提醒时才会使用短信服务商。这些提供商可能将数据存储在韩国境外，包括美国。我们只共享服务所必需的信息，绝不出售你的个人信息。",
     s6Title: "6. 保存期限",
     s6Body:
-      "候补名单信息保存至 WatchDive 上线活动结束，或你要求删除或退订为止，以先到者为准。页面测量摘要最多保存 12 个月，之后删除。收到删除请求后，我们会不无故拖延地删除相应记录。",
+      "候补名单信息保存至 WatchDive 上线活动结束，或你要求删除或退订为止，以先到者为准。页面测量摘要最多保存 12 个月，之后删除。收到删除请求后，我们会不无故拖延地删除相应记录。如果你支付可选的预约费用，我们保留该付款的付款标识、付款状态和预约条款，仅用于管理该预约并满足适用的法律和会计要求。",
     s7Title: "7. 你的权利",
     s7Intro: "你可以随时：",
     s7Item1: "询问我们持有你的哪些信息；",
@@ -1014,19 +1014,19 @@ const zhCN: FrozenLandingMessages = {
   },
   terms: {
     metaTitle: "使用条款 — WatchDive",
-    metaDescription: "由 Diveroid Ltd 运营的 WatchDive 预启动页面使用条款。",
+    metaDescription: "由 Diveroid Ltd 运营的 WatchDive 预启动页面使用条款，包括可选的 USD $3 价格预约。",
     back: "← 返回首页",
     h1: "使用条款 — WatchDive 预启动",
     effectiveLabel: "生效日期：",
-    effectiveDate: "2026 年 7 月 30 日",
+    effectiveDate: "2026 年 10 月 18 日",
     intro:
-      "欢迎来到由 Diveroid Ltd（“我们”，“DIVEROID”）运营的 WatchDive 预启动页面。使用本页面并报名，即表示你同意以下条款。",
+      "欢迎来到由 Diveroid Ltd（“我们”，“DIVEROID”）运营的 WatchDive 预启动页面。使用本页面、报名，或在你选择时支付可选的价格预约费用，即表示你同意以下条款。",
     s1Title: "1. 本页面是什么",
     s1Body:
-      "本页面用于登记你对 WatchDive 的兴趣并接收即将开启的 Kickstarter 众筹消息。它不是商店。这里不发生任何购买，也不收取任何款项。",
+      "本页面用于登记你对 WatchDive 的兴趣并接收即将开启的 Kickstarter 众筹消息。免费的邮箱报名不是购买，不收款，不预留产品，也不保证特定价格。你可以另外选择可选的价格预约，通过 Stripe hosted Checkout 现在支付正好 USD $3。该费用加在产品价格之上，不从产品价格中扣除。付费价格预约保证你能在发布时以 USD $149 购买该产品，无论你是否属于公开的前 100 名。USD $149 仅在你之后选择购买时收取，我们不会自动收取、安排收取或授权收取。USD $3 费用与 USD $149 产品价格合计为适用的产品运费和税费之前的 USD $152。如果产品运费或税费适用，我们会在你购买产品之前告知。USD $3 费用不予退款，但如果我们取消产品发布，则退还该费用。本条款不限制适用法律不允许我们限制的权利，也不要求你放弃此类权利。",
     s2Title: "2. 预启动信息",
     s2Body:
-      "WatchDive 仍在开发中。此处展示的所有内容 — 包括功能、兼容性、规格、价格（如早鸟价）及上线日期 — 仅供参考，可能在 Kickstarter 众筹之前或期间发生变更。报名不预留产品，也不保证特定价格。",
+      "WatchDive 仍在开发中。本页面展示的公开内容 — 包括功能、兼容性、规格、公开的早鸟价和上线日期 — 仅供参考，可能在 Kickstarter 众筹之前或期间发生变更。免费的邮箱报名不预留产品，也不保证特定价格。付费价格预约保证你能在发布时以 USD $149 购买该产品，无论你是否属于公开的前 100 名。",
     s3Title: "3. 邮件与短信通知",
     s3Body:
       "提交表单即请求一封包含确认链接的运营邮件。你的候补名单注册及接收上线与营销消息的同意，仅在你使用该链接时完成。若你同时提供手机号，即表示同意该输入框旁说明的可选短信通知。你可随时通过营销邮件中的链接或联系我们退订。我们如何处理你的数据，见隐私政策。",
@@ -1038,7 +1038,7 @@ const zhCN: FrozenLandingMessages = {
     s5Body1:
       "WatchDive 是为配合兼容智能手表而设计的潜水辅助工具。发布后，它旨在辅助 — 而非替代 — 正规潜水训练、证书与备用潜水电脑。请始终在训练范围内潜水并遵循安全潜水规范。",
     s5Body2:
-      "本页面按“现状”提供，不含任何形式的保证。对因使用本页面产生的任何损害，我们不承担责任。",
+      "本页面按“现状”提供，不含任何形式的保证。对因使用本页面产生的任何损害，我们不承担责任。 在适用法律不允许的范围内，该限制不适用。本条款不要求你放弃适用法律为你保留的权利。",
     s6Title: "6. 适用法律",
     s6Body: "本条款受大韩民国法律管辖。",
     s7Title: "7. 联系我们",
@@ -1407,14 +1407,14 @@ const zhTW: FrozenLandingMessages = {
   },
   privacy: {
     metaTitle: "隱私權政策 — WatchDive",
-    metaDescription: "你報名接收 WatchDive 預先啟動消息時，Diveroid Ltd 如何處理你的資訊。",
+    metaDescription: "你報名接收 WatchDive 預先啟動消息、選擇可選的 USD $3 價格預約，以及選擇頁面測量時，Diveroid Ltd 如何處理你的資訊。",
     back: "← 回到首頁",
     h1: "隱私權政策 — WatchDive 預先啟動",
     effectiveLabel: "生效日期：",
-    effectiveDate: "2026 年 10 月 8 日",
+    effectiveDate: "2026 年 10 月 18 日",
     intro1:
       "本隱私權政策說明 Diveroid Ltd（「我們」，「DIVEROID」）在你於 WatchDive 預先啟動頁面報名接收即將開啟的 Kickstarter 募資消息時，如何處理你的資訊。",
-    intro2: "本頁面僅用於蒐集上線意向。它不是商店，也不處理任何付款。",
+    intro2: "本頁面蒐集上線意向。免費的電子郵件報名不是購買，也不收款。如果你選擇可選的價格預約，Stripe hosted Checkout 現在收取正好 USD $3。該費用加在產品價格之上，不從產品價格中扣除。付費價格預約保證你能在發布時以 USD $149 購買該產品，無論你是否屬於公開的前 100 名。USD $149 僅在你之後選擇購買時收取，我們不會自動收取。費用與產品價格合計為適用的產品運費和稅費之前的 USD $152。如果產品運費或稅費適用，我們會在你購買產品之前告知。費用的付款條件見使用條款。",
     s1Title: "1. 我們是誰",
     s1Company: "公司：Diveroid Ltd（品牌：DIVEROID）",
     s1Rep: "代表人：Jay Kim",
@@ -1427,8 +1427,8 @@ const zhTW: FrozenLandingMessages = {
     s2Security:
       "安全訊號 — 用於限制自動化或重複請求、在伺服器記憶體中使用的濫用旗標與短效的金鑰式網路分桶。潛在名單紀錄中不保留原始 IP 位址、網路分桶或完整的瀏覽器 user-agent。",
     s2Usage:
-      "頁面測量 — 裝置類型（手機、平板或電腦）、瀏覽器視窗大小、頁面語言、時區、國家代碼、停留時間、捲動深度、各區塊在畫面上停留的時間，以及報名按鈕這類有名稱的點擊與其在畫面上的大致位置。我們也會記錄來源網站的網域與連結中的活動標記（source、medium、campaign），這些紀錄歸在一個只在目前瀏覽器分頁中保留的隨機工作階段識別碼之下。在歐盟／歐洲經濟區、英國與瑞士，或無法判斷你所在的國家時，僅在你選擇「允許」後執行；在其他地區預設執行，你可以透過頁面底部的「Cookie 設定」關閉。這份紀錄不包含你的電子郵件、電話號碼、IP 位址、完整的瀏覽器使用者代理（User-Agent）、你輸入的文字、精確位置，也不推斷年齡或性別。允許測量時，我們將實驗版本保留最多 30 天，讓回訪時顯示相同頁面，並將隨機工作階段識別碼與實驗版本連結到新報名紀錄，以比較實際儲存和確認的信箱數量。彙總報告不包含信箱地址。Google Analytics 4、Google Ads、Meta Pixel 與 Microsoft Clarity 熱圖在識別碼已設定時遵循相同規則。支援聊天與 Vercel Web Analytics 可能隨頁面載入。",
-    s2NoPayment: "本頁面不蒐集任何付款資訊。",
+      "頁面測量 — 裝置類型（手機、平板或電腦）、瀏覽器視窗大小、頁面語言、時區、由託管網路根據 IP 位址得出的粗略國家代碼、停留時間、捲動深度、各區塊在畫面上停留的時間，以及報名按鈕這類有名稱的點擊與其在畫面上的大致位置。我們也會記錄來源網站的網域與連結中的活動標記（source、medium、campaign），這些紀錄歸在一個只在目前瀏覽器分頁中保留的隨機工作階段識別碼之下。在歐盟／歐洲經濟區、英國與瑞士，或無法判斷你所在的國家時，僅在你選擇「允許」後執行；在其他地區預設執行，你可以透過頁面底部的「Cookie 設定」關閉。這份紀錄不包含你的電子郵件、電話號碼、IP 位址、完整的瀏覽器使用者代理（User-Agent）、你輸入的文字、精確位置，也不推斷年齡或性別。允許測量時，我們將實驗版本保留最多 30 天，讓回訪時顯示相同頁面，並將隨機工作階段識別碼與實驗版本連結到新報名紀錄，以比較實際儲存和確認的信箱數量。彙總報告不包含信箱地址。Google Analytics 4、Google Ads、Meta Pixel 與 Microsoft Clarity 熱圖在識別碼已設定時遵循相同規則。支援聊天與 Vercel Web Analytics 可能隨頁面載入。報名時可能另行保存一個粗略國家代碼，它不同於可選的頁面測量。該代碼由託管網路根據 IP 位址得出，並同時保存該代碼來自該網路這一事實以及讀取時間。如果無法使用該訊號，國家會記為未知。我們不隨該國家代碼保留原始 IP 位址。",
+    s2NoPayment: "可選的價格預約 — 僅在你選擇時。Stripe hosted Checkout 處理銀行卡資料並現在收取正好 USD $3。我們的伺服器保存付款識別碼、付款狀態，以及適用於該付款的預約條款。我們不保存完整卡號、卡片安全碼或其他完整卡片資訊。免費的電子郵件報名不蒐集付款資訊。USD $3 費用加在產品價格之上，不從產品價格中扣除。付費價格預約保證你能在發布時以 USD $149 購買該產品，無論你是否屬於公開的前 100 名。USD $149 僅在你之後選擇購買時收取，我們不會自動收取、安排收取或授權收取。與報名一起保存的粗略國家代碼不同於可選的頁面測量，也不是原始 IP 位址。",
     s3Title: "3. 使用目的",
     s3Intro: "你提供的資訊用於：",
     s3Item1: "寄送一次性連結，確認你掌控該電子郵件地址；",
@@ -1436,16 +1436,16 @@ const zhTW: FrozenLandingMessages = {
     s3Item3: "分享早鳥價格與上線相關消息；",
     s3Item4: "保護表單與郵件寄送服務不被濫用；",
     s3Item5: "了解頁面的哪些部分有被使用，以便改進（在需要「允許」的地區，僅在你允許之後）。",
-    s3Outro: "我們不會將你的資訊用於無關目的。",
+    s3Outro: "如果你選擇可選的價格預約，我們使用付款識別碼、付款狀態和預約條款來管理該預約。我們不會將你的資訊用於無關目的。",
     s4Title: "4. 法律依據",
     s4Body:
-      "送出表單即請求一封營運性確認信。你的候補名單註冊及接收上線消息的同意，僅在你使用確認連結後完成。行銷與頁面測量 Cookie：在歐盟／歐洲經濟區、英國與瑞士，或無法判斷你所在的國家時，僅在你選擇「允許」後執行（同意）。在其他地區，基於我們衡量廣告成效的正當利益預設執行，你可以隨時透過頁面底部的「Cookie 設定」關閉。選擇「暫時不要」或瀏覽器送出 Global Privacy Control 訊號時，在任何地區都會保持關閉。我們會儲存一個短期的國家 Cookie，記錄適用哪項規則；也會儲存語言偏好 Cookie，讓頁面維持你選擇的語言。你可以隨時撤回同意（見第 7 條）。",
+      "送出表單即請求一封營運性確認信。你的候補名單註冊及接收上線消息的同意，僅在你使用確認連結後完成。行銷與頁面測量 Cookie：在歐盟／歐洲經濟區、英國與瑞士，或無法判斷你所在的國家時，僅在你選擇「允許」後執行（同意）。在其他地區，基於我們衡量廣告成效的正當利益預設執行，你可以隨時透過頁面底部的「Cookie 設定」關閉。選擇「暫時不要」或瀏覽器送出 Global Privacy Control 訊號時，在任何地區都會保持關閉。我們會儲存一個短期的國家 Cookie，記錄適用哪項規則。該 Cookie 只保存由託管網路根據 IP 位址得出的粗略國家代碼，不保存原始 IP 位址；也會儲存語言偏好 Cookie，讓頁面維持你選擇的語言。你可以隨時撤回同意（見第 7 條）。",
     s5Title: "5. 共享與跨境傳輸",
     s5Body:
-      "我們使用下列處理者來營運本頁面：Vercel 負責代管與 Web Analytics，Resend 負責確認信與消息信，Notion 保存候補名單紀錄以及與之分開的頁面測量摘要，另有我們自己的支援聊天；Google 與 Meta 僅在相應標籤已啟用且你的測量處於開啟狀態時使用（見第 4 條）。只有在你選擇簡訊提醒時才會使用簡訊服務商。這些供應商可能將資料儲存在韓國境外，包括美國。我們只分享服務所必需的資訊，絕不出售你的個人資訊。",
+      "我們使用下列處理者來營運本頁面：在你選擇可選的 USD $3 價格預約時，Stripe 提供 Stripe hosted Checkout；Vercel 負責代管與 Web Analytics，Resend 負責確認信與消息信，Notion 保存候補名單紀錄以及與之分開的頁面測量摘要，另有我們自己的支援聊天；Google 與 Meta 僅在相應標籤已啟用且你的測量處於開啟狀態時使用（見第 4 條）。只有在你選擇簡訊提醒時才會使用簡訊服務商。這些供應商可能將資料儲存在韓國境外，包括美國。我們只分享服務所必需的資訊，絕不出售你的個人資訊。",
     s6Title: "6. 保存期間",
     s6Body:
-      "候補名單資訊保存至 WatchDive 上線活動結束，或你要求刪除或取消訂閱為止，以先到者為準。頁面測量摘要最多保存 12 個月，之後刪除。收到刪除請求後，我們會盡速刪除相關紀錄。",
+      "候補名單資訊保存至 WatchDive 上線活動結束，或你要求刪除或取消訂閱為止，以先到者為準。頁面測量摘要最多保存 12 個月，之後刪除。收到刪除請求後，我們會盡速刪除相關紀錄。如果你支付可選的預約費用，我們保留該付款的付款識別碼、付款狀態和預約條款，僅用於管理該預約並滿足適用的法律和會計要求。",
     s7Title: "7. 你的權利",
     s7Intro: "你可以隨時：",
     s7Item1: "詢問我們持有你的哪些資訊；",
@@ -1463,19 +1463,19 @@ const zhTW: FrozenLandingMessages = {
   },
   terms: {
     metaTitle: "使用條款 — WatchDive",
-    metaDescription: "由 Diveroid Ltd 營運的 WatchDive 預先啟動頁面使用條款。",
+    metaDescription: "由 Diveroid Ltd 營運的 WatchDive 預先啟動頁面使用條款，包括可選的 USD $3 價格預約。",
     back: "← 回到首頁",
     h1: "使用條款 — WatchDive 預先啟動",
     effectiveLabel: "生效日期：",
-    effectiveDate: "2026 年 7 月 30 日",
+    effectiveDate: "2026 年 10 月 18 日",
     intro:
-      "歡迎來到由 Diveroid Ltd（「我們」，「DIVEROID」）營運的 WatchDive 預先啟動頁面。使用本頁面並報名，即表示你同意以下條款。",
+      "歡迎來到由 Diveroid Ltd（「我們」，「DIVEROID」）營運的 WatchDive 預先啟動頁面。使用本頁面、報名，或在你選擇時支付可選的價格預約費用，即表示你同意以下條款。",
     s1Title: "1. 本頁面是什麼",
     s1Body:
-      "本頁面用於登記你對 WatchDive 的興趣並接收即將開啟的 Kickstarter 募資消息。它不是商店。這裡不進行任何購買，也不收取任何款項。",
+      "本頁面用於登記你對 WatchDive 的興趣並接收即將開啟的 Kickstarter 募資消息。免費的電子郵件報名不是購買，不收款，不預留產品，也不保證特定價格。你可以另外選擇可選的價格預約，透過 Stripe hosted Checkout 現在支付正好 USD $3。該費用加在產品價格之上，不從產品價格中扣除。付費價格預約保證你能在發布時以 USD $149 購買該產品，無論你是否屬於公開的前 100 名。USD $149 僅在你之後選擇購買時收取，我們不會自動收取、安排收取或授權收取。USD $3 費用與 USD $149 產品價格合計為適用的產品運費和稅費之前的 USD $152。如果產品運費或稅費適用，我們會在你購買產品之前告知。USD $3 費用不予退款，但如果我們取消產品發布，則退還該費用。本條款不限制適用法律不允許我們限制的權利，也不要求你放棄此類權利。",
     s2Title: "2. 預先啟動資訊",
     s2Body:
-      "WatchDive 仍在開發中。此處顯示的所有內容 — 包括功能、相容性、規格、價格（如早鳥價）與上線日期 — 僅供參考，可能在 Kickstarter 募資之前或期間變更。報名不預留產品，也不保證特定價格。",
+      "WatchDive 仍在開發中。此處顯示的公開內容 — 包括功能、相容性、規格、公開的早鳥價與上線日期 — 僅供參考，可能在 Kickstarter 募資之前或期間變更。免費的電子郵件報名不預留產品，也不保證特定價格。付費價格預約保證你能在發布時以 USD $149 購買該產品，無論你是否屬於公開的前 100 名。",
     s3Title: "3. 郵件與簡訊通知",
     s3Body:
       "送出表單即請求一封包含確認連結的營運郵件。你的候補名單註冊及接收上線與行銷消息的同意，僅在你使用該連結時完成。若你同時提供電話號碼，即表示同意該欄位旁說明的選擇性簡訊通知。你可隨時透過行銷郵件中的連結或與我們聯絡取消訂閱。我們如何處理你的資料，請見隱私權政策。",
@@ -1487,7 +1487,7 @@ const zhTW: FrozenLandingMessages = {
     s5Body1:
       "WatchDive 是為搭配相容智慧手錶而設計的潛水輔助工具。發售後，它旨在輔助 — 而非取代 — 正規潛水訓練、證照與備用潛水電腦。請始終在訓練範圍內潛水並遵循安全潛水規範。",
     s5Body2:
-      "本頁面按「現狀」提供，不附任何形式的保證。對因使用本頁面而生的任何損害，我們不負責任。",
+      "本頁面按「現狀」提供，不附任何形式的保證。對因使用本頁面而生的任何損害，我們不負責任。 在適用法律不允許的範圍內，該限制不適用。本條款不要求你放棄適用法律為你保留的權利。",
     s6Title: "6. 準據法",
     s6Body: "本條款受大韓民國法律管轄。",
     s7Title: "7. 聯絡我們",
@@ -1872,15 +1872,15 @@ const ja: FrozenLandingMessages = {
   privacy: {
     metaTitle: "プライバシーポリシー — WatchDive",
     metaDescription:
-      "WatchDive の事前登録にお申し込みいただいた際に、Diveroid Ltd が情報をどのように取り扱うか。",
+      "WatchDive の事前登録、任意の USD $3 価格予約、任意のページ計測について、Diveroid Ltd が情報をどのように取り扱うか。",
     back: "← ホームに戻る",
     h1: "プライバシーポリシー — WatchDive 事前登録",
     effectiveLabel: "発効日:",
-    effectiveDate: "2026 年 10 月 8 日",
+    effectiveDate: "2026 年 10 月 18 日",
     intro1:
       "本プライバシーポリシーは、Diveroid Ltd（「当社」、「DIVEROID」）が、WatchDive 事前登録ページで今後の Kickstarter キャンペーン情報の受け取りにお申し込みいただいた際に、お客様の情報をどのように取り扱うかを説明するものです。",
     intro2:
-      "このページはローンチへの関心を登録するためだけのものです。ストアではなく、決済は一切行いません。",
+      "このページはローンチへの関心を登録します。無料のメール登録は購入ではなく、支払いも受けません。任意の価格予約を選ぶと、Stripe hosted Checkout が今ちょうど USD $3 を請求します。この手数料は製品価格に加算され、製品価格から差し引かれません。有料の価格予約は、公開の先着100名に入るかどうかにかかわらず、ローンチ時に製品を USD $149 で購入できることを保証します。USD $149 は、後で購入を選んだときにだけ請求し、自動では請求しません。手数料と製品価格の合計は、適用される製品の送料と税金の前で USD $152 です。製品の送料または税金がかかる場合は、製品を購入する前に開示します。手数料の支払条件は利用規約にあります。",
     s1Title: "1. 当社について",
     s1Company: "会社: Diveroid Ltd（ブランド: DIVEROID）",
     s1Rep: "代表者: Jay Kim",
@@ -1894,8 +1894,8 @@ const ja: FrozenLandingMessages = {
     s2Security:
       "セキュリティシグナル — 自動化された、または繰り返しのリクエストを制限するためにサーバーメモリ上で使う不正利用フラグと短命の鍵付きネットワークバケット。リード記録には、生の IP アドレス、ネットワークバケット、ブラウザーの完全な user-agent を保持しません。",
     s2Usage:
-      "ページ計測 — 端末の種類（スマホ、タブレット、パソコン）、ブラウザのウィンドウサイズ、ページの言語、タイムゾーン、国コード、滞在時間、スクロールした深さ、各セクションが画面に表示されていた時間、そして登録ボタンのような名前のあるクリックと、その画面上のおおよその位置を記録します。参照元サイトのドメインと、リンクに付いたキャンペーンタグ（source・medium・campaign）も記録し、これらはそのブラウザタブの中だけで保たれるランダムなセッション識別子にまとめられます。EU/EEA、英国、スイスから、または国が判別できない場合は「許可する」を選んだときだけ動き、それ以外の地域では最初から動きます。ページ下部の「クッキー設定」からいつでも止められます。この記録には、メールアドレス、電話番号、IP アドレス、ブラウザのユーザーエージェント全文、入力した文字、正確な位置、推定した年齢や性別は含まれません。計測が許可された場合、再訪時に同じ画面を表示するため実験バージョンを最大30日間保存し、ランダムなセッション識別子と実験バージョンを新規登録情報に関連付けて、実際に保存・確認されたメールアドレスの件数を比較します。集計レポートにメールアドレスは含めません。Google Analytics 4、Google Ads、Meta ピクセル、Microsoft Clarity のヒートマップも、識別子が設定されている場合は同じルールに従います。サポートチャットと Vercel Web Analytics はページと一緒に読み込まれることがあります。",
-    s2NoPayment: "このページでは決済情報を収集しません。",
+      "ページ計測 — 端末の種類（スマホ、タブレット、パソコン）、ブラウザのウィンドウサイズ、ページの言語、タイムゾーン、ホスティング側が IP アドレスから得た国レベルのコード、滞在時間、スクロールした深さ、各セクションが画面に表示されていた時間、そして登録ボタンのような名前のあるクリックと、その画面上のおおよその位置を記録します。参照元サイトのドメインと、リンクに付いたキャンペーンタグ（source・medium・campaign）も記録し、これらはそのブラウザタブの中だけで保たれるランダムなセッション識別子にまとめられます。EU/EEA、英国、スイスから、または国が判別できない場合は「許可する」を選んだときだけ動き、それ以外の地域では最初から動きます。ページ下部の「クッキー設定」からいつでも止められます。この記録には、メールアドレス、電話番号、IP アドレス、ブラウザのユーザーエージェント全文、入力した文字、正確な位置、推定した年齢や性別は含まれません。計測が許可された場合、再訪時に同じ画面を表示するため実験バージョンを最大30日間保存し、ランダムなセッション識別子と実験バージョンを新規登録情報に関連付けて、実際に保存・確認されたメールアドレスの件数を比較します。集計レポートにメールアドレスは含めません。Google Analytics 4、Google Ads、Meta ピクセル、Microsoft Clarity のヒートマップも、識別子が設定されている場合は同じルールに従います。サポートチャットと Vercel Web Analytics はページと一緒に読み込まれることがあります。登録と一緒に、任意のページ計測とは別に、大まかな国コードを保存することがあります。そのコードはホスティング側が IP アドレスから得て、そのコードがそのネットワーク由来であることと読み取った時刻も一緒に保存します。その信号を使えない場合、国は不明として保存します。その国コードと一緒に生の IP アドレスは保持しません。",
+    s2NoPayment: "任意の価格予約 — 選んだ場合のみ。Stripe hosted Checkout がカードデータを処理し、今ちょうど USD $3 を請求します。当社のサーバーは、決済の識別子、決済状況、その支払いに適用される予約条件を保存します。カード番号の全体、セキュリティコード、その他のカード情報一式は保存しません。無料のメール登録では決済情報を収集しません。USD $3 の手数料は製品価格に加算され、製品価格から差し引かれません。有料の価格予約は、公開の先着100名に入るかどうかにかかわらず、ローンチ時に製品を USD $149 で購入できることを保証します。USD $149 は、後で購入を選んだときにだけ請求し、自動で請求せず、請求を予定せず、決済を承認しません。登録と一緒に保存する大まかな国コードは、任意のページ計測とは別であり、生の IP アドレスではありません。",
     s3Title: "3. 利用目的",
     s3Intro: "ご提供いただいた情報は次の目的で利用します:",
     s3Item1: "メールアドレスを管理していることを確認する 1 回限りのリンクの送信;",
@@ -1904,16 +1904,16 @@ const ja: FrozenLandingMessages = {
     s3Item4: "フォームとメール配信サービスの不正利用からの保護;",
     s3Item5:
       "ページのどの部分が使われているかを把握し、改善するため（許可が必要な地域では、許可された場合のみ）。",
-    s3Outro: "無関係な目的でお客様の情報を利用することはありません。",
+    s3Outro: "任意の価格予約を選んだ場合、決済の識別子、決済状況、予約条件を、その予約の管理に使います。無関係な目的でお客様の情報を利用することはありません。",
     s4Title: "4. 法的根拠",
     s4Body:
-      "フォームの送信は、運用上の確認メールを依頼する行為です。ウェイトリストへの登録とローンチ情報受け取りへの同意は、確認リンクを使用した時点ではじめて完了します。マーケティング用とページ計測用のクッキーは、EU/EEA、英国、スイスから、または国が判別できない場合、「許可する」を選んだときだけ動きます（同意）。それ以外の地域では、広告の効果を測るという当社の正当な利益に基づいて最初から動き、ページ下部の「クッキー設定」からいつでも止められます。「今はしない」を選んだ場合や、ブラウザの Global Privacy Control 信号がある場合は、どの地域でも動きません。どのルールが適用されるかを記録する短期間の国クッキーと、選んだ言語でページを表示し続けるための言語設定クッキーを保存します。同意はいつでも撤回できます（第 7 条参照）。",
+      "フォームの送信は、運用上の確認メールを依頼する行為です。ウェイトリストへの登録とローンチ情報受け取りへの同意は、確認リンクを使用した時点ではじめて完了します。マーケティング用とページ計測用のクッキーは、EU/EEA、英国、スイスから、または国が判別できない場合、「許可する」を選んだときだけ動きます（同意）。それ以外の地域では、広告の効果を測るという当社の正当な利益に基づいて最初から動き、ページ下部の「クッキー設定」からいつでも止められます。「今はしない」を選んだ場合や、ブラウザの Global Privacy Control 信号がある場合は、どの地域でも動きません。どのルールが適用されるかを記録する短期間の国クッキーと、選んだ言語でページを表示し続けるための言語設定クッキーを保存します。国クッキーに入るのは、ホスティング側が IP アドレスから得た国レベルのコードだけで、生の IP アドレスではありません。同意はいつでも撤回できます（第 7 条参照）。",
     s5Title: "5. 第三者提供と国外移転",
     s5Body:
-      "このページの運営には次の処理者を利用します。ホスティングと Web Analytics に Vercel、確認メールとお知らせメールに Resend、ウェイトリストの記録と、それとは別のページ計測の要約に Notion、そして当社のサポートチャットです。Google と Meta は、そのタグが設定され、お客様の計測がオンになっている場合だけ利用します（第 4 条参照）。SMS 配信事業者は、SMS 通知を選んだ場合だけ利用します。これらの提供者は、米国を含む韓国国外にデータを保存することがあります。サービスに必要なものだけを共有し、個人情報を販売することは決してありません。",
+      "このページの運営には次の処理者を利用します。任意の USD $3 価格予約では、Stripe が Stripe hosted Checkout を提供します。ホスティングと Web Analytics に Vercel、確認メールとお知らせメールに Resend、ウェイトリストの記録と、それとは別のページ計測の要約に Notion、そして当社のサポートチャットです。Google と Meta は、そのタグが設定され、お客様の計測がオンになっている場合だけ利用します（第 4 条参照）。SMS 配信事業者は、SMS 通知を選んだ場合だけ利用します。これらの提供者は、米国を含む韓国国外にデータを保存することがあります。サービスに必要なものだけを共有し、個人情報を販売することは決してありません。",
     s6Title: "6. 保存期間",
     s6Body:
-      "ウェイトリストの情報は、WatchDive のローンチキャンペーンが終了するまで、または削除・配信停止のご依頼があるまで — いずれか早い方まで保持します。ページ計測の要約は最長 12 か月保持したのち削除します。削除のご依頼があれば、該当する記録を遅滞なく削除します。",
+      "ウェイトリストの情報は、WatchDive のローンチキャンペーンが終了するまで、または削除・配信停止のご依頼があるまで — いずれか早い方まで保持します。ページ計測の要約は最長 12 か月保持したのち削除します。削除のご依頼があれば、該当する記録を遅滞なく削除します。任意の予約手数料を支払った場合、その支払いの決済の識別子、決済状況、予約条件は、その予約を管理し、適用される法的・会計上の要件を満たすためだけに保管します。",
     s7Title: "7. お客様の権利",
     s7Intro: "いつでも次のことができます:",
     s7Item1: "当社が保有するご自身の情報の照会;",
@@ -1933,19 +1933,19 @@ const ja: FrozenLandingMessages = {
   },
   terms: {
     metaTitle: "利用規約 — WatchDive",
-    metaDescription: "Diveroid Ltd が運営する WatchDive 事前登録ページの利用規約。",
+    metaDescription: "Diveroid Ltd が運営する WatchDive 事前登録ページの利用規約。任意の USD $3 価格予約を含みます。",
     back: "← ホームに戻る",
     h1: "利用規約 — WatchDive 事前登録",
     effectiveLabel: "発効日:",
-    effectiveDate: "2026 年 7 月 30 日",
+    effectiveDate: "2026 年 10 月 18 日",
     intro:
-      "Diveroid Ltd（「当社」、「DIVEROID」）が運営する WatchDive 事前登録ページへようこそ。このページを利用し登録することで、以下の規約に同意したものとみなされます。",
+      "Diveroid Ltd（「当社」、「DIVEROID」）が運営する WatchDive 事前登録ページへようこそ。このページを利用し、登録し、または任意の価格予約手数料を支払うことで、以下の規約に同意したものとみなされます。",
     s1Title: "1. このページについて",
     s1Body:
-      "このページでは、WatchDive への関心を登録し、今後の Kickstarter キャンペーン情報を受け取れます。ストアではありません。ここでは購入は行われず、支払いも発生しません。",
+      "このページでは、WatchDive への関心を登録し、今後の Kickstarter キャンペーン情報を受け取れます。無料のメール登録は購入ではなく、支払いを受けず、製品の予約でも特定価格の保証でもありません。別に、Stripe hosted Checkout で今ちょうど USD $3 を一度支払うと、任意の価格予約を選べます。この手数料は製品価格に加算され、製品価格から差し引かれません。有料の価格予約は、公開の先着100名に入るかどうかにかかわらず、ローンチ時に製品を USD $149 で購入できることを保証します。USD $149 は、後で購入を選んだときにだけ請求し、自動で請求せず、請求を予定せず、決済を承認しません。USD $3 の手数料と USD $149 の製品価格の合計は、適用される製品の送料と税金の前で USD $152 です。製品の送料または税金がかかる場合は、製品を購入する前に開示します。USD $3 の手数料は返金されません。ただし当社が製品のローンチを中止した場合は、その手数料を返金します。本規約は、適用される法律が制限を許さない権利を制限せず、その権利を放棄するよう求めません。",
     s2Title: "2. 事前公開情報",
     s2Body:
-      "WatchDive はまだ開発中です。ここに表示されるすべての内容 — 機能、互換性、仕様、価格（早割価格を含む）、ローンチ日など — は情報提供のみを目的とし、Kickstarter キャンペーンの前または期間中に変更される可能性があります。登録は製品の予約でも特定価格の保証でもありません。",
+      "WatchDive はまだ開発中です。このページに表示される公開情報 — 機能、互換性、仕様、公開の早割価格、ローンチ日など — は情報提供のみを目的とし、Kickstarter キャンペーンの前または期間中に変更される可能性があります。無料のメール登録は製品の予約でも特定価格の保証でもありません。有料の価格予約は、公開の先着100名に入るかどうかにかかわらず、ローンチ時に製品を USD $149 で購入できることを保証します。",
     s3Title: "3. メールと SMS のお知らせ",
     s3Body:
       "フォームの送信は、確認リンクを含む運用メール 1 通を依頼する行為です。ウェイトリストへの登録と、ローンチおよびマーケティング情報の受け取りへの同意は、そのリンクを使用した時点で完了します。電話番号も入力した場合、その欄の横に記載された任意の SMS 通知に同意したことになります。マーケティングメール内のリンク、または当社への連絡により、いつでも配信を停止できます。データの取り扱いはプライバシーポリシーに記載しています。",
@@ -1957,7 +1957,7 @@ const ja: FrozenLandingMessages = {
     s5Body1:
       "WatchDive は、対応スマートウォッチと組み合わせて使うよう設計されたダイビング補助器具です。発売後も、正式なダイビングトレーニング、資格、バックアップのダイブコンピューターを置き換えるのではなく、補助することを目的としています。常にトレーニングの範囲内で潜り、安全なダイビング慣行に従ってください。",
     s5Body2:
-      "このページは、いかなる種類の保証もなく「現状のまま」提供されます。当社は、このページの利用から生じるいかなる損害についても責任を負いません。",
+      "このページは、いかなる種類の保証もなく「現状のまま」提供されます。当社は、このページの利用から生じるいかなる損害についても責任を負いません。 適用される法律が許さない範囲では、この制限は適用されません。本規約は、適用される法律があなたに残す権利を放棄するよう求めません。",
     s6Title: "6. 準拠法",
     s6Body: "本規約は大韓民国の法律に準拠します。",
     s7Title: "7. お問い合わせ",
@@ -2350,15 +2350,15 @@ const es: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Política de privacidad — WatchDive",
     metaDescription:
-      "Cómo trata Diveroid Ltd tu información cuando te registras para recibir novedades del prelanzamiento de WatchDive.",
+      "Cómo trata Diveroid Ltd tu información cuando te registras, eliges la reserva de precio opcional de USD $3 y la medición opcional de la página de prelanzamiento de WatchDive.",
     back: "← Volver al inicio",
     h1: "Política de privacidad — Prelanzamiento de WatchDive",
     effectiveLabel: "Fecha de entrada en vigor:",
-    effectiveDate: "8 de octubre de 2026",
+    effectiveDate: "18 de octubre de 2026",
     intro1:
       'Esta Política de privacidad explica cómo Diveroid Ltd ("nosotros", "DIVEROID") trata tu información cuando te registras en la página de prelanzamiento de WatchDive para recibir novedades sobre nuestra próxima campaña de Kickstarter.',
     intro2:
-      "Esta página sirve únicamente para registrar interés en el lanzamiento. No es una tienda y no procesa ningún pago.",
+      "Esta página recoge el interés en el lanzamiento. Un registro gratuito por email no es una compra y no cobra ningún pago. Si eliges la reserva de precio opcional, Stripe hosted Checkout cobra exactamente USD $3 ahora. La comisión se suma al precio del producto y no se deduce de él. La reserva de precio de pago garantiza que puedes comprar el producto por USD $149 en el lanzamiento, estés o no entre los 100 primeros públicos. Cobramos USD $149 más adelante solo cuando eliges comprar, y no lo cobramos automáticamente. La comisión y el precio del producto juntos son USD $152 antes de cualquier envío o impuesto del producto que se aplique. Si se aplican envío o impuestos del producto, los indicamos antes de que compres el producto. Las condiciones de pago de la comisión están en los Términos de uso.",
     s1Title: "1. Quiénes somos",
     s1Company: "Empresa: Diveroid Ltd (marca: DIVEROID)",
     s1Rep: "Representante: Jay Kim",
@@ -2373,8 +2373,8 @@ const es: FrozenLandingMessages = {
     s2Security:
       "Señales de seguridad — indicadores de abuso y un bucket de red cifrado y de corta vida usado en la memoria del servidor para limitar solicitudes automatizadas o repetidas. No conservamos la dirección IP en bruto, el bucket de red ni el user-agent completo del navegador en el registro del lead.",
     s2Usage:
-      "Medición de la página — tipo de dispositivo (teléfono, tableta u ordenador), tamaño de la ventana del navegador, idioma de la página, zona horaria, código de país, tiempo en la página, hasta dónde te desplazas, cuánto tiempo estuvo cada sección en pantalla y clics con nombre, como el botón de registro, con su posición aproximada en la pantalla. También registra el dominio del sitio desde el que llegas y las etiquetas de campaña del enlace (source, medium y campaign), agrupados bajo un identificador de sesión aleatorio que solo se conserva en esa pestaña del navegador. En la UE/EEE, el Reino Unido y Suiza, o cuando no podemos saber tu país, solo funciona después de que elijas Permitir; en el resto funciona por defecto y puedes desactivarla desde Cookies, al pie de la página. Este registro no incluye tu email, tu número de teléfono, tu dirección IP, el agente de usuario completo del navegador, el texto que escribes, tu ubicación precisa ni una edad o un género inferidos. Cuando la medición está permitida, guardamos la versión del experimento hasta 30 días para mostrarte la misma versión al volver y vinculamos el identificador de sesión y la variante al nuevo registro, para comparar correos guardados y confirmados. El informe agregado no incluye direcciones de correo. Cuando sus identificadores están configurados, Google Analytics 4, Google Ads, el píxel de Meta y los mapas de calor de Microsoft Clarity siguen la misma regla. El chat de soporte y Vercel Web Analytics pueden cargarse con la página.",
-    s2NoPayment: "No recopilamos datos de pago en esta página.",
+      "Medición de la página — tipo de dispositivo (teléfono, tableta u ordenador), tamaño de la ventana del navegador, idioma de la página, zona horaria, un código de país aproximado derivado de la dirección IP por la red de alojamiento, tiempo en la página, hasta dónde te desplazas, cuánto tiempo estuvo cada sección en pantalla y clics con nombre, como el botón de registro, con su posición aproximada en la pantalla. También registra el dominio del sitio desde el que llegas y las etiquetas de campaña del enlace (source, medium y campaign), agrupados bajo un identificador de sesión aleatorio que solo se conserva en esa pestaña del navegador. En la UE/EEE, el Reino Unido y Suiza, o cuando no podemos saber tu país, solo funciona después de que elijas Permitir; en el resto funciona por defecto y puedes desactivarla desde Cookies, al pie de la página. Este registro no incluye tu email, tu número de teléfono, tu dirección IP, el agente de usuario completo del navegador, el texto que escribes, tu ubicación precisa ni una edad o un género inferidos. Cuando la medición está permitida, guardamos la versión del experimento hasta 30 días para mostrarte la misma versión al volver y vinculamos el identificador de sesión y la variante al nuevo registro, para comparar correos guardados y confirmados. El informe agregado no incluye direcciones de correo. Cuando sus identificadores están configurados, Google Analytics 4, Google Ads, el píxel de Meta y los mapas de calor de Microsoft Clarity siguen la misma regla. El chat de soporte y Vercel Web Analytics pueden cargarse con la página. Con tu registro puede guardarse un código de país aproximado, por separado de la medición opcional de la página. Lo deriva la red de alojamiento a partir de la dirección IP, junto con el hecho de que el código proviene de esa red y el momento en que se leyó. Si esa señal no se puede usar, el país se guarda como desconocido. No conservamos la dirección IP en bruto junto con ese código de país.",
+    s2NoPayment: "Reserva de precio opcional — solo si la eliges. Stripe hosted Checkout procesa los datos de tu tarjeta y cobra exactamente USD $3 ahora. Nuestro servidor guarda identificadores de pago, el estado del pago y las condiciones de la reserva que se aplican a ese pago. No guardamos el número completo de la tarjeta, el código de seguridad ni el resto de los datos completos de la tarjeta. Un registro gratuito por email no recoge datos de pago. La comisión de USD $3 se suma al precio del producto y no se deduce de él. La reserva de precio de pago garantiza que puedes comprar el producto por USD $149 en el lanzamiento, estés o no entre los 100 primeros públicos. Cobramos USD $149 más adelante solo cuando eliges comprar, y no lo cobramos, programamos ni autorizamos automáticamente. Un código de país aproximado guardado con un registro es distinto de la medición opcional de la página y no es una dirección IP en bruto.",
     s3Title: "3. Para qué la usamos",
     s3Intro: "Usamos la información que proporcionas para:",
     s3Item1: "enviar un enlace de un solo uso que confirme que controlas la dirección de email;",
@@ -2383,16 +2383,16 @@ const es: FrozenLandingMessages = {
     s3Item4: "proteger el formulario y nuestro servicio de envío de email frente a abusos;",
     s3Item5:
       "ver qué partes de la página se usan para poder mejorarla (después de que permitas la medición, donde se requiere Permitir).",
-    s3Outro: "No usaremos tu información para fines no relacionados.",
+    s3Outro: "Si eliges la reserva de precio opcional, usamos los identificadores de pago, el estado del pago y las condiciones de la reserva para administrar esa reserva. No usaremos tu información para fines no relacionados.",
     s4Title: "4. Base legal",
     s4Body:
-      "Enviar el formulario solicita un email operativo de confirmación. Tu registro en la lista de espera y tu consentimiento para recibir novedades del lanzamiento se completan solo después de que uses el enlace de confirmación. Cookies de marketing y de medición: en la UE/EEE, el Reino Unido y Suiza, o cuando no podemos saber tu país, solo funcionan después de que elijas Permitir (consentimiento). En el resto funcionan por defecto, sobre la base de nuestro interés legítimo en medir nuestra publicidad, y puedes desactivarlas en cualquier momento desde Cookies, al pie de la página. Ahora no, o una señal Global Privacy Control del navegador, las mantiene desactivadas en todas partes. Una cookie de país de corta duración registra cuál de estas reglas se aplica, y una cookie de idioma mantiene la página en el idioma que elegiste. Puedes retirar tu consentimiento en cualquier momento (ver Sección 7).",
+      "Enviar el formulario solicita un email operativo de confirmación. Tu registro en la lista de espera y tu consentimiento para recibir novedades del lanzamiento se completan solo después de que uses el enlace de confirmación. Cookies de marketing y de medición: en la UE/EEE, el Reino Unido y Suiza, o cuando no podemos saber tu país, solo funcionan después de que elijas Permitir (consentimiento). En el resto funcionan por defecto, sobre la base de nuestro interés legítimo en medir nuestra publicidad, y puedes desactivarlas en cualquier momento desde Cookies, al pie de la página. Ahora no, o una señal Global Privacy Control del navegador, las mantiene desactivadas en todas partes. Una cookie de país de corta duración registra cuál de estas reglas se aplica. Esa cookie guarda un código de país aproximado derivado de la dirección IP por la red de alojamiento, no la dirección IP en bruto. Una cookie de idioma mantiene la página en el idioma que elegiste. Puedes retirar tu consentimiento en cualquier momento (ver Sección 7).",
     s5Title: "5. Compartición y transferencia internacional",
     s5Body:
-      "Usamos encargados del tratamiento para operar esta página: Vercel para el alojamiento y Web Analytics, Resend para los emails de confirmación y de novedades, Notion para los registros de la lista de espera y, por separado, los resúmenes de medición de la página, nuestro propio chat de soporte, y Google y Meta solo cuando esas etiquetas están activadas y la medición está activa para ti (ver Sección 4). Solo usamos un proveedor de SMS si eliges recibir un aviso por mensaje de texto. Estos proveedores pueden almacenar datos fuera de Corea, incluido Estados Unidos. Solo compartimos lo que cada servicio necesita y nunca vendemos tu información personal.",
+      "Usamos encargados del tratamiento para operar esta página: Stripe, que ofrece Stripe hosted Checkout para la reserva de precio opcional de USD $3, Vercel para el alojamiento y Web Analytics, Resend para los emails de confirmación y de novedades, Notion para los registros de la lista de espera y, por separado, los resúmenes de medición de la página, nuestro propio chat de soporte, y Google y Meta solo cuando esas etiquetas están activadas y la medición está activa para ti (ver Sección 4). Solo usamos un proveedor de SMS si eliges recibir un aviso por mensaje de texto. Estos proveedores pueden almacenar datos fuera de Corea, incluido Estados Unidos. Solo compartimos lo que cada servicio necesita y nunca vendemos tu información personal.",
     s6Title: "6. Cuánto tiempo la conservamos",
     s6Body:
-      "Conservamos los datos de la lista de espera hasta que termine la campaña de lanzamiento de WatchDive o hasta que nos pidas eliminarlos o darte de baja, lo que ocurra primero. Los resúmenes de medición de la página se conservan hasta 12 meses y después se eliminan. Tras una solicitud de eliminación, borramos los registros correspondientes sin demora indebida.",
+      "Conservamos los datos de la lista de espera hasta que termine la campaña de lanzamiento de WatchDive o hasta que nos pidas eliminarlos o darte de baja, lo que ocurra primero. Los resúmenes de medición de la página se conservan hasta 12 meses y después se eliminan. Tras una solicitud de eliminación, borramos los registros correspondientes sin demora indebida. Si pagas la comisión opcional de reserva, conservamos los identificadores de pago, el estado del pago y las condiciones de la reserva de ese pago solo para administrar la reserva y para cumplir los requisitos legales y contables aplicables.",
     s7Title: "7. Tus derechos",
     s7Intro: "Puedes en cualquier momento:",
     s7Item1: "preguntar qué información tenemos sobre ti;",
@@ -2414,19 +2414,19 @@ const es: FrozenLandingMessages = {
   terms: {
     metaTitle: "Términos de uso — WatchDive",
     metaDescription:
-      "Términos de uso de la página de prelanzamiento de WatchDive, operada por Diveroid Ltd",
+      "Términos de uso de la página de prelanzamiento de WatchDive, operada por Diveroid Ltd, incluida la reserva de precio opcional de USD $3.",
     back: "← Volver al inicio",
     h1: "Términos de uso — Prelanzamiento de WatchDive",
     effectiveLabel: "Fecha de entrada en vigor:",
-    effectiveDate: "30 de julio de 2026",
+    effectiveDate: "18 de octubre de 2026",
     intro:
-      'Bienvenido a la página de prelanzamiento de WatchDive, operada por Diveroid Ltd ("nosotros", "DIVEROID"). Al usar esta página y registrarte, aceptas los siguientes términos.',
+      'Bienvenido a la página de prelanzamiento de WatchDive, operada por Diveroid Ltd ("nosotros", "DIVEROID"). Al usar esta página, al registrarte y, si la eliges, al pagar la comisión opcional de reserva de precio, aceptas los siguientes términos.',
     s1Title: "1. Qué es esta página",
     s1Body:
-      "Esta página te permite registrar tu interés en WatchDive y recibir novedades sobre nuestra próxima campaña de Kickstarter. No es una tienda. Aquí no se realiza ninguna compra ni se cobra ningún pago.",
+      "Esta página te permite registrar tu interés en WatchDive y recibir novedades sobre nuestra próxima campaña de Kickstarter. Un registro gratuito por email no es una compra, no cobra ningún pago, no reserva una unidad y no garantiza un precio. Por separado puedes elegir una reserva de precio opcional pagando exactamente USD $3 ahora mediante Stripe hosted Checkout. Esa comisión se suma al precio del producto y no se deduce de él. La reserva de precio de pago garantiza que puedes comprar el producto por USD $149 en el lanzamiento, estés o no entre los 100 primeros públicos. Cobramos USD $149 más adelante solo cuando eliges comprar, y no lo cobramos, programamos ni autorizamos automáticamente. La comisión de USD $3 y el precio del producto de USD $149 juntos son USD $152 antes de cualquier envío o impuesto del producto que se aplique. Si se aplican envío o impuestos del producto, los indicamos antes de que compres el producto. La comisión de USD $3 no es reembolsable, salvo si cancelamos el lanzamiento del producto, en cuyo caso devolvemos la comisión. Nada en estos términos limita un derecho que la ley aplicable no nos permite limitar, y estos términos no te exigen renunciar a ese derecho.",
     s2Title: "2. Información de prelanzamiento",
     s2Body:
-      "WatchDive sigue en desarrollo. Todos los detalles mostrados aquí — incluidas funciones, compatibilidad, especificaciones, precios (como el precio early bird) y la fecha de lanzamiento — se ofrecen solo a título informativo y pueden cambiar antes o durante la campaña de Kickstarter. Registrarse no reserva una unidad ni garantiza un precio concreto.",
+      "WatchDive sigue en desarrollo. Los datos públicos mostrados en esta página — incluidas funciones, compatibilidad, especificaciones, el precio early bird público y la fecha de lanzamiento — se ofrecen solo a título informativo y pueden cambiar antes o durante la campaña de Kickstarter. Un registro gratuito por email no reserva una unidad ni garantiza un precio concreto. La reserva de precio de pago garantiza que puedes comprar el producto por USD $149 en el lanzamiento, estés o no entre los 100 primeros públicos.",
     s3Title: "3. Novedades por email y SMS",
     s3Body:
       "Enviar el formulario solicita un único email operativo con un enlace de confirmación. Tu registro en la lista de espera y tu aceptación de recibir novedades de lanzamiento y marketing se completan solo cuando usas ese enlace. Si además proporcionas un número de teléfono, aceptas el aviso opcional por SMS descrito junto a ese campo. Puedes darte de baja del marketing en cualquier momento con el enlace de un email de marketing o contactándonos. Cómo tratamos tus datos se describe en nuestra Política de privacidad.",
@@ -2438,7 +2438,7 @@ const es: FrozenLandingMessages = {
     s5Body1:
       "WatchDive es una ayuda al buceo diseñada para funcionar con un smartwatch compatible. Cuando se lance, está pensado para apoyar — no reemplazar — la formación de buceo adecuada, la certificación y un ordenador de buceo de respaldo. Bucea siempre dentro de tu formación y sigue prácticas de buceo seguras.",
     s5Body2:
-      'Esta página se ofrece "tal cual", sin garantías de ningún tipo. No somos responsables de ningún daño derivado de tu uso de esta página.',
+      'Esta página se ofrece "tal cual", sin garantías de ningún tipo. No somos responsables de ningún daño derivado de tu uso de esta página. Este límite no se aplica donde la ley aplicable no lo permite, y estos términos no te exigen renunciar a un derecho que la ley aplicable te conserva.',
     s6Title: "6. Ley aplicable",
     s6Body: "Estos términos se rigen por las leyes de la República de Corea.",
     s7Title: "7. Contacto",
@@ -2832,15 +2832,15 @@ const fr: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Politique de confidentialité — WatchDive",
     metaDescription:
-      "Comment Diveroid Ltd traite vos informations lorsque vous vous inscrivez aux actualités de prélancement de WatchDive.",
+      "Comment Diveroid Ltd traite l’inscription, la réservation de prix facultative de USD $3 et la mesure facultative de page sur le prélancement WatchDive.",
     back: "← Retour à l’accueil",
     h1: "Politique de confidentialité — Prélancement WatchDive",
     effectiveLabel: "Date d’entrée en vigueur :",
-    effectiveDate: "8 octobre 2026",
+    effectiveDate: "18 octobre 2026",
     intro1:
       "La présente Politique de confidentialité explique comment Diveroid Ltd (« nous », « DIVEROID ») traite vos informations lorsque vous vous inscrivez sur la page de prélancement de WatchDive pour recevoir des nouvelles de notre prochaine campagne Kickstarter.",
     intro2:
-      "Cette page sert uniquement à recueillir l’intérêt pour le lancement. Ce n’est pas une boutique et aucun paiement n’y est traité.",
+      "Cette page recueille l’intérêt pour le lancement. Une inscription gratuite par e-mail n’est pas un achat et n’encaisse pas de paiement. Si vous choisissez la réservation de prix facultative, Stripe hosted Checkout prélève exactement USD $3 maintenant. Les frais s’ajoutent au prix du produit et le montant n’est pas déduit du prix du produit. La réservation de prix payée garantit que vous pouvez acheter le produit pour USD $149 au lancement, que vous figuriez ou non parmi les 100 premiers annoncés publiquement. Nous facturons USD $149 plus tard seulement lorsque vous choisissez d’acheter, et nous ne le prélevons pas automatiquement. Les frais et le prix du produit font ensemble USD $152 avant tout frais de livraison ou taxe du produit qui s’applique. Si des frais de livraison ou des taxes du produit s’appliquent, nous les indiquons avant que vous achetiez le produit. Les conditions de paiement des frais figurent dans les Conditions d’utilisation.",
     s1Title: "1. Qui nous sommes",
     s1Company: "Société : Diveroid Ltd (marque : DIVEROID)",
     s1Rep: "Représentant : Jay Kim",
@@ -2855,8 +2855,8 @@ const fr: FrozenLandingMessages = {
     s2Security:
       "Signaux de sécurité — indicateurs d’abus et compartiment réseau chiffré à courte durée de vie, utilisés en mémoire serveur pour limiter les requêtes automatisées ou répétées. Nous ne conservons ni l’adresse IP brute, ni le compartiment réseau, ni le user-agent complet du navigateur dans la fiche du prospect.",
     s2Usage:
-      "Mesure de la page — type d’appareil (téléphone, tablette ou ordinateur), taille de la fenêtre du navigateur, langue de la page, fuseau horaire, code pays, temps passé sur la page, profondeur de défilement, durée d’affichage de chaque section à l’écran et clics nommés, comme le bouton d’inscription, avec leur position approximative à l’écran. Elle enregistre aussi le domaine du site d’origine et les balises de campagne du lien (source, medium et campaign), regroupés sous un identifiant de session aléatoire conservé uniquement dans cet onglet du navigateur. Dans l’UE/EEE, au Royaume-Uni et en Suisse, ou lorsque nous ne pouvons pas déterminer votre pays, elle ne fonctionne qu’après Autoriser ; ailleurs, elle est active par défaut et vous pouvez la désactiver via Cookies, en bas de la page. Cet enregistrement ne contient ni votre adresse e-mail, ni votre numéro de téléphone, ni votre adresse IP, ni l’agent utilisateur complet du navigateur, ni le texte saisi, ni votre position précise, ni un âge ou un genre déduit. Lorsque la mesure est autorisée, nous conservons la version de l’expérience pendant 30 jours maximum pour vos prochaines visites et relions l’identifiant de session et la variante à une nouvelle inscription, afin de comparer les e-mails enregistrés et confirmés. Le rapport agrégé ne contient aucune adresse e-mail. Lorsque leurs identifiants sont configurés, Google Analytics 4, Google Ads, le pixel Meta et les cartes de chaleur Microsoft Clarity suivent la même règle. Le chat d’assistance et Vercel Web Analytics peuvent se charger avec la page.",
-    s2NoPayment: "Nous ne collectons aucune donnée de paiement sur cette page.",
+      "Mesure de la page — type d’appareil (téléphone, tablette ou ordinateur), taille de la fenêtre du navigateur, langue de la page, fuseau horaire, un code pays approximatif déduit de l’adresse IP par le réseau d’hébergement, temps passé sur la page, profondeur de défilement, durée d’affichage de chaque section à l’écran et clics nommés, comme le bouton d’inscription, avec leur position approximative à l’écran. Elle enregistre aussi le domaine du site d’origine et les balises de campagne du lien (source, medium et campaign), regroupés sous un identifiant de session aléatoire conservé uniquement dans cet onglet du navigateur. Dans l’UE/EEE, au Royaume-Uni et en Suisse, ou lorsque nous ne pouvons pas déterminer votre pays, elle ne fonctionne qu’après Autoriser ; ailleurs, elle est active par défaut et vous pouvez la désactiver via Cookies, en bas de la page. Cet enregistrement ne contient ni votre adresse e-mail, ni votre numéro de téléphone, ni votre adresse IP, ni l’agent utilisateur complet du navigateur, ni le texte saisi, ni votre position précise, ni un âge ou un genre déduit. Lorsque la mesure est autorisée, nous conservons la version de l’expérience pendant 30 jours maximum pour vos prochaines visites et relions l’identifiant de session et la variante à une nouvelle inscription, afin de comparer les e-mails enregistrés et confirmés. Le rapport agrégé ne contient aucune adresse e-mail. Lorsque leurs identifiants sont configurés, Google Analytics 4, Google Ads, le pixel Meta et les cartes de chaleur Microsoft Clarity suivent la même règle. Le chat d’assistance et Vercel Web Analytics peuvent se charger avec la page. Un code pays approximatif peut être enregistré avec votre inscription, séparément de la mesure facultative de la page. Le réseau d’hébergement le déduit de l’adresse IP, avec le fait que le code provient de ce réseau et l’heure de lecture. Si ce signal ne peut pas être utilisé, le pays est enregistré comme inconnu. Nous ne conservons pas l’adresse IP brute avec ce code pays.",
+    s2NoPayment: "Réservation de prix facultative — seulement si vous la choisissez. Stripe hosted Checkout traite les données de votre carte et prélève exactement USD $3 maintenant. Notre serveur conserve les identifiants de paiement, le statut du paiement et les conditions de la réservation qui s’appliquent à ce paiement. Nous ne stockons pas le numéro complet de la carte, le cryptogramme ni les autres données complètes de carte. Une inscription gratuite par e-mail ne collecte pas de données de paiement. Les frais de USD $3 s’ajoutent au prix du produit et le montant n’est pas déduit du prix du produit. La réservation de prix payée garantit que vous pouvez acheter le produit pour USD $149 au lancement, que vous figuriez ou non parmi les 100 premiers annoncés publiquement. Nous facturons USD $149 plus tard seulement lorsque vous choisissez d’acheter, et nous ne le prélevons pas, ne le programmons pas et ne l’autorisons pas automatiquement. Un code pays approximatif enregistré avec une inscription est distinct de la mesure facultative de la page et n’est pas une adresse IP brute.",
     s3Title: "3. Pourquoi nous les utilisons",
     s3Intro: "Nous utilisons les informations que vous fournissez pour :",
     s3Item1: "envoyer un lien à usage unique confirmant que vous contrôlez l’adresse e-mail ;",
@@ -2865,16 +2865,16 @@ const fr: FrozenLandingMessages = {
     s3Item4: "protéger le formulaire et notre service d’envoi d’e-mails contre les abus ;",
     s3Item5:
       "comprendre quelles parties de la page sont utilisées afin de l’améliorer (après votre autorisation, là où Autoriser est requis).",
-    s3Outro: "Nous n’utiliserons pas vos informations à des fins sans rapport.",
+    s3Outro: "Si vous choisissez la réservation de prix facultative, nous utilisons les identifiants de paiement, le statut du paiement et les conditions de la réservation pour gérer cette réservation. Nous n’utiliserons pas vos informations à des fins sans rapport.",
     s4Title: "4. Base légale",
     s4Body:
-      "L’envoi du formulaire demande un e-mail opérationnel de confirmation. Votre inscription sur la liste d’attente et votre consentement aux actualités de lancement ne sont finalisés qu’après utilisation du lien de confirmation. Cookies marketing et de mesure : dans l’UE/EEE, au Royaume-Uni et en Suisse, ou lorsque nous ne pouvons pas déterminer votre pays, ils ne fonctionnent qu’après Autoriser (consentement). Ailleurs, ils sont actifs par défaut, sur la base de notre intérêt légitime à mesurer notre publicité, et vous pouvez vous y opposer à tout moment via Cookies, en bas de la page. Pas maintenant, ou un signal Global Privacy Control du navigateur, les maintient désactivés partout. Un cookie de pays de courte durée indique laquelle de ces règles s’applique, et un cookie de langue conserve la page dans la langue choisie. Vous pouvez retirer votre consentement à tout moment (voir Section 7).",
+      "L’envoi du formulaire demande un e-mail opérationnel de confirmation. Votre inscription sur la liste d’attente et votre consentement aux actualités de lancement ne sont finalisés qu’après utilisation du lien de confirmation. Cookies marketing et de mesure : dans l’UE/EEE, au Royaume-Uni et en Suisse, ou lorsque nous ne pouvons pas déterminer votre pays, ils ne fonctionnent qu’après Autoriser (consentement). Ailleurs, ils sont actifs par défaut, sur la base de notre intérêt légitime à mesurer notre publicité, et vous pouvez vous y opposer à tout moment via Cookies, en bas de la page. Pas maintenant, ou un signal Global Privacy Control du navigateur, les maintient désactivés partout. Un cookie de pays de courte durée indique laquelle de ces règles s’applique. Ce cookie contient un code pays approximatif déduit de l’adresse IP par le réseau d’hébergement, et non l’adresse IP brute. Un cookie de langue conserve la page dans la langue choisie. Vous pouvez retirer votre consentement à tout moment (voir Section 7).",
     s5Title: "5. Partage et transfert international",
     s5Body:
-      "Nous faisons appel à des sous-traitants pour exploiter cette page : Vercel pour l’hébergement et Web Analytics, Resend pour les e-mails de confirmation et d’actualités, Notion pour les inscriptions à la liste d’attente et, séparément, les résumés de mesure de la page, notre propre chat d’assistance, ainsi que Google et Meta uniquement lorsque ces balises sont activées et que la mesure est active pour vous (voir Section 4). Un prestataire SMS n’est utilisé que si vous choisissez une alerte par SMS. Ces prestataires peuvent stocker des données hors de Corée, y compris aux États-Unis. Nous ne partageons que ce dont chaque service a besoin et ne vendons jamais vos informations personnelles.",
+      "Nous faisons appel à des sous-traitants pour exploiter cette page : Stripe, qui fournit Stripe hosted Checkout pour la réservation de prix facultative de USD $3, Vercel pour l’hébergement et Web Analytics, Resend pour les e-mails de confirmation et d’actualités, Notion pour les inscriptions à la liste d’attente et, séparément, les résumés de mesure de la page, notre propre chat d’assistance, ainsi que Google et Meta uniquement lorsque ces balises sont activées et que la mesure est active pour vous (voir Section 4). Un prestataire SMS n’est utilisé que si vous choisissez une alerte par SMS. Ces prestataires peuvent stocker des données hors de Corée, y compris aux États-Unis. Nous ne partageons que ce dont chaque service a besoin et ne vendons jamais vos informations personnelles.",
     s6Title: "6. Durée de conservation",
     s6Body:
-      "Nous conservons les informations de la liste d’attente jusqu’à la fin de la campagne de lancement de WatchDive, ou jusqu’à ce que vous demandiez leur suppression ou votre désinscription — au premier des deux termes. Les résumés de mesure de la page sont conservés 12 mois au maximum, puis supprimés. Après une demande de suppression, nous effaçons les enregistrements concernés sans retard injustifié.",
+      "Nous conservons les informations de la liste d’attente jusqu’à la fin de la campagne de lancement de WatchDive, ou jusqu’à ce que vous demandiez leur suppression ou votre désinscription — au premier des deux termes. Les résumés de mesure de la page sont conservés 12 mois au maximum, puis supprimés. Après une demande de suppression, nous effaçons les enregistrements concernés sans retard injustifié. Si vous payez les frais facultatifs de réservation, nous conservons les identifiants de paiement, le statut du paiement et les conditions de la réservation de ce paiement uniquement pour gérer la réservation et pour respecter les obligations légales et comptables applicables.",
     s7Title: "7. Vos droits",
     s7Intro: "Vous pouvez à tout moment :",
     s7Item1: "demander quelles informations nous détenons à votre sujet ;",
@@ -2896,19 +2896,19 @@ const fr: FrozenLandingMessages = {
   terms: {
     metaTitle: "Conditions d’utilisation — WatchDive",
     metaDescription:
-      "Conditions d’utilisation de la page de prélancement WatchDive, exploitée par Diveroid Ltd",
+      "Conditions d’utilisation de la page de prélancement WatchDive, exploitée par Diveroid Ltd, y compris la réservation de prix facultative de USD $3.",
     back: "← Retour à l’accueil",
     h1: "Conditions d’utilisation — Prélancement WatchDive",
     effectiveLabel: "Date d’entrée en vigueur :",
-    effectiveDate: "30 juillet 2026",
+    effectiveDate: "18 octobre 2026",
     intro:
-      "Bienvenue sur la page de prélancement de WatchDive, exploitée par Diveroid Ltd (« nous », « DIVEROID »). En utilisant cette page et en vous inscrivant, vous acceptez les conditions suivantes.",
+      "Bienvenue sur la page de prélancement de WatchDive, exploitée par Diveroid Ltd (« nous », « DIVEROID »). En utilisant cette page, en vous inscrivant et, si vous la choisissez, en payant les frais facultatifs de réservation de prix, vous acceptez les conditions suivantes.",
     s1Title: "1. Ce qu’est cette page",
     s1Body:
-      "Cette page vous permet d’enregistrer votre intérêt pour WatchDive et de recevoir des nouvelles de notre prochaine campagne Kickstarter. Ce n’est pas une boutique. Aucun achat n’y est effectué et aucun paiement n’y est encaissé.",
+      "Cette page vous permet d’enregistrer votre intérêt pour WatchDive et de recevoir des nouvelles de notre prochaine campagne Kickstarter. Une inscription gratuite par e-mail n’est pas un achat, n’encaisse pas de paiement, ne réserve pas d’unité et ne garantit aucun prix. Vous pouvez séparément choisir une réservation de prix facultative en payant exactement USD $3 maintenant via Stripe hosted Checkout. Ces frais s’ajoutent au prix du produit et le montant n’est pas déduit du prix du produit. La réservation de prix payée garantit que vous pouvez acheter le produit pour USD $149 au lancement, que vous figuriez ou non parmi les 100 premiers annoncés publiquement. Nous facturons USD $149 plus tard seulement lorsque vous choisissez d’acheter, et nous ne le prélevons pas, ne le programmons pas et ne l’autorisons pas automatiquement. Les frais de USD $3 et le prix du produit de USD $149 font ensemble USD $152 avant tout frais de livraison ou taxe du produit qui s’applique. Si des frais de livraison ou des taxes du produit s’appliquent, nous les indiquons avant que vous achetiez le produit. Les frais de USD $3 ne sont pas remboursables, sauf si nous annulons le lancement du produit, auquel cas nous remboursons les frais. Rien dans ces conditions ne limite un droit que le droit applicable ne nous permet pas de limiter, et ces conditions ne vous demandent pas de renoncer à un tel droit.",
     s2Title: "2. Informations de prélancement",
     s2Body:
-      "WatchDive est encore en développement. Tous les détails présentés ici — y compris fonctionnalités, compatibilité, spécifications, prix (comme le tarif early bird) et date de lancement — sont fournis à titre informatif uniquement et peuvent changer avant ou pendant la campagne Kickstarter. L’inscription ne réserve pas d’unité et ne garantit aucun prix.",
+      "WatchDive est encore en développement. Les informations publiques présentées ici — y compris fonctionnalités, compatibilité, spécifications, le tarif early bird public et la date de lancement — sont fournies à titre informatif uniquement et peuvent changer avant ou pendant la campagne Kickstarter. L’inscription gratuite par e-mail ne réserve pas d’unité et ne garantit aucun prix. La réservation de prix payée garantit que vous pouvez acheter le produit pour USD $149 au lancement, que vous figuriez ou non parmi les 100 premiers annoncés publiquement.",
     s3Title: "3. Actualités par e-mail et SMS",
     s3Body:
       "L’envoi du formulaire demande un unique e-mail opérationnel contenant un lien de confirmation. Votre inscription sur la liste d’attente et votre accord pour recevoir les actualités de lancement et marketing ne sont finalisés que lorsque vous utilisez ce lien. Si vous fournissez aussi un numéro de téléphone, vous acceptez la notification SMS facultative décrite à côté de ce champ. Vous pouvez vous désinscrire du marketing à tout moment via le lien d’un e-mail marketing ou en nous contactant. Le traitement de vos données est décrit dans notre Politique de confidentialité.",
@@ -2920,7 +2920,7 @@ const fr: FrozenLandingMessages = {
     s5Body1:
       "WatchDive est une aide à la plongée conçue pour fonctionner avec une montre connectée compatible. À sa sortie, il est destiné à accompagner — et non remplacer — une formation de plongée adéquate, la certification et un ordinateur de plongée de secours. Plongez toujours dans les limites de votre formation et respectez les pratiques de plongée sûres.",
     s5Body2:
-      "Cette page est fournie « en l’état », sans garantie d’aucune sorte. Nous ne sommes pas responsables des dommages résultant de votre utilisation de cette page.",
+      "Cette page est fournie « en l’état », sans garantie d’aucune sorte. Nous ne sommes pas responsables des dommages résultant de votre utilisation de cette page. Cette limite ne s’applique pas là où la loi applicable ne le permet pas, et ces conditions ne vous demandent pas de renoncer à un droit que la loi applicable vous conserve.",
     s6Title: "6. Droit applicable",
     s6Body: "Les présentes conditions sont régies par le droit de la République de Corée.",
     s7Title: "7. Contact",
@@ -3312,15 +3312,15 @@ const de: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Datenschutzerklärung — WatchDive",
     metaDescription:
-      "Wie Diveroid Ltd deine Daten behandelt, wenn du dich für WatchDive-Vorstart-Updates anmeldest.",
+      "Wie Diveroid Ltd deine Daten behandelt, wenn du dich anmeldest, die optionale Preisreservierung von USD $3 wählst und die optionale Seitenmessung der WatchDive-Vorstart-Seite nutzt.",
     back: "← Zur Startseite",
     h1: "Datenschutzerklärung — WatchDive Vorstart",
     effectiveLabel: "Gültig ab:",
-    effectiveDate: "8. Oktober 2026",
+    effectiveDate: "18. Oktober 2026",
     intro1:
       "Diese Datenschutzerklärung erläutert, wie Diveroid Ltd („wir“, „uns“, „DIVEROID“) deine Daten behandelt, wenn du dich auf der WatchDive-Vorstart-Seite anmeldest, um Updates zu unserer kommenden Kickstarter-Kampagne zu erhalten.",
     intro2:
-      "Diese Seite dient ausschließlich der Erfassung von Start-Interesse. Sie ist kein Shop und verarbeitet keine Zahlungen.",
+      "Diese Seite erfasst Interesse am Start. Eine kostenlose E-Mail-Anmeldung ist kein Kauf und nimmt keine Zahlung entgegen. Wenn du die optionale Preisreservierung wählst, berechnet Stripe hosted Checkout jetzt genau USD $3. Die Gebühr kommt zum Produktpreis hinzu und wird nicht vom Produktpreis abgezogen. Eine bezahlte Preisreservierung garantiert, dass du das Produkt zum Start für USD $149 kaufen kannst, ob du zu den öffentlichen ersten 100 gehörst oder nicht. USD $149 berechnen wir später nur, wenn du den Kauf wählst, und wir belasten ihn nicht automatisch. Die Gebühr und der Produktpreis sind zusammen USD $152 vor anwendbarem Produktversand oder anwendbarer Produktsteuer. Wenn Produktversand oder Produktsteuer anfällt, nennen wir das, bevor du das Produkt kaufst. Die Zahlungsbedingungen der Gebühr stehen in den Nutzungsbedingungen.",
     s1Title: "1. Wer wir sind",
     s1Company: "Unternehmen: Diveroid Ltd (Marke: DIVEROID)",
     s1Rep: "Vertreter: Jay Kim",
@@ -3334,8 +3334,8 @@ const de: FrozenLandingMessages = {
     s2Security:
       "Sicherheitssignale — Missbrauchs-Flags und ein kurzlebiger, verschlüsselter Netzwerk-Bucket im Serverspeicher, um automatisierte oder wiederholte Anfragen zu begrenzen. Rohe IP-Adresse, Netzwerk-Bucket oder den vollständigen Browser-User-Agent bewahren wir im Lead-Datensatz nicht auf.",
     s2Usage:
-      "Seitenmessung — Geräteklasse (Telefon, Tablet oder Computer), Größe des Browserfensters, Seitensprache, Zeitzone, Ländercode, Verweildauer, Scrolltiefe, wie lange jeder Abschnitt auf dem Bildschirm war, und benannte Klicks wie der Anmeldebutton samt ihrer ungefähren Position auf dem Bildschirm. Außerdem erfasst sie die Domain der verweisenden Website und die Kampagnen-Tags im Link (source, medium und campaign), zusammengefasst unter einer zufälligen Sitzungskennung, die nur in diesem Browser-Tab erhalten bleibt. In der EU/im EWR, im Vereinigten Königreich und in der Schweiz oder wenn wir dein Land nicht erkennen können, läuft sie erst, nachdem du Erlauben gewählt hast; anderswo läuft sie standardmäßig, und du kannst sie über die Cookie-Einstellungen unten auf der Seite abschalten. Dieser Datensatz enthält weder deine E-Mail-Adresse noch deine Telefonnummer, deine IP-Adresse, den vollständigen User-Agent deines Browsers, eingegebenen Text, deinen genauen Standort oder ein geschätztes Alter oder Geschlecht. Wenn die Messung erlaubt ist, speichern wir die Testvariante bis zu 30 Tage für einheitliche Wiederbesuche und verknüpfen die zufällige Sitzungskennung und Variante mit einer neuen Anmeldung, um gespeicherte und bestätigte E-Mails zu vergleichen. Der aggregierte Bericht enthält keine E-Mail-Adressen. Wenn ihre Kennungen gesetzt sind, folgen Google Analytics 4, Google Ads, das Meta-Pixel und Microsoft-Clarity-Heatmaps derselben Regel. Der Support-Chat und Vercel Web Analytics können mit der Seite laden.",
-    s2NoPayment: "Zahlungsdaten erheben wir auf dieser Seite nicht.",
+      "Seitenmessung — Geräteklasse (Telefon, Tablet oder Computer), Größe des Browserfensters, Seitensprache, Zeitzone, ein grober Ländercode, den das Hosting-Netz aus der IP-Adresse ableitet, Verweildauer, Scrolltiefe, wie lange jeder Abschnitt auf dem Bildschirm war, und benannte Klicks wie der Anmeldebutton samt ihrer ungefähren Position auf dem Bildschirm. Außerdem erfasst sie die Domain der verweisenden Website und die Kampagnen-Tags im Link (source, medium und campaign), zusammengefasst unter einer zufälligen Sitzungskennung, die nur in diesem Browser-Tab erhalten bleibt. In der EU/im EWR, im Vereinigten Königreich und in der Schweiz oder wenn wir dein Land nicht erkennen können, läuft sie erst, nachdem du Erlauben gewählt hast; anderswo läuft sie standardmäßig, und du kannst sie über die Cookie-Einstellungen unten auf der Seite abschalten. Dieser Datensatz enthält weder deine E-Mail-Adresse noch deine Telefonnummer, deine IP-Adresse, den vollständigen User-Agent deines Browsers, eingegebenen Text, deinen genauen Standort oder ein geschätztes Alter oder Geschlecht. Wenn die Messung erlaubt ist, speichern wir die Testvariante bis zu 30 Tage für einheitliche Wiederbesuche und verknüpfen die zufällige Sitzungskennung und Variante mit einer neuen Anmeldung, um gespeicherte und bestätigte E-Mails zu vergleichen. Der aggregierte Bericht enthält keine E-Mail-Adressen. Wenn ihre Kennungen gesetzt sind, folgen Google Analytics 4, Google Ads, das Meta-Pixel und Microsoft-Clarity-Heatmaps derselben Regel. Der Support-Chat und Vercel Web Analytics können mit der Seite laden. Mit deiner Anmeldung kann ein grober Ländercode gespeichert werden, getrennt von der optionalen Seitenmessung. Das Hosting-Netz leitet ihn aus der IP-Adresse ab, zusammen mit der Tatsache, dass der Code von diesem Netz stammt, und dem Zeitpunkt des Abrufs. Wenn dieses Signal nicht verwendbar ist, wird das Land als unbekannt gespeichert. Wir behalten die rohe IP-Adresse nicht zusammen mit diesem Ländercode.",
+    s2NoPayment: "Optionale Preisreservierung — nur wenn du sie wählst. Stripe hosted Checkout verarbeitet deine Kartendaten und berechnet jetzt genau USD $3. Unser Server speichert Zahlungskennungen, den Zahlungsstatus und die Reservierungsbedingungen, die für diese Zahlung gelten. Wir speichern nicht die vollständige Kartennummer, den Sicherheitscode oder sonstige vollständige Kartendaten. Eine kostenlose E-Mail-Anmeldung erfasst keine Zahlungsdaten. Die Gebühr von USD $3 kommt zum Produktpreis hinzu und wird nicht vom Produktpreis abgezogen. Eine bezahlte Preisreservierung garantiert, dass du das Produkt zum Start für USD $149 kaufen kannst, ob du zu den öffentlichen ersten 100 gehörst oder nicht. USD $149 berechnen wir später nur, wenn du den Kauf wählst, und wir belasten ihn nicht automatisch, planen ihn nicht ein und autorisieren ihn nicht. Ein grober Ländercode, der mit einer Anmeldung gespeichert wird, ist von der optionalen Seitenmessung getrennt und keine rohe IP-Adresse.",
     s3Title: "3. Wofür wir sie nutzen",
     s3Intro: "Wir nutzen die von dir angegebenen Daten, um:",
     s3Item1:
@@ -3345,16 +3345,16 @@ const de: FrozenLandingMessages = {
     s3Item4: "das Formular und unseren E-Mail-Versanddienst vor Missbrauch zu schützen;",
     s3Item5:
       "zu sehen, welche Teile der Seite genutzt werden, um sie zu verbessern (wo Erlauben erforderlich ist, erst nach deiner Zustimmung).",
-    s3Outro: "Wir verwenden deine Daten nicht für sachfremde Zwecke.",
+    s3Outro: "Wenn du die optionale Preisreservierung wählst, nutzen wir die Zahlungskennungen, den Zahlungsstatus und die Reservierungsbedingungen, um diese Reservierung zu verwalten. Wir verwenden deine Daten nicht für sachfremde Zwecke.",
     s4Title: "4. Rechtsgrundlage",
     s4Body:
-      "Das Absenden des Formulars fordert eine betriebliche Bestätigungsmail an. Deine Wartelisten-Registrierung und die Einwilligung in Start-Updates werden erst abgeschlossen, wenn du den Bestätigungslink verwendest. Marketing- und Messcookies: In der EU/im EWR, im Vereinigten Königreich und in der Schweiz oder wenn wir dein Land nicht erkennen können, laufen sie erst, nachdem du Erlauben gewählt hast (Einwilligung). Anderswo laufen sie standardmäßig auf Grundlage unseres berechtigten Interesses, unsere Werbung zu messen, und du kannst jederzeit über die Cookie-Einstellungen unten auf der Seite widersprechen. Jetzt nicht oder ein Global-Privacy-Control-Signal deines Browsers hält sie überall ausgeschaltet. Ein kurzlebiges Länder-Cookie hält fest, welche dieser Regeln gilt, und ein Sprach-Cookie sorgt dafür, dass die Seite in der gewählten Sprache bleibt. Du kannst deine Einwilligung jederzeit widerrufen (siehe Abschnitt 7).",
+      "Das Absenden des Formulars fordert eine betriebliche Bestätigungsmail an. Deine Wartelisten-Registrierung und die Einwilligung in Start-Updates werden erst abgeschlossen, wenn du den Bestätigungslink verwendest. Marketing- und Messcookies: In der EU/im EWR, im Vereinigten Königreich und in der Schweiz oder wenn wir dein Land nicht erkennen können, laufen sie erst, nachdem du Erlauben gewählt hast (Einwilligung). Anderswo laufen sie standardmäßig auf Grundlage unseres berechtigten Interesses, unsere Werbung zu messen, und du kannst jederzeit über die Cookie-Einstellungen unten auf der Seite widersprechen. Jetzt nicht oder ein Global-Privacy-Control-Signal deines Browsers hält sie überall ausgeschaltet. Ein kurzlebiges Länder-Cookie hält fest, welche dieser Regeln gilt. Dieses Cookie speichert einen groben Ländercode, den das Hosting-Netz aus der IP-Adresse ableitet, nicht die rohe IP-Adresse. Ein Sprach-Cookie sorgt dafür, dass die Seite in der gewählten Sprache bleibt. Du kannst deine Einwilligung jederzeit widerrufen (siehe Abschnitt 7).",
     s5Title: "5. Weitergabe und internationale Übermittlung",
     s5Body:
-      "Für den Betrieb dieser Seite nutzen wir Auftragsverarbeiter: Vercel für Hosting und Web Analytics, Resend für Bestätigungs- und Update-E-Mails, Notion für die Wartelisten-Einträge und, getrennt davon, die Zusammenfassungen der Seitenmessung, unseren eigenen Support-Chat sowie Google und Meta nur, wenn diese Tags aktiviert sind und die Messung für dich aktiv ist (siehe Abschnitt 4). Einen SMS-Anbieter nutzen wir nur, wenn du eine SMS-Benachrichtigung wählst. Diese Anbieter können Daten außerhalb Koreas speichern, auch in den USA. Wir teilen nur, was der jeweilige Dienst braucht, und verkaufen deine personenbezogenen Daten niemals.",
+      "Für den Betrieb dieser Seite nutzen wir Auftragsverarbeiter: Stripe für Stripe hosted Checkout bei der optionalen Preisreservierung von USD $3, Vercel für Hosting und Web Analytics, Resend für Bestätigungs- und Update-E-Mails, Notion für die Wartelisten-Einträge und, getrennt davon, die Zusammenfassungen der Seitenmessung, unseren eigenen Support-Chat sowie Google und Meta nur, wenn diese Tags aktiviert sind und die Messung für dich aktiv ist (siehe Abschnitt 4). Einen SMS-Anbieter nutzen wir nur, wenn du eine SMS-Benachrichtigung wählst. Diese Anbieter können Daten außerhalb Koreas speichern, auch in den USA. Wir teilen nur, was der jeweilige Dienst braucht, und verkaufen deine personenbezogenen Daten niemals.",
     s6Title: "6. Wie lange wir sie aufbewahren",
     s6Body:
-      "Wartelisten-Daten bewahren wir auf, bis die WatchDive-Startkampagne endet oder du uns um Löschung bittest bzw. dich abmeldest — je nachdem, was zuerst eintritt. Zusammenfassungen der Seitenmessung werden höchstens 12 Monate aufbewahrt und dann gelöscht. Nach einer Löschanfrage löschen wir die betreffenden Datensätze ohne unangemessene Verzögerung.",
+      "Wartelisten-Daten bewahren wir auf, bis die WatchDive-Startkampagne endet oder du uns um Löschung bittest bzw. dich abmeldest — je nachdem, was zuerst eintritt. Zusammenfassungen der Seitenmessung werden höchstens 12 Monate aufbewahrt und dann gelöscht. Nach einer Löschanfrage löschen wir die betreffenden Datensätze ohne unangemessene Verzögerung. Wenn du die optionale Reservierungsgebühr zahlst, bewahren wir die Zahlungskennungen, den Zahlungsstatus und die Reservierungsbedingungen dieser Zahlung nur auf, um die Reservierung zu verwalten und anwendbare gesetzliche und buchhalterische Anforderungen zu erfüllen.",
     s7Title: "7. Deine Rechte",
     s7Intro: "Du kannst jederzeit:",
     s7Item1: "erfragen, welche Daten wir über dich gespeichert haben;",
@@ -3375,19 +3375,19 @@ const de: FrozenLandingMessages = {
   terms: {
     metaTitle: "Nutzungsbedingungen — WatchDive",
     metaDescription:
-      "Nutzungsbedingungen der WatchDive-Vorstart-Seite, betrieben von Diveroid Ltd",
+      "Nutzungsbedingungen der WatchDive-Vorstart-Seite, betrieben von Diveroid Ltd, einschließlich der optionalen Preisreservierung von USD $3.",
     back: "← Zur Startseite",
     h1: "Nutzungsbedingungen — WatchDive Vorstart",
     effectiveLabel: "Gültig ab:",
-    effectiveDate: "30. Juli 2026",
+    effectiveDate: "18. Oktober 2026",
     intro:
-      "Willkommen auf der WatchDive-Vorstart-Seite, betrieben von Diveroid Ltd („wir“, „uns“, „DIVEROID“). Mit der Nutzung dieser Seite und deiner Anmeldung stimmst du den folgenden Bedingungen zu.",
+      "Willkommen auf der WatchDive-Vorstart-Seite, betrieben von Diveroid Ltd („wir“, „uns“, „DIVEROID“). Mit der Nutzung dieser Seite, mit deiner Anmeldung und, wenn du sie wählst, mit der Zahlung der optionalen Preisreservierungsgebühr stimmst du den folgenden Bedingungen zu.",
     s1Title: "1. Was diese Seite ist",
     s1Body:
-      "Auf dieser Seite kannst du dein Interesse an WatchDive registrieren und Updates zu unserer kommenden Kickstarter-Kampagne erhalten. Sie ist kein Shop. Hier wird nichts gekauft und keine Zahlung entgegengenommen.",
+      "Auf dieser Seite kannst du dein Interesse an WatchDive registrieren und Updates zu unserer kommenden Kickstarter-Kampagne erhalten. Eine kostenlose E-Mail-Anmeldung ist kein Kauf, nimmt keine Zahlung entgegen, reserviert kein Gerät und garantiert keinen Preis. Getrennt kannst du eine optionale Preisreservierung wählen, indem du jetzt genau USD $3 über Stripe hosted Checkout zahlst. Diese Gebühr kommt zum Produktpreis hinzu und wird nicht vom Produktpreis abgezogen. Eine bezahlte Preisreservierung garantiert, dass du das Produkt zum Start für USD $149 kaufen kannst, ob du zu den öffentlichen ersten 100 gehörst oder nicht. USD $149 berechnen wir später nur, wenn du den Kauf wählst, und wir belasten ihn nicht automatisch, planen ihn nicht ein und autorisieren ihn nicht. Die Gebühr von USD $3 und der Produktpreis von USD $149 sind zusammen USD $152 vor anwendbarem Produktversand oder anwendbarer Produktsteuer. Wenn Produktversand oder Produktsteuer anfällt, nennen wir das, bevor du das Produkt kaufst. Die Gebühr von USD $3 ist nicht erstattungsfähig, außer wenn wir die Produkteinführung absagen; dann erstatten wir die Gebühr. Diese Bedingungen beschränken kein Recht, das anwendbares Recht uns zu beschränken verbietet, und sie verlangen nicht, dass du auf ein solches Recht verzichtest.",
     s2Title: "2. Vorstart-Informationen",
     s2Body:
-      "WatchDive ist noch in Entwicklung. Alle hier gezeigten Angaben — einschließlich Funktionen, Kompatibilität, Spezifikationen, Preisen (etwa dem Early-Bird-Preis) und Startdatum — dienen nur der Information und können sich vor oder während der Kickstarter-Kampagne ändern. Die Anmeldung reserviert kein Gerät und garantiert keinen bestimmten Preis.",
+      "WatchDive ist noch in Entwicklung. Öffentliche Angaben auf dieser Seite — einschließlich Funktionen, Kompatibilität, Spezifikationen, dem öffentlichen Early-Bird-Preis und dem Startdatum — dienen nur der Information und können sich vor oder während der Kickstarter-Kampagne ändern. Eine kostenlose E-Mail-Anmeldung reserviert kein Gerät und garantiert keinen bestimmten Preis. Eine bezahlte Preisreservierung garantiert, dass du das Produkt zum Start für USD $149 kaufen kannst, ob du zu den öffentlichen ersten 100 gehörst oder nicht.",
     s3Title: "3. E-Mail- und SMS-Updates",
     s3Body:
       "Das Absenden des Formulars fordert eine einzelne betriebliche E-Mail mit einem Bestätigungslink an. Deine Wartelisten-Registrierung und deine Zustimmung zu Start- und Marketing-Updates werden erst abgeschlossen, wenn du diesen Link verwendest. Gibst du zusätzlich eine Telefonnummer an, stimmst du der optionalen SMS-Benachrichtigung zu, die neben dem Feld beschrieben ist. Du kannst dich jederzeit über den Link in einer Marketing-E-Mail oder per Kontakt zu uns vom Marketing abmelden. Wie wir deine Daten behandeln, steht in unserer Datenschutzerklärung.",
@@ -3399,7 +3399,7 @@ const de: FrozenLandingMessages = {
     s5Body1:
       "WatchDive ist eine Tauchhilfe, die für die Nutzung mit einer kompatiblen Smartwatch entwickelt wurde. Nach der Veröffentlichung soll es eine ordentliche Tauchausbildung, Zertifizierung und einen Backup-Tauchcomputer unterstützen — nicht ersetzen. Tauche immer im Rahmen deiner Ausbildung und befolge sichere Tauchpraktiken.",
     s5Body2:
-      "Diese Seite wird „wie besehen“ ohne jegliche Gewährleistung bereitgestellt. Für Schäden aus deiner Nutzung dieser Seite haften wir nicht.",
+      "Diese Seite wird „wie besehen“ ohne jegliche Gewährleistung bereitgestellt. Für Schäden aus deiner Nutzung dieser Seite haften wir nicht. Diese Grenze gilt nicht, wo anwendbares Recht sie nicht erlaubt, und diese Bedingungen verlangen nicht, dass du auf ein Recht verzichtest, das anwendbares Recht dir erhält.",
     s6Title: "6. Anwendbares Recht",
     s6Body: "Diese Bedingungen unterliegen dem Recht der Republik Korea.",
     s7Title: "7. Kontakt",
@@ -3789,15 +3789,15 @@ const ptBR: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Política de Privacidade — WatchDive",
     metaDescription:
-      "Como a Diveroid Ltd trata suas informações quando você se cadastra para receber novidades do pré-lançamento do WatchDive.",
+      "Como a Diveroid Ltd trata suas informações quando você se cadastra, escolhe a reserva de preço opcional de USD $3 e a medição opcional da página de pré-lançamento do WatchDive.",
     back: "← Voltar ao início",
     h1: "Política de Privacidade — Pré-lançamento WatchDive",
     effectiveLabel: "Data de vigência:",
-    effectiveDate: "8 de outubro de 2026",
+    effectiveDate: "18 de outubro de 2026",
     intro1:
       'Esta Política de Privacidade explica como a Diveroid Ltd ("nós", "DIVEROID") trata suas informações quando você se cadastra na página de pré-lançamento do WatchDive para receber novidades sobre nossa próxima campanha no Kickstarter.',
     intro2:
-      "Esta página serve apenas para registrar interesse no lançamento. Não é uma loja e não processa nenhum pagamento.",
+      "Esta página registra o interesse no lançamento. Um cadastro gratuito por e-mail não é uma compra e não recebe pagamento. Se você escolher a reserva de preço opcional, o Stripe hosted Checkout cobra exatamente USD $3 agora. A taxa é somada ao preço do produto e não é deduzida do preço do produto. A reserva de preço paga garante que você pode comprar o produto por USD $149 no lançamento, esteja você ou não entre os 100 primeiros anunciados publicamente. Cobramos USD $149 depois somente quando você escolhe comprar, e não cobramos automaticamente. A taxa e o preço do produto juntos são USD $152 antes de qualquer frete ou imposto do produto que se aplique. Se frete ou imposto do produto se aplicar, informamos antes de você comprar o produto. As condições de pagamento da taxa estão nos Termos de Uso.",
     s1Title: "1. Quem somos",
     s1Company: "Empresa: Diveroid Ltd (marca: DIVEROID)",
     s1Rep: "Representante: Jay Kim",
@@ -3812,8 +3812,8 @@ const ptBR: FrozenLandingMessages = {
     s2Security:
       "Sinais de segurança — marcadores de abuso e um bucket de rede com chave e vida curta, usados na memória do servidor para limitar solicitações automatizadas ou repetidas. Não retemos o endereço IP bruto, o bucket de rede nem o user-agent completo do navegador no registro do lead.",
     s2Usage:
-      "Medição da página — tipo de aparelho (telefone, tablet ou computador), tamanho da janela do navegador, idioma da página, fuso horário, código do país, tempo na página, até onde você rolou, quanto tempo cada seção ficou na tela e cliques nomeados, como o botão de cadastro, com a posição aproximada na tela. Também registra o domínio do site de onde você veio e as tags de campanha do link (source, medium e campaign), reunidos sob um identificador de sessão aleatório que só fica guardado naquela aba do navegador. Na UE/EEE, no Reino Unido e na Suíça, ou quando não conseguimos identificar seu país, ela só funciona depois que você escolhe Permitir; nos demais lugares, funciona por padrão e você pode desativá-la em Cookies, no rodapé da página. Esse registro não inclui seu e-mail, seu número de telefone, seu endereço IP, o user-agent completo do navegador, o texto digitado, sua localização precisa nem idade ou gênero inferidos. Quando a medição é permitida, guardamos a versão do teste por até 30 dias para manter a mesma página nas próximas visitas e vinculamos o identificador de sessão e a variante ao novo cadastro, para comparar e-mails salvos e confirmados. O relatório agregado não contém endereços de e-mail. Quando os identificadores estão configurados, Google Analytics 4, Google Ads, o pixel da Meta e os mapas de calor do Microsoft Clarity seguem a mesma regra. O chat de suporte e o Vercel Web Analytics podem carregar com a página.",
-    s2NoPayment: "Não coletamos dados de pagamento nesta página.",
+      "Medição da página — tipo de aparelho (telefone, tablet ou computador), tamanho da janela do navegador, idioma da página, fuso horário, um código de país aproximado derivado do endereço IP pela rede de hospedagem, tempo na página, até onde você rolou, quanto tempo cada seção ficou na tela e cliques nomeados, como o botão de cadastro, com a posição aproximada na tela. Também registra o domínio do site de onde você veio e as tags de campanha do link (source, medium e campaign), reunidos sob um identificador de sessão aleatório que só fica guardado naquela aba do navegador. Na UE/EEE, no Reino Unido e na Suíça, ou quando não conseguimos identificar seu país, ela só funciona depois que você escolhe Permitir; nos demais lugares, funciona por padrão e você pode desativá-la em Cookies, no rodapé da página. Esse registro não inclui seu e-mail, seu número de telefone, seu endereço IP, o user-agent completo do navegador, o texto digitado, sua localização precisa nem idade ou gênero inferidos. Quando a medição é permitida, guardamos a versão do teste por até 30 dias para manter a mesma página nas próximas visitas e vinculamos o identificador de sessão e a variante ao novo cadastro, para comparar e-mails salvos e confirmados. O relatório agregado não contém endereços de e-mail. Quando os identificadores estão configurados, Google Analytics 4, Google Ads, o pixel da Meta e os mapas de calor do Microsoft Clarity seguem a mesma regra. O chat de suporte e o Vercel Web Analytics podem carregar com a página. Um código de país aproximado pode ser guardado com o seu cadastro, separadamente da medição opcional da página. A rede de hospedagem o deriva do endereço IP, junto com o fato de que o código veio dessa rede e o momento em que foi lido. Se esse sinal não puder ser usado, o país é guardado como desconhecido. Não retemos o endereço IP bruto junto com esse código de país.",
+    s2NoPayment: "Reserva de preço opcional — somente se você escolher. O Stripe hosted Checkout processa os dados do seu cartão e cobra exatamente USD $3 agora. Nosso servidor guarda identificadores de pagamento, o status do pagamento e as condições da reserva que se aplicam a esse pagamento. Não guardamos o número completo do cartão, o código de segurança nem os demais dados completos do cartão. Um cadastro gratuito por e-mail não coleta dados de pagamento. A taxa de USD $3 é somada ao preço do produto e não é deduzida do preço do produto. A reserva de preço paga garante que você pode comprar o produto por USD $149 no lançamento, esteja você ou não entre os 100 primeiros anunciados publicamente. Cobramos USD $149 depois somente quando você escolhe comprar, e não cobramos, não agendamos e não autorizamos essa cobrança automaticamente. Um código de país aproximado guardado com um cadastro é separado da medição opcional da página e não é um endereço IP bruto.",
     s3Title: "3. Por que usamos",
     s3Intro: "Usamos as informações que você fornece para:",
     s3Item1: "enviar um link de uso único para confirmar que você controla o endereço de e-mail;",
@@ -3822,16 +3822,16 @@ const ptBR: FrozenLandingMessages = {
     s3Item4: "proteger o formulário e nosso serviço de envio de e-mails contra abuso;",
     s3Item5:
       "ver quais partes da página são usadas para melhorá-la (depois que você permite a medição, onde Permitir é exigido).",
-    s3Outro: "Não usaremos suas informações para fins não relacionados.",
+    s3Outro: "Se você escolher a reserva de preço opcional, usamos os identificadores de pagamento, o status do pagamento e as condições da reserva para administrar essa reserva. Não usaremos suas informações para fins não relacionados.",
     s4Title: "4. Base legal",
     s4Body:
-      "Enviar o formulário solicita um e-mail operacional de confirmação. Seu registro na lista de espera e o consentimento para receber novidades do lançamento só se completam depois que você usa o link de confirmação. Cookies de marketing e de medição: na UE/EEE, no Reino Unido e na Suíça, ou quando não conseguimos identificar seu país, só funcionam depois que você escolhe Permitir (consentimento). Nos demais lugares, funcionam por padrão com base no nosso legítimo interesse em medir nossa publicidade, e você pode desativá-los a qualquer momento em Cookies, no rodapé da página. Agora não, ou um sinal Global Privacy Control do navegador, os mantém desligados em qualquer lugar. Um cookie de país de curta duração registra qual dessas regras se aplica, e um cookie de idioma mantém a página no idioma que você escolheu. Você pode retirar seu consentimento a qualquer momento (veja a Seção 7).",
+      "Enviar o formulário solicita um e-mail operacional de confirmação. Seu registro na lista de espera e o consentimento para receber novidades do lançamento só se completam depois que você usa o link de confirmação. Cookies de marketing e de medição: na UE/EEE, no Reino Unido e na Suíça, ou quando não conseguimos identificar seu país, só funcionam depois que você escolhe Permitir (consentimento). Nos demais lugares, funcionam por padrão com base no nosso legítimo interesse em medir nossa publicidade, e você pode desativá-los a qualquer momento em Cookies, no rodapé da página. Agora não, ou um sinal Global Privacy Control do navegador, os mantém desligados em qualquer lugar. Um cookie de país de curta duração registra qual dessas regras se aplica. Esse cookie guarda um código de país aproximado derivado do endereço IP pela rede de hospedagem, não o endereço IP bruto. Um cookie de idioma mantém a página no idioma que você escolheu. Você pode retirar seu consentimento a qualquer momento (veja a Seção 7).",
     s5Title: "5. Compartilhamento e transferência internacional",
     s5Body:
-      "Usamos operadores para manter esta página: Vercel para hospedagem e Web Analytics, Resend para e-mails de confirmação e de novidades, Notion para os registros da lista de espera e, separadamente, os resumos de medição da página, nosso próprio chat de suporte, e Google e Meta só quando essas tags estão ativadas e a medição está ligada para você (veja a Seção 4). Um provedor de SMS só é usado se você escolher receber um alerta por mensagem de texto. Esses provedores podem armazenar dados fora da Coreia, inclusive nos Estados Unidos. Compartilhamos apenas o que cada serviço precisa e nunca vendemos suas informações pessoais.",
+      "Usamos operadores para manter esta página: a Stripe, que fornece o Stripe hosted Checkout para a reserva de preço opcional de USD $3, a Vercel para hospedagem e Web Analytics, Resend para e-mails de confirmação e de novidades, Notion para os registros da lista de espera e, separadamente, os resumos de medição da página, nosso próprio chat de suporte, e Google e Meta só quando essas tags estão ativadas e a medição está ligada para você (veja a Seção 4). Um provedor de SMS só é usado se você escolher receber um alerta por mensagem de texto. Esses provedores podem armazenar dados fora da Coreia, inclusive nos Estados Unidos. Compartilhamos apenas o que cada serviço precisa e nunca vendemos suas informações pessoais.",
     s6Title: "6. Por quanto tempo guardamos",
     s6Body:
-      "Guardamos os dados da lista de espera até o fim da campanha de lançamento do WatchDive ou até você pedir a exclusão ou cancelar a inscrição — o que ocorrer primeiro. Os resumos de medição da página ficam guardados por até 12 meses e depois são excluídos. Após um pedido de exclusão, apagamos os registros correspondentes sem demora injustificada.",
+      "Guardamos os dados da lista de espera até o fim da campanha de lançamento do WatchDive ou até você pedir a exclusão ou cancelar a inscrição — o que ocorrer primeiro. Os resumos de medição da página ficam guardados por até 12 meses e depois são excluídos. Após um pedido de exclusão, apagamos os registros correspondentes sem demora injustificada. Se você pagar a taxa opcional de reserva, guardamos os identificadores de pagamento, o status do pagamento e as condições da reserva desse pagamento somente para administrar a reserva e para cumprir exigências legais e contábeis aplicáveis.",
     s7Title: "7. Seus direitos",
     s7Intro: "Você pode, a qualquer momento:",
     s7Item1: "perguntar quais informações temos sobre você;",
@@ -3852,19 +3852,19 @@ const ptBR: FrozenLandingMessages = {
   terms: {
     metaTitle: "Termos de Uso — WatchDive",
     metaDescription:
-      "Termos de Uso da página de pré-lançamento do WatchDive, operada pela Diveroid Ltd",
+      "Termos de Uso da página de pré-lançamento do WatchDive, operada pela Diveroid Ltd, incluindo a reserva de preço opcional de USD $3.",
     back: "← Voltar ao início",
     h1: "Termos de Uso — Pré-lançamento WatchDive",
     effectiveLabel: "Data de vigência:",
-    effectiveDate: "30 de julho de 2026",
+    effectiveDate: "18 de outubro de 2026",
     intro:
-      'Bem-vindo à página de pré-lançamento do WatchDive, operada pela Diveroid Ltd ("nós", "DIVEROID"). Ao usar esta página e se cadastrar, você concorda com os termos a seguir.',
+      'Bem-vindo à página de pré-lançamento do WatchDive, operada pela Diveroid Ltd ("nós", "DIVEROID"). Ao usar esta página, ao se cadastrar e, se escolher, ao pagar a taxa opcional de reserva de preço, você concorda com os termos a seguir.',
     s1Title: "1. O que é esta página",
     s1Body:
-      "Esta página permite registrar seu interesse no WatchDive e receber novidades sobre nossa próxima campanha no Kickstarter. Não é uma loja. Nenhuma compra é feita e nenhum pagamento é cobrado aqui.",
+      "Esta página permite registrar seu interesse no WatchDive e receber novidades sobre nossa próxima campanha no Kickstarter. Um cadastro gratuito por e-mail não é uma compra, não recebe pagamento, não reserva uma unidade e não garante um preço. Você pode, separadamente, escolher uma reserva de preço opcional pagando exatamente USD $3 agora pelo Stripe hosted Checkout. Essa taxa é somada ao preço do produto e não é deduzida do preço do produto. A reserva de preço paga garante que você pode comprar o produto por USD $149 no lançamento, esteja você ou não entre os 100 primeiros anunciados publicamente. Cobramos USD $149 depois somente quando você escolhe comprar, e não cobramos, não agendamos e não autorizamos essa cobrança automaticamente. A taxa de USD $3 e o preço do produto de USD $149 juntos são USD $152 antes de qualquer frete ou imposto do produto que se aplique. Se frete ou imposto do produto se aplicar, informamos antes de você comprar o produto. A taxa de USD $3 não é reembolsável, exceto se cancelarmos o lançamento do produto, caso em que devolvemos a taxa. Nada nestes termos limita um direito que a lei aplicável não nos permite limitar, e estes termos não exigem que você abra mão de tal direito.",
     s2Title: "2. Informações de pré-lançamento",
     s2Body:
-      "O WatchDive ainda está em desenvolvimento. Todos os detalhes mostrados aqui — incluindo funções, compatibilidade, especificações, preços (como o preço early bird) e a data de lançamento — são fornecidos apenas a título informativo e podem mudar antes ou durante a campanha no Kickstarter. Cadastrar-se não reserva uma unidade nem garante um preço específico.",
+      "O WatchDive ainda está em desenvolvimento. As informações públicas mostradas aqui — incluindo funções, compatibilidade, especificações, o preço early bird público e a data de lançamento — são fornecidas apenas a título informativo e podem mudar antes ou durante a campanha no Kickstarter. Um cadastro gratuito por e-mail não reserva uma unidade nem garante um preço específico. A reserva de preço paga garante que você pode comprar o produto por USD $149 no lançamento, esteja você ou não entre os 100 primeiros anunciados publicamente.",
     s3Title: "3. Novidades por e-mail e SMS",
     s3Body:
       "Enviar o formulário solicita um único e-mail operacional com um link de confirmação. Seu registro na lista de espera e a concordância em receber novidades de lançamento e marketing só se completam quando você usa esse link. Se você também informar um telefone, concorda com o aviso opcional por SMS descrito ao lado daquele campo. Você pode cancelar o marketing a qualquer momento pelo link de um e-mail de marketing ou falando com a gente. Como tratamos seus dados está descrito na nossa Política de Privacidade.",
@@ -3876,7 +3876,7 @@ const ptBR: FrozenLandingMessages = {
     s5Body1:
       "O WatchDive é um auxílio ao mergulho projetado para funcionar com um smartwatch compatível. Quando lançado, destina-se a apoiar — não substituir — o treinamento adequado de mergulho, a certificação e um computador de mergulho reserva. Mergulhe sempre dentro do seu treinamento e siga práticas seguras de mergulho.",
     s5Body2:
-      'Esta página é fornecida "como está", sem garantias de qualquer tipo. Não nos responsabilizamos por danos decorrentes do seu uso desta página.',
+      'Esta página é fornecida "como está", sem garantias de qualquer tipo. Não nos responsabilizamos por danos decorrentes do seu uso desta página. Esse limite não se aplica onde a lei aplicável não o permite, e estes termos não exigem que você abra mão de um direito que a lei aplicável preserva.',
     s6Title: "6. Lei aplicável",
     s6Body: "Estes termos são regidos pelas leis da República da Coreia.",
     s7Title: "7. Contato",

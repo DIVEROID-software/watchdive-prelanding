@@ -20,7 +20,6 @@ export const Route = createFileRoute("/terms")({
 export function TermsPage() {
   const locale = useCurrentLocale();
   const copy = useFrozenLandingMessages().terms;
-  const storeDisclaimer = splitSecondSentence(copy.s1Body);
   const changeDisclaimer = splitChangeDisclaimer(copy.s2Body);
   const privacyReference = splitAround(copy.s3Body, copy.s3PrivacyLink);
   const contact = splitAround(copy.s7Body, "help@diveroid.com");
@@ -43,11 +42,7 @@ export function TermsPage() {
           <p>{copy.intro}</p>
 
           <Section title={copy.s1Title}>
-            <p>
-              {storeDisclaimer[0]}
-              <strong>{storeDisclaimer[1]}</strong>
-              {storeDisclaimer[2]}
-            </p>
+            <p>{copy.s1Body}</p>
           </Section>
 
           <Section title={copy.s2Title}>
@@ -100,16 +95,6 @@ export function TermsPage() {
       </article>
     </div>
   );
-}
-
-function splitSecondSentence(value: string): readonly [string, string, string] {
-  const sentencePattern = /[.!?。！？](?:\s+|$)/g;
-  const first = sentencePattern.exec(value);
-  const second = sentencePattern.exec(value);
-  if (!first || !second) return ["", value, ""];
-  const secondStart = first.index + first[0].length;
-  const secondEnd = second.index + 1;
-  return [value.slice(0, secondStart), value.slice(secondStart, secondEnd), value.slice(secondEnd)];
 }
 
 const CHANGE_DISCLAIMERS = [

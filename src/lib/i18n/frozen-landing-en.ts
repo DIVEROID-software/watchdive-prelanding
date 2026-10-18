@@ -380,15 +380,15 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   privacy: {
     metaTitle: "Privacy Policy — WatchDive",
     metaDescription:
-      "How Diveroid Ltd handles signup details and optional page measurement on the WatchDive pre-launch page.",
+      "How Diveroid Ltd handles signup details, an optional USD $3 price reservation, and optional page measurement on the WatchDive pre-launch page.",
     back: "← Back to home",
     h1: "Privacy Policy — WatchDive Pre-Launch",
     effectiveLabel: "Effective date:",
-    effectiveDate: "October 8, 2026",
+    effectiveDate: "October 18, 2026",
     intro1:
       'This Privacy Policy explains how Diveroid Ltd ("we", "us", "DIVEROID") handles your information when you sign up on the WatchDive pre-launch page to receive updates about our upcoming Kickstarter campaign.',
     intro2:
-      "This page is for collecting launch interest only. It is not a store and does not process any payment.",
+      "This page collects launch interest. A free email signup is not a purchase and takes no payment. If you choose the optional price reservation, Stripe hosted Checkout charges exactly USD $3 now. That fee is in addition to the product price and is not deducted from it. The paid reservation guarantees that you can buy the product for USD $149 at launch, whether or not you are among the public first 100. We charge USD $149 later only when you choose to buy, and we do not charge, schedule, or authorize it automatically. The USD $3 fee and the USD $149 product price together are USD $152 before any product shipping or tax that applies. If product shipping or tax applies, we disclose it before you purchase the product. Payment terms for the fee are in the Terms of Use.",
     s1Title: "1. Who we are",
     s1Company: "Company: Diveroid Ltd (brand: DIVEROID)",
     s1Rep: "Representative: Jay Kim",
@@ -402,8 +402,8 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s2Security:
       "Security signals — abuse flags and a short-lived, keyed network bucket used in server memory to limit automated or repeated requests. We do not retain the raw IP address, the network bucket, or the full browser user-agent in the lead record.",
     s2Usage:
-      "Page measurement — device class (phone, tablet, or desktop), browser window size, page language, time zone, country code, time on the page, how far you scrolled, how long each section was on screen, and named clicks such as a signup button, with their approximate position on the screen. It also records the referring site's domain and the campaign tags in the link (source, medium, and campaign), grouped under a random session identifier that is kept only in that browser tab. In the EU/EEA, the UK and Switzerland, or when we cannot tell your country, it runs only after you choose Allow; elsewhere it runs by default and you can turn it off with Cookie settings at the bottom of the page. This record does not contain your email address, phone number, IP address, full browser user-agent, the text you type, your precise location, or an inferred age or gender. When measurement is allowed, a page experiment stores its version for up to 30 days to keep return visits consistent and links the random session ID and experiment variant to a new signup, so we can compare saved and confirmed emails. The aggregate report contains no email addresses. When their identifiers are configured, Google Analytics 4, Google Ads, the Meta pixel, and Microsoft Clarity heatmaps follow the same rule. Our support chat and Vercel Web Analytics can load with the page.",
-    s2NoPayment: "We do not collect payment details on this page.",
+      "Page measurement — device class (phone, tablet, or desktop), browser window size, page language, time zone, a coarse country code derived from the IP address by the hosting network, time on the page, how far you scrolled, how long each section was on screen, and named clicks such as a signup button, with their approximate position on the screen. It also records the referring site's domain and the campaign tags in the link (source, medium, and campaign), grouped under a random session identifier that is kept only in that browser tab. In the EU/EEA, the UK and Switzerland, or when we cannot tell your country, it runs only after you choose Allow; elsewhere it runs by default and you can turn it off with Cookie settings at the bottom of the page. This record does not contain your email address, phone number, IP address, full browser user-agent, the text you type, your precise location, or an inferred age or gender. When measurement is allowed, a page experiment stores its version for up to 30 days to keep return visits consistent and links the random session ID and experiment variant to a new signup, so we can compare saved and confirmed emails. The aggregate report contains no email addresses. When their identifiers are configured, Google Analytics 4, Google Ads, the Meta pixel, and Microsoft Clarity heatmaps follow the same rule. Our support chat and Vercel Web Analytics can load with the page. A coarse country code may be stored with your signup, separately from optional page measurement. It is derived from the IP address by the hosting network, together with the fact that the code came from that network and the time it was read. If that signal cannot be used, the country is stored as unknown. We do not retain the raw IP address with that country code.",
+    s2NoPayment: "Optional price reservation — only if you choose it. Stripe hosted Checkout processes your card data and charges exactly USD $3 now. Our server stores payment identifiers, payment status, and the reservation terms that apply to that payment. We do not store the full card number, the card security code, or other full card details. A free email signup collects no payment details. The USD $3 fee is in addition to the product price and is not deducted from it. The paid reservation guarantees that you can buy the product for USD $149 at launch, whether or not you are among the public first 100. We charge USD $149 later only when you choose to buy, and we do not charge, schedule, or authorize it automatically. A coarse country code stored with a signup is separate from optional page measurement and is not a raw IP address.",
     s3Title: "3. Why we use it",
     s3Intro: "We use the information you provide to:",
     s3Item1: "send a one-time link to confirm that you control the email address;",
@@ -412,16 +412,16 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s3Item4: "protect the form and our email delivery service from abuse;",
     s3Item5:
       "see which parts of the page are used, so we can improve it (after you allow measurement where Allow is required).",
-    s3Outro: "We will not use your information for unrelated purposes.",
+    s3Outro: "If you choose the optional price reservation, we use the payment identifiers, payment status, and reservation terms to administer that reservation. We will not use your information for unrelated purposes.",
     s4Title: "4. Legal basis",
     s4Body:
-      "Submitting the form requests an operational confirmation email. Your waitlist registration and consent to launch updates are completed only after you use the confirmation link. Marketing and page-measurement cookies: in the EU/EEA, the UK and Switzerland, or when we cannot tell your country, they run only after you choose Allow (consent). Elsewhere they run by default, based on our legitimate interest in measuring our advertising, and you can opt out at any time with Cookie settings at the bottom of the page. Not now, or a browser Global Privacy Control signal, keeps them off everywhere. A short-lived country cookie records which of these rules applies. A language preference cookie is stored so the page stays in the language you chose. You can withdraw consent at any time (see Section 7).",
+      "Submitting the form requests an operational confirmation email. Your waitlist registration and consent to launch updates are completed only after you use the confirmation link. Marketing and page-measurement cookies: in the EU/EEA, the UK and Switzerland, or when we cannot tell your country, they run only after you choose Allow (consent). Elsewhere they run by default, based on our legitimate interest in measuring our advertising, and you can opt out at any time with Cookie settings at the bottom of the page. Not now, or a browser Global Privacy Control signal, keeps them off everywhere. A short-lived country cookie records which of these rules applies. That cookie stores a coarse country code derived from the IP address by the hosting network, not the raw IP address. A language preference cookie is stored so the page stays in the language you chose. You can withdraw consent at any time (see Section 7).",
     s5Title: "5. Sharing and international transfer",
     s5Body:
-      "We use processors to run this page: Vercel for hosting and Web Analytics, Resend for confirmation and update email, Notion for waitlist records and, separately, page-measurement summaries, our own support chat, and Google and Meta only when those tags are enabled and measurement is on for you (see Section 4). An SMS provider is used only if you opt into a text alert. These providers may store data outside Korea, including in the United States. We share only what the service needs, and we never sell your personal information.",
+      "We use processors to run this page: Stripe, which provides Stripe hosted Checkout for the optional USD $3 price reservation, Vercel for hosting and Web Analytics, Resend for confirmation and update email, Notion for waitlist records and, separately, page-measurement summaries, our own support chat, and Google and Meta only when those tags are enabled and measurement is on for you (see Section 4). An SMS provider is used only if you opt into a text alert. These providers may store data outside Korea, including in the United States. We share only what the service needs, and we never sell your personal information.",
     s6Title: "6. How long we keep it",
     s6Body:
-      "We keep waitlist details until the WatchDive launch campaign ends, or until you ask us to delete them or unsubscribe, whichever comes first. Page-measurement summaries are kept for up to 12 months and then deleted. After a deletion request, we delete the matching records without undue delay.",
+      "We keep waitlist details until the WatchDive launch campaign ends, or until you ask us to delete them or unsubscribe, whichever comes first. Page-measurement summaries are kept for up to 12 months and then deleted. After a deletion request, we delete the matching records without undue delay. If you pay the optional reservation fee, we keep the payment identifiers, payment status, and the reservation terms for that payment only to administer the reservation and to meet applicable legal and accounting requirements.",
     s7Title: "7. Your rights",
     s7Intro: "You can at any time:",
     s7Item1: "ask what information we hold about you;",
@@ -441,19 +441,19 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   },
   terms: {
     metaTitle: "Terms of Use — WatchDive",
-    metaDescription: "Terms of Use for the WatchDive pre-launch page, operated by Diveroid Ltd",
+    metaDescription: "Terms of Use for the WatchDive pre-launch page, operated by Diveroid Ltd, including the optional USD $3 price reservation.",
     back: "← Back to home",
     h1: "Terms of Use — WatchDive Pre-Launch",
     effectiveLabel: "Effective date:",
-    effectiveDate: "July 30, 2026",
+    effectiveDate: "October 18, 2026",
     intro:
-      'Welcome to the WatchDive pre-launch page, operated by Diveroid Ltd ("we", "us", "DIVEROID"). By using this page and signing up, you agree to the following terms.',
+      'Welcome to the WatchDive pre-launch page, operated by Diveroid Ltd ("we", "us", "DIVEROID"). By using this page, by signing up, and, if you choose it, by paying the optional price-reservation fee, you agree to the following terms.',
     s1Title: "1. What this page is",
     s1Body:
-      "This page lets you register your interest in WatchDive and receive updates about our upcoming Kickstarter campaign. It is not a store. No purchase is made and no payment is taken here.",
+      "This page lets you register your interest in WatchDive and receive updates about our upcoming Kickstarter campaign. A free email signup is not a purchase, takes no payment, does not reserve a unit, and does not guarantee a price. You may separately choose an optional price reservation by paying exactly USD $3 now through Stripe hosted Checkout. That fee is in addition to the product price and is not deducted from it. The paid reservation guarantees that you can buy the product for USD $149 at launch, whether or not you are among the public first 100. We charge USD $149 later only when you choose to buy, and we do not charge, schedule, or authorize it automatically. The USD $3 fee and the USD $149 product price together are USD $152 before any product shipping or tax that applies. If product shipping or tax applies, we disclose it before you purchase the product. The USD $3 fee is nonrefundable, except if we cancel the product launch, in which case we refund the fee. Nothing in these terms limits a right that applicable law does not allow us to limit, and these terms do not require you to give up such a right.",
     s2Title: "2. Pre-launch information",
     s2Body:
-      "WatchDive is still in development. All details shown here — including features, compatibility, specifications, pricing (such as the early-bird price), and the launch date — are provided for information only and may change before or during the Kickstarter campaign. Signing up does not reserve a unit or guarantee a specific price.",
+      "WatchDive is still in development. Public details shown on this page — including features, compatibility, specifications, the public early-bird price, and the launch date — are provided for information only and may change before or during the Kickstarter campaign. A free email signup does not reserve a unit or guarantee a specific price. A paid price reservation guarantees that you can buy the product for USD $149 at launch, whether or not you are among the public first 100.",
     s3Title: "3. Email and SMS updates",
     s3Body:
       "Submitting the form requests one operational email containing a confirmation link. Your waitlist registration and agreement to receive launch and marketing updates are completed only when you use that link. If you also provide a phone number, you agree to the optional SMS update described beside that field. You can unsubscribe from future marketing at any time using the link in a marketing email or by contacting us. How we handle your data is described in our Privacy Policy.",
@@ -465,7 +465,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s5Body1:
       "WatchDive is a dive aid designed to work with a compatible smartwatch. When released, it is intended to support — not replace — proper dive training, certification, and a backup dive computer. Always dive within your training and follow safe diving practices.",
     s5Body2:
-      'This page is provided "as is" without warranties of any kind. We are not liable for any damages arising from your use of this page.',
+      'This page is provided "as is" without warranties of any kind. We are not liable for any damages arising from your use of this page. This limit does not apply where applicable law does not allow it, and these terms do not require you to give up a right that applicable law keeps.',
     s6Title: "6. Governing law",
     s6Body: "These terms are governed by the laws of the Republic of Korea.",
     s7Title: "7. Contact",

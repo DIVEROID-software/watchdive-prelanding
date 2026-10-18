@@ -919,9 +919,10 @@ test("every legal translation retains the operating and consent essentials", () 
     const privacy = flattenedText(FROZEN_LANDING_MESSAGES[locale].privacy);
     const expected = LEGAL_ESSENTIALS[locale];
 
-    for (const key of ["store", "changeable", "noReservation", "training", "backup"] as const) {
+    for (const key of ["changeable", "noReservation", "training", "backup"] as const) {
       assert.match(terms, expected[key], `${locale}: legal terms lost ${key}`);
     }
+    assert.doesNotMatch(terms, expected.store, `${locale}: terms still say this page is not a store`);
     for (const key of ["email", "required", "phone", "optional"] as const) {
       assert.match(privacy, expected[key], `${locale}: privacy copy lost ${key}`);
     }

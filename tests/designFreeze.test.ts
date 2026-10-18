@@ -121,8 +121,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // across 9 locales. The existing first form, media and 50:50 experiment stay.
   // 2026-10-12: owner requested aligned app screenshots. The three existing
   // figures share title/image/caption rows, including in the swipe carousel.
+  // 2026-10-18: owner-requested underwater image quality improvement uses
+  // original-master responsive exports in ValueSection; hero and layout stay.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "54dc82076f36d94500a59dad3c18950235fc0266ba33f70c8b3824166fe187d8");
+  assert.equal(digest, "966f597fec4169bf5cb61d2f48a769c030ac1b32137693647b1db1fd92d92566");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
