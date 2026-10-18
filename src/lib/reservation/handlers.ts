@@ -15,8 +15,15 @@ import {
   type ReservationConfigResult,
 } from "./config.ts";
 import { verifyReservationInvite, type ReservationInvite } from "./invite.ts";
+import {
+  createReservationNotionMirror,
+  readReservationNotionMirrorConfig,
+  unavailableReservationMirror,
+  type ReservationPaymentMirror,
+} from "./notionMirror.ts";
 import { sessionOwnedByInbox, type ReservationSnapshot } from "./state.ts";
 import { processReservationWebhook } from "./webhook.ts";
+import { createNotionRequest } from "../verification/notionLead.ts";
 
 export type ReservationDeps = {
   env?: EnvSource;
@@ -56,6 +63,16 @@ function stripeFor(
     secretKey,
     fetchImpl: deps.fetchImpl,
     allowLive: livemode,
+  });
+}
+
+function reservationMirror(deps: ReservationDeps): ReservationPaymentMirror | undefined {
+  const config = readReservationNotionMirrorConfig(envOf(deps));
+  if (!config.enabled) return undefined;
+  if (!config.ok) return unavailableReservationMirror();
+  return createReservationNotionMirror({
+    request: createNotionRequest(deps.fetchImpl, envOf(deps)),
+    databaseId: config.databaseId,
   });
 }
 
@@ -242,6 +259,7 @@ export async function handleReservationWebhook(
       config: config.value,
       stripe: stripeFor(config.value.secretKey, config.value.livemode, deps),
       nowMs: deps.nowMs ?? Date.now(),
+      mirror: reservationMirror(deps),
     });
     return json(result.httpStatus, result.body);
   } catch (error) {

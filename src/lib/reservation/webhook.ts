@@ -20,10 +20,17 @@ import {
   type StripeCheckoutSession,
 } from "./stripeApi.ts";
 import {
+  NotionMirrorError,
+  reservationMirrorRequiresLead,
+  type ReservationMirrorInput,
+  type ReservationPaymentMirror,
+} from "./notionMirror.ts";
+import {
   aggregateInspections,
   blockingError,
   inspectSession,
   isOurProduct,
+  type InspectedSession,
   type ReservationSnapshot,
 } from "./state.ts";
 
@@ -200,6 +207,8 @@ async function resolveSession(
  * Verifies the raw body, re-reads Stripe, and returns the derived state.
  * Calling this twice for the same Stripe objects returns the same paid and
  * refund amounts. It does not create a charge and it does not refund.
+ * When a mirror is attached, the signup row is updated from that re-read.
+ * A failed or missing mirror is a retryable 500 and is not acknowledged.
  */
 export async function processReservationWebhook(input: {
   rawBody: string;
@@ -207,6 +216,7 @@ export async function processReservationWebhook(input: {
   config: EnabledReservationConfig;
   stripe: StripeApi;
   nowMs: number;
+  mirror?: ReservationPaymentMirror;
 }): Promise<WebhookResult> {
   const secret = input.config.webhookSecret;
   if (!secret) return { httpStatus: 503, body: { error: "reservation_misconfigured" } };
@@ -260,7 +270,7 @@ export async function processReservationWebhook(input: {
       input.nowMs,
       sessionHash,
     );
-    return snapshotBody(eventId, aggregateInspections([inspected]));
+    return acknowledge(eventId, aggregateInspections([inspected]), [inspected], null, null);
   }
 
   const customer = await input.stripe.retrieveCustomer(session.customerId);
@@ -272,7 +282,7 @@ export async function processReservationWebhook(input: {
       input.nowMs,
       sessionHash,
     );
-    return snapshotBody(eventId, aggregateInspections([inspected]));
+    return acknowledge(eventId, aggregateInspections([inspected]), [inspected], null, null);
   }
   const email = reservationCanonicalEmail(customer.email);
   if (sessionHash !== reservationEmailHash(email)) {
@@ -306,7 +316,53 @@ export async function processReservationWebhook(input: {
     input.config.livemode,
     input.nowMs,
   );
-  return snapshotBody(eventId, after.snapshot);
+  return acknowledge(eventId, after.snapshot, after.inspected, customer.email, email);
+
+  async function acknowledge(
+    id: string,
+    snapshot: ReservationSnapshot,
+    inspected: InspectedSession[],
+    rawEmail: string | null,
+    inbox: string | null,
+  ): Promise<WebhookResult> {
+    if (!input.mirror) return snapshotBody(id, snapshot);
+    if (!rawEmail || !inbox) {
+      if (reservationMirrorRequiresLead(snapshot)) {
+        console.error("[reservation] webhook notion unaddressed");
+        return { httpStatus: 500, body: { error: "notion_mirror_failed", reason: "unaddressed", retryable: true } };
+      }
+      return snapshotBody(id, snapshot);
+    }
+    const chosen = inspected.find(
+      (item) => "session" in item && item.session.id === snapshot.sessionId,
+    );
+    const mirrorInput: ReservationMirrorInput = {
+      rawEmail,
+      email: inbox,
+      snapshot,
+      session: chosen && "session" in chosen
+        ? {
+            id: chosen.session.id,
+            paymentIntentId: chosen.session.paymentIntentId,
+            chargeCreated: chosen.kind === "paid" ? chosen.chargeCreated : null,
+            livemode: chosen.session.livemode,
+          }
+        : null,
+      mode: input.config.mode,
+    };
+    try {
+      const result = await input.mirror.apply(mirrorInput);
+      if ("skipped" in result) return snapshotBody(id, snapshot, { mirror: result.skipped });
+      return snapshotBody(id, snapshot, { mirror: "updated", pages: result.updated });
+    } catch (error) {
+      const reason = error instanceof NotionMirrorError ? error.reason : "delivery";
+      console.error(`[reservation] webhook notion ${reason}`);
+      return {
+        httpStatus: 500,
+        body: { error: "notion_mirror_failed", reason, retryable: true },
+      };
+    }
+  }
 }
 
 function metaProduct(session: StripeCheckoutSession): string {

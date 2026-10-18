@@ -1,7 +1,7 @@
 // Paid state is a function of Stripe objects retrieved by the API client.
 // Replaying a webhook cannot add the fee or the refund a second time, because
-// nothing here increments a counter. Notion is not consulted: it has no
-// compare-and-set, and this flow does not add a reservation column.
+// nothing here increments a counter. This module does not read or write Notion.
+// A paid decision never comes from a Notion checkbox.
 import {
   FEE_POLICY,
   LATER_PRODUCT_PRICE_CENTS,
@@ -74,6 +74,8 @@ export type InspectedSession =
   | {
       kind: "paid";
       session: StripeCheckoutSession;
+      /** Charge.created seconds. Null when Stripe omitted it. Not session.created. */
+      chargeCreated: number | null;
       amountRefunded: number;
       amountRefundPending: number;
       refundState: RefundState;
@@ -334,6 +336,7 @@ export async function inspectSession(
   return {
     kind: "paid",
     session,
+    chargeCreated: charge.created,
     amountRefunded: refund.succeeded,
     amountRefundPending: refund.pending,
     refundState: refund.state,

@@ -132,7 +132,7 @@ test("the reservation screen does not collect email, phone, SMS consent, or a ca
   assert.match(page, /isTerminalReservationStatus/);
   assert.match(page, /writeInvalidInviteFlag/);
   assert.match(page, /disabled=\{!view\.checkoutEnabled\}/);
-  assert.match(page, /type="checkbox" checked=\{termsAccepted\}/);
+  assert.match(page, /type="checkbox"\s+checked=\{termsAccepted\}/);
   assert.doesNotMatch(page, /wd-rsv-langs|copy\.priceRows\.map/);
   assert.match(page, /role="status"/);
   assert.match(page, /lang=\{view\.locale\}/);
