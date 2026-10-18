@@ -91,7 +91,7 @@ export type ReservationDependencies = {
   send: (message: ReservationMessage) => Promise<void>;
   /** Test double only. Production uses issueReservationInvite. */
   signInvite?: ReservationInviteSigner;
-  env?: TokenEnvironment;
+  env?: TokenEnvironment & { WATCHDIVE_RESERVATION_TOKEN_SECRET?: string };
   now?: () => Date;
   sleep?: (ms: number) => Promise<void>;
   writeSample?: (locale: Locale, mail: RenderedReservationMail) => Promise<void>;

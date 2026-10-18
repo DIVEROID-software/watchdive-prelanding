@@ -105,7 +105,9 @@ test("the verify surface emits no external script or frame URL of its own", () =
 test("the route gate module names the widget, so no route hardcodes it", () => {
   const gate = read("src/lib/thirdPartyScripts.ts");
   assert.ok(gate.includes("export const SUPPORT_WIDGET_SRC"));
-  assert.ok(gate.includes('TOKEN_BEARING_ROUTES = new Set(["/verify", "/admin/behavior"])'));
+  assert.ok(
+    gate.includes('TOKEN_BEARING_ROUTES = new Set(["/verify", "/admin/behavior", "/reservation"])'),
+  );
   assert.ok(gate.includes("stripLocalePrefix(pathname)"));
 });
 

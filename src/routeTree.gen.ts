@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ReservationRouteImport } from './routes/reservation'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as LocaleIndexRouteImport } from './routes/$locale.index'
@@ -25,6 +26,9 @@ import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
 import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cron.verification-reminder'
+import { Route as ApiReservationCheckoutRouteImport } from './routes/api/reservation/checkout'
+import { Route as ApiReservationStatusRouteImport } from './routes/api/reservation/status'
+import { Route as ApiReservationWebhookRouteImport } from './routes/api/reservation/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,6 +43,11 @@ const LocaleRoute = LocaleRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReservationRoute = ReservationRouteImport.update({
+  id: '/reservation',
+  path: '/reservation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -107,11 +116,27 @@ const ApiCronVerificationReminderRoute =
     path: '/api/cron/verification-reminder',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiReservationCheckoutRoute = ApiReservationCheckoutRouteImport.update({
+  id: '/api/reservation/checkout',
+  path: '/api/reservation/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReservationStatusRoute = ApiReservationStatusRouteImport.update({
+  id: '/api/reservation/status',
+  path: '/api/reservation/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReservationWebhookRoute = ApiReservationWebhookRouteImport.update({
+  id: '/api/reservation/webhook',
+  path: '/api/reservation/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteWithChildren
   '/privacy': typeof PrivacyRoute
+  '/reservation': typeof ReservationRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -125,10 +150,14 @@ export interface FileRoutesByFullPath {
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
+  '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/status': typeof ApiReservationStatusRoute
+  '/api/reservation/webhook': typeof ApiReservationWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
+  '/reservation': typeof ReservationRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -142,12 +171,16 @@ export interface FileRoutesByTo {
   '/$locale': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
+  '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/status': typeof ApiReservationStatusRoute
+  '/api/reservation/webhook': typeof ApiReservationWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteWithChildren
   '/privacy': typeof PrivacyRoute
+  '/reservation': typeof ReservationRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -161,6 +194,9 @@ export interface FileRoutesById {
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
+  '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/status': typeof ApiReservationStatusRoute
+  '/api/reservation/webhook': typeof ApiReservationWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -168,6 +204,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$locale'
     | '/privacy'
+    | '/reservation'
     | '/terms'
     | '/verify'
     | '/$locale/privacy'
@@ -181,10 +218,14 @@ export interface FileRouteTypes {
     | '/$locale/'
     | '/$locale/r/$code'
     | '/api/cron/verification-reminder'
+    | '/api/reservation/checkout'
+    | '/api/reservation/status'
+    | '/api/reservation/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/privacy'
+    | '/reservation'
     | '/terms'
     | '/verify'
     | '/$locale/privacy'
@@ -198,11 +239,15 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/$locale/r/$code'
     | '/api/cron/verification-reminder'
+    | '/api/reservation/checkout'
+    | '/api/reservation/status'
+    | '/api/reservation/webhook'
   id:
     | '__root__'
     | '/'
     | '/$locale'
     | '/privacy'
+    | '/reservation'
     | '/terms'
     | '/verify'
     | '/$locale/privacy'
@@ -216,12 +261,16 @@ export interface FileRouteTypes {
     | '/$locale/'
     | '/$locale/r/$code'
     | '/api/cron/verification-reminder'
+    | '/api/reservation/checkout'
+    | '/api/reservation/status'
+    | '/api/reservation/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LocaleRoute: typeof LocaleRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
+  ReservationRoute: typeof ReservationRoute
   TermsRoute: typeof TermsRoute
   VerifyRoute: typeof VerifyRoute
   AdminBehaviorRoute: typeof AdminBehaviorRoute
@@ -230,6 +279,9 @@ export interface RootRouteChildren {
   RCodeRoute: typeof RCodeRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
+  ApiReservationCheckoutRoute: typeof ApiReservationCheckoutRoute
+  ApiReservationStatusRoute: typeof ApiReservationStatusRoute
+  ApiReservationWebhookRoute: typeof ApiReservationWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -253,6 +305,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reservation': {
+      id: '/reservation'
+      path: '/reservation'
+      fullPath: '/reservation'
+      preLoaderRoute: typeof ReservationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -346,6 +405,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronVerificationReminderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/reservation/checkout': {
+      id: '/api/reservation/checkout'
+      path: '/api/reservation/checkout'
+      fullPath: '/api/reservation/checkout'
+      preLoaderRoute: typeof ApiReservationCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/reservation/status': {
+      id: '/api/reservation/status'
+      path: '/api/reservation/status'
+      fullPath: '/api/reservation/status'
+      preLoaderRoute: typeof ApiReservationStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/reservation/webhook': {
+      id: '/api/reservation/webhook'
+      path: '/api/reservation/webhook'
+      fullPath: '/api/reservation/webhook'
+      preLoaderRoute: typeof ApiReservationWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -372,6 +452,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LocaleRoute: LocaleRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
+  ReservationRoute: ReservationRoute,
   TermsRoute: TermsRoute,
   VerifyRoute: VerifyRoute,
   AdminBehaviorRoute: AdminBehaviorRoute,
@@ -380,6 +461,9 @@ const rootRouteChildren: RootRouteChildren = {
   RCodeRoute: RCodeRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
+  ApiReservationCheckoutRoute: ApiReservationCheckoutRoute,
+  ApiReservationStatusRoute: ApiReservationStatusRoute,
+  ApiReservationWebhookRoute: ApiReservationWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,0 +1,273 @@
+/* Official DIVEROID tokens from brand-guidance/_system/tokens/design-tokens.json.
+   Scoped here so the site dark theme cannot replace them. No new colors or gradients. */
+
+.wd-rsv {
+  --background: #f6fafc;
+  --foreground: #10212e;
+  --primary: #3d2683;
+  --primary-foreground: #ffffff;
+  --border: #d5e3ea;
+  min-height: 100vh;
+  box-sizing: border-box;
+  border-top: 4px solid #201748;
+  background: #f6fafc;
+  color: #10212e;
+  color-scheme: light;
+  font-family: "Pangram Sans", "Spoqa Han Sans Neo", "Helvetica Neue", "Apple SD Gothic Neo", sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.wd-rsv * { box-sizing: border-box; }
+
+.wd-rsv[lang="ko"] { word-break: keep-all; }
+
+.wd-rsv-inner {
+  width: min(100%, 44rem);
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+}
+
+.wd-rsv-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.wd-rsv-home {
+  display: inline-flex;
+  padding: 1.5rem;
+  margin: 0;
+  line-height: 0;
+  text-decoration: none;
+}
+
+.wd-rsv-wordmark {
+  display: block;
+  width: 160px;
+  height: auto;
+}
+
+.wd-rsv-langs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.wd-rsv-lang {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #b4c8d3;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #3d2683;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.wd-rsv-lang[aria-current="true"] {
+  background: #3d2683;
+  color: #ffffff;
+  border-color: #3d2683;
+}
+
+.wd-rsv h1 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.wd-rsv[lang="ko"] h1 {
+  letter-spacing: -0.02em;
+  line-height: 1.45;
+}
+
+.wd-rsv[lang="ko"] p,
+.wd-rsv[lang="ko"] li {
+  letter-spacing: -0.01em;
+}
+
+.wd-rsv-intro,
+.wd-rsv-status,
+.wd-rsv-notice,
+.wd-rsv-terms,
+.wd-rsv-contact {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.wd-rsv-status,
+.wd-rsv-error {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.9rem;
+}
+
+.wd-rsv-status {
+  background: #ffffff;
+  border: 1px solid #d5e3ea;
+}
+
+.wd-rsv-status[data-phase="paid"] {
+  background: #d7f5e7;
+  color: #177552;
+  border-color: #2dbe7e;
+}
+
+.wd-rsv-error {
+  background: #ffe1dc;
+  color: #b6382e;
+  border: 2px solid #ff6b5a;
+}
+
+.wd-rsv-prices {
+  margin: 1.25rem 0 0;
+  padding: 0;
+}
+
+.wd-rsv-prices h2,
+.wd-rsv-terms h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.wd-rsv-price {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem 1rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid #d5e3ea;
+}
+
+.wd-rsv-price:last-child { border-bottom: 1px solid #d5e3ea; }
+
+.wd-rsv-price dd { margin: 0; }
+
+.wd-rsv-amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 1.125rem;
+  letter-spacing: 0;
+}
+
+.wd-rsv-detail {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #36505e;
+  font-size: 0.9375rem;
+}
+
+.wd-rsv-total .wd-rsv-amount { font-size: 1.5rem; }
+
+.wd-rsv-notice {
+  margin: 1rem 0 0;
+  padding: 0.95rem 1rem;
+  background: #eef9ff;
+  color: #10212e;
+  border: 2px solid #d5e3ea;
+  border-radius: 0.9rem;
+}
+
+.wd-rsv-notice p,
+.wd-rsv-terms p,
+.wd-rsv-terms li { margin: 0.65rem 0; }
+
+.wd-rsv-terms { margin-top: 1.5rem; }
+
+.wd-rsv-terms ol { margin: 0; padding-left: 1.2rem; }
+
+.wd-rsv-read,
+.wd-rsv-submit,
+.wd-rsv-check {
+  min-height: 2.75rem;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 0.8rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.wd-rsv-read,
+.wd-rsv-check {
+  border: 1px solid #b4c8d3;
+  background: #ffffff;
+  color: #10212e;
+}
+
+.wd-rsv-read[aria-pressed="true"] { border-color: #201748; }
+
+.wd-rsv-submit {
+  border: 0;
+  background: #3d2683;
+  color: #ffffff;
+}
+
+.wd-rsv-submit:hover:not(:disabled) { background: #30206d; }
+
+.wd-rsv-submit:active:not(:disabled) { background: #201748; }
+
+.wd-rsv-submit:disabled,
+.wd-rsv-read:disabled,
+.wd-rsv-check:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.wd-rsv-accept {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  margin-top: 0.9rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.wd-rsv-accept input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+  flex: 0 0 auto;
+}
+
+.wd-rsv-hint { margin: 0.6rem 0 0; font-size: 0.8125rem; }
+
+.wd-rsv-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.wd-rsv-links a {
+  color: #3d2683;
+  font-weight: 500;
+}
+
+.wd-rsv :focus-visible {
+  outline: 3px solid #1a668e;
+  outline-offset: 3px;
+}
+
+@media (max-width: 32rem) {
+  .wd-rsv-price { grid-template-columns: 1fr; }
+  .wd-rsv-amount { justify-self: start; }
+  .wd-rsv h1 { font-size: 1.75rem; }
+}
+
+@media (min-width: 48rem) {
+  .wd-rsv-inner { padding: 2rem 1.5rem 4rem; }
+  .wd-rsv-submit,
+  .wd-rsv-read,
+  .wd-rsv-check { width: auto; min-width: 16rem; }
+}
