@@ -108,7 +108,7 @@
  *   individual reviews use the Product Truth publication allowlist.
  * - FAQ compatibility, sensor/Bluetooth architecture and battery warranty /
  *   paid-replacement terms were approved by the product owner on 2026-08-01.
- * - Operator: Privacy/Terms name "Diveroid Ltd" (England, company no. 16343651),
+ * - Operator: Privacy/Terms name "DIVEROID LTD" (England, company no. 16343651),
  *   matching the landing footer, in every locale (2026-09-26).
  *
  * Legal pages (privacy/terms): the eight non-English versions are faithful,
@@ -505,19 +505,19 @@ const ko: FrozenLandingMessages = {
   privacy: {
     metaTitle: "개인정보처리방침 — WatchDive",
     metaDescription:
-      "WatchDive 프리런칭 페이지에서 소식 신청, 선택적 USD $3 가격 예약, 선택적 페이지 측정을 Diveroid Ltd가 처리하는 방법.",
+      "WatchDive 프리런칭 페이지에서 소식 신청, 선택적 USD $3 가격 예약, 선택적 페이지 측정을 DIVEROID LTD가 처리하는 방법.",
     back: "← 홈으로 돌아가기",
     h1: "개인정보처리방침 — WatchDive 프리런칭",
     effectiveLabel: "시행일:",
     effectiveDate: "2026년 10월 18일",
     intro1:
-      '본 개인정보처리방침은 Diveroid Ltd("회사", "당사", "DIVEROID")가 WatchDive 프리런칭 페이지에서 예정된 Kickstarter 캠페인 소식을 받기 위해 신청하실 때 정보를 어떻게 처리하는지 설명합니다.',
+      '본 개인정보처리방침은 DIVEROID LTD("회사", "당사", "DIVEROID")가 WatchDive 프리런칭 페이지에서 예정된 Kickstarter 캠페인 소식을 받기 위해 신청하실 때 정보를 어떻게 처리하는지 설명합니다.',
     intro2:
       "이 페이지는 런칭 관심을 등록합니다. 무료 이메일 신청은 구매가 아니며 결제를 받지 않습니다. 선택적 가격 예약을 선택하면 Stripe hosted Checkout이 지금 정확히 USD $3을 청구합니다. 이 수수료는 제품 가격에 더해지며 제품 가격에서 공제되지 않습니다. 유료 가격 예약은 공개된 선착순 100명에 포함되는지와 관계없이 출시 시 제품을 USD $149에 구매할 수 있음을 보장합니다. USD $149는 나중에 구매를 선택할 때에만 청구하며 자동으로 청구하지 않습니다. 수수료와 제품 가격을 합하면 적용되는 제품 배송비와 세금 전 USD $152입니다. 제품 배송비나 세금이 적용되면 제품을 구매하기 전에 안내합니다. 수수료의 결제 조건은 이용약관에 있습니다.",
     s1Title: "1. 회사 소개",
-    s1Company: "회사: Diveroid Ltd (브랜드: DIVEROID)",
+    s1Company: "회사: DIVEROID LTD (브랜드: DIVEROID)",
     s1Rep: "대표: Jay Kim",
-    s1Addr: "등록지: 영국(잉글랜드)",
+    s1Addr: "등록 주소: Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA",
     s1Reg: "회사 번호: 16343651",
     s1Contact: "개인정보 문의: help@diveroid.com",
     s2Title: "2. 수집하는 정보",
@@ -561,17 +561,17 @@ const ko: FrozenLandingMessages = {
       "본 방침은 수시로 갱신될 수 있습니다. 최신 버전은 항상 이 페이지에서 확인할 수 있으며, 시행일은 상단에 표시됩니다.",
     s10Title: "10. 문의",
     s10Body: "개인정보 관련 문의는 help@diveroid.com으로 보내 주세요.",
-    footerLine: "Diveroid Ltd · 영국(잉글랜드) 등록 · 회사 번호 16343651",
+    footerLine: "DIVEROID LTD · 영국(잉글랜드) 등록 · 회사 번호 16343651",
   },
   terms: {
     metaTitle: "이용약관 — WatchDive",
-    metaDescription: "Diveroid Ltd가 운영하는 WatchDive 프리런칭 페이지의 이용약관. 선택적 USD $3 가격 예약을 포함합니다.",
+    metaDescription: "DIVEROID LTD가 운영하는 WatchDive 프리런칭 페이지의 이용약관. 선택적 USD $3 가격 예약을 포함합니다.",
     back: "← 홈으로 돌아가기",
     h1: "이용약관 — WatchDive 프리런칭",
     effectiveLabel: "시행일:",
     effectiveDate: "2026년 10월 18일",
     intro:
-      'Diveroid Ltd("회사", "당사", "DIVEROID")가 운영하는 WatchDive 프리런칭 페이지에 오신 것을 환영합니다. 이 페이지를 이용하거나 신청하거나, 선택적 가격 예약 수수료를 결제하면 아래 약관에 동의하는 것입니다.',
+      'DIVEROID LTD("회사", "당사", "DIVEROID")가 운영하는 WatchDive 프리런칭 페이지에 오신 것을 환영합니다. 이 페이지를 이용하거나 신청하거나, 선택적 가격 예약 수수료를 결제하면 아래 약관에 동의하는 것입니다.',
     s1Title: "1. 이 페이지의 성격",
     s1Body:
       "이 페이지는 WatchDive에 대한 관심을 등록하고 예정된 Kickstarter 캠페인 소식을 받는 곳입니다. 무료 이메일 신청은 구매가 아니고, 결제를 받지 않으며, 제품을 예약하거나 특정 가격을 보장하지 않습니다. 이와 별도로 Stripe hosted Checkout에서 지금 정확히 USD $3을 한 번 내면 선택적 가격 예약을 할 수 있습니다. 이 수수료는 제품 가격에 더해지며 제품 가격에서 공제되지 않습니다. 유료 가격 예약은 공개된 선착순 100명에 포함되는지와 관계없이 출시 시 제품을 USD $149에 구매할 수 있음을 보장합니다. USD $149는 나중에 구매를 선택할 때에만 청구하며, 자동으로 청구하거나, 청구 일정을 잡거나, 결제를 승인하지 않습니다. USD $3 수수료와 USD $149 제품 가격을 합하면 적용되는 제품 배송비와 세금 전 USD $152입니다. 제품 배송비나 세금이 적용되면 제품을 구매하기 전에 안내합니다. USD $3 수수료는 환불되지 않습니다. 다만 당사가 제품 출시를 취소하면 그 수수료를 환불합니다. 본 약관은 적용 법률이 제한을 허용하지 않는 권리를 제한하지 않으며, 그러한 권리를 포기하라고 요구하지 않습니다.",
@@ -584,7 +584,7 @@ const ko: FrozenLandingMessages = {
     s3PrivacyLink: "개인정보처리방침",
     s4Title: "4. 지식재산권",
     s4Body:
-      "이 페이지의 모든 콘텐츠 — WatchDive와 DIVEROID 명칭, 로고, 텍스트, 이미지, 영상 포함 — 는 Diveroid Ltd 또는 라이선서의 소유입니다. 허락 없이 복제하거나 재사용할 수 없습니다.",
+      "이 페이지의 모든 콘텐츠 — WatchDive와 DIVEROID 명칭, 로고, 텍스트, 이미지, 영상 포함 — 는 DIVEROID LTD 또는 라이선서의 소유입니다. 허락 없이 복제하거나 재사용할 수 없습니다.",
     s5Title: "5. 면책",
     s5Body1:
       "WatchDive는 호환 스마트워치와 함께 사용하도록 설계된 다이빙 보조 도구입니다. 출시 후에도 정식 다이빙 교육, 자격, 백업 다이브 컴퓨터를 대체하는 것이 아니라 보조하기 위한 것입니다. 항상 교육받은 범위 안에서 다이빙하고 안전 수칙을 따르세요.",
@@ -594,7 +594,7 @@ const ko: FrozenLandingMessages = {
     s6Body: "본 약관은 대한민국 법률의 적용을 받습니다.",
     s7Title: "7. 문의",
     s7Body: "궁금한 점은 help@diveroid.com으로 이메일 주세요.",
-    footerLine: "Diveroid Ltd · 영국(잉글랜드) 등록 · 회사 번호 16343651",
+    footerLine: "DIVEROID LTD · 영국(잉글랜드) 등록 · 회사 번호 16343651",
   },
 };
 
@@ -958,18 +958,18 @@ const zhCN: FrozenLandingMessages = {
   },
   privacy: {
     metaTitle: "隐私政策 — WatchDive",
-    metaDescription: "你报名接收 WatchDive 预启动消息、选择可选的 USD $3 价格预约，以及选择页面测量时，Diveroid Ltd 如何处理你的信息。",
+    metaDescription: "你报名接收 WatchDive 预启动消息、选择可选的 USD $3 价格预约，以及选择页面测量时，DIVEROID LTD 如何处理你的信息。",
     back: "← 返回首页",
     h1: "隐私政策 — WatchDive 预启动",
     effectiveLabel: "生效日期：",
     effectiveDate: "2026 年 10 月 18 日",
     intro1:
-      "本隐私政策说明 Diveroid Ltd（“我们”，“DIVEROID”）在你于 WatchDive 预启动页面报名接收即将开启的 Kickstarter 众筹消息时，如何处理你的信息。",
+      "本隐私政策说明 DIVEROID LTD（“我们”，“DIVEROID”）在你于 WatchDive 预启动页面报名接收即将开启的 Kickstarter 众筹消息时，如何处理你的信息。",
     intro2: "本页面收集上线意向。免费的邮箱报名不是购买，也不收款。如果你选择可选的价格预约，Stripe hosted Checkout 现在收取正好 USD $3。该费用加在产品价格之上，不从产品价格中扣除。付费价格预约保证你能在发布时以 USD $149 购买该产品，无论你是否属于公开的前 100 名。USD $149 仅在你之后选择购买时收取，我们不会自动收取。费用与产品价格合计为适用的产品运费和税费之前的 USD $152。如果产品运费或税费适用，我们会在你购买产品之前告知。费用的付款条件见使用条款。",
     s1Title: "1. 我们是谁",
-    s1Company: "公司：Diveroid Ltd（品牌：DIVEROID）",
+    s1Company: "公司：DIVEROID LTD（品牌：DIVEROID）",
     s1Rep: "代表人：Jay Kim",
-    s1Addr: "注册地：英国（英格兰）",
+    s1Addr: "注册地址：Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA",
     s1Reg: "公司编号：16343651",
     s1Contact: "隐私联系邮箱：help@diveroid.com",
     s2Title: "2. 我们收集什么",
@@ -1010,17 +1010,17 @@ const zhCN: FrozenLandingMessages = {
     s9Body: "我们可能不时更新本隐私政策。最新版本始终可在本页查看，顶部标注生效日期。",
     s10Title: "10. 联系我们",
     s10Body: "对隐私有疑问？请发邮件至 help@diveroid.com。",
-    footerLine: "Diveroid Ltd · 英国（英格兰）注册 · 公司编号 16343651",
+    footerLine: "DIVEROID LTD · 英国（英格兰）注册 · 公司编号 16343651",
   },
   terms: {
     metaTitle: "使用条款 — WatchDive",
-    metaDescription: "由 Diveroid Ltd 运营的 WatchDive 预启动页面使用条款，包括可选的 USD $3 价格预约。",
+    metaDescription: "由 DIVEROID LTD 运营的 WatchDive 预启动页面使用条款，包括可选的 USD $3 价格预约。",
     back: "← 返回首页",
     h1: "使用条款 — WatchDive 预启动",
     effectiveLabel: "生效日期：",
     effectiveDate: "2026 年 10 月 18 日",
     intro:
-      "欢迎来到由 Diveroid Ltd（“我们”，“DIVEROID”）运营的 WatchDive 预启动页面。使用本页面、报名，或在你选择时支付可选的价格预约费用，即表示你同意以下条款。",
+      "欢迎来到由 DIVEROID LTD（“我们”，“DIVEROID”）运营的 WatchDive 预启动页面。使用本页面、报名，或在你选择时支付可选的价格预约费用，即表示你同意以下条款。",
     s1Title: "1. 本页面是什么",
     s1Body:
       "本页面用于登记你对 WatchDive 的兴趣并接收即将开启的 Kickstarter 众筹消息。免费的邮箱报名不是购买，不收款，不预留产品，也不保证特定价格。你可以另外选择可选的价格预约，通过 Stripe hosted Checkout 现在支付正好 USD $3。该费用加在产品价格之上，不从产品价格中扣除。付费价格预约保证你能在发布时以 USD $149 购买该产品，无论你是否属于公开的前 100 名。USD $149 仅在你之后选择购买时收取，我们不会自动收取、安排收取或授权收取。USD $3 费用与 USD $149 产品价格合计为适用的产品运费和税费之前的 USD $152。如果产品运费或税费适用，我们会在你购买产品之前告知。USD $3 费用不予退款，但如果我们取消产品发布，则退还该费用。本条款不限制适用法律不允许我们限制的权利，也不要求你放弃此类权利。",
@@ -1033,7 +1033,7 @@ const zhCN: FrozenLandingMessages = {
     s3PrivacyLink: "隐私政策",
     s4Title: "4. 知识产权",
     s4Body:
-      "本页面的全部内容 — 包括 WatchDive 与 DIVEROID 名称、标志、文字、图片与视频 — 均属 Diveroid Ltd 或其许可方所有。未经许可不得复制或再利用。",
+      "本页面的全部内容 — 包括 WatchDive 与 DIVEROID 名称、标志、文字、图片与视频 — 均属 DIVEROID LTD 或其许可方所有。未经许可不得复制或再利用。",
     s5Title: "5. 免责声明",
     s5Body1:
       "WatchDive 是为配合兼容智能手表而设计的潜水辅助工具。发布后，它旨在辅助 — 而非替代 — 正规潜水训练、证书与备用潜水电脑。请始终在训练范围内潜水并遵循安全潜水规范。",
@@ -1043,7 +1043,7 @@ const zhCN: FrozenLandingMessages = {
     s6Body: "本条款受大韩民国法律管辖。",
     s7Title: "7. 联系我们",
     s7Body: "有问题？请发邮件至 help@diveroid.com。",
-    footerLine: "Diveroid Ltd · 英国（英格兰）注册 · 公司编号 16343651",
+    footerLine: "DIVEROID LTD · 英国（英格兰）注册 · 公司编号 16343651",
   },
 };
 
@@ -1407,18 +1407,18 @@ const zhTW: FrozenLandingMessages = {
   },
   privacy: {
     metaTitle: "隱私權政策 — WatchDive",
-    metaDescription: "你報名接收 WatchDive 預先啟動消息、選擇可選的 USD $3 價格預約，以及選擇頁面測量時，Diveroid Ltd 如何處理你的資訊。",
+    metaDescription: "你報名接收 WatchDive 預先啟動消息、選擇可選的 USD $3 價格預約，以及選擇頁面測量時，DIVEROID LTD 如何處理你的資訊。",
     back: "← 回到首頁",
     h1: "隱私權政策 — WatchDive 預先啟動",
     effectiveLabel: "生效日期：",
     effectiveDate: "2026 年 10 月 18 日",
     intro1:
-      "本隱私權政策說明 Diveroid Ltd（「我們」，「DIVEROID」）在你於 WatchDive 預先啟動頁面報名接收即將開啟的 Kickstarter 募資消息時，如何處理你的資訊。",
+      "本隱私權政策說明 DIVEROID LTD（「我們」，「DIVEROID」）在你於 WatchDive 預先啟動頁面報名接收即將開啟的 Kickstarter 募資消息時，如何處理你的資訊。",
     intro2: "本頁面蒐集上線意向。免費的電子郵件報名不是購買，也不收款。如果你選擇可選的價格預約，Stripe hosted Checkout 現在收取正好 USD $3。該費用加在產品價格之上，不從產品價格中扣除。付費價格預約保證你能在發布時以 USD $149 購買該產品，無論你是否屬於公開的前 100 名。USD $149 僅在你之後選擇購買時收取，我們不會自動收取。費用與產品價格合計為適用的產品運費和稅費之前的 USD $152。如果產品運費或稅費適用，我們會在你購買產品之前告知。費用的付款條件見使用條款。",
     s1Title: "1. 我們是誰",
-    s1Company: "公司：Diveroid Ltd（品牌：DIVEROID）",
+    s1Company: "公司：DIVEROID LTD（品牌：DIVEROID）",
     s1Rep: "代表人：Jay Kim",
-    s1Addr: "註冊地：英國（英格蘭）",
+    s1Addr: "註冊地址：Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA",
     s1Reg: "公司編號：16343651",
     s1Contact: "隱私權聯絡信箱：help@diveroid.com",
     s2Title: "2. 我們蒐集什麼",
@@ -1459,17 +1459,17 @@ const zhTW: FrozenLandingMessages = {
     s9Body: "我們可能不時更新本隱私權政策。最新版本一律可在本頁查看，頂端標註生效日期。",
     s10Title: "10. 聯絡我們",
     s10Body: "對隱私權有疑問？請寄信至 help@diveroid.com。",
-    footerLine: "Diveroid Ltd · 英國（英格蘭）註冊 · 公司編號 16343651",
+    footerLine: "DIVEROID LTD · 英國（英格蘭）註冊 · 公司編號 16343651",
   },
   terms: {
     metaTitle: "使用條款 — WatchDive",
-    metaDescription: "由 Diveroid Ltd 營運的 WatchDive 預先啟動頁面使用條款，包括可選的 USD $3 價格預約。",
+    metaDescription: "由 DIVEROID LTD 營運的 WatchDive 預先啟動頁面使用條款，包括可選的 USD $3 價格預約。",
     back: "← 回到首頁",
     h1: "使用條款 — WatchDive 預先啟動",
     effectiveLabel: "生效日期：",
     effectiveDate: "2026 年 10 月 18 日",
     intro:
-      "歡迎來到由 Diveroid Ltd（「我們」，「DIVEROID」）營運的 WatchDive 預先啟動頁面。使用本頁面、報名，或在你選擇時支付可選的價格預約費用，即表示你同意以下條款。",
+      "歡迎來到由 DIVEROID LTD（「我們」，「DIVEROID」）營運的 WatchDive 預先啟動頁面。使用本頁面、報名，或在你選擇時支付可選的價格預約費用，即表示你同意以下條款。",
     s1Title: "1. 本頁面是什麼",
     s1Body:
       "本頁面用於登記你對 WatchDive 的興趣並接收即將開啟的 Kickstarter 募資消息。免費的電子郵件報名不是購買，不收款，不預留產品，也不保證特定價格。你可以另外選擇可選的價格預約，透過 Stripe hosted Checkout 現在支付正好 USD $3。該費用加在產品價格之上，不從產品價格中扣除。付費價格預約保證你能在發布時以 USD $149 購買該產品，無論你是否屬於公開的前 100 名。USD $149 僅在你之後選擇購買時收取，我們不會自動收取、安排收取或授權收取。USD $3 費用與 USD $149 產品價格合計為適用的產品運費和稅費之前的 USD $152。如果產品運費或稅費適用，我們會在你購買產品之前告知。USD $3 費用不予退款，但如果我們取消產品發布，則退還該費用。本條款不限制適用法律不允許我們限制的權利，也不要求你放棄此類權利。",
@@ -1482,7 +1482,7 @@ const zhTW: FrozenLandingMessages = {
     s3PrivacyLink: "隱私權政策",
     s4Title: "4. 智慧財產權",
     s4Body:
-      "本頁面的全部內容 — 包括 WatchDive 與 DIVEROID 名稱、標誌、文字、圖片與影片 — 均屬 Diveroid Ltd 或其授權方所有。未經許可不得複製或再利用。",
+      "本頁面的全部內容 — 包括 WatchDive 與 DIVEROID 名稱、標誌、文字、圖片與影片 — 均屬 DIVEROID LTD 或其授權方所有。未經許可不得複製或再利用。",
     s5Title: "5. 免責聲明",
     s5Body1:
       "WatchDive 是為搭配相容智慧手錶而設計的潛水輔助工具。發售後，它旨在輔助 — 而非取代 — 正規潛水訓練、證照與備用潛水電腦。請始終在訓練範圍內潛水並遵循安全潛水規範。",
@@ -1492,7 +1492,7 @@ const zhTW: FrozenLandingMessages = {
     s6Body: "本條款受大韓民國法律管轄。",
     s7Title: "7. 聯絡我們",
     s7Body: "有問題嗎？請寄信至 help@diveroid.com。",
-    footerLine: "Diveroid Ltd · 英國（英格蘭）註冊 · 公司編號 16343651",
+    footerLine: "DIVEROID LTD · 英國（英格蘭）註冊 · 公司編號 16343651",
   },
 };
 
@@ -1872,19 +1872,19 @@ const ja: FrozenLandingMessages = {
   privacy: {
     metaTitle: "プライバシーポリシー — WatchDive",
     metaDescription:
-      "WatchDive の事前登録、任意の USD $3 価格予約、任意のページ計測について、Diveroid Ltd が情報をどのように取り扱うか。",
+      "WatchDive の事前登録、任意の USD $3 価格予約、任意のページ計測について、DIVEROID LTD が情報をどのように取り扱うか。",
     back: "← ホームに戻る",
     h1: "プライバシーポリシー — WatchDive 事前登録",
     effectiveLabel: "発効日:",
     effectiveDate: "2026 年 10 月 18 日",
     intro1:
-      "本プライバシーポリシーは、Diveroid Ltd（「当社」、「DIVEROID」）が、WatchDive 事前登録ページで今後の Kickstarter キャンペーン情報の受け取りにお申し込みいただいた際に、お客様の情報をどのように取り扱うかを説明するものです。",
+      "本プライバシーポリシーは、DIVEROID LTD（「当社」、「DIVEROID」）が、WatchDive 事前登録ページで今後の Kickstarter キャンペーン情報の受け取りにお申し込みいただいた際に、お客様の情報をどのように取り扱うかを説明するものです。",
     intro2:
       "このページはローンチへの関心を登録します。無料のメール登録は購入ではなく、支払いも受けません。任意の価格予約を選ぶと、Stripe hosted Checkout が今ちょうど USD $3 を請求します。この手数料は製品価格に加算され、製品価格から差し引かれません。有料の価格予約は、公開の先着100名に入るかどうかにかかわらず、ローンチ時に製品を USD $149 で購入できることを保証します。USD $149 は、後で購入を選んだときにだけ請求し、自動では請求しません。手数料と製品価格の合計は、適用される製品の送料と税金の前で USD $152 です。製品の送料または税金がかかる場合は、製品を購入する前に開示します。手数料の支払条件は利用規約にあります。",
     s1Title: "1. 当社について",
-    s1Company: "会社: Diveroid Ltd（ブランド: DIVEROID）",
+    s1Company: "会社: DIVEROID LTD（ブランド: DIVEROID）",
     s1Rep: "代表者: Jay Kim",
-    s1Addr: "登記地: 英国（イングランド）",
+    s1Addr: "登記住所: Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA",
     s1Reg: "会社番号: 16343651",
     s1Contact: "プライバシー窓口: help@diveroid.com",
     s2Title: "2. 収集する情報",
@@ -1929,17 +1929,17 @@ const ja: FrozenLandingMessages = {
       "本プライバシーポリシーは随時更新されることがあります。最新版は常にこのページで確認でき、冒頭に発効日を表示します。",
     s10Title: "10. お問い合わせ",
     s10Body: "プライバシーに関するご質問は help@diveroid.com までメールでお寄せください。",
-    footerLine: "Diveroid Ltd · 英国（イングランド）登記 · 会社番号 16343651",
+    footerLine: "DIVEROID LTD · 英国（イングランド）登記 · 会社番号 16343651",
   },
   terms: {
     metaTitle: "利用規約 — WatchDive",
-    metaDescription: "Diveroid Ltd が運営する WatchDive 事前登録ページの利用規約。任意の USD $3 価格予約を含みます。",
+    metaDescription: "DIVEROID LTD が運営する WatchDive 事前登録ページの利用規約。任意の USD $3 価格予約を含みます。",
     back: "← ホームに戻る",
     h1: "利用規約 — WatchDive 事前登録",
     effectiveLabel: "発効日:",
     effectiveDate: "2026 年 10 月 18 日",
     intro:
-      "Diveroid Ltd（「当社」、「DIVEROID」）が運営する WatchDive 事前登録ページへようこそ。このページを利用し、登録し、または任意の価格予約手数料を支払うことで、以下の規約に同意したものとみなされます。",
+      "DIVEROID LTD（「当社」、「DIVEROID」）が運営する WatchDive 事前登録ページへようこそ。このページを利用し、登録し、または任意の価格予約手数料を支払うことで、以下の規約に同意したものとみなされます。",
     s1Title: "1. このページについて",
     s1Body:
       "このページでは、WatchDive への関心を登録し、今後の Kickstarter キャンペーン情報を受け取れます。無料のメール登録は購入ではなく、支払いを受けず、製品の予約でも特定価格の保証でもありません。別に、Stripe hosted Checkout で今ちょうど USD $3 を一度支払うと、任意の価格予約を選べます。この手数料は製品価格に加算され、製品価格から差し引かれません。有料の価格予約は、公開の先着100名に入るかどうかにかかわらず、ローンチ時に製品を USD $149 で購入できることを保証します。USD $149 は、後で購入を選んだときにだけ請求し、自動で請求せず、請求を予定せず、決済を承認しません。USD $3 の手数料と USD $149 の製品価格の合計は、適用される製品の送料と税金の前で USD $152 です。製品の送料または税金がかかる場合は、製品を購入する前に開示します。USD $3 の手数料は返金されません。ただし当社が製品のローンチを中止した場合は、その手数料を返金します。本規約は、適用される法律が制限を許さない権利を制限せず、その権利を放棄するよう求めません。",
@@ -1952,7 +1952,7 @@ const ja: FrozenLandingMessages = {
     s3PrivacyLink: "プライバシーポリシー",
     s4Title: "4. 知的財産",
     s4Body:
-      "このページのすべてのコンテンツ — WatchDive と DIVEROID の名称、ロゴ、テキスト、画像、動画を含む — は、Diveroid Ltd またはそのライセンサーに帰属します。許可なく複製・再利用することはできません。",
+      "このページのすべてのコンテンツ — WatchDive と DIVEROID の名称、ロゴ、テキスト、画像、動画を含む — は、DIVEROID LTD またはそのライセンサーに帰属します。許可なく複製・再利用することはできません。",
     s5Title: "5. 免責事項",
     s5Body1:
       "WatchDive は、対応スマートウォッチと組み合わせて使うよう設計されたダイビング補助器具です。発売後も、正式なダイビングトレーニング、資格、バックアップのダイブコンピューターを置き換えるのではなく、補助することを目的としています。常にトレーニングの範囲内で潜り、安全なダイビング慣行に従ってください。",
@@ -1962,7 +1962,7 @@ const ja: FrozenLandingMessages = {
     s6Body: "本規約は大韓民国の法律に準拠します。",
     s7Title: "7. お問い合わせ",
     s7Body: "ご質問は help@diveroid.com までメールでお寄せください。",
-    footerLine: "Diveroid Ltd · 英国（イングランド）登記 · 会社番号 16343651",
+    footerLine: "DIVEROID LTD · 英国（イングランド）登記 · 会社番号 16343651",
   },
 };
 
@@ -2350,19 +2350,19 @@ const es: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Política de privacidad — WatchDive",
     metaDescription:
-      "Cómo trata Diveroid Ltd tu información cuando te registras, eliges la reserva de precio opcional de USD $3 y la medición opcional de la página de prelanzamiento de WatchDive.",
+      "Cómo trata DIVEROID LTD tu información cuando te registras, eliges la reserva de precio opcional de USD $3 y la medición opcional de la página de prelanzamiento de WatchDive.",
     back: "← Volver al inicio",
     h1: "Política de privacidad — Prelanzamiento de WatchDive",
     effectiveLabel: "Fecha de entrada en vigor:",
     effectiveDate: "18 de octubre de 2026",
     intro1:
-      'Esta Política de privacidad explica cómo Diveroid Ltd ("nosotros", "DIVEROID") trata tu información cuando te registras en la página de prelanzamiento de WatchDive para recibir novedades sobre nuestra próxima campaña de Kickstarter.',
+      'Esta Política de privacidad explica cómo DIVEROID LTD ("nosotros", "DIVEROID") trata tu información cuando te registras en la página de prelanzamiento de WatchDive para recibir novedades sobre nuestra próxima campaña de Kickstarter.',
     intro2:
       "Esta página recoge el interés en el lanzamiento. Un registro gratuito por email no es una compra y no cobra ningún pago. Si eliges la reserva de precio opcional, Stripe hosted Checkout cobra exactamente USD $3 ahora. La comisión se suma al precio del producto y no se deduce de él. La reserva de precio de pago garantiza que puedes comprar el producto por USD $149 en el lanzamiento, estés o no entre los 100 primeros públicos. Cobramos USD $149 más adelante solo cuando eliges comprar, y no lo cobramos automáticamente. La comisión y el precio del producto juntos son USD $152 antes de cualquier envío o impuesto del producto que se aplique. Si se aplican envío o impuestos del producto, los indicamos antes de que compres el producto. Las condiciones de pago de la comisión están en los Términos de uso.",
     s1Title: "1. Quiénes somos",
-    s1Company: "Empresa: Diveroid Ltd (marca: DIVEROID)",
+    s1Company: "Empresa: DIVEROID LTD (marca: DIVEROID)",
     s1Rep: "Representante: Jay Kim",
-    s1Addr: "Registrada en: Inglaterra (Reino Unido)",
+    s1Addr: "Domicilio social: Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA",
     s1Reg: "N.º de empresa: 16343651",
     s1Contact: "Contacto de privacidad: help@diveroid.com",
     s2Title: "2. Qué recopilamos",
@@ -2409,18 +2409,18 @@ const es: FrozenLandingMessages = {
       "Podemos actualizar esta Política de privacidad de vez en cuando. La versión más reciente estará siempre disponible en esta página, con la fecha de entrada en vigor arriba.",
     s10Title: "10. Contacto",
     s10Body: "¿Preguntas sobre tu privacidad? Escribe a help@diveroid.com.",
-    footerLine: "Diveroid Ltd · Registrada en Inglaterra · N.º de empresa 16343651",
+    footerLine: "DIVEROID LTD · Registrada en Inglaterra · N.º de empresa 16343651",
   },
   terms: {
     metaTitle: "Términos de uso — WatchDive",
     metaDescription:
-      "Términos de uso de la página de prelanzamiento de WatchDive, operada por Diveroid Ltd, incluida la reserva de precio opcional de USD $3.",
+      "Términos de uso de la página de prelanzamiento de WatchDive, operada por DIVEROID LTD, incluida la reserva de precio opcional de USD $3.",
     back: "← Volver al inicio",
     h1: "Términos de uso — Prelanzamiento de WatchDive",
     effectiveLabel: "Fecha de entrada en vigor:",
     effectiveDate: "18 de octubre de 2026",
     intro:
-      'Bienvenido a la página de prelanzamiento de WatchDive, operada por Diveroid Ltd ("nosotros", "DIVEROID"). Al usar esta página, al registrarte y, si la eliges, al pagar la comisión opcional de reserva de precio, aceptas los siguientes términos.',
+      'Bienvenido a la página de prelanzamiento de WatchDive, operada por DIVEROID LTD ("nosotros", "DIVEROID"). Al usar esta página, al registrarte y, si la eliges, al pagar la comisión opcional de reserva de precio, aceptas los siguientes términos.',
     s1Title: "1. Qué es esta página",
     s1Body:
       "Esta página te permite registrar tu interés en WatchDive y recibir novedades sobre nuestra próxima campaña de Kickstarter. Un registro gratuito por email no es una compra, no cobra ningún pago, no reserva una unidad y no garantiza un precio. Por separado puedes elegir una reserva de precio opcional pagando exactamente USD $3 ahora mediante Stripe hosted Checkout. Esa comisión se suma al precio del producto y no se deduce de él. La reserva de precio de pago garantiza que puedes comprar el producto por USD $149 en el lanzamiento, estés o no entre los 100 primeros públicos. Cobramos USD $149 más adelante solo cuando eliges comprar, y no lo cobramos, programamos ni autorizamos automáticamente. La comisión de USD $3 y el precio del producto de USD $149 juntos son USD $152 antes de cualquier envío o impuesto del producto que se aplique. Si se aplican envío o impuestos del producto, los indicamos antes de que compres el producto. La comisión de USD $3 no es reembolsable, salvo si cancelamos el lanzamiento del producto, en cuyo caso devolvemos la comisión. Nada en estos términos limita un derecho que la ley aplicable no nos permite limitar, y estos términos no te exigen renunciar a ese derecho.",
@@ -2433,7 +2433,7 @@ const es: FrozenLandingMessages = {
     s3PrivacyLink: "Política de privacidad",
     s4Title: "4. Propiedad intelectual",
     s4Body:
-      "Todo el contenido de esta página — incluidos los nombres WatchDive y DIVEROID, logotipos, textos, imágenes y vídeos — pertenece a Diveroid Ltd o a sus licenciantes. No puedes copiarlo ni reutilizarlo sin nuestro permiso.",
+      "Todo el contenido de esta página — incluidos los nombres WatchDive y DIVEROID, logotipos, textos, imágenes y vídeos — pertenece a DIVEROID LTD o a sus licenciantes. No puedes copiarlo ni reutilizarlo sin nuestro permiso.",
     s5Title: "5. Descargo de responsabilidad",
     s5Body1:
       "WatchDive es una ayuda al buceo diseñada para funcionar con un smartwatch compatible. Cuando se lance, está pensado para apoyar — no reemplazar — la formación de buceo adecuada, la certificación y un ordenador de buceo de respaldo. Bucea siempre dentro de tu formación y sigue prácticas de buceo seguras.",
@@ -2443,7 +2443,7 @@ const es: FrozenLandingMessages = {
     s6Body: "Estos términos se rigen por las leyes de la República de Corea.",
     s7Title: "7. Contacto",
     s7Body: "¿Preguntas? Escribe a help@diveroid.com.",
-    footerLine: "Diveroid Ltd · Registrada en Inglaterra · N.º de empresa 16343651",
+    footerLine: "DIVEROID LTD · Registrada en Inglaterra · N.º de empresa 16343651",
   },
 };
 
@@ -2832,19 +2832,19 @@ const fr: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Politique de confidentialité — WatchDive",
     metaDescription:
-      "Comment Diveroid Ltd traite l’inscription, la réservation de prix facultative de USD $3 et la mesure facultative de page sur le prélancement WatchDive.",
+      "Comment DIVEROID LTD traite l’inscription, la réservation de prix facultative de USD $3 et la mesure facultative de page sur le prélancement WatchDive.",
     back: "← Retour à l’accueil",
     h1: "Politique de confidentialité — Prélancement WatchDive",
     effectiveLabel: "Date d’entrée en vigueur :",
     effectiveDate: "18 octobre 2026",
     intro1:
-      "La présente Politique de confidentialité explique comment Diveroid Ltd (« nous », « DIVEROID ») traite vos informations lorsque vous vous inscrivez sur la page de prélancement de WatchDive pour recevoir des nouvelles de notre prochaine campagne Kickstarter.",
+      "La présente Politique de confidentialité explique comment DIVEROID LTD (« nous », « DIVEROID ») traite vos informations lorsque vous vous inscrivez sur la page de prélancement de WatchDive pour recevoir des nouvelles de notre prochaine campagne Kickstarter.",
     intro2:
       "Cette page recueille l’intérêt pour le lancement. Une inscription gratuite par e-mail n’est pas un achat et n’encaisse pas de paiement. Si vous choisissez la réservation de prix facultative, Stripe hosted Checkout prélève exactement USD $3 maintenant. Les frais s’ajoutent au prix du produit et le montant n’est pas déduit du prix du produit. La réservation de prix payée garantit que vous pouvez acheter le produit pour USD $149 au lancement, que vous figuriez ou non parmi les 100 premiers annoncés publiquement. Nous facturons USD $149 plus tard seulement lorsque vous choisissez d’acheter, et nous ne le prélevons pas automatiquement. Les frais et le prix du produit font ensemble USD $152 avant tout frais de livraison ou taxe du produit qui s’applique. Si des frais de livraison ou des taxes du produit s’appliquent, nous les indiquons avant que vous achetiez le produit. Les conditions de paiement des frais figurent dans les Conditions d’utilisation.",
     s1Title: "1. Qui nous sommes",
-    s1Company: "Société : Diveroid Ltd (marque : DIVEROID)",
+    s1Company: "Société : DIVEROID LTD (marque : DIVEROID)",
     s1Rep: "Représentant : Jay Kim",
-    s1Addr: "Immatriculée en : Angleterre (Royaume-Uni)",
+    s1Addr: "Siège social : Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA",
     s1Reg: "N° de société : 16343651",
     s1Contact: "Contact confidentialité : help@diveroid.com",
     s2Title: "2. Ce que nous collectons",
@@ -2891,18 +2891,18 @@ const fr: FrozenLandingMessages = {
       "Nous pouvons mettre à jour cette Politique de confidentialité de temps à autre. La dernière version sera toujours disponible sur cette page, avec la date d’entrée en vigueur affichée en haut.",
     s10Title: "10. Contact",
     s10Body: "Des questions sur votre vie privée ? Écrivez à help@diveroid.com.",
-    footerLine: "Diveroid Ltd · Immatriculée en Angleterre · N° de société 16343651",
+    footerLine: "DIVEROID LTD · Immatriculée en Angleterre · N° de société 16343651",
   },
   terms: {
     metaTitle: "Conditions d’utilisation — WatchDive",
     metaDescription:
-      "Conditions d’utilisation de la page de prélancement WatchDive, exploitée par Diveroid Ltd, y compris la réservation de prix facultative de USD $3.",
+      "Conditions d’utilisation de la page de prélancement WatchDive, exploitée par DIVEROID LTD, y compris la réservation de prix facultative de USD $3.",
     back: "← Retour à l’accueil",
     h1: "Conditions d’utilisation — Prélancement WatchDive",
     effectiveLabel: "Date d’entrée en vigueur :",
     effectiveDate: "18 octobre 2026",
     intro:
-      "Bienvenue sur la page de prélancement de WatchDive, exploitée par Diveroid Ltd (« nous », « DIVEROID »). En utilisant cette page, en vous inscrivant et, si vous la choisissez, en payant les frais facultatifs de réservation de prix, vous acceptez les conditions suivantes.",
+      "Bienvenue sur la page de prélancement de WatchDive, exploitée par DIVEROID LTD (« nous », « DIVEROID »). En utilisant cette page, en vous inscrivant et, si vous la choisissez, en payant les frais facultatifs de réservation de prix, vous acceptez les conditions suivantes.",
     s1Title: "1. Ce qu’est cette page",
     s1Body:
       "Cette page vous permet d’enregistrer votre intérêt pour WatchDive et de recevoir des nouvelles de notre prochaine campagne Kickstarter. Une inscription gratuite par e-mail n’est pas un achat, n’encaisse pas de paiement, ne réserve pas d’unité et ne garantit aucun prix. Vous pouvez séparément choisir une réservation de prix facultative en payant exactement USD $3 maintenant via Stripe hosted Checkout. Ces frais s’ajoutent au prix du produit et le montant n’est pas déduit du prix du produit. La réservation de prix payée garantit que vous pouvez acheter le produit pour USD $149 au lancement, que vous figuriez ou non parmi les 100 premiers annoncés publiquement. Nous facturons USD $149 plus tard seulement lorsque vous choisissez d’acheter, et nous ne le prélevons pas, ne le programmons pas et ne l’autorisons pas automatiquement. Les frais de USD $3 et le prix du produit de USD $149 font ensemble USD $152 avant tout frais de livraison ou taxe du produit qui s’applique. Si des frais de livraison ou des taxes du produit s’appliquent, nous les indiquons avant que vous achetiez le produit. Les frais de USD $3 ne sont pas remboursables, sauf si nous annulons le lancement du produit, auquel cas nous remboursons les frais. Rien dans ces conditions ne limite un droit que le droit applicable ne nous permet pas de limiter, et ces conditions ne vous demandent pas de renoncer à un tel droit.",
@@ -2915,7 +2915,7 @@ const fr: FrozenLandingMessages = {
     s3PrivacyLink: "Politique de confidentialité",
     s4Title: "4. Propriété intellectuelle",
     s4Body:
-      "Tout le contenu de cette page — y compris les noms WatchDive et DIVEROID, logos, textes, images et vidéos — appartient à Diveroid Ltd ou à ses concédants. Vous ne pouvez pas le copier ni le réutiliser sans notre autorisation.",
+      "Tout le contenu de cette page — y compris les noms WatchDive et DIVEROID, logos, textes, images et vidéos — appartient à DIVEROID LTD ou à ses concédants. Vous ne pouvez pas le copier ni le réutiliser sans notre autorisation.",
     s5Title: "5. Avertissement",
     s5Body1:
       "WatchDive est une aide à la plongée conçue pour fonctionner avec une montre connectée compatible. À sa sortie, il est destiné à accompagner — et non remplacer — une formation de plongée adéquate, la certification et un ordinateur de plongée de secours. Plongez toujours dans les limites de votre formation et respectez les pratiques de plongée sûres.",
@@ -2925,7 +2925,7 @@ const fr: FrozenLandingMessages = {
     s6Body: "Les présentes conditions sont régies par le droit de la République de Corée.",
     s7Title: "7. Contact",
     s7Body: "Des questions ? Écrivez à help@diveroid.com.",
-    footerLine: "Diveroid Ltd · Immatriculée en Angleterre · N° de société 16343651",
+    footerLine: "DIVEROID LTD · Immatriculée en Angleterre · N° de société 16343651",
   },
 };
 
@@ -3312,19 +3312,19 @@ const de: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Datenschutzerklärung — WatchDive",
     metaDescription:
-      "Wie Diveroid Ltd deine Daten behandelt, wenn du dich anmeldest, die optionale Preisreservierung von USD $3 wählst und die optionale Seitenmessung der WatchDive-Vorstart-Seite nutzt.",
+      "Wie DIVEROID LTD deine Daten behandelt, wenn du dich anmeldest, die optionale Preisreservierung von USD $3 wählst und die optionale Seitenmessung der WatchDive-Vorstart-Seite nutzt.",
     back: "← Zur Startseite",
     h1: "Datenschutzerklärung — WatchDive Vorstart",
     effectiveLabel: "Gültig ab:",
     effectiveDate: "18. Oktober 2026",
     intro1:
-      "Diese Datenschutzerklärung erläutert, wie Diveroid Ltd („wir“, „uns“, „DIVEROID“) deine Daten behandelt, wenn du dich auf der WatchDive-Vorstart-Seite anmeldest, um Updates zu unserer kommenden Kickstarter-Kampagne zu erhalten.",
+      "Diese Datenschutzerklärung erläutert, wie DIVEROID LTD („wir“, „uns“, „DIVEROID“) deine Daten behandelt, wenn du dich auf der WatchDive-Vorstart-Seite anmeldest, um Updates zu unserer kommenden Kickstarter-Kampagne zu erhalten.",
     intro2:
       "Diese Seite erfasst Interesse am Start. Eine kostenlose E-Mail-Anmeldung ist kein Kauf und nimmt keine Zahlung entgegen. Wenn du die optionale Preisreservierung wählst, berechnet Stripe hosted Checkout jetzt genau USD $3. Die Gebühr kommt zum Produktpreis hinzu und wird nicht vom Produktpreis abgezogen. Eine bezahlte Preisreservierung garantiert, dass du das Produkt zum Start für USD $149 kaufen kannst, ob du zu den öffentlichen ersten 100 gehörst oder nicht. USD $149 berechnen wir später nur, wenn du den Kauf wählst, und wir belasten ihn nicht automatisch. Die Gebühr und der Produktpreis sind zusammen USD $152 vor anwendbarem Produktversand oder anwendbarer Produktsteuer. Wenn Produktversand oder Produktsteuer anfällt, nennen wir das, bevor du das Produkt kaufst. Die Zahlungsbedingungen der Gebühr stehen in den Nutzungsbedingungen.",
     s1Title: "1. Wer wir sind",
-    s1Company: "Unternehmen: Diveroid Ltd (Marke: DIVEROID)",
+    s1Company: "Unternehmen: DIVEROID LTD (Marke: DIVEROID)",
     s1Rep: "Vertreter: Jay Kim",
-    s1Addr: "Registriert in: England (Vereinigtes Königreich)",
+    s1Addr: "Eingetragener Sitz: Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA",
     s1Reg: "Unternehmensnr.: 16343651",
     s1Contact: "Datenschutz-Kontakt: help@diveroid.com",
     s2Title: "2. Was wir erheben",
@@ -3370,18 +3370,18 @@ const de: FrozenLandingMessages = {
       "Wir können diese Datenschutzerklärung von Zeit zu Zeit aktualisieren. Die aktuelle Version ist stets auf dieser Seite verfügbar, mit dem Gültigkeitsdatum oben.",
     s10Title: "10. Kontakt",
     s10Body: "Fragen zu deinen Daten? Schreib an help@diveroid.com.",
-    footerLine: "Diveroid Ltd · Registriert in England · Unternehmensnr. 16343651",
+    footerLine: "DIVEROID LTD · Registriert in England · Unternehmensnr. 16343651",
   },
   terms: {
     metaTitle: "Nutzungsbedingungen — WatchDive",
     metaDescription:
-      "Nutzungsbedingungen der WatchDive-Vorstart-Seite, betrieben von Diveroid Ltd, einschließlich der optionalen Preisreservierung von USD $3.",
+      "Nutzungsbedingungen der WatchDive-Vorstart-Seite, betrieben von DIVEROID LTD, einschließlich der optionalen Preisreservierung von USD $3.",
     back: "← Zur Startseite",
     h1: "Nutzungsbedingungen — WatchDive Vorstart",
     effectiveLabel: "Gültig ab:",
     effectiveDate: "18. Oktober 2026",
     intro:
-      "Willkommen auf der WatchDive-Vorstart-Seite, betrieben von Diveroid Ltd („wir“, „uns“, „DIVEROID“). Mit der Nutzung dieser Seite, mit deiner Anmeldung und, wenn du sie wählst, mit der Zahlung der optionalen Preisreservierungsgebühr stimmst du den folgenden Bedingungen zu.",
+      "Willkommen auf der WatchDive-Vorstart-Seite, betrieben von DIVEROID LTD („wir“, „uns“, „DIVEROID“). Mit der Nutzung dieser Seite, mit deiner Anmeldung und, wenn du sie wählst, mit der Zahlung der optionalen Preisreservierungsgebühr stimmst du den folgenden Bedingungen zu.",
     s1Title: "1. Was diese Seite ist",
     s1Body:
       "Auf dieser Seite kannst du dein Interesse an WatchDive registrieren und Updates zu unserer kommenden Kickstarter-Kampagne erhalten. Eine kostenlose E-Mail-Anmeldung ist kein Kauf, nimmt keine Zahlung entgegen, reserviert kein Gerät und garantiert keinen Preis. Getrennt kannst du eine optionale Preisreservierung wählen, indem du jetzt genau USD $3 über Stripe hosted Checkout zahlst. Diese Gebühr kommt zum Produktpreis hinzu und wird nicht vom Produktpreis abgezogen. Eine bezahlte Preisreservierung garantiert, dass du das Produkt zum Start für USD $149 kaufen kannst, ob du zu den öffentlichen ersten 100 gehörst oder nicht. USD $149 berechnen wir später nur, wenn du den Kauf wählst, und wir belasten ihn nicht automatisch, planen ihn nicht ein und autorisieren ihn nicht. Die Gebühr von USD $3 und der Produktpreis von USD $149 sind zusammen USD $152 vor anwendbarem Produktversand oder anwendbarer Produktsteuer. Wenn Produktversand oder Produktsteuer anfällt, nennen wir das, bevor du das Produkt kaufst. Die Gebühr von USD $3 ist nicht erstattungsfähig, außer wenn wir die Produkteinführung absagen; dann erstatten wir die Gebühr. Diese Bedingungen beschränken kein Recht, das anwendbares Recht uns zu beschränken verbietet, und sie verlangen nicht, dass du auf ein solches Recht verzichtest.",
@@ -3394,7 +3394,7 @@ const de: FrozenLandingMessages = {
     s3PrivacyLink: "Datenschutzerklärung",
     s4Title: "4. Geistiges Eigentum",
     s4Body:
-      "Alle Inhalte dieser Seite — einschließlich der Namen WatchDive und DIVEROID, Logos, Texte, Bilder und Videos — gehören Diveroid Ltd oder ihren Lizenzgebern. Ohne unsere Erlaubnis darfst du sie nicht kopieren oder weiterverwenden.",
+      "Alle Inhalte dieser Seite — einschließlich der Namen WatchDive und DIVEROID, Logos, Texte, Bilder und Videos — gehören DIVEROID LTD oder ihren Lizenzgebern. Ohne unsere Erlaubnis darfst du sie nicht kopieren oder weiterverwenden.",
     s5Title: "5. Haftungsausschluss",
     s5Body1:
       "WatchDive ist eine Tauchhilfe, die für die Nutzung mit einer kompatiblen Smartwatch entwickelt wurde. Nach der Veröffentlichung soll es eine ordentliche Tauchausbildung, Zertifizierung und einen Backup-Tauchcomputer unterstützen — nicht ersetzen. Tauche immer im Rahmen deiner Ausbildung und befolge sichere Tauchpraktiken.",
@@ -3404,7 +3404,7 @@ const de: FrozenLandingMessages = {
     s6Body: "Diese Bedingungen unterliegen dem Recht der Republik Korea.",
     s7Title: "7. Kontakt",
     s7Body: "Fragen? Schreib an help@diveroid.com.",
-    footerLine: "Diveroid Ltd · Registriert in England · Unternehmensnr. 16343651",
+    footerLine: "DIVEROID LTD · Registriert in England · Unternehmensnr. 16343651",
   },
 };
 
@@ -3789,19 +3789,19 @@ const ptBR: FrozenLandingMessages = {
   privacy: {
     metaTitle: "Política de Privacidade — WatchDive",
     metaDescription:
-      "Como a Diveroid Ltd trata suas informações quando você se cadastra, escolhe a reserva de preço opcional de USD $3 e a medição opcional da página de pré-lançamento do WatchDive.",
+      "Como a DIVEROID LTD trata suas informações quando você se cadastra, escolhe a reserva de preço opcional de USD $3 e a medição opcional da página de pré-lançamento do WatchDive.",
     back: "← Voltar ao início",
     h1: "Política de Privacidade — Pré-lançamento WatchDive",
     effectiveLabel: "Data de vigência:",
     effectiveDate: "18 de outubro de 2026",
     intro1:
-      'Esta Política de Privacidade explica como a Diveroid Ltd ("nós", "DIVEROID") trata suas informações quando você se cadastra na página de pré-lançamento do WatchDive para receber novidades sobre nossa próxima campanha no Kickstarter.',
+      'Esta Política de Privacidade explica como a DIVEROID LTD ("nós", "DIVEROID") trata suas informações quando você se cadastra na página de pré-lançamento do WatchDive para receber novidades sobre nossa próxima campanha no Kickstarter.',
     intro2:
       "Esta página registra o interesse no lançamento. Um cadastro gratuito por e-mail não é uma compra e não recebe pagamento. Se você escolher a reserva de preço opcional, o Stripe hosted Checkout cobra exatamente USD $3 agora. A taxa é somada ao preço do produto e não é deduzida do preço do produto. A reserva de preço paga garante que você pode comprar o produto por USD $149 no lançamento, esteja você ou não entre os 100 primeiros anunciados publicamente. Cobramos USD $149 depois somente quando você escolhe comprar, e não cobramos automaticamente. A taxa e o preço do produto juntos são USD $152 antes de qualquer frete ou imposto do produto que se aplique. Se frete ou imposto do produto se aplicar, informamos antes de você comprar o produto. As condições de pagamento da taxa estão nos Termos de Uso.",
     s1Title: "1. Quem somos",
-    s1Company: "Empresa: Diveroid Ltd (marca: DIVEROID)",
+    s1Company: "Empresa: DIVEROID LTD (marca: DIVEROID)",
     s1Rep: "Representante: Jay Kim",
-    s1Addr: "Registrada em: Inglaterra (Reino Unido)",
+    s1Addr: "Sede registrada: Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA",
     s1Reg: "Nº da empresa: 16343651",
     s1Contact: "Contato de privacidade: help@diveroid.com",
     s2Title: "2. O que coletamos",
@@ -3847,18 +3847,18 @@ const ptBR: FrozenLandingMessages = {
       "Podemos atualizar esta Política de Privacidade de tempos em tempos. A versão mais recente estará sempre disponível nesta página, com a data de vigência no topo.",
     s10Title: "10. Contato",
     s10Body: "Dúvidas sobre sua privacidade? Escreva para help@diveroid.com.",
-    footerLine: "Diveroid Ltd · Registrada na Inglaterra · Nº da empresa 16343651",
+    footerLine: "DIVEROID LTD · Registrada na Inglaterra · Nº da empresa 16343651",
   },
   terms: {
     metaTitle: "Termos de Uso — WatchDive",
     metaDescription:
-      "Termos de Uso da página de pré-lançamento do WatchDive, operada pela Diveroid Ltd, incluindo a reserva de preço opcional de USD $3.",
+      "Termos de Uso da página de pré-lançamento do WatchDive, operada pela DIVEROID LTD, incluindo a reserva de preço opcional de USD $3.",
     back: "← Voltar ao início",
     h1: "Termos de Uso — Pré-lançamento WatchDive",
     effectiveLabel: "Data de vigência:",
     effectiveDate: "18 de outubro de 2026",
     intro:
-      'Bem-vindo à página de pré-lançamento do WatchDive, operada pela Diveroid Ltd ("nós", "DIVEROID"). Ao usar esta página, ao se cadastrar e, se escolher, ao pagar a taxa opcional de reserva de preço, você concorda com os termos a seguir.',
+      'Bem-vindo à página de pré-lançamento do WatchDive, operada pela DIVEROID LTD ("nós", "DIVEROID"). Ao usar esta página, ao se cadastrar e, se escolher, ao pagar a taxa opcional de reserva de preço, você concorda com os termos a seguir.',
     s1Title: "1. O que é esta página",
     s1Body:
       "Esta página permite registrar seu interesse no WatchDive e receber novidades sobre nossa próxima campanha no Kickstarter. Um cadastro gratuito por e-mail não é uma compra, não recebe pagamento, não reserva uma unidade e não garante um preço. Você pode, separadamente, escolher uma reserva de preço opcional pagando exatamente USD $3 agora pelo Stripe hosted Checkout. Essa taxa é somada ao preço do produto e não é deduzida do preço do produto. A reserva de preço paga garante que você pode comprar o produto por USD $149 no lançamento, esteja você ou não entre os 100 primeiros anunciados publicamente. Cobramos USD $149 depois somente quando você escolhe comprar, e não cobramos, não agendamos e não autorizamos essa cobrança automaticamente. A taxa de USD $3 e o preço do produto de USD $149 juntos são USD $152 antes de qualquer frete ou imposto do produto que se aplique. Se frete ou imposto do produto se aplicar, informamos antes de você comprar o produto. A taxa de USD $3 não é reembolsável, exceto se cancelarmos o lançamento do produto, caso em que devolvemos a taxa. Nada nestes termos limita um direito que a lei aplicável não nos permite limitar, e estes termos não exigem que você abra mão de tal direito.",
@@ -3871,7 +3871,7 @@ const ptBR: FrozenLandingMessages = {
     s3PrivacyLink: "Política de Privacidade",
     s4Title: "4. Propriedade intelectual",
     s4Body:
-      "Todo o conteúdo desta página — incluindo os nomes WatchDive e DIVEROID, logos, textos, imagens e vídeos — pertence à Diveroid Ltd ou a seus licenciadores. Você não pode copiá-lo nem reutilizá-lo sem nossa permissão.",
+      "Todo o conteúdo desta página — incluindo os nomes WatchDive e DIVEROID, logos, textos, imagens e vídeos — pertence à DIVEROID LTD ou a seus licenciadores. Você não pode copiá-lo nem reutilizá-lo sem nossa permissão.",
     s5Title: "5. Isenção de responsabilidade",
     s5Body1:
       "O WatchDive é um auxílio ao mergulho projetado para funcionar com um smartwatch compatível. Quando lançado, destina-se a apoiar — não substituir — o treinamento adequado de mergulho, a certificação e um computador de mergulho reserva. Mergulhe sempre dentro do seu treinamento e siga práticas seguras de mergulho.",
@@ -3881,7 +3881,7 @@ const ptBR: FrozenLandingMessages = {
     s6Body: "Estes termos são regidos pelas leis da República da Coreia.",
     s7Title: "7. Contato",
     s7Body: "Dúvidas? Escreva para help@diveroid.com.",
-    footerLine: "Diveroid Ltd · Registrada na Inglaterra · Nº da empresa 16343651",
+    footerLine: "DIVEROID LTD · Registrada na Inglaterra · Nº da empresa 16343651",
   },
 };
 

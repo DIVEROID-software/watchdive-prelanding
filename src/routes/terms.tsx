@@ -19,7 +19,9 @@ export const Route = createFileRoute("/terms")({
 
 export function TermsPage() {
   const locale = useCurrentLocale();
-  const copy = useFrozenLandingMessages().terms;
+  const messages = useFrozenLandingMessages();
+  const copy = messages.terms;
+  const merchant = messages.privacy;
   const changeDisclaimer = splitChangeDisclaimer(copy.s2Body);
   const privacyReference = splitAround(copy.s3Body, copy.s3PrivacyLink);
   const contact = splitAround(copy.s7Body, "help@diveroid.com");
@@ -77,6 +79,9 @@ export function TermsPage() {
           </Section>
 
           <Section title={copy.s7Title}>
+            <p>{merchant.s1Company}</p>
+            <p>{merchant.s1Reg}</p>
+            <p>{merchant.s1Addr}</p>
             <p>
               {contact[0]}
               <a

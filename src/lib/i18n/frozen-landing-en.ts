@@ -380,19 +380,19 @@ export const EN_FROZEN_LANDING_MESSAGES = {
   privacy: {
     metaTitle: "Privacy Policy — WatchDive",
     metaDescription:
-      "How Diveroid Ltd handles signup details, an optional USD $3 price reservation, and optional page measurement on the WatchDive pre-launch page.",
+      "How DIVEROID LTD handles signup details, an optional USD $3 price reservation, and optional page measurement on the WatchDive pre-launch page.",
     back: "← Back to home",
     h1: "Privacy Policy — WatchDive Pre-Launch",
     effectiveLabel: "Effective date:",
     effectiveDate: "October 18, 2026",
     intro1:
-      'This Privacy Policy explains how Diveroid Ltd ("we", "us", "DIVEROID") handles your information when you sign up on the WatchDive pre-launch page to receive updates about our upcoming Kickstarter campaign.',
+      'This Privacy Policy explains how DIVEROID LTD ("we", "us", "DIVEROID") handles your information when you sign up on the WatchDive pre-launch page to receive updates about our upcoming Kickstarter campaign.',
     intro2:
       "This page collects launch interest. A free email signup is not a purchase and takes no payment. If you choose the optional price reservation, Stripe hosted Checkout charges exactly USD $3 now. That fee is in addition to the product price and is not deducted from it. The paid reservation guarantees that you can buy the product for USD $149 at launch, whether or not you are among the public first 100. We charge USD $149 later only when you choose to buy, and we do not charge, schedule, or authorize it automatically. The USD $3 fee and the USD $149 product price together are USD $152 before any product shipping or tax that applies. If product shipping or tax applies, we disclose it before you purchase the product. Payment terms for the fee are in the Terms of Use.",
     s1Title: "1. Who we are",
-    s1Company: "Company: Diveroid Ltd (brand: DIVEROID)",
+    s1Company: "Company: DIVEROID LTD (brand: DIVEROID)",
     s1Rep: "Representative: Jay Kim",
-    s1Addr: "Registered in: England",
+    s1Addr: "Registered office: Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA",
     s1Reg: "Company no.: 16343651",
     s1Contact: "Privacy contact: help@diveroid.com",
     s2Title: "2. What we collect",
@@ -437,17 +437,17 @@ export const EN_FROZEN_LANDING_MESSAGES = {
       "We may update this Privacy Policy from time to time. The latest version will always be available on this page, with the effective date shown at the top.",
     s10Title: "10. Contact",
     s10Body: "Questions about your privacy? Email help@diveroid.com.",
-    footerLine: "Diveroid Ltd · Registered in England · Company no. 16343651",
+    footerLine: "DIVEROID LTD · Registered in England · Company no. 16343651",
   },
   terms: {
     metaTitle: "Terms of Use — WatchDive",
-    metaDescription: "Terms of Use for the WatchDive pre-launch page, operated by Diveroid Ltd, including the optional USD $3 price reservation.",
+    metaDescription: "Terms of Use for the WatchDive pre-launch page, operated by DIVEROID LTD, including the optional USD $3 price reservation.",
     back: "← Back to home",
     h1: "Terms of Use — WatchDive Pre-Launch",
     effectiveLabel: "Effective date:",
     effectiveDate: "October 18, 2026",
     intro:
-      'Welcome to the WatchDive pre-launch page, operated by Diveroid Ltd ("we", "us", "DIVEROID"). By using this page, by signing up, and, if you choose it, by paying the optional price-reservation fee, you agree to the following terms.',
+      'Welcome to the WatchDive pre-launch page, operated by DIVEROID LTD ("we", "us", "DIVEROID"). By using this page, by signing up, and, if you choose it, by paying the optional price-reservation fee, you agree to the following terms.',
     s1Title: "1. What this page is",
     s1Body:
       "This page lets you register your interest in WatchDive and receive updates about our upcoming Kickstarter campaign. A free email signup is not a purchase, takes no payment, does not reserve a unit, and does not guarantee a price. You may separately choose an optional price reservation by paying exactly USD $3 now through Stripe hosted Checkout. That fee is in addition to the product price and is not deducted from it. The paid reservation guarantees that you can buy the product for USD $149 at launch, whether or not you are among the public first 100. We charge USD $149 later only when you choose to buy, and we do not charge, schedule, or authorize it automatically. The USD $3 fee and the USD $149 product price together are USD $152 before any product shipping or tax that applies. If product shipping or tax applies, we disclose it before you purchase the product. The USD $3 fee is nonrefundable, except if we cancel the product launch, in which case we refund the fee. Nothing in these terms limits a right that applicable law does not allow us to limit, and these terms do not require you to give up such a right.",
@@ -460,7 +460,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s3PrivacyLink: "Privacy Policy",
     s4Title: "4. Intellectual property",
     s4Body:
-      "All content on this page — including the WatchDive and DIVEROID names, logos, text, images, and videos — belongs to Diveroid Ltd or its licensors. You may not copy or reuse it without our permission.",
+      "All content on this page — including the WatchDive and DIVEROID names, logos, text, images, and videos — belongs to DIVEROID LTD or its licensors. You may not copy or reuse it without our permission.",
     s5Title: "5. Disclaimer",
     s5Body1:
       "WatchDive is a dive aid designed to work with a compatible smartwatch. When released, it is intended to support — not replace — proper dive training, certification, and a backup dive computer. Always dive within your training and follow safe diving practices.",
@@ -470,7 +470,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     s6Body: "These terms are governed by the laws of the Republic of Korea.",
     s7Title: "7. Contact",
     s7Body: "Questions? Email help@diveroid.com.",
-    footerLine: "Diveroid Ltd · Registered in England · Company no. 16343651",
+    footerLine: "DIVEROID LTD · Registered in England · Company no. 16343651",
   },
 };
 

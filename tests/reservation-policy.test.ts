@@ -399,8 +399,10 @@ test("governing law, merchant identity, consent, and UTM measurement stay", () =
     }
     assert.match(privacy.s2Usage, /30/);
     assert.ok(privacy.s1Reg.includes("16343651"), locale);
+    assert.ok(privacy.s1Addr.includes("Office 12146, 182-184 High Street North"), locale);
+    assert.ok(privacy.s1Addr.includes("London, United Kingdom, E6 2JA"), locale);
     assert.ok(privacy.s1Rep.includes("Jay Kim"), locale);
-    assert.ok(privacy.s1Company.includes("Diveroid Ltd"), locale);
+    assert.ok(privacy.s1Company.includes("DIVEROID LTD"), locale);
     assert.ok(terms.s3Body.includes(terms.s3PrivacyLink), locale);
     assert.ok(terms.s7Body.includes("help@diveroid.com"), locale);
     assert.ok(privacy.s10Body.includes("help@diveroid.com"), locale);
