@@ -81,6 +81,11 @@ export type StripeCharge = {
   /** Stripe always returns this boolean. A missing value is refused by the parser. */
   disputed: boolean;
   paymentIntentId: string | null;
+  /**
+   * Charge.created, seconds. Null when the retrieved object omits it.
+   * This is not Checkout Session.created.
+   */
+  created: number | null;
 };
 
 export type StripeDispute = {
@@ -166,6 +171,10 @@ function requiredInt(record: Record<string, unknown>, key: string, what: string)
   const value = record[key];
   if (typeof value !== "number" || !Number.isInteger(value)) unexpected(what);
   return value;
+}
+
+function optionalInt(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) ? value : null;
 }
 
 function parseCustomer(value: unknown): StripeCustomer {
@@ -254,6 +263,7 @@ function parseCharge(value: unknown): StripeCharge {
     refunded: requiredBoolean(record, "refunded", "charge.refunded"),
     disputed: requiredBoolean(record, "disputed", "charge.disputed"),
     paymentIntentId: idOf(record.payment_intent),
+    created: optionalInt(record.created),
   };
 }
 

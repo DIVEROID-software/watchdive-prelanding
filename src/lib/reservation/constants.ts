@@ -56,6 +56,14 @@ export const STRIPE_API_BASE = "https://api.stripe.com";
 
 export const ENV_RESERVATION_ENABLED = "WATCHDIVE_RESERVATION_ENABLED";
 export const ENV_RESERVATION_ALLOW_LIVE = "WATCHDIVE_RESERVATION_ALLOW_LIVE";
+/**
+ * Copies the Stripe snapshot onto the existing signup row. Exactly `true`
+ * enables it. Unset is off, which is the current steady state. Checkout and
+ * the success URL never read this flag.
+ */
+export const ENV_RESERVATION_NOTION_MIRROR = "WATCHDIVE_RESERVATION_NOTION_MIRROR";
+export const ENV_NOTION_API_KEY = "NOTION_API_KEY";
+export const ENV_NOTION_WAITLIST_DB_ID = "NOTION_WAITLIST_DB_ID";
 export const ENV_STRIPE_SECRET_KEY = "STRIPE_SECRET_KEY";
 export const ENV_STRIPE_WEBHOOK_SECRET = "STRIPE_WEBHOOK_SECRET";
 export const ENV_RESERVATION_TOKEN_SECRET = "WATCHDIVE_RESERVATION_TOKEN_SECRET";
