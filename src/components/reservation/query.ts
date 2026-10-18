@@ -42,6 +42,8 @@ export function parseReservationQuery(search: string): ReservationQuery {
 
 export const RESERVATION_INVITE_STORAGE_KEY = "watchdive.reservation.invite";
 export const RESERVATION_LANG_STORAGE_KEY = "watchdive.reservation.lang";
+/** Non-secret marker. It never stores the invite token or a query secret. */
+export const RESERVATION_INVALID_INVITE_KEY = "watchdive.reservation.inviteInvalid";
 
 export function parseInviteFragment(hash: string): { token: string | null; invalid: boolean } {
   const raw = hash.startsWith("#") ? hash.slice(1) : hash;
@@ -56,6 +58,7 @@ export function parseInviteFragment(hash: string): { token: string | null; inval
 type InviteStorage = {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
 };
 
 export function readStoredInvite(storage: Pick<InviteStorage, "getItem">): string | null {
@@ -85,6 +88,61 @@ export function writeStoredLang(
   lang: ReservationLocale,
 ): void {
   storage.setItem(RESERVATION_LANG_STORAGE_KEY, lang);
+}
+
+export function readInvalidInviteFlag(storage: Pick<InviteStorage, "getItem">): boolean {
+  try {
+    return storage.getItem(RESERVATION_INVALID_INVITE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function writeInvalidInviteFlag(storage: InviteStorage, invalid: boolean): void {
+  try {
+    if (!invalid) {
+      if (storage.removeItem) storage.removeItem(RESERVATION_INVALID_INVITE_KEY);
+      else storage.setItem(RESERVATION_INVALID_INVITE_KEY, "0");
+      return;
+    }
+    storage.setItem(RESERVATION_INVALID_INVITE_KEY, "1");
+  } catch {
+    return;
+  }
+}
+
+/**
+ * Store a valid fragment, or a non-secret invalid flag, then drop the hash
+ * and any invite query. The token itself is never copied into the query.
+ */
+export function rememberReservationEntry(input: {
+  href: string;
+  storage: InviteStorage;
+}): { replaceUrl: string | null; inviteToken: string | null; invalidInvite: boolean } {
+  const url = new URL(input.href);
+  const fragment = parseInviteFragment(url.hash);
+  const leakedQuery = url.searchParams.has("inviteToken") || url.searchParams.has("token");
+  const queryLang = parseReservationLang(url.searchParams.get("lang"));
+  if (queryLang) writeStoredLang(input.storage, queryLang);
+  const storedLang = queryLang ?? readStoredLang(input.storage);
+  if (fragment.token) {
+    writeStoredInvite(input.storage, fragment.token);
+    writeInvalidInviteFlag(input.storage, false);
+  } else if (fragment.invalid) {
+    writeInvalidInviteFlag(input.storage, true);
+  }
+  if (fragment.token || fragment.invalid || leakedQuery || (!queryLang && storedLang)) {
+    return {
+      replaceUrl: reservationUrlWithoutSecret(input.href, storedLang ?? undefined),
+      inviteToken: null,
+      invalidInvite: readInvalidInviteFlag(input.storage),
+    };
+  }
+  return {
+    replaceUrl: null,
+    inviteToken: readStoredInvite(input.storage),
+    invalidInvite: readInvalidInviteFlag(input.storage),
+  };
 }
 
 /**

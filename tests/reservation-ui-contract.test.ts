@@ -164,6 +164,7 @@ test("a bearer status is the handler shape, and only paid 300 usd counts", async
     "refunded",
     "partially_refunded",
     "refund_pending",
+    "disputed",
     "invalid",
   ]) {
     const parsed = parseReservationStatus({
@@ -235,7 +236,7 @@ test("the page client posts terms and sends the bearer to the handler", async ()
 });
 
 test("buyer copy stays readable in every site locale", () => {
-  assert.equal(reservationCopy("ko").title, "지금 $3로 출시가 $149를 보장받으세요");
+  assert.equal(reservationCopy("ko").title, "지금 $3로 최저 출시가 $149를 보장받으세요");
   assert.equal(
     reservationCopy("ko").intro,
     "예약금 $3는 별도이며, 출시 시 제품 가격 $149에서 차감되지 않습니다.",

@@ -410,6 +410,32 @@ test("governing law, merchant identity, consent, and UTM measurement stay", () =
   }
 });
 
+const LOWEST_LAUNCH_PRICE: Record<FrozenLandingLocale, string> = {
+  en: "That USD $149 price is the lowest launch price.",
+  ko: "USD $149는 최저 출시가입니다.",
+  "zh-CN": "USD $149 是最低发布价。",
+  "zh-TW": "USD $149 是最低上市價。",
+  ja: "USD $149 は最低の発売価格です。",
+  es: "USD $149 es el precio de lanzamiento más bajo.",
+  fr: "USD $149 est le prix de lancement le plus bas.",
+  de: "USD $149 ist der niedrigste Startpreis.",
+  "pt-BR": "USD $149 é o menor preço de lançamento.",
+};
+
+test("every locale says the guaranteed USD $149 price is the lowest launch price", () => {
+  for (const locale of FROZEN_LANDING_LOCALES) {
+    const sentence = LOWEST_LAUNCH_PRICE[locale];
+    const terms = FROZEN_LANDING_MESSAGES[locale].terms;
+    const privacy = FROZEN_LANDING_MESSAGES[locale].privacy;
+    assert.equal(terms.s1Body.includes(sentence), true, locale);
+    assert.equal(terms.s2Body.includes(sentence), true, locale);
+    assert.equal(privacy.intro2.includes(sentence), true, locale);
+    assert.equal(privacy.s2NoPayment.includes(sentence), true, locale);
+    assert.equal(terms.s1Body.includes(ANCHORS[locale].guarantee), true, locale);
+    assert.equal(terms.s1Body.includes(ANCHORS[locale].independent), true, locale);
+  }
+});
+
 test("hero and FAQ do not pick up the reservation fee", () => {
   for (const locale of FROZEN_LANDING_LOCALES) {
     const messages = FROZEN_LANDING_MESSAGES[locale];

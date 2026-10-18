@@ -4,12 +4,14 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  createReservationSubmitLock,
   fetchReservationStatus,
   requestReservationCheckout,
 } from "../src/components/reservation/client.ts";
 import {
   checkoutPayload,
   isHostedStripeCheckoutUrl,
+  isTerminalReservationStatus,
   parseCheckoutResponse,
   parseReservationStatus,
   statusRequestPath,
@@ -28,9 +30,12 @@ import {
   formatUsd,
 } from "../src/components/reservation/pricing.ts";
 import {
+  RESERVATION_INVALID_INVITE_KEY,
+  RESERVATION_INVITE_STORAGE_KEY,
   parseInviteFragment,
   parseReservationQuery,
   readStoredInvite,
+  rememberReservationEntry,
   reservationLangBootstrapScript,
   reservationReturnUrl,
   reservationUrlWithoutSecret,
@@ -533,3 +538,150 @@ test("status is requested from the server and an unverified paid body stays unpa
   const sessionAlone = await fetchReservationStatus({ inviteToken: null, sessionId: SESSION });
   assert.deepEqual(sessionAlone, { ok: false, reason: "nothing_to_check" });
 });
+
+test("a refunded or disputed body is not accepted as a paid reservation", () => {
+  const clean = parseReservationStatus(
+    stripeBody({ status: "paid", paid: true, amountTotal: 300, currency: "usd" }),
+  );
+  assert.equal(clean?.authoritativePaid, true);
+  assert.equal(isTerminalReservationStatus(clean!), true);
+
+  for (const field of ["amountRefunded", "amountRefundPending"] as const) {
+    const blocked = parseReservationStatus(
+      stripeBody({
+        status: "paid",
+        paid: true,
+        amountTotal: 300,
+        currency: "usd",
+        [field]: 300,
+      }),
+    );
+    assert.equal(blocked?.authoritativePaid, false, field);
+    assert.equal(blocked?.serverStatus, "invalid", field);
+    assert.equal(isTerminalReservationStatus(blocked!), false, field);
+  }
+
+  for (const status of ["refunded", "partially_refunded", "refund_pending"] as const) {
+    const parsed = parseReservationStatus(
+      stripeBody({ status, paid: true, amountTotal: 300, currency: "usd" }),
+    );
+    assert.equal(parsed?.serverStatus, status);
+    assert.equal(parsed?.authoritativePaid, false);
+    assert.equal(isTerminalReservationStatus(parsed!), true);
+  }
+
+  const disputed = parseReservationStatus(
+    stripeBody({ status: "disputed", paid: true, amountTotal: 300, currency: "usd" }),
+  );
+  assert.equal(disputed?.serverStatus, "disputed");
+  assert.equal(disputed?.authoritativePaid, false);
+  assert.equal(disputed?.paid, false);
+  const screen = view({ status: disputed });
+  assert.equal(screen.phase, "disputed");
+  assert.equal(screen.showCheckoutForm, false);
+  assert.equal(screen.checkoutEnabled, false);
+  assert.equal(screen.checkoutBlock, "payment_closed");
+  assert.equal(screen.statusText, screen.copy.disputedStatus);
+  assert.doesNotMatch(screen.statusText, /\bpaid\b/i);
+
+  assert.equal(
+    parseReservationStatus(
+      stripeBody({
+        status: "paid",
+        paid: true,
+        amountTotal: 300,
+        currency: "usd",
+        amountRefunded: 1.5,
+      }),
+    ),
+    null,
+  );
+});
+
+test("401 invalid_invite is an invalid link, and another 401 stays unavailable", async () => {
+  const status = await fetchReservationStatus({ inviteToken: INVITE, sessionId: null }, async () => {
+    return new Response(JSON.stringify({ error: "invalid_invite" }), { status: 401 });
+  });
+  assert.deepEqual(status, { ok: false, reason: "invalid_invite" });
+
+  const missingBearer = await fetchReservationStatus(
+    { inviteToken: INVITE, sessionId: null },
+    async () => new Response(JSON.stringify({ error: "missing_bearer" }), { status: 401 }),
+  );
+  assert.deepEqual(missingBearer, { ok: false, reason: "bad_response" });
+
+  const checkout = await requestReservationCheckout(INVITE, async () => {
+    return new Response(JSON.stringify({ error: "invalid_invite" }), { status: 400 });
+  });
+  assert.deepEqual(checkout, { ok: false, reason: "invalid_invite" });
+
+  const closed = view({ inviteToken: INVITE, invalidInvite: true, status: unpaid });
+  assert.equal(closed.phase, "needs_invitation");
+  assert.equal(closed.showCheckoutForm, false);
+  assert.match(closed.statusText, /cannot be used/i);
+  const paidWins = view({ invalidInvite: true, status: verifiedPaid });
+  assert.equal(paidWins.phase, "paid");
+});
+
+test("an invalid fragment keeps a non-secret flag and never copies the token into the query", () => {
+  const forged = "not-a-signed-invite";
+  const storage = memoryStorage();
+  const first = rememberReservationEntry({
+    href: `https://watchdive.diveroid.com/reservation#invite=${forged}`,
+    storage,
+  });
+  assert.ok(first.replaceUrl);
+  assert.equal(first.replaceUrl?.includes(forged), false);
+  assert.equal(first.replaceUrl?.includes("inviteToken"), false);
+  assert.equal(first.replaceUrl?.includes("#"), false);
+  assert.equal(storage.data[RESERVATION_INVITE_STORAGE_KEY], undefined);
+  assert.equal(storage.data[RESERVATION_INVALID_INVITE_KEY], "1");
+  const second = rememberReservationEntry({ href: first.replaceUrl ?? "", storage });
+  assert.equal(second.replaceUrl, null);
+  assert.equal(second.invalidInvite, true);
+  assert.equal(second.inviteToken, null);
+
+  const kept = memoryStorage({ [RESERVATION_INVITE_STORAGE_KEY]: INVITE });
+  rememberReservationEntry({
+    href: "https://watchdive.diveroid.com/reservation#invite=not-a-token",
+    storage: kept,
+  });
+  assert.equal(kept.data[RESERVATION_INVITE_STORAGE_KEY], INVITE);
+  assert.equal(kept.data[RESERVATION_INVALID_INVITE_KEY], "1");
+
+  const repaired = memoryStorage({ [RESERVATION_INVALID_INVITE_KEY]: "1" });
+  const valid = rememberReservationEntry({
+    href: `https://watchdive.diveroid.com/reservation#invite=${INVITE}`,
+    storage: repaired,
+  });
+  assert.equal(repaired.data[RESERVATION_INVITE_STORAGE_KEY], INVITE);
+  assert.equal(repaired.data[RESERVATION_INVALID_INVITE_KEY], undefined);
+  assert.equal(valid.replaceUrl?.includes(INVITE), false);
+  const restored = rememberReservationEntry({ href: valid.replaceUrl ?? "", storage: repaired });
+  assert.equal(restored.invalidInvite, false);
+  assert.equal(restored.inviteToken, INVITE);
+});
+
+test("the submit lock rejects a second begin in the same turn", () => {
+  const lock = createReservationSubmitLock();
+  assert.equal(lock.tryBegin(), true);
+  assert.equal(lock.tryBegin(), false);
+  lock.end();
+  assert.equal(lock.tryBegin(), true);
+});
+
+function memoryStorage(initial: Record<string, string> = {}) {
+  const data: Record<string, string> = { ...initial };
+  return {
+    data,
+    getItem(key: string) {
+      return Object.prototype.hasOwnProperty.call(data, key) ? data[key] : null;
+    },
+    setItem(key: string, value: string) {
+      data[key] = value;
+    },
+    removeItem(key: string) {
+      delete data[key];
+    },
+  };
+}

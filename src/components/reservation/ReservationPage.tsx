@@ -1,20 +1,20 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { isI18nReviewEnabled } from "@/lib/i18n/review-gate";
 import { LOCALE_PREFERENCE_COOKIE } from "@/lib/i18n/auto-locale";
 import { LANGUAGE_OPTIONS } from "@/lib/i18n/locale";
 
-import { fetchReservationStatus, requestReservationCheckout } from "./client";
-import { isRefundStatus, STATUS_RETRY_DELAYS_MS, type ReservationStatus } from "./contract";
+import {
+  createReservationSubmitLock,
+  fetchReservationStatus,
+  requestReservationCheckout,
+} from "./client";
+import { isTerminalReservationStatus, STATUS_RETRY_DELAYS_MS, type ReservationStatus } from "./contract";
 import { buildReservationView } from "./model";
 import {
-  parseInviteFragment,
-  parseReservationLang,
   parseReservationQuery,
-  readStoredInvite,
-  readStoredLang,
-  reservationUrlWithoutSecret,
-  writeStoredInvite,
+  rememberReservationEntry,
+  writeInvalidInviteFlag,
   writeStoredLang,
   type ReservationLocale,
 } from "./query";
@@ -51,23 +51,19 @@ export function ReservationPage({ search }: { search: string }) {
   const acceptId = useId();
   const hintId = useId();
   const statusId = useId();
+  const submitLock = useRef(createReservationSubmitLock());
 
   useEffect(() => {
-    const fragment = parseInviteFragment(window.location.hash);
-    const params = new URLSearchParams(window.location.search);
-    const leakedQuery = params.has("inviteToken") || params.has("token");
-    const queryLang = parseReservationLang(params.get("lang"));
-    if (queryLang) writeStoredLang(window.sessionStorage, queryLang);
-    const storedLang = queryLang ?? readStoredLang(window.sessionStorage);
-    if (fragment.token || fragment.invalid || leakedQuery || (!queryLang && storedLang)) {
-      if (fragment.token) writeStoredInvite(window.sessionStorage, fragment.token);
-      window.location.replace(
-        reservationUrlWithoutSecret(window.location.href, storedLang ?? undefined),
-      );
+    const entry = rememberReservationEntry({
+      href: window.location.href,
+      storage: window.sessionStorage,
+    });
+    if (entry.replaceUrl) {
+      window.location.replace(entry.replaceUrl);
       return;
     }
-    setInviteToken(readStoredInvite(window.sessionStorage));
-    setInvalidInvite(false);
+    setInviteToken(entry.inviteToken);
+    setInvalidInvite(entry.invalidInvite);
   }, [search]);
 
   useEffect(() => {
@@ -84,13 +80,18 @@ export function ReservationPage({ search }: { search: string }) {
         setStatusLoading(false);
         if (!result.ok) {
           setStatus(null);
+          if (result.reason === "invalid_invite") {
+            setStatusError(false);
+            setInvalidInvite(true);
+            writeInvalidInviteFlag(window.sessionStorage, true);
+            return;
+          }
           setStatusError(true);
           return;
         }
         setStatus(result.status);
         setStatusError(false);
-        const terminal =
-          result.status.authoritativePaid || isRefundStatus(result.status.serverStatus);
+        const terminal = isTerminalReservationStatus(result.status);
         if (!lookup.sessionId || terminal || attempt >= STATUS_RETRY_DELAYS_MS.length) return;
         const delay = STATUS_RETRY_DELAYS_MS[attempt];
         attempt += 1;
@@ -127,13 +128,23 @@ export function ReservationPage({ search }: { search: string }) {
 
   async function onSubmit(event: { preventDefault(): void }) {
     event.preventDefault();
-    if (!view.checkoutEnabled || !inviteToken) return;
+    if (!submitLock.current.tryBegin()) return;
+    if (!view.checkoutEnabled || !inviteToken) {
+      submitLock.current.end();
+      return;
+    }
     setSubmitting(true);
     setCheckoutError(false);
     setCheckoutConflict(false);
     const result = await requestReservationCheckout(inviteToken);
     if (!result.ok) {
+      submitLock.current.end();
       setSubmitting(false);
+      if (result.reason === "invalid_invite") {
+        setInvalidInvite(true);
+        writeInvalidInviteFlag(window.sessionStorage, true);
+        return;
+      }
       if (result.reason === "conflict") {
         setCheckoutConflict(true);
         setRefreshNonce((value) => value + 1);

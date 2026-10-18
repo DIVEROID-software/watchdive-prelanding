@@ -38,6 +38,40 @@ function sameOriginJson(
   };
 }
 
+async function responseError(response: Response): Promise<string | null> {
+  try {
+    const body = await readLimitedJson(response);
+    if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+    const error = (body as { error?: unknown }).error;
+    return typeof error === "string" ? error : null;
+  } catch {
+    return null;
+  }
+}
+
+async function closedFailure(
+  response: Response,
+): Promise<"invalid_invite" | "bad_response" | null> {
+  if (response.status !== 401 && response.status !== 400) return null;
+  const error = await responseError(response);
+  return error === "invalid_invite" ? "invalid_invite" : "bad_response";
+}
+
+/** Same-turn guard. The first begin wins until end() after a failed attempt. */
+export function createReservationSubmitLock(): { tryBegin(): boolean; end(): void } {
+  let held = false;
+  return {
+    tryBegin() {
+      if (held) return false;
+      held = true;
+      return true;
+    },
+    end() {
+      held = false;
+    },
+  };
+}
+
 export async function requestReservationCheckout(
   inviteToken: string,
   fetchImpl: FetchLike = fetch,
@@ -53,6 +87,8 @@ export async function requestReservationCheckout(
       sameOriginJson("POST", { body: JSON.stringify(checkoutPayload(token)) }),
     );
     if (response.status === 409) return { ok: false, reason: "conflict" };
+    const closed = await closedFailure(response);
+    if (closed) return { ok: false, reason: closed };
     if (response.status !== 200) return { ok: false, reason: "bad_response" };
     const parsed = parseCheckoutResponse(await readLimitedJson(response));
     return parsed ? { ok: true, url: parsed.url } : { ok: false, reason: "bad_response" };
@@ -66,13 +102,15 @@ export async function fetchReservationStatus(
   fetchImpl: FetchLike = fetch,
 ): Promise<
   | { ok: true; status: ReservationStatus }
-  | { ok: false; reason: "nothing_to_check" | "network" | "bad_response" }
+  | { ok: false; reason: "nothing_to_check" | "network" | "bad_response" | "invalid_invite" }
 > {
   const token = normalizeInviteToken(lookup.inviteToken);
   if (!token) return { ok: false, reason: "nothing_to_check" };
   const path = statusRequestPath(lookup.sessionId);
   try {
     const response = await fetchImpl(path, sameOriginJson("GET", { bearer: token }));
+    const closed = await closedFailure(response);
+    if (closed) return { ok: false, reason: closed };
     if (response.status !== 200) return { ok: false, reason: "bad_response" };
     const status = parseReservationStatus(await readLimitedJson(response));
     return status ? { ok: true, status } : { ok: false, reason: "bad_response" };

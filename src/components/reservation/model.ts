@@ -17,6 +17,7 @@ export type ReservationPhase =
   | "paid"
   | "canceled"
   | "refunded"
+  | "disputed"
   | "status_unavailable";
 
 export type CheckoutBlock =
@@ -69,9 +70,12 @@ export function reservationPhase(input: {
   status: ReservationStatus | null;
   statusError: boolean;
   statusLoading: boolean;
+  invalidInvite?: boolean;
 }): ReservationPhase {
   if (input.status?.authoritativePaid) return "paid";
   if (input.status && isRefundStatus(input.status.serverStatus)) return "refunded";
+  if (input.status?.serverStatus === "disputed") return "disputed";
+  if (input.invalidInvite) return "needs_invitation";
   if (!input.inviteToken) return input.canceled ? "canceled" : "needs_invitation";
   if (input.statusLoading) return "pending";
   if (input.statusError || !input.status) return "status_unavailable";
@@ -94,7 +98,11 @@ export function checkoutBlockReason(input: {
   if (input.status?.authoritativePaid) return "already_paid";
   if (input.statusLoading) return "status_loading";
   if (input.statusError || !input.status) return "status_unavailable";
-  if (isRefundStatus(input.status.serverStatus) || input.status.authoritativePaid) {
+  if (
+    isRefundStatus(input.status.serverStatus) ||
+    input.status.serverStatus === "disputed" ||
+    input.status.authoritativePaid
+  ) {
     return "payment_closed";
   }
   if (input.status.serverStatus === "invalid") return "status_unavailable";
@@ -114,6 +122,7 @@ function statusText(
   invalidInvitation: boolean,
 ): string {
   if (status?.authoritativePaid || phase === "paid") return copy.paidStatus;
+  if (status?.serverStatus === "disputed" || phase === "disputed") return copy.disputedStatus;
   if (status?.serverStatus === "refunded") return copy.refundedStatus;
   if (status?.serverStatus === "partially_refunded") return copy.partialRefundStatus;
   if (status?.serverStatus === "refund_pending") return copy.refundPendingStatus;
@@ -166,6 +175,7 @@ export function buildReservationView(input: ReservationUiInput): ReservationView
     status: input.status,
     statusError: input.statusError,
     statusLoading: input.statusLoading,
+    invalidInvite: input.invalidInvite,
   });
   const checkoutBlock = checkoutBlockReason({
     inviteToken: input.inviteToken,
@@ -181,6 +191,7 @@ export function buildReservationView(input: ReservationUiInput): ReservationView
     Boolean(input.inviteToken) &&
     phase !== "paid" &&
     phase !== "refunded" &&
+    phase !== "disputed" &&
     phase !== "needs_invitation";
   const statusDetail =
     phase === "canceled" ? (input.inviteToken ? copy.canceledRetry : copy.needsInvitation) : null;
@@ -196,7 +207,8 @@ export function buildReservationView(input: ReservationUiInput): ReservationView
       (phase === "pending" ||
         phase === "status_unavailable" ||
         phase === "canceled" ||
-        phase === "refunded"),
+        phase === "refunded" ||
+        phase === "disputed"),
     statusText: statusText(phase, copy, input.status, invalidInvitation),
     checkoutHint: showCheckoutForm ? checkoutHint(checkoutBlock, copy) : null,
     checkoutErrorText:

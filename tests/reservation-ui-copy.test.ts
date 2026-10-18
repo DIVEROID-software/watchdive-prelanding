@@ -71,7 +71,7 @@ test("buyer copy states the separate fee, the launch price, and the refund rule"
 
   const koreanCopy = reservationCopy("ko");
   const korean = reservationCopyText("ko");
-  assert.equal(koreanCopy.title, "지금 $3로 출시가 $149를 보장받으세요");
+  assert.equal(koreanCopy.title, "지금 $3로 최저 출시가 $149를 보장받으세요");
   assert.equal(
     koreanCopy.intro,
     "예약금 $3는 별도이며, 출시 시 제품 가격 $149에서 차감되지 않습니다.",
@@ -86,6 +86,33 @@ test("buyer copy states the separate fee, the launch price, and the refund rule"
   assert.match(korean, /배송비와 세금/);
   assert.doesNotMatch(korean, /서명된 초대|재고|인증|증거|세션/);
   assert.doesNotMatch(korean, /할인|보증금|전액 환불|언제든 환불/);
+  assert.match(koreanCopy.priceRows[0]?.detail ?? "", /차감되지 않습니다/);
+});
+
+test("every locale names the lowest launch price and a closed dispute", () => {
+  const lowest: Record<(typeof SUPPORTED_LOCALES)[number], RegExp> = {
+    en: /lowest launch price/,
+    ko: /최저 출시가/,
+    "zh-CN": /最低发布价/,
+    "zh-TW": /最低上市價/,
+    ja: /最低発売価格/,
+    es: /precio de lanzamiento más bajo/,
+    fr: /prix de lancement le plus bas/,
+    de: /niedrigsten Startpreis/i,
+    "pt-BR": /menor preço de lançamento/,
+  };
+  for (const locale of SUPPORTED_LOCALES) {
+    const copy = reservationCopy(locale);
+    const text = reservationCopyText(locale);
+    assert.match(copy.title, lowest[locale], locale);
+    assert.match(copy.metaTitle, lowest[locale], locale);
+    assert.match(text, lowest[locale], locale);
+    assert.match(copy.terms[1] ?? "", lowest[locale], locale);
+    assert.match(copy.disputedStatus, /\S/, locale);
+    assert.doesNotMatch(copy.disputedStatus, /paid|결제되었습니다|已支付|已付款|支払われました|está pagad|est payé|ist bezahlt|foi paga/i);
+  }
+  assert.doesNotMatch(reservationCopy("ja").metaDescription, /の前で/);
+  assert.match(reservationCopy("ja").metaDescription, /含まれません/);
 });
 
 test("the reservation screen does not collect email, phone, SMS consent, or a card", () => {
@@ -96,6 +123,11 @@ test("the reservation screen does not collect email, phone, SMS consent, or a ca
   assert.doesNotMatch(page, /sms|phone-number|PhoneOptIn|card number|cardNumber/i);
   assert.doesNotMatch(route, /sms|PhoneOptIn|metaPixel|conversionExperiment/i);
   assert.equal(page.match(/requestReservationCheckout/g)?.length, 2);
+  assert.equal(page.match(/tryBegin\(/g)?.length, 1);
+  assert.ok(page.indexOf("tryBegin()") < page.indexOf("requestReservationCheckout(inviteToken)"));
+  assert.match(page, /rememberReservationEntry/);
+  assert.match(page, /isTerminalReservationStatus/);
+  assert.match(page, /writeInvalidInviteFlag/);
   assert.match(page, /disabled=\{!view\.checkoutEnabled\}/);
   assert.match(page, /aria-pressed=\{termsRead\}/);
   assert.match(page, /role="status"/);

@@ -15,7 +15,8 @@
  *   200 JSON: status, paid, source "stripe", amountTotal, currency,
  *   amountRefunded, amountRefundPending, duplicatePaid, sessionId.
  *   Paid is shown only when status is "paid", paid is true, source is "stripe",
- *   currency is "usd", and amountTotal is the 300-cent fee.
+ *   currency is "usd", amountTotal is the 300-cent fee, and no refund,
+ *   pending refund, or dispute is present. A disputed status stays closed.
  */
 import { TERMS_VERSION } from "../../lib/reservation/constants.ts";
 import { RESERVATION_FEE_USD_CENTS, assertReservationPricing } from "./pricing.ts";
@@ -42,6 +43,7 @@ export const SERVER_STATUSES = [
   "refunded",
   "partially_refunded",
   "refund_pending",
+  "disputed",
   "invalid",
 ] as const;
 
@@ -64,6 +66,16 @@ const REFUND_STATUSES = new Set<ServerReservationStatus>([
 
 export function isRefundStatus(status: ServerReservationStatus): boolean {
   return REFUND_STATUSES.has(status);
+}
+
+export function isTerminalReservationStatus(status: ReservationStatus): boolean {
+  return status.authoritativePaid || isRefundStatus(status.serverStatus) || status.serverStatus === "disputed";
+}
+
+function refundCents(value: unknown): number | null {
+  if (value === undefined || value === null) return 0;
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) return null;
+  return value;
 }
 
 export function normalizeInviteToken(value: unknown): string | null {
@@ -131,6 +143,8 @@ export function parseReservationStatus(body: unknown): ReservationStatus | null 
     amountTotal?: unknown;
     currency?: unknown;
     source?: unknown;
+    amountRefunded?: unknown;
+    amountRefundPending?: unknown;
   };
   if (
     record.source !== "stripe" ||
@@ -144,13 +158,22 @@ export function parseReservationStatus(body: unknown): ReservationStatus | null 
     return null;
   }
   if (record.currency !== null && record.currency !== "usd") return null;
+  const refunded = refundCents(record.amountRefunded);
+  const refundPending = refundCents(record.amountRefundPending);
+  if (refunded === null || refundPending === null) return null;
   const currency = record.currency === "usd" ? "usd" : null;
   const amount = amountTotal === null ? null : amountTotal;
+  const blocksPaid =
+    isRefundStatus(record.status) ||
+    record.status === "disputed" ||
+    refunded > 0 ||
+    refundPending > 0;
   const authoritativePaid =
     record.status === "paid" &&
     record.paid === true &&
     amount === RESERVATION_FEE_USD_CENTS &&
-    currency === "usd";
+    currency === "usd" &&
+    !blocksPaid;
   return {
     serverStatus: authoritativePaid ? "paid" : record.status === "paid" ? "invalid" : record.status,
     paid: authoritativePaid,

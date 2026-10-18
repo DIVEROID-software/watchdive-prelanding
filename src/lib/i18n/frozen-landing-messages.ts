@@ -3885,14 +3885,79 @@ const ptBR: FrozenLandingMessages = {
   },
 };
 
+/** Inserted beside the existing first-100 guarantee. English source stays in frozen-landing-en.ts. */
+const LOWEST_LAUNCH_PRICE: Record<FrozenLandingLocale, { after: string; sentence: string }> = {
+  en: {
+    after: "whether or not you are among the public first 100.",
+    sentence: "That USD $149 price is the lowest launch price.",
+  },
+  ko: {
+    after: "출시 시 제품을 USD $149에 구매할 수 있음을 보장합니다.",
+    sentence: "USD $149는 최저 출시가입니다.",
+  },
+  "zh-CN": {
+    after: "无论你是否属于公开的前 100 名。",
+    sentence: "USD $149 是最低发布价。",
+  },
+  "zh-TW": {
+    after: "無論你是否屬於公開的前 100 名。",
+    sentence: "USD $149 是最低上市價。",
+  },
+  ja: {
+    after: "ローンチ時に製品を USD $149 で購入できることを保証します。",
+    sentence: "USD $149 は最低の発売価格です。",
+  },
+  es: {
+    after: "estés o no entre los 100 primeros públicos.",
+    sentence: "USD $149 es el precio de lanzamiento más bajo.",
+  },
+  fr: {
+    after: "que vous figuriez ou non parmi les 100 premiers annoncés publiquement.",
+    sentence: "USD $149 est le prix de lancement le plus bas.",
+  },
+  de: {
+    after: "ob du zu den öffentlichen ersten 100 gehörst oder nicht.",
+    sentence: "USD $149 ist der niedrigste Startpreis.",
+  },
+  "pt-BR": {
+    after: "esteja você ou não entre os 100 primeiros anunciados publicamente.",
+    sentence: "USD $149 é o menor preço de lançamento.",
+  },
+};
+
+function insertAfter(text: string, after: string, sentence: string): string {
+  if (text.includes(sentence) || !text.includes(after)) return text;
+  return text.replaceAll(after, `${after} ${sentence}`);
+}
+
+function withLowestLaunchPrice(
+  messages: FrozenLandingMessages,
+  locale: FrozenLandingLocale,
+): FrozenLandingMessages {
+  const { after, sentence } = LOWEST_LAUNCH_PRICE[locale];
+  return {
+    ...messages,
+    privacy: {
+      ...messages.privacy,
+      intro2: insertAfter(messages.privacy.intro2, after, sentence),
+      s2NoPayment: insertAfter(messages.privacy.s2NoPayment, after, sentence),
+    },
+    terms: {
+      ...messages.terms,
+      s1Body: insertAfter(messages.terms.s1Body, after, sentence),
+      s2Body: insertAfter(messages.terms.s2Body, after, sentence),
+    },
+  };
+}
+
 export const FROZEN_LANDING_MESSAGES: Record<FrozenLandingLocale, FrozenLandingMessages> = {
-  en,
-  ko,
-  "zh-CN": zhCN,
-  "zh-TW": zhTW,
-  ja,
-  es,
-  fr,
-  de,
-  "pt-BR": ptBR,
+  en: withLowestLaunchPrice(en, "en"),
+  ko: withLowestLaunchPrice(ko, "ko"),
+  "zh-CN": withLowestLaunchPrice(zhCN, "zh-CN"),
+  "zh-TW": withLowestLaunchPrice(zhTW, "zh-TW"),
+  ja: withLowestLaunchPrice(ja, "ja"),
+  es: withLowestLaunchPrice(es, "es"),
+  fr: withLowestLaunchPrice(fr, "fr"),
+  de: withLowestLaunchPrice(de, "de"),
+  "pt-BR": withLowestLaunchPrice(ptBR, "pt-BR"),
 };

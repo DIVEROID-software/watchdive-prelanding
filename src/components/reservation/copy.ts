@@ -51,6 +51,7 @@ export type ReservationCopy = {
   refundedStatus: string;
   partialRefundStatus: string;
   refundPendingStatus: string;
+  disputedStatus: string;
   invalidStatus: string;
   checkoutConflict: string;
   unavailableStatus: string;
@@ -64,13 +65,13 @@ const product = PRODUCT_PRICE_USD;
 const total = TOTAL_BEFORE_SHIPPING_TAX_USD;
 
 const english: ReservationCopy = {
-  metaTitle: "Reserve the $149 launch price for $3",
+  metaTitle: "Reserve the lowest launch price of $149 for $3",
   metaDescription: `The ${fee} reservation fee is separate from the ${product} product price. Together they are ${total} before shipping and tax.`,
   languageLabel: "Language",
   english: "English",
   korean: "한국어",
   home: "WatchDive home",
-  title: "Reserve the $149 launch price for $3 now.",
+  title: "Reserve the lowest launch price of $149 for $3 now.",
   intro:
     "The $3 reservation fee is separate. It is not deducted from the $149 product price at launch.",
   priceHeading: "Prices",
@@ -97,7 +98,7 @@ const english: ReservationCopy = {
   termsHeading: "Before you pay",
   terms: [
     `You pay ${fee} now. This fee is separate. It is not credited toward the ${product} product price, and it does not reduce that price.`,
-    `A paid reservation gives a 100% guarantee of the ${product} product price, even if you are not among the first 100. You pay that price yourself at launch. WatchDive does not charge it automatically.`,
+    `A paid reservation gives a 100% guarantee of the lowest launch price, ${product}, even if you are not among the first 100. You pay that price yourself at launch. WatchDive does not charge it automatically.`,
     `${total} is the fee plus the product price, before shipping and tax if those apply.`,
     `The ${fee} fee is refunded only if we cancel the launch. Rights that the law requires still apply.`,
   ],
@@ -124,6 +125,7 @@ const english: ReservationCopy = {
   refundedStatus: "The reservation fee was refunded.",
   partialRefundStatus: "Part of the reservation fee was refunded.",
   refundPendingStatus: "A refund is still in progress.",
+  disputedStatus: "This payment is disputed. Checkout stays closed.",
   invalidStatus: "We could not confirm this payment.",
   checkoutConflict: "We did not start another payment. We are checking the payment again.",
   unavailableStatus: "We could not confirm the payment yet.",
@@ -133,13 +135,13 @@ const english: ReservationCopy = {
 };
 
 const korean: ReservationCopy = {
-  metaTitle: "지금 $3로 출시가 $149를 보장받으세요",
+  metaTitle: "지금 $3로 최저 출시가 $149를 보장받으세요",
   metaDescription: `예약금 ${fee}는 제품 가격 ${product}와 별도입니다. 둘을 더한 금액은 배송비와 세금 전 ${total}입니다.`,
   languageLabel: "언어",
   english: "English",
   korean: "한국어",
   home: "WatchDive 홈",
-  title: "지금 $3로 출시가 $149를 보장받으세요",
+  title: "지금 $3로 최저 출시가 $149를 보장받으세요",
   intro: "예약금 $3는 별도이며, 출시 시 제품 가격 $149에서 차감되지 않습니다.",
   priceHeading: "가격",
   priceRows: [
@@ -147,7 +149,7 @@ const korean: ReservationCopy = {
       id: "fee",
       label: "지금",
       amount: fee,
-      detail: "예약금입니다. 제품 가격과 별도입니다.",
+      detail: "예약금입니다. 제품 가격과 별도이며, 그 가격에서 차감되지 않습니다.",
     },
     {
       id: "product",
@@ -165,7 +167,7 @@ const korean: ReservationCopy = {
   termsHeading: "결제 전에",
   terms: [
     `지금 ${fee}를 결제합니다. 예약금은 별도이며, 제품 가격 ${product}에서 차감되지 않고 그 가격을 낮추지 않습니다.`,
-    `결제한 예약은 처음 100명에 들지 않아도 제품 가격 ${product}를 100% 보장합니다. 이 가격은 출시 때 직접 결제하며, 자동으로 청구되지 않습니다.`,
+    `결제한 예약은 처음 100명에 들지 않아도 최저 출시가인 제품 가격 ${product}를 100% 보장합니다. 이 가격은 출시 때 직접 결제하며, 자동으로 청구되지 않습니다.`,
     `${total}는 예약금과 제품 가격을 더한 금액이며, 적용되는 배송비와 세금은 포함되지 않습니다.`,
     `${fee} 예약금은 출시를 취소하는 경우에만 환불됩니다. 법이 요구하는 권리는 그대로 적용됩니다.`,
   ],
@@ -192,6 +194,7 @@ const korean: ReservationCopy = {
   refundedStatus: "예약금이 환불되었습니다.",
   partialRefundStatus: "예약금의 일부가 환불되었습니다.",
   refundPendingStatus: "환불이 아직 진행 중입니다.",
+  disputedStatus: "이 결제는 분쟁 중입니다. 결제는 열리지 않습니다.",
   invalidStatus: "이 결제를 확인하지 못했습니다.",
   checkoutConflict: "다른 결제를 시작하지 않았습니다. 결제를 다시 확인하고 있습니다.",
   unavailableStatus: "결제를 아직 확인하지 못했습니다.",
@@ -201,13 +204,13 @@ const korean: ReservationCopy = {
 };
 
 const chineseSimplified: ReservationCopy = {
-  metaTitle: "现在用 $3 锁定 $149 发布价",
+  metaTitle: "现在用 $3 锁定最低发布价 $149",
   metaDescription: `预约金 ${fee} 与产品价格 ${product} 分开计算。两者合计为运费和税费前的 ${total}。`,
   languageLabel: "语言",
   english: "English",
   korean: "한국어",
   home: "WatchDive 首页",
-  title: "现在用 $3 锁定 $149 发布价",
+  title: "现在用 $3 锁定最低发布价 $149",
   intro: "$3 预约金是另计的，不会从发布时的 $149 产品价格中扣除。",
   priceHeading: "价格",
   priceRows: [
@@ -228,7 +231,7 @@ const chineseSimplified: ReservationCopy = {
   termsHeading: "付款前",
   terms: [
     `您现在支付 ${fee}。这笔费用是另计的，不抵扣 ${product} 产品价格，也不会降低该价格。`,
-    `已支付的预约 100% 保证 ${product} 产品价格，即使您不在前 100 名之列。该价格由您在发布时自行支付。WatchDive 不会自动扣款。`,
+    `已支付的预约 100% 保证最低发布价 ${product}，即使您不在前 100 名之列。该价格由您在发布时自行支付。WatchDive 不会自动扣款。`,
     `${total} 是预约金加产品价格，不含适用的运费和税费。`,
     `${fee} 预约金仅在我们取消发布时退还。法律要求保留的权利仍然适用。`,
   ],
@@ -255,6 +258,7 @@ const chineseSimplified: ReservationCopy = {
   refundedStatus: "预约金已退还。",
   partialRefundStatus: "预约金已部分退还。",
   refundPendingStatus: "退款仍在处理中。",
+  disputedStatus: "这笔付款存在争议。结账保持关闭。",
   invalidStatus: "我们无法确认这笔付款。",
   checkoutConflict: "我们没有开始另一笔付款。正在重新确认付款。",
   unavailableStatus: "我们还不能确认付款。",
@@ -264,13 +268,13 @@ const chineseSimplified: ReservationCopy = {
 };
 
 const chineseTraditional: ReservationCopy = {
-  metaTitle: "現在用 $3 鎖定 $149 上市價",
+  metaTitle: "現在用 $3 鎖定最低上市價 $149",
   metaDescription: `預約金 ${fee} 與產品價格 ${product} 分開計算。兩者合計為運費和稅費前的 ${total}。`,
   languageLabel: "語言",
   english: "English",
   korean: "한국어",
   home: "WatchDive 首頁",
-  title: "現在用 $3 鎖定 $149 上市價",
+  title: "現在用 $3 鎖定最低上市價 $149",
   intro: "$3 預約金是另計的，不會從上市時的 $149 產品價格中扣除。",
   priceHeading: "價格",
   priceRows: [
@@ -291,7 +295,7 @@ const chineseTraditional: ReservationCopy = {
   termsHeading: "付款前",
   terms: [
     `您現在支付 ${fee}。這筆費用是另計的，不抵扣 ${product} 產品價格，也不會降低該價格。`,
-    `已支付的預約 100% 保證 ${product} 產品價格，即使您不在前 100 名之列。該價格由您在上市時自行支付。WatchDive 不會自動扣款。`,
+    `已支付的預約 100% 保證最低上市價 ${product}，即使您不在前 100 名之列。該價格由您在上市時自行支付。WatchDive 不會自動扣款。`,
     `${total} 是預約金加產品價格，不含適用的運費和稅費。`,
     `${fee} 預約金僅在我們取消上市時退還。法律要求保留的權利仍然適用。`,
   ],
@@ -318,6 +322,7 @@ const chineseTraditional: ReservationCopy = {
   refundedStatus: "預約金已退還。",
   partialRefundStatus: "預約金已部分退還。",
   refundPendingStatus: "退款仍在處理中。",
+  disputedStatus: "這筆付款存在爭議。結帳保持關閉。",
   invalidStatus: "我們無法確認這筆付款。",
   checkoutConflict: "我們沒有開始另一筆付款。正在重新確認付款。",
   unavailableStatus: "我們還不能確認付款。",
@@ -327,13 +332,13 @@ const chineseTraditional: ReservationCopy = {
 };
 
 const japanese: ReservationCopy = {
-  metaTitle: "今 $3 で発売価格 $149 を確保",
-  metaDescription: `予約金 ${fee} は製品価格 ${product} とは別です。合計は送料と税金の前で ${total} です。`,
+  metaTitle: "今 $3 で最低発売価格 $149 を確保",
+  metaDescription: `予約金 ${fee} は製品価格 ${product} とは別です。合計 ${total} には、適用される送料と税金は含まれません。`,
   languageLabel: "言語",
   english: "English",
   korean: "한국어",
   home: "WatchDive ホーム",
-  title: "今 $3 で発売価格 $149 を確保する",
+  title: "今 $3 で最低発売価格 $149 を確保する",
   intro: "予約金 $3 は別料金です。発売時の製品価格 $149 からは差し引かれません。",
   priceHeading: "価格",
   priceRows: [
@@ -359,8 +364,8 @@ const japanese: ReservationCopy = {
   termsHeading: "支払いの前に",
   terms: [
     `今 ${fee} を支払います。この料金は別料金で、${product} の製品価格には充当されず、その価格を下げることもありません。`,
-    `支払い済みの予約は、最初の100名に入らなくても、製品価格 ${product} を100%保証します。この価格は発売時にご自身で支払います。WatchDive が自動で請求することはありません。`,
-    `${total} は予約金と製品価格の合計で、適用される送料と税金の前の金額です。`,
+    `支払い済みの予約は、最初の100名に入らなくても、最低発売価格である製品価格 ${product} を100%保証します。この価格は発売時にご自身で支払います。WatchDive が自動で請求することはありません。`,
+    `${total} は予約金と製品価格の合計で、適用される送料と税金は含まれません。`,
     `${fee} の予約金が返金されるのは、発売を中止した場合だけです。法律が求める権利は残ります。`,
   ],
   markRead: "上記を読みました",
@@ -386,6 +391,7 @@ const japanese: ReservationCopy = {
   refundedStatus: "予約金は返金されました。",
   partialRefundStatus: "予約金の一部が返金されました。",
   refundPendingStatus: "返金はまだ処理中です。",
+  disputedStatus: "この支払いは係争中です。支払い画面は閉じたままです。",
   invalidStatus: "この支払いを確認できませんでした。",
   checkoutConflict: "別の支払いは始めていません。支払いを再度確認しています。",
   unavailableStatus: "支払いはまだ確認できていません。",
@@ -395,13 +401,13 @@ const japanese: ReservationCopy = {
 };
 
 const spanish: ReservationCopy = {
-  metaTitle: "Reserva el precio de lanzamiento de $149 por $3",
+  metaTitle: "Reserva el precio de lanzamiento más bajo de $149 por $3",
   metaDescription: `La reserva de ${fee} es aparte del precio del producto de ${product}. Juntas son ${total} antes de envío e impuestos.`,
   languageLabel: "Idioma",
   english: "English",
   korean: "한국어",
   home: "Inicio de WatchDive",
-  title: "Reserva ahora el precio de lanzamiento de $149 por $3.",
+  title: "Reserva ahora el precio de lanzamiento más bajo de $149 por $3.",
   intro:
     "La reserva de $3 es aparte. No se descuenta del precio del producto de $149 en el lanzamiento.",
   priceHeading: "Precios",
@@ -428,7 +434,7 @@ const spanish: ReservationCopy = {
   termsHeading: "Antes de pagar",
   terms: [
     `Pagas ${fee} ahora. Esta cuota es aparte. No se abona al precio de ${product} ni lo reduce.`,
-    `Una reserva pagada garantiza al 100% el precio de ${product}, aunque no estés entre las primeras 100 personas. Ese precio lo pagas tú en el lanzamiento. WatchDive no lo cobra automáticamente.`,
+    `Una reserva pagada garantiza al 100% el precio de lanzamiento más bajo, ${product}, aunque no estés entre las primeras 100 personas. Ese precio lo pagas tú en el lanzamiento. WatchDive no lo cobra automáticamente.`,
     `${total} es la cuota más el precio del producto, antes del envío y de los impuestos que correspondan.`,
     `La cuota de ${fee} se reembolsa solo si cancelamos el lanzamiento. Siguen aplicando los derechos que exige la ley.`,
   ],
@@ -455,6 +461,7 @@ const spanish: ReservationCopy = {
   refundedStatus: "La reserva se reembolsó.",
   partialRefundStatus: "Se reembolsó una parte de la reserva.",
   refundPendingStatus: "Un reembolso sigue en curso.",
+  disputedStatus: "Este pago está en disputa. El pago sigue cerrado.",
   invalidStatus: "No pudimos confirmar este pago.",
   checkoutConflict: "No iniciamos otro pago. Estamos comprobando el pago otra vez.",
   unavailableStatus: "Todavía no pudimos confirmar el pago.",
@@ -464,13 +471,13 @@ const spanish: ReservationCopy = {
 };
 
 const french: ReservationCopy = {
-  metaTitle: "Réservez le prix de lancement de $149 pour $3",
+  metaTitle: "Réservez le prix de lancement le plus bas de $149 pour $3",
   metaDescription: `Les ${fee} de réservation sont distincts du prix du produit de ${product}. Ensemble, ils font ${total} avant livraison et taxes.`,
   languageLabel: "Langue",
   english: "English",
   korean: "한국어",
   home: "Accueil WatchDive",
-  title: "Réservez maintenant le prix de lancement de $149 pour $3.",
+  title: "Réservez maintenant le prix de lancement le plus bas de $149 pour $3.",
   intro:
     "Les $3 de réservation sont distincts. Ils ne sont pas déduits du prix du produit de $149 au lancement.",
   priceHeading: "Prix",
@@ -497,7 +504,7 @@ const french: ReservationCopy = {
   termsHeading: "Avant de payer",
   terms: [
     `Vous payez ${fee} maintenant. Ces frais sont distincts. Ils ne sont pas déduits du prix de ${product} et ne le réduisent pas.`,
-    `Une réservation payée garantit à 100 % le prix de ${product}, même si vous n’êtes pas parmi les 100 premières personnes. Vous payez ce prix vous-même au lancement. WatchDive ne le prélève pas automatiquement.`,
+    `Une réservation payée garantit à 100 % le prix de lancement le plus bas, ${product}, même si vous n’êtes pas parmi les 100 premières personnes. Vous payez ce prix vous-même au lancement. WatchDive ne le prélève pas automatiquement.`,
     `${total} correspond aux frais plus le prix du produit, avant les frais de livraison et les taxes s’ils s’appliquent.`,
     `Les frais de ${fee} sont remboursés seulement si nous annulons le lancement. Les droits exigés par la loi restent applicables.`,
   ],
@@ -526,6 +533,7 @@ const french: ReservationCopy = {
   refundedStatus: "Les frais de réservation ont été remboursés.",
   partialRefundStatus: "Une partie des frais de réservation a été remboursée.",
   refundPendingStatus: "Un remboursement est encore en cours.",
+  disputedStatus: "Ce paiement est contesté. Le paiement reste fermé.",
   invalidStatus: "Nous n’avons pas pu confirmer ce paiement.",
   checkoutConflict:
     "Nous n’avons pas commencé un autre paiement. Nous vérifions à nouveau le paiement.",
@@ -536,13 +544,13 @@ const french: ReservationCopy = {
 };
 
 const german: ReservationCopy = {
-  metaTitle: "Startpreis von $149 jetzt für $3 sichern",
+  metaTitle: "Niedrigsten Startpreis von $149 jetzt für $3 sichern",
   metaDescription: `Die Reservierung von ${fee} ist vom Produktpreis ${product} getrennt. Zusammen sind das ${total} vor Versand und Steuer.`,
   languageLabel: "Sprache",
   english: "English",
   korean: "한국어",
   home: "WatchDive Start",
-  title: "Sichern Sie sich jetzt den Startpreis von $149 für $3.",
+  title: "Sichern Sie sich jetzt den niedrigsten Startpreis von $149 für $3.",
   intro:
     "Die Reservierungsgebühr von $3 ist separat. Sie wird beim Start nicht vom Produktpreis von $149 abgezogen.",
   priceHeading: "Preise",
@@ -569,7 +577,7 @@ const german: ReservationCopy = {
   termsHeading: "Vor der Zahlung",
   terms: [
     `Sie zahlen jetzt ${fee}. Diese Gebühr ist separat. Sie wird nicht auf den Produktpreis von ${product} angerechnet und senkt ihn nicht.`,
-    `Eine bezahlte Reservierung garantiert den Produktpreis von ${product} zu 100 %, auch wenn Sie nicht zu den ersten 100 gehören. Diesen Preis zahlen Sie beim Start selbst. WatchDive belastet ihn nicht automatisch.`,
+    `Eine bezahlte Reservierung garantiert den niedrigsten Startpreis von ${product} zu 100 %, auch wenn Sie nicht zu den ersten 100 gehören. Diesen Preis zahlen Sie beim Start selbst. WatchDive belastet ihn nicht automatisch.`,
     `${total} sind Gebühr plus Produktpreis, vor Versand und Steuer, falls diese anfallen.`,
     `Die Gebühr von ${fee} wird nur erstattet, wenn wir den Start absagen. Rechte, die das Gesetz verlangt, bleiben bestehen.`,
   ],
@@ -598,6 +606,7 @@ const german: ReservationCopy = {
   refundedStatus: "Die Reservierungsgebühr wurde erstattet.",
   partialRefundStatus: "Ein Teil der Reservierungsgebühr wurde erstattet.",
   refundPendingStatus: "Eine Erstattung läuft noch.",
+  disputedStatus: "Diese Zahlung ist angefochten. Die Zahlung bleibt geschlossen.",
   invalidStatus: "Wir konnten diese Zahlung nicht bestätigen.",
   checkoutConflict: "Wir haben keine weitere Zahlung gestartet. Wir prüfen die Zahlung erneut.",
   unavailableStatus: "Wir konnten die Zahlung noch nicht bestätigen.",
@@ -607,13 +616,13 @@ const german: ReservationCopy = {
 };
 
 const portuguese: ReservationCopy = {
-  metaTitle: "Garanta o preço de lançamento de $149 por $3",
+  metaTitle: "Garanta o menor preço de lançamento de $149 por $3",
   metaDescription: `A reserva de ${fee} é separada do preço do produto de ${product}. Juntas, são ${total} antes do frete e dos impostos.`,
   languageLabel: "Idioma",
   english: "English",
   korean: "한국어",
   home: "Início da WatchDive",
-  title: "Garanta agora o preço de lançamento de $149 por $3.",
+  title: "Garanta agora o menor preço de lançamento de $149 por $3.",
   intro:
     "A taxa de reserva de $3 é separada. Ela não é descontada do preço do produto de $149 no lançamento.",
   priceHeading: "Preços",
@@ -640,7 +649,7 @@ const portuguese: ReservationCopy = {
   termsHeading: "Antes de pagar",
   terms: [
     `Você paga ${fee} agora. Esta taxa é separada. Ela não é creditada no preço de ${product} e não reduz esse preço.`,
-    `Uma reserva paga garante 100% o preço de ${product}, mesmo que você não esteja entre as primeiras 100 pessoas. Você paga esse preço no lançamento. A WatchDive não o cobra automaticamente.`,
+    `Uma reserva paga garante 100% o menor preço de lançamento, ${product}, mesmo que você não esteja entre as primeiras 100 pessoas. Você paga esse preço no lançamento. A WatchDive não o cobra automaticamente.`,
     `${total} é a taxa mais o preço do produto, antes do frete e dos impostos que se aplicarem.`,
     `A taxa de ${fee} é reembolsada somente se cancelarmos o lançamento. Os direitos exigidos por lei continuam valendo.`,
   ],
@@ -667,6 +676,7 @@ const portuguese: ReservationCopy = {
   refundedStatus: "A taxa de reserva foi reembolsada.",
   partialRefundStatus: "Parte da taxa de reserva foi reembolsada.",
   refundPendingStatus: "Um reembolso ainda está em andamento.",
+  disputedStatus: "Este pagamento está em disputa. O pagamento permanece fechado.",
   invalidStatus: "Não conseguimos confirmar este pagamento.",
   checkoutConflict: "Não iniciamos outro pagamento. Estamos verificando o pagamento de novo.",
   unavailableStatus: "Ainda não conseguimos confirmar o pagamento.",
