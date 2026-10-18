@@ -123,7 +123,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     sub: "Your Apple Watch or Galaxy Watch goes into the housing, and its DIVEROID sensor reads depth and water temperature. No second dive computer to buy or learn.",
     priceLine: "Early bird $149 for the first 100 backers on Kickstarter. Launching in December.",
     backgroundAlt: "Scuba diver exploring a vibrant coral reef",
-    sideImageAlt: "WatchDive on a diver’s wrist during a swimming-pool dive, showing depth and dive time",
+    sideImageAlt: "WatchDive on a diver’s wrist over a coral reef, showing depth and dive time",
     stat1Label: "Housing · 197 ft (60 m)",
     stat1Desc: "Water-resistance test completed",
     stat2Label: "Scuba + Freedive",

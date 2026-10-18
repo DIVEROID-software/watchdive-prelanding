@@ -11,3 +11,6 @@ Portrait crop source: `02_images/04_LIFESTYLE/00_recommended-product-safe-4x5/L-
 Other pool wrist asset `refresh/wrist-pool-*`: source `02_images/05_USE CASE | FUN ACTIVITY/1_FUN ACTIVITY.jpeg`, 6000×4000, Sony ILCE-7M3. Camera timestamp 2018:04:21 is metadata only, not an independently confirmed shoot date.
 
 Use the pool sources above for future ads/press. Historical press-kit copies of watchdive-image10 are not evidence of photographic authenticity and should not be reused as documentary product imagery. This change does not claim to modify agency-hosted Prelaunch assets or external press copies.
+
+## Owner-directed hero restoration
+On 2026-10-18 the owner requested restoration of the previous reef hero after comparing the pool replacement. Restored only hero imagery, responsive crops, blur preview and matching alt text. The revised dive-computer FAQ remains. Reef source authenticity remains unverified; restoration is not documentary verification.
