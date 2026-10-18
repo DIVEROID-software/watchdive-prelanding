@@ -197,6 +197,8 @@ test("Apple model copy does not describe approval, review or entitlement status"
 
 test("197 ft and 60 m values stay confined to housing water-resistance test contexts", () => {
   const expectedDepthPaths = [
+    // Owner-approved FAQ distinguishes 40 m operation from 60 m water resistance.
+    "faq.a1",
     "faq.a2",
     "hero.stat1Label",
     "safety.point1Body",

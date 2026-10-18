@@ -180,9 +180,10 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // 16px mobile inputs, visible focus and a stacked narrow-screen layout.
   // 2026-10-12: shared app-screen rows align images and captions across wrapped
   // headings; 22 locale/viewport cases and mobile navigation were reviewed.
+  // 2026-10-18: owner requested verified pool photography; remove reef blur preview.
   assert.equal(
     sha256(read("src/styles.css")),
-    "14e9f987912e12f15a74e6527ea8460af1627602c5c2fb074c034fff32a17074",
+    "d978d4fac9e8dcc88bd55a4ae915a6bb955379c7486480fad3794a32ae05d58a",
   );
 });
 
