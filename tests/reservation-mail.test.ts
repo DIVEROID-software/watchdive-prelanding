@@ -239,7 +239,9 @@ test("rendered mail keeps the disclosure and rejects a country claim", () => {
   assert.match(mail.html, /#3D2683/);
   assert.match(mail.html, /#EEF9FF/);
   assert.match(mail.html, /#F6FAFC/);
-  assert.match(mail.html, /\/brand\/reservation\/diveroid-wordmark-white-transparent\.png/);
+  assert.match(mail.html, /\/brand\/reservation\/diveroid-wordmark-color-transparent\.png/);
+  assert.match(mail.html, /\/brand\/reservation\/watchdive-underwater\.jpg/);
+  assert.match(mail.html, /\$3로 내 최저가 확보하기/);
   assert.match(mail.text, /모든 다이빙이, 바다의 지도가 됩니다/);
   assert.equal(mail.html.includes("Work Sans"), false);
   assert.equal(mail.html.includes("#08021f"), false);
