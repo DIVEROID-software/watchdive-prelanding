@@ -109,7 +109,10 @@ test("every locale names the lowest launch price and a closed dispute", () => {
     assert.match(text, lowest[locale], locale);
     assert.match(copy.terms[1] ?? "", lowest[locale], locale);
     assert.match(copy.disputedStatus, /\S/, locale);
-    assert.doesNotMatch(copy.disputedStatus, /paid|결제되었습니다|已支付|已付款|支払われました|está pagad|est payé|ist bezahlt|foi paga/i);
+    assert.doesNotMatch(
+      copy.disputedStatus,
+      /paid|결제되었습니다|已支付|已付款|支払われました|está pagad|est payé|ist bezahlt|foi paga/i,
+    );
   }
   assert.doesNotMatch(reservationCopy("ja").metaDescription, /の前で/);
   assert.match(reservationCopy("ja").metaDescription, /含まれません/);
@@ -129,7 +132,8 @@ test("the reservation screen does not collect email, phone, SMS consent, or a ca
   assert.match(page, /isTerminalReservationStatus/);
   assert.match(page, /writeInvalidInviteFlag/);
   assert.match(page, /disabled=\{!view\.checkoutEnabled\}/);
-  assert.match(page, /aria-pressed=\{termsRead\}/);
+  assert.match(page, /type="checkbox" checked=\{termsAccepted\}/);
+  assert.doesNotMatch(page, /wd-rsv-langs|copy\.priceRows\.map/);
   assert.match(page, /role="status"/);
   assert.match(page, /lang=\{view\.locale\}/);
   assert.match(route, /no-referrer/);
