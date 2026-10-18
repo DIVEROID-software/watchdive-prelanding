@@ -7,6 +7,12 @@
 import type { Locale } from "../i18n/locale.ts";
 import { LABEL_SEPARATOR } from "../launchMail/copy.ts";
 import { RESERVATION_COPY, RESERVATION_TAGLINE, copyParagraphs } from "./copy.ts";
+import {
+  RESERVATION_COMPANY_NUMBER,
+  RESERVATION_LEGAL_NAME,
+  RESERVATION_REGISTERED_OFFICE,
+  resolveReservationMerchant,
+} from "./merchant.ts";
 
 export type ReservationMailInput = {
   locale: Locale;
@@ -14,11 +20,14 @@ export type ReservationMailInput = {
   unsubscribeUrl: string;
   privacyUrl: string;
   termsUrl: string;
-  /** Sender postal address. Required on a real send. Omitted only in a preview. */
+  /**
+   * Optional confirmation of the registered office. Omit it to use the
+   * verified office. A different address is rejected.
+   */
   postalAddress?: string;
   /**
-   * Verified UK legal name. Required on a real send. Omitted until root
-   * supplies it. This renderer does not invent a company or an address.
+   * Optional confirmation of DIVEROID LTD. Omit it to use that name.
+   * A different name is rejected. The company number is not an input.
    */
   legalName?: string;
 };
@@ -118,7 +127,13 @@ export function assertReservationMailSafe(
 ): void {
   let html = mail.html;
   let text = mail.text;
-  for (const value of [postalAddress, legalName]) {
+  for (const value of [
+    postalAddress,
+    legalName,
+    RESERVATION_LEGAL_NAME,
+    RESERVATION_REGISTERED_OFFICE,
+    RESERVATION_COMPANY_NUMBER,
+  ]) {
     if (!value) continue;
     html = html.replaceAll(escapeHtml(value), "");
     text = text.replaceAll(value, "");
@@ -144,6 +159,9 @@ export function assertReservationMailSafe(
 }
 
 export function renderReservationMail(input: ReservationMailInput): RenderedReservationMail {
+  const resolved = resolveReservationMerchant(input.legalName, input.postalAddress);
+  if (!resolved.ok) throw new Error("Reservation mail merchant identity mismatch");
+  const merchant = resolved.merchant;
   const copy = RESERVATION_COPY[input.locale];
   const inviteUrl = requireInviteUrl(input.inviteUrl, input.locale);
   const unsubscribeUrl = requireHttps(input.unsubscribeUrl);
@@ -208,16 +226,12 @@ export function renderReservationMail(input: ReservationMailInput): RenderedRese
     ),
     p(
       `color:${INK};font-size:12px;font-weight:500;line-height:20px;`,
-      input.legalName ? `${escapeHtml(input.legalName)} &nbsp;·&nbsp; WatchDive` : "WatchDive",
+      `${escapeHtml(merchant.legalName)} &nbsp;·&nbsp; ${escapeHtml(merchant.companyNumber)} &nbsp;·&nbsp; WatchDive`,
     ),
-    ...(input.postalAddress
-      ? [
-          p(
-            `margin:4px 0 0;color:${MUTED};font-size:12px;line-height:20px;`,
-            escapeHtml(input.postalAddress),
-          ),
-        ]
-      : []),
+    p(
+      `margin:4px 0 0;color:${MUTED};font-size:12px;line-height:20px;`,
+      escapeHtml(merchant.postalAddress),
+    ),
     p(
       "margin:6px 0 0;font-size:12px;line-height:20px;",
       `<a href="mailto:help@diveroid.com" style="color:${MID};text-decoration:underline;">${escapeHtml(copy.help)}</a>`,
@@ -246,8 +260,8 @@ export function renderReservationMail(input: ReservationMailInput): RenderedRese
     `${copy.unsubscribe}${sep}${unsubscribeUrl}`,
     `${copy.privacy}${sep}${privacyUrl}`,
     `${copy.terms}${sep}${termsUrl}`,
-    input.legalName ? `${input.legalName} · WatchDive` : "WatchDive",
-    ...(input.postalAddress ? [input.postalAddress] : []),
+    `${merchant.legalName} · ${merchant.companyNumber} · WatchDive`,
+    merchant.postalAddress,
     `help@diveroid.com`,
   ].join("\n");
 
@@ -255,6 +269,6 @@ export function renderReservationMail(input: ReservationMailInput): RenderedRese
   for (const paragraph of copyParagraphs(copy)) {
     if (!text.includes(paragraph)) throw new Error("Reservation mail dropped a required paragraph");
   }
-  assertReservationMailSafe(rendered, input.locale, input.postalAddress, input.legalName);
+  assertReservationMailSafe(rendered, input.locale, merchant.postalAddress, merchant.legalName);
   return rendered;
 }

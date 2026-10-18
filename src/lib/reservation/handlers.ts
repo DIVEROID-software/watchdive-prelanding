@@ -1,6 +1,6 @@
 // HTTP adapters for the reservation routes. Routes stay thin so tests can call
 // these with a fake fetch and a fake env. Nothing here reads the Host header.
-import { canonicalEmail } from "../api/abuse.ts";
+import { reservationCanonicalEmail } from "./emailIdentity.ts";
 import { StripeApiError, createStripeClient } from "./stripeApi.ts";
 import {
   isHostedCheckoutUrl,
@@ -170,7 +170,7 @@ async function inboxStatus(
       return json(404, { error: "not_found" });
     }
     const customer = await stripe.retrieveCustomer(session.customerId);
-    if (!customer.email || canonicalEmail(customer.email) !== invite.email) {
+    if (!customer.email || reservationCanonicalEmail(customer.email) !== invite.email) {
       return json(404, { error: "not_found" });
     }
   }

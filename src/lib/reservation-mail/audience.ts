@@ -12,6 +12,7 @@
 import { localeFromCountry } from "../i18n/auto-locale.ts";
 import { DEFAULT_LOCALE, matchLocale, parseLocalePath, type Locale } from "../i18n/locale.ts";
 import { parseLaunchMarker } from "../launchMail/audience.ts";
+import { reservationCanonicalEmail } from "../reservation/emailIdentity.ts";
 import { isLeadId } from "../verification/token.ts";
 import { parseReservationMarker } from "./campaign.ts";
 
@@ -136,16 +137,31 @@ export function reservationLocale(
 }
 
 function addressOf(row: ReservationRow): string {
-  return row.email.trim().toLowerCase();
+  return reservationCanonicalEmail(row.email);
 }
 
+export type AudienceSelection = {
+  /**
+   * True when this lead already has any receipt. Among eligible rows of one
+   * inbox, the oldest row with a receipt is the one that may resume. The
+   * callback receives the lead id as stored.
+   */
+  leadHasReceipt?: (leadId: string) => boolean;
+};
+
 /**
- * Oldest row first (the store's order). The first eligible row of an address
- * wins. A suppression, unsubscribe, hold, unknown marker, or recorded send on
- * any row holds the whole address, because each lead id would otherwise be a
- * separate provider key.
+ * Oldest row first (the store's order). One reservation inbox produces one
+ * recipient. Gmail and googlemail.com aliases share an inbox. A plus-tag on
+ * any other domain stays a different inbox. A suppression, unsubscribe, hold,
+ * unknown marker, or recorded send on any alias holds that inbox. When a
+ * receipt exists, the oldest eligible alias that owns one is selected so an
+ * in-window intent is retried by that lead. Queue order follows the oldest
+ * eligible alias, so a later receipt owner does not jump behind another inbox.
  */
-export function selectAudience(rows: readonly ReservationRow[]): AudienceResult {
+export function selectAudience(
+  rows: readonly ReservationRow[],
+  selection: AudienceSelection = {},
+): AudienceResult {
   const skipped: Partial<Record<SkipReason, number>> = {};
   const bump = (reason: SkipReason) => {
     skipped[reason] = (skipped[reason] ?? 0) + 1;
@@ -162,8 +178,8 @@ export function selectAudience(rows: readonly ReservationRow[]): AudienceResult 
     }
   });
 
-  const recipients: Recipient[] = [];
-  const taken = new Set<string>();
+  const groups = new Map<string, ReservationRow[]>();
+  const order: string[] = [];
   rows.forEach((row, index) => {
     const reason = own[index];
     if (reason) {
@@ -176,12 +192,26 @@ export function selectAudience(rows: readonly ReservationRow[]): AudienceResult 
       bump(ADDRESS_POISON[held] ?? "unrecognised_address");
       return;
     }
-    if (taken.has(address)) {
-      bump("duplicate_address");
-      return;
+    const group = groups.get(address);
+    if (group) group.push(row);
+    else {
+      groups.set(address, [row]);
+      order.push(address);
     }
-    taken.add(address);
-    recipients.push({ row, locale: reservationLocale(row) });
   });
+
+  const recipients: Recipient[] = [];
+  for (const address of order) {
+    const group = groups.get(address) ?? [];
+    const withReceipt = selection.leadHasReceipt
+      ? group.filter((row) => selection.leadHasReceipt?.(row.leadId) === true)
+      : [];
+    const winner = (withReceipt.length > 0 ? withReceipt : group)[0];
+    if (!winner) continue;
+    for (const row of group) {
+      if (row !== winner) bump("duplicate_address");
+    }
+    recipients.push({ row: winner, locale: reservationLocale(winner) });
+  }
   return { recipients, skipped };
 }

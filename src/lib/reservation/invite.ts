@@ -3,14 +3,16 @@
 // field on the request. Notion does not store the token.
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-import { canonicalEmail } from "../api/abuse.ts";
+import { reservationCanonicalEmail } from "./emailIdentity.ts";
 import { isLeadId } from "../verification/token.ts";
 import { RESERVATION_INVITE_PURPOSE, RESERVATION_OFFER_VERSION } from "./constants.ts";
 import { assertTokenSecret } from "./config.ts";
 
 const TOKEN_PREFIX = "v1";
 const JTI_PATTERN = /^[A-Za-z0-9_-]{16,64}$/;
-const EMAIL_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
+// Plus stays in the pattern because a non-Gmail address keeps its plus-tag.
+// Gmail tags are removed before this check. The local part still cannot start with +.
+const EMAIL_PATTERN = /^[a-z0-9][a-z0-9._+-]{0,63}@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
 const MAX_TOKEN_LENGTH = 4096;
 
 export type ReservationInvite = {
@@ -66,9 +68,10 @@ function isJti(value: string): boolean {
 }
 
 /**
- * Mints an opaque invite. Email is canonicalized the same way as the waitlist
- * (`+tags` and Gmail dots collapse) so two spellings of one inbox cannot buy
- * two reservations.
+ * Mints an opaque invite. The token stores the reservation authorization
+ * identity. Gmail and googlemail.com lose plus-tags and dots and share one
+ * inbox. Every other domain keeps plus-tags and dots, so those addresses
+ * stay distinct. The mailed To address is the verified row email, not this key.
  */
 export function issueReservationInvite(input: IssueReservationInviteInput): string {
   if (input.emailVerified !== true) {
@@ -76,7 +79,7 @@ export function issueReservationInvite(input: IssueReservationInviteInput): stri
   }
   const secret = assertTokenSecret(input.secret);
   if (!isLeadId(input.leadId)) throw new Error("Invalid lead id");
-  const email = canonicalEmail(input.email);
+  const email = reservationCanonicalEmail(input.email);
   if (!isReservationEmail(email)) throw new Error("Invalid email");
   const nowMs = input.nowMs ?? Date.now();
   const expSeconds = Math.floor(input.expiresAtMs / 1000);
@@ -115,7 +118,7 @@ function readPayload(body: string): InvitePayload | undefined {
   if (record.offerVersion !== RESERVATION_OFFER_VERSION) return undefined;
   if (typeof record.leadId !== "string" || !isLeadId(record.leadId)) return undefined;
   if (typeof record.email !== "string" || !isReservationEmail(record.email)) return undefined;
-  if (canonicalEmail(record.email) !== record.email) return undefined;
+  if (reservationCanonicalEmail(record.email) !== record.email) return undefined;
   if (typeof record.exp !== "number" || !Number.isSafeInteger(record.exp) || record.exp <= 0) {
     return undefined;
   }

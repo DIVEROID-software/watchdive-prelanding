@@ -4,7 +4,7 @@
 // after that check. Payment state is then re-read from Stripe.
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-import { canonicalEmail } from "../api/abuse.ts";
+import { reservationCanonicalEmail } from "./emailIdentity.ts";
 import { META_EMAIL_SHA256, META_PRODUCT, PRODUCT_CODE } from "./constants.ts";
 import type { EnabledReservationConfig } from "./config.ts";
 import {
@@ -274,7 +274,7 @@ export async function processReservationWebhook(input: {
     );
     return snapshotBody(eventId, aggregateInspections([inspected]));
   }
-  const email = canonicalEmail(customer.email);
+  const email = reservationCanonicalEmail(customer.email);
   if (sessionHash !== reservationEmailHash(email)) {
     return { httpStatus: 200, body: { received: true, eventId, ignored: "not_bound" } };
   }

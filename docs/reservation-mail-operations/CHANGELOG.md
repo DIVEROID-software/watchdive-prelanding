@@ -1,5 +1,13 @@
 # Reservation mail changelog
 
+## 2026-10-18 identity, lowest price, reservation inbox
+
+- Previews and sends always name DIVEROID LTD, company 16343651, and the registered office Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA. Omitting the flags uses those constants. A conflicting name or office is rejected and is not echoed.
+- English, Spanish, French, German, and Brazilian Portuguese state the lowest launch price in the same places Korean, Chinese, and Japanese already did.
+- Reservation authorization uses `reservationCanonicalEmail`. Gmail and googlemail.com share one inbox. Plus-tags and dots on every other domain stay distinct. The waitlist canonicalizer in `src/lib/api/abuse.ts` is unchanged. Mail To stays the verified row address.
+- An unsubscribed Gmail alias holds the whole Gmail inbox. A receipt on one lead of that inbox holds the other leads that are still in the audience. The ledger stores no email, so a deleted sibling row cannot be matched.
+- Deleting both the receipt ledger and the Notion sent marker is operator destruction of both controls. A missing ledger with the marker still present does not send. This job does not add another production store.
+
 ## 2026-10-18 brand, nine languages, UK footer
 
 - Visible copy is one pricing block per language. The Korean block is the reviewed wording. Other languages state the same facts once. The inbox preview is the first sentence, not a second legal wall.
@@ -7,7 +15,7 @@
 - `lang` on `/reservation#invite=` is the actual supported locale, not an English fallback.
 - Language order is explicit `Signup locale`, then a localized landing path, then browser language, then unambiguous `Signup country`, then English. `/en` beats KR. Phone, SMS, IP, and the legacy Country select are not read. Blank country cells are not backfilled.
 - The HTML uses the brand palette and the official white wordmark URL. The image file is published by the frontend under `public/brand/reservation/`.
-- The footer legal name is runtime configuration. Send refuses without `WATCHDIVE_LEGAL_NAME` and the registered postal address. Previews use the Companies House identity for 16343651: DIVEROID LTD, Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA.
+- The footer was documented here as refusing a send without `WATCHDIVE_LEGAL_NAME` and the registered postal address. That claim did not match the code, which accepted any shape-valid company. The section above is the correction: the constants are always used, and a conflicting identity is rejected.
 
 ## 2026-10-18 contract v1
 

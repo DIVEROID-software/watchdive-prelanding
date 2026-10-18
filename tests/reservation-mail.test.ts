@@ -1,7 +1,7 @@
 // Reservation invitation: disclosure, eligibility, dry run, and resumable send.
 // Every dependency is a fake. Nothing touches a network or a live mailbox.
 import assert from "node:assert/strict";
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -30,6 +30,11 @@ import {
 } from "../src/lib/reservation-mail/inviteLink.ts";
 import { deliverReservationMessage } from "../src/lib/reservation-mail/provider.ts";
 import { decideMailAction } from "../src/lib/reservation-mail/receipts.ts";
+import {
+  RESERVATION_COMPANY_NUMBER,
+  RESERVATION_LEGAL_NAME,
+  RESERVATION_REGISTERED_OFFICE,
+} from "../src/lib/reservation-mail/merchant.ts";
 import { renderReservationMail } from "../src/lib/reservation-mail/render.ts";
 import {
   PREVIEW_LEAD_ID,
@@ -50,9 +55,8 @@ import { ResendDeliveryError } from "../src/lib/verification/resend.ts";
 import { verifyReservationInvite } from "../src/lib/reservation/invite.ts";
 import { TEST_ENV, TEST_ORIGIN, TEST_SECRET } from "./helpers/fakes.ts";
 
-const POSTAL = "Example Sender, 1 Example Road, Test City";
-/** Fixture only. Not the verified UK company. */
-const LEGAL = "Example Company Ltd";
+const POSTAL = RESERVATION_REGISTERED_OFFICE;
+const LEGAL = RESERVATION_LEGAL_NAME;
 const RESERVATION_TOKEN_SECRET = "reservation-token-secret-32bytes-min!!";
 const MAIL_ENV = {
   ...TEST_ENV,
@@ -228,7 +232,9 @@ test("rendered mail keeps the disclosure and rejects a country claim", () => {
   assert.equal(mail.html.includes("Work Sans"), false);
   assert.equal(mail.html.includes("#08021f"), false);
   assert.equal(mail.html.includes("#6dcaf8"), false);
-  assert.equal(mail.html.includes("DIVEROID LTD"), false);
+  assert.match(mail.html, /DIVEROID LTD/);
+  assert.match(mail.html, new RegExp(RESERVATION_COMPANY_NUMBER));
+  assert.match(mail.text, /E6 2JA/);
   assert.equal(mail.text.split("예약금 US$3을 결제하면").length, 2);
   assert.equal(mail.subject, "WatchDive 출시가 $149 보장 — 예약금 $3");
   const linkedMatch = mail.text.match(
@@ -612,10 +618,10 @@ test("a bad invite does not block a different recipient", async () => {
   assert.equal(formatReservationSummary(result).includes(SECRET_EMAIL), false);
 });
 
-test("send refuses without the postal address or the Notion column", async () => {
+test("omitted identity uses the verified company, and a conflicting identity is refused", async () => {
   const dir = await directory();
   const store = new FakeStore([row()]);
-  const missingPostal = await runReservationMail(options(dir, { postalAddress: undefined }), {
+  const conflict = await runReservationMail(options(dir, { legalName: "Not The Company Ltd" }), {
     store,
     send: async () => {
       throw new Error("should not send");
@@ -624,10 +630,11 @@ test("send refuses without the postal address or the Notion column", async () =>
     env: MAIL_ENV,
     now: () => NOW,
   });
-  assert.equal(missingPostal.aborted, "postal_address_missing");
-  assert.equal(missingPostal.sent, 0);
+  assert.equal(conflict.aborted, "merchant_identity_mismatch");
+  assert.equal(conflict.sent, 0);
+  assert.equal((conflict.detail ?? "").includes("Not The Company"), false);
 
-  const missingLegal = await runReservationMail(options(dir, { legalName: undefined }), {
+  const malformed = await runReservationMail(options(dir, { legalName: "Bad<script>" }), {
     store,
     send: async () => {
       throw new Error("should not send");
@@ -636,8 +643,8 @@ test("send refuses without the postal address or the Notion column", async () =>
     env: MAIL_ENV,
     now: () => NOW,
   });
-  assert.equal(missingLegal.aborted, "legal_name_missing");
-  assert.equal(missingLegal.sent, 0);
+  assert.equal(malformed.aborted, "invalid_input");
+  assert.equal(malformed.sent, 0);
 
   store.schema = { ...SCHEMA, reservationMail: "missing" };
   const missingColumn = await runReservationMail(options(dir), {
@@ -662,6 +669,25 @@ test("send refuses without the postal address or the Notion column", async () =>
   assert.equal(dry.aborted, undefined);
   assert.equal(dry.eligible, 1);
   assert.ok(dry.sendBlockers.some((line) => /Reservation mail/.test(line)));
+
+  const sendDir = await directory();
+  const resend = new FakeResend();
+  const omitted = await runReservationMail(
+    options(sendDir, { postalAddress: undefined, legalName: undefined }),
+    {
+      store: new FakeStore([row()]),
+      send: resend.send,
+      signInvite: signerFor(),
+      env: MAIL_ENV,
+      now: () => NOW,
+      sleep: async () => undefined,
+    },
+  );
+  assert.equal(omitted.aborted, undefined);
+  assert.equal(omitted.sent, 1);
+  assert.match(resend.calls[0]?.html ?? "", new RegExp(RESERVATION_COMPANY_NUMBER));
+  assert.match(resend.calls[0]?.text ?? "", /DIVEROID LTD/);
+  assert.match(resend.calls[0]?.text ?? "", /E6 2JA/);
 });
 
 test("a corrupt or unsafe ledger refuses the send", async () => {
@@ -923,6 +949,13 @@ test("CLI defaults to dry run and refuses an unconfirmed send", async () => {
     POSTAL,
   ]);
   assert.equal(confirmed.ok && confirmed.options.mode, "send");
+  if (confirmed.ok) {
+    assert.equal(confirmed.options.postalAddress, RESERVATION_REGISTERED_OFFICE);
+    assert.equal(confirmed.options.legalName, RESERVATION_LEGAL_NAME);
+  }
+  const mismatch = parseCli(["--postal-address", "1 Wrong Road, Test City"]);
+  assert.equal(mismatch.ok, false);
+  if (!mismatch.ok) assert.equal(mismatch.error.includes("Wrong Road"), false);
   const wrong = parseCli(["--send", "--confirm-campaign", "other-campaign"]);
   assert.equal(wrong.ok, false);
   const lines: string[] = [];
@@ -1020,4 +1053,209 @@ test("an unexpected error is the same hold as an unknown outcome", async () => {
   });
   assert.equal(resend.calls.length, 1);
   assert.equal(second.sent, 0);
+});
+
+const LOWEST_WORD: Record<(typeof SUPPORTED_LOCALES)[number], string> = {
+  en: "lowest",
+  ko: "최저",
+  "zh-CN": "最低",
+  "zh-TW": "最低",
+  ja: "最安",
+  es: "más bajo",
+  fr: "plus bas",
+  de: "niedrigst",
+  "pt-BR": "menor",
+};
+
+function claimsEmail(html: string): string | undefined {
+  const linked = html.match(/#invite=([^"'&\s]+)/);
+  if (!linked?.[1]) return undefined;
+  const token = decodeURIComponent(linked[1]);
+  return verifyReservationInvite(token, RESERVATION_TOKEN_SECRET, NOW.getTime())?.email;
+}
+
+test("every preview names the company number and the lowest launch price", () => {
+  for (const locale of SUPPORTED_LOCALES) {
+    const mail = renderReservationMail({
+      locale,
+      inviteUrl: buildReservationInviteUrl(TEST_ORIGIN, locale, SECRET_TOKEN),
+      unsubscribeUrl: `${TEST_ORIGIN}/unsubscribe/example-token-value-0001`,
+      privacyUrl: `${TEST_ORIGIN}/${locale}/privacy`,
+      termsUrl: `${TEST_ORIGIN}/${locale}/terms`,
+    });
+    const visible = `${mail.html}\n${mail.text}`;
+    assert.match(visible, /DIVEROID LTD/, locale);
+    assert.match(visible, new RegExp(RESERVATION_COMPANY_NUMBER), locale);
+    assert.match(visible, /E6 2JA/, locale);
+    assert.equal(visible.includes(LOWEST_WORD[locale]), true, locale);
+    assert.equal(mail.html.includes(RESERVATION_COPY[locale].preheader), true, locale);
+  }
+  assert.throws(
+    () =>
+      renderReservationMail({
+        locale: "en",
+        inviteUrl: buildReservationInviteUrl(TEST_ORIGIN, "en", SECRET_TOKEN),
+        unsubscribeUrl: `${TEST_ORIGIN}/unsubscribe/example-token-value-0001`,
+        privacyUrl: `${TEST_ORIGIN}/en/privacy`,
+        termsUrl: `${TEST_ORIGIN}/en/terms`,
+        legalName: "Not The Company Ltd",
+      }),
+    /merchant identity mismatch/,
+  );
+});
+
+test("custom-domain plus and dotted addresses stay distinct, and Gmail aliases do not", async () => {
+  const dir = await directory();
+  const tagged = row({ email: "  Diver+tag@example.com " });
+  const plain = row({ email: "diver@example.com" });
+  const dotted = row({ email: "a.b@example.com" });
+  const undotted = row({ email: "ab@example.com" });
+  const resend = new FakeResend();
+  const sent = await runReservationMail(options(dir), {
+    store: new FakeStore([tagged, plain, dotted, undotted]),
+    send: resend.send,
+    env: MAIL_ENV,
+    now: () => NOW,
+    sleep: async () => undefined,
+  });
+  assert.equal(sent.sent, 4);
+  assert.deepEqual(
+    resend.calls.map((call) => call.to),
+    ["Diver+tag@example.com", "diver@example.com", "a.b@example.com", "ab@example.com"],
+  );
+  assert.equal(claimsEmail(resend.calls[0]?.html ?? ""), "diver+tag@example.com");
+  assert.equal(claimsEmail(resend.calls[2]?.html ?? ""), "a.b@example.com");
+  assert.equal(claimsEmail(resend.calls[3]?.html ?? ""), "ab@example.com");
+
+  const gmailDir = await directory();
+  const alias = row({ email: "A.B+left@gmail.com" });
+  const collapsed = row({ email: "ab@gmail.com" });
+  const gmail = new FakeResend();
+  const once = await runReservationMail(options(gmailDir), {
+    store: new FakeStore([alias, collapsed]),
+    send: gmail.send,
+    env: MAIL_ENV,
+    now: () => NOW,
+    sleep: async () => undefined,
+  });
+  assert.equal(once.sent, 1);
+  assert.equal(once.skipped.duplicate_address, 1);
+  assert.equal(gmail.calls[0]?.to, "A.B+left@gmail.com");
+  assert.equal(claimsEmail(gmail.calls[0]?.html ?? ""), "ab@gmail.com");
+
+  const held = selectAudience([
+    row({ email: "a.b+x@gmail.com", launchMail: "unsubscribed 2026-10-01T00:00:00.000Z" }),
+    row({ email: "ab@gmail.com" }),
+    row({ email: "a.b@googlemail.com" }),
+  ]);
+  assert.equal(held.recipients.length, 0);
+  assert.equal(held.skipped.unsubscribed_address, 2);
+
+  const separate = selectAudience([
+    row({ email: "person@example.com", status: "unsubscribed" }),
+    row({ email: "person+tag@example.com" }),
+  ]);
+  assert.deepEqual(
+    separate.recipients.map((item) => item.row.email),
+    ["person+tag@example.com"],
+  );
+});
+
+test("a Gmail receipt holds the alias, and a sent marker still blocks when the ledger is missing", async () => {
+  const dir = await directory();
+  const older = row({ email: "A.B+left@gmail.com" });
+  const younger = row({ email: "ab@gmail.com" });
+  await writeFile(
+    join(dir, `${RESERVATION_CAMPAIGN_ID}.jsonl`),
+    `${JSON.stringify({
+      v: 1,
+      campaignId: RESERVATION_CAMPAIGN_ID,
+      leadId: younger.leadId,
+      state: "accepted",
+      at: "2026-10-18T03:00:00.000Z",
+      firstIntentAt: "2026-10-18T03:00:00.000Z",
+      notion: "ok",
+    })}\n`,
+  );
+  const resend = new FakeResend();
+  const store = new FakeStore([older, younger]);
+  const result = await runReservationMail(options(dir), {
+    store,
+    send: resend.send,
+    env: MAIL_ENV,
+    now: () => NOW,
+    sleep: async () => undefined,
+  });
+  assert.equal(resend.calls.length, 0);
+  assert.equal(result.sent, 0);
+  assert.equal(result.unresolved, 0);
+  assert.equal(older.reservationMail, undefined);
+  assert.equal(
+    store.writes.some((write) => write.pageId === older.pageId),
+    false,
+  );
+
+  const stalledDir = await directory();
+  const eligible = row({ email: "ab@gmail.com" });
+  const hidden = row({ email: "a.b+x@gmail.com", duplicate: true });
+  await writeFile(
+    join(stalledDir, `${RESERVATION_CAMPAIGN_ID}.jsonl`),
+    `${JSON.stringify({
+      v: 1,
+      campaignId: RESERVATION_CAMPAIGN_ID,
+      leadId: hidden.leadId,
+      state: "failed",
+      at: "2026-10-18T03:00:00.000Z",
+      firstIntentAt: "2026-10-18T03:00:00.000Z",
+      notion: "ok",
+      failureClass: "provider_rejected",
+    })}\n`,
+  );
+  const stalledSend = new FakeResend();
+  const stalledStore = new FakeStore([eligible, hidden]);
+  const stalled = await runReservationMail(options(stalledDir), {
+    store: stalledStore,
+    send: stalledSend.send,
+    env: MAIL_ENV,
+    now: () => NOW,
+    sleep: async () => undefined,
+  });
+  assert.equal(stalledSend.calls.length, 0);
+  assert.equal(stalled.sent, 0);
+  assert.equal(stalled.unresolved, 0);
+  assert.equal(eligible.reservationMail, undefined);
+
+  const markedDir = await directory();
+  const marked = row({
+    reservationMail: `${RESERVATION_CAMPAIGN_ID} sent 2026-10-18T03:00:00.000Z`,
+  });
+  const markedSend = new FakeResend();
+  const markedResult = await runReservationMail(options(markedDir), {
+    store: new FakeStore([marked]),
+    send: markedSend.send,
+    env: MAIL_ENV,
+    now: () => NOW,
+    sleep: async () => undefined,
+  });
+  assert.equal(markedSend.calls.length, 0);
+  assert.equal(markedResult.sent, 0);
+  assert.equal(markedResult.eligible, 0);
+
+  const olderAlias = row({ email: "ab@gmail.com" });
+  const other = row({ email: "other@example.com" });
+  const youngerAlias = row({ email: "a.b@gmail.com" });
+  const ordered = selectAudience([olderAlias, other, youngerAlias], {
+    leadHasReceipt: (leadId) => leadId === youngerAlias.leadId,
+  });
+  assert.deepEqual(
+    ordered.recipients.map((item) => item.row.leadId),
+    [youngerAlias.leadId, other.leadId],
+  );
+
+  const readme = await readFile(
+    new URL("../docs/reservation-mail-operations/README.md", import.meta.url),
+    "utf8",
+  );
+  assert.match(readme, /operator destruction of the only two records/);
+  assert.match(readme, /does not add a third production store/);
 });

@@ -8,7 +8,7 @@
 // error does not advance the attempt. Notion is not a lock.
 import { createHash } from "node:crypto";
 
-import { canonicalEmail } from "../api/abuse.ts";
+import { reservationCanonicalEmail } from "./emailIdentity.ts";
 import {
   CANCEL_PATH,
   CHECKOUT_HOST,
@@ -157,7 +157,7 @@ function customerKey(emailSha256: string): string {
 
 function sameInbox(stored: string | null, email: string): boolean {
   if (!stored) return false;
-  return canonicalEmail(stored) === email;
+  return reservationCanonicalEmail(stored) === email;
 }
 
 async function listCustomers(stripe: StripeApi, email: string): Promise<StripeCustomer[]> {

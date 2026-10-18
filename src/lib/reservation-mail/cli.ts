@@ -14,6 +14,7 @@ import type { Locale } from "../i18n/locale.ts";
 import { createNotionRequest } from "../verification/notionLead.ts";
 import { readResendConfig } from "../verification/resend.ts";
 import { RESERVATION_CAMPAIGN_ID } from "./campaign.ts";
+import { readReservationMerchant } from "./merchant.ts";
 import { deliverReservationMessage } from "./provider.ts";
 import {
   formatReservationSummary,
@@ -30,19 +31,20 @@ export const USAGE = `Usage:
     [--receipt-dir <dir>]               durable receipt ledger (default .reservation-mail-receipts)
     [--send --confirm-campaign ${RESERVATION_CAMPAIGN_ID}]
                                         really send this one stable campaign
-    [--postal-address "<address>"]      UK registered office, or WATCHDIVE_POSTAL_ADDRESS
-    [--legal-name "<name>"]             verified UK legal name, or WATCHDIVE_LEGAL_NAME
+    [--postal-address "<address>"]      registered office, or omit it; a different address is rejected
+    [--legal-name "<name>"]             DIVEROID LTD, or omit it; a different name is rejected
     [--limit <n>]                       only the first n eligible recipients (oldest first)
     [--rate <per second>]               Resend request rate (default 2)
 
 Reads NOTION_API_KEY, NOTION_WAITLIST_DB_ID, WATCHDIVE_VERIFICATION_SECRET,
 and WATCHDIVE_PUBLIC_ORIGIN. A send also reads RESEND_API_KEY,
 WATCHDIVE_EMAIL_FROM (and optional WATCHDIVE_EMAIL_FROM_NAME,
-WATCHDIVE_EMAIL_REPLY_TO), WATCHDIVE_RESERVATION_TOKEN_SECRET (at least
-32 bytes), WATCHDIVE_LEGAL_NAME, and WATCHDIVE_POSTAL_ADDRESS. The token
-secret is not the verification secret. The legal name and postal address
-must be the verified UK company. This command does not invent them. Stripe
-keys and WATCHDIVE_RESERVATION_ENABLED are not read. Optional
+WATCHDIVE_EMAIL_REPLY_TO) and WATCHDIVE_RESERVATION_TOKEN_SECRET (at least
+32 bytes). The token secret is not the verification secret. The sender is
+DIVEROID LTD, company 16343651, Office 12146, 182-184 High Street North,
+East Ham, London, United Kingdom, E6 2JA. Omitting the name and office uses
+that identity. A different name or office is rejected. Stripe keys and
+WATCHDIVE_RESERVATION_ENABLED are not read. Optional
 RESERVATION_MAIL_RECEIPT_DIR overrides --receipt-dir. Values are never printed.
 
 A send mints each invite with issueReservationInvite in
@@ -101,6 +103,8 @@ export function parseCli(argv: string[], env: NodeJS.ProcessEnv = process.env): 
   if (rate instanceof Error) return { ok: false, error: rate.message };
   const postalAddress = values["postal-address"] ?? env.WATCHDIVE_POSTAL_ADDRESS;
   const legalName = values["legal-name"] ?? env.WATCHDIVE_LEGAL_NAME;
+  const identity = readReservationMerchant(legalName, postalAddress);
+  if (!identity.ok) return { ok: false, error: identity.error };
   const receiptDir = resolve(
     values["receipt-dir"] ?? env.RESERVATION_MAIL_RECEIPT_DIR ?? ".reservation-mail-receipts",
   );
@@ -111,8 +115,8 @@ export function parseCli(argv: string[], env: NodeJS.ProcessEnv = process.env): 
     options: {
       mode: values.send ? "send" : "dry-run",
       receiptDir,
-      ...(postalAddress ? { postalAddress } : {}),
-      ...(legalName ? { legalName } : {}),
+      postalAddress: identity.merchant.postalAddress,
+      legalName: identity.merchant.legalName,
       ...(limit !== undefined ? { limit } : {}),
       ...(rate !== undefined ? { ratePerSecond: rate } : {}),
     },

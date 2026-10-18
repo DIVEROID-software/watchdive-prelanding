@@ -2,8 +2,8 @@
 // once, in that language. There is no shared English fact wall and no second
 // restatement of the fee, the later price, and the total.
 //
-// Paying the US$3 reservation fee guarantees the US$149 launch price. That
-// guarantee is separate from the public first-100 benefit. The fee is not
+// Paying the US$3 reservation fee guarantees the lowest US$149 launch price.
+// That guarantee is separate from the public first-100 benefit. The fee is not
 // deducted from the product price. US$149 is paid later, by the buyer, and
 // is not automatic. The total is US$152 before product shipping and tax.
 // The fee is refunded only if the launch is cancelled. Mandatory rights stay.
@@ -44,13 +44,13 @@ export type ReservationCopy = {
 
 export const RESERVATION_COPY: Record<Locale, ReservationCopy> = {
   en: {
-    subject: "WatchDive launch price guaranteed at $149 — $3 reservation fee",
-    preheader: "Paying the US$3 reservation fee guarantees the US$149 launch price, 100%.",
-    heading: "Your US$149 launch price",
+    subject: "WatchDive lowest launch price guaranteed at $149 — $3 reservation fee",
+    preheader: "Paying the US$3 reservation fee guarantees the lowest US$149 launch price, 100%.",
+    heading: "Your lowest US$149 launch price",
     intro: "Thank you for confirming your WatchDive signup.",
     disclosure:
-      "Paying the US$3 reservation fee guarantees the US$149 launch price, 100%. It applies separately from the first-100 benefit. The fee is not deducted from the product price. When you buy the product, you pay US$149 separately. The total is US$152, before product shipping and tax. The product price is not charged automatically. The reservation fee is refunded only if the launch is cancelled. Rights the law gives you are not limited.",
-    button: "Guarantee the US$149 launch price",
+      "Paying the US$3 reservation fee guarantees the lowest US$149 launch price, 100%. It applies separately from the first-100 benefit. The fee is not deducted from the product price. When you buy the product, you pay US$149 separately. The total is US$152, before product shipping and tax. The product price is not charged automatically. The reservation fee is refunded only if the launch is cancelled. Rights the law gives you are not limited.",
+    button: "Guarantee the lowest US$149 launch price",
     fallback: "Or open this link",
     reason: "You received this because you confirmed your WatchDive signup.",
     unsubscribe: "Unsubscribe from these emails",
@@ -171,12 +171,12 @@ export const RESERVATION_COPY: Record<Locale, ReservationCopy> = {
   },
   es: {
     subject: "Precio de lanzamiento de WatchDive garantizado en $149 — reserva de $3",
-    preheader: "Pagar la reserva de US$3 garantiza al 100 % el precio de lanzamiento de US$149.",
-    heading: "Tu precio de lanzamiento de US$149",
+    preheader: "Pagar la reserva de US$3 garantiza al 100 % el precio de lanzamiento más bajo de US$149.",
+    heading: "Tu precio de lanzamiento más bajo de US$149",
     intro: "Gracias por confirmar tu registro en WatchDive.",
     disclosure:
-      "Pagar la reserva de US$3 garantiza al 100 % el precio de lanzamiento de US$149. Se aplica aparte del beneficio de los primeros 100. La reserva no se descuenta del precio del producto. Al comprar el producto, pagas US$149 por separado. El total es US$152, antes del envío y de los impuestos del producto. El precio del producto no se cobra automáticamente. La reserva se reembolsa solo si se cancela el lanzamiento. Los derechos que te reconoce la ley no quedan limitados.",
-    button: "Garantizar el precio de US$149",
+      "Pagar la reserva de US$3 garantiza al 100 % el precio de lanzamiento más bajo de US$149. Se aplica aparte del beneficio de los primeros 100. La reserva no se descuenta del precio del producto. Al comprar el producto, pagas US$149 por separado. El total es US$152, antes del envío y de los impuestos del producto. El precio del producto no se cobra automáticamente. La reserva se reembolsa solo si se cancela el lanzamiento. Los derechos que te reconoce la ley no quedan limitados.",
+    button: "Garantizar el precio de lanzamiento más bajo de US$149",
     fallback: "O abre este enlace",
     reason: "Recibes este mensaje porque confirmaste tu registro en WatchDive.",
     unsubscribe: "Cancelar estos correos",
@@ -197,12 +197,12 @@ export const RESERVATION_COPY: Record<Locale, ReservationCopy> = {
   fr: {
     subject: "Prix de lancement WatchDive garanti à $149 — frais de réservation de $3",
     preheader:
-      "Payer les frais de réservation de US$3 garantit à 100 % le prix de lancement de US$149.",
-    heading: "Votre prix de lancement de US$149",
+      "Payer les frais de réservation de US$3 garantit à 100 % le prix de lancement le plus bas de US$149.",
+    heading: "Votre prix de lancement le plus bas de US$149",
     intro: "Merci d'avoir confirmé votre inscription à WatchDive.",
     disclosure:
-      "Payer les frais de réservation de US$3 garantit à 100 % le prix de lancement de US$149. Cette garantie s'applique séparément de l'avantage des 100 premiers. Les frais ne sont pas déduits du prix du produit. Lors de l'achat, vous payez US$149 à part. Le total est de US$152, hors livraison et taxes du produit. Le prix du produit n'est pas débité automatiquement. Les frais sont remboursés seulement si le lancement est annulé. Les droits que la loi vous accorde ne sont pas limités.",
-    button: "Garantir le prix de US$149",
+      "Payer les frais de réservation de US$3 garantit à 100 % le prix de lancement le plus bas de US$149. Cette garantie s'applique séparément de l'avantage des 100 premiers. Les frais ne sont pas déduits du prix du produit. Lors de l'achat, vous payez US$149 à part. Le total est de US$152, hors livraison et taxes du produit. Le prix du produit n'est pas débité automatiquement. Les frais sont remboursés seulement si le lancement est annulé. Les droits que la loi vous accorde ne sont pas limités.",
+    button: "Garantir le prix de lancement le plus bas de US$149",
     fallback: "Ou ouvrez ce lien",
     reason: "Vous recevez ce message parce que vous avez confirmé votre inscription à WatchDive.",
     unsubscribe: "Se désabonner de ces e-mails",
@@ -223,12 +223,12 @@ export const RESERVATION_COPY: Record<Locale, ReservationCopy> = {
   de: {
     subject: "WatchDive-Startpreis garantiert bei $149 — Reservierung $3",
     preheader:
-      "Wenn Sie die Reservierungsgebühr von US$3 zahlen, ist der Startpreis von US$149 zu 100 % garantiert.",
-    heading: "Ihr Startpreis von US$149",
+      "Wenn Sie die Reservierungsgebühr von US$3 zahlen, garantiert das den niedrigsten Startpreis von US$149 zu 100 %.",
+    heading: "Ihr niedrigster Startpreis von US$149",
     intro: "Danke, dass Sie Ihre WatchDive-Anmeldung bestätigt haben.",
     disclosure:
-      "Wenn Sie die Reservierungsgebühr von US$3 zahlen, ist der Startpreis von US$149 zu 100 % garantiert. Das gilt getrennt vom Vorteil für die ersten 100. Die Gebühr wird nicht angerechnet und nicht vom Produktpreis abgezogen. Beim Kauf zahlen Sie US$149 gesondert. Die Summe ist US$152, zuzüglich Versand und Steuern des Produkts. Der Produktpreis wird nicht automatisch berechnet. Die Gebühr wird nur erstattet, wenn der Start abgesagt wird. Gesetzliche Verbraucherrechte werden nicht eingeschränkt.",
-    button: "Startpreis von US$149 sichern",
+      "Wenn Sie die Reservierungsgebühr von US$3 zahlen, garantiert das den niedrigsten Startpreis von US$149 zu 100 %. Das gilt getrennt vom Vorteil für die ersten 100. Die Gebühr wird nicht angerechnet und nicht vom Produktpreis abgezogen. Beim Kauf zahlen Sie US$149 gesondert. Die Summe ist US$152, zuzüglich Versand und Steuern des Produkts. Der Produktpreis wird nicht automatisch berechnet. Die Gebühr wird nur erstattet, wenn der Start abgesagt wird. Gesetzliche Verbraucherrechte werden nicht eingeschränkt.",
+    button: "Niedrigsten Startpreis von US$149 sichern",
     fallback: "Oder öffnen Sie diesen Link",
     reason: "Sie erhalten diese Nachricht, weil Sie Ihre WatchDive-Anmeldung bestätigt haben.",
     unsubscribe: "Diese E-Mails abbestellen",
@@ -248,12 +248,12 @@ export const RESERVATION_COPY: Record<Locale, ReservationCopy> = {
   },
   "pt-BR": {
     subject: "Preço de lançamento do WatchDive garantido em $149 — reserva de $3",
-    preheader: "Pagar a reserva de US$3 garante 100% o preço de lançamento de US$149.",
-    heading: "Seu preço de lançamento de US$149",
+    preheader: "Pagar a reserva de US$3 garante 100% o menor preço de lançamento de US$149.",
+    heading: "Seu menor preço de lançamento de US$149",
     intro: "Obrigado por confirmar seu cadastro no WatchDive.",
     disclosure:
-      "Pagar a reserva de US$3 garante 100% o preço de lançamento de US$149. Vale separadamente do benefício dos primeiros 100. A reserva não é descontada do preço do produto. Na compra, você paga US$149 à parte. O total é US$152, antes do frete e dos impostos do produto. O preço do produto não é cobrado automaticamente. A reserva é reembolsada somente se o lançamento for cancelado. Os direitos que a lei lhe assegura não ficam limitados.",
-    button: "Garantir o preço de US$149",
+      "Pagar a reserva de US$3 garante 100% o menor preço de lançamento de US$149. Vale separadamente do benefício dos primeiros 100. A reserva não é descontada do preço do produto. Na compra, você paga US$149 à parte. O total é US$152, antes do frete e dos impostos do produto. O preço do produto não é cobrado automaticamente. A reserva é reembolsada somente se o lançamento for cancelado. Os direitos que a lei lhe assegura não ficam limitados.",
+    button: "Garantir o menor preço de lançamento de US$149",
     fallback: "Ou abra este link",
     reason: "Você recebeu esta mensagem porque confirmou seu cadastro no WatchDive.",
     unsubscribe: "Cancelar estes e-mails",

@@ -6,7 +6,7 @@ import { test } from "node:test";
 
 import { parseContract, parseHandledEvents } from "../scripts/reservation-readiness.ts";
 
-import { canonicalEmail } from "../src/lib/api/abuse.ts";
+import { reservationCanonicalEmail } from "../src/lib/reservation/emailIdentity.ts";
 import {
   LATER_PRODUCT_PRICE_CENTS,
   PRICE_BEFORE_SHIPPING_OR_TAX_CENTS,
@@ -162,7 +162,7 @@ class MemoryStripe {
     };
     this.seq += 1;
     this.customers.push(customer);
-    const emailSha256 = reservationEmailHash(canonicalEmail(email));
+    const emailSha256 = reservationEmailHash(reservationCanonicalEmail(email));
     const amount = input.amountTotal ?? RESERVATION_FEE_CENTS;
     const currency = input.currency ?? "usd";
     const pi = `pi_test_${this.seq}`;
@@ -460,7 +460,7 @@ function statusRequest(token: string | null, sessionId?: string, queryToken?: st
 }
 
 function inboxHash(email = EMAIL): string {
-  return reservationEmailHash(canonicalEmail(email));
+  return reservationEmailHash(reservationCanonicalEmail(email));
 }
 
 async function bodyOf(response: Response): Promise<Record<string, unknown>> {
@@ -650,6 +650,26 @@ test("the same Gmail inbox cannot pay twice under another spelling or lead", asy
   assert.equal(response.status, 409);
   assert.equal((await bodyOf(response)).error, "already_paid");
   assert.equal(fake.creates(), 0);
+});
+
+test("a custom-domain plus address is a different inbox from the address without the tag", async () => {
+  const fake = new MemoryStripe();
+  fake.seedPaid({ email: "diver+tag@example.com" });
+  const tagged = await handleReservationCheckout(
+    post(invite({ email: "Diver+Tag@example.com" })),
+    deps(fake),
+  );
+  assert.equal(tagged.status, 409);
+  assert.equal((await bodyOf(tagged)).error, "already_paid");
+  assert.equal(fake.creates(), 0);
+
+  const other = await handleReservationCheckout(
+    post(invite({ email: "diver@example.com", leadId: OTHER_LEAD, jti: "invitejti00000066" })),
+    deps(fake),
+  );
+  assert.equal(other.status, 200);
+  assert.equal(fake.creates(), 1);
+  assert.equal(fake.customers.at(-1)?.email, "diver@example.com");
 });
 
 test("a refunded or partially refunded fee does not start a new charge", async () => {
@@ -869,6 +889,32 @@ test("a paid webhook trusts the retrieved session, and a replay does not double 
     fake.calls.filter((call) => call.path.includes("/refunds") && call.method === "POST").length,
     0,
   );
+});
+
+test("a custom-domain plus webhook stays bound to that exact inbox", async () => {
+  const fake = new MemoryStripe();
+  const session = fake.seedPaid({ email: "diver+tag@example.com" });
+  const payload = JSON.stringify({
+    id: "evt_plus_custom",
+    type: "checkout.session.completed",
+    livemode: false,
+    data: { object: { id: session.id, payment_status: "unpaid", amount_total: 1 } },
+  });
+  const body = await bodyOf(
+    await handleReservationWebhook(
+      new Request("https://watchdive.diveroid.com/api/reservation/webhook", {
+        method: "POST",
+        headers: {
+          "stripe-signature": stripeSignature(payload, WEBHOOK_SECRET, Math.floor(NOW / 1000)),
+        },
+        body: payload,
+      }),
+      deps(fake),
+    ),
+  );
+  assert.equal(body.paid, true);
+  assert.equal(body.ignored, undefined);
+  assert.equal(fake.creates(), 0);
 });
 
 test("refund webhooks read the charge and stay idempotent when the event amount is wrong", async () => {

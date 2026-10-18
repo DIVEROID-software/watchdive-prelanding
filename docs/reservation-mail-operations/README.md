@@ -45,7 +45,7 @@ Do not bootstrap from a worker. Do not create `send-enabled` until root decides 
 
 ## Fail closed
 
-An unknown provider outcome (transport, unreadable success, unexpected error) is stored as `hold unknown_outcome` and is not retried, including inside the 23 hour window. A 409 stays `hold provider_conflict`. A clear provider rejection is stored as `failed` and is not retried. An intent with no outcome may resume inside 23 hours on the same idempotency key. After 23 hours that intent becomes `hold expired_intent` and is not sent. Deleting both the ledger and the Notion cell can still allow a later send. A sent Notion cell alone still blocks.
+An unknown provider outcome (transport, unreadable success, unexpected error) is stored as `hold unknown_outcome` and is not retried, including inside the 23 hour window. A 409 stays `hold provider_conflict`. A clear provider rejection is stored as `failed` and is not retried. An intent with no outcome may resume inside 23 hours on the same idempotency key. After 23 hours that intent becomes `hold expired_intent` and is not sent. A missing ledger file is an empty ledger. If the Notion sent marker is still present, the run does not send again. Deleting both the ledger and the Notion marker on purpose destroys both controls, and a later run can send. That is operator destruction of the only two records, not a missing-ledger defect, and this job does not add a third production store to paper over it.
 
 ## Link
 
@@ -57,7 +57,7 @@ Language order: an explicit `Signup locale` cell when it matches a supported loc
 
 Companies House company 16343651 is DIVEROID LTD. The registered office is Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA. Source: https://find-and-update.company-information.service.gov.uk/company/16343651. Root also matched the Stripe account legal name DIVEROID LTD and country GB. The Stripe business address and the public descriptor are a separate root item and are not used here.
 
-Preview HTML uses that legal name and registered office. A real send still refuses unless `--legal-name` / `WATCHDIVE_LEGAL_NAME` and `--postal-address` / `WATCHDIVE_POSTAL_ADDRESS` are set to those values. The plist does not contain them.
+Previews and sends always include that legal name, company number 16343651, and registered office. Omitting `--legal-name` / `WATCHDIVE_LEGAL_NAME` and `--postal-address` / `WATCHDIVE_POSTAL_ADDRESS` uses those constants. A different name or office is rejected and is not printed. The plist does not contain them.
 
 The wordmark stays the official DIVEROID image. It is not the legal-name line.
 

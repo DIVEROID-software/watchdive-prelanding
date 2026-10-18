@@ -13,6 +13,7 @@
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
 import { SUPPORTED_LOCALES, privacyPath, termsPath, type Locale } from "../i18n/locale.ts";
+import { reservationCanonicalEmail } from "../reservation/emailIdentity.ts";
 import { classifyDeliveryFailure, ResendDeliveryError } from "../verification/resend.ts";
 import {
   requirePublicOrigin,
@@ -20,8 +21,7 @@ import {
   type TokenEnvironment,
 } from "../verification/token.ts";
 import { createUnsubscribeToken, unsubscribeUrl } from "../launchMail/unsubscribeToken.ts";
-import type { SkipReason } from "./audience.ts";
-import { selectAudience } from "./audience.ts";
+import { selectAudience, type ReservationRow, type SkipReason } from "./audience.ts";
 import {
   RESERVATION_CAMPAIGN_ID,
   failedMarker,
@@ -38,6 +38,7 @@ import {
   readReservationTokenSecret,
   type ReservationInviteSigner,
 } from "./inviteLink.ts";
+import { readReservationMerchant } from "./merchant.ts";
 import {
   acquireReceiptLock,
   appendReceipt,
@@ -47,7 +48,6 @@ import {
   loadLedger,
   openReceiptLog,
   prepareReceiptDir,
-  receiptFileExists,
   receiptPaths,
   releaseReceiptLock,
   type ReceiptRecord,
@@ -76,8 +76,9 @@ export type ReservationMessage = {
 
 export type ReservationRunOptions = {
   mode: "dry-run" | "send";
+  /** Omit, or pass the registered office. Any other address aborts the run. */
   postalAddress?: string;
-  /** Verified UK legal name. A send refuses while this is empty. */
+  /** Omit, or pass DIVEROID LTD. Any other name aborts the run. */
   legalName?: string;
   ratePerSecond?: number;
   /** First n eligible recipients only, oldest first. Recorded like any send. */
@@ -106,6 +107,7 @@ export type ReservationAbort =
   | "launch_mail_unreadable"
   | "postal_address_missing"
   | "legal_name_missing"
+  | "merchant_identity_mismatch"
   | "invite_secret_missing"
   | "audience_query_failed"
   | "receipt_unsafe"
@@ -180,24 +182,6 @@ function emptyResult(mode: ReservationRunOptions["mode"]): ReservationRunResult 
   };
 }
 
-function cleanPostal(value: string | undefined): string {
-  const postal = value?.trim() ?? "";
-  if (!postal) return "";
-  if (postal.length < 8 || postal.length > 300 || /[\u0000-\u001f<>]/.test(postal)) {
-    throw new Error("--postal-address must be a single-line postal address");
-  }
-  return postal;
-}
-
-function cleanLegalName(value: string | undefined): string {
-  const name = value?.trim() ?? "";
-  if (!name) return "";
-  if (name.length < 2 || name.length > 120 || /[\u0000-\u001f<>]/.test(name)) {
-    throw new Error("--legal-name must be a single-line legal name");
-  }
-  return name;
-}
-
 function createRateLimiter(
   perSecond: number,
   now: () => number,
@@ -263,14 +247,10 @@ export async function runReservationMail(
     detail,
   });
 
-  let postal = "";
-  let legalName = "";
-  try {
-    postal = cleanPostal(options.postalAddress);
-    legalName = cleanLegalName(options.legalName);
-  } catch (error) {
-    return abort("invalid_input", error instanceof Error ? error.message : "invalid input");
-  }
+  const identity = readReservationMerchant(options.legalName, options.postalAddress);
+  if (!identity.ok) return abort(identity.code, identity.error);
+  const postal = identity.merchant.postalAddress;
+  const legalName = identity.merchant.legalName;
   const rate = options.ratePerSecond ?? DEFAULT_SEND_RATE_PER_SECOND;
   if (!(rate > 0 && rate <= MAX_SEND_RATE_PER_SECOND)) {
     return abort("invalid_input", `--rate must be between 0 and ${MAX_SEND_RATE_PER_SECOND}`);
@@ -298,14 +278,6 @@ export async function runReservationMail(
   result.helperLoaded = true;
 
   const blockers = result.sendBlockers;
-  if (!postal) {
-    blockers.push("no postal address (--postal-address or WATCHDIVE_POSTAL_ADDRESS)");
-  }
-  if (!legalName) {
-    blockers.push(
-      "no verified UK legal name (--legal-name or WATCHDIVE_LEGAL_NAME); a send would refuse",
-    );
-  }
   if (!tokenSecret) {
     blockers.push(
       "WATCHDIVE_RESERVATION_TOKEN_SECRET is missing or shorter than 32 bytes; a send would refuse",
@@ -338,15 +310,6 @@ export async function runReservationMail(
     if (sending) return abort("launch_mail_unreadable", why);
     blockers.push(why);
   }
-  if (sending && !postal) {
-    return abort("postal_address_missing", "a commercial mail needs the sender's postal address");
-  }
-  if (sending && !legalName) {
-    return abort(
-      "legal_name_missing",
-      "a commercial mail needs the verified UK legal name; none is configured",
-    );
-  }
   if (sending && !tokenSecret) {
     return abort(
       "invite_secret_missing",
@@ -354,36 +317,55 @@ export async function runReservationMail(
     );
   }
 
-  let rows;
+  let rows: ReservationRow[];
   try {
     rows = await dependencies.store.listRows(schema);
   } catch {
     return abort("audience_query_failed", "audience query failed");
   }
   result.rowsScanned = rows.length;
-  const audience = selectAudience(rows);
+
+  const paths = receiptPaths(options.receiptDir);
+  let ledger = await loadLedger(paths.file);
+  if (ledgerUnsafe(ledger)) {
+    const why = "receipt ledger has a corrupt, foreign, or unsafe line; nothing will be sent";
+    if (sending) return abort("receipt_unsafe", why);
+    blockers.push(why);
+  }
+  const ledgerTrusted = !ledgerUnsafe(ledger);
+  const audience = selectAudience(rows, {
+    ...(ledgerTrusted
+      ? { leadHasReceipt: (leadId: string) => ledger.byLead.has(leadId.toLowerCase()) }
+      : {}),
+  });
   result.skipped = audience.skipped;
   result.eligible = audience.recipients.length;
   for (const { locale } of audience.recipients) {
     result.byLocale[locale] = (result.byLocale[locale] ?? 0) + 1;
   }
 
-  const paths = receiptPaths(options.receiptDir);
-  let ledger = await (async () => {
-    if (await receiptFileExists(paths.file)) return loadLedger(paths.file);
-    return loadLedger(paths.file);
-  })();
-  if (ledgerUnsafe(ledger)) {
-    const why = "receipt ledger has a corrupt, foreign, or unsafe line; nothing will be sent";
-    if (sending) return abort("receipt_unsafe", why);
-    blockers.push(why);
-  }
-  for (const { row } of audience.recipients) {
-    const action = decideMailAction(
+  // A receipt belongs to a lead id. Another lead of the same reservation inbox
+  // must not send as well. Reason "accepted" keeps the skip from counting as
+  // an unresolved hold. Failed and intent receipts are included on purpose.
+  const inboxAction = (row: ReservationRow, now: Date) => {
+    const own = decideMailAction(
       row.reservationMail,
       ledger.byLead.get(row.leadId.toLowerCase()),
-      clock(),
+      now,
     );
+    if (own.type !== "deliver" || !ledgerTrusted) return own;
+    const address = reservationCanonicalEmail(row.email);
+    const siblingHasReceipt = rows.some((other) => {
+      if (other.leadId.toLowerCase() === row.leadId.toLowerCase()) return false;
+      if (reservationCanonicalEmail(other.email) !== address) return false;
+      return ledger.byLead.has(other.leadId.toLowerCase());
+    });
+    if (!siblingHasReceipt) return own;
+    return { type: "block" as const, reason: "accepted" as const, writeUnresolved: false };
+  };
+
+  for (const { row } of audience.recipients) {
+    const action = inboxAction(row, clock());
     if (action.type === "deliver") result.planned.deliver += 1;
     else if (action.type === "record_only") result.planned.reconcile += 1;
     else if (action.reason === "expired") result.planned.expired += 1;
@@ -401,8 +383,8 @@ export async function runReservationMail(
       unsubscribeUrl: unsubscribeFor(leadId, locale),
       privacyUrl: pageUrl(privacyPath(locale)),
       termsUrl: pageUrl(termsPath(locale)),
-      ...(postal ? { postalAddress: postal } : {}),
-      ...(legalName ? { legalName } : {}),
+      postalAddress: postal,
+      legalName,
     });
 
   if (!sending) {
@@ -504,11 +486,7 @@ export async function runReservationMail(
       const item = queue[cursor++];
       const { row, locale } = item;
       const decidedAt = clock();
-      const optimistic = decideMailAction(
-        row.reservationMail,
-        ledger.byLead.get(row.leadId.toLowerCase()),
-        decidedAt,
-      );
+      const optimistic = inboxAction(row, decidedAt);
       let message: ReservationMessage | undefined;
       if (optimistic.type === "deliver") {
         try {
@@ -554,11 +532,7 @@ export async function runReservationMail(
 
       const step = await exclusive(async () => {
         if (stopped) return "stop" as const;
-        const action = decideMailAction(
-          row.reservationMail,
-          ledger.byLead.get(row.leadId.toLowerCase()),
-          decidedAt,
-        );
+        const action = inboxAction(row, decidedAt);
         if (action.type === "block") {
           if (action.writeUnresolved) {
             const at = clock().toISOString();
