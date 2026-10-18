@@ -208,3 +208,21 @@ test("no attribution writes no properties at all", () => {
   assert.deepEqual(attributionProperties(undefined), {});
   assert.deepEqual(attributionProperties({}), {});
 });
+
+// --- signup country is not client attribution ----------------------------
+
+test("a client country, IP, or calling code never becomes campaign attribution", () => {
+  const clean = sanitizeAttribution({
+    utmSource: "meta",
+    utmCampaign: "launch",
+    landingPath: "/",
+    country: "KR",
+    signupCountry: "US",
+    ip: "203.0.113.10",
+    phoneCountry: "82",
+  });
+
+  assert.deepEqual(clean, { utmSource: "meta", utmCampaign: "launch", landingPath: "/" });
+  assert.equal(JSON.stringify(clean).includes("203.0.113.10"), false);
+  assert.equal(JSON.stringify(clean).includes("KR"), false);
+});

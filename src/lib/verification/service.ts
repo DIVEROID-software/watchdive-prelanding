@@ -39,6 +39,7 @@ import {
 } from "../conversionExperimentContract.ts";
 import type { PollGate } from "./pollGate.ts";
 import type { VerificationMailer } from "./resend.ts";
+import { observeSignupCountry, type SignupCountryProbe } from "../attribution.ts";
 import { canonicalEmail } from "../api/abuse.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
 import type { TokenEnvironment } from "./token.ts";
@@ -108,6 +109,12 @@ export type RequestVerificationInput = {
    * already been attributed.
    */
   attribution?: LeadAttribution;
+  /**
+   * Server-owned country sensor for a new row. Callers that omit it do not
+   * write a country. A resend never applies it: `startAttempt` leaves the
+   * original observation in place.
+   */
+  signupCountryProbe?: SignupCountryProbe;
   /** The browser's measurement choice at submit time. */
   measurementConsent: boolean;
   /** Meta click cookie, stored only when `measurementConsent` is true. */
@@ -154,6 +161,20 @@ export type ServiceDependencies = {
    */
   onDeliveryFailure?: (error: unknown) => Promise<void> | void;
 };
+
+function newSignupCountry(
+  input: RequestVerificationInput,
+  observedAt: Date,
+): { signupCountry?: ReturnType<typeof observeSignupCountry> } {
+  if (!input.signupCountryProbe) return {};
+  return {
+    signupCountry: observeSignupCountry({
+      trustedVercel: input.signupCountryProbe.trustedVercel,
+      header: input.signupCountryProbe.header,
+      observedAt,
+    }),
+  };
+}
 
 function leadExperiment(input: RequestVerificationInput): { experiment?: ExperimentContext } {
   const experiment = persistableExperimentContext(input.experiment, {
@@ -281,6 +302,7 @@ export async function requestVerificationService(
         refCode: (dependencies.refCode ?? defaultRefCode)(),
         ...(input.referredBy ? { referredBy: input.referredBy } : {}),
         ...(input.attribution ? { attribution: input.attribution } : {}),
+        ...newSignupCountry(input, now),
         flags: input.flags,
         suspect: input.suspect,
         signedUpAt: now.toISOString(),
@@ -309,6 +331,7 @@ export async function requestVerificationService(
       refCode: (dependencies.refCode ?? defaultRefCode)(),
       ...(input.referredBy ? { referredBy: input.referredBy } : {}),
       ...(input.attribution ? { attribution: input.attribution } : {}),
+      ...newSignupCountry(input, now),
       flags: input.flags,
       suspect: input.suspect,
       signedUpAt: now.toISOString(),

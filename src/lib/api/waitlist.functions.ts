@@ -5,6 +5,7 @@ import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abus
 import {
   ATTRIBUTION_VALUE_MAX,
   FBCLID_MAX,
+  readSignupCountryProbe,
   sanitizeSignupAttribution,
   toLeadAttribution,
 } from "@/lib/attribution";
@@ -56,6 +57,11 @@ import {
 //   Lead ID (rich_text) · Meta Event ID (rich_text)
 //   UTM Source · UTM Medium · UTM Campaign · UTM Content · UTM Term (rich_text)
 //   Landing path (rich_text)
+//   Signup country · Signup country source (rich_text) · Signup country
+//   observed (date) — written only when a new row is created, from the trusted
+//   Vercel `x-vercel-ip-country` header. Off Vercel the header is ignored and
+//   the cells say `unknown`. Until the columns exist, the create is retried
+//   without them. No IP is stored. Existing rows are not backfilled.
 //   Verification reminder (rich_text) — read and written only by the daily
 //   reminder job (api.cron.verification-reminder). Until it exists the job
 //   sends nothing; signups are unaffected.
@@ -346,6 +352,12 @@ export const joinWaitlist = createServerFn({ method: "POST" })
               ? { fbclid: attribution.fbclid }
               : {}),
           },
+          // Country is not part of the client attribution object. The header
+          // is read only when VERCEL=1; otherwise the probe carries no header.
+          signupCountryProbe: readSignupCountryProbe({
+            vercelEnv: process.env.VERCEL,
+            readHeader: () => getRequestHeader("x-vercel-ip-country"),
+          }),
           flags,
           suspect: flags.length > 0,
           measurementConsent: data.measurementConsent,

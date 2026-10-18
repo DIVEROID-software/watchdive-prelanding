@@ -146,6 +146,21 @@ export const FIELD_UTM_CONTENT = "UTM Content";
 export const FIELD_UTM_TERM = "UTM Term";
 export const FIELD_LANDING_PATH = "Landing path";
 
+/**
+ * Coarse signup geography. Not on the live database yet: a create that names
+ * a missing column is retried without these three, and no existing row is
+ * rewritten to fill them. `unknown` is a stored value, distinct from an empty
+ * cell on a row that predates the columns.
+ */
+export const FIELD_SIGNUP_COUNTRY = "Signup country";
+export const FIELD_SIGNUP_COUNTRY_SOURCE = "Signup country source";
+export const FIELD_SIGNUP_COUNTRY_OBSERVED = "Signup country observed";
+export const SIGNUP_COUNTRY_UNKNOWN = "unknown";
+/** The only sensor whose country code may be stored. */
+export const SIGNUP_COUNTRY_SOURCE_VERCEL = "x-vercel-ip-country";
+/** No trusted sensor ran, or the claim did not come from one. */
+export const SIGNUP_COUNTRY_SOURCE_UNKNOWN = "unknown";
+
 export const STATUS_PENDING = "pending";
 export const STATUS_VERIFIED = "verified";
 export const STATUS_UNSUBSCRIBED = "unsubscribed";
@@ -166,6 +181,16 @@ export type LeadRecord = {
   emailVerified: boolean;
   refCode: string;
   source: string;
+  /**
+   * Coarse country written at row creation. Absent means the cell was empty
+   * (a legacy row, or a create that had to drop the not-yet-provisioned
+   * columns). The stored word `unknown` means this signup was observed and
+   * had no trusted country. Never an IP address, a phone calling code, or
+   * the page language.
+   */
+  signupCountry?: string;
+  signupCountrySource?: string;
+  signupCountryObservedAt?: string;
   suspect: boolean;
   flags: string[];
   phone: string;
@@ -227,6 +252,21 @@ export type LeadAttribution = {
   fbclid?: string;
 };
 
+export type SignupCountrySource =
+  typeof SIGNUP_COUNTRY_SOURCE_VERCEL | typeof SIGNUP_COUNTRY_SOURCE_UNKNOWN;
+
+/**
+ * Server-owned observation stored on a new signup. The browser payload cannot
+ * produce one: a client country, cookie, or phone calling code is not this.
+ */
+export type SignupCountryObservation = {
+  /** ISO 3166-1 alpha-2, or `unknown` when the trusted sensor had no country. */
+  country: string;
+  countrySource: SignupCountrySource;
+  /** ISO-8601 UTC time the server read the sensor. */
+  countryObservedAt: string;
+};
+
 /** PII-free browser context accepted by the LaunchOS website adapter. */
 export type LaunchOsMeasurementContext = {
   funnelInstanceId: string;
@@ -280,6 +320,12 @@ export type CreatePendingInput = {
   leadId: string;
   expiresAt: string;
   attribution?: LeadAttribution;
+  /**
+   * Coarse country of this new signup. Omitted on purpose when the caller has
+   * no server probe — that absence must not be written as `unknown`, which
+   * would look like a real observation of a country-less request.
+   */
+  signupCountry?: SignupCountryObservation;
   /** Present only when the submitting browser allowed measurement. */
   metaFbc?: string;
   /** Initial `Measurement consent` state: granted, or withheld. */

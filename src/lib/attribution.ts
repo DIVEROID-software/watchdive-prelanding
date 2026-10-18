@@ -8,7 +8,14 @@
 // the submit, which is why signups have been landing with no campaign at all.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
+import { normalizeCountry } from "./consentRegion.ts";
 import type { LeadAttribution } from "./verification/contracts.ts";
+import {
+  SIGNUP_COUNTRY_SOURCE_UNKNOWN,
+  SIGNUP_COUNTRY_SOURCE_VERCEL,
+  SIGNUP_COUNTRY_UNKNOWN,
+  type SignupCountryObservation,
+} from "./verification/contracts.ts";
 import { competitionRegistry, type CompetitionRound } from "./competitionRegistry.ts";
 import {
   acceptsCompetitionCapture,
@@ -261,4 +268,137 @@ export function getAttribution(
     // anything. Either way this page load still reports what its own URL carried.
     return incoming;
   }
+}
+
+/**
+ * Assigned ISO 3166-1 alpha-2 codes, plus `XK`.
+ *
+ * `XK` is the user-assigned code geo databases, including the one behind
+ * Vercel's country header, emit for Kosovo. It is not an official ISO
+ * assignment. Proxy and reserved codes (`T1`, `A1`, `EU`, `XX`, `UK`) are
+ * absent on purpose: those observations are stored as `unknown`.
+ */
+const ISO_SIGNUP_COUNTRIES = new Set(
+  `
+  AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ
+  BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ
+  CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ
+  DE DJ DK DM DO DZ
+  EC EE EG EH ER ES ET
+  FI FJ FK FM FO FR
+  GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY
+  HK HM HN HR HT HU
+  ID IE IL IM IN IO IQ IR IS IT
+  JE JM JO JP
+  KE KG KH KI KM KN KP KR KW KY KZ
+  LA LB LC LI LK LR LS LT LU LV LY
+  MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ
+  NA NC NE NF NG NI NL NO NP NR NU NZ
+  OM
+  PA PE PF PG PH PK PL PM PN PR PS PT PW PY
+  QA
+  RE RO RS RU RW
+  SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ
+  TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ
+  UA UG UM US UY UZ
+  VA VC VE VG VI VN VU
+  WF WS
+  XK
+  YE YT
+  ZA ZM ZW
+`
+    .split(/\s+/)
+    .filter(Boolean),
+);
+
+export const SIGNUP_COUNTRY_CODE_COUNT = ISO_SIGNUP_COUNTRIES.size;
+
+/** A stored country cell: `unknown`, or one coarse ISO code. Nothing else. */
+export function persistableSignupCountry(value: unknown): string | undefined {
+  if (value === SIGNUP_COUNTRY_UNKNOWN) return SIGNUP_COUNTRY_UNKNOWN;
+  const code = normalizeCountry(typeof value === "string" ? value : undefined);
+  return code && ISO_SIGNUP_COUNTRIES.has(code) ? code : undefined;
+}
+
+/**
+ * Last gate before a CRM write. A vercel-sourced code that is not a country
+ * becomes `unknown` while keeping that sensor. Any other source cannot carry
+ * a country code. An unparseable timestamp drops the whole observation rather
+ * than inventing one.
+ */
+export function coerceSignupCountryObservation(
+  raw: SignupCountryObservation | undefined,
+): SignupCountryObservation | undefined {
+  if (!raw) return undefined;
+  const observedMs = Date.parse(raw.countryObservedAt);
+  if (!Number.isFinite(observedMs)) return undefined;
+  const countryObservedAt = new Date(observedMs).toISOString();
+  if (raw.countrySource === SIGNUP_COUNTRY_SOURCE_VERCEL) {
+    return {
+      country: persistableSignupCountry(raw.country) ?? SIGNUP_COUNTRY_UNKNOWN,
+      countrySource: SIGNUP_COUNTRY_SOURCE_VERCEL,
+      countryObservedAt,
+    };
+  }
+  return {
+    country: SIGNUP_COUNTRY_UNKNOWN,
+    countrySource: SIGNUP_COUNTRY_SOURCE_UNKNOWN,
+    countryObservedAt,
+  };
+}
+
+export type SignupCountryProbe = {
+  trustedVercel: boolean;
+  /**
+   * The raw `x-vercel-ip-country` value. Only read when this process is the
+   * Vercel runtime. An untrusted local process leaves this `null` and does
+   * not consult the header a client can set.
+   */
+  header: string | null;
+};
+
+/**
+ * Whether this process may believe `x-vercel-ip-country`.
+ *
+ * Vercel sets `VERCEL=1` and overwrites that header. A laptop, a test, or a
+ * preview that is not Vercel must not treat a client-supplied copy as the
+ * visitor's country. `WATCHDIVE_DEV_GEO_COUNTRY` is intentionally not a
+ * substitute here: it may shape the consent cookie, but it must not become a
+ * CRM country.
+ */
+export function readSignupCountryProbe(input: {
+  vercelEnv: string | undefined;
+  readHeader: () => string | null | undefined;
+}): SignupCountryProbe {
+  if (input.vercelEnv !== "1") return { trustedVercel: false, header: null };
+  try {
+    const header = input.readHeader();
+    return { trustedVercel: true, header: typeof header === "string" ? header : null };
+  } catch {
+    return { trustedVercel: true, header: null };
+  }
+}
+
+/** The country this signup may persist. Never an IP, city, or client claim. */
+export function observeSignupCountry(input: {
+  trustedVercel: boolean;
+  header: string | null | undefined;
+  observedAt: Date;
+}): SignupCountryObservation {
+  const ms = input.observedAt.getTime();
+  const countryObservedAt = Number.isFinite(ms)
+    ? new Date(ms).toISOString()
+    : new Date(0).toISOString();
+  if (!input.trustedVercel) {
+    return {
+      country: SIGNUP_COUNTRY_UNKNOWN,
+      countrySource: SIGNUP_COUNTRY_SOURCE_UNKNOWN,
+      countryObservedAt,
+    };
+  }
+  return {
+    country: persistableSignupCountry(input.header) ?? SIGNUP_COUNTRY_UNKNOWN,
+    countrySource: SIGNUP_COUNTRY_SOURCE_VERCEL,
+    countryObservedAt,
+  };
 }

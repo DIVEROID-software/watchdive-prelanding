@@ -74,6 +74,11 @@ export class FakeLeadStore implements LeadStore {
       ...(record.landingPath ? { landingPath: record.landingPath } : {}),
       ...(record.measurementConsent ? { measurementConsent: record.measurementConsent } : {}),
       ...(record.metaFbc ? { metaFbc: record.metaFbc } : {}),
+      ...(record.signupCountry ? { signupCountry: record.signupCountry } : {}),
+      ...(record.signupCountrySource ? { signupCountrySource: record.signupCountrySource } : {}),
+      ...(record.signupCountryObservedAt
+        ? { signupCountryObservedAt: record.signupCountryObservedAt }
+        : {}),
     };
     this.rows.set(row.pageId, row);
     this.byCanonical.set(record.canonical, row.pageId);
@@ -112,6 +117,13 @@ export class FakeLeadStore implements LeadStore {
       sends: 1,
       ...(input.metaFbc ? { metaFbc: input.metaFbc } : {}),
       ...(input.measurementState ? { measurementConsent: input.measurementState } : {}),
+      ...(input.signupCountry
+        ? {
+            signupCountry: input.signupCountry.country,
+            signupCountrySource: input.signupCountry.countrySource,
+            signupCountryObservedAt: input.signupCountry.countryObservedAt,
+          }
+        : {}),
     });
   }
 

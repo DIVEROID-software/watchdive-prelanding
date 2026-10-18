@@ -10,7 +10,14 @@
 // is a repeat-signup count, and that lives in process memory instead — see
 // `networkGate.ts`. The user agent survives only as a `headless` flag.
 //
+// A new signup may also store a coarse country (`Signup country`,
+// `Signup country source`, `Signup country observed`): the trusted edge ISO,
+// the sensor name, and the time it was read. No IP. Existing rows are not
+// backfilled. If those columns are not on the database yet, the create is
+// retried without them so the signup itself is not lost.
+//
 // Kept free of path-alias imports so `npm test` can load it directly.
+import { coerceSignupCountryObservation, persistableSignupCountry } from "../attribution.ts";
 import {
   canonicalEmailFilters,
   canonicalEmailProperties,
@@ -28,6 +35,7 @@ import type {
   LeadStore,
   MarkSentInput,
   MarkVerifiedInput,
+  SignupCountryObservation,
   StartAttemptInput,
   VerificationStatus,
 } from "./contracts.ts";
@@ -37,6 +45,9 @@ import {
   FIELD_LEAD_ID,
   FIELD_MEASUREMENT_CONSENT,
   FIELD_META_EVENT_ID,
+  FIELD_SIGNUP_COUNTRY,
+  FIELD_SIGNUP_COUNTRY_OBSERVED,
+  FIELD_SIGNUP_COUNTRY_SOURCE,
   FIELD_UTM_CAMPAIGN,
   FIELD_UTM_CONTENT,
   FIELD_UTM_MEDIUM,
@@ -53,6 +64,8 @@ import {
   FIELD_VERIFIED_AT,
   FLAG_MEASUREMENT_WITHDRAWN,
   MEASUREMENT_CONSENT_WITHDRAWN,
+  SIGNUP_COUNTRY_SOURCE_UNKNOWN,
+  SIGNUP_COUNTRY_SOURCE_VERCEL,
   STATUS_PENDING,
   STATUS_UNSUBSCRIBED,
   STATUS_VERIFIED,
@@ -167,9 +180,16 @@ export class NotionRequestError extends Error {
   }
 }
 
+const SIGNUP_COUNTRY_FIELDS = [
+  FIELD_SIGNUP_COUNTRY,
+  FIELD_SIGNUP_COUNTRY_SOURCE,
+  FIELD_SIGNUP_COUNTRY_OBSERVED,
+] as const;
+
 function optionalColumnsMentioned(rawBody: string): string[] {
   const names = [
     FIELD_CONVERSION_EXPERIMENT,
+    ...SIGNUP_COUNTRY_FIELDS,
     process.env.NOTION_META_FBC_PROPERTY?.trim() ?? "",
     process.env.NOTION_FBCLID_PROPERTY?.trim() ?? "",
   ].filter((name) => name.length > 0);
@@ -273,6 +293,7 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     refCode: readText(properties["Ref code"]),
     source:
       (properties.Source as { select?: { name?: string } } | undefined)?.select?.name ?? "unknown",
+    ...readSignupCountryFields(properties),
     suspect: Boolean((properties.Suspect as { checkbox?: boolean } | undefined)?.checkbox),
     flags:
       (properties.Flags as { multi_select?: { name?: string }[] } | undefined)?.multi_select
@@ -330,7 +351,69 @@ export function attributionProperties(
   );
 }
 
-type OptionalLeadWrite = { fbc: boolean; experiment: boolean; fbclid: boolean };
+/**
+ * All three cells, or none. `unknown` is written on purpose: an empty cell
+ * would be indistinguishable from a row that predates the columns. UTM blanks
+ * stay omitted; this observation does not.
+ */
+export function signupCountryProperties(
+  observation: SignupCountryObservation | undefined,
+): Record<string, ReturnType<typeof textProp> | { date: { start: string } }> {
+  const clean = coerceSignupCountryObservation(observation);
+  if (!clean) return {};
+  return {
+    [FIELD_SIGNUP_COUNTRY]: textProp(clean.country),
+    [FIELD_SIGNUP_COUNTRY_SOURCE]: textProp(clean.countrySource),
+    [FIELD_SIGNUP_COUNTRY_OBSERVED]: { date: { start: clean.countryObservedAt } },
+  };
+}
+
+/**
+ * Additive property patch for the live waitlist database. Not applied by this
+ * process. Notion's database update merges the keys it is given, so this
+ * object must be sent alone — never as a full replacement of `properties`.
+ */
+export function signupCountryNotionPropertyPatch(): {
+  properties: {
+    [FIELD_SIGNUP_COUNTRY]: { rich_text: Record<string, never> };
+    [FIELD_SIGNUP_COUNTRY_SOURCE]: { rich_text: Record<string, never> };
+    [FIELD_SIGNUP_COUNTRY_OBSERVED]: { date: Record<string, never> };
+  };
+} {
+  return {
+    properties: {
+      [FIELD_SIGNUP_COUNTRY]: { rich_text: {} },
+      [FIELD_SIGNUP_COUNTRY_SOURCE]: { rich_text: {} },
+      [FIELD_SIGNUP_COUNTRY_OBSERVED]: { date: {} },
+    },
+  };
+}
+
+function readSignupCountryFields(
+  properties: Record<string, unknown>,
+): Pick<LeadRecord, "signupCountry" | "signupCountrySource" | "signupCountryObservedAt"> {
+  const country = persistableSignupCountry(readText(properties[FIELD_SIGNUP_COUNTRY]));
+  const sourceText = readText(properties[FIELD_SIGNUP_COUNTRY_SOURCE]);
+  const source =
+    sourceText === SIGNUP_COUNTRY_SOURCE_VERCEL || sourceText === SIGNUP_COUNTRY_SOURCE_UNKNOWN
+      ? sourceText
+      : undefined;
+  const observed = readDate(properties[FIELD_SIGNUP_COUNTRY_OBSERVED]);
+  const observedMs = observed ? Date.parse(observed) : Number.NaN;
+  return {
+    ...(country ? { signupCountry: country } : {}),
+    ...(source ? { signupCountrySource: source } : {}),
+    ...(Number.isFinite(observedMs)
+      ? { signupCountryObservedAt: new Date(observedMs).toISOString() }
+      : {}),
+  };
+}
+
+type OptionalLeadWrite = { fbc: boolean; experiment: boolean; fbclid: boolean; country: boolean };
+
+function mentionsSignupCountryColumn(named: ReadonlySet<string>): boolean {
+  return SIGNUP_COUNTRY_FIELDS.some((name) => named.has(name));
+}
 
 function omitFbclid(attribution: LeadAttribution): LeadAttribution {
   const { fbclid: _ignored, ...rest } = attribution;
@@ -361,13 +444,21 @@ async function createLeadPage(
     if (options.fbc && columns.fbcColumn && named.has(columns.fbcColumn)) next.fbc = false;
     if (options.fbclid && columns.fbclidColumn && named.has(columns.fbclidColumn))
       next.fbclid = false;
+    if (options.country && mentionsSignupCountryColumn(named)) next.country = false;
     const dropped =
       next.experiment !== options.experiment ||
       next.fbc !== options.fbc ||
-      next.fbclid !== options.fbclid;
+      next.fbclid !== options.fbclid ||
+      next.country !== options.country;
     if (dropped) {
       if (options.experiment && !next.experiment) {
         console.error("[conversion-experiment] optional context omitted", {
+          status: error instanceof NotionRequestError ? error.status : 0,
+          code: error instanceof NotionRequestError ? error.code : "",
+        });
+      }
+      if (options.country && !next.country) {
+        console.error("[signup-country] optional columns omitted", {
           status: error instanceof NotionRequestError ? error.status : 0,
           code: error instanceof NotionRequestError ? error.code : "",
         });
@@ -428,6 +519,7 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
         fbc: Boolean(fbcColumn),
         experiment: Boolean(experimentJson),
         fbclid: Boolean(fbclidColumn && input.attribution?.fbclid),
+        country: Boolean(input.signupCountry),
       };
       const create = (options: OptionalLeadWrite) => {
         const attribution = input.attribution
@@ -453,6 +545,7 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
                 : {}),
               Suspect: { checkbox: input.suspect },
               ...attributionProperties(attribution),
+              ...(options.country ? signupCountryProperties(input.signupCountry) : {}),
               [FIELD_VERIFICATION_STATUS]: { select: { name: STATUS_PENDING } },
               [FIELD_EMAIL_VERIFIED]: { checkbox: false },
               [FIELD_LEAD_ID]: textProp(input.leadId),
