@@ -252,7 +252,7 @@ const ko: FrozenLandingMessages = {
     sub: "차고 있던 Apple Watch나 Galaxy Watch를 하우징에 끼우면, 안의 DIVEROID 센서가 수심과 수온을 잽니다. 다이브 컴퓨터를 따로 사고 익힐 필요가 없습니다.",
     priceLine: "Kickstarter 선착순 100명 얼리버드 20만 원대. 12월 킥스타터 런칭.",
     backgroundAlt: "화려한 산호초를 탐험하는 스쿠버 다이버",
-    sideImageAlt: "수영장에서 다이버 손목에 착용한 WatchDive. 화면에 수심과 다이브 타임이 보입니다",
+    sideImageAlt: "산호초 위, 다이버 손목에 찬 WatchDive. 화면에 수심과 다이브 타임이 보입니다",
     stat1Label: "하우징 · 60m",
     stat1Desc: "방수 테스트 완료",
     stat2Label: "스쿠버 + 프리다이빙",
@@ -712,7 +712,7 @@ const zhCN: FrozenLandingMessages = {
     sub: "把你现在戴的 Apple Watch 或 Galaxy Watch 装进外壳，里面的 DIVEROID 传感器测量水深和水温。不用再买一台潜水电脑，也不用从头学。",
     priceLine: "Kickstarter 前 100 名早鸟价约 1,000 元。12 月上线。",
     backgroundAlt: "在缤纷珊瑚礁间探索的水肺潜水员",
-    sideImageAlt: "泳池潜水时佩戴在潜水员手腕上的 WatchDive，显示水深和潜水时间",
+    sideImageAlt: "珊瑚礁上方，潜水员手腕上的 WatchDive，屏幕显示水深和潜水时间",
     stat1Label: "外壳 · 60 米",
     stat1Desc: "防水测试已完成",
     stat2Label: "水肺 + 自由潜",
@@ -1161,7 +1161,7 @@ const zhTW: FrozenLandingMessages = {
     sub: "把你現在戴的 Apple Watch 或 Galaxy Watch 裝進外殼，裡面的 DIVEROID 感測器量測水深與水溫。不必再買一台潛水電腦，也不必從頭學。",
     priceLine: "Kickstarter 前 100 名早鳥價約 NT$5,000。12 月上線。",
     backgroundAlt: "在繽紛珊瑚礁間探索的水肺潛水員",
-    sideImageAlt: "泳池潛水時佩戴在潛水員手腕上的 WatchDive，顯示水深與潛水時間",
+    sideImageAlt: "珊瑚礁上方，潛水員手腕上的 WatchDive，螢幕顯示水深與潛水時間",
     stat1Label: "外殼 · 60 公尺",
     stat1Desc: "防水測試已完成",
     stat2Label: "水肺 + 自由潛",
@@ -1616,7 +1616,7 @@ const ja: FrozenLandingMessages = {
     sub: "今つけている Apple Watch や Galaxy Watch をハウジングに入れるだけ。内蔵の DIVEROID センサーが水深と水温を計測します。ダイブコンピューターを別に買って覚え直す必要はありません。",
     priceLine: "Kickstarter 先着100名の早割は2万円台。12月ローンチ。",
     backgroundAlt: "色鮮やかなサンゴ礁を探索するスキューバダイバー",
-    sideImageAlt: "プールでダイバーの手首に装着した WatchDive。水深と潜水時間を表示",
+    sideImageAlt: "サンゴ礁の上、ダイバーの手首の WatchDive。画面に水深と潜水時間",
     stat1Label: "ハウジング · 60m",
     stat1Desc: "防水テスト完了",
     stat2Label: "スキューバ + フリーダイビング",
@@ -2089,7 +2089,8 @@ const es: FrozenLandingMessages = {
     priceLine:
       "Early bird por unos 140 € para los 100 primeros en Kickstarter. Lanzamiento en diciembre.",
     backgroundAlt: "Buceador explorando un arrecife de coral lleno de vida",
-    sideImageAlt: "WatchDive en la muñeca de un buceador en una piscina, mostrando profundidad y tiempo de inmersión",
+    sideImageAlt:
+      "WatchDive en la muñeca de un buceador sobre un arrecife de coral, con la profundidad y el tiempo de inmersión en pantalla",
     stat1Label: "Carcasa · 60 m",
     stat1Desc: "Prueba de resistencia al agua completada",
     stat2Label: "Buceo + Apnea",
@@ -2569,7 +2570,8 @@ const fr: FrozenLandingMessages = {
     priceLine:
       "Early bird à environ 140 € pour les 100 premiers sur Kickstarter. Lancement en décembre.",
     backgroundAlt: "Plongeur explorant un récif corallien éclatant",
-    sideImageAlt: "WatchDive au poignet d’un plongeur en piscine, affichant la profondeur et le temps de plongée",
+    sideImageAlt:
+      "WatchDive au poignet d’un plongeur au-dessus d’un récif corallien, profondeur et temps de plongée à l’écran",
     stat1Label: "Caisson · 60 m",
     stat1Desc: "Test d’étanchéité terminé",
     stat2Label: "Plongée bouteille + apnée",
@@ -3049,7 +3051,8 @@ const de: FrozenLandingMessages = {
     sub: "Die Apple Watch oder Galaxy Watch, die du schon trägst, kommt ins Gehäuse. Sein DIVEROID-Sensor misst Tiefe und Wassertemperatur. Kein zweiter Tauchcomputer, den du kaufen und lernen musst.",
     priceLine: "Early Bird für die ersten 100 auf Kickstarter: rund 140 €. Start im Dezember.",
     backgroundAlt: "Taucher erkundet ein farbenprächtiges Korallenriff",
-    sideImageAlt: "WatchDive am Handgelenk eines Tauchers im Schwimmbecken mit Tiefe und Tauchzeit",
+    sideImageAlt:
+      "WatchDive am Handgelenk eines Tauchers über einem Korallenriff, mit Tiefe und Tauchzeit auf dem Display",
     stat1Label: "Gehäuse · 60 m",
     stat1Desc: "Dichtigkeitstest abgeschlossen",
     stat2Label: "Gerätetauchen + Apnoe",
@@ -3527,7 +3530,8 @@ const ptBR: FrozenLandingMessages = {
     priceLine:
       "Early bird por cerca de R$ 800 para os 100 primeiros no Kickstarter. Lançamento em dezembro.",
     backgroundAlt: "Mergulhador explorando um recife de coral vibrante",
-    sideImageAlt: "WatchDive no pulso de um mergulhador em piscina, mostrando profundidade e tempo de mergulho",
+    sideImageAlt:
+      "WatchDive no pulso de um mergulhador sobre um recife de coral, com profundidade e tempo de mergulho na tela",
     stat1Label: "Caixa · 60 m",
     stat1Desc: "Teste de resistência à água concluído",
     stat2Label: "Cilindro + Apneia",
