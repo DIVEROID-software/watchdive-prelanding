@@ -82,7 +82,11 @@ import {
   useLocalizedBetaReviewBodies,
 } from "@/lib/i18n/use-current-locale";
 
-import whyImage from "../assets/live/refresh/underwater-mobile-1000.webp";
+import why640 from "../assets/live/super-resolution-20261018/from-master/underwater-wrist-4x5-640.webp";
+import why1000 from "../assets/live/super-resolution-20261018/from-master/underwater-wrist-4x5-1000.webp";
+import why1600 from "../assets/live/super-resolution-20261018/from-master/underwater-wrist-4x5-1600.webp";
+import why2200 from "../assets/live/super-resolution-20261018/from-master/underwater-wrist-4x5-2200.webp";
+import whyDesktop from "../assets/live/super-resolution-20261018/from-master/underwater-wide-2000.webp";
 import step1Image from "../assets/live/watchdive-step1.webp";
 import step2Image from "../assets/live/refresh/wrist-pool-1000.webp";
 import syncImage from "../assets/live/refresh/sync-app-1000.webp";
@@ -114,8 +118,6 @@ import samsungLogo from "../assets/live/samsung-logo.svg";
 import wordmarkWhite from "../assets/brand/diveroid-wordmark-white.png";
 // Smaller cuts of the same photographs (Lanczos, WebP q86), offered through
 // srcset so a phone fetches the width it paints instead of the 1600px master.
-import why800 from "../assets/live/refresh/underwater-mobile-640.webp";
-import why1200 from "../assets/live/refresh/underwater-1600.webp";
 import step1_800 from "../assets/live/responsive/watchdive-step1-800.webp";
 import step1_1200 from "../assets/live/responsive/watchdive-step1-1200.webp";
 import step2_800 from "../assets/live/refresh/wrist-pool-640.webp";
@@ -127,7 +129,7 @@ import samsungFeature1200 from "../assets/live/responsive/samsung-feature-1200.w
 import watchScreen400 from "../assets/live/responsive/watch-screen-400.webp";
 import watchdiveClip720 from "../assets/live/responsive/watchdive-clip-720.mp4";
 
-const whySrcSet = `${why800} 640w, ${whyImage} 1000w`;
+const whySrcSet = `${why640} 640w, ${why1000} 1000w, ${why1600} 1600w, ${why2200} 2200w`;
 const stepSrcSets = {
   step1: `${step1_800} 800w, ${step1_1200} 1200w, ${step1Image} 1600w`,
   step2: `${step2_800} 640w, ${step2Image} 1000w`,
@@ -1508,9 +1510,9 @@ function ValueSection() {
         <div className="mt-8 grid gap-10 lg:mt-0 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-center">
           <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
             <picture>
-              <source media="(min-width: 1024px)" srcSet={why1200} />
+              <source media="(min-width: 1024px)" srcSet={whyDesktop} />
               <SectionImage
-                src={whyImage}
+                src={why1000}
                 srcSet={whySrcSet}
                 sizes="(min-width: 1024px) 520px, calc(100vw - 40px)"
                 alt={m.value.imageAlt}
