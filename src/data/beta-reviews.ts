@@ -33,6 +33,10 @@ export type BetaReview = {
 /** Publishing an unverified product claim is a compliance decision, not a UI one. */
 export const INCLUDE_UNVERIFIED_CLAIMS = false;
 
+// Product owner supplied the beta-tester count on 2026-10-18.
+// This is separate from the number of review records or publishable cards.
+export const BETA_TESTER_COUNT = 50;
+
 export const BETA_REVIEWS: BetaReview[] = [
   {
     id: 1,

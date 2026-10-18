@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { BETA_REVIEWS, PUBLISHABLE_REVIEWS, type BetaReview } from "@/data/beta-reviews";
+import { BETA_REVIEWS, BETA_TESTER_COUNT, PUBLISHABLE_REVIEWS, type BetaReview } from "@/data/beta-reviews";
 import { betaReviewBody, type LocalizedBetaReviewBodies } from "@/data/beta-reviews.loader";
 import { ReviewAvatar } from "@/components/review-avatar";
 import {
@@ -182,7 +182,7 @@ export function ReviewTicker() {
           id="beta-reviews-heading"
           className="mt-3 text-center text-title text-white"
         >
-          {messages.h2.replace("{count}", String(PUBLISHABLE_REVIEWS.length))}
+          {messages.h2.replace("{count}", String(BETA_TESTER_COUNT))}
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-body leading-relaxed text-[#F6FAFC]">
           {messages.sub}
