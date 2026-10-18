@@ -159,6 +159,11 @@ export function ReservationPage({ search }: { search: string }) {
   return (
     <main className="wd-rsv" lang={view.locale} data-phase={view.phase}>
       <div className="wd-rsv-inner">
+        {import.meta.env.VITE_RESERVATION_TEST_MODE === "true" ? (
+          <p role="status" style={{ padding: "12px", background: "#fff3cd", color: "#322600", borderRadius: "8px" }}>
+            테스트 결제 · 실제로 청구되지 않습니다. / Test mode — no real charge.
+          </p>
+        ) : null}
         <header className="wd-rsv-header">
           <a
             className="wd-rsv-home"
