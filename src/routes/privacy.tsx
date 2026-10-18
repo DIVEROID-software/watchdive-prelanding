@@ -1,19 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
 import { homePath } from "@/lib/i18n/locale";
+import { legalHead } from "@/lib/i18n/seo";
 import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 
 export const Route = createFileRoute("/privacy")({
-  head: () => ({
-    meta: [
-      { title: EN_FROZEN_LANDING_MESSAGES.privacy.metaTitle },
-      {
-        name: "description",
-        content: EN_FROZEN_LANDING_MESSAGES.privacy.metaDescription,
-      },
-    ],
-  }),
+  head: () => legalHead("en", "privacy"),
   component: PrivacyPage,
 });
 

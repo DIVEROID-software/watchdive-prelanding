@@ -1,9 +1,21 @@
 import localizedSocialImage from "../../assets/live/hero-background.webp";
-import { EN_FROZEN_LANDING_MESSAGES, type FrozenLandingMessages } from "./frozen-landing-en";
-import { homePath, privacyPath, SUPPORTED_LOCALES, termsPath, type Locale } from "./locale";
+import { EN_FROZEN_LANDING_MESSAGES, type FrozenLandingMessages } from "./frozen-landing-en.ts";
+import { homePath, privacyPath, SUPPORTED_LOCALES, termsPath, type Locale } from "./locale.ts";
+import { absoluteWatchDivePath, WATCHDIVE_PUBLIC_ORIGIN as SOURCE_ORIGIN } from "./publicOrigin.ts";
+import { landingStructuredData, legalStructuredData, structuredDataScript } from "./structuredData.ts";
 
+// Read by reservation readiness. Keep this literal pinned to the production origin.
 export const WATCHDIVE_PUBLIC_ORIGIN = "https://watchdive.diveroid.com";
 
+if (WATCHDIVE_PUBLIC_ORIGIN !== SOURCE_ORIGIN) {
+  throw new Error("WatchDive public origin constants diverged");
+}
+
+export { absoluteWatchDivePath };
+
+// One og:locale per page. The rendered head keeps a single meta per property,
+// so repeating og:locale:alternate would leave only the last locale. The
+// hreflang links below are the full cluster, including x-default.
 const OG_LOCALE: Record<Locale, string> = {
   en: "en_US",
   ko: "ko_KR",
@@ -16,8 +28,19 @@ const OG_LOCALE: Record<Locale, string> = {
   "pt-BR": "pt_BR",
 };
 
-export function absoluteWatchDivePath(pathname: string): string {
-  return new URL(pathname, WATCHDIVE_PUBLIC_ORIGIN).toString();
+function hreflangLinks(pathFor: (locale: Locale) => string) {
+  return [
+    ...SUPPORTED_LOCALES.map((alternate) => ({
+      rel: "alternate" as const,
+      hrefLang: alternate,
+      href: absoluteWatchDivePath(pathFor(alternate)),
+    })),
+    {
+      rel: "alternate" as const,
+      hrefLang: "x-default",
+      href: absoluteWatchDivePath(pathFor("en")),
+    },
+  ];
 }
 
 export function landingHead(
@@ -35,6 +58,7 @@ export function landingHead(
     meta: [
       { title: copy.title },
       { name: "description", content: copy.description },
+      { name: "robots", content: "index, follow" },
       { property: "og:title", content: copy.ogTitle },
       { property: "og:description", content: copy.ogDescription },
       { property: "og:type", content: "website" },
@@ -48,18 +72,9 @@ export function landingHead(
       { name: "twitter:description", content: copy.twitterDescription },
       { name: "twitter:image", content: socialImage },
     ],
-    links: [
-      { rel: "canonical", href: canonical },
-      ...SUPPORTED_LOCALES.map((alternate) => ({
-        rel: "alternate",
-        hrefLang: alternate,
-        href: absoluteWatchDivePath(homePath(alternate)),
-      })),
-      {
-        rel: "alternate",
-        hrefLang: "x-default",
-        href: absoluteWatchDivePath(homePath("en")),
-      },
+    links: [{ rel: "canonical", href: canonical }, ...hreflangLinks(homePath)],
+    scripts: [
+      structuredDataScript(landingStructuredData(locale, messages, canonical, socialImage)),
     ],
   };
 }
@@ -72,20 +87,20 @@ export function legalHead(
   const copy = messages[document];
   const pathFor = document === "privacy" ? privacyPath : termsPath;
   const canonical = absoluteWatchDivePath(pathFor(locale));
+  const socialImage = absoluteWatchDivePath(localizedSocialImage);
   return {
-    meta: [{ title: copy.metaTitle }, { name: "description", content: copy.metaDescription }],
-    links: [
-      { rel: "canonical", href: canonical },
-      ...SUPPORTED_LOCALES.map((alternate) => ({
-        rel: "alternate",
-        hrefLang: alternate,
-        href: absoluteWatchDivePath(pathFor(alternate)),
-      })),
-      {
-        rel: "alternate",
-        hrefLang: "x-default",
-        href: absoluteWatchDivePath(pathFor("en")),
-      },
+    meta: [
+      { title: copy.metaTitle },
+      { name: "description", content: copy.metaDescription },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: copy.metaTitle },
+      { property: "og:description", content: copy.metaDescription },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: canonical },
+      { property: "og:locale", content: OG_LOCALE[locale] },
+      { property: "og:image", content: socialImage },
     ],
+    links: [{ rel: "canonical", href: canonical }, ...hreflangLinks(pathFor)],
+    scripts: [structuredDataScript(legalStructuredData(locale, document, messages, canonical))],
   };
 }

@@ -32,6 +32,7 @@ export const Route = createFileRoute("/r/$code")({
             Location: code ? `/?ref=${code}` : "/",
             "Cache-Control": "no-store",
             "Referrer-Policy": "no-referrer",
+            "X-Robots-Tag": "noindex, nofollow",
           },
         });
       },
