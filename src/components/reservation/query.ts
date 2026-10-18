@@ -1,4 +1,8 @@
-import { localeFromPreferenceCookie } from "../../lib/i18n/auto-locale.ts";
+import {
+  localeFromPreferenceCookie,
+  localeFromCountry,
+  localeFromAcceptLanguage,
+} from "../../lib/i18n/auto-locale.ts";
 import { SUPPORTED_LOCALES, matchLocale, type Locale } from "../../lib/i18n/locale.ts";
 
 import { normalizeCheckoutSessionId, normalizeInviteToken } from "./contract.ts";
@@ -115,10 +119,11 @@ export function writeInvalidInviteFlag(storage: InviteStorage, invalid: boolean)
  * Store a valid fragment, or a non-secret invalid flag, then drop the hash
  * and any invite query. The token itself is never copied into the query.
  */
-export function rememberReservationEntry(input: {
-  href: string;
-  storage: InviteStorage;
-}): { replaceUrl: string | null; inviteToken: string | null; invalidInvite: boolean } {
+export function rememberReservationEntry(input: { href: string; storage: InviteStorage }): {
+  replaceUrl: string | null;
+  inviteToken: string | null;
+  invalidInvite: boolean;
+} {
   const url = new URL(input.href);
   const fragment = parseInviteFragment(url.hash);
   const leakedQuery = url.searchParams.has("inviteToken") || url.searchParams.has("token");
@@ -237,4 +242,29 @@ export function reservationLocaleHint(
 /** Automatic Korean selection never overrides an explicit lang parameter. */
 export function shouldPreferKorean(search: string, hint: ReservationLocale | null): boolean {
   return parseReservationQuery(search).lang === null && hint === "ko";
+}
+
+/** Signup language in the mailed URL wins. Stripe returns restore session language in the head script. */
+export function reservationInitialLocaleRedirect(
+  request: Request,
+  country: string | null,
+): string | null {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const url = new URL(request.url);
+  if (
+    url.pathname !== "/reservation" ||
+    url.searchParams.has("lang") ||
+    url.searchParams.has("session_id") ||
+    url.searchParams.has("canceled")
+  )
+    return null;
+  const locale =
+    localeFromPreferenceCookie(request.headers.get("cookie")) ??
+    localeFromCountry(country) ??
+    localeFromAcceptLanguage(request.headers.get("accept-language")) ??
+    "en";
+  url.searchParams.delete("inviteToken");
+  url.searchParams.delete("token");
+  url.searchParams.set("lang", locale);
+  return url.pathname + url.search;
 }

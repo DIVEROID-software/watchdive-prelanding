@@ -2,14 +2,18 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { isI18nReviewEnabled } from "@/lib/i18n/review-gate";
 import { LOCALE_PREFERENCE_COOKIE } from "@/lib/i18n/auto-locale";
-import { LANGUAGE_OPTIONS } from "@/lib/i18n/locale";
+import { RESERVATION_PRESENTATION } from "./presentation";
 
 import {
   createReservationSubmitLock,
   fetchReservationStatus,
   requestReservationCheckout,
 } from "./client";
-import { isTerminalReservationStatus, STATUS_RETRY_DELAYS_MS, type ReservationStatus } from "./contract";
+import {
+  isTerminalReservationStatus,
+  STATUS_RETRY_DELAYS_MS,
+  type ReservationStatus,
+} from "./contract";
 import { buildReservationView } from "./model";
 import {
   parseReservationQuery,
@@ -121,6 +125,8 @@ export function ReservationPage({ search }: { search: string }) {
     localizedSite: LOCALIZED_SITE,
   });
   const copy = view.copy;
+  const presentation = RESERVATION_PRESENTATION[view.locale];
+  const showStatus = statusLoading || (view.phase !== "offer" && status?.serverStatus !== "open");
 
   useEffect(() => {
     document.title = copy.metaTitle;
@@ -173,129 +179,127 @@ export function ReservationPage({ search }: { search: string }) {
               height={152}
             />
           </a>
-          <nav className="wd-rsv-langs" aria-label={copy.languageLabel}>
-            {LANGUAGE_OPTIONS.map((option) => (
-              <a
-                key={option.locale}
-                className="wd-rsv-lang"
-                href={view.languageLinks[option.locale]}
-                hrefLang={option.locale}
-                lang={option.locale}
-                aria-current={view.locale === option.locale ? "true" : undefined}
-                onClick={(event) => follow(event, view.languageLinks[option.locale], option.locale)}
-              >
-                {option.label}
-              </a>
-            ))}
-          </nav>
+          {import.meta.env.VITE_RESERVATION_TEST_MODE === "true" ? (
+            <span className="wd-rsv-test" role="status">
+              {presentation.testMode}
+            </span>
+          ) : null}
         </header>
-
-        <h1>{copy.title}</h1>
-        <p className="wd-rsv-intro">{copy.intro}</p>
-
-        <div
-          className="wd-rsv-status"
-          id={statusId}
-          role="status"
-          aria-live="polite"
-          aria-busy={statusLoading}
-          data-phase={view.phase}
-        >
-          <p>{statusLoading ? copy.checkingStatus : view.statusText}</p>
-          {view.statusDetail ? <p>{view.statusDetail}</p> : null}
-        </div>
-
-        {view.checkoutErrorText ? (
-          <p className="wd-rsv-error" role="alert">
-            {view.checkoutErrorText}
-          </p>
-        ) : null}
-
-        <section className="wd-rsv-prices" aria-labelledby="reservation-prices">
-          <h2 id="reservation-prices">{copy.priceHeading}</h2>
-          <dl>
-            {copy.priceRows.map((row) => (
+        <div className="wd-rsv-layout">
+          <section className="wd-rsv-story">
+            <p className="wd-rsv-product">WatchDive</p>
+            <h1>{presentation.headline}</h1>
+            <figure className="wd-rsv-photo">
+              <img
+                src="/brand/reservation/watchdive-underwater.jpg"
+                alt={presentation.imageAlt}
+                width="1440"
+                height="960"
+                fetchPriority="high"
+              />
+            </figure>
+          </section>
+          <section className="wd-rsv-card" aria-labelledby="reservation-offer">
+            <p className="wd-rsv-eyebrow">{presentation.eyebrow}</p>
+            <h2 id="reservation-offer">{presentation.benefit}</h2>
+            <div className="wd-rsv-fee">
+              <span>$</span>3
+            </div>
+            <p className="wd-rsv-fee-label">{presentation.feeLabel}</p>
+            <p className="wd-rsv-description">{presentation.description}</p>
+            {showStatus ? (
               <div
-                className={row.id === "total" ? "wd-rsv-price wd-rsv-total" : "wd-rsv-price"}
-                key={row.id}
+                className="wd-rsv-status"
+                id={statusId}
+                role="status"
+                aria-live="polite"
+                aria-busy={statusLoading}
+                data-phase={view.phase}
               >
-                <dt>{row.label}</dt>
-                <dd className="wd-rsv-amount">{row.amount}</dd>
-                <dd className="wd-rsv-detail">{row.detail}</dd>
+                <p>{statusLoading ? copy.checkingStatus : view.statusText}</p>
+                {view.statusDetail ? <p>{view.statusDetail}</p> : null}
               </div>
-            ))}
-          </dl>
-        </section>
-
-        <section className="wd-rsv-terms" aria-labelledby="reservation-terms">
-          <h2 id="reservation-terms">{copy.termsHeading}</h2>
-          <ol>
-            {copy.terms.map((term) => (
-              <li key={term}>{term}</li>
-            ))}
-          </ol>
-          {view.showCheckoutForm ? (
-            <form onSubmit={onSubmit} noValidate>
+            ) : (
+              <span id={statusId} />
+            )}
+            {view.checkoutErrorText ? (
+              <p className="wd-rsv-error" role="alert">
+                {view.checkoutErrorText}
+              </p>
+            ) : null}
+            {view.showCheckoutForm ? (
+              <form onSubmit={onSubmit} noValidate>
+                <div className="wd-rsv-disclosure">
+                  <p>{copy.intro}</p>
+                  <p>{copy.terms[copy.terms.length - 1]}</p>
+                </div>
+                <label className="wd-rsv-accept" htmlFor={acceptId}>
+                  <input
+                    id={acceptId}
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(event) => {
+                      setTermsRead(event.currentTarget.checked);
+                      setTermsAccepted(event.currentTarget.checked);
+                    }}
+                  />
+                  <span>{presentation.consent}</span>
+                </label>
+                <button
+                  type="submit"
+                  className="wd-rsv-submit"
+                  disabled={!view.checkoutEnabled}
+                  aria-describedby={
+                    view.checkoutHint &&
+                    view.checkoutBlock !== "terms_unread" &&
+                    view.checkoutBlock !== "terms_unaccepted"
+                      ? hintId
+                      : statusId
+                  }
+                >
+                  {submitting ? copy.checkingOut : presentation.cta}
+                  <span aria-hidden="true"> →</span>
+                </button>
+                {view.checkoutHint &&
+                view.checkoutBlock !== "terms_unread" &&
+                view.checkoutBlock !== "terms_unaccepted" ? (
+                  <p className="wd-rsv-hint" id={hintId}>
+                    {view.checkoutHint}
+                  </p>
+                ) : null}
+                <p className="wd-rsv-reassurance">{presentation.reassurance}</p>
+              </form>
+            ) : null}
+            {view.showCheckAgain && status?.serverStatus !== "open" ? (
               <button
                 type="button"
-                className="wd-rsv-read"
-                aria-pressed={termsRead}
-                onClick={() => setTermsRead(true)}
+                className="wd-rsv-check"
+                disabled={statusLoading}
+                onClick={() => setRefreshNonce((value) => value + 1)}
               >
-                {termsRead ? copy.markReadDone : copy.markRead}
+                {copy.checkAgain}
               </button>
-              <label className="wd-rsv-accept" htmlFor={acceptId}>
-                <input
-                  id={acceptId}
-                  type="checkbox"
-                  checked={termsAccepted}
-                  disabled={!termsRead}
-                  onChange={(event) => setTermsAccepted(event.currentTarget.checked)}
-                />
-                <span>{copy.acceptLabel}</span>
-              </label>
-              {view.checkoutHint ? (
-                <p className="wd-rsv-hint" id={hintId}>
-                  {view.checkoutHint}
-                </p>
-              ) : null}
-              <button
-                type="submit"
-                className="wd-rsv-submit"
-                disabled={!view.checkoutEnabled}
-                aria-describedby={view.checkoutHint ? hintId : statusId}
-              >
-                {submitting ? copy.checkingOut : copy.checkout}
-              </button>
-            </form>
-          ) : null}
-          {view.showCheckAgain ? (
-            <button
-              type="button"
-              className="wd-rsv-check"
-              disabled={statusLoading}
-              onClick={() => setRefreshNonce((value) => value + 1)}
+            ) : null}
+          </section>
+        </div>
+        <footer className="wd-rsv-footer">
+          <nav className="wd-rsv-links" aria-label={copy.siteTerms}>
+            <a
+              href={view.supportLinks.privacy}
+              onClick={(event) => follow(event, view.supportLinks.privacy)}
             >
-              {copy.checkAgain}
-            </button>
-          ) : null}
-        </section>
-
-        <nav className="wd-rsv-links" aria-label={copy.siteTerms}>
-          <a
-            href={view.supportLinks.privacy}
-            onClick={(event) => follow(event, view.supportLinks.privacy)}
-          >
-            {copy.privacy}
-          </a>
-          <a
-            href={view.supportLinks.terms}
-            onClick={(event) => follow(event, view.supportLinks.terms)}
-          >
-            {copy.siteTerms}
-          </a>
-        </nav>
-        <p className="wd-rsv-contact">{copy.contact}</p>
+              {copy.privacy}
+            </a>
+            <a
+              href={view.supportLinks.terms}
+              onClick={(event) => follow(event, view.supportLinks.terms)}
+            >
+              {copy.siteTerms}
+            </a>
+          </nav>
+          <p>{copy.contact}</p>
+          <p>DIVEROID LTD · 16343651</p>
+        </footer>
       </div>
     </main>
   );

@@ -1,4 +1,5 @@
 import "./lib/error-capture";
+import { reservationInitialLocaleRedirect } from "./components/reservation/query";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
@@ -138,6 +139,20 @@ export default {
     if (pathname === "/api/capi-status" && request.method === "GET") {
       return capiStatusResponse();
     }
+
+    const reservationRedirect = reservationInitialLocaleRedirect(
+      request,
+      process.env.VERCEL === "1" ? (requestCountry(request) ?? null) : null,
+    );
+    if (reservationRedirect)
+      return new Response(null, {
+        status: 307,
+        headers: {
+          location: reservationRedirect,
+          "cache-control": "private, no-store",
+          vary: "Cookie, Accept-Language, X-Vercel-IP-Country",
+        },
+      });
 
     const redirect = autoLocaleRedirect(
       request,
