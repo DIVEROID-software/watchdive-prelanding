@@ -204,41 +204,27 @@ function byCreated(a: StripeCheckoutSession, b: StripeCheckoutSession): number {
 
 export function aggregateInspections(items: InspectedSession[]): ReservationSnapshot {
   const paid = items.filter((item) => item.kind === "paid");
-  const full = paid
-    .filter((item) => item.refundState === "full")
+  const clean = paid
+    .filter((item) => item.refundState === "none" && item.dispute === "none")
     .sort((a, b) => byCreated(a.session, b.session));
-  const firstFull = full[0];
-  if (firstFull) {
-    return snapshotFrom("refunded", firstFull.session, {
-      amountRefunded: firstFull.amountRefunded,
-      amountRefundPending: firstFull.amountRefundPending,
-    });
-  }
+  const duplicatePaid = clean.length > 1;
 
+  // A live dispute can still reverse an unrefunded charge, so it blocks even
+  // when another session is a clean USD 3 payment. A full refund on the same
+  // charge is not a live dispute.
   const disputed = paid
-    .filter((item) => item.dispute === "open")
+    .filter((item) => item.dispute === "open" && item.refundState !== "full")
     .sort((a, b) => byCreated(a.session, b.session));
   const firstDisputed = disputed[0];
   if (firstDisputed) {
     return snapshotFrom("disputed", firstDisputed.session, {
       amountRefunded: firstDisputed.amountRefunded,
       amountRefundPending: firstDisputed.amountRefundPending,
+      duplicatePaid,
     });
   }
 
-  const clean = paid
-    .filter((item) => item.refundState === "none" && item.dispute === "none")
-    .sort((a, b) => byCreated(a.session, b.session));
-  const firstClean = clean[0];
-  if (firstClean) {
-    return snapshotFrom("paid", firstClean.session, {
-      paid: true,
-      amountRefunded: 0,
-      amountRefundPending: 0,
-      duplicatePaid: clean.length > 1,
-    });
-  }
-
+  // An in-flight refund is not a settled clean contract.
   const pending = paid
     .filter((item) => item.refundState === "pending")
     .sort((a, b) => byCreated(a.session, b.session));
@@ -247,6 +233,17 @@ export function aggregateInspections(items: InspectedSession[]): ReservationSnap
     return snapshotFrom("refund_pending", firstPending.session, {
       amountRefunded: firstPending.amountRefunded,
       amountRefundPending: firstPending.amountRefundPending,
+      duplicatePaid,
+    });
+  }
+
+  const firstClean = clean[0];
+  if (firstClean) {
+    return snapshotFrom("paid", firstClean.session, {
+      paid: true,
+      amountRefunded: 0,
+      amountRefundPending: 0,
+      duplicatePaid,
     });
   }
 
@@ -258,6 +255,19 @@ export function aggregateInspections(items: InspectedSession[]): ReservationSnap
     return snapshotFrom("partially_refunded", firstPartial.session, {
       amountRefunded: firstPartial.amountRefunded,
       amountRefundPending: firstPartial.amountRefundPending,
+      duplicatePaid,
+    });
+  }
+
+  const full = paid
+    .filter((item) => item.refundState === "full")
+    .sort((a, b) => byCreated(a.session, b.session));
+  const firstFull = full[0];
+  if (firstFull) {
+    return snapshotFrom("refunded", firstFull.session, {
+      amountRefunded: firstFull.amountRefunded,
+      amountRefundPending: firstFull.amountRefundPending,
+      duplicatePaid,
     });
   }
 

@@ -99,7 +99,7 @@ Checkout parameters, copied onto the session, the PaymentIntent, and the product
 
 `email_sha256` is SHA-256 hex of `reservation-email:v1:` plus the canonical email. The session idempotency key is `wdres_v1_{email_sha256}_2026-10-18_a{attempt}`. The customer idempotency key is `wdres_cus_v1_{email_sha256}`. The raw email, the lead id, and the token `jti` are not placed in either key and are not Stripe metadata. `lead_id` and `invite_jti` are not sent.
 
-`attempt` is one plus the count of expired sessions for this inbox and offer (`terminal_unpaid` or `invalid`, and Stripe `status` `expired`). Paid, open, and unknown errors do not spend an attempt. An idempotency conflict re-reads Stripe and returns the blocked state, the open hosted URL, or `reservation_in_progress`. It does not allocate another attempt. After a confirmed expired session, one reissue uses the next attempt only when the reloaded expired count actually increased.
+`attempt` is one plus the count of sessions for this inbox and offer whose Stripe `status` is `expired` and whose inspection is `terminal_unpaid` or `invalid`. Paid, open, and unknown errors do not spend an attempt. A session that is still `status` `open` after `expires_at` does not spend an attempt until this server has expired it and the re-read shows `expired`. An idempotency conflict re-reads Stripe and returns the blocked state, the open hosted URL, or `reservation_in_progress`. It does not allocate another attempt. After a confirmed expired session, one reissue uses the next attempt only when the reloaded expired count actually increased.
 
 After create, the server re-reads amount, currency, success URL, line items, and the checkout host. A mismatch expires that session and returns 502 `stripe_contract_mismatch`. If the following list does not yet show a `checkout.stripe.com` URL, the response is 409 `reservation_in_progress`. The create response URL is not returned on its own.
 
@@ -143,7 +143,7 @@ The signature is HMAC-SHA256 over the raw body, of the string `{timestamp}.{rawB
 
 A matching signature then re-fetches Stripe. Event amounts are not trusted. Livemode must match the key or the event is 200 ignored. Unknown event types are 200 ignored. A session that is not this product and offer is 200 ignored. If the customer email hash is not the session `email_sha256`, the event is 200 ignored `not_bound`. Stripe read failures throw and the handler returns 500 `stripe_error` so Stripe retries. Flag off or misconfigured is 503 so Stripe retries. Body over 1_000_000 bytes is 413.
 
-The webhook does not create a charge and does not refund. Replaying it returns the same derived `paid` and `amountRefunded`. When the inbox is paid, refunded, partially refunded, refund-pending, or disputed, every open session is expired. When the inbox is open, the oldest `checkout.stripe.com` URL is kept and every other open session is expired, including a URL on any other host.
+The webhook does not create a charge and does not refund. Replaying it returns the same derived `paid` and `amountRefunded`. Dispute and refund events accept `charge` as a string id or as an object whose `id` is a string beginning with `ch_`. A number, an array, a missing id, or an id that does not begin with `ch_` does not select a session. When the inbox is paid, refunded, partially refunded, refund-pending, or disputed, every session that is still `status` `open` is expired, including one whose `expires_at` has passed. When the inbox is open, the oldest `checkout.stripe.com` URL that is not past `expires_at` is kept and every other open session is expired, including a URL on any other host. A session that is still `open` after `expires_at` is expired and the inbox is re-read before that choice. If that expire fails, or the re-read still shows it open, the webhook returns 500 so Stripe retries.
 
 Handled snapshot events, matching `HANDLED_EVENTS`:
 
@@ -211,11 +211,20 @@ Checkout does not re-read Notion to prove `emailVerified`. The signature is that
 - charge `amount_refunded` is 0, the charge is not fully refunded, and no refund is `pending` or `requires_action`
 - charge `disputed` is false, or every dispute on that charge has status `won`, `warning_closed`, or `prevented`
 
-Anything else is `paid: false`. An open dispute, a missing dispute list on a disputed charge, or any other dispute status is status `disputed` and blocks a new charge with 409 `disputed`. A won dispute with no refund can stay `paid`. An open session that matches the money is `open` and its URL may be reused only when the host is `checkout.stripe.com`. A completed session that is not `paid` is not paid, even if the webhook event says it is. A full refund, a partial refund, and a pending refund are `refunded`, `partially_refunded`, and `refund_pending`. Each of those blocks a new charge with 409. This offer version does not automatically start another charge after a refund. A new charge would need a future explicit offer-version change. This code does not refund.
+Anything else on that charge is `paid: false`. An open dispute, a missing dispute list on a disputed charge, or any other dispute status is an open dispute. A won dispute with no refund can stay a clean payment. An open session that matches the money is `open` and its URL may be reused only when the host is `checkout.stripe.com` and `expires_at` is still in the future. A completed session that is not `paid` is not paid, even if the webhook event says it is. On a single charge, a full refund, a partial refund, and a pending refund are `refunded`, `partially_refunded`, and `refund_pending`. Each of those blocks a new charge with 409 when no clean payment remains. This offer version does not automatically start another charge after a refund. A new charge would need a future explicit offer-version change. This code does not refund.
 
 `amount_total` is the figure Stripe returns after discounts. This client also requires the line `unit_amount` and line `amount_total` to be 300. It does not read `total_details.amount_discount` as its own field. Promotion codes are not enabled on create.
 
-Priority when several of our sessions exist: full refund, then an open dispute, then clean paid, then refund pending, then partial refund, then the oldest open session, then invalid, otherwise unpaid. A full refund is reported even when that charge is also disputed. `duplicatePaid` is true when more than one clean paid session exists. The server does not refund the extra. Root refunds it manually in Stripe.
+Priority when several of our sessions exist:
+
+1. A live dispute: any paid session with an open dispute whose refund is not full. Status `disputed` and `paid` false, even when another session is a clean USD 3 payment. Checkout is 409 `disputed`.
+2. A `pending` or `requires_action` refund on any paid session. Status `refund_pending` and `paid` false, even when another session is a clean payment. Checkout is 409 `refund_pending`.
+3. A clean paid session: refund state none and dispute none. Status `paid` and `paid` true. The reported session is the oldest clean session, with `amountRefunded` 0. A fully refunded sibling, or a partially refunded sibling, does not clear this. Checkout is 409 `already_paid`.
+4. A partial refund, when no live dispute, pending refund, or clean payment remains. Status `partially_refunded`.
+5. A full refund, including a charge that is both fully refunded and disputed, when no earlier item applies. Status `refunded` and `paid` false. A full refund is reported even when that same charge is also disputed.
+6. The oldest open session whose `expires_at` is still in the future, then invalid, otherwise unpaid.
+
+`duplicatePaid` is true only when more than one clean paid session exists. The flag stays accurate when a live dispute or a pending refund is the status that blocks checkout. The server does not refund the extra. Root refunds it manually in Stripe. After that manual refund, a remaining clean USD 3 charge stays `paid` and `duplicatePaid` becomes false.
 
 ## Idempotency
 
@@ -223,11 +232,12 @@ Customer and session lists are reads. They are not an atomic lock. Notion is not
 
 1. List customers by the canonical email and keep only customers whose stored email canonicalizes to that inbox.
 2. List Checkout Sessions for those customers. Lists paginate 100 at a time and fail closed with 502 `list_truncated` after 10 pages.
-3. If the inbox is already paid, refunded, partially refunded, refund pending, or disputed, expire every open session and do not create a session.
-4. If an open session matches the contract and its URL host is `checkout.stripe.com`, keep the oldest URL and expire the others. A non-matching host is expired and is not returned.
-5. Expire open sessions that claim this product but have the wrong money.
-6. Otherwise create one session with the inbox idempotency key for the current spent attempt. Two racing creates for the same inbox share that key for Stripe's idempotency window (24 hours), including when the lead ids and token jtis differ. After that window, a confirmed expired session is the only reason to use the next attempt.
-7. Re-read the inbox after create. Return a URL only when the list shows a hosted keeper. If the inbox is now blocked, expire every open session and do not return a second URL.
+3. If the inbox is already paid, refunded, partially refunded, refund pending, or disputed, expire every session that is still `status` `open`, including one past `expires_at`, and do not create a session.
+4. Expire open sessions that claim this product but have the wrong money, then re-read.
+5. Expire every session that is still `status` `open` and whose `expires_at` is at or before now, by calling the Checkout expire API, then re-read. A 400 because the session is already closed is not a failure. Any other expire failure returns `stripe_error` and does not create a session. If the re-read still shows one of those sessions open, return `reservation_in_progress` and do not create a session.
+6. If an open session matches the contract, is not past `expires_at`, and its URL host is `checkout.stripe.com`, keep the oldest URL and expire the others. A non-matching host is expired and is not returned.
+7. Otherwise create one session with the inbox idempotency key for the current spent attempt. Two racing creates for the same inbox share that key for Stripe's idempotency window (24 hours), including when the lead ids and token jtis differ. After that window, the next attempt is used only when the re-read shows a session with Stripe `status` `expired`. That includes a session this server just expired because `expires_at` passed while `status` was still `open`. Dropping the previous idempotency key must not leave two payable URLs.
+8. Re-read the inbox after create. Return a URL only when the list shows a hosted keeper that is not past `expires_at`. If the inbox is now blocked, expire every open session and do not return a second URL.
 
 The same Gmail inbox cannot pay twice under another spelling or another lead id. A different canonical email is a different charge. Two lead ids for one canonical inbox share one customer and one payment state.
 
@@ -243,7 +253,7 @@ Residual: if someone later edits the Stripe customer email off the canonical add
 6. Keep `/reservation` and the three API routes if `routeTree.gen.ts` is regenerated. Do not add `/ko/reservation`.
 7. The email worker must call `issueReservationInvite` with the verified email, `emailVerified: true`, and `expiresAtMs`, and must mail `https://watchdive.diveroid.com/reservation?lang=ko#invite=TOKEN` (use the saved supported locale in `lang`; fallback to English only when no supported preference exists).
 8. The page must read `#invite`, strip the fragment, store the token in `sessionStorage`, POST `{ inviteToken, acceptedTerms: true, termsVersion: "2026-10-18" }`, and GET status with `Authorization: Bearer` plus that token. Success is only the paid rule above.
-9. Watch `duplicatePaid` and refund extras manually. This code will not do it.
+9. Watch `duplicatePaid` and refund extras manually. This code will not do it. Refunding one extra must leave the remaining clean USD 3 charge `paid` with `duplicatePaid` false. Do not treat a live dispute or a pending refund on any charge as that clean payment.
 10. Do not deploy from a tree that drops the protected FAQ and pool-photo commit named in `docs/reservation-rollout.md`.
 
 This implementation did not call live Stripe, send customer email, mutate a schema, deploy, change Meta ads, edit `package.json`, or commit.

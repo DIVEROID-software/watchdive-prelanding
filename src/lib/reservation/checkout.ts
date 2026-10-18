@@ -263,12 +263,57 @@ function openSessions(inspected: InspectedSession[]): StripeCheckoutSession[] {
     .sort((a, b) => a.created - b.created || a.id.localeCompare(b.id));
 }
 
-/** Expires every open session. Used when the inbox is already paid, refunded, or disputed. */
+function pastDueOpenSessions(
+  inspected: InspectedSession[],
+  nowMs: number,
+): StripeCheckoutSession[] {
+  const due: StripeCheckoutSession[] = [];
+  for (const item of inspected) {
+    if (item.kind === "foreign") continue;
+    const session = item.session;
+    if (session.status === "open" && session.expiresAt * 1000 <= nowMs) due.push(session);
+  }
+  return due.sort((a, b) => a.created - b.created || a.id.localeCompare(b.id));
+}
+
+/** Expires every still-open session, including one past expires_at. */
 export async function expireOpenSessions(
   stripe: StripeApi,
   inspected: InspectedSession[],
+  nowMs: number,
 ): Promise<void> {
-  await expireSessions(stripe, openSessions(inspected));
+  const seen = new Set<string>();
+  const targets = [...openSessions(inspected), ...pastDueOpenSessions(inspected, nowMs)].filter(
+    (session) => {
+      if (seen.has(session.id)) return false;
+      seen.add(session.id);
+      return true;
+    },
+  );
+  await expireSessions(stripe, targets);
+}
+
+/**
+ * Calls the Stripe expire API for sessions that are still open after
+ * expires_at, then re-reads. A failed expire, or a re-read that still shows
+ * one of those sessions open, does not continue to session creation.
+ */
+export async function retirePastDueOpenSessions(
+  stripe: StripeApi,
+  email: string,
+  livemode: boolean,
+  nowMs: number,
+  loaded: { snapshot: ReservationSnapshot; inspected: InspectedSession[]; customers: StripeCustomer[] },
+): Promise<
+  | { snapshot: ReservationSnapshot; inspected: InspectedSession[]; customers: StripeCustomer[] }
+  | "fail_closed"
+> {
+  const due = pastDueOpenSessions(loaded.inspected, nowMs);
+  if (due.length === 0) return loaded;
+  await expireSessions(stripe, due);
+  const reloaded = await loadReservationState(stripe, email, livemode, nowMs);
+  if (pastDueOpenSessions(reloaded.inspected, nowMs).length > 0) return "fail_closed";
+  return reloaded;
 }
 
 /**
@@ -347,10 +392,11 @@ export async function startReservationCheckout(input: {
 async function blockedDecision(
   stripe: StripeApi,
   loaded: { snapshot: ReservationSnapshot; inspected: InspectedSession[] },
+  nowMs: number,
 ): Promise<CheckoutDecision> {
   const blocked = blockingError(loaded.snapshot.status);
   if (!blocked) return { kind: "in_progress" };
-  await expireOpenSessions(stripe, loaded.inspected);
+  await expireOpenSessions(stripe, loaded.inspected, nowMs);
   return { kind: "blocked", error: blocked, snapshot: loaded.snapshot };
 }
 
@@ -361,7 +407,7 @@ async function afterConflict(
   nowMs: number,
 ): Promise<CheckoutDecision> {
   const again = await loadReservationState(stripe, email, livemode, nowMs);
-  if (blockingError(again.snapshot.status)) return blockedDecision(stripe, again);
+  if (blockingError(again.snapshot.status)) return blockedDecision(stripe, again, nowMs);
   if (again.snapshot.status === "open") {
     const keeper = await collapseOpenSessions(stripe, again.inspected);
     if (isHostedCheckoutUrl(keeper?.url)) return { kind: "url", url: keeper.url };
@@ -397,7 +443,7 @@ async function acceptCreated(
   }
 
   const refreshed = await loadReservationState(stripe, invite.email, livemode, nowMs);
-  if (blockingError(refreshed.snapshot.status)) return blockedDecision(stripe, refreshed);
+  if (blockingError(refreshed.snapshot.status)) return blockedDecision(stripe, refreshed, nowMs);
   const keeper = await collapseOpenSessions(stripe, refreshed.inspected);
   if (isHostedCheckoutUrl(keeper?.url)) return { kind: "url", url: keeper.url };
   return { kind: "in_progress" };
@@ -412,15 +458,26 @@ async function checkoutForInvite(
 ): Promise<CheckoutDecision> {
   const emailSha256 = reservationEmailHash(invite.email);
   let loaded = await loadReservationState(stripe, invite.email, livemode, nowMs);
-  if (blockingError(loaded.snapshot.status)) return blockedDecision(stripe, loaded);
+  if (blockingError(loaded.snapshot.status)) return blockedDecision(stripe, loaded, nowMs);
 
   const invalidOpen = loaded.inspected
     .flatMap((item) => item.kind === "invalid" && item.session.status === "open" ? [item.session] : []);
   if (invalidOpen.length > 0) {
     await expireSessions(stripe, invalidOpen);
     loaded = await loadReservationState(stripe, invite.email, livemode, nowMs);
-    if (blockingError(loaded.snapshot.status)) return blockedDecision(stripe, loaded);
+    if (blockingError(loaded.snapshot.status)) return blockedDecision(stripe, loaded, nowMs);
   }
+
+  const retired = await retirePastDueOpenSessions(
+    stripe,
+    invite.email,
+    livemode,
+    nowMs,
+    loaded,
+  );
+  if (retired === "fail_closed") return { kind: "in_progress" };
+  loaded = retired;
+  if (blockingError(loaded.snapshot.status)) return blockedDecision(stripe, loaded, nowMs);
 
   if (loaded.snapshot.status === "open") {
     const keeper = await collapseOpenSessions(stripe, loaded.inspected);
@@ -444,13 +501,13 @@ async function checkoutForInvite(
 
   if (created.status === "complete" || created.paymentStatus === "paid") {
     const settled = await loadReservationState(stripe, invite.email, livemode, nowMs);
-    if (blockingError(settled.snapshot.status)) return blockedDecision(stripe, settled);
+    if (blockingError(settled.snapshot.status)) return blockedDecision(stripe, settled, nowMs);
     return { kind: "in_progress" };
   }
 
   if (sessionExpired(created, nowMs)) {
     const reloaded = await loadReservationState(stripe, invite.email, livemode, nowMs);
-    if (blockingError(reloaded.snapshot.status)) return blockedDecision(stripe, reloaded);
+    if (blockingError(reloaded.snapshot.status)) return blockedDecision(stripe, reloaded, nowMs);
     const next = spentAttempts(reloaded.inspected) + 1;
     if (next === attempt) return { kind: "in_progress" };
     const retried = await createSession(stripe, params, emailSha256, next);

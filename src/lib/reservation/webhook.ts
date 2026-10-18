@@ -12,6 +12,7 @@ import {
   expireOpenSessions,
   loadReservationState,
   reservationEmailHash,
+  retirePastDueOpenSessions,
 } from "./checkout.ts";
 import {
   StripeApiError,
@@ -97,13 +98,25 @@ function objectId(event: Record<string, unknown>): string {
   return typeof id === "string" ? id : "";
 }
 
+function expandedId(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
+  const id = (value as { id?: unknown }).id;
+  return typeof id === "string" ? id : "";
+}
+
 function objectString(event: Record<string, unknown>, key: string): string {
   const data = event.data;
   if (!data || typeof data !== "object") return "";
   const object = (data as { object?: unknown }).object;
   if (!object || typeof object !== "object") return "";
-  const value = (object as Record<string, unknown>)[key];
-  return typeof value === "string" ? value : "";
+  return expandedId((object as Record<string, unknown>)[key]);
+}
+
+/** A charge id from a string or from an expanded charge object. */
+function chargeIdFrom(value: string): string {
+  if (!value.startsWith("ch_") || value.length < 4 || /\s/.test(value)) return "";
+  return value;
 }
 
 function snapshotBody(
@@ -153,8 +166,8 @@ async function resolveSession(
   }
 
   if (eventType.startsWith("charge.dispute.")) {
-    const chargeId = objectString(event, "charge");
-    if (!chargeId.startsWith("ch_")) return null;
+    const chargeId = chargeIdFrom(objectString(event, "charge"));
+    if (!chargeId) return null;
     const charge = await stripe.retrieveCharge(chargeId);
     if (!charge.paymentIntentId) return null;
     return sessionForPaymentIntent(stripe, charge.paymentIntentId);
@@ -169,9 +182,9 @@ async function resolveSession(
   }
 
   if (eventType.startsWith("refund.")) {
-    const chargeId = objectString(event, "charge");
+    const chargeId = chargeIdFrom(objectString(event, "charge"));
     const paymentIntentId = objectString(event, "payment_intent");
-    if (chargeId.startsWith("ch_")) {
+    if (chargeId) {
       const charge = await stripe.retrieveCharge(chargeId);
       if (!charge.paymentIntentId) return null;
       return sessionForPaymentIntent(stripe, charge.paymentIntentId);
@@ -266,16 +279,26 @@ export async function processReservationWebhook(input: {
     return { httpStatus: 200, body: { received: true, eventId, ignored: "not_bound" } };
   }
 
-  const loaded = await loadReservationState(
+  const initial = await loadReservationState(
     input.stripe,
     email,
     input.config.livemode,
     input.nowMs,
   );
-  if (blockingError(loaded.snapshot.status)) {
-    await expireOpenSessions(input.stripe, loaded.inspected);
-  } else if (loaded.snapshot.status === "open") {
-    await collapseOpenSessions(input.stripe, loaded.inspected);
+  const retired = await retirePastDueOpenSessions(
+    input.stripe,
+    email,
+    input.config.livemode,
+    input.nowMs,
+    initial,
+  );
+  if (retired === "fail_closed") {
+    throw new StripeApiError(502, "expire_not_observed", "api_error", null);
+  }
+  if (blockingError(retired.snapshot.status)) {
+    await expireOpenSessions(input.stripe, retired.inspected, input.nowMs);
+  } else if (retired.snapshot.status === "open") {
+    await collapseOpenSessions(input.stripe, retired.inspected);
   }
   const after = await loadReservationState(
     input.stripe,
