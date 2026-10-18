@@ -115,7 +115,7 @@ export type ReservationDependencies = {
   send: (message: ReservationMessage) => Promise<void>;
   /** Test double only. Production uses issueReservationInvite. */
   signInvite?: ReservationInviteSigner;
-  env?: TokenEnvironment & { WATCHDIVE_RESERVATION_TOKEN_SECRET?: string };
+  env?: TokenEnvironment & { WATCHDIVE_RESERVATION_TOKEN_SECRET?: string; WATCHDIVE_RESERVATION_UNSUBSCRIBE_SECRET?: string };
   now?: () => Date;
   sleep?: (ms: number) => Promise<void>;
   writeSample?: (locale: Locale, mail: RenderedReservationMail) => Promise<void>;
@@ -307,8 +307,11 @@ export async function runReservationMail(
 
   let secret: string;
   let publicOrigin: string;
+  const reservationUnsubscribeSecret = (env.WATCHDIVE_RESERVATION_UNSUBSCRIBE_SECRET ?? "").trim();
+  const unsubscribeVersion = reservationUnsubscribeSecret ? "u2" : "u1";
   try {
-    secret = requireSecret(env);
+    secret = reservationUnsubscribeSecret || requireSecret(env);
+    if (Buffer.byteLength(secret, "utf8") < 32) throw new Error("Reservation unsubscribe secret must be at least 32 bytes");
     publicOrigin = requirePublicOrigin(env);
   } catch (error) {
     return abort("not_configured", error instanceof Error ? error.message : "not configured");
@@ -431,7 +434,7 @@ export async function runReservationMail(
   }
 
   const unsubscribeFor = (leadId: string, locale: Locale) =>
-    unsubscribeUrl(publicOrigin, createUnsubscribeToken(leadId, locale, secret));
+    unsubscribeUrl(publicOrigin, createUnsubscribeToken(leadId, locale, secret, unsubscribeVersion));
   const pageUrl = (path: string) => new URL(path, publicOrigin).toString();
   const renderFor = (locale: Locale, leadId: string, invite: string) =>
     renderReservationMail({

@@ -270,6 +270,22 @@ test("unsubscribe tokens round-trip and reject any tampering", () => {
   assert.ok(!url.includes("@"));
 });
 
+test("reservation unsubscribe uses an independent key while old links remain valid", async () => {
+  const target = row();
+  const store = new FakeLaunchStore([target]);
+  const reservationSecret = "reservation-unsubscribe-independent-secret-20261019";
+  const token = createUnsubscribeToken(target.leadId, "ko", reservationSecret, "u2");
+  const env = { ...TEST_ENV, WATCHDIVE_RESERVATION_UNSUBSCRIBE_SECRET: reservationSecret };
+  assert.equal(parseUnsubscribeToken(token, reservationSecret), undefined);
+  assert.equal(parseUnsubscribeToken(token, TEST_SECRET, "u2"), undefined);
+  assert.equal((await handleUnsubscribe("GET", token, { store, env })).status, 200);
+  assert.equal((await handleUnsubscribe("GET", token, { store, env: TEST_ENV })).status, 503);
+  const old = createUnsubscribeToken(target.leadId, "ko", TEST_SECRET);
+  assert.equal((await handleUnsubscribe("GET", old, { store, env })).status, 200);
+  assert.equal((await handleUnsubscribe("POST", token, { store, env })).status, 200);
+  assert.equal((await handleUnsubscribe("POST", token, { store, env })).status, 200);
+});
+
 test("GET only asks; POST records the opt-out once; bad tokens and a missing property fail safe", async () => {
   const target = row();
   const store = new FakeLaunchStore([target]);

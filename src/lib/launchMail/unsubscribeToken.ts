@@ -1,6 +1,9 @@
 // Signed one-click unsubscribe links for the launch mails.
 //
-// `u1.<leadId>.<locale>.<mac>`, an HMAC over the same server secret as the
+// `u1.<leadId>.<locale>.<mac>` uses the legacy verification secret.
+// `u2.<leadId>.<locale>.<mac>` uses the independent reservation-mail key.
+// Legacy links remain valid. Each version has a separate signed payload.
+// The legacy HMAC uses the same server secret as the
 // confirmation token but in its own domain, so neither token can stand in for
 // the other. It names the signup by its opaque `Lead ID` — never an address and
 // never a Notion page id — and the locale only picks the language of the page.
@@ -22,7 +25,7 @@ const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f
 const SEGMENT = `(?:${Object.values(LOCALE_PATH_SEGMENTS).join("|")})`;
 
 export const UNSUBSCRIBE_TOKEN_PATTERN = new RegExp(
-  `^u1\\.${UUID}\\.${SEGMENT}\\.[A-Za-z0-9_-]{43}$`,
+  `^u[12]\\.${UUID}\\.${SEGMENT}\\.[A-Za-z0-9_-]{43}$`,
 );
 
 export const UNSUBSCRIBE_PATH_PREFIX = "/unsubscribe/";
@@ -35,11 +38,11 @@ function mac(secret: string, payload: string): string {
   return createHmac("sha256", secret).update(`unsubscribe:v1:${payload}`).digest("base64url");
 }
 
-export function createUnsubscribeToken(leadId: string, locale: Locale, secret: string): string {
+export function createUnsubscribeToken(leadId: string, locale: Locale, secret: string, version: "u1" | "u2" = "u1"): string {
   if (!isLeadId(leadId)) throw new Error("Invalid lead id");
   if (!isLocale(locale)) throw new Error("Invalid locale");
   // The lowercase path slug, so the whole token is URL-safe as it stands.
-  const payload = `u1.${leadId.toLowerCase()}.${LOCALE_PATH_SEGMENTS[locale]}`;
+  const payload = `${version}.${leadId.toLowerCase()}.${LOCALE_PATH_SEGMENTS[locale]}`;
   return `${payload}.${mac(secret, payload)}`;
 }
 
@@ -48,9 +51,11 @@ export type ParsedUnsubscribeToken = { leadId: string; locale: Locale };
 export function parseUnsubscribeToken(
   token: unknown,
   secret: string,
+  expectedVersion: "u1" | "u2" = "u1",
 ): ParsedUnsubscribeToken | undefined {
   if (typeof token !== "string" || !UNSUBSCRIBE_TOKEN_PATTERN.test(token)) return undefined;
   const [version, leadId, segment, signature] = token.split(".");
+  if (version !== expectedVersion) return undefined;
   const locale = LOCALE_BY_SEGMENT.get(segment);
   if (!locale) return undefined;
   const expected = mac(secret, `${version}.${leadId}.${segment}`);

@@ -122,6 +122,22 @@ function runOptions(receiptDir: string, notBefore: string | null = NOT_BEFORE) {
   };
 }
 
+test("office sender needs no verification key when reservation unsubscribe key is configured", async () => {
+  const store = new MemoryStore([row(99)]);
+  const sink = new Sink();
+  const result = await runReservationMail(runOptions(await directory()), {
+    store, send: sink.send, liveGate: passLiveGate, now: () => NOW,
+    env: {
+      WATCHDIVE_PUBLIC_ORIGIN: PRODUCTION_ORIGIN,
+      WATCHDIVE_RESERVATION_TOKEN_SECRET: TOKEN,
+      WATCHDIVE_RESERVATION_UNSUBSCRIBE_SECRET: "reservation-unsubscribe-independent-secret-20261019",
+    },
+  });
+  assert.equal(result.aborted, undefined);
+  assert.equal(sink.calls.length, 1);
+  assert.match(sink.calls[0].headers["List-Unsubscribe"], /\/unsubscribe\/u2\./);
+});
+
 test("179999 ms is too early and 180000 ms is eligible", () => {
   const early = row(1, { verifiedAt: TOO_EARLY });
   const due = row(2, { verifiedAt: DUE });
