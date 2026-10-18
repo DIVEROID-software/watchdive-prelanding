@@ -5,6 +5,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { geoCookie, normalizeCountry, consentRegionFor } from "./lib/consentRegion";
 import { autoLocaleRedirect } from "./lib/i18n/auto-locale";
+import { publicCrawlResponse, applySearchIndexingPolicy } from "./lib/i18n/crawl.ts";
 import { localeFromPathname } from "./lib/i18n/locale";
 import { isI18nReviewEnabled } from "./lib/i18n/review-gate";
 import { checkMetaCapiToken, metaCapiConfigStatus } from "./lib/api/metaCapi";
@@ -82,9 +83,19 @@ async function capiStatusResponse(): Promise<Response> {
  * visitor's country for another.
  */
 function withGeoCookie(request: Request, response: Response): Response {
-  const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.includes("text/html")) return response;
   const headers = new Headers(response.headers);
+  if (response.status >= 400 && !headers.has("x-robots-tag")) {
+    headers.set("x-robots-tag", "noindex");
+  }
+  const contentType = headers.get("content-type") ?? "";
+  if (!contentType.includes("text/html")) {
+    if (headers.get("x-robots-tag") === response.headers.get("x-robots-tag")) return response;
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
   headers.append("set-cookie", geoCookie(requestCountry(request), isSecureRequest(request)));
   headers.set("cache-control", "private, no-cache");
   return new Response(response.body, {
@@ -125,7 +136,7 @@ async function normalizeCatastrophicSsrResponse(
   });
 }
 
-export default {
+const server = {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     let pathname = "/";
     try {
@@ -139,6 +150,8 @@ export default {
     if (pathname === "/api/capi-status" && request.method === "GET") {
       return capiStatusResponse();
     }
+    const crawl = publicCrawlResponse(pathname, request.method);
+    if (crawl) return crawl;
 
     const reservationRedirect = reservationInitialLocaleRedirect(
       request,
@@ -182,5 +195,12 @@ export default {
         headers: { "content-type": "text/html; charset=utf-8" },
       });
     }
+  },
+};
+
+export default {
+  async fetch(request: Request, env: unknown, ctx: unknown) {
+    const response = await server.fetch(request, env, ctx);
+    return applySearchIndexingPolicy(response, new URL(request.url).pathname, process.env.VERCEL_ENV);
   },
 };
