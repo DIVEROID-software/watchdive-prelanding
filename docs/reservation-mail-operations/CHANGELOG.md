@@ -1,5 +1,14 @@
 # Reservation mail changelog
 
+## 2026-10-18 three minutes after verification
+
+- Eligibility is `Verified at` plus 180000 ms. Signup time is not the clock. A missing, date-only, or timezone-less timestamp is not eligible. 179999 ms is too early and 180000 ms is eligible.
+- A send requires `WATCHDIVE_RESERVATION_MAIL_NOT_BEFORE` or `--not-before`. Earlier verifications are not invited. The historical backlog is not mailed.
+- `Reservation paid` true with `Reservation mode` `live` suppresses that inbox. Mode `test` does not. Missing paid columns are not a payment. Suppression and paid state are read again immediately before the provider call.
+- A customer send requires reservation enabled, live allowed, a live Stripe key, origin `https://watchdive.diveroid.com`, and a read-only account plus Checkout-host check. It does not create a Checkout Session. QA, preview, and localhost origins are refused. Dry-run does not call Stripe.
+- The office Mac mini template interval is 30 seconds and stays disabled. The tick no longer replaces the shell, so the lock is removed on exit. A dead pid is reclaimed. A live pid is not stolen.
+- No customer mail was sent. The Resend sender is still absent from this worker.
+
 ## 2026-10-18 identity, lowest price, reservation inbox
 
 - Previews and sends always name DIVEROID LTD, company 16343651, and the registered office Office 12146, 182-184 High Street North, East Ham, London, United Kingdom, E6 2JA. Omitting the flags uses those constants. A conflicting name or office is rejected and is not echoed.

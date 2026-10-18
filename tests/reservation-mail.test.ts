@@ -63,6 +63,9 @@ const MAIL_ENV = {
   WATCHDIVE_RESERVATION_TOKEN_SECRET: RESERVATION_TOKEN_SECRET,
 };
 const NOW = new Date("2026-10-18T04:00:00.000Z");
+const VERIFIED_AT = "2026-10-18T03:00:00.000Z";
+const NOT_BEFORE = "2026-10-18T00:00:00.000Z";
+const passLiveGate = async () => ({ ok: true as const });
 const SECRET_EMAIL = "person-secret@example.com";
 const SECRET_TOKEN = "signed-invite-SECRETTOKENVALUE";
 
@@ -83,6 +86,7 @@ function row(overrides: Partial<ReservationRow> = {}): ReservationRow {
     suspect: false,
     duplicate: false,
     landingPath: "/",
+    verifiedAt: VERIFIED_AT,
     ...overrides,
   };
 }
@@ -96,6 +100,9 @@ const SCHEMA: ReservationSchema = {
   hasCountryProperty: true,
   hasSmsConsentProperty: true,
   hasPhoneProperty: true,
+  verifiedAt: "ok",
+  reservationPaid: "missing",
+  reservationMode: "missing",
 };
 
 class FakeStore implements ReservationStore {
@@ -116,6 +123,10 @@ class FakeStore implements ReservationStore {
 
   async listRows() {
     return this.rows;
+  }
+
+  async readRow(pageId: string) {
+    return this.rows.find((item) => item.pageId === pageId);
   }
 
   async recordReservationMail(pageId: string, value: string) {
@@ -166,6 +177,7 @@ function options(
     legalName: LEGAL,
     receiptDir,
     ratePerSecond: 50,
+    notBefore: NOT_BEFORE,
     ...overrides,
   };
 }
@@ -418,6 +430,7 @@ test("dry run sends nothing and does not write a receipt", async () => {
     send: resend.send,
     signInvite: signerFor(() => SECRET_TOKEN),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
   });
   assert.equal(resend.calls.length, 0);
@@ -445,6 +458,7 @@ test("send records a receipt and a second run does not send again", async () => 
     send: resend.send,
     signInvite: signerFor(() => SECRET_TOKEN),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   };
@@ -521,6 +535,7 @@ test("an old intent is not sent again, and a fresh one retries the same key", as
     send: oldResend.send,
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });
@@ -529,6 +544,7 @@ test("an old intent is not sent again, and a fresh one retries the same key", as
     send: freshResend.send,
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });
@@ -561,6 +577,7 @@ test("an accepted receipt reconciles Notion and does not call the provider", asy
     send: resend.send,
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });
@@ -580,6 +597,7 @@ test("a provider conflict is held and a later run does not retry it", async () =
     send: resend.send,
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   };
@@ -608,6 +626,7 @@ test("a bad invite does not block a different recipient", async () => {
       return SECRET_TOKEN;
     },
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });
@@ -628,6 +647,7 @@ test("omitted identity uses the verified company, and a conflicting identity is 
     },
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
   });
   assert.equal(conflict.aborted, "merchant_identity_mismatch");
@@ -641,6 +661,7 @@ test("omitted identity uses the verified company, and a conflicting identity is 
     },
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
   });
   assert.equal(malformed.aborted, "invalid_input");
@@ -654,6 +675,7 @@ test("omitted identity uses the verified company, and a conflicting identity is 
     },
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
   });
   assert.equal(missingColumn.aborted, "reservation_mail_property_missing");
@@ -664,6 +686,7 @@ test("omitted identity uses the verified company, and a conflicting identity is 
     },
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
   });
   assert.equal(dry.aborted, undefined);
@@ -679,6 +702,7 @@ test("omitted identity uses the verified company, and a conflicting identity is 
       send: resend.send,
       signInvite: signerFor(),
       env: MAIL_ENV,
+    liveGate: passLiveGate,
       now: () => NOW,
       sleep: async () => undefined,
     },
@@ -701,6 +725,7 @@ test("a corrupt or unsafe ledger refuses the send", async () => {
     },
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
   });
   assert.equal(corrupt.aborted, "receipt_unsafe");
@@ -717,6 +742,7 @@ test("a corrupt or unsafe ledger refuses the send", async () => {
     },
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
   });
   assert.equal(unsafe.aborted, "receipt_unsafe");
@@ -731,6 +757,7 @@ test("--limit holds the rest back", async () => {
     send: resend.send,
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });
@@ -820,6 +847,7 @@ test("a send keeps the invite expiry tied to the frozen first intent", async () 
     store: new FakeStore([person]),
     send: resend.send,
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: clock,
     sleep: async () => undefined,
   });
@@ -986,6 +1014,7 @@ test("an unknown provider outcome is held and is not retried inside the window",
     send: resend.send,
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   };
@@ -1012,6 +1041,7 @@ test("a clear provider rejection is not replayed inside the window", async () =>
     send: resend.send,
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   };
@@ -1036,6 +1066,7 @@ test("an unexpected error is the same hold as an unknown outcome", async () => {
     send: resend.send,
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });
@@ -1048,6 +1079,7 @@ test("an unexpected error is the same hold as an unknown outcome", async () => {
     send: resend.send,
     signInvite: signerFor(),
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });
@@ -1115,6 +1147,7 @@ test("custom-domain plus and dotted addresses stay distinct, and Gmail aliases d
     store: new FakeStore([tagged, plain, dotted, undotted]),
     send: resend.send,
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });
@@ -1135,6 +1168,7 @@ test("custom-domain plus and dotted addresses stay distinct, and Gmail aliases d
     store: new FakeStore([alias, collapsed]),
     send: gmail.send,
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });
@@ -1183,6 +1217,7 @@ test("a Gmail receipt holds the alias, and a sent marker still blocks when the l
     store,
     send: resend.send,
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });
@@ -1217,6 +1252,7 @@ test("a Gmail receipt holds the alias, and a sent marker still blocks when the l
     store: stalledStore,
     send: stalledSend.send,
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });
@@ -1234,6 +1270,7 @@ test("a Gmail receipt holds the alias, and a sent marker still blocks when the l
     store: new FakeStore([marked]),
     send: markedSend.send,
     env: MAIL_ENV,
+    liveGate: passLiveGate,
     now: () => NOW,
     sleep: async () => undefined,
   });

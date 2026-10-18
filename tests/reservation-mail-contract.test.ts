@@ -50,7 +50,10 @@ test("the tick and launchd template stay gated and uninstalled", () => {
   assert.equal(tick.includes("launchctl"), false);
   assert.match(plist, /com\.diveroid\.watchdive-reservation-mail/);
   assert.match(plist, /<key>Disabled<\/key>\s*<true\/>/);
-  assert.match(plist, /<key>StartInterval<\/key>\s*<integer>1800<\/integer>/);
+  assert.match(plist, /<key>StartInterval<\/key>\s*<integer>30<\/integer>/);
+  assert.match(plist, /<key>RunAtLoad<\/key>\s*<false\/>/);
+  assert.equal(/\bexec\b/.test(tick), false);
+  assert.match(tick, /trap cleanup EXIT/);
   assert.equal(plist.includes("launchctl"), false);
   assert.equal(plist.includes("RESEND_API_KEY"), false);
   assert.equal(plist.includes("WATCHDIVE_RESERVATION_TOKEN_SECRET"), false);

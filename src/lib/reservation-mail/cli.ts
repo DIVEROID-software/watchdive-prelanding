@@ -22,6 +22,7 @@ import {
   type ReservationMessage,
   type ReservationRunOptions,
 } from "./run.ts";
+import { parseVerifiedInstant } from "./schedule.ts";
 import { createNotionReservationStore } from "./store.ts";
 
 export const USAGE = `Usage:
@@ -35,6 +36,7 @@ export const USAGE = `Usage:
     [--legal-name "<name>"]             DIVEROID LTD, or omit it; a different name is rejected
     [--limit <n>]                       only the first n eligible recipients (oldest first)
     [--rate <per second>]               Resend request rate (default 2)
+    [--not-before <ISO instant>]        prospective start; also WATCHDIVE_RESERVATION_MAIL_NOT_BEFORE
 
 Reads NOTION_API_KEY, NOTION_WAITLIST_DB_ID, WATCHDIVE_VERIFICATION_SECRET,
 and WATCHDIVE_PUBLIC_ORIGIN. A send also reads RESEND_API_KEY,
@@ -43,9 +45,16 @@ WATCHDIVE_EMAIL_REPLY_TO) and WATCHDIVE_RESERVATION_TOKEN_SECRET (at least
 32 bytes). The token secret is not the verification secret. The sender is
 DIVEROID LTD, company 16343651, Office 12146, 182-184 High Street North,
 East Ham, London, United Kingdom, E6 2JA. Omitting the name and office uses
-that identity. A different name or office is rejected. Stripe keys and
-WATCHDIVE_RESERVATION_ENABLED are not read. Optional
-RESERVATION_MAIL_RECEIPT_DIR overrides --receipt-dir. Values are never printed.
+that identity. A different name or office is rejected. A send reads
+WATCHDIVE_RESERVATION_ENABLED (exactly true), WATCHDIVE_RESERVATION_ALLOW_LIVE
+(exactly true), and STRIPE_SECRET_KEY (a live key). It then performs a
+read-only Stripe account GET and a GET of https://checkout.stripe.com/. It
+does not create a Checkout Session. A test key, localhost, a Vercel preview,
+or any other origin than https://watchdive.diveroid.com refuses the send.
+Dry-run does not call Stripe. Eligibility is Verified at plus 180000 ms, and
+only on or after the prospective start. Signup time is not used. A missing
+or invalid Verified at is not eligible. Optional RESERVATION_MAIL_RECEIPT_DIR
+overrides --receipt-dir. Values are never printed.
 
 A send mints each invite with issueReservationInvite in
 src/lib/reservation/invite.ts, passing the verified row email. The only query
@@ -76,6 +85,7 @@ export function parseCli(argv: string[], env: NodeJS.ProcessEnv = process.env): 
         "receipt-dir": { type: "string" },
         limit: { type: "string" },
         rate: { type: "string" },
+        "not-before": { type: "string" },
         help: { type: "boolean" },
       },
     }));
@@ -108,6 +118,13 @@ export function parseCli(argv: string[], env: NodeJS.ProcessEnv = process.env): 
   const receiptDir = resolve(
     values["receipt-dir"] ?? env.RESERVATION_MAIL_RECEIPT_DIR ?? ".reservation-mail-receipts",
   );
+  const notBeforeRaw = (values["not-before"] ?? env.WATCHDIVE_RESERVATION_MAIL_NOT_BEFORE ?? "").trim();
+  if (notBeforeRaw && !parseVerifiedInstant(notBeforeRaw).ok) {
+    return {
+      ok: false,
+      error: "--not-before must be an ISO-8601 instant with a timezone",
+    };
+  }
 
   return {
     ok: true,
@@ -119,6 +136,7 @@ export function parseCli(argv: string[], env: NodeJS.ProcessEnv = process.env): 
       legalName: identity.merchant.legalName,
       ...(limit !== undefined ? { limit } : {}),
       ...(rate !== undefined ? { ratePerSecond: rate } : {}),
+      ...(notBeforeRaw ? { notBefore: notBeforeRaw } : {}),
     },
   };
 }
