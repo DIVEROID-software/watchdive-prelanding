@@ -300,7 +300,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     h2: "Questions and answers.",
     q1: "Is WatchDive a dive computer?",
     a1: "Yes. WatchDive turns your smartwatch into a dive computer. It provides decompression (deco) guidance and a compass, and runs on a Bühlmann-based decompression algorithm. Recommended operating depth is 40 m, with a maximum water-resistance depth of 60 m.",
-    q2: "How deep has the housing been tested?",
+    q2: "How deep can I use WatchDive?",
     a2: "The WatchDive housing has completed a water-resistance test at 197 ft (60 m). That test is not an independent certification, and it is not a promise for every environment. Dive within your training and the conditions of the day.",
     q3: "Does it show a safety stop and no-decompression time?",
     a3: "Yes. A safety stop, an ascent alert, depth, dive time, water temperature and no-decompression time.",
