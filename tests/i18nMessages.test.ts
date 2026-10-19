@@ -333,7 +333,7 @@ test("localized CTA copy asks for an invitation instead of claiming a purchase o
 test("each locale uses its own contextual currency across every price-bearing surface", () => {
   const localCurrency: Record<Locale, RegExp> = {
     en: /\$(?:149|299|1,000)/,
-    ko: /(?:20만 원대|40만 원대|100만 원 이상)/,
+    ko: /(?:\$(?:149|299)|100만 원 이상)/,
     "zh-CN": /(?:1,000|2,000|7,000) 元/,
     "zh-TW": /NT\$(?:5,000|10,000|30,000)/,
     ja: /(?:2万円台|4万円台|15万円以上)/,
@@ -380,7 +380,7 @@ test("each locale uses its own contextual currency across every price-bearing su
     );
     for (const [path, copy] of Object.entries(priceBearingSurfaces)) {
       assert.match(copy, localCurrency[locale], `${locale}.${path}: local currency is missing`);
-      if (locale !== "en") {
+      if (locale !== "en" && locale !== "ko") {
         assert.doesNotMatch(
           copy,
           /\$(?:149|299|1,000)/,

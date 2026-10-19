@@ -138,13 +138,13 @@ const ko: FrozenLandingMessages = {
   meta: {
     title: "WatchDive — 쓰던 스마트워치 그대로, 바닷속으로",
     description:
-      "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 선착순 100명 얼리버드 20만 원대.",
+      "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 선착순 100명 얼리버드 $149.",
     ogTitle: "WatchDive — 쓰던 스마트워치 그대로, 바닷속으로",
     ogDescription:
-      "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 선착순 100명 얼리버드 20만 원대.",
+      "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 선착순 100명 얼리버드 $149.",
     twitterTitle: "WatchDive — 쓰던 스마트워치 그대로, 바닷속으로",
     twitterDescription:
-      "쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징. Kickstarter 선착순 100명 얼리버드 20만 원대.",
+      "쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징. Kickstarter 선착순 100명 얼리버드 $149.",
   },
   banner: {
     kicker: "Kickstarter",
@@ -152,7 +152,7 @@ const ko: FrozenLandingMessages = {
     joinCta: "알림 신청",
   },
   cta: {
-    label: "선착순 100명 20만 원대 알림 받기",
+    label: "선착순 100명 $149 알림 받기",
   },
   referral: {
     welcome: "친구가 초대했습니다. 이메일을 인증하면 같은 명단에 올라갑니다.",
@@ -167,7 +167,7 @@ const ko: FrozenLandingMessages = {
     copied: "복사했습니다",
     shareButton: "다이빙 버디에게 보내기",
     shareText:
-      "WatchDive는 쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징입니다. Kickstarter 얼리버드는 선착순 100명까지 20만 원대. 제 링크로 같이 신청하세요.",
+      "WatchDive는 쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징입니다. Kickstarter 얼리버드는 선착순 100명까지 $149. 제 링크로 같이 신청하세요.",
   },
   gallery: {
     black: "블랙",
@@ -250,23 +250,23 @@ const ko: FrozenLandingMessages = {
     h1: "WatchDive. 쓰던 스마트워치가 다이브 컴퓨터로, 그대로 바닷속으로.",
     h1Highlight: "다이브 컴퓨터",
     sub: "차고 있던 Apple Watch나 Galaxy Watch를 하우징에 끼우면, 안의 DIVEROID 센서가 수심과 수온을 잽니다. 다이브 컴퓨터를 따로 사고 익힐 필요가 없습니다.",
-    priceLine: "Kickstarter 선착순 100명 얼리버드 20만 원대. 12월 킥스타터 런칭.",
+    priceLine: "Kickstarter 선착순 100명 얼리버드 $149. 12월 킥스타터 런칭.",
     backgroundAlt: "화려한 산호초를 탐험하는 스쿠버 다이버",
     sideImageAlt: "산호초 위, 다이버 손목에 찬 WatchDive. 화면에 수심과 다이브 타임이 보입니다",
     stat1Label: "하우징 · 60m",
     stat1Desc: "방수 테스트 완료",
     stat2Label: "스쿠버 + 프리다이빙",
     stat2Desc: "두 가지 모드",
-    stat3Label: "20만 원대",
+    stat3Label: "$149",
     stat3Desc: "선착순 100명 · 50% 할인",
-    wasPrice: "40만 원대",
-    nowPrice: "20만 원대",
+    wasPrice: "$299",
+    nowPrice: "$149",
     offBadge: "50% 할인",
     offNote: "오픈 선착순 100명",
     gift: "그리고 같이 물에 들어가는 사람에게 링크를 보내세요.",
     trust1: "이메일만 남기면 됩니다. 열리는 날 알려 드립니다.",
     trust2:
-      "하루 전에 한 번, 한 시간 전에 다시 한 번. Kickstarter에서 처음 100명이 20만 원대입니다.",
+      "하루 전에 한 번, 한 시간 전에 다시 한 번. Kickstarter에서 처음 100명이 $149입니다.",
     backedBy: "NVIDIA Inception, AWS",
     featuredBy: "삼성 광고",
     nvidiaAlt: "NVIDIA Inception",
@@ -277,11 +277,11 @@ const ko: FrozenLandingMessages = {
     cardKicker: "Kickstarter",
     cardHeadline: "수심. 시간. 무감압.",
     cardFrom: "선착순 100명",
-    cardPrice: "20만 원대",
+    cardPrice: "$149",
   },
   value: {
     kicker: "왜 WatchDive인가",
-    h2: "선착순 100명, 20만 원대.",
+    h2: "선착순 100명, $149.",
     imageAlt: "물속에서 손목에 착용한 WatchDive",
     overlayKicker: "손목에서",
     overlayText: "쓰던 스마트워치 위에 하우징과 센서를 더했습니다.",
@@ -402,10 +402,10 @@ const ko: FrozenLandingMessages = {
   offer: {
     imageAlt: "수영장 가장자리에 놓인 WatchDive 하우징",
     kicker: "선착순 100명 · 50% 할인",
-    headline: "40만 원대 20만 원대 — 50% 할인.",
-    headlineStrike: "40만 원대",
-    headlineNew: "20만 원대",
-    lead: "WatchDive가 열리는 날 가장 먼저 알려 드립니다. 정가는 40만 원대, 선착순 100명 얼리버드는 20만 원대입니다. 원화 금액은 이해를 돕기 위한 예상 범위이고, 실제 결제 금액은 Kickstarter 캠페인 페이지를 기준으로 합니다.",
+    headline: "$299 $149 — 50% 할인.",
+    headlineStrike: "$299",
+    headlineNew: "$149",
+    lead: "WatchDive가 열리는 날 가장 먼저 알려 드립니다. 정가는 $299, 선착순 100명 얼리버드는 $149입니다. 가격은 미국 달러(USD) 기준이며, 실제 결제 금액은 Kickstarter 캠페인 페이지를 기준으로 합니다.",
     leadHighlight: "가장 먼저",
   },
   creds: {
