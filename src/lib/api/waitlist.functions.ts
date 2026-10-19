@@ -202,6 +202,17 @@ async function countableRows(dbId: string): Promise<number> {
   return count;
 }
 
+/** Social signup uses the same cap as the email form. A failed read stays closed. */
+export async function waitlistSignupOpen(): Promise<boolean> {
+  const dbId = process.env.NOTION_WAITLIST_DB_ID;
+  if (!dbId) return false;
+  try {
+    return !waitlistClosed(await countableRows(dbId));
+  } catch {
+    return false;
+  }
+}
+
 // The figure the page shows. It is rendered on the server (the landing route
 // loaders call this), so a crawler burst is answered from one short-lived
 // cached read rather than a Notion query per request. `null` means the count

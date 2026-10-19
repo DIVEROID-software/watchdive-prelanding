@@ -40,12 +40,17 @@ import type {
   VerificationStatus,
 } from "./contracts.ts";
 import {
+  FIELD_APPLE_SUBJECT,
+  FIELD_AUTH_VERIFICATION_PROVENANCE,
   FIELD_EMAIL_VERIFIED,
+  FIELD_GOOGLE_SUBJECT,
   FIELD_LANDING_PATH,
   FIELD_LEAD_ID,
   FIELD_MEASUREMENT_CONSENT,
   FIELD_META_EVENT_ID,
   FIELD_SIGNUP_COUNTRY,
+  FIELD_SIGNUP_LOCALE,
+  FIELD_SIGNUP_METHOD,
   FIELD_SIGNUP_COUNTRY_OBSERVED,
   FIELD_SIGNUP_COUNTRY_SOURCE,
   FIELD_UTM_CAMPAIGN,
@@ -186,10 +191,31 @@ const SIGNUP_COUNTRY_FIELDS = [
   FIELD_SIGNUP_COUNTRY_OBSERVED,
 ] as const;
 
+/** Same live checkbox the reservation mail audience already skips. */
+const FIELD_DUPLICATE = "Duplicate";
+const SUBJECT_PATTERN = /^[A-Za-z0-9._-]{1,255}$/;
+
+/**
+ * The provider subject column is missing or rejected. A social create must not
+ * continue without it: the page could not be matched on the next login.
+ */
+export class SocialAuthSchemaError extends Error {
+  constructor() {
+    super("social_auth_schema");
+    this.name = "SocialAuthSchemaError";
+  }
+}
+
 function optionalColumnsMentioned(rawBody: string): string[] {
   const names = [
     FIELD_CONVERSION_EXPERIMENT,
     ...SIGNUP_COUNTRY_FIELDS,
+    FIELD_SIGNUP_METHOD,
+    FIELD_GOOGLE_SUBJECT,
+    FIELD_APPLE_SUBJECT,
+    FIELD_AUTH_VERIFICATION_PROVENANCE,
+    FIELD_SIGNUP_LOCALE,
+    FIELD_DUPLICATE,
     process.env.NOTION_META_FBC_PROPERTY?.trim() ?? "",
     process.env.NOTION_FBCLID_PROPERTY?.trim() ?? "",
   ].filter((name) => name.length > 0);
@@ -313,6 +339,42 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     ...(measurementConsent ? { measurementConsent } : {}),
     ...(isMetaFbc(metaFbc) ? { metaFbc } : {}),
     ...(hasUtm ? { utm } : {}),
+    ...readSocialIdentity(properties),
+  };
+}
+
+function readSocialIdentity(
+  properties: Record<string, unknown>,
+): Pick<
+  LeadRecord,
+  | "signupMethod"
+  | "googleSubject"
+  | "appleSubject"
+  | "authVerificationProvenance"
+  | "signupLocale"
+  | "signedUpAt"
+  | "duplicate"
+> {
+  const methodName = (properties[FIELD_SIGNUP_METHOD] as { select?: { name?: string } } | undefined)?.select
+    ?.name;
+  const signupMethod =
+    methodName === "email" || methodName === "google" || methodName === "apple" ? methodName : undefined;
+  const googleSubject = readText(properties[FIELD_GOOGLE_SUBJECT]);
+  const appleSubject = readText(properties[FIELD_APPLE_SUBJECT]);
+  const provenance = readText(properties[FIELD_AUTH_VERIFICATION_PROVENANCE]);
+  const signupLocale = readText(properties[FIELD_SIGNUP_LOCALE]);
+  const signedUpAt = readDate(properties[FIELD_SIGNED_UP]);
+  const duplicate = Boolean(
+    (properties[FIELD_DUPLICATE] as { checkbox?: boolean } | undefined)?.checkbox,
+  );
+  return {
+    ...(signupMethod ? { signupMethod } : {}),
+    ...(SUBJECT_PATTERN.test(googleSubject) ? { googleSubject } : {}),
+    ...(SUBJECT_PATTERN.test(appleSubject) ? { appleSubject } : {}),
+    ...(provenance ? { authVerificationProvenance: provenance } : {}),
+    ...(signupLocale ? { signupLocale } : {}),
+    ...(signedUpAt ? { signedUpAt } : {}),
+    ...(duplicate ? { duplicate: true } : {}),
   };
 }
 
@@ -409,7 +471,23 @@ function readSignupCountryFields(
   };
 }
 
-type OptionalLeadWrite = { fbc: boolean; experiment: boolean; fbclid: boolean; country: boolean };
+type OptionalLeadWrite = {
+  fbc: boolean;
+  experiment: boolean;
+  fbclid: boolean;
+  country: boolean;
+  method: boolean;
+  provenance: boolean;
+  locale: boolean;
+  subject: boolean;
+};
+
+type LeadWriteContext = {
+  fbcColumn?: string;
+  fbclidColumn?: string;
+  requireProviderSubject: boolean;
+  subjectField?: string;
+};
 
 function mentionsSignupCountryColumn(named: ReadonlySet<string>): boolean {
   return SIGNUP_COUNTRY_FIELDS.some((name) => named.has(name));
@@ -428,7 +506,7 @@ function omitFbclid(attribution: LeadAttribution): LeadAttribution {
 async function createLeadPage(
   create: (options: OptionalLeadWrite) => Promise<Record<string, unknown>>,
   options: OptionalLeadWrite,
-  columns: { fbcColumn?: string; fbclidColumn?: string },
+  columns: LeadWriteContext,
 ): Promise<Record<string, unknown>> {
   try {
     return await create(options);
@@ -439,17 +517,33 @@ async function createLeadPage(
       error.code === "validation_error"
         ? new Set(error.rejectedOptionalColumns)
         : new Set<string>();
+    if (
+      options.subject &&
+      columns.requireProviderSubject &&
+      columns.subjectField &&
+      named.has(columns.subjectField)
+    ) {
+      throw new SocialAuthSchemaError();
+    }
     const next: OptionalLeadWrite = { ...options };
     if (options.experiment && named.has(FIELD_CONVERSION_EXPERIMENT)) next.experiment = false;
     if (options.fbc && columns.fbcColumn && named.has(columns.fbcColumn)) next.fbc = false;
     if (options.fbclid && columns.fbclidColumn && named.has(columns.fbclidColumn))
       next.fbclid = false;
     if (options.country && mentionsSignupCountryColumn(named)) next.country = false;
+    if (options.method && named.has(FIELD_SIGNUP_METHOD)) next.method = false;
+    if (options.provenance && named.has(FIELD_AUTH_VERIFICATION_PROVENANCE)) next.provenance = false;
+    if (options.locale && named.has(FIELD_SIGNUP_LOCALE)) next.locale = false;
+    if (options.subject && columns.subjectField && named.has(columns.subjectField)) next.subject = false;
     const dropped =
       next.experiment !== options.experiment ||
       next.fbc !== options.fbc ||
       next.fbclid !== options.fbclid ||
-      next.country !== options.country;
+      next.country !== options.country ||
+      next.method !== options.method ||
+      next.provenance !== options.provenance ||
+      next.locale !== options.locale ||
+      next.subject !== options.subject;
     if (dropped) {
       if (options.experiment && !next.experiment) {
         console.error("[conversion-experiment] optional context omitted", {
@@ -511,15 +605,107 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
       return queryOne({ property: FIELD_LEAD_ID, rich_text: { equals: leadId } });
     },
 
+    async listByProviderSubject(provider, sub) {
+      if (!SUBJECT_PATTERN.test(sub)) return [];
+      const field = provider === "google" ? FIELD_GOOGLE_SUBJECT : FIELD_APPLE_SUBJECT;
+      try {
+        const result = await request("POST", `databases/${databaseId}/query`, {
+          filter: { property: field, rich_text: { equals: sub } },
+          page_size: 100,
+          sorts: [{ property: FIELD_SIGNED_UP, direction: "ascending" }],
+        });
+        if (result.has_more) throw new SocialAuthSchemaError();
+        return ((result.results as Record<string, unknown>[] | undefined) ?? [])
+          .map((page) => toLeadRecord(page))
+          .filter((row): row is LeadRecord => Boolean(row));
+      } catch (error) {
+        if (error instanceof SocialAuthSchemaError) throw error;
+        if (
+          error instanceof NotionRequestError &&
+          error.status === 400 &&
+          error.code === "validation_error" &&
+          error.rejectedOptionalColumns.includes(field)
+        ) {
+          throw new SocialAuthSchemaError();
+        }
+        throw error;
+      }
+    },
+
+    async attachProviderSubject(pageId, provider, sub, provenance) {
+      if (!SUBJECT_PATTERN.test(sub)) return "conflict";
+      const field = provider === "google" ? FIELD_GOOGLE_SUBJECT : FIELD_APPLE_SUBJECT;
+      const current = toLeadRecord(await request("GET", `pages/${pageId}`));
+      if (!current) return "conflict";
+      const stored = provider === "google" ? current.googleSubject : current.appleSubject;
+      if (stored === sub) return "present";
+      if (stored) return "conflict";
+      const properties: Record<string, unknown> = { [field]: textProp(sub) };
+      if (!current.authVerificationProvenance && provenance.length > 0 && provenance.length <= 200) {
+        properties[FIELD_AUTH_VERIFICATION_PROVENANCE] = textProp(provenance);
+      }
+      try {
+        await request("PATCH", `pages/${pageId}`, { properties });
+      } catch (error) {
+        const named =
+          error instanceof NotionRequestError && error.status === 400
+            ? error.rejectedOptionalColumns
+            : [];
+        if (named.includes(field)) throw new SocialAuthSchemaError();
+        if (named.includes(FIELD_AUTH_VERIFICATION_PROVENANCE)) {
+          await request("PATCH", `pages/${pageId}`, { properties: { [field]: textProp(sub) } });
+          return "attached";
+        }
+        throw error;
+      }
+      return "attached";
+    },
+
+    async markDuplicate(pageId) {
+      try {
+        await request("PATCH", `pages/${pageId}`, {
+          properties: { [FIELD_DUPLICATE]: { checkbox: true } },
+        });
+      } catch (error) {
+        if (
+          error instanceof NotionRequestError &&
+          error.status === 400 &&
+          error.rejectedOptionalColumns.includes(FIELD_DUPLICATE)
+        ) {
+          throw new SocialAuthSchemaError();
+        }
+        throw error;
+      }
+    },
+
+    async noteVerificationSend(pageId, input) {
+      await request("PATCH", `pages/${pageId}`, {
+        properties: {
+          [FIELD_VERIFICATION_SENDS]: { number: input.sends },
+          [FIELD_VERIFICATION_SENT]: { date: { start: input.sentAt } },
+        },
+      });
+    },
+
     async createPending(input: CreatePendingInput) {
       const fbcColumn = input.metaFbc && isMetaFbc(input.metaFbc) ? metaFbcColumn() : undefined;
       const fbclidColumn = process.env.NOTION_FBCLID_PROPERTY?.trim() || undefined;
       const experimentJson = input.experiment ? encodeLeadExperiment(input.experiment) : null;
+      const subjectField = input.googleSubject
+        ? FIELD_GOOGLE_SUBJECT
+        : input.appleSubject
+          ? FIELD_APPLE_SUBJECT
+          : undefined;
+      if (input.requireProviderSubject && !subjectField) throw new SocialAuthSchemaError();
       const base: OptionalLeadWrite = {
         fbc: Boolean(fbcColumn),
         experiment: Boolean(experimentJson),
         fbclid: Boolean(fbclidColumn && input.attribution?.fbclid),
         country: Boolean(input.signupCountry),
+        method: Boolean(input.signupMethod),
+        provenance: Boolean(input.authVerificationProvenance),
+        locale: Boolean(input.signupLocale),
+        subject: Boolean(subjectField),
       };
       const create = (options: OptionalLeadWrite) => {
         const attribution = input.attribution
@@ -535,6 +721,21 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
               ...canonicalEmailProperties(input.canonical),
               ...(input.phone?.trim() ? { Phone: textProp(input.phone.trim()) } : {}),
               Source: { select: { name: input.source } },
+              ...(options.method && input.signupMethod
+                ? { [FIELD_SIGNUP_METHOD]: { select: { name: input.signupMethod } } }
+                : {}),
+              ...(options.subject && input.googleSubject
+                ? { [FIELD_GOOGLE_SUBJECT]: textProp(input.googleSubject) }
+                : {}),
+              ...(options.subject && input.appleSubject
+                ? { [FIELD_APPLE_SUBJECT]: textProp(input.appleSubject) }
+                : {}),
+              ...(options.provenance && input.authVerificationProvenance
+                ? { [FIELD_AUTH_VERIFICATION_PROVENANCE]: textProp(input.authVerificationProvenance) }
+                : {}),
+              ...(options.locale && input.signupLocale
+                ? { [FIELD_SIGNUP_LOCALE]: textProp(input.signupLocale) }
+                : {}),
               "Signed up": { date: { start: input.signedUpAt } },
               "Ref code": textProp(input.refCode),
               ...(input.referredBy && input.referredBy !== input.refCode
@@ -567,6 +768,8 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
       const page = await createLeadPage(create, base, {
         fbcColumn,
         fbclidColumn,
+        requireProviderSubject: Boolean(input.requireProviderSubject),
+        ...(subjectField ? { subjectField } : {}),
       });
       const record = toLeadRecord(page);
       if (!record) throw new Error("Notion page create returned no usable row");

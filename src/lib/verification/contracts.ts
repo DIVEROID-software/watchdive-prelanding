@@ -155,6 +155,18 @@ export const FIELD_LANDING_PATH = "Landing path";
 export const FIELD_SIGNUP_COUNTRY = "Signup country";
 export const FIELD_SIGNUP_COUNTRY_SOURCE = "Signup country source";
 export const FIELD_SIGNUP_COUNTRY_OBSERVED = "Signup country observed";
+
+/**
+ * How the row was first created. Written once. A later sign-in must not
+ * replace it. `Source` stays the form placement (hero/offer) and is not this.
+ */
+export const FIELD_SIGNUP_METHOD = "Signup method";
+export const FIELD_GOOGLE_SUBJECT = "Google subject";
+export const FIELD_APPLE_SUBJECT = "Apple subject";
+export const FIELD_AUTH_VERIFICATION_PROVENANCE = "Auth verification provenance";
+export const FIELD_SIGNUP_LOCALE = "Signup locale";
+export const SIGNUP_METHODS = ["email", "google", "apple"] as const;
+export type SignupMethod = (typeof SIGNUP_METHODS)[number];
 export const SIGNUP_COUNTRY_UNKNOWN = "unknown";
 /** The only sensor whose country code may be stored. */
 export const SIGNUP_COUNTRY_SOURCE_VERCEL = "x-vercel-ip-country";
@@ -224,6 +236,15 @@ export type LeadRecord = {
   metaFbc?: string;
   /** First-touch campaign tags, read back for the late submit `Lead`. */
   utm?: { source?: string; medium?: string; campaign?: string; content?: string; term?: string };
+  /** Set on create only. Empty on rows that predate the column. */
+  signupMethod?: SignupMethod;
+  googleSubject?: string;
+  appleSubject?: string;
+  authVerificationProvenance?: string;
+  signupLocale?: string;
+  /** `Signed up` instant, used only to pick the earliest of two raced pages. */
+  signedUpAt?: string;
+  duplicate?: boolean;
 };
 
 /**
@@ -332,6 +353,17 @@ export type CreatePendingInput = {
   measurementState?: string;
   /** New consented, non-suspect row only; never rewritten on resend. */
   experiment?: ExperimentContext;
+  /** New rows only. A resend goes through `startAttempt` and does not write this. */
+  signupMethod?: SignupMethod;
+  googleSubject?: string;
+  appleSubject?: string;
+  authVerificationProvenance?: string;
+  signupLocale?: string;
+  /**
+   * Social creates fail closed when the provider subject column is missing.
+   * Email creates leave this unset so a missing `Signup method` column is dropped.
+   */
+  requireProviderSubject?: boolean;
 };
 
 /** Written when a new attempt is minted — this is what kills the previous link. */
@@ -371,6 +403,22 @@ export interface LeadStore {
   recordMeasurementWithdrawal(pageId: string): Promise<void>;
   reread(pageId: string): Promise<LeadRecord | undefined>;
   recordPhoneOptIn?(pageId: string, phone: string, consent: string): Promise<void>;
+  /** Pages whose provider subject cell equals `sub`. Empty when the column is absent. */
+  listByProviderSubject?(provider: "google" | "apple", sub: string): Promise<LeadRecord[]>;
+  /**
+   * Writes only an empty provider subject cell, and provenance when that cell
+   * is also empty. Never touches verification, email, source, consent, or payment.
+   */
+  attachProviderSubject?(
+    pageId: string,
+    provider: "google" | "apple",
+    sub: string,
+    provenance: string,
+  ): Promise<"attached" | "present" | "conflict">;
+  /** Checkbox only. A missing column must not verify the loser. */
+  markDuplicate?(pageId: string): Promise<void>;
+  /** Send counter and sent time only. Does not replace Lead ID or Verified at. */
+  noteVerificationSend?(pageId: string, input: { sends: number; sentAt: string }): Promise<void>;
 }
 
 export type PendingResponse = {

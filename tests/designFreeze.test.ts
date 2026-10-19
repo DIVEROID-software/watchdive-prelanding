@@ -125,8 +125,11 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // original-master responsive exports in ValueSection; hero and layout stay.
   // 2026-10-18: owner requested an explicit already-verified response card.
   // It replaces the inbox prompt only after a repeat verified signup.
+  // 2026-10-19: owner requested Google and Apple signup on both existing forms.
+  // The email fields, phone fields, and 50:50 experiment stay. The buttons are
+  // an added control above each form, and the result line sits above the hero form.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "bd26c4e350e35d01509d52d33559aefc0e13eccd88413347f7f8842a2cb9c0b5");
+  assert.equal(digest, "ae5f16faa77c1fb92c7b2ac896494b57aa6c55f0cde5f742992b40bb4d37755a");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

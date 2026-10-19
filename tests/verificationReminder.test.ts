@@ -15,6 +15,7 @@ import {
   formatReminderSummary,
   REMINDER_TIME_BUDGET_MS,
   reminderExpiryMs,
+  reminderLocale,
   runVerificationReminders,
   VERIFICATION_REMINDER_DELAY_MS,
   VERIFICATION_REMINDER_MAX_AGE_MS,
@@ -109,7 +110,7 @@ function leadId(): string {
 }
 
 /** A signup whose first confirmation mail went out `hoursAgo` hours before NOW. */
-function seedPending(overrides: Partial<LeadRecord> = {}, hoursAgo = 7): LeadRecord {
+function seedPending(overrides: Partial<LeadRecord> = {}, hoursAgo = 25): LeadRecord {
   const sentAt = new Date(NOW.getTime() - hoursAgo * HOUR);
   const n = leadCounter + 1;
   return store.seed({
@@ -174,7 +175,7 @@ test("an unconfirmed signup past the delay gets the same confirmation mail, flag
   assert.match(after.reminder ?? "", /^sent /);
 });
 
-test("the reminded link confirms the signup, and so does the original one", async () => {
+test("the refreshed reminder confirms after the original link expires", async () => {
   const row = seedPending();
   const original = createVerificationToken(
     row.leadId,
@@ -208,8 +209,8 @@ test("the reminded link confirms the signup, and so does the original one", asyn
   assert.equal(store.rows.get(row.pageId)!.emailVerified, true);
 });
 
-test("the original link still confirms after a reminder went out", async () => {
-  const row = seedPending();
+test("an original link that is still valid survives a reminder", async () => {
+  const row = seedPending({ expiresAt: new Date(NOW.getTime() + HOUR).toISOString() });
   const original = createVerificationToken(
     row.leadId,
     Date.parse(row.expiresAt!),
@@ -549,4 +550,34 @@ test("the cron endpoint refuses everything without a configured secret", () => {
   assert.equal(checkCronAuthorization(secret, secret), "unauthorized");
   assert.equal(checkCronAuthorization(`Bearer ${secret}x`, secret), "unauthorized");
   assert.equal(checkCronAuthorization(null, secret), "unauthorized");
+});
+
+test("24-hour boundary and dry-run never claim or send", async () => {
+  assert.equal(VERIFICATION_REMINDER_DELAY_MS, 24 * HOUR);
+  const row = seedPending({}, 24);
+  clock = new Date(NOW.getTime() - 1);
+  assert.equal((await runVerificationReminders(deps())).sent, 0);
+  clock = NOW;
+  const before = structuredClone(store.rows.get(row.pageId));
+  const preview = await runVerificationReminders(deps({ dryRun: true }));
+  assert.equal(preview.dryRun, true);
+  assert.equal(preview.candidates, 1);
+  assert.equal(preview.sent, 0);
+  assert.equal(store.claims.length, 0);
+  assert.equal(store.outcomes.length, 0);
+  assert.equal(mailer.sent.length, 0);
+  assert.deepEqual(store.rows.get(row.pageId), before);
+  assert.equal((await runVerificationReminders(deps())).sent, 1);
+});
+
+test("a verified timestamp excludes an inconsistent pending row", async () => {
+  seedPending({ verifiedAt: NOW.toISOString(), emailVerified: false });
+  assert.equal((await runVerificationReminders(deps())).sent, 0);
+  assert.equal(store.claims.length, 0);
+});
+
+test("reminder keeps saved signup language ahead of legacy landing path", () => {
+  const row = { ...seedPending({ landingPath: "/en" }), signupLocale: "ko" };
+  assert.equal(reminderLocale(row), "ko");
+  assert.equal(reminderLocale({ ...row, signupLocale: "invalid" }), "en");
 });

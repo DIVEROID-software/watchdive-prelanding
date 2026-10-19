@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { SOCIAL_SIGNUP_PRIVACY } from "@/lib/socialSignupPrivacy";
 import { homePath } from "@/lib/i18n/locale";
 import { legalHead } from "@/lib/i18n/seo";
 import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
@@ -86,6 +87,7 @@ export function PrivacyPage() {
                 {usage[1]}
               </li>
             </ul>
+            <p>{SOCIAL_SIGNUP_PRIVACY[locale]}</p>
             <p>{copy.s2NoPayment}</p>
           </Section>
 

@@ -20,6 +20,7 @@ import {
   loadWaitlistCount,
 } from "@/lib/api/waitlist.functions";
 import { EarlyBirdRace } from "@/components/early-bird-race";
+import { SocialAuthEntry, SocialAuthResult } from "@/components/social-auth-entry";
 import { HeroPhoto } from "@/components/hero-photo";
 import { ProductGallery } from "@/components/product-gallery";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -1258,6 +1259,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       ) : (
         <p className="wd-experiment-copy wd-experiment-benefit">{copy.benefit}</p>
       )}
+      <SocialAuthEntry locale={locale} source={id} disabled={loading} referredBy={getRef()} />
       <p
         id={`${id}-confirm-note`}
         className="wd-control-copy text-sm leading-relaxed text-white/90"
@@ -1398,7 +1400,8 @@ const HOLD_EARLY_SUBMIT_JS = `document.addEventListener("submit",function(e){var
  */
 function Hero() {
   const m = useFrozenLandingMessages();
-  const copy = conversionCopy[useCurrentLocale()];
+  const locale = useCurrentLocale();
+  const copy = conversionCopy[locale];
   const [before, highlight, after] = splitHighlightedCopy(m.hero.h1, m.hero.h1Highlight);
   return (
     <header className="wd-hero-new text-white">
@@ -1429,6 +1432,7 @@ function Hero() {
               <p className="wd-control-copy text-xs text-white/85">{m.hero.offNote}</p>
             </div>
           </div>
+          <SocialAuthResult locale={locale} />
           <EmailForm id="hero" />
           <div className="mt-5">
             <LaunchNotice />

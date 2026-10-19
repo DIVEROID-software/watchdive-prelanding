@@ -1,8 +1,7 @@
 // One reminder of the confirmation mail for a signup that has not confirmed.
 //
-// The person asked for a confirmation mail; this re-sends that same mail, with
-// the same copy, once. It is the tail of the double opt-in they started, not a
-// campaign: no new copy, no promotion, and never a second reminder.
+// The person asked to join the waitlist. After 24 hours, one focused reminder
+// lets them finish email verification. It contains no purchase promotion.
 //
 // How a reminder is issued
 //   The attempt's `Lead ID` is kept. Minting a new one (`startAttempt`) would
@@ -12,7 +11,7 @@
 //   with a fresh expiry, `Verification expires` is moved out to match (Notion is
 //   the authority on the window), and both links confirm the same row.
 //
-// How "exactly once" holds  (strictly: at most once)
+// Duplicate suppression under the single office scheduler
 //   1. The candidate query requires `Verification reminder` to be empty.
 //   2. Before any mail, the row is claimed: a unique marker is written into
 //      `Verification reminder`. If that write fails — including Notion
@@ -39,10 +38,10 @@ import {
   requireSecret,
   type TokenEnvironment,
 } from "./token.ts";
-import { DEFAULT_LOCALE, localeFromPathname, type Locale } from "../i18n/locale.ts";
+import { DEFAULT_LOCALE, isLocale, localeFromPathname, type Locale } from "../i18n/locale.ts";
 
 /** How long after the confirmation mail went out before the one reminder. */
-export const VERIFICATION_REMINDER_DELAY_MS = 6 * 60 * 60 * 1000;
+export const VERIFICATION_REMINDER_DELAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Signups whose mail went out longer ago than this are left alone. A reminder
@@ -65,7 +64,7 @@ export const REMINDER_TIME_BUDGET_MS = 40_000;
 
 /**
  * The window the daily sweep checks for pending rows with no recorded send.
- * Matches the cron interval in vercel.json (daily), so consecutive runs tile
+ * The office driver requests this maintenance once daily, so runs tile
  * instead of re-reporting the same rows.
  */
 export const UNSENT_SWEEP_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -119,11 +118,16 @@ export type ReminderDependencies = {
   now?: () => Date;
   sleep?: (ms: number) => Promise<void>;
   runId?: () => string;
+  /** Read eligibility only: no claims, mail, or other writes. */
+  dryRun?: boolean;
+  /** Frequent office ticks skip the diagnostic daily sweep. */
+  skipUnsentSweep?: boolean;
 };
 
 export type ReminderSkipReason =
   | "not_pending"
   | "verified"
+  | "duplicate"
   | "suspect"
   | "flagged"
   | "already_reminded"
@@ -136,6 +140,7 @@ export type ReminderSkipReason =
 export type ReminderRunResult = {
   /** Set when the run stopped before mailing anyone, e.g. the property is missing. */
   aborted?: "reminder_property_missing" | "candidate_query_failed" | "not_configured";
+  dryRun?: boolean;
   candidates: number;
   sent: number;
   /** Claimed, but the provider refused the mail. Never retried. */
@@ -162,7 +167,8 @@ export function reminderSkipReason(
   // Only `pending` is mailable. Verified, unsubscribed, a withdrawn/suppressed
   // row, and legacy single opt-in rows (no status) are all excluded.
   if (record.status !== "pending") return "not_pending";
-  if (record.emailVerified) return "verified";
+  if (record.emailVerified || record.verifiedAt) return "verified";
+  if ((record as LeadRecord & { duplicate?: boolean }).duplicate) return "duplicate";
   // Suspect covers every abuse flag, including a shared network.
   if (record.suspect) return "suspect";
   if (reviewFlags(record.flags).length > 0) return "flagged";
@@ -179,8 +185,10 @@ export function reminderSkipReason(
   return undefined;
 }
 
-/** The language the person signed up in, as far as the first-touch path tells. */
+/** Prefer the saved signup language; fall back to the legacy first-touch path. */
 export function reminderLocale(record: LeadRecord): Locale {
+  const saved = (record as LeadRecord & { signupLocale?: string }).signupLocale;
+  if (saved && isLocale(saved)) return saved;
   if (!record.landingPath) return DEFAULT_LOCALE;
   try {
     return localeFromPathname(record.landingPath);
@@ -255,6 +263,7 @@ export async function runVerificationReminders(
     else eligible.push(record);
   }
   result.candidates = eligible.length;
+  if (dependencies.dryRun) return { ...result, dryRun: true };
 
   for (let offset = 0; offset < eligible.length; offset += REMINDER_BATCH_SIZE) {
     if (clock().getTime() - startedAtMs > REMINDER_TIME_BUDGET_MS) {
@@ -310,6 +319,8 @@ export async function runVerificationReminders(
         fresh.reminder !== marker ||
         fresh.status !== "pending" ||
         fresh.emailVerified ||
+        Boolean(fresh.verifiedAt) ||
+        Boolean((fresh as LeadRecord & { duplicate?: boolean }).duplicate) ||
         fresh.suspect ||
         reviewFlags(fresh.flags).length > 0 ||
         fresh.leadId !== record.leadId
@@ -351,16 +362,17 @@ export async function runVerificationReminders(
     }
   }
 
-  try {
-    result.unsentPending = await store.countUnsentPending({
-      signedUpOnOrAfter: new Date(
-        startedAtMs - UNSENT_SWEEP_GRACE_MS - UNSENT_SWEEP_WINDOW_MS,
-      ).toISOString(),
-      signedUpBefore: new Date(startedAtMs - UNSENT_SWEEP_GRACE_MS).toISOString(),
-    });
-  } catch {
-    // The sweep is diagnostic; its failure never undoes the reminders.
-  }
+  if (!dependencies.skipUnsentSweep)
+    try {
+      result.unsentPending = await store.countUnsentPending({
+        signedUpOnOrAfter: new Date(
+          startedAtMs - UNSENT_SWEEP_GRACE_MS - UNSENT_SWEEP_WINDOW_MS,
+        ).toISOString(),
+        signedUpBefore: new Date(startedAtMs - UNSENT_SWEEP_GRACE_MS).toISOString(),
+      });
+    } catch {
+      // The sweep is diagnostic; its failure never undoes the reminders.
+    }
 
   return result;
 }
