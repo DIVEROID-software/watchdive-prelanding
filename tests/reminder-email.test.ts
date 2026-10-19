@@ -69,7 +69,7 @@ test("every signup locale has reminder copy, plaintext, and one verify button", 
     assert.equal(mail.subject, copy.subject);
     assert.ok(mail.subject.length > 0);
     assert.match(mail.html, new RegExp(`<html lang="${locale}"`));
-    assert.match(mail.html, new RegExp(`<title>${escapeHtml(copy.subject)}</title>`));
+    assert.ok(mail.html.includes(`<title>${escapeHtml(copy.subject)}</title>`));
     assert.ok(mail.html.includes(escapeHtml(copy.headline).replaceAll("\n", "<br>")));
     assert.ok(mail.html.includes(escapeHtml(copy.received)));
     assert.ok(mail.html.includes(escapeHtml(copy.instruction)));

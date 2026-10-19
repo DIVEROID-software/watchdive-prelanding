@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 
+import { SUPPORTED_LOCALES } from "../src/lib/i18n/locale.ts";
+import { reminderLocale } from "../src/lib/verification/reminder.ts";
 import { canonicalEmail } from "../src/lib/api/abuse.ts";
 import {
   FIELD_LEAD_ID,
@@ -175,7 +177,10 @@ test("the Meta event id is derived from the attempt, not the moment", async () =
 });
 
 test("confirmation exposes only phone presence and does not require measurement consent", async () => {
-  await requestVerificationService(submit({ phone: "+447700900123", measurementConsent: false }), deps());
+  await requestVerificationService(
+    submit({ phone: "+447700900123", measurementConsent: false }),
+    deps(),
+  );
   const token = mailer.sent[0].token;
   for (const expected of ["verified", "already_verified"]) {
     const response = await confirmVerificationService(token, deps());
@@ -658,4 +663,16 @@ test("a suppressed submit still records where it came from", async () => {
 
   assert.equal(mailer.sent.length, 0);
   assert.deepEqual(store.createPendingInputs[0].attribution, META_TOUCH);
+});
+
+test("email signup preserves every selected language for reminders without measurement consent", async () => {
+  for (const locale of SUPPORTED_LOCALES) {
+    store = new FakeLeadStore();
+    mailer = new FakeMailer();
+    await requestVerificationService(submit({ locale, measurementConsent: false }), deps());
+    const row = await store.findByEmail(CANONICAL, EMAIL);
+    assert.ok(row);
+    assert.equal(row.signupLocale, locale);
+    assert.equal(reminderLocale(row), locale);
+  }
 });

@@ -210,7 +210,9 @@ function newRowIdentity(input: RequestVerificationInput) {
         : {}),
     ...(input.googleSubject ? { googleSubject: input.googleSubject } : {}),
     ...(input.appleSubject ? { appleSubject: input.appleSubject } : {}),
-    ...(input.signupLocale ? { signupLocale: input.signupLocale } : {}),
+    signupLocale: isLocale(input.signupLocale)
+      ? input.signupLocale
+      : (input.locale ?? DEFAULT_LOCALE),
     ...(input.requireProviderSubject ? { requireProviderSubject: true as const } : {}),
   };
 }
@@ -297,7 +299,8 @@ export async function requestVerificationService(
   // Owner-requested status disclosure. This is only a notice, never proof of
   // inbox ownership. Keep the decoy handle and return no checkout credential.
   if (
-    existing && !suppressed &&
+    existing &&
+    !suppressed &&
     (existing.status === "verified" || existing.emailVerified) &&
     existing.status !== "unsubscribed"
   ) {
@@ -535,7 +538,12 @@ export async function completeSocialVerification(
     dependencies,
     secret,
   );
-  await scheduleWelcome({ ...fresh, emailVerified: true, status: "verified" }, dependencies, now, welcomeLocale(fresh));
+  await scheduleWelcome(
+    { ...fresh, emailVerified: true, status: "verified" },
+    dependencies,
+    now,
+    welcomeLocale(fresh),
+  );
   return "verified";
 }
 
@@ -561,7 +569,8 @@ export async function sendSocialVerificationMail(
   ) {
     return "skipped";
   }
-  if (!attemptCooled(record, now.getTime()) || record.sends >= VERIFICATION_MAX_SENDS) return "skipped";
+  if (!attemptCooled(record, now.getTime()) || record.sends >= VERIFICATION_MAX_SENDS)
+    return "skipped";
   const env = dependencies.env ?? process.env;
   let secret: string;
   let publicOrigin: string;
