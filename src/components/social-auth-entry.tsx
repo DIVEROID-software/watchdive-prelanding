@@ -98,9 +98,16 @@ export function SocialAuthEntry({
 export function SocialAuthResult({ locale }: { locale: Locale }) {
   const [kind, setKind] = useState<SocialAuthResultKind | null>(null);
   useEffect(() => {
-    const value = new URLSearchParams(window.location.search).get("auth");
+    const url = new URL(window.location.href);
+    const value = url.searchParams.get("auth");
+    // A callback query is not a persistent, verified signup session. Do not
+    // display a completion claim above a fresh signup form or on later visits.
+    if (value === "confirmed") {
+      url.searchParams.delete("auth");
+      window.history.replaceState(window.history.state, "", url.toString());
+      return;
+    }
     if (
-      value === "confirmed" ||
       value === "check-email" ||
       value === "pending" ||
       value === "error" ||
