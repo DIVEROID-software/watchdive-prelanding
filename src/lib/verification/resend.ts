@@ -223,8 +223,8 @@ const EMAIL_COPY = {
       ignore: "직접 요청한 적이 없다면 이 메일을 무시해 주세요. 별도의 처리는 이루어지지 않습니다.",
     },
     welcome: {
-      subject: "WatchDive 대기 명단 등록이 완료되었습니다",
-      heading: "WatchDive 대기 명단 등록이 완료되었습니다",
+      subject: "WatchDive 출시 알림 신청이 완료되었습니다.",
+      heading: "WatchDive 출시 알림 신청이 완료되었습니다.",
       intro:
         "이메일 인증이 완료되었습니다. 아래 개인 초대 링크를 다이빙에 관심 있는 분들과 공유해 주세요.",
       button: "내 초대 링크 열기",

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { hasSocialAcknowledgement, socialAckCookie } from "@/lib/socialAuthAcknowledgement";
 
 import { SocialSignupButtons, type SocialProvider } from "@/components/SocialSignupButtons";
 import { getAttribution } from "@/lib/attribution";
@@ -95,28 +96,38 @@ export function SocialAuthEntry({
   );
 }
 
-export function SocialAuthResult({ locale }: { locale: Locale }) {
+const SocialResultContext = createContext<SocialAuthResultKind | null>(null);
+
+export function SocialSignupResultProvider({ children }: { children: ReactNode }) {
   const [kind, setKind] = useState<SocialAuthResultKind | null>(null);
   useEffect(() => {
     const url = new URL(window.location.href);
     const value = url.searchParams.get("auth");
-    // A callback query is not a persistent, verified signup session. Do not
-    // display a completion claim above a fresh signup form or on later visits.
-    if (value === "confirmed") {
+    const acknowledged = hasSocialAcknowledgement(value, document.cookie);
+    // Consume even when the query is missing, so an abandoned callback receipt
+    // cannot be reused on a later visit. This flag controls presentation only.
+    document.cookie = socialAckCookie(false);
+    if (value?.toLowerCase() === "confirmed") {
       url.searchParams.delete("auth");
       window.history.replaceState(window.history.state, "", url.toString());
+      if (acknowledged) setKind("confirmed");
       return;
     }
-    if (
-      value === "check-email" ||
-      value === "pending" ||
-      value === "error" ||
-      value === "open-browser"
-    ) {
+    if (value === "check-email" || value === "pending" || value === "error" || value === "open-browser") {
       setKind(value);
     }
   }, []);
-  if (!kind) return null;
+  return <SocialResultContext.Provider value={kind}>{children}</SocialResultContext.Provider>;
+}
+
+export function useSocialSignupCompleted(): boolean {
+  return useContext(SocialResultContext) === "confirmed";
+}
+
+export function SocialAuthResult({ locale }: { locale: Locale }) {
+  const kind = useContext(SocialResultContext);
+  // Completion replaces the form. It never appears above fresh signup fields.
+  if (!kind || kind === "confirmed") return null;
   return (
     <p role="status" className="mb-3 text-sm leading-relaxed text-white/90">
       {socialAuthResultCopy(locale)[kind]}

@@ -254,6 +254,9 @@ test("authorization code flow verifies a gmail identity once and repeats do not 
   assert.equal(first.response.status, 303);
   const location = first.response.headers.get("location") ?? "";
   assert.equal(new URL(location).searchParams.get("auth"), "confirmed");
+  const cookies = first.response.headers.getSetCookie();
+  assert.ok(cookies.some((c) => c.startsWith("__Host-wd_social_ack=1;")));
+  assert.ok(cookies.some((c) => c.startsWith("__Host-wd_social_state=")));
   assert.equal(location.includes(CODE), false);
   assert.equal(location.includes(idToken), false);
   assert.equal(location.includes("access-token-test"), false);

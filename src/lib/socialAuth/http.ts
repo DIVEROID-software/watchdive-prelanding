@@ -1,3 +1,4 @@
+import { socialAckCookie } from "../socialAuthAcknowledgement.ts";
 // HTTP entry points for Google and Apple signup.
 // Routes stay thin. This module does not import the server-only dependency
 // graph, so node tests can call it with fakes. No token or address is logged.
@@ -82,7 +83,8 @@ function redirectFinish(
 ): Response {
   const headers = noStore(new Headers());
   headers.set("Location", finishUrl(origin, locale, auth));
-  headers.set("Set-Cookie", clearSocialStateCookie());
+  headers.append("Set-Cookie", clearSocialStateCookie());
+  headers.append("Set-Cookie", socialAckCookie(auth === "confirmed"));
   return new Response(null, { status: 303, headers });
 }
 

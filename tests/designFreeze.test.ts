@@ -128,8 +128,11 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // 2026-10-19: owner requested Google and Apple signup on both existing forms.
   // The email fields, phone fields, and 50:50 experiment stay. The buttons are
   // an added control above each form, and the result line sits above the hero form.
+  // 2026-10-19: signup-state QA repair adds a non-DOM React provider and
+  // replaces both forms with a completion panel only for a one-time social
+  // callback acknowledgement. Fresh signup structure and allocation stay.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "ae5f16faa77c1fb92c7b2ac896494b57aa6c55f0cde5f742992b40bb4d37755a");
+  assert.equal(digest, "d657a598030611916b200f29ab31254b9fe7d2f5277bafd053b7b3f2a776e3fb");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

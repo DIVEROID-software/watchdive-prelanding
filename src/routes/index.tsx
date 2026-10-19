@@ -1,3 +1,4 @@
+import { socialAuthResultCopy } from "@/lib/socialAuthResultCopy";
 import { alreadyVerifiedCopy } from "@/lib/i18n/already-verified";
 import { PhoneOptInCard } from "@/components/phone-optin-card";
 import { PhoneNumberFields } from "@/components/phone-number-fields";
@@ -20,7 +21,7 @@ import {
   loadWaitlistCount,
 } from "@/lib/api/waitlist.functions";
 import { EarlyBirdRace } from "@/components/early-bird-race";
-import { SocialAuthEntry, SocialAuthResult } from "@/components/social-auth-entry";
+import { SocialAuthEntry, SocialAuthResult, SocialSignupResultProvider, useSocialSignupCompleted } from "@/components/social-auth-entry";
 import { HeroPhoto } from "@/components/hero-photo";
 import { ProductGallery } from "@/components/product-gallery";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -166,6 +167,7 @@ export const Route = createFileRoute("/")({
 });
 
 export function DesignFrozenLanding() {
+  const locale = useCurrentLocale();
   // The campaign is recorded on arrival rather than at submit. A visitor who
   // lands tagged and then navigates before signing up leaves no query behind,
   // and by the time the form runs the URL that paid for them is gone.
@@ -194,7 +196,7 @@ export function DesignFrozenLanding() {
   }, []);
 
   return (
-    <>
+    <SocialSignupResultProvider key={locale}>
       <StickyLaunchBanner />
       <div className="wd-scroll bg-background text-foreground">
         <Hero />
@@ -211,7 +213,7 @@ export function DesignFrozenLanding() {
         <FAQ />
         <Footer />
       </div>
-    </>
+    </SocialSignupResultProvider>
   );
 }
 
@@ -810,6 +812,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const copy = conversionCopy[locale];
+  const socialCompleted = useSocialSignupCompleted();
   const [pending, setPending] = useState<string | null>(null);
   const [alreadyVerified, setAlreadyVerified] = useState(false);
   const [closed, setClosed] = useState<string | null>(null);
@@ -1131,6 +1134,15 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     // that stops the reload retry is set only when all of them are recorded.
     const current = nextHandle || handle;
     return withdrawEverySignup(current ? [current] : []);
+  }
+
+  if (socialCompleted) {
+    return (
+      <div role="status" aria-live="polite" className="rounded-2xl bg-white/10 p-5 text-white">
+        <div className="text-base font-semibold">{socialAuthResultCopy(locale).confirmed}</div>
+        <p className="mt-2 text-sm text-white/80">{m.referral.successBody}</p>
+      </div>
+    );
   }
 
   if (closed) {
