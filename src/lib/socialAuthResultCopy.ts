@@ -12,7 +12,7 @@ const RESULT: Record<Locale, Record<SocialAuthResultKind, string>> = {
     "open-browser": "Google sign-in does not run in this browser. Open this page yourself in Safari or Chrome. You can continue with email on this page.",
   },
   ko: {
-    confirmed: "명단에 등록되었습니다.",
+    confirmed: "WatchDive 출시 알림 신청이 완료되었습니다.",
     "check-email": "이 주소로 메일을 받을 수 있다면 확인 링크가 발송됩니다.",
     pending: "Apple이 숨긴 주소는 저장되었지만 아직 확인되지 않았습니다. 확인 메일은 보내지 않았습니다. 이 페이지의 이메일 양식을 사용하세요.",
     error: "로그인이 끝나지 않았습니다. 이 페이지의 이메일 양식을 사용할 수 있습니다.",

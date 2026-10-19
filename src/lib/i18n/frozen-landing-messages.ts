@@ -157,7 +157,7 @@ const ko: FrozenLandingMessages = {
   referral: {
     welcome: "친구가 초대했습니다. 이메일을 인증하면 같은 명단에 올라갑니다.",
     welcomeHighlight: "친구가 초대했습니다",
-    successTitle: "명단에 올랐습니다.",
+    successTitle: "WatchDive 출시 알림 신청이 완료되었습니다.",
     successBody: "Kickstarter가 열리는 순간 메일로 알려 드립니다.",
     buddyTitle: "버디에게도",
     buddyBody:
@@ -476,9 +476,9 @@ const ko: FrozenLandingMessages = {
     waitingTitle: "이메일을 인증해 주세요",
     waitingBody: "아직 인증되지 않았습니다. 버튼을 눌러 마무리하세요.",
     confirmButton: "이메일 인증하기",
-    verifiedTitle: "명단 이메일이 인증되었습니다",
+    verifiedTitle: "WatchDive 출시 알림 신청이 완료되었습니다.",
     verifiedBody:
-      "명단에 올랐습니다. 12월 캠페인이 열리는 순간 Kickstarter 링크를 메일로 보내 드립니다.",
+      "이메일 인증이 완료되었습니다. 12월 캠페인이 열리면 Kickstarter 링크를 이메일로 보내 드립니다.",
     buddyTitle: "버디에게도",
     buddyBody: "같이 물에 들어가는 다이버에게 링크를 보내세요.",
     backHome: "WatchDive로 돌아가기",
