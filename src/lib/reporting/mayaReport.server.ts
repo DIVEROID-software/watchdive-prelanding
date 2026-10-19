@@ -91,7 +91,7 @@ export async function handleMayaReport(
     if (
       !p ||
       typeof p.report_id !== "string" ||
-      !/^wd-team-performance-daily-\d{8}$/.test(p.report_id)
+      !/^wd-(?:team|kr)-performance-daily-\d{8}$/.test(p.report_id)
     )
       return json({ ok: false, error: "invalid_report_id" }, 400);
     if (p.action === "lookup") {
@@ -135,7 +135,7 @@ export async function handleMayaReport(
         await api("files.getUploadURLExternal", {
           filename: `${p.report_id}.png`,
           length: png.length,
-          alt_txt: "WatchDive 팀별 누적 인증 이메일 수와 인증당 획득 비용",
+          alt_txt: "WatchDive 광고 가입·인증 성과와 획득 비용",
         })
       ).value;
       const url = new URL(upload.upload_url);
@@ -172,7 +172,7 @@ export async function handleMayaReport(
         return json({ ok: false, error: "invalid_upload_ticket" }, 400);
       const done = (
         await api("files.completeUploadExternal", {
-          files: [{ id: p.file_id, title: `WatchDive 팀별 성과 · ${p.report_id.slice(-8)}` }],
+          files: [{ id: p.file_id, title: `WatchDive ${p.report_id.startsWith("wd-kr-") ? "한국 광고" : "팀별"} 성과 · ${p.report_id.slice(-8)}` }],
           channel_id: CHANNEL,
           initial_comment: p.text,
         })

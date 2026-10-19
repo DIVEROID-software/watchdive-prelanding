@@ -140,3 +140,17 @@ test("upstream failures cannot expose secrets", async () => {
   assert.equal(r.status, 502);
   assert.equal((await r.json()).error, "slack_request_failed");
 });
+
+// KR reports have a separate receipt namespace so a legacy report delivered on
+// the transition date cannot suppress the current campaign report.
+test("KR report lookup is isolated from legacy report and rejects arbitrary namespaces", async () => {
+  const t = transport();
+  const result = await (await handleMayaReport(req({action: "lookup", report_id: "wd-kr-performance-daily-20261009"}), env, t.fetcher)).json();
+  assert.equal(result.ok, true);
+  assert.equal(result.matches.length, 0);
+  for (const bad of ["wd-any-performance-daily-20261009", "wd-kr-performance-daily-20261009-extra"]) {
+    const isolated = transport();
+    assert.equal((await handleMayaReport(req({action: "lookup", report_id: bad}), env, isolated.fetcher)).status, 400);
+    assert.equal(isolated.calls.length, 1);
+  }
+});
