@@ -21,7 +21,7 @@ import { parseUnsubscribeToken, unsubscribeTokenLocale } from "./unsubscribeToke
 export type UnsubscribeDependencies = {
   /** Undefined when the database is not configured. */
   store?: LaunchStore;
-  env?: TokenEnvironment;
+  env?: TokenEnvironment & { WATCHDIVE_RESERVATION_UNSUBSCRIBE_SECRET?: string };
   now?: () => Date;
 };
 
@@ -83,12 +83,17 @@ export async function handleUnsubscribe(
 ): Promise<Response> {
   const fallbackLocale = unsubscribeTokenLocale(token) ?? DEFAULT_LOCALE;
   let secret: string;
+  const version = token.startsWith("u2.") ? "u2" : "u1";
   try {
-    secret = requireSecret(dependencies.env ?? process.env);
+    const env = dependencies.env ?? process.env;
+    secret = version === "u2"
+      ? (env.WATCHDIVE_RESERVATION_UNSUBSCRIBE_SECRET ?? "").trim()
+      : requireSecret(env);
+    if (Buffer.byteLength(secret, "utf8") < 32) throw new Error("unsubscribe signing key unavailable");
   } catch {
     return htmlResponse(503, "unavailable", fallbackLocale);
   }
-  const parsed = parseUnsubscribeToken(token, secret);
+  const parsed = parseUnsubscribeToken(token, secret, version);
   if (!parsed) return htmlResponse(400, "invalid", fallbackLocale);
   const { locale } = parsed;
 

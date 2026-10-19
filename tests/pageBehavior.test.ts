@@ -63,9 +63,15 @@ test("email, phone and addresses never fit a behavior summary", () => {
 test("the behavior store does not keep an address or a raw user agent", () => {
   // The request handler may classify a crawler from the user-agent header.
   // That string is not logged and is not a column. behaviorNotion never sees it.
-  const server = readFileSync(new URL("../src/lib/api/pageBehavior.server.ts", import.meta.url), "utf8");
+  const server = readFileSync(
+    new URL("../src/lib/api/pageBehavior.server.ts", import.meta.url),
+    "utf8",
+  );
   const notion = readFileSync(new URL("../src/lib/api/behaviorNotion.ts", import.meta.url), "utf8");
-  const audience = readFileSync(new URL("../src/lib/api/behaviorAudience.ts", import.meta.url), "utf8");
+  const audience = readFileSync(
+    new URL("../src/lib/api/behaviorAudience.ts", import.meta.url),
+    "utf8",
+  );
   const source = `${server}\n${notion}\n${audience}`;
   assert.equal(source.includes("x-forwarded-for"), false);
   assert.equal(notion.includes("user-agent"), false);
@@ -384,13 +390,14 @@ test("the cron's retention step cannot throw into the reminder result", async ()
   assert.equal(lines[1], "[page-behavior] retention archived 3");
 });
 
-test("retention runs inside the existing daily cron, not a new cron entry", () => {
+test("retention is gated to daily office maintenance; Vercel schedules are removed", () => {
   const vercel = JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
-  assert.equal(vercel.crons.length, 1);
+  assert.equal(vercel.crons.length, 0);
   const cron = readFileSync(
     new URL("../src/lib/verification/reminderCron.server.ts", import.meta.url),
     "utf8",
   );
+  assert.ok(cron.includes("if (maintenance) await purgeExpiredBehavior()"));
   assert.ok(
     cron.indexOf("await purgeExpiredBehavior()") > cron.indexOf("runVerificationReminders("),
   );

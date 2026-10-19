@@ -8,6 +8,11 @@
 // language. It is never eligibility and it is never inferred from a phone
 // number or an IP. Locale is a language, never a country.
 //
+// `Verified at` is not read here. The mail run passes a schedule so a row is
+// invited only at Verified at plus three minutes, and only on or after the
+// prospective start. A live Reservation paid checkbox suppresses that inbox.
+// A test-mode payment does not.
+//
 // Kept free of path-alias imports so `npm test` can load it directly.
 import { localeFromCountry } from "../i18n/auto-locale.ts";
 import { DEFAULT_LOCALE, matchLocale, parseLocalePath, type Locale } from "../i18n/locale.ts";
@@ -15,6 +20,9 @@ import { parseLaunchMarker } from "../launchMail/audience.ts";
 import { reservationCanonicalEmail } from "../reservation/emailIdentity.ts";
 import { isLeadId } from "../verification/token.ts";
 import { parseReservationMarker } from "./campaign.ts";
+import { delaySkipReason, type MailSchedule } from "./schedule.ts";
+
+export type { MailSchedule } from "./schedule.ts";
 
 const EMAIL_SHAPE = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/;
 
@@ -43,7 +51,20 @@ export type ReservationRow = {
   launchMail?: string;
   /** Raw Reservation mail cell, when that column exists. */
   reservationMail?: string;
+  /**
+   * Raw `Verified at` cell. Absent when the cell is empty. Signup time is a
+   * different property and is not stored here.
+   */
+  verifiedAt?: string;
+  /**
+   * Reservation paid checkbox plus Reservation mode. Absent or omitted means
+   * the mirror columns were not on the page, which is not a live payment.
+   * `unreadable` fails closed for this row. `test` does not suppress.
+   */
+  payment?: ReservationPaymentState;
 };
+
+export type ReservationPaymentState = "absent" | "unpaid" | "test" | "live" | "unreadable";
 
 export type SkipReason =
   | "not_verified"
@@ -62,7 +83,15 @@ export type SkipReason =
   | "unrecognised_marker"
   | "unrecognised_address"
   | "no_address"
-  | "no_lead_id";
+  | "no_lead_id"
+  | "missing_verified_at"
+  | "invalid_verified_at"
+  | "not_due"
+  | "before_cutoff"
+  | "cutoff_unconfigured"
+  | "paid_live"
+  | "paid_live_address"
+  | "paid_unreadable";
 
 export type Recipient = { row: ReservationRow; locale: Locale };
 
@@ -78,10 +107,12 @@ const ADDRESS_POISON: Partial<Record<SkipReason, SkipReason>> = {
   already_sent: "already_sent_address",
   held: "held_address",
   unrecognised_marker: "unrecognised_address",
+  paid_live: "paid_live_address",
 };
 
 const POISON_RANK: Partial<Record<SkipReason, number>> = {
-  unsubscribed: 6,
+  unsubscribed: 7,
+  paid_live: 6,
   suppressed: 5,
   suspect: 4,
   unrecognised_marker: 3,
@@ -92,6 +123,8 @@ const POISON_RANK: Partial<Record<SkipReason, number>> = {
 /** Why this row itself cannot be mailed, before address-wide holds. */
 export function reservationSkipReason(row: ReservationRow): SkipReason | undefined {
   if (!EMAIL_SHAPE.test(row.email.trim())) return "no_address";
+  if (row.payment === "live") return "paid_live";
+  if (row.payment === "unreadable") return "paid_unreadable";
   if (row.status === "suppressed") return "suppressed";
   if (row.status === "unsubscribed") return "unsubscribed";
   if (row.status !== "verified" || !row.emailVerified) return "not_verified";
@@ -147,6 +180,12 @@ export type AudienceSelection = {
    * callback receives the lead id as stored.
    */
   leadHasReceipt?: (leadId: string) => boolean;
+  /**
+   * When set, a row is eligible only at Verified at plus three minutes and
+   * only on or after the prospective start. The mail run always sets this.
+   * Callers that omit it keep the older static selection.
+   */
+  schedule?: MailSchedule;
 };
 
 /**
@@ -166,7 +205,11 @@ export function selectAudience(
   const bump = (reason: SkipReason) => {
     skipped[reason] = (skipped[reason] ?? 0) + 1;
   };
-  const own = rows.map((row) => reservationSkipReason(row));
+  const own = rows.map((row) => {
+    const reason = reservationSkipReason(row);
+    if (reason || !selection.schedule) return reason;
+    return delaySkipReason(row, selection.schedule);
+  });
   const poison = new Map<string, SkipReason>();
   rows.forEach((row, index) => {
     const reason = own[index];

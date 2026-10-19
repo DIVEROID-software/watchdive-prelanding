@@ -1,10 +1,11 @@
 // Reservation-invite HTML and text. Rendering is a pure function of its
 // inputs so a resumed send stays byte-identical for the provider idempotency
-// key. Inline CSS only. The only image is the official wordmark on our origin.
+// key. Inline CSS only. Images are the official wordmark and approved real pool photo on our origin.
 // No script, no third-party image, no recipient address.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
 import type { Locale } from "../i18n/locale.ts";
+import { RESERVATION_PRESENTATION } from "../../components/reservation/presentation.ts";
 import { LABEL_SEPARATOR } from "../launchMail/copy.ts";
 import { RESERVATION_COPY, RESERVATION_TAGLINE, copyParagraphs } from "./copy.ts";
 import {
@@ -44,7 +45,7 @@ const CANVAS = "#F6FAFC";
 const PAPER = "#FFFFFF";
 const LINE = "#D5E3EA";
 const MUTED = "#526B7A";
-const WORDMARK_PATH = "/brand/reservation/diveroid-wordmark-white-transparent.png";
+const WORDMARK_PATH = "/brand/reservation/diveroid-wordmark-color-transparent.png";
 
 const FORBIDDEN: readonly RegExp[] = [
   /\b100\s+backers\b/i,
@@ -163,6 +164,7 @@ export function renderReservationMail(input: ReservationMailInput): RenderedRese
   if (!resolved.ok) throw new Error("Reservation mail merchant identity mismatch");
   const merchant = resolved.merchant;
   const copy = RESERVATION_COPY[input.locale];
+  const presentation = RESERVATION_PRESENTATION[input.locale];
   const inviteUrl = requireInviteUrl(input.inviteUrl, input.locale);
   const unsubscribeUrl = requireHttps(input.unsubscribeUrl);
   const privacyUrl = requireHttps(input.privacyUrl);
@@ -192,27 +194,26 @@ export function renderReservationMail(input: ReservationMailInput): RenderedRese
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${CANVAS}" style="width:100%;border-collapse:collapse;"><tr><td class="wd-shell" align="center" style="padding:40px 16px;">`,
     '<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->',
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-spacing:0;">',
-    `<tr><td class="wd-pad" bgcolor="${DEEP}" align="left" style="padding:32px 40px;background-color:${DEEP};border-radius:24px 24px 0 0;">`,
+    `<tr><td class="wd-pad" bgcolor="${PAPER}" align="left" style="padding:32px 40px 12px;background-color:${PAPER};border-radius:24px 24px 0 0;">`,
     `<img src="${wordmark}" width="160" height="24" alt="DIVEROID" style="display:block;width:160px;height:auto;border:0;outline:none;text-decoration:none;">`,
     "</td></tr>",
     `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:36px 40px 32px;background-color:${PAPER};">`,
-    `<h1 class="wd-title" style="margin:0 0 18px;color:${INK};font-family:${FONT};font-size:28px;font-weight:500;line-height:1.35;letter-spacing:${tracking};word-break:${wordBreak};overflow-wrap:break-word;">${escapeHtml(copy.heading)}</h1>`,
-    body(copy.intro),
-    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 18px;"><tr>`,
-    `<td style="padding:16px 18px;border:1px solid ${LINE};border-left:4px solid ${MID};border-radius:10px;background-color:${FOAM};">`,
-    p(
-      "margin:0;color:#10212E;font-size:15px;font-weight:400;line-height:1.6;",
-      escapeHtml(copy.disclosure),
-    ),
-    "</td></tr></table>",
+    `<h1 class="wd-title" style="margin:0 0 24px;color:${INK};font-family:${FONT};font-size:28px;font-weight:500;line-height:1.35;letter-spacing:${tracking};word-break:${wordBreak};overflow-wrap:break-word;">${escapeHtml(presentation.headline).replaceAll("\n", "<br>")}</h1>`,
+    `<img src="${new URL(inviteUrl).origin}/brand/reservation/watchdive-underwater.jpg" width="520" alt="${escapeHtml(presentation.imageAlt)}" style="display:block;width:100%;height:auto;border:0;border-radius:12px;margin:0 0 28px;">`,
+    `<h2 style="margin:0 0 18px;color:${INK};font-family:${FONT};font-size:23px;font-weight:500;line-height:1.4;word-break:${wordBreak};">${escapeHtml(presentation.benefit)}</h2>`,
+    `<p style="margin:0 0 8px;color:${DEEP};font-family:${FONT};font-size:64px;line-height:1.1;">$3</p>`,
+    p(`color:${MUTED};font-size:12px;line-height:1.5;`, escapeHtml(presentation.feeLabel)),
+    body(presentation.description),
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="${MID}" style="background-color:${MID};border:1px solid ${MID};border-radius:12px;mso-padding-alt:18px 20px;">`,
-    `<a href="${invite}" rel="noreferrer noopener" style="display:block;padding:18px 20px;border-radius:12px;color:#FFFFFF;font-family:${FONT};font-size:16px;font-weight:600;line-height:24px;text-align:center;text-decoration:none;mso-padding-alt:0;">${escapeHtml(copy.button)}</a>`,
+    `<a href="${invite}" rel="noreferrer noopener" style="display:block;padding:18px 20px;border-radius:12px;color:#FFFFFF;font-family:${FONT};font-size:16px;font-weight:600;line-height:24px;text-align:center;text-decoration:none;mso-padding-alt:0;">${escapeHtml(presentation.cta)}</a>`,
     "</td></tr></table>",
     `<p style="margin:16px 0 0;padding:12px 14px;border:1px solid ${LINE};border-radius:10px;background-color:${FOAM};word-break:break-all;overflow-wrap:anywhere;text-align:center;"><a href="${invite}" rel="noreferrer noopener" style="color:${MID};font-family:${FONT};font-size:13px;line-height:20px;text-decoration:underline;">${escapeHtml(copy.fallback)}</a></p>`,
+    p(`margin:24px 0 0;color:${MUTED};font-size:12px;line-height:1.75;`, escapeHtml(copy.disclosure)),
     "</td></tr>",
     `<tr><td bgcolor="${PAPER}" style="padding:0;background-color:${PAPER};border-radius:0 0 24px 24px;font-size:0;line-height:24px;">&nbsp;</td></tr>`,
     '<tr><td style="padding:24px 20px 0;text-align:center;">',
     p("margin:0 auto 8px;color:#526B7A;font-size:13px;line-height:20px;", escapeHtml(tagline)),
+    p("margin:0 auto 8px;color:#526B7A;font-size:12px;line-height:20px;", escapeHtml(copy.intro)),
     p("margin:0 auto 10px;color:#526B7A;font-size:12px;line-height:20px;", escapeHtml(copy.reason)),
     p(
       "margin:0 auto 10px;font-size:12px;line-height:20px;",

@@ -11,6 +11,11 @@
 // window. A clear provider rejection is not replayed either. After the window,
 // an unfinished intent is a hold and is not sent again.
 //
+// Eligibility uses Verified at plus three minutes, and only when that instant
+// is on or after the configured prospective start. Suppression and a live
+// payment are read again immediately before a provider call. A test payment
+// does not suppress. A customer send also requires the live reservation gate.
+//
 // Kept free of path-alias imports so `npm test` can load it directly.
 import { SUPPORTED_LOCALES, privacyPath, termsPath, type Locale } from "../i18n/locale.ts";
 import { reservationCanonicalEmail } from "../reservation/emailIdentity.ts";
@@ -21,7 +26,20 @@ import {
   type TokenEnvironment,
 } from "../verification/token.ts";
 import { createUnsubscribeToken, unsubscribeUrl } from "../launchMail/unsubscribeToken.ts";
-import { selectAudience, type ReservationRow, type SkipReason } from "./audience.ts";
+import type { EnvSource } from "../reservation/config.ts";
+import { selectAudience, reservationSkipReason, type ReservationRow, type SkipReason } from "./audience.ts";
+import {
+  assertLiveCustomerSend,
+  liveGateConfigProblem,
+  probeProductionCheckout,
+  type LiveGateResult,
+} from "./liveGate.ts";
+import {
+  delaySkipReason,
+  parseVerifiedInstant,
+  RESERVATION_INVITE_DELAY_MS,
+  type MailSchedule,
+} from "./schedule.ts";
 import {
   RESERVATION_CAMPAIGN_ID,
   failedMarker,
@@ -85,6 +103,11 @@ export type ReservationRunOptions = {
   limit?: number;
   receiptDir: string;
   unsubscribeMailto?: string;
+  /**
+   * ISO-8601 instant with a timezone. Rows whose Verified at is earlier are
+   * not invited. A send refuses when this is omitted.
+   */
+  notBefore?: string;
 };
 
 export type ReservationDependencies = {
@@ -92,10 +115,14 @@ export type ReservationDependencies = {
   send: (message: ReservationMessage) => Promise<void>;
   /** Test double only. Production uses issueReservationInvite. */
   signInvite?: ReservationInviteSigner;
-  env?: TokenEnvironment & { WATCHDIVE_RESERVATION_TOKEN_SECRET?: string };
+  env?: TokenEnvironment & { WATCHDIVE_RESERVATION_TOKEN_SECRET?: string; WATCHDIVE_RESERVATION_UNSUBSCRIBE_SECRET?: string };
   now?: () => Date;
   sleep?: (ms: number) => Promise<void>;
   writeSample?: (locale: Locale, mail: RenderedReservationMail) => Promise<void>;
+  /** Test double. Production uses assertLiveCustomerSend and the read-only probe. */
+  liveGate?: (env: EnvSource) => Promise<LiveGateResult>;
+  /** Test double for the read-only Checkout probe. Ignored when liveGate is set. */
+  checkoutProbe?: Parameters<typeof assertLiveCustomerSend>[1];
 };
 
 export type ReservationAbort =
@@ -114,7 +141,11 @@ export type ReservationAbort =
   | "receipt_lock_held"
   | "receipt_write_failed"
   | "reservation_mail_write_rejected"
-  | "template_rejected";
+  | "template_rejected"
+  | "prospective_start_missing"
+  | "verified_at_unreadable"
+  | "paid_columns_unreadable"
+  | "live_gate_refused";
 
 export type PlannedActions = {
   deliver: number;
@@ -148,6 +179,10 @@ export type ReservationRunResult = {
   samples: Locale[];
   samplesUnsigned: boolean;
   helperLoaded: boolean;
+  /** Rows held at send time because suppression, payment, or the delay changed. */
+  recheckSkipped: number;
+  /** Configured prospective start, when it parsed. Never a secret. */
+  notBefore?: string;
   /** True when the reservation token secret is present. The secret is never stored. */
   tokenSecretReady: boolean;
 };
@@ -179,6 +214,7 @@ function emptyResult(mode: ReservationRunOptions["mode"]): ReservationRunResult 
     samplesUnsigned: false,
     helperLoaded: true,
     tokenSecretReady: false,
+    recheckSkipped: 0,
   };
 }
 
@@ -258,11 +294,24 @@ export async function runReservationMail(
   if (options.limit !== undefined && !(Number.isInteger(options.limit) && options.limit > 0)) {
     return abort("invalid_input", "--limit must be a positive whole number");
   }
+  const notBeforeRaw = options.notBefore?.trim() ?? "";
+  let notBeforeMs: number | undefined;
+  if (notBeforeRaw) {
+    const parsedStart = parseVerifiedInstant(notBeforeRaw);
+    if (!parsedStart.ok) {
+      return abort("invalid_input", "--not-before must be an ISO-8601 instant with a timezone");
+    }
+    notBeforeMs = parsedStart.ms;
+    result.notBefore = notBeforeRaw;
+  }
 
   let secret: string;
   let publicOrigin: string;
+  const reservationUnsubscribeSecret = (env.WATCHDIVE_RESERVATION_UNSUBSCRIBE_SECRET ?? "").trim();
+  const unsubscribeVersion = reservationUnsubscribeSecret ? "u2" : "u1";
   try {
-    secret = requireSecret(env);
+    secret = reservationUnsubscribeSecret || requireSecret(env);
+    if (Buffer.byteLength(secret, "utf8") < 32) throw new Error("Reservation unsubscribe secret must be at least 32 bytes");
     publicOrigin = requirePublicOrigin(env);
   } catch (error) {
     return abort("not_configured", error instanceof Error ? error.message : "not configured");
@@ -324,6 +373,16 @@ export async function runReservationMail(
     return abort("audience_query_failed", "audience query failed");
   }
   result.rowsScanned = rows.length;
+  if (schema.verifiedAt === "wrong_type") {
+    rows = rows.map((row) => ({ ...row, verifiedAt: "wrong-type" }));
+  }
+  if (schema.reservationPaid === "wrong_type" || schema.reservationMode === "wrong_type") {
+    rows = rows.map((row) => ({ ...row, payment: "unreadable" as const }));
+  }
+  const schedule: MailSchedule = {
+    nowMs: clock().getTime(),
+    ...(notBeforeMs !== undefined ? { notBeforeMs } : {}),
+  };
 
   const paths = receiptPaths(options.receiptDir);
   let ledger = await loadLedger(paths.file);
@@ -334,6 +393,7 @@ export async function runReservationMail(
   }
   const ledgerTrusted = !ledgerUnsafe(ledger);
   const audience = selectAudience(rows, {
+    schedule,
     ...(ledgerTrusted
       ? { leadHasReceipt: (leadId: string) => ledger.byLead.has(leadId.toLowerCase()) }
       : {}),
@@ -374,7 +434,7 @@ export async function runReservationMail(
   }
 
   const unsubscribeFor = (leadId: string, locale: Locale) =>
-    unsubscribeUrl(publicOrigin, createUnsubscribeToken(leadId, locale, secret));
+    unsubscribeUrl(publicOrigin, createUnsubscribeToken(leadId, locale, secret, unsubscribeVersion));
   const pageUrl = (path: string) => new URL(path, publicOrigin).toString();
   const renderFor = (locale: Locale, leadId: string, invite: string) =>
     renderReservationMail({
@@ -386,6 +446,66 @@ export async function runReservationMail(
       postalAddress: postal,
       legalName,
     });
+
+  if (!notBeforeRaw) {
+    blockers.push(
+      "Prospective start is not configured (WATCHDIVE_RESERVATION_MAIL_NOT_BEFORE or --not-before). A send would refuse.",
+    );
+  }
+  if (schema.verifiedAt === "missing" || schema.verifiedAt === "wrong_type") {
+    blockers.push("`Verified at` is missing or not a date, so nobody can become eligible");
+  }
+  if (schema.reservationPaid === "wrong_type" || schema.reservationMode === "wrong_type") {
+    blockers.push(
+      "`Reservation paid` or `Reservation mode` is the wrong type, so paid state fails closed",
+    );
+  }
+  const liveConfigProblem = liveGateConfigProblem(env as EnvSource);
+  if (liveConfigProblem) blockers.push(liveConfigProblem);
+
+  const recheck = async (row: ReservationRow): Promise<SkipReason | "unreadable" | undefined> => {
+    let fresh: ReservationRow | undefined;
+    try {
+      fresh = await dependencies.store.readRow(row.pageId);
+    } catch {
+      return "unreadable";
+    }
+    if (!fresh || fresh.leadId.toLowerCase() !== row.leadId.toLowerCase()) return "unreadable";
+    return (
+      reservationSkipReason(fresh) ??
+      delaySkipReason(fresh, {
+        nowMs: clock().getTime(),
+        ...(notBeforeMs !== undefined ? { notBeforeMs } : {}),
+      })
+    );
+  };
+
+  if (sending && !notBeforeRaw) {
+    return abort(
+      "prospective_start_missing",
+      "Set WATCHDIVE_RESERVATION_MAIL_NOT_BEFORE or --not-before before any send",
+    );
+  }
+  if (sending && (schema.verifiedAt === "missing" || schema.verifiedAt === "wrong_type")) {
+    return abort("verified_at_unreadable", "`Verified at` must be a date column before any send");
+  }
+  if (
+    sending &&
+    (schema.reservationPaid === "wrong_type" || schema.reservationMode === "wrong_type")
+  ) {
+    return abort(
+      "paid_columns_unreadable",
+      "`Reservation paid` must be a checkbox and `Reservation mode` must be a select",
+    );
+  }
+  if (sending) {
+    const decide =
+      dependencies.liveGate ??
+      ((source: EnvSource) =>
+        assertLiveCustomerSend(source, dependencies.checkoutProbe ?? probeProductionCheckout));
+    const gate = await decide(env as EnvSource);
+    if (!gate.ok) return abort("live_gate_refused", gate.problem);
+  }
 
   if (!sending) {
     for (const locale of SUPPORTED_LOCALES) {
@@ -571,6 +691,13 @@ export async function runReservationMail(
           } else if (action.reason === "unresolved") result.unresolved += 1;
           return "skip" as const;
         }
+        if (action.type === "deliver") {
+          const held = await recheck(row);
+          if (held !== undefined) {
+            result.recheckSkipped += 1;
+            return "skip" as const;
+          }
+        }
         if (action.type === "record_only") {
           let notionState: ReceiptRecord["notion"] = "ok";
           if (action.writeNotion) {
@@ -619,6 +746,11 @@ export async function runReservationMail(
       const intentStarted = step.firstIntentAt;
       await acquire();
       if (stopped) break;
+      const heldNow = await recheck(row);
+      if (heldNow !== undefined) {
+        result.recheckSkipped += 1;
+        continue;
+      }
       try {
         await dependencies.send(message);
         const acceptedAt = clock().toISOString();
@@ -766,6 +898,11 @@ export function formatReservationSummary(result: ReservationRunResult): string {
   }
   lines.push(`Rows scanned: ${result.rowsScanned}`);
   lines.push(`Eligible: ${result.eligible}`);
+  lines.push(
+    `Invite delay: ${RESERVATION_INVITE_DELAY_MS} ms after Verified at. Signup time is not used.`,
+  );
+  lines.push(`Prospective start: ${result.notBefore ?? "not configured"}`);
+  if (result.recheckSkipped) lines.push(`Send-time recheck held: ${result.recheckSkipped}`);
   lines.push("Language (not country):");
   for (const locale of SUPPORTED_LOCALES) {
     lines.push(`  ${locale.padEnd(6)} ${result.byLocale[locale] ?? 0}`);

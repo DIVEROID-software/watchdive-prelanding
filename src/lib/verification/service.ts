@@ -41,12 +41,13 @@ import type { PollGate } from "./pollGate.ts";
 import type { VerificationMailer } from "./resend.ts";
 import { observeSignupCountry, type SignupCountryProbe } from "../attribution.ts";
 import { canonicalEmail } from "../api/abuse.ts";
-import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
+import { DEFAULT_LOCALE, isLocale, parseLocalePath, type Locale } from "../i18n/locale.ts";
 import type { TokenEnvironment } from "./token.ts";
 import {
   createVerificationToken,
   deterministicMetaEventId,
   deterministicSubmitEventId,
+  isLeadId,
   isVerificationTokenShape,
   newLeadId,
   parseVerificationToken,
@@ -133,6 +134,14 @@ export type RequestVerificationInput = {
   networkSendBlocked: boolean;
   /** Stored only on a new consented, non-suspect row. */
   experiment?: ExperimentContext;
+  /** New rows only. Defaults to email. A resend does not write this. */
+  signupMethod?: "email" | "google" | "apple";
+  googleSubject?: string;
+  appleSubject?: string;
+  authVerificationProvenance?: string;
+  signupLocale?: string;
+  /** Social creates fail closed when the provider subject column is missing. */
+  requireProviderSubject?: boolean;
 };
 
 export type ServiceDependencies = {
@@ -187,6 +196,23 @@ function leadExperiment(input: RequestVerificationInput): { experiment?: Experim
 
 function pendingResponse(handle: string): PendingResponse {
   return { ok: true, status: "pending", message: GENERIC_PENDING_MESSAGE, handle };
+}
+
+/** Identity columns for a new row only. `startAttempt` never calls this. */
+function newRowIdentity(input: RequestVerificationInput) {
+  const signupMethod = input.signupMethod ?? "email";
+  return {
+    signupMethod,
+    ...(input.authVerificationProvenance
+      ? { authVerificationProvenance: input.authVerificationProvenance }
+      : signupMethod === "email"
+        ? { authVerificationProvenance: "email:double-opt-in" as const }
+        : {}),
+    ...(input.googleSubject ? { googleSubject: input.googleSubject } : {}),
+    ...(input.appleSubject ? { appleSubject: input.appleSubject } : {}),
+    ...(input.signupLocale ? { signupLocale: input.signupLocale } : {}),
+    ...(input.requireProviderSubject ? { requireProviderSubject: true as const } : {}),
+  };
 }
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -325,6 +351,7 @@ export async function requestVerificationService(
         // Nothing was sent for it: a later consented, non-abusive submit can
         // still open its one submit Lead. Empty is only for pre-release rows.
         measurementState: MEASUREMENT_CONSENT_WITHHELD,
+        ...newRowIdentity(input),
       });
     }
     return floor(pendingResponse(decoyHandle()));
@@ -356,6 +383,7 @@ export async function requestVerificationService(
       measurementState: consentRequested
         ? MEASUREMENT_CONSENT_GRANTED
         : MEASUREMENT_CONSENT_WITHHELD,
+      ...newRowIdentity(input),
     });
     // The server leg of the browser's submit Lead, same id, through the row
     // gate (a No thanks may already have landed). Never fails the signup.
@@ -449,6 +477,119 @@ async function scheduleWelcome(
   } catch {
     // Best effort by design. The confirmation already succeeded.
   }
+}
+
+function welcomeLocale(record: LeadRecord): Locale {
+  if (isLocale(record.signupLocale)) return record.signupLocale;
+  if (record.landingPath) {
+    try {
+      return parseLocalePath(record.landingPath).locale;
+    } catch {
+      return DEFAULT_LOCALE;
+    }
+  }
+  return DEFAULT_LOCALE;
+}
+
+/**
+ * First verification of a social row. An already-verified, duplicate, or
+ * unsubscribed row is left untouched: `markVerified` always rewrites Verified at.
+ */
+export async function completeSocialVerification(
+  record: LeadRecord,
+  dependencies: ServiceDependencies,
+  context: ConversionContext,
+  now: Date,
+): Promise<"verified" | "already"> {
+  if (
+    record.duplicate ||
+    record.status === "unsubscribed" ||
+    record.emailVerified ||
+    record.status === "verified" ||
+    record.verifiedAt
+  ) {
+    return "already";
+  }
+  if (!isLeadId(record.leadId)) return "already";
+  const fresh = await dependencies.store.reread(record.pageId).catch(() => undefined);
+  if (
+    !fresh ||
+    fresh.duplicate ||
+    fresh.status === "unsubscribed" ||
+    fresh.emailVerified ||
+    fresh.status === "verified" ||
+    fresh.verifiedAt ||
+    !isLeadId(fresh.leadId)
+  ) {
+    return "already";
+  }
+  const secret = requireSecret(dependencies.env ?? process.env);
+  const metaEventId = deterministicMetaEventId(fresh.leadId, secret);
+  const verifiedAt = now.toISOString();
+  await dependencies.store.markVerified(fresh.pageId, { verifiedAt, metaEventId });
+  await sendConversions(
+    { ...fresh, emailVerified: true, status: "verified", verifiedAt },
+    metaEventId,
+    false,
+    context,
+    dependencies,
+    secret,
+  );
+  await scheduleWelcome({ ...fresh, emailVerified: true, status: "verified" }, dependencies, now, welcomeLocale(fresh));
+  return "verified";
+}
+
+/**
+ * Sends one confirmation mail for the row's current Lead ID.
+ * Does not call `startAttempt` and does not move Verified at.
+ * Without `noteVerificationSend`, sends nothing.
+ */
+export async function sendSocialVerificationMail(
+  record: LeadRecord,
+  dependencies: ServiceDependencies,
+  now: Date,
+  locale: Locale,
+): Promise<"sent" | "skipped"> {
+  if (!dependencies.store.noteVerificationSend) return "skipped";
+  if (!isLeadId(record.leadId)) return "skipped";
+  if (
+    record.duplicate ||
+    record.status === "unsubscribed" ||
+    record.emailVerified ||
+    record.status === "verified" ||
+    record.verifiedAt
+  ) {
+    return "skipped";
+  }
+  if (!attemptCooled(record, now.getTime()) || record.sends >= VERIFICATION_MAX_SENDS) return "skipped";
+  const env = dependencies.env ?? process.env;
+  let secret: string;
+  let publicOrigin: string;
+  try {
+    secret = requireSecret(env);
+    publicOrigin = requirePublicOrigin(env);
+  } catch {
+    return "skipped";
+  }
+  const token = createVerificationToken(
+    record.leadId,
+    now.getTime() + VERIFICATION_TTL_MS,
+    false,
+    secret,
+    locale,
+  );
+  await dependencies.mailer.send({
+    to: record.email,
+    token,
+    leadId: record.leadId,
+    publicOrigin,
+    locale,
+  });
+  await dependencies.store.noteVerificationSend(record.pageId, {
+    sends: record.sends + 1,
+    sentAt: now.toISOString(),
+  });
+  return "sent";
 }
 
 export async function confirmVerificationService(

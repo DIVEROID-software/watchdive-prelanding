@@ -1,12 +1,11 @@
-// Server-only assembly of the daily confirmation-reminder run.
+// Server-only assembly of the office Mac mini confirmation-reminder tick.
 //
 // Reached solely from the cron route, so the Notion, Resend, Slack and cron
 // secrets have no path into a client bundle.
 import { createBehaviorNotion } from "../api/behaviorNotion.ts";
 import { checkCronAuthorization } from "./cronAuth.ts";
-import { createSlackPoster } from "./deliveryAlert.ts";
 import { createNotionReminderStore, createNotionRequest } from "./notionLead.ts";
-import { formatReminderSummary, runVerificationReminders } from "./reminder.ts";
+import { runVerificationReminders } from "./reminder.ts";
 import { createResendMailer } from "./resend.ts";
 
 function json(status: number, body: unknown): Response {
@@ -19,7 +18,7 @@ function json(status: number, body: unknown): Response {
 export async function handleVerificationReminderCron(request: Request): Promise<Response> {
   const auth = checkCronAuthorization(
     request.headers.get("authorization"),
-    process.env.CRON_SECRET,
+    process.env.WATCHDIVE_REMINDER_CRON_SECRET,
   );
   if (auth === "not_configured") {
     console.error("[watchdive] verification_reminder_refused", { reason: "cron_secret_not_set" });
@@ -27,6 +26,9 @@ export async function handleVerificationReminderCron(request: Request): Promise<
   }
   if (auth !== "authorized") return json(401, { ok: false });
 
+  const params = new URL(request.url).searchParams;
+  const dryRun = params.get("mode") === "dry-run";
+  const maintenance = !dryRun && params.get("maintenance") === "1";
   const databaseId = process.env.NOTION_WAITLIST_DB_ID;
   if (!databaseId) return json(503, { ok: false });
 
@@ -35,6 +37,8 @@ export async function handleVerificationReminderCron(request: Request): Promise<
     result = await runVerificationReminders({
       store: createNotionReminderStore(createNotionRequest(), databaseId),
       mailer: createResendMailer(),
+      dryRun,
+      skipUnsentSweep: !maintenance,
     });
   } catch (error) {
     console.error("[watchdive] verification_reminder_failed", {
@@ -45,15 +49,13 @@ export async function handleVerificationReminderCron(request: Request): Promise<
 
   // Counts only — the same object is safe for the log, Slack and the response.
   console.log("[watchdive] verification_reminder_run", result);
-  const summary = formatReminderSummary(result);
-  if (summary) await createSlackPoster()(summary);
-  await purgeExpiredBehavior();
-  return json(200, { ok: !result.aborted, ...result });
+  if (maintenance) await purgeExpiredBehavior();
+  return json(200, { ok: !result.aborted, policy: "wd-verification-reminder-24h-v1", ...result });
 }
 
 /**
- * Page-behaviour retention rides on this daily cron (Hobby allows few cron
- * entries). It runs after the reminder pass and can never change that
+ * Page-behaviour retention runs only on the office tick marked maintenance.
+ * It runs once daily after the reminder pass and can never change that
  * result: failures are logged inside purgeExpired, and anything thrown here
  * is reduced to one line.
  */

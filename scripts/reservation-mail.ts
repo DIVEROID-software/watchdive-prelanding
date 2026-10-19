@@ -23,9 +23,13 @@
 //     --legal-name "<verified UK legal name>"
 //
 // A send also needs WATCHDIVE_RESERVATION_TOKEN_SECRET (at least 32 bytes).
-// That secret signs the invite. It is not the verification secret. Stripe is
-// not read. Dry run prints counts only. It does not send, and it does not
-// write Notion or the receipt ledger.
+// That secret signs the invite. It is not the verification secret. A send
+// reads WATCHDIVE_RESERVATION_ENABLED, WATCHDIVE_RESERVATION_ALLOW_LIVE, and
+// the live Stripe key, then checks the pinned account and the Checkout host
+// with read-only GETs. It does not create a Checkout Session. Dry-run does
+// not call Stripe. Dry run prints counts only. It does not send, and it does
+// not write Notion or the receipt ledger. Invite eligibility is Verified at
+// plus 180000 ms, on or after WATCHDIVE_RESERVATION_MAIL_NOT_BEFORE.
 import { main } from "../src/lib/reservation-mail/cli.ts";
 
 process.exitCode = await main(process.argv.slice(2));

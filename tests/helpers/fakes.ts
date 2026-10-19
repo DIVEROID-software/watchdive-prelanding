@@ -79,6 +79,15 @@ export class FakeLeadStore implements LeadStore {
       ...(record.signupCountryObservedAt
         ? { signupCountryObservedAt: record.signupCountryObservedAt }
         : {}),
+      ...(record.signupMethod ? { signupMethod: record.signupMethod } : {}),
+      ...(record.googleSubject ? { googleSubject: record.googleSubject } : {}),
+      ...(record.appleSubject ? { appleSubject: record.appleSubject } : {}),
+      ...(record.authVerificationProvenance
+        ? { authVerificationProvenance: record.authVerificationProvenance }
+        : {}),
+      ...(record.signupLocale ? { signupLocale: record.signupLocale } : {}),
+      ...(record.signedUpAt ? { signedUpAt: record.signedUpAt } : {}),
+      ...(record.duplicate ? { duplicate: true } : {}),
     };
     this.rows.set(row.pageId, row);
     this.byCanonical.set(record.canonical, row.pageId);
@@ -124,7 +133,49 @@ export class FakeLeadStore implements LeadStore {
             signupCountryObservedAt: input.signupCountry.countryObservedAt,
           }
         : {}),
+      ...(input.signupMethod ? { signupMethod: input.signupMethod } : {}),
+      ...(input.googleSubject ? { googleSubject: input.googleSubject } : {}),
+      ...(input.appleSubject ? { appleSubject: input.appleSubject } : {}),
+      ...(input.authVerificationProvenance
+        ? { authVerificationProvenance: input.authVerificationProvenance }
+        : {}),
+      ...(input.signupLocale ? { signupLocale: input.signupLocale } : {}),
+      signedUpAt: input.signedUpAt,
     });
+  }
+
+  async listByProviderSubject(provider: "google" | "apple", sub: string): Promise<LeadRecord[]> {
+    return [...this.rows.values()].filter((row) =>
+      provider === "google" ? row.googleSubject === sub : row.appleSubject === sub,
+    );
+  }
+
+  async attachProviderSubject(
+    pageId: string,
+    provider: "google" | "apple",
+    sub: string,
+    provenance: string,
+  ): Promise<"attached" | "present" | "conflict"> {
+    const row = this.rows.get(pageId);
+    if (!row) return "conflict";
+    const current = provider === "google" ? row.googleSubject : row.appleSubject;
+    if (current === sub) return "present";
+    if (current) return "conflict";
+    if (provider === "google") row.googleSubject = sub;
+    else row.appleSubject = sub;
+    if (!row.authVerificationProvenance) row.authVerificationProvenance = provenance;
+    return "attached";
+  }
+
+  async markDuplicate(pageId: string): Promise<void> {
+    const row = this.rows.get(pageId);
+    if (row) this.rows.set(pageId, { ...row, duplicate: true });
+  }
+
+  async noteVerificationSend(pageId: string, input: { sends: number; sentAt: string }): Promise<void> {
+    const row = this.rows.get(pageId);
+    if (!row) return;
+    this.rows.set(pageId, { ...row, sends: input.sends, sentAt: input.sentAt });
   }
 
   measurementFbcs: { pageId: string; metaFbc: string }[] = [];

@@ -25,10 +25,15 @@ import { Route as ApiMayaReportRouteImport } from './routes/api.maya-report'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
+import { Route as ApiAuthProvidersRouteImport } from './routes/api/auth/providers'
+import { Route as ApiAuthStartRouteImport } from './routes/api/auth/start'
 import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cron.verification-reminder'
+import { Route as ApiCronVerificationReminderV2RouteImport } from './routes/api.cron.verification-reminder-v2'
 import { Route as ApiReservationCheckoutRouteImport } from './routes/api/reservation/checkout'
 import { Route as ApiReservationStatusRouteImport } from './routes/api/reservation/status'
 import { Route as ApiReservationWebhookRouteImport } from './routes/api/reservation/webhook'
+import { Route as ApiAuthAppleCallbackRouteImport } from './routes/api/auth/apple/callback'
+import { Route as ApiAuthGoogleCallbackRouteImport } from './routes/api/auth/google/callback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -110,10 +115,26 @@ const LocaleRCodeRoute = LocaleRCodeRouteImport.update({
   path: '/r/$code',
   getParentRoute: () => LocaleRoute,
 } as any)
+const ApiAuthProvidersRoute = ApiAuthProvidersRouteImport.update({
+  id: '/api/auth/providers',
+  path: '/api/auth/providers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthStartRoute = ApiAuthStartRouteImport.update({
+  id: '/api/auth/start',
+  path: '/api/auth/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronVerificationReminderRoute =
   ApiCronVerificationReminderRouteImport.update({
     id: '/api/cron/verification-reminder',
     path: '/api/cron/verification-reminder',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiCronVerificationReminderV2Route =
+  ApiCronVerificationReminderV2RouteImport.update({
+    id: '/api/cron/verification-reminder-v2',
+    path: '/api/cron/verification-reminder-v2',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiReservationCheckoutRoute = ApiReservationCheckoutRouteImport.update({
@@ -129,6 +150,16 @@ const ApiReservationStatusRoute = ApiReservationStatusRouteImport.update({
 const ApiReservationWebhookRoute = ApiReservationWebhookRouteImport.update({
   id: '/api/reservation/webhook',
   path: '/api/reservation/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthAppleCallbackRoute = ApiAuthAppleCallbackRouteImport.update({
+  id: '/api/auth/apple/callback',
+  path: '/api/auth/apple/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthGoogleCallbackRoute = ApiAuthGoogleCallbackRouteImport.update({
+  id: '/api/auth/google/callback',
+  path: '/api/auth/google/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -149,10 +180,15 @@ export interface FileRoutesByFullPath {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/auth/providers': typeof ApiAuthProvidersRoute
+  '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
+  '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
+  '/api/auth/apple/callback': typeof ApiAuthAppleCallbackRoute
+  '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -170,10 +206,15 @@ export interface FileRoutesByTo {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/auth/providers': typeof ApiAuthProvidersRoute
+  '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
+  '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
+  '/api/auth/apple/callback': typeof ApiAuthAppleCallbackRoute
+  '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -193,10 +234,15 @@ export interface FileRoutesById {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/auth/providers': typeof ApiAuthProvidersRoute
+  '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
+  '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
+  '/api/auth/apple/callback': typeof ApiAuthAppleCallbackRoute
+  '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -217,10 +263,15 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/$locale/'
     | '/$locale/r/$code'
+    | '/api/auth/providers'
+    | '/api/auth/start'
     | '/api/cron/verification-reminder'
+    | '/api/cron/verification-reminder-v2'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
+    | '/api/auth/apple/callback'
+    | '/api/auth/google/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -238,10 +289,15 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/$locale'
     | '/$locale/r/$code'
+    | '/api/auth/providers'
+    | '/api/auth/start'
     | '/api/cron/verification-reminder'
+    | '/api/cron/verification-reminder-v2'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
+    | '/api/auth/apple/callback'
+    | '/api/auth/google/callback'
   id:
     | '__root__'
     | '/'
@@ -260,10 +316,15 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/$locale/'
     | '/$locale/r/$code'
+    | '/api/auth/providers'
+    | '/api/auth/start'
     | '/api/cron/verification-reminder'
+    | '/api/cron/verification-reminder-v2'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
+    | '/api/auth/apple/callback'
+    | '/api/auth/google/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -278,10 +339,15 @@ export interface RootRouteChildren {
   ApiMayaReportRoute: typeof ApiMayaReportRoute
   RCodeRoute: typeof RCodeRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
+  ApiAuthProvidersRoute: typeof ApiAuthProvidersRoute
+  ApiAuthStartRoute: typeof ApiAuthStartRoute
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
+  ApiCronVerificationReminderV2Route: typeof ApiCronVerificationReminderV2Route
   ApiReservationCheckoutRoute: typeof ApiReservationCheckoutRoute
   ApiReservationStatusRoute: typeof ApiReservationStatusRoute
   ApiReservationWebhookRoute: typeof ApiReservationWebhookRoute
+  ApiAuthAppleCallbackRoute: typeof ApiAuthAppleCallbackRoute
+  ApiAuthGoogleCallbackRoute: typeof ApiAuthGoogleCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -398,11 +464,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleRCodeRouteImport
       parentRoute: typeof LocaleRoute
     }
+    '/api/auth/providers': {
+      id: '/api/auth/providers'
+      path: '/api/auth/providers'
+      fullPath: '/api/auth/providers'
+      preLoaderRoute: typeof ApiAuthProvidersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/start': {
+      id: '/api/auth/start'
+      path: '/api/auth/start'
+      fullPath: '/api/auth/start'
+      preLoaderRoute: typeof ApiAuthStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/verification-reminder': {
       id: '/api/cron/verification-reminder'
       path: '/api/cron/verification-reminder'
       fullPath: '/api/cron/verification-reminder'
       preLoaderRoute: typeof ApiCronVerificationReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/verification-reminder-v2': {
+      id: '/api/cron/verification-reminder-v2'
+      path: '/api/cron/verification-reminder-v2'
+      fullPath: '/api/cron/verification-reminder-v2'
+      preLoaderRoute: typeof ApiCronVerificationReminderV2RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/reservation/checkout': {
@@ -424,6 +511,20 @@ declare module '@tanstack/react-router' {
       path: '/api/reservation/webhook'
       fullPath: '/api/reservation/webhook'
       preLoaderRoute: typeof ApiReservationWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/apple/callback': {
+      id: '/api/auth/apple/callback'
+      path: '/api/auth/apple/callback'
+      fullPath: '/api/auth/apple/callback'
+      preLoaderRoute: typeof ApiAuthAppleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/google/callback': {
+      id: '/api/auth/google/callback'
+      path: '/api/auth/google/callback'
+      fullPath: '/api/auth/google/callback'
+      preLoaderRoute: typeof ApiAuthGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -460,10 +561,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMayaReportRoute: ApiMayaReportRoute,
   RCodeRoute: RCodeRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
+  ApiAuthProvidersRoute: ApiAuthProvidersRoute,
+  ApiAuthStartRoute: ApiAuthStartRoute,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
+  ApiCronVerificationReminderV2Route: ApiCronVerificationReminderV2Route,
   ApiReservationCheckoutRoute: ApiReservationCheckoutRoute,
   ApiReservationStatusRoute: ApiReservationStatusRoute,
   ApiReservationWebhookRoute: ApiReservationWebhookRoute,
+  ApiAuthAppleCallbackRoute: ApiAuthAppleCallbackRoute,
+  ApiAuthGoogleCallbackRoute: ApiAuthGoogleCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

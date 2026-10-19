@@ -9,7 +9,7 @@
 	<key>RunAtLoad</key>
 	<false/>
 	<key>StartInterval</key>
-	<integer>1800</integer>
+	<integer>30</integer>
 	<key>WorkingDirectory</key>
 	<string>/Users/macm4/OrcaProjects/watchdive-marketing/ads/autopilot/reservation-20261018/implementation</string>
 	<key>ProgramArguments</key>
