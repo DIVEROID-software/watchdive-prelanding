@@ -9,6 +9,7 @@ import { phoneOptInCopy } from "../phoneOptInCopy.ts";
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
 import { verificationTokenLocale, verificationUrl } from "./token.ts";
+import { buildReminderEmail } from "./reminderEmail.ts";
 import { DEFAULT_LOCALE, referralPath, type Locale } from "../i18n/locale.ts";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
@@ -48,10 +49,10 @@ export type VerificationMail = {
   publicOrigin: string;
   locale: Locale;
   /**
-   * The single scheduled reminder of this same confirmation mail. Identical
-   * copy; only the idempotency key differs, because the reminder deliberately
-   * keeps the attempt's lead id (so the first link keeps working) and would
-   * otherwise collide with the original send's key.
+   * The single scheduled reminder. When true, the reminder template is used
+   * instead of the first confirmation. The idempotency key stays in its own
+   * namespace because the reminder reuses the attempt's lead id (so the first
+   * link keeps working) and would otherwise collide with the original send.
    */
   reminder?: boolean;
 };
@@ -588,7 +589,8 @@ export function createResendMailer(
       if (!signedLocale || signedLocale !== locale) {
         throw new Error("Verification token locale mismatch");
       }
-      const content = body(verificationUrl(publicOrigin, token), signedLocale);
+      const url = verificationUrl(publicOrigin, token);
+      const content = reminder ? buildReminderEmail(url, signedLocale) : body(url, signedLocale);
       // Ties every retry of one attempt to one message. A new attempt mints a
       // new lead id, so a resend is a genuinely new key. The reminder reuses
       // the attempt's lead id, so it gets its own namespace — one key per
