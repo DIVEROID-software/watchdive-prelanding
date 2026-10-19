@@ -203,7 +203,8 @@ test("reminder=true selects the reminder template and keeps the idempotency key 
   assert.equal(JSON.stringify(seen).includes("re_test_key"), false);
 });
 
-test("the first confirmation and welcome markup in resend.ts are unchanged", () => {
+// 2026-10-19: Korean welcome subject and heading now say launch notification signup complete.
+test("the first confirmation and reviewed welcome markup in resend.ts stay fixed", () => {
   const copyPath = fileURLToPath(new URL("../src/lib/verification/resend.ts", import.meta.url));
   const copy = readFileSync(copyPath, "utf8");
   // Frozen from reviewed baseline faa9dd2; no sibling checkout required in CI.
@@ -217,7 +218,7 @@ test("the first confirmation and welcome markup in resend.ts are unchanged", () 
         ),
       )
       .digest("hex"),
-    "cd00cab4132792c6fbb265d86c56f6b60cf2dfdeae00a87e590db76164a585c7",
+    "a68c60a7c570a10b367e9faa4d991228e738b84b3665e1789ee7a5fe19150c53",
   );
   assert.equal(
     createHash("sha256")
