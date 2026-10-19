@@ -55,6 +55,8 @@ export type VerificationMail = {
    * link keeps working) and would otherwise collide with the original send.
    */
   reminder?: boolean;
+  /** Explicit user-authorized one-off; signing secret remains server-side. */
+  manualCampaign?: "wd-manual-verify-20261019";
 };
 
 export type WelcomeMail = {
@@ -584,7 +586,7 @@ export function createResendMailer(
   const config = readResendConfig(env);
 
   return {
-    async send({ to, token, leadId, publicOrigin, locale, reminder }) {
+    async send({ to, token, leadId, publicOrigin, locale, reminder, manualCampaign }) {
       const signedLocale = verificationTokenLocale(token);
       if (!signedLocale || signedLocale !== locale) {
         throw new Error("Verification token locale mismatch");
@@ -595,7 +597,9 @@ export function createResendMailer(
       // new lead id, so a resend is a genuinely new key. The reminder reuses
       // the attempt's lead id, so it gets its own namespace — one key per
       // attempt, which also makes a duplicated reminder collapse at Resend.
-      const idempotencyKey = reminder
+      const idempotencyKey = manualCampaign === "wd-manual-verify-20261019"
+        ? `${manualCampaign}-${leadId}`
+        : reminder
         ? `watchdive-verification-reminder-${leadId}`
         : `watchdive-verification-${leadId}`;
       await deliver(

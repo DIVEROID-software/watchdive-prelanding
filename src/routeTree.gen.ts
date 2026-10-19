@@ -27,6 +27,7 @@ import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$toke
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
 import { Route as ApiAuthProvidersRouteImport } from './routes/api/auth/providers'
 import { Route as ApiAuthStartRouteImport } from './routes/api/auth/start'
+import { Route as ApiCronManualVerification20261019RouteImport } from './routes/api.cron.manual-verification-20261019'
 import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cron.verification-reminder'
 import { Route as ApiCronVerificationReminderV2RouteImport } from './routes/api.cron.verification-reminder-v2'
 import { Route as ApiReservationCheckoutRouteImport } from './routes/api/reservation/checkout'
@@ -125,6 +126,12 @@ const ApiAuthStartRoute = ApiAuthStartRouteImport.update({
   path: '/api/auth/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronManualVerification20261019Route =
+  ApiCronManualVerification20261019RouteImport.update({
+    id: '/api/cron/manual-verification-20261019',
+    path: '/api/cron/manual-verification-20261019',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCronVerificationReminderRoute =
   ApiCronVerificationReminderRouteImport.update({
     id: '/api/cron/verification-reminder',
@@ -182,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
+  '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
@@ -208,6 +216,7 @@ export interface FileRoutesByTo {
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
+  '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
@@ -236,6 +245,7 @@ export interface FileRoutesById {
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
+  '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/$locale/r/$code'
     | '/api/auth/providers'
     | '/api/auth/start'
+    | '/api/cron/manual-verification-20261019'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
     | '/api/reservation/checkout'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/$locale/r/$code'
     | '/api/auth/providers'
     | '/api/auth/start'
+    | '/api/cron/manual-verification-20261019'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
     | '/api/reservation/checkout'
@@ -318,6 +330,7 @@ export interface FileRouteTypes {
     | '/$locale/r/$code'
     | '/api/auth/providers'
     | '/api/auth/start'
+    | '/api/cron/manual-verification-20261019'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
     | '/api/reservation/checkout'
@@ -341,6 +354,7 @@ export interface RootRouteChildren {
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ApiAuthProvidersRoute: typeof ApiAuthProvidersRoute
   ApiAuthStartRoute: typeof ApiAuthStartRoute
+  ApiCronManualVerification20261019Route: typeof ApiCronManualVerification20261019Route
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
   ApiCronVerificationReminderV2Route: typeof ApiCronVerificationReminderV2Route
   ApiReservationCheckoutRoute: typeof ApiReservationCheckoutRoute
@@ -478,6 +492,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthStartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/manual-verification-20261019': {
+      id: '/api/cron/manual-verification-20261019'
+      path: '/api/cron/manual-verification-20261019'
+      fullPath: '/api/cron/manual-verification-20261019'
+      preLoaderRoute: typeof ApiCronManualVerification20261019RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/verification-reminder': {
       id: '/api/cron/verification-reminder'
       path: '/api/cron/verification-reminder'
@@ -563,6 +584,8 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ApiAuthProvidersRoute: ApiAuthProvidersRoute,
   ApiAuthStartRoute: ApiAuthStartRoute,
+  ApiCronManualVerification20261019Route:
+    ApiCronManualVerification20261019Route,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
   ApiCronVerificationReminderV2Route: ApiCronVerificationReminderV2Route,
   ApiReservationCheckoutRoute: ApiReservationCheckoutRoute,
