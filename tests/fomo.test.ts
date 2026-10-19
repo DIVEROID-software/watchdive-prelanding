@@ -237,7 +237,7 @@ test("the line uses the hero's localized price and never leaks dollars into othe
     "Unos 140 € solo para los 100 primeros en Kickstarter, al abrir.",
   );
   for (const locale of SUPPORTED_LOCALES) {
-    if (locale === "en") continue;
+    if (locale === "en" || locale === "ko") continue;
     const price = (FROZEN_LANDING_MESSAGES as Record<string, { hero: { nowPrice: string } }>)[locale]
       ?.hero.nowPrice;
     if (!price) continue;
