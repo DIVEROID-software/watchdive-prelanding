@@ -13,7 +13,11 @@
 //                         (office stock), shipping and taxes paid by recipient
 //   Top 3 at the close  → one WatchDive each, shipping and taxes paid by recipient
 //   Close               → immediately before the Kickstarter campaign goes
-//                         live; date not set yet (planned for December 2026)
+//                         live (planned December 2026), long stop 2027-01-31
+//                         23:59 KST; prizes sent before March 2027, WatchDive
+//                         prizes given even if the campaign does not go ahead
+//   Light worth ~USD 70, WatchDive prize USD 299 (watch not included)
+//   Korean winners pay the 22% withholding to us before shipping; we file it
 
 export const REFERRAL_PROGRAM_ID = "wd-buddy-invite-20261022" as const;
 
@@ -77,12 +81,32 @@ export const CREDIT_DAY_TIME_ZONE = "Asia/Seoul";
  * credited to anyone.
  */
 export const CLOSE_NOTICE_DAYS = 7;
-export function referralClosesAt(env: Record<string, string | undefined> = process.env): Date | null {
+
+/**
+ * Long-stop close (owner decision 2026-10-22): the program ends at this
+ * instant even if Kickstarter has not gone live. An earlier env close wins.
+ */
+export const LONG_STOP_CLOSE = "2027-01-31T23:59:00+09:00";
+
+export function referralClosesAt(env: Record<string, string | undefined> = process.env): Date {
+  const longStop = new Date(LONG_STOP_CLOSE);
   const raw = env.WATCHDIVE_REFERRAL_CLOSES_AT;
-  if (!raw) return null;
+  if (!raw) return longStop;
   const at = new Date(raw);
-  return Number.isFinite(at.getTime()) ? at : null;
+  return Number.isFinite(at.getTime()) && at < longStop ? at : longStop;
 }
+
+/** Prize facts stated in the rules (owner decisions 2026-10-22). */
+export const LIGHT_VALUE_USD = 70;
+export const PRIZE_VALUE_USD = 299;
+/** Physical rewards are sent before this month (prize kept even if the campaign fails). */
+export const PRIZE_DELIVERY_BY = "2027-03";
+/** Minimum age: 19 for residents of South Korea, 18 (and adult where they live) elsewhere. */
+export const MIN_AGE_KR = 19;
+export const MIN_AGE_OTHER = 18;
+/** Korean prize withholding applies above this taxable value per payment (소득세법 제84조). */
+export const KR_PRIZE_TAX_FREE_KRW = 50000;
+export const KR_PRIZE_WITHHOLDING_RATE = 0.22;
 
 /** A referrer gets at most one friend-joined mail per this interval. */
 export const NOTICE_MIN_INTERVAL_MS = 60 * 60 * 1000;

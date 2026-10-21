@@ -48,6 +48,14 @@ test("values come from program.ts", () => {
     noticeDays: CLOSE_NOTICE_DAYS,
     min: NICKNAME_MIN,
     max: NICKNAME_MAX,
+    lightValue: "$70",
+    prizeValue: "$299",
+    ageKr: 19,
+    ageOther: 18,
+    longStop: "2027-01-31 23:59 KST",
+    deliveryBy: "2027-03",
+    taxFree: "KRW 50,000",
+    taxRate: 22,
   });
   assert.equal(tierValues("en", "buddy").hours, EARLY_NOTICE_HOURS.buddy);
 });
