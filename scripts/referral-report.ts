@@ -12,6 +12,10 @@
 // The ledger, leaderboard and disposable-domain list come from the core
 // modules (loaded lazily by main()), so the logic below stays testable with
 // fakes. The review signals only ever flag; ops decides (see the runbook).
+// A candidate is `review_needed` when any reason fires: verification bursts,
+// signup bursts, disposable or rare domains, one non-mainstream domain
+// concentration, alias/forwarding services, same locale/path/UTM, fast
+// signup→verify, quick mail confirmations, or many never-confirmed sign-ups.
 import { chmod, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
@@ -47,6 +51,21 @@ export const REVIEW = {
   fastVerifyMs: 60 * 1000,
   fastVerifyShare: 0.5,
   fastVerifyMinFriends: 3,
+  /**
+   * `Verified at` − `Verification sent` under this reads as an automated
+   * confirmation: a person has to switch to the mail app and press the button.
+   * Google/Apple sign-ins are exempt (verified at once, no mail). Mail security
+   * scanners can also click fast, hence a review signal, never an exclusion.
+   */
+  quickConfirmMs: 20 * 1000,
+  quickConfirmMinFriends: 2,
+  /** More alias/forwarding-service friends than this is worth a look. */
+  aliasMaxFriends: 2,
+  /** More friends than this on ONE non-mainstream domain (catch-all custom domains). */
+  domainConcentrationMax: 3,
+  /** Many referred sign-ups that never confirm (addresses entered for other people). */
+  pendingMinFriends: 5,
+  pendingShare: 0.67,
 } as const;
 
 /** Domains big enough that a single occurrence is not "rare". */
@@ -55,11 +74,19 @@ const COMMON_DOMAINS = new Set([
   "outlook.com", "hotmail.com", "live.com", "msn.com", "yahoo.com", "yahoo.co.jp", "yahoo.co.kr",
   "icloud.com", "me.com", "qq.com", "163.com", "126.com", "gmx.de", "web.de", "t-online.de",
   "orange.fr", "free.fr", "uol.com.br", "bol.com.br", "proton.me", "protonmail.com",
+  "mac.com", "pm.me", "yahoo.co.uk", "hotmail.co.uk", "naver.co.kr", "aol.com", "yandex.ru",
+  "mail.ru", "docomo.ne.jp", "ezweb.ne.jp", "softbank.ne.jp", "i.softbank.jp",
 ]);
 
 /** Friend-level facts the ledger rows do not carry. Never leave this process. */
 export type RowSignals = {
   signedUpAt?: string;
+  /** `Verification sent`: when the (last) confirmation mail went out. */
+  verificationSentAt?: string;
+  /** `Signup method`; google/apple rows are verified without a mail click. */
+  signupMethod?: string;
+  /** `Auth verification provenance` was written (a social sign-in verified the row). */
+  socialVerified?: boolean;
   landingPath?: string;
   utm?: { source?: string; medium?: string; campaign?: string; content?: string; term?: string };
 };
@@ -75,6 +102,18 @@ export type ReviewSignals = {
   sameLandingPathShare: number;
   sameUtmShare: number;
   fastVerifyShare: number;
+  /** Mail confirmations faster than REVIEW.quickConfirmMs (social sign-ins exempt). */
+  quickConfirmations: number;
+  aliasFriends: number;
+  aliasShare: number;
+  /** Friends on the single most common non-mainstream, non-alias domain. */
+  topOtherDomainFriends: number;
+  /** Referred sign-ups that are still pending (never confirmed). */
+  pendingFriends: number;
+  /** pending / (pending + verified friends). */
+  pendingShare: number;
+  /** Largest number of referred sign-ups (any status) inside one burst window. */
+  maxSignedUpInBurstWindow: number;
 };
 
 export type ReviewReason =
@@ -84,7 +123,19 @@ export type ReviewReason =
   | "same_locale"
   | "same_landing_path"
   | "same_utm"
-  | "fast_verify";
+  | "fast_verify"
+  | "quick_confirmation"
+  | "alias_services"
+  | "domain_concentration"
+  | "pending_ratio"
+  | "burst_signups";
+
+export type ReviewOptions = {
+  /** Alias/forwarding service test (core `isAliasServiceEmail`). Default: none. */
+  isAliasService?: (email: string) => boolean;
+  /** The referrer's referred rows that never confirmed (for the pending ratio and signup bursts). */
+  pending?: ReferralRow[];
+};
 
 const ZERO = 0;
 
@@ -133,25 +184,48 @@ export function computeReviewSignals(
   signals: Map<string, RowSignals>,
   population: { domainCounts: Map<string, number> },
   isDisposable: (email: string) => boolean,
+  options: ReviewOptions = {},
 ): { signals: ReviewSignals; reasons: ReviewReason[] } {
   const n = friends.length;
+  const isAlias = options.isAliasService ?? (() => false);
+  const pending = options.pending ?? [];
   const perDomain = new Map<string, number>();
+  const perOtherDomain = new Map<string, number>();
   let disposable = 0;
   let rare = 0;
   let fast = 0;
   let fastKnown = 0;
+  let quick = 0;
+  let alias = 0;
   for (const friend of friends) {
     const domain = domainOf(friend.email);
+    const signal = signals.get(friend.pageId);
     perDomain.set(domain, (perDomain.get(domain) ?? 0) + 1);
     if (isDisposable(friend.email)) disposable += 1;
+    if (isAlias(friend.email)) alias += 1;
+    else if (domain && !COMMON_DOMAINS.has(domain)) {
+      perOtherDomain.set(domain, (perOtherDomain.get(domain) ?? 0) + 1);
+    }
     if (!COMMON_DOMAINS.has(domain) && (population.domainCounts.get(domain) ?? 0) <= 1) rare += 1;
-    const signedUp = Date.parse(signals.get(friend.pageId)?.signedUpAt ?? "");
+    const signedUp = Date.parse(signal?.signedUpAt ?? "");
     const verified = Date.parse(friend.verifiedAt ?? "");
     if (Number.isFinite(signedUp) && Number.isFinite(verified)) {
       fastKnown += 1;
       if (verified - signedUp < REVIEW.fastVerifyMs) fast += 1;
     }
+    const sent = Date.parse(signal?.verificationSentAt ?? "");
+    const social =
+      signal?.socialVerified === true ||
+      signal?.signupMethod === "google" ||
+      signal?.signupMethod === "apple";
+    if (!social && Number.isFinite(sent) && Number.isFinite(verified)) {
+      const delta = verified - sent;
+      if (delta >= 0 && delta < REVIEW.quickConfirmMs) quick += 1;
+    }
   }
+  const signupTimes = [...friends, ...pending].map((row) =>
+    Date.parse(signals.get(row.pageId)?.signedUpAt ?? ""),
+  );
   // Only domains shared by two or more friends are listed, so a one-off
   // domain (often a person's own) never appears in the summary.
   const shared = [...perDomain.entries()].filter(([, count]) => count >= 2).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
@@ -166,6 +240,13 @@ export function computeReviewSignals(
     sameLandingPathShare: topShare(friends.map((f) => signals.get(f.pageId)?.landingPath)),
     sameUtmShare: topShare(friends.map((f) => utmKey(signals.get(f.pageId)))),
     fastVerifyShare: share(fast, fastKnown),
+    quickConfirmations: quick,
+    aliasFriends: alias,
+    aliasShare: share(alias, n),
+    topOtherDomainFriends: Math.max(0, ...perOtherDomain.values()),
+    pendingFriends: pending.length,
+    pendingShare: share(pending.length, pending.length + n),
+    maxSignedUpInBurstWindow: maxInWindow(signupTimes, REVIEW.burstWindowMs),
   };
   const reasons: ReviewReason[] = [];
   if (out.maxVerifiedInBurstWindow >= REVIEW.burstMinFriends) reasons.push("burst_verifications");
@@ -177,6 +258,11 @@ export function computeReviewSignals(
     if (out.sameUtmShare >= REVIEW.sameValueShare) reasons.push("same_utm");
   }
   if (fastKnown >= REVIEW.fastVerifyMinFriends && out.fastVerifyShare >= REVIEW.fastVerifyShare) reasons.push("fast_verify");
+  if (quick >= REVIEW.quickConfirmMinFriends) reasons.push("quick_confirmation");
+  if (alias > REVIEW.aliasMaxFriends) reasons.push("alias_services");
+  if (out.topOtherDomainFriends > REVIEW.domainConcentrationMax) reasons.push("domain_concentration");
+  if (pending.length >= REVIEW.pendingMinFriends && out.pendingShare >= REVIEW.pendingShare) reasons.push("pending_ratio");
+  if (out.maxSignedUpInBurstWindow >= REVIEW.burstMinFriends) reasons.push("burst_signups");
   return { signals: out, reasons };
 }
 
@@ -199,6 +285,8 @@ export type ReportInput = {
   now: Date;
   closesAt: Date | null;
   isDisposable: (email: string) => boolean;
+  /** Core `isAliasServiceEmail`; without it the alias signal stays 0. */
+  isAliasService?: (email: string) => boolean;
 };
 
 export type ReportSummary = {
@@ -235,15 +323,26 @@ function safeNickname(value: string | undefined): string | null {
   return value.includes("@") ? "[redacted]" : value;
 }
 
-/** Verified friends of one referrer, as the review sees them (before caps). */
+/**
+ * Verified friends of one referrer, as the review sees them (before caps). A
+ * friend who confirmed and later unsubscribed still counts in the ledger, so
+ * the review sees them too.
+ */
 function friendsOf(refCode: string, referrer: ReferralRow | undefined, byReferrer: Map<string, ReferralRow[]>): ReferralRow[] {
   return (byReferrer.get(refCode) ?? []).filter(
     (row) =>
       row.emailVerified &&
-      row.status === "verified" &&
+      (row.status === "verified" || row.status === "unsubscribed") &&
       !row.suspect &&
       !row.duplicate &&
       row.canonicalEmail !== referrer?.canonicalEmail,
+  );
+}
+
+/** Referred sign-ups that never confirmed (still pending). */
+function pendingOf(refCode: string, referrer: ReferralRow | undefined, byReferrer: Map<string, ReferralRow[]>): ReferralRow[] {
+  return (byReferrer.get(refCode) ?? []).filter(
+    (row) => !row.emailVerified && row.status === "pending" && row.canonicalEmail !== referrer?.canonicalEmail,
   );
 }
 
@@ -277,6 +376,10 @@ export function buildReport(input: ReportInput): {
       input.signals,
       { domainCounts },
       input.isDisposable,
+      {
+        ...(input.isAliasService ? { isAliasService: input.isAliasService } : {}),
+        pending: pendingOf(standing.refCode, referrer, byReferrer),
+      },
     );
     flags.set(standing.refCode, reasons.length > 0);
     review.push({
@@ -483,7 +586,16 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     })) as { results?: Record<string, unknown>[]; has_more?: boolean; next_cursor?: string | null };
     for (const result of page.results ?? []) {
       const lead = toLeadRecord(result);
-      if (lead) signals.set(lead.pageId, { signedUpAt: lead.signedUpAt, landingPath: lead.landingPath, utm: lead.utm });
+      if (lead) {
+        signals.set(lead.pageId, {
+          signedUpAt: lead.signedUpAt,
+          verificationSentAt: lead.sentAt,
+          signupMethod: lead.signupMethod,
+          socialVerified: Boolean(lead.authVerificationProvenance),
+          landingPath: lead.landingPath,
+          utm: lead.utm,
+        });
+      }
     }
     cursor = page.has_more ? (page.next_cursor ?? undefined) : undefined;
   } while (cursor);
@@ -496,6 +608,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     now,
     closesAt,
     isDisposable: eligibilityMod.isDisposableEmail,
+    isAliasService: eligibilityMod.isAliasServiceEmail,
   });
   const json = `${JSON.stringify(summary, null, 2)}\n`;
   if (json.includes("@")) {

@@ -136,6 +136,117 @@ test("review signals: a varied organic referrer is not flagged", () => {
   assert.deepEqual(reasons, []);
 });
 
+test("review signals: quick mail confirmations flag; social sign-ins are exempt", () => {
+  const friends = Array.from({ length: 3 }, (_, i) =>
+    row({ pageId: `q${i}`, email: `q${i}@gmail.com`, verifiedAt: at(i * 3600 + 12) }),
+  );
+  const mail = new Map(friends.map((f, i) => [f.pageId, { signedUpAt: at(i * 3600 - 5), verificationSentAt: at(i * 3600) }]));
+  const flagged = computeReviewSignals(friends, mail, { domainCounts: new Map() }, noDisposable);
+  assert.equal(flagged.signals.quickConfirmations, 3);
+  assert.ok(flagged.reasons.includes("quick_confirmation"));
+
+  // Exactly at the threshold, or slower, is not quick.
+  const slow = new Map(friends.map((f, i) => [f.pageId, { verificationSentAt: at(i * 3600 - 8) }]));
+  assert.equal(computeReviewSignals(friends, slow, { domainCounts: new Map() }, noDisposable).signals.quickConfirmations, 0);
+
+  // Google/Apple sign-ins verify with no mail click.
+  const social = new Map(
+    friends.map((f, i) => [
+      f.pageId,
+      i === 0
+        ? { verificationSentAt: at(0), signupMethod: "google" }
+        : i === 1
+          ? { verificationSentAt: at(3600), signupMethod: "apple" }
+          : { verificationSentAt: at(7200), socialVerified: true },
+    ]),
+  );
+  const exempt = computeReviewSignals(friends, social, { domainCounts: new Map() }, noDisposable);
+  assert.equal(exempt.signals.quickConfirmations, 0);
+  assert.equal(exempt.reasons.includes("quick_confirmation"), false);
+
+  // One quick confirmation alone (a mail scanner) is not enough.
+  const one = new Map([[friends[0].pageId, { verificationSentAt: at(0) }]]);
+  assert.equal(computeReviewSignals(friends, one, { domainCounts: new Map() }, noDisposable).reasons.includes("quick_confirmation"), false);
+});
+
+test("review signals: alias services count but flag above the allowance", () => {
+  const isAlias = (email: string) => /@(duck\.com|mozmail\.com)$/.test(email);
+  const mk = (k: number) =>
+    Array.from({ length: 5 }, (_, i) =>
+      row({ pageId: `a${k}${i}`, email: i < k ? `x${i}@duck.com` : `y${i}@gmail.com`, verifiedAt: at(i * 7200) }),
+    );
+  const two = computeReviewSignals(mk(2), new Map(), { domainCounts: new Map() }, noDisposable, { isAliasService: isAlias });
+  assert.equal(two.signals.aliasFriends, 2);
+  assert.equal(two.reasons.includes("alias_services"), false);
+  const three = computeReviewSignals(mk(3), new Map(), { domainCounts: new Map() }, noDisposable, { isAliasService: isAlias });
+  assert.equal(three.signals.aliasFriends, 3);
+  assert.equal(three.signals.aliasShare, 0.6);
+  assert.ok(three.reasons.includes("alias_services"));
+  // Without the alias test the signal stays off (older callers).
+  assert.equal(computeReviewSignals(mk(3), new Map(), { domainCounts: new Map() }, noDisposable).signals.aliasFriends, 0);
+});
+
+test("review signals: more than three friends on one non-mainstream domain", () => {
+  const mk = (k: number) =>
+    Array.from({ length: k }, (_, i) => row({ pageId: `d${k}${i}`, email: `p${i}@reefclub.dev`, verifiedAt: at(i * 7200) }));
+  const three = computeReviewSignals(mk(3), new Map(), { domainCounts: new Map([["reefclub.dev", 3]]) }, noDisposable);
+  assert.equal(three.signals.topOtherDomainFriends, 3);
+  assert.equal(three.reasons.includes("domain_concentration"), false);
+  const four = computeReviewSignals(mk(4), new Map(), { domainCounts: new Map([["reefclub.dev", 4]]) }, noDisposable);
+  assert.ok(four.reasons.includes("domain_concentration"));
+  // Mainstream providers never concentrate.
+  const gmail = Array.from({ length: 6 }, (_, i) => row({ pageId: `m${i}`, email: `p${i}@gmail.com`, verifiedAt: at(i * 7200) }));
+  assert.equal(computeReviewSignals(gmail, new Map(), { domainCounts: new Map() }, noDisposable).signals.topOtherDomainFriends, 0);
+});
+
+test("review signals: many never-confirmed sign-ups and signup bursts", () => {
+  const friends = [0, 1].map((i) => row({ pageId: `v${i}`, email: `v${i}@gmail.com`, verifiedAt: at(i * 7200) }));
+  const pending = Array.from({ length: 5 }, (_, i) =>
+    row({ pageId: `p${i}`, email: `p${i}@gmail.com`, status: "pending", emailVerified: false, verifiedAt: undefined }),
+  );
+  const sig = new Map(pending.map((p, i) => [p.pageId, { signedUpAt: at(i * 20) }]));
+  const { signals, reasons } = computeReviewSignals(friends, sig, { domainCounts: new Map() }, noDisposable, { pending });
+  assert.equal(signals.pendingFriends, 5);
+  assert.equal(signals.pendingShare, 0.714);
+  assert.equal(signals.maxSignedUpInBurstWindow, 5);
+  assert.ok(reasons.includes("pending_ratio"));
+  assert.ok(reasons.includes("burst_signups"));
+  // A normal verify rate does not flag.
+  const calm = computeReviewSignals(friends, new Map(), { domainCounts: new Map() }, noDisposable, { pending: pending.slice(0, 1) });
+  assert.equal(calm.reasons.includes("pending_ratio"), false);
+  assert.equal(calm.reasons.includes("burst_signups"), false);
+});
+
+test("report: pending and unsubscribed-after-confirming friends reach the review signals", () => {
+  const referrer = row({ pageId: "rr", refCode: "bbbbbbbb", email: "lead@example.com", canonicalEmail: "lead@example.com" });
+  const confirmed = Array.from({ length: 3 }, (_, i) =>
+    row({ pageId: `c${i}`, referredBy: "bbbbbbbb", email: `c${i}@gmail.com`, verifiedAt: at(i * 7200), status: i === 0 ? "unsubscribed" : "verified" }),
+  );
+  const never = Array.from({ length: 7 }, (_, i) =>
+    row({ pageId: `n${i}`, referredBy: "bbbbbbbb", email: `n${i}@gmail.com`, status: "pending", emailVerified: false }),
+  );
+  const standing: ReferrerStanding = {
+    refCode: "bbbbbbbb", credited: 3, reachedAt: {}, leaderOrder: null, lightEligible: false, lastCreditAt: at(14400),
+  };
+  const ledger = { standings: new Map([["bbbbbbbb", standing]]), excluded: {} } as unknown as LedgerResult;
+  const { summary } = buildReport({
+    rows: [referrer, ...confirmed, ...never],
+    signals: new Map(),
+    ledger,
+    leaderboard: { entries: [], asOf: at(0), closed: false },
+    now: new Date(T0),
+    closesAt: null,
+    isDisposable: noDisposable,
+    isAliasService: () => false,
+  });
+  const candidate = summary.review.find((c) => c.refCode === "bbbbbbbb");
+  assert.equal(candidate?.signals.friends, 3);
+  assert.equal(candidate?.signals.pendingFriends, 7);
+  assert.ok(candidate?.reasons.includes("pending_ratio"));
+  assert.equal(candidate?.review_needed, true);
+  assert.equal(JSON.stringify(summary).includes("@"), false);
+});
+
 function fixture() {
   const referrer = row({ pageId: "r1", refCode: "aaaaaaaa", nickname: "Neo", email: "boss@example.com", canonicalEmail: "boss@example.com" });
   const friends = Array.from({ length: 5 }, (_, i) =>
