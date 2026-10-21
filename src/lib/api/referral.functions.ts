@@ -144,7 +144,7 @@ export const getReferralProgress = createServerFn({ method: "POST" })
     }
   });
 
-/** Route loader for /buddy/$token and /$locale/buddy/$token: 404 unless WATCHDIVE_REFERRAL_PROGRAM_ENABLED=1. */
+/** Route loader for /buddy and /$locale/buddy: 404 unless WATCHDIVE_REFERRAL_PROGRAM_ENABLED=1. */
 export async function requireReferralProgram(): Promise<void> {
   let enabled = false;
   try {
@@ -155,7 +155,8 @@ export async function requireReferralProgram(): Promise<void> {
   if (!enabled) throw notFound();
 }
 
-// The status link carries its signed token in the path.
+// The status link carries its signed token in the URL fragment, which no
+// Referer ever includes; no-referrer and noindex stay as defence in depth.
 export const BUDDY_PAGE_META = [
   { name: "referrer", content: "no-referrer" },
   { name: "robots", content: "noindex, nofollow, noarchive" },

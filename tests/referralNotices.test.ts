@@ -227,7 +227,7 @@ test("a first friend sends one notice that announces the first tier", async () =
   assert.equal(mail.remainingToNext, 2);
   assert.equal(mail.idempotencyKey, `wd-buddy-invite-20261022-notice-${rows[0]!.refCode}-1`);
   assert.equal(mail.idempotencyKey, noticeIdempotencyKey(rows[0]!.refCode, 1));
-  assert.match(mail.statusUrl, /^https:\/\/watchdive\.example\/buddy\/[^=?#]+$/);
+  assert.match(mail.statusUrl, /^https:\/\/watchdive\.example\/buddy#[^=?#/]+$/);
   assert.deepEqual(store.marks, [{ pageId: rows[0]!.pageId, count: 1, at: NOW.toISOString() }]);
   // The friend's row is never the recipient and no friend data is in the mail.
   const serialized = JSON.stringify(mail);

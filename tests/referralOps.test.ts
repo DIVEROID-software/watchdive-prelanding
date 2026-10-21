@@ -221,7 +221,7 @@ test("announce idempotency key", () => {
 test("announce render escapes every value", () => {
   const mail = renderAnnouncement(
     "en",
-    { share: "https://x.test/r/abcd1234", status: "https://x.test/buddy/t", rules: "https://x.test/buddy-rules" },
+    { share: "https://x.test/r/abcd1234", status: "https://x.test/buddy#t", rules: "https://x.test/buddy-rules" },
     { price: "<b>$149</b>", seats: 100, stock: 30, winners: 3, hours: 1 },
   );
   assert.equal(mail.html.includes("<b>$149</b>"), false);
@@ -235,7 +235,7 @@ async function setup(rows: AnnounceRow[], env: Record<string, string | undefined
   const deps: AnnounceDeps = {
     rows, env,
     values: () => ({ price: "$149", seats: 100, stock: 30, winners: 3, hours: 1 }),
-    links: (r) => ({ share: `https://x.test/r/${r.refCode}`, status: "https://x.test/buddy/t", rules: "https://x.test/buddy-rules" }),
+    links: (r) => ({ share: `https://x.test/r/${r.refCode}`, status: "https://x.test/buddy#t", rules: "https://x.test/buddy-rules" }),
     send: async (m) => void sent.push(m),
     sleep: async () => {},
   };

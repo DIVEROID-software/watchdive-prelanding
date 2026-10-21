@@ -11,9 +11,41 @@ import { NICKNAME_MAX, NICKNAME_MIN } from "@/lib/referral/program";
 import { copyValues } from "@/lib/referral/values";
 
 // The private Buddy Invite page, opened from the signed link in the welcome
-// and friend-joined mails. The token is in the path, so the route sets
-// no-referrer and noindex; the status itself is fetched after mount so the
-// server-rendered HTML carries nothing personal a cache could keep.
+// and friend-joined mails (`/buddy#<token>`). The token lives only in the URL
+// fragment: it is read here, after mount, and travels only in the POST body of
+// the server functions, never as a path or query. The server-rendered HTML is
+// the same for everyone, so it carries nothing personal a cache could keep.
+// The fragment is left in the address bar on purpose: the link does not
+// expire, and a reload or bookmark of the owner's own page must keep working.
+
+/** Signed status tokens are short; anything longer is not one. */
+const TOKEN_MAX = 400;
+
+/** The token in a `#<token>` fragment, or "" when there is none. */
+function tokenFromHash(hash: string): string {
+  const encoded = hash.replace(/^#/, "").trim();
+  // A hand-mangled fragment can be invalid percent-encoding, which throws.
+  let raw: string;
+  try {
+    raw = decodeURIComponent(encoded);
+  } catch {
+    raw = encoded;
+  }
+  return raw.length > 0 && raw.length <= TOKEN_MAX ? raw : "";
+}
+
+/** null until mounted (the server has no fragment), then the current fragment's token. */
+function useHashToken(): string | null {
+  const [token, setToken] = useState<string | null>(null);
+  useEffect(() => {
+    const read = () => setToken(tokenFromHash(window.location.hash));
+    read();
+    // Opening a second mail's link in the same tab changes only the fragment.
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
+  }, []);
+  return token;
+}
 
 type Load =
   | { state: "loading" }
@@ -61,14 +93,21 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function StatusPage({ token, locale }: { token: string; locale: Locale }) {
+export function StatusPage({ locale }: { locale: Locale }) {
   const copy = referralCopy(locale);
   // Navigation and retry labels come from the site's existing reviewed catalog.
   const site = useFrozenLandingMessages().verify;
+  const token = useHashToken();
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    if (token === null) return;
+    // No fragment: nothing to look up, and no request is made.
+    if (!token) {
+      setLoad({ state: "invalid" });
+      return;
+    }
     let alive = true;
     setLoad({ state: "loading" });
     getReferralStatus({ data: { token, locale } })
@@ -128,8 +167,9 @@ export function StatusPage({ token, locale }: { token: string; locale: Locale })
           </Card>
         )}
 
-        {load.state === "ready" && (
+        {load.state === "ready" && token && (
           <StatusCard
+            key={token}
             token={token}
             locale={locale}
             status={load.status}
