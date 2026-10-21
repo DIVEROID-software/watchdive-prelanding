@@ -75,7 +75,10 @@ export function LeaderboardView({
       )}
 
       <p className="mt-4 text-center text-caption">
-        <a href={buddyRulesPath(locale)} className="text-primary underline underline-offset-4">
+        <a
+          href={buddyRulesPath(locale)}
+          className="inline-flex min-h-11 items-center text-primary underline underline-offset-4"
+        >
           {copy.leaderboard.rulesLink}
         </a>
       </p>

@@ -134,8 +134,13 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // 2026-10-22: Buddy Invite adds a client-only leaderboard section between the
   // offer and the FAQ, a footer rules link, and the referral card in the
   // post-verification panel. The hero and both forms are untouched.
+  // 2026-10-22: Buddy Invite visual QA, program-on branches only: the card's
+  // share field gets a non-collapsing class and a label, reward tiers move
+  // into a <details>, the rules link gets a 44px target, and the invited
+  // banner gains one muted line. Switch-off DOM is pixel-identical to main
+  // (full-page diff 0 at 390/1280px in ko/en/de/ja).
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "b18f02098a4172c7d24b3518a2c2b4720be094c7a71b9865019fc5bcfe5d73ca");
+  assert.equal(digest, "c76ad0464ccb95cfae150c4b9912a437e568ec1ebab0394d8876c411d03344e4");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

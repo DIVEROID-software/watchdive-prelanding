@@ -8,6 +8,7 @@ import { useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 import type { ReferralStatus } from "@/lib/referral/contract";
 import { fill, referralCopy } from "@/lib/referral/copy";
 import { NICKNAME_MAX, NICKNAME_MIN, REFERRAL_TIERS } from "@/lib/referral/program";
+import { referralShareCopy } from "@/lib/referral/shareCopy";
 import { copyValues } from "@/lib/referral/values";
 
 // The private Buddy Invite page, opened from the signed link in the welcome
@@ -52,6 +53,12 @@ function heldFriends(status: ReferralStatus): number {
   const tier = REFERRAL_TIERS.find((t) => t.id === status.highestTier);
   return Math.max(status.credited, tier?.minFriends ?? 0);
 }
+
+// The brutal theme sets every h1 to the 44–84px display scale for page
+// sections (`html:root h1 { … !important }`). Inside this card that broke
+// Japanese mid-word (バディ招 / 待の状況) and filled a phone screen with the
+// title, so the card heading is capped the way the theme caps dialog titles.
+const TITLE = "text-heading [html:root_&]:text-[2rem]! sm:[html:root_&]:text-[2.5rem]!";
 
 type Load =
   | { state: "loading" }
@@ -102,7 +109,8 @@ function Stat({ label, value }: { label: string; value: string }) {
 export function StatusPage({ locale }: { locale: Locale }) {
   const copy = referralCopy(locale);
   // Navigation and retry labels come from the site's existing reviewed catalog.
-  const site = useFrozenLandingMessages().verify;
+  const frozen = useFrozenLandingMessages();
+  const site = frozen.verify;
   const token = useHashToken();
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const [attempt, setAttempt] = useState(0);
@@ -143,14 +151,14 @@ export function StatusPage({ locale }: { locale: Locale }) {
 
         {load.state === "loading" && (
           <Card role="status">
-            <h1 className="text-heading">{copy.status.title}</h1>
+            <h1 className={TITLE}>{copy.status.title}</h1>
             <div aria-hidden className="mt-5 h-24 animate-pulse rounded-xl bg-white/10" />
           </Card>
         )}
 
         {load.state === "invalid" && (
           <Card role="alert">
-            <h1 className="text-heading">{copy.status.title}</h1>
+            <h1 className={TITLE}>{copy.status.title}</h1>
             <p className="mt-3 text-body leading-relaxed text-white/75">
               {copy.status.invalidLink}
             </p>
@@ -159,9 +167,10 @@ export function StatusPage({ locale }: { locale: Locale }) {
 
         {load.state === "error" && (
           <Card role="alert">
-            <h1 className="text-heading">{copy.status.title}</h1>
+            <h1 className={TITLE}>{copy.status.title}</h1>
+            {/* A load failure, not a save: "Could not save" would be wrong here. */}
             <p className="mt-3 text-body leading-relaxed text-white/75">
-              {copy.status.errors.failed}
+              {frozen.errors.errorBody}
             </p>
             <button
               type="button"
@@ -187,10 +196,16 @@ export function StatusPage({ locale }: { locale: Locale }) {
 
         <footer className="mt-8 text-center text-caption text-white/55">
           <nav className="flex justify-center gap-4">
-            <Link to={privacyPath(locale)} className="inline-flex min-h-11 items-center underline">
+            <Link
+              to={privacyPath(locale)}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center px-1 underline"
+            >
               {site.footerPrivacy}
             </Link>
-            <Link to={termsPath(locale)} className="inline-flex min-h-11 items-center underline">
+            <Link
+              to={termsPath(locale)}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center px-1 underline"
+            >
               {site.footerTerms}
             </Link>
           </nav>
@@ -215,6 +230,8 @@ function StatusCard({
   const tiers = referralCopy(locale).tiers;
   const values = { ...copyValues(locale), min: NICKNAME_MIN, max: NICKNAME_MAX };
   const landing = useFrozenLandingMessages().referral;
+  // Legal review D9: neutral "Share" label and prefilled text, no reward claim.
+  const shareCopy = referralShareCopy(locale);
   const ids = { nickname: useId(), help: useId(), error: useId() };
 
   const [nickname, setNickname] = useState(status.nickname ?? "");
@@ -232,7 +249,7 @@ function StatusCard({
       if (navigator.share) {
         await navigator.share({
           title: "WatchDive",
-          text: landing.shareText,
+          text: shareCopy.text,
           url: status.shareUrl,
         });
         return;
@@ -274,7 +291,7 @@ function StatusCard({
   return (
     <div className="space-y-4">
       <Card>
-        <h1 className="text-heading">{copy.title}</h1>
+        <h1 className={TITLE}>{copy.title}</h1>
 
         <dl className="mt-5 grid grid-cols-2 gap-3">
           <Stat label={copy.countLabel} value={formatNumber(status.credited, locale)} />
@@ -316,14 +333,16 @@ function StatusCard({
               aria-label={copy.shareTitle}
               value={status.shareUrl}
               onFocus={(event) => event.currentTarget.select()}
-              className="h-11 flex-1 rounded-lg bg-white/95 px-3 text-body text-[color:var(--color-deep-2)] outline-none"
+              // `flex-1` only in the row layout: in the phone column it means
+              // flex-basis 0 along the column axis and collapses the field.
+              className="h-11 min-h-11 w-full min-w-0 shrink-0 rounded-lg bg-white/95 px-3 sm:w-auto sm:flex-1 text-body text-[color:var(--color-deep-2)] outline-none"
             />
             <button
               type="button"
               onClick={share}
               className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-body font-semibold text-[#F6FAFC] hover:brightness-110"
             >
-              {copied ? landing.copied : landing.shareButton}
+              {copied ? landing.copied : shareCopy.button}
             </button>
           </div>
           <span className="sr-only" aria-live="polite">
