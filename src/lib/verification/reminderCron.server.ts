@@ -134,6 +134,7 @@ export async function sendReferralNotices(
       dryRun,
       maxSends: 50,
       budgetMs: 15_000,
+      log,
     });
     log(`[referral-notices] run ${JSON.stringify(outcome)}`);
   } catch (error) {

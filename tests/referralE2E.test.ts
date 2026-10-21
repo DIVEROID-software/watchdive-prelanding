@@ -600,9 +600,13 @@ async function runStory(on: boolean) {
   assert.deepEqual(
     net.notion.calls
       .slice(callsBeforeDry)
-      .filter((call) => call.method !== "POST" || !call.path.endsWith("/query")),
+      // Reads only: row queries and (at most) the notice pass's schema GET.
+      .filter(
+        (call) =>
+          call.method !== "GET" && (call.method !== "POST" || !call.path.endsWith("/query")),
+      ),
     [],
-    "dry run: queries only, no write",
+    "dry run: reads only, no write",
   );
   if (on) {
     assert.deepEqual([dryTick.notices?.wouldSend, dryTick.notices?.sent], [2, 0]);

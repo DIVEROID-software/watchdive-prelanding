@@ -66,21 +66,32 @@ function referrerWith(friends: number, overrides: Partial<ReferralRow> = {}): Re
 class FakeStore {
   rows: ReferralRow[];
   lists = 0;
-  marks: { pageId: string; count: number; at: string }[] = [];
+  marks: { pageId: string; count: number; at: string; leaderReachedAt?: string }[] = [];
   failMark = false;
+  /** Program columns the fake database lacks (missingColumns answers with them). */
+  missing: string[] = [];
+  schemaReads = 0;
   constructor(rows: ReferralRow[]) {
     this.rows = rows;
+  }
+  async missingColumns() {
+    this.schemaReads++;
+    return [...this.missing];
   }
   async listProgramRows() {
     this.lists++;
     return this.rows.map((r) => ({ ...r }));
   }
-  async markNotified(pageId: string, input: { count: number; at: string }) {
+  async markNotified(
+    pageId: string,
+    input: { count: number; at: string; leaderReachedAt?: string },
+  ) {
     if (this.failMark) throw new Error("notion down");
     this.marks.push({ pageId, ...input });
     const target = this.rows.find((r) => r.pageId === pageId)!;
     target.notifiedCount = input.count;
     target.notifiedAt = input.at;
+    if (input.leaderReachedAt) target.leaderReachedAt = input.leaderReachedAt;
   }
 }
 
@@ -463,4 +474,154 @@ test("no Lead ID or no signing secret: no opt-out link, so no notice", async () 
   );
   assert.equal(b.skippedNoOptOut, 1);
   assert.equal(mailer.sent.length, 0);
+});
+
+// ---- schema gate --------------------------------------------------------------
+
+test("missing program columns abort the whole pass: nothing read, sent or written, one log line", async () => {
+  const store = new FakeStore(referrerWith(3));
+  store.missing = ["Referral leader reached at", "Referral notified count"];
+  const mailer = new FakeNoticeMailer();
+  const lines: string[] = [];
+  const result = await runReferralNotices(deps(store, mailer, { log: (line) => lines.push(line) }));
+  assert.equal(result.enabled, true);
+  assert.equal(result.aborted, "schema_missing");
+  assert.equal(result.pending + result.sent + result.wouldSend + result.sendFailed, 0);
+  assert.equal(store.schemaReads, 1, "checked once per pass");
+  assert.equal(store.lists, 0, "no row read");
+  assert.equal(mailer.sent.length, 0);
+  assert.equal(store.marks.length, 0);
+  assert.deepEqual(lines, [
+    '[referral-notices] referral_notices_schema_missing {"missing":["Referral leader reached at","Referral notified count"]}',
+  ]);
+});
+
+test("with every column present the schema is checked once and the pass runs", async () => {
+  const store = new FakeStore(referrerWith(1));
+  const mailer = new FakeNoticeMailer();
+  const lines: string[] = [];
+  const result = await runReferralNotices(deps(store, mailer, { log: (line) => lines.push(line) }));
+  assert.equal(result.aborted, undefined);
+  assert.equal(store.schemaReads, 1);
+  assert.equal(result.sent, 1);
+  assert.deepEqual(lines, []);
+});
+
+test("the schema gate also holds for a dry run, and switched off it is never consulted", async () => {
+  const store = new FakeStore(referrerWith(2));
+  store.missing = ["Referral notices off"];
+  const dry = await runReferralNotices(
+    deps(store, new FakeNoticeMailer(), { dryRun: true, log: () => {} }),
+  );
+  assert.equal(dry.aborted, "schema_missing");
+  assert.equal(dry.wouldSend, 0);
+  const off = new FakeStore(referrerWith(2));
+  await runReferralNotices(deps(off, new FakeNoticeMailer(), { env: {} }));
+  assert.equal(off.schemaReads, 0);
+});
+
+// ---- write-once Dive Leader instant ---------------------------------------------
+
+test("the first notice that announces Dive Leader stamps the 10th friend's instant, in the same write", async () => {
+  const rows = referrerWith(10, { notifiedCount: 9, notifiedAt: "2026-10-22T00:00:00.000Z" });
+  const store = new FakeStore(rows);
+  const mailer = new FakeNoticeMailer();
+  await runReferralNotices(deps(store, mailer));
+  assert.deepEqual(mailer.sent[0]!.crossed, ["leader"]);
+  // Friends are one minute apart from 02:00, so the 10th verified at 02:09.
+  assert.deepEqual(store.marks, [
+    {
+      pageId: rows[0]!.pageId,
+      count: 10,
+      at: NOW.toISOString(),
+      leaderReachedAt: "2026-10-23T02:09:00.000Z",
+    },
+  ]);
+});
+
+test("the leader stamp is write-once: later notices and an existing stamp are never rewritten", async () => {
+  // Already stamped (say by an earlier pass whose count write was lost).
+  const stamped = referrerWith(10, {
+    notifiedCount: 8,
+    notifiedAt: "2026-10-22T00:00:00.000Z",
+    leaderReachedAt: "2026-10-23T01:59:00.000Z",
+  });
+  const store = new FakeStore(stamped);
+  await runReferralNotices(deps(store, new FakeNoticeMailer()));
+  assert.equal(store.marks.length, 1);
+  assert.equal("leaderReachedAt" in store.marks[0]!, false);
+  assert.equal(stamped[0]!.leaderReachedAt, "2026-10-23T01:59:00.000Z");
+
+  // Announced ten already (before the column existed): two more friends the
+  // next KST day (the daily cap is 10) cross nothing new, so no stamp.
+  const later = referrerWith(10, { notifiedCount: 10, notifiedAt: "2026-10-22T00:00:00.000Z" });
+  for (const at of ["2026-10-23T16:00:00.000Z", "2026-10-23T16:01:00.000Z"]) {
+    later.push(row({ referredBy: later[0]!.refCode, verifiedAt: at }));
+  }
+  const laterStore = new FakeStore(later);
+  const mailer = new FakeNoticeMailer();
+  await runReferralNotices(
+    deps(laterStore, mailer, { now: () => new Date("2026-10-24T00:00:00.000Z") }),
+  );
+  assert.deepEqual(mailer.sent[0]!.crossed, []);
+  assert.equal("leaderReachedAt" in laterStore.marks[0]!, false);
+});
+
+test("a failed send writes no leader stamp; a lost count write restamps the same instant next tick", async () => {
+  const rows = referrerWith(10, { notifiedCount: 9, notifiedAt: "2026-10-22T00:00:00.000Z" });
+  const store = new FakeStore(rows);
+  const mailer = new FakeNoticeMailer();
+  mailer.fail = true;
+  const failed = await runReferralNotices(deps(store, mailer));
+  assert.equal(failed.sendFailed, 1);
+  assert.equal(store.marks.length, 0);
+  assert.equal(rows[0]!.leaderReachedAt, undefined);
+
+  mailer.fail = false;
+  store.failMark = true;
+  const lost = await runReferralNotices(deps(store, mailer));
+  assert.equal(lost.markFailed, 1);
+  assert.equal(rows[0]!.leaderReachedAt, undefined);
+
+  store.failMark = false;
+  await runReferralNotices(deps(store, mailer));
+  assert.equal(rows[0]!.leaderReachedAt, "2026-10-23T02:09:00.000Z");
+  assert.equal(
+    new Set(mailer.sent.map((m) => m.idempotencyKey)).size,
+    1,
+    "collapses at the provider",
+  );
+});
+
+test("a dry run never stamps the leader instant", async () => {
+  const rows = referrerWith(10, { notifiedCount: 9, notifiedAt: "2026-10-22T00:00:00.000Z" });
+  const store = new FakeStore(rows);
+  const result = await runReferralNotices(deps(store, new FakeNoticeMailer(), { dryRun: true }));
+  assert.equal(result.wouldSend, 1);
+  assert.equal(store.marks.length, 0);
+});
+
+test("the cron hook routes the schema-missing line through its own logger", async () => {
+  const lines: string[] = [];
+  const env = {
+    ...ON,
+    WATCHDIVE_VERIFICATION_SECRET: "x".repeat(32),
+    WATCHDIVE_PUBLIC_ORIGIN: "https://watchdive.example",
+    RESEND_API_KEY: "re_x",
+    WATCHDIVE_EMAIL_FROM: "a@b.example",
+  };
+  let seenLog: ((line: string) => void) | undefined;
+  await sendReferralNotices(
+    "db",
+    false,
+    env,
+    (async (d: ReferralNoticeDeps) => {
+      seenLog = d.log;
+      d.log?.("[referral-notices] referral_notices_schema_missing {}");
+      return { enabled: true, aborted: "schema_missing" } as never;
+    }) as typeof runReferralNotices,
+    (line) => lines.push(line),
+  );
+  assert.equal(typeof seenLog, "function");
+  assert.equal(lines[0], "[referral-notices] referral_notices_schema_missing {}");
 });

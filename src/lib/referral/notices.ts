@@ -11,6 +11,16 @@
 // first message instead of sending a second. A count that rose in between is a
 // genuinely new notice under a new key.
 //
+// The first notice that announces Dive Leader also stamps the write-once
+// `Referral leader reached at` (the exact light-order key, ledger.ts
+// `leaderInstant`) in the same PATCH as the count, and only after the
+// provider accepted the mail: a failed send records nothing.
+//
+// Before anything is read or sent, the pass checks that the program columns
+// exist (store `missingColumns`, one schema GET cached per process). Without
+// them a write of the announced count would be refused after the mail went
+// out, and every tick would mail the same person again.
+//
 // Imports from core (feat/referral-core), coded against the brief signatures:
 //   computeLedger(rows, { closesAt }) → LedgerResult   (./ledger.ts)
 //   statusUrl(origin, refCode, locale, secret) → string (./statusToken.ts)
@@ -21,6 +31,7 @@ import { parseReservationMarker } from "../reservation-mail/campaign.ts";
 import { conversionBlocked } from "../verification/contracts.ts";
 import { buddyUnsubscribeUrl } from "../verification/resend.ts";
 import type { ReferralMailer, ReferralRow, ReferralStore } from "./contract.ts";
+import { normalizeRefCode } from "./eligibility.ts";
 import { computeLedger } from "./ledger.ts";
 import {
   NOTICE_MIN_INTERVAL_MS,
@@ -84,7 +95,7 @@ export const DEFAULT_NOTICE_MAX_SENDS = 50;
 export type ReferralNoticeDeps = {
   /** Switches are read from here (see referralNoticesEnabled). */
   env: Record<string, string | undefined>;
-  store: Pick<ReferralStore, "listProgramRows" | "markNotified">;
+  store: Pick<ReferralStore, "listProgramRows" | "markNotified" | "missingColumns">;
   mailer: ReferralMailer;
   now: () => Date;
   publicOrigin: string;
@@ -107,12 +118,16 @@ export type ReferralNoticeDeps = {
   budgetMs?: number;
   /** Monotonic-ish clock for the budget; defaults to Date.now. */
   clock?: () => number;
+  /** Operational log line (column names and counts only); defaults to console.error. */
+  log?: (line: string) => void;
 };
 
 /** Counts only: safe for the log line and the cron response. */
 export type ReferralNoticeResult = {
   /** False when either switch is off; every count is then zero. */
   enabled: boolean;
+  /** Set when the pass stopped before reading rows; every count is then zero. */
+  aborted?: "schema_missing";
   dryRun: boolean;
   /** Referrers whose credited count is above the last announced one. */
   pending: number;
@@ -187,16 +202,27 @@ export async function runReferralNotices(deps: ReferralNoticeDeps): Promise<Refe
   // nothing and cannot fail the tick it rides.
   if (!result.enabled) return result;
 
+  // All or nothing: a missing column would let mail go out with no record of
+  // it (and then go out again every tick), so nothing is read or sent.
+  const missing = await deps.store.missingColumns();
+  if (missing.length > 0) {
+    (deps.log ?? ((line: string) => console.error(line)))(
+      `[referral-notices] referral_notices_schema_missing ${JSON.stringify({ missing })}`,
+    );
+    result.aborted = "schema_missing";
+    return result;
+  }
+
   const rows = await deps.store.listProgramRows();
   const ledger = computeLedger(rows, { closesAt: deps.closesAt });
   // Same lookup the ledger uses (first row by page id wins a code, codes
-  // compared trimmed and lowercased), so a notice always reaches the row that
+  // compared by normalizeRefCode), so a notice always reaches the row that
   // owns the standing.
   const byRefCode = new Map<string, ReferralRow>();
   for (const row of [...rows].sort((a, b) =>
     a.pageId < b.pageId ? -1 : a.pageId > b.pageId ? 1 : 0,
   )) {
-    const code = (row.refCode ?? "").trim().toLowerCase();
+    const code = normalizeRefCode(row.refCode);
     if (code && !byRefCode.has(code)) byRefCode.set(code, row);
   }
 
@@ -258,12 +284,19 @@ export async function runReferralNotices(deps: ReferralNoticeDeps): Promise<Refe
 
     const credited = standing.credited;
     const next = nextTier(credited);
+    const crossed = tiersCrossed(announced, credited).map((tier) => tier.id);
+    // Write-once: stamped only by the notice that first announces Dive
+    // Leader to a row with an empty cell; an existing stamp is never touched.
+    const leaderReachedAt =
+      crossed.includes("leader") && !row.leaderReachedAt
+        ? (standing.reachedAt.leader ?? now.toISOString())
+        : undefined;
     try {
       await deps.mailer.sendReferralNotice({
         to: row.email,
         locale,
         credited,
-        crossed: tiersCrossed(announced, credited).map((tier) => tier.id),
+        crossed,
         nextTier: next ? next.id : null,
         remainingToNext: next ? next.minFriends - credited : null,
         statusUrl: statusUrl(deps.publicOrigin, standing.refCode, locale, deps.secret),
@@ -279,7 +312,11 @@ export async function runReferralNotices(deps: ReferralNoticeDeps): Promise<Refe
     }
     result.sent++;
     try {
-      await deps.store.markNotified(row.pageId, { count: credited, at: now.toISOString() });
+      await deps.store.markNotified(row.pageId, {
+        count: credited,
+        at: now.toISOString(),
+        ...(leaderReachedAt ? { leaderReachedAt } : {}),
+      });
     } catch {
       result.markFailed++;
     }

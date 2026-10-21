@@ -883,11 +883,20 @@ test("notices over 40 random ticks: once per (code,count), never to opted-out, i
       async listProgramRows() {
         return rows.map((row) => ({ ...row, flags: [...row.flags] }));
       },
-      async markNotified(pageId: string, input: { count: number; at: string }) {
+      async missingColumns() {
+        return [];
+      },
+      async markNotified(
+        pageId: string,
+        input: { count: number; at: string; leaderReachedAt?: string },
+      ) {
         if (failMark) throw new Error("notion down");
         const target = rows.find((row) => row.pageId === pageId)!;
+        // Write-once is the caller's promise; the fake checks it.
+        assert.ok(!(input.leaderReachedAt && target.leaderReachedAt), "leader stamp overwritten");
         target.notifiedCount = input.count;
         target.notifiedAt = input.at;
+        if (input.leaderReachedAt) target.leaderReachedAt = input.leaderReachedAt;
       },
     };
     for (let tick = 0; tick < 40; tick++) {
@@ -1041,10 +1050,17 @@ test("a friend withdrawn after the notice: status shows the lower count but keep
       async listProgramRows() {
         return rows.map((row) => ({ ...row }));
       },
-      async markNotified(pageId: string, input: { count: number; at: string }) {
+      async missingColumns() {
+        return [];
+      },
+      async markNotified(
+        pageId: string,
+        input: { count: number; at: string; leaderReachedAt?: string },
+      ) {
         const target = rows.find((row) => row.pageId === pageId)!;
         target.notifiedCount = input.count;
         target.notifiedAt = input.at;
+        if (input.leaderReachedAt) target.leaderReachedAt = input.leaderReachedAt;
       },
     },
     mailer: {
@@ -1310,4 +1326,238 @@ test("report segments are deterministic and match the ledger for every seed", ()
       assert.ok(ledger.standings.has(code), `seed ${seed}: ${code} has no standing`);
     assert.ok(!JSON.stringify(a.summary).includes("@"));
   }
+});
+
+// ---- exact light order: the write-once `Referral leader reached at` ------------
+
+/** Asserts the light-order invariants on one ledger; returns leaders in order. */
+function assertLightOrder(ledger: ReturnType<typeof computeLedger>, label: string) {
+  const leaders = [...ledger.standings.values()].filter((s) => s.reachedAt.leader);
+  const byOrder = [...leaders].sort((a, b) => a.leaderOrder! - b.leaderOrder!);
+  assert.deepEqual(
+    byOrder.map((s) => s.leaderOrder),
+    leaders.map((_, i) => i + 1),
+    `${label}: contiguous 1..n`,
+  );
+  for (let i = 1; i < byOrder.length; i++) {
+    const ta = Date.parse(byOrder[i - 1].reachedAt.leader!);
+    const tb = Date.parse(byOrder[i].reachedAt.leader!);
+    assert.ok(
+      ta < tb || (ta === tb && byOrder[i - 1].refCode < byOrder[i].refCode),
+      `${label}: ordered by leader instant, then code`,
+    );
+  }
+  for (const s of ledger.standings.values()) {
+    if (!s.reachedAt.leader) {
+      assert.equal(s.leaderOrder, null, label);
+      assert.equal(s.lightEligible, false, label);
+    } else {
+      assert.equal(s.lightEligible, s.leaderOrder! <= LEADER_LIGHT_STOCK, label);
+    }
+  }
+  assert.equal(
+    leaders.filter((s) => s.lightEligible).length,
+    Math.min(LEADER_LIGHT_STOCK, leaders.length),
+    `${label}: exactly min(30, n) lights`,
+  );
+  return byOrder;
+}
+
+test("exact light order: a recorded leader instant decides the order; still contiguous 1..n and exactly 30", () => {
+  for (const seed of SEEDS.slice(0, 80)) {
+    const rng = mulberry32(seed ^ 0x5eed);
+    const rows = leaderRows(seed, 45);
+    const timeline = computeLedger(rows, { closesAt: null });
+    const stamps = new Map<string, string>();
+    const told = new Set<string>();
+    const changed = rows.map((row) => {
+      const standing = timeline.standings.get(row.refCode);
+      if (!standing?.reachedAt.leader || !chance(rng, 0.6)) return row;
+      // A stamp near the timeline instant: earlier, later, or an exact tie
+      // with another stamp, as a real notice pass would have written it.
+      const base = Date.parse(standing.reachedAt.leader);
+      const stamp = new Date(
+        chance(rng, 0.2) ? BASE + 30 * HOUR : base + Math.floor((rng() - 0.5) * 4 * HOUR),
+      ).toISOString();
+      stamps.set(row.refCode, stamp);
+      told.add(row.refCode);
+      return { ...row, leaderReachedAt: stamp, notifiedCount: 10, notifiedAt: stamp };
+    });
+    // Remove friends from some stamped leaders: they keep the told tier and the stamp.
+    let removed = 0;
+    const withRemovals = changed.map((row) => {
+      if (row.referredBy && told.has(row.referredBy) && chance(rng, 0.15)) {
+        removed++;
+        return { ...row, suspect: true };
+      }
+      return row;
+    });
+    for (const [label, input] of [
+      ["stamped", changed],
+      ["stamped+removed", withRemovals],
+      ["shuffled", shuffle(rng, withRemovals)],
+    ] as const) {
+      const ledger = computeLedger(input, { closesAt: null });
+      for (const [code, stamp] of stamps) {
+        assert.equal(ledger.standings.get(code)!.reachedAt.leader, stamp, `seed ${seed} ${label}`);
+      }
+      // Unstamped leaders keep the timeline instant.
+      for (const s of ledger.standings.values()) {
+        if (!stamps.has(s.refCode) && s.reachedAt.leader && label === "stamped") {
+          assert.equal(s.reachedAt.leader, timeline.standings.get(s.refCode)!.reachedAt.leader);
+        }
+      }
+      assertLightOrder(ledger, `seed ${seed} ${label}`);
+    }
+    // Removals move nobody whose instant is recorded.
+    const before = computeLedger(changed, { closesAt: null });
+    const after = computeLedger(withRemovals, { closesAt: null });
+    const orderOf = (l: typeof before) =>
+      [...l.standings.values()]
+        .filter((s) => stamps.has(s.refCode))
+        .sort((a, b) => a.leaderOrder! - b.leaderOrder!)
+        .map((s) => s.refCode);
+    assert.deepEqual(orderOf(after), orderOf(before), `seed ${seed}: ${removed} removals`);
+  }
+});
+
+test("exact light order: once every leader is stamped, later friends and removals never change it", () => {
+  for (const seed of SEEDS.slice(0, 40)) {
+    const rng = mulberry32(seed);
+    const rows = leaderRows(seed, 34);
+    const first = computeLedger(rows, { closesAt: null });
+    const stamped = rows.map((row) => {
+      const at = first.standings.get(row.refCode)?.reachedAt.leader;
+      return at ? { ...row, leaderReachedAt: at, notifiedCount: 10, notifiedAt: at } : row;
+    });
+    const order = (input: ReferralRow[]) =>
+      assertLightOrder(computeLedger(input, { closesAt: null }), `seed ${seed}`).map(
+        (s) => `${s.leaderOrder}:${s.refCode}:${s.lightEligible}`,
+      );
+    const baseline = order(stamped);
+    assert.deepEqual(baseline, order(rows), "stamping the timeline instant changes nothing");
+    // Later: more friends on a later day for random leaders, and removals.
+    let id = 900_000;
+    const later = [...stamped];
+    for (const row of stamped) {
+      if (row.referredBy || !chance(rng, 0.5)) continue;
+      for (let k = 0; k < 3; k++) {
+        later.push(
+          baseRow(id++, `z${String(id).padStart(7, "0")}`, `late${seed}-${id}@example.com`, {
+            referredBy: row.refCode,
+            verifiedAt: new Date(BASE + 72 * HOUR + k * 1000).toISOString(),
+          }),
+        );
+      }
+    }
+    const thinned = later.map((row) =>
+      row.referredBy && chance(rng, 0.2) ? { ...row, suspect: true } : row,
+    );
+    assert.deepEqual(order(thinned), baseline, `seed ${seed}`);
+  }
+});
+
+test("a leader stamp counts only while the tier is held, is readable, and the review is not rejected", () => {
+  const rows = leaderRows(4242, 3);
+  const ledger = computeLedger(rows, { closesAt: null });
+  const target = [...ledger.standings.values()].find((s) => s.leaderOrder === 3)!;
+  const early = "2026-10-22T00:00:00.000Z";
+  const withStamp = (extra: Partial<ReferralRow>) =>
+    rows.map((row) =>
+      row.refCode === target.refCode ? { ...row, leaderReachedAt: early, ...extra } : row,
+    );
+
+  const used = computeLedger(withStamp({}), { closesAt: null }).standings.get(target.refCode)!;
+  assert.equal(used.reachedAt.leader, early);
+  assert.equal(used.leaderOrder, 1);
+
+  // Unreadable: the timeline instant stands.
+  const bad = computeLedger(withStamp({ leaderReachedAt: "not a date" }), { closesAt: null });
+  assert.equal(bad.standings.get(target.refCode)!.reachedAt.leader, target.reachedAt.leader);
+
+  // Not held any more (friends removed, never told): no leader at all.
+  const gone = withStamp({}).map((row) =>
+    row.referredBy === target.refCode ? { ...row, suspect: true } : row,
+  );
+  const lost = computeLedger(gone, { closesAt: null });
+  assert.equal(lost.standings.get(target.refCode), undefined);
+
+  // Rejected: no standing, so no light, whatever the stamp says.
+  const rejected = computeLedger(withStamp({ rewardReview: "rejected" }), { closesAt: null });
+  assert.equal(rejected.standings.has(target.refCode), false);
+  assertLightOrder(rejected, "rejected");
+});
+
+test("report light allocation follows the recorded instants: exactly 30, in stamp order", () => {
+  const rows = leaderRows(31337, 33);
+  const timeline = computeLedger(rows, { closesAt: null });
+  // Reverse the timeline with stamps: the last to reach ten is stamped first.
+  const ordered = [...timeline.standings.values()].sort((a, b) => b.leaderOrder! - a.leaderOrder!);
+  const stampOf = new Map(
+    ordered.map((s, i) => [s.refCode, new Date(BASE + i * 60_000).toISOString()]),
+  );
+  const stamped = rows.map((row) =>
+    stampOf.has(row.refCode)
+      ? { ...row, leaderReachedAt: stampOf.get(row.refCode)!, notifiedCount: 10 }
+      : row,
+  );
+  const { summary } = reportFor(stamped);
+  assert.equal(summary.lightAllocation.length, LEADER_LIGHT_STOCK);
+  assert.deepEqual(
+    summary.lightAllocation.map((e) => e.refCode),
+    ordered.slice(0, LEADER_LIGHT_STOCK).map((s) => s.refCode),
+  );
+  assert.deepEqual(
+    summary.lightAllocation.map((e) => e.order),
+    Array.from({ length: LEADER_LIGHT_STOCK }, (_, i) => i + 1),
+  );
+});
+
+// ---- one ref-code rule for every lookup -----------------------------------------
+
+test("normalizeRefCode: trimmed, lowercased, exactly eight [a-z0-9], else no code", () => {
+  assert.equal(normalizeRefCode(" AB12cd34\n"), "ab12cd34");
+  for (const bad of [
+    "",
+    "   ",
+    "ab12cd3",
+    "ab12cd345",
+    "ab12-d34",
+    "ab12cd3!",
+    "ａb12cd34",
+    undefined,
+    null,
+    12345678,
+  ]) {
+    assert.equal(normalizeRefCode(bad as never), "", String(bad));
+  }
+});
+
+test("a Referred by that is not a code is an unknown referrer, never a credit", () => {
+  const ref = baseRow(1, "ab12cd34", "ref@example.com");
+  const friends = [" AB12CD34 ", "ab12cd3", "ab12cd34x", "ab12-cd34"].map((by, i) =>
+    baseRow(10 + i, `f000000${i}`, `f${i}@example.com`, { referredBy: by }),
+  );
+  const ledger = computeLedger([ref, ...friends], { closesAt: null });
+  assert.equal(
+    ledger.standings.get("ab12cd34")!.credited,
+    1,
+    "only the padded/uppercase code matches",
+  );
+  assert.equal(ledger.excluded.unknown_referrer, 3);
+});
+
+test("report rows and friends are keyed by the same rule as the ledger", () => {
+  const ref = baseRow(1, " AB12CD34 ", "ref@example.com");
+  const friends = Array.from({ length: 3 }, (_, i) =>
+    baseRow(10 + i, `f000000${i}`, `f${i}@example.com`, {
+      referredBy: i === 0 ? "AB12CD34" : "ab12cd34",
+      verifiedAt: new Date(BASE + i * 1000).toISOString(),
+    }),
+  );
+  const rows = [ref, ...friends];
+  const ledger = computeLedger(rows, { closesAt: null });
+  assert.equal(ledger.standings.get("ab12cd34")!.credited, 3);
+  const { rowsByRef } = reportFor(rows);
+  assert.equal(rowsByRef.get("ab12cd34")?.pageId, ref.pageId);
 });

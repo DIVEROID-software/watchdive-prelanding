@@ -15,10 +15,24 @@ import { canonicalEmail } from "../api/abuse.ts";
 import { CANONICAL_EMAIL_PROPERTY } from "../api/notionCanonicalEmail.ts";
 import { toLeadRecord, type NotionRequest } from "../verification/notionLead.ts";
 import { REFERRAL_COLUMNS, type ReferralRow, type ReferralStore } from "./contract.ts";
+import { normalizeRefCode } from "./eligibility.ts";
 
 /** 100 rows a page; a runaway cursor stops here rather than looping forever. */
 const MAX_PAGES = 500;
-const REF_CODE = /^[a-z0-9]{8}$/;
+
+/**
+ * How long a schema read that found every program column is trusted. The
+ * notice pass rides a 5-minute tick, so this is about one schema GET per
+ * process per few ticks. A read that found columns missing is not cached:
+ * once ops add them, the next tick sees it.
+ */
+export const SCHEMA_CACHE_MS = 10 * 60 * 1000;
+const schemaOk = new Map<string, number>();
+
+/** Test hook: forget every cached schema read. */
+export function resetReferralSchemaCache(): void {
+  schemaOk.clear();
+}
 
 type Properties = Record<string, unknown>;
 
@@ -61,6 +75,7 @@ export function toReferralRow(page: Record<string, unknown>): ReferralRow | unde
   const nickname = readText(properties[REFERRAL_COLUMNS.nickname]);
   const notifiedAt = readDate(properties[REFERRAL_COLUMNS.notifiedAt]);
   const rewardReview = readReview(properties[REFERRAL_COLUMNS.rewardReview]);
+  const leaderReachedAt = readDate(properties[REFERRAL_COLUMNS.leaderReachedAt]);
   // Rows older than the canonical column fall back to the same canonicalizer
   // the signup form uses, so self-referral and duplicate checks still hold.
   const stored = readCanonicalEmail(properties[CANONICAL_EMAIL_PROPERTY]);
@@ -82,6 +97,7 @@ export function toReferralRow(page: Record<string, unknown>): ReferralRow | unde
     notifiedCount: readNumber(properties[REFERRAL_COLUMNS.notifiedCount]),
     ...(notifiedAt ? { notifiedAt } : {}),
     ...(rewardReview ? { rewardReview } : {}),
+    ...(leaderReachedAt ? { leaderReachedAt } : {}),
     ...(lead.signupLocale ? { signupLocale: lead.signupLocale } : {}),
     ...(lead.leadId ? { leadId: lead.leadId } : {}),
     ...(lead.signupCountry ? { signupCountry: lead.signupCountry } : {}),
@@ -104,7 +120,9 @@ export const PROGRAM_ROWS_FILTER = {
 export function createNotionReferralStore(
   request: NotionRequest,
   databaseId: string,
+  options: { clock?: () => number } = {},
 ): ReferralStore {
+  const clock = options.clock ?? Date.now;
   return {
     async listProgramRows() {
       const rows: ReferralRow[] = [];
@@ -129,8 +147,8 @@ export function createNotionReferralStore(
     },
 
     async findByRefCode(refCode) {
-      const code = refCode.trim().toLowerCase();
-      if (!REF_CODE.test(code)) return undefined;
+      const code = normalizeRefCode(refCode);
+      if (!code) return undefined;
       const result = await request("POST", `databases/${databaseId}/query`, {
         filter: { property: REFERRAL_COLUMNS.refCode, rich_text: { equals: code } },
         // Codes are unique by construction; on a (never expected) collision
@@ -162,12 +180,35 @@ export function createNotionReferralStore(
       if (!Number.isSafeInteger(input.count) || input.count < 0) {
         throw new Error("A notified count must be a non-negative integer");
       }
+      if (
+        input.leaderReachedAt !== undefined &&
+        !Number.isFinite(Date.parse(input.leaderReachedAt))
+      ) {
+        throw new Error("A leader instant must be a valid date");
+      }
       await request("PATCH", `pages/${pageId}`, {
         properties: {
           [REFERRAL_COLUMNS.notifiedCount]: { number: input.count },
           [REFERRAL_COLUMNS.notifiedAt]: { date: { start: input.at } },
+          // Write-once by the caller's contract: only named when the row's
+          // cell was empty in the pass that sent the first Dive Leader notice.
+          ...(input.leaderReachedAt
+            ? { [REFERRAL_COLUMNS.leaderReachedAt]: { date: { start: input.leaderReachedAt } } }
+            : {}),
         },
       });
+    },
+
+    async missingColumns() {
+      const cachedAt = schemaOk.get(databaseId);
+      if (cachedAt !== undefined && clock() - cachedAt < SCHEMA_CACHE_MS) return [];
+      // One database GET returns the property map (names and types), no rows.
+      const database = await request("GET", `databases/${databaseId}`);
+      const present = new Set(Object.keys((database.properties ?? {}) as Properties));
+      const missing = Object.values(REFERRAL_COLUMNS).filter((name) => !present.has(name));
+      if (missing.length === 0) schemaOk.set(databaseId, clock());
+      else schemaOk.delete(databaseId);
+      return missing;
     },
   };
 }

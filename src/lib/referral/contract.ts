@@ -31,6 +31,12 @@ export const REFERRAL_COLUMNS = {
   notifiedAt: "Referral notified at",
   /** New select (ops): pending | approved | rejected — manual reward review. */
   rewardReview: "Referral reward review",
+  /**
+   * New date, write-once: the instant the person first reached Dive Leader,
+   * recorded with the notice that announced it. The exact key of the light
+   * order; never overwritten once set (see notices.ts).
+   */
+  leaderReachedAt: "Referral leader reached at",
 } as const;
 
 /** One waitlist row, reduced to what the referral program may read. */
@@ -53,6 +59,8 @@ export type ReferralRow = {
   notifiedCount: number;
   notifiedAt?: string;
   rewardReview?: "pending" | "approved" | "rejected";
+  /** Write-once `Referral leader reached at` (ISO), when recorded. */
+  leaderReachedAt?: string;
   signupLocale?: string;
   /**
    * Opaque `Lead ID`, server-only: signs the referrer's own opt-out link
@@ -162,7 +170,20 @@ export interface ReferralStore {
   listProgramRows(): Promise<ReferralRow[]>;
   findByRefCode(refCode: string): Promise<ReferralRow | undefined>;
   writeSettings(pageId: string, input: ReferralSettingsInput): Promise<void>;
-  markNotified(pageId: string, input: { count: number; at: string }): Promise<void>;
+  /**
+   * Records the announced count. `leaderReachedAt` is passed only on the
+   * notice that first announced Dive Leader to a row whose write-once column
+   * is still empty, and is written in the same PATCH.
+   */
+  markNotified(
+    pageId: string,
+    input: { count: number; at: string; leaderReachedAt?: string },
+  ): Promise<void>;
+  /**
+   * Program columns (REFERRAL_COLUMNS) missing from the database schema, by
+   * name; empty when all exist. One lightweight schema read, cached briefly.
+   */
+  missingColumns(): Promise<string[]>;
 }
 
 /** Friend-joined / tier-reached mail, one per referrer per tick at most. */
