@@ -11,7 +11,11 @@
 //
 // Decisions (documented for review):
 //   - One person counts once: a second confirmed row with the same canonical
-//     email is `duplicate`, whoever referred it. The earliest confirmation wins.
+//     email or referral identity key (identity.ts: Gmail dots/+tags, Apple
+//     me.com/mac.com, documented +tags) is `duplicate`, whoever referred it.
+//     The earliest confirmation wins.
+//   - A friend who confirmed and later unsubscribed keeps counting
+//     (`wasConfirmedFriend`): counts never drop because a friend left the list.
 //   - The daily cap is per referrer per Asia/Seoul calendar day of the friend's
 //     `Verified at`. Friends over the cap are `daily_cap` and never roll over.
 //   - A referrer gets a standing only while their own row is a confirmed,
@@ -33,6 +37,7 @@ import type {
   ReferrerStanding,
 } from "./contract.ts";
 import { excludeReason, normalizeRefCode, referrerEligible, verifiedAtMs } from "./eligibility.ts";
+import { referralIdentityKey } from "./identity.ts";
 import { checkNickname } from "./nickname.ts";
 import {
   CREDIT_DAY_TIME_ZONE,
@@ -104,16 +109,21 @@ export function computeLedger(
   }
   candidates.sort((a, b) => a.at - b.at || compare(a.friend.pageId, b.friend.pageId));
 
-  const seenPeople = new Set<string>();
+  // A person is seen under both keys: the signup's canonical email and the
+  // referral identity key (documented provider aliases, identity.ts).
+  const seenCanonical = new Set<string>();
+  const seenIdentity = new Set<string>();
   const perDay = new Map<string, number>();
   const credits = new Map<string, number[]>();
   for (const { friend, code, at } of candidates) {
-    const person = friend.canonicalEmail || friend.email.trim().toLowerCase();
-    if (person && seenPeople.has(person)) {
+    const canonical = friend.canonicalEmail || friend.email.trim().toLowerCase();
+    const identity = referralIdentityKey(friend.email);
+    if ((canonical && seenCanonical.has(canonical)) || (identity && seenIdentity.has(identity))) {
       excluded.duplicate += 1;
       continue;
     }
-    if (person) seenPeople.add(person);
+    if (canonical) seenCanonical.add(canonical);
+    if (identity) seenIdentity.add(identity);
     const dayKey = `${code}|${creditDayKey(at)}`;
     const today = perDay.get(dayKey) ?? 0;
     if (today >= DAILY_CREDIT_CAP) {
