@@ -1,4 +1,4 @@
-import { INLINE_MEASUREMENT_ALLOWED_JS, measurementAllowed } from "./consentRegion.ts";
+import { measurementAllowed } from "./consentRegion.ts";
 import { competitionRegistry } from "./competitionRegistry.ts";
 import type { ExperimentContext } from "./conversionExperimentContract.ts";
 
@@ -18,21 +18,25 @@ declare global {
   }
 }
 
-/** Before first paint: visual choice is ephemeral until measurement is allowed.
- * The QA override never writes the visitor's assignment and never counts. */
+/** Before first paint. Since the 2026-10-21 full rollout every visitor, including
+ * one whose saved assignment was control, sees form_first; only the QA override
+ * can show control, and it never writes the visitor's assignment or counts. */
 export function experimentBootstrap(enabled: boolean): string {
   if (!enabled) return "";
   return `(function(){try{
 var p=new URLSearchParams(location.search),qa=p.get('wd_qa')==='1';
-var v=crypto.getRandomValues(new Uint8Array(1))[0]<128?'control':'form_first';
-if(!qa&&${INLINE_MEASUREMENT_ALLOWED_JS}){try{var s=JSON.parse(localStorage.getItem(${JSON.stringify(EXPERIMENT_STORAGE_KEY)})||'null');if(s&&s.expiresAt>Date.now()&&(s.variant==='control'||s.variant==='form_first'))v=s.variant;}catch(e){}}
+var v='form_first';
 if(qa&&(p.get('wd_variant')==='control'||p.get('wd_variant')==='form_first'))v=p.get('wd_variant');
 window.__wdLandingVariant=v;window.__wdLandingQa=qa;document.documentElement.dataset.wdLanding=v;
 }catch(e){}})();`;
 }
 
-export function variantFromRandomByte(byte: number): Variant {
-  return byte < 128 ? "control" : "form_first";
+/** Allocation phase boundary: 50:50 from 2026-10-08, 100% form_first from this
+ * release on 2026-10-21. Split experiment cohorts at the deploy time. */
+export const FORM_FIRST_FULL_ROLLOUT = "2026-10-21" as const;
+
+export function assignedVariant(): Variant {
+  return "form_first";
 }
 
 /** Match the complete registered ad tuple; a team label supplied in a URL is not evidence. */

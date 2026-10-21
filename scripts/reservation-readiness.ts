@@ -773,16 +773,22 @@ export async function evaluateReadiness(input: ReadinessInput): Promise<Readines
   );
 
   const experiment = input.code.experimentClient ?? "";
-  const splitOk =
+  const legacySplit =
     experiment.includes('return byte < 128 ? "control" : "form_first"') &&
     experiment.includes("<128?'control':'form_first'");
+  const fullRollout =
+    experiment.includes('FORM_FIRST_FULL_ROLLOUT = "2026-10-21"') &&
+    experiment.includes("var v='form_first';");
+  const splitOk = legacySplit || fullRollout;
   push(
     checks,
     "experiment_split",
     splitOk ? "pass" : "fail",
     splitOk
-      ? "Form-first assignment is still the 50:50 byte < 128 split."
-      : "Form-first 50:50 assignment marker is missing. Do not change the experiment as part of reservation.",
+      ? fullRollout
+        ? "Form-first assignment is the owner-approved 2026-10-21 full rollout."
+        : "Form-first assignment is still the 50:50 byte < 128 split."
+      : "Form-first assignment marker is missing. Do not change the experiment as part of reservation.",
   );
 
   const seoOk = (input.code.seo ?? "").includes(
