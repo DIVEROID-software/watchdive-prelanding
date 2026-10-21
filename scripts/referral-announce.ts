@@ -26,6 +26,10 @@ import {
   referralProgramEnabled,
 } from "../src/lib/referral/program.ts";
 import { DEFAULT_LOCALE, localeFromPathname, matchLocale, type Locale } from "../src/lib/i18n/locale.ts";
+import { FIELD_LAUNCH_MAIL, parseLaunchMarker } from "../src/lib/launchMail/audience.ts";
+import { parseReservationMarker } from "../src/lib/reservation-mail/campaign.ts";
+import { FIELD_RESERVATION_MAIL } from "../src/lib/reservation-mail/store.ts";
+import { conversionBlocked } from "../src/lib/verification/contracts.ts";
 
 export const ANNOUNCE_CAMPAIGN = `${REFERRAL_PROGRAM_ID}-announce`;
 const SENDER_IDENTITY =
@@ -43,13 +47,25 @@ export type AnnounceRow = {
   refCode: string;
   signupLocale?: string;
   landingPath?: string;
+  /** Abuse flags on the row (`Flags`). */
+  flags?: string[];
+  /**
+   * Raw `Launch mail` / `Reservation mail` cells. The one-click unsubscribe
+   * this very mail carries writes `unsubscribed <iso>` to `Launch mail`, never
+   * to `Verification status`, so the status alone does not see an opt-out.
+   */
+  launchMail?: string;
+  reservationMail?: string;
 };
 
 export type SkipReason =
   | "not_verified"
   | "unsubscribed"
+  | "unsubscribed_address"
   | "suspect"
+  | "blocked_flag"
   | "duplicate"
+  | "duplicate_address"
   | "verified_after_release"
   | "verified_at_missing"
   | "no_ref_code"
@@ -62,9 +78,10 @@ export function announceSkipReason(
   releasedAt: Date,
   ignoreRelease = false,
 ): SkipReason | null {
-  if (row.status === "unsubscribed") return "unsubscribed";
+  if (optedOut(row)) return "unsubscribed";
   if (row.status !== "verified" || !row.emailVerified) return "not_verified";
   if (row.suspect) return "suspect";
+  if (conversionBlocked(row.flags ?? [])) return "blocked_flag";
   if (row.duplicate) return "duplicate";
   if (!row.email.includes("@")) return "no_email";
   if (!/^[a-z0-9]{8}$/.test(row.refCode)) return "no_ref_code";
@@ -74,6 +91,19 @@ export function announceSkipReason(
     if (at >= releasedAt.getTime()) return "verified_after_release";
   }
   return null;
+}
+
+/** Any opt-out on the row: status, or a launch/reservation one-click unsubscribe. */
+function optedOut(row: AnnounceRow): boolean {
+  return (
+    row.status === "unsubscribed" ||
+    parseLaunchMarker(row.launchMail).kind === "unsubscribed" ||
+    parseReservationMarker(row.reservationMail).kind === "unsubscribed"
+  );
+}
+
+function addressOf(row: Pick<AnnounceRow, "email">): string {
+  return row.email.trim().toLowerCase();
 }
 
 export function announceKey(row: Pick<AnnounceRow, "leadId" | "pageId">, selfTest = false): string {
@@ -249,12 +279,18 @@ export async function runAnnounce(options: AnnounceOptions, deps: AnnounceDeps):
   const only = options.only?.trim().toLowerCase();
   const selfTest = Boolean(only);
   const queue: { row: AnnounceRow; locale: Locale; key: string }[] = [];
+  // An opt-out on any row of an address covers the address (the person may
+  // have signed up twice), and an address gets one announcement, not one per row.
+  const optedOutAddresses = new Set(deps.rows.filter(optedOut).map(addressOf));
+  const queuedAddresses = new Set<string>();
   for (const row of deps.rows) {
-    if (only && row.email.trim().toLowerCase() !== only) {
+    if (only && addressOf(row) !== only) {
       result.skipped.not_selected = (result.skipped.not_selected ?? 0) + 1;
       continue;
     }
-    const why = announceSkipReason(row, options.releasedAt, selfTest);
+    let why = announceSkipReason(row, options.releasedAt, selfTest);
+    if (!why && optedOutAddresses.has(addressOf(row))) why = "unsubscribed_address";
+    if (!why && queuedAddresses.has(addressOf(row))) why = "duplicate_address";
     if (why) {
       result.skipped[why] = (result.skipped[why] ?? 0) + 1;
       continue;
@@ -262,6 +298,7 @@ export async function runAnnounce(options: AnnounceOptions, deps: AnnounceDeps):
     const locale = rowLocale(row);
     result.eligible += 1;
     result.byLocale[locale] = (result.byLocale[locale] ?? 0) + 1;
+    queuedAddresses.add(addressOf(row));
     queue.push({ row, locale, key: announceKey(row, selfTest) });
   }
 
@@ -336,6 +373,17 @@ export async function runAnnounce(options: AnnounceOptions, deps: AnnounceDeps):
   }
 }
 
+/** Text of a rich_text/title/select cell, "" when absent. */
+function plainCell(property: unknown): string {
+  const value = property as
+    | { rich_text?: { plain_text?: string }[]; title?: { plain_text?: string }[]; select?: { name?: string } | null }
+    | undefined;
+  if (!value) return "";
+  if (value.rich_text) return value.rich_text.map((part) => part.plain_text ?? "").join("");
+  if (value.title) return value.title.map((part) => part.plain_text ?? "").join("");
+  return value.select?.name ?? "";
+}
+
 export const USAGE = `Usage: node --experimental-strip-types --env-file=<env> scripts/referral-announce.ts
   --released-at <ISO>          program release instant; only people verified BEFORE it are eligible (or WATCHDIVE_REFERRAL_RELEASED_AT)
   [--limit <n>]                at most n sends this run (staged batches; re-run resumes)
@@ -406,6 +454,9 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
         pageId: lead.pageId, leadId: lead.leadId, email: lead.email, status: lead.status,
         emailVerified: lead.emailVerified, suspect: lead.suspect, duplicate: Boolean(lead.duplicate),
         verifiedAt: lead.verifiedAt, refCode: lead.refCode, signupLocale: lead.signupLocale, landingPath: lead.landingPath,
+        flags: lead.flags,
+        launchMail: plainCell((result.properties as Record<string, unknown> | undefined)?.[FIELD_LAUNCH_MAIL]),
+        reservationMail: plainCell((result.properties as Record<string, unknown> | undefined)?.[FIELD_RESERVATION_MAIL]),
       });
     }
     cursor = page.has_more ? (page.next_cursor ?? undefined) : undefined;

@@ -212,6 +212,32 @@ test("announce eligibility: before release only, not unsubscribed or suspect", (
   assert.equal(announceSkipReason(arow({ verifiedAt: "2026-11-02T00:00:00Z" }), RELEASE, true), null);
 });
 
+test("announce: a one-click unsubscribe or an abuse flag stops the announcement", () => {
+  // The unsubscribe link this mail carries writes `Launch mail`, not the status.
+  assert.equal(announceSkipReason(arow({ launchMail: "unsubscribed 2026-11-02T00:00:00.000Z" }), RELEASE), "unsubscribed");
+  assert.equal(announceSkipReason(arow({ reservationMail: "unsubscribed 2026-11-02T00:00:00.000Z" }), RELEASE), "unsubscribed");
+  // Even the --only self-test never mails an opted-out address.
+  assert.equal(announceSkipReason(arow({ launchMail: "Unsubscribe" }), RELEASE, true), "unsubscribed");
+  assert.equal(announceSkipReason(arow({ launchMail: "t-1d sent 2026-12-01T00:00:00Z" }), RELEASE), null);
+  assert.equal(announceSkipReason(arow({ flags: ["bot-signal"] }), RELEASE), "blocked_flag");
+  assert.equal(announceSkipReason(arow({ flags: ["ip-repeat"] }), RELEASE), null);
+});
+
+test("announce: one mail per address, and an opt-out on any of its rows covers it", async () => {
+  const rows = [
+    arow({ pageId: "a1", leadId: "", email: "twice@example.com", refCode: "abcd0001" }),
+    arow({ pageId: "a2", leadId: "", email: "Twice@Example.com ", refCode: "abcd0002" }),
+    arow({ pageId: "b1", leadId: "", email: "gone@example.com", refCode: "abcd0003" }),
+    arow({ pageId: "b2", leadId: "", email: "gone@example.com", refCode: "abcd0004", launchMail: "unsubscribed 2026-11-02T00:00:00.000Z" }),
+  ];
+  const { sent, dir, deps } = await setup(rows, { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" });
+  const result = await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: dir }, deps);
+  assert.deepEqual(sent.map((m) => m.to), ["twice@example.com"]);
+  assert.equal(result.skipped.duplicate_address, 1);
+  assert.equal(result.skipped.unsubscribed_address, 1);
+  assert.equal(result.skipped.unsubscribed, 1);
+});
+
 test("announce idempotency key", () => {
   assert.equal(announceKey(arow()), `${REFERRAL_PROGRAM_ID}-announce-${LEAD}`);
   assert.equal(announceKey(arow({ leadId: "" })), `${REFERRAL_PROGRAM_ID}-announce-p1`);
