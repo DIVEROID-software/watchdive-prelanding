@@ -147,6 +147,7 @@ export function createNotionReferralStore(
           },
           [REFERRAL_COLUMNS.leaderboard]: { checkbox: input.leaderboard },
           [REFERRAL_COLUMNS.noticesOff]: { checkbox: input.noticesOff },
+          ...(input.clearHidden ? { [REFERRAL_COLUMNS.nicknameHidden]: { checkbox: false } } : {}),
         },
       });
     },

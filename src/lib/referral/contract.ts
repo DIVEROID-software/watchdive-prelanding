@@ -132,6 +132,11 @@ export type ReferralSettingsInput = {
   nickname: string | null;
   leaderboard: boolean;
   noticesOff: boolean;
+  /**
+   * Server-set only, never from the request: a person whose nickname ops hid
+   * picks a new one, so the hide no longer applies. Ops can hide it again.
+   */
+  clearHidden?: boolean;
 };
 
 export type NicknameCheck =

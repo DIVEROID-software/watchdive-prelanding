@@ -11,25 +11,30 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleRouteImport } from './routes/$locale'
+import { Route as BuddyRulesRouteImport } from './routes/buddy-rules'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReservationRouteImport } from './routes/reservation'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as LocaleIndexRouteImport } from './routes/$locale.index'
+import { Route as LocaleBuddyRulesRouteImport } from './routes/$locale.buddy-rules'
 import { Route as LocalePrivacyRouteImport } from './routes/$locale.privacy'
 import { Route as LocaleTermsRouteImport } from './routes/$locale.terms'
 import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
 import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
 import { Route as ApiExperimentReportRouteImport } from './routes/api.experiment-report'
 import { Route as ApiMayaReportRouteImport } from './routes/api.maya-report'
+import { Route as BuddyTokenRouteImport } from './routes/buddy.$token'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
+import { Route as LocaleBuddyTokenRouteImport } from './routes/$locale.buddy.$token'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
 import { Route as ApiAuthProvidersRouteImport } from './routes/api/auth/providers'
 import { Route as ApiAuthStartRouteImport } from './routes/api/auth/start'
 import { Route as ApiCronManualVerification20261019RouteImport } from './routes/api.cron.manual-verification-20261019'
 import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cron.verification-reminder'
 import { Route as ApiCronVerificationReminderV2RouteImport } from './routes/api.cron.verification-reminder-v2'
+import { Route as ApiReferralLeaderboardRouteImport } from './routes/api.referral.leaderboard'
 import { Route as ApiReservationCheckoutRouteImport } from './routes/api/reservation/checkout'
 import { Route as ApiReservationStatusRouteImport } from './routes/api/reservation/status'
 import { Route as ApiReservationWebhookRouteImport } from './routes/api/reservation/webhook'
@@ -44,6 +49,11 @@ const IndexRoute = IndexRouteImport.update({
 const LocaleRoute = LocaleRouteImport.update({
   id: '/$locale',
   path: '/$locale',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuddyRulesRoute = BuddyRulesRouteImport.update({
+  id: '/buddy-rules',
+  path: '/buddy-rules',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -69,6 +79,11 @@ const VerifyRoute = VerifyRouteImport.update({
 const LocaleIndexRoute = LocaleIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => LocaleRoute,
+} as any)
+const LocaleBuddyRulesRoute = LocaleBuddyRulesRouteImport.update({
+  id: '/buddy-rules',
+  path: '/buddy-rules',
   getParentRoute: () => LocaleRoute,
 } as any)
 const LocalePrivacyRoute = LocalePrivacyRouteImport.update({
@@ -101,6 +116,11 @@ const ApiMayaReportRoute = ApiMayaReportRouteImport.update({
   path: '/api/maya-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BuddyTokenRoute = BuddyTokenRouteImport.update({
+  id: '/buddy/$token',
+  path: '/buddy/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RCodeRoute = RCodeRouteImport.update({
   id: '/r/$code',
   path: '/r/$code',
@@ -110,6 +130,11 @@ const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
   id: '/unsubscribe/$token',
   path: '/unsubscribe/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleBuddyTokenRoute = LocaleBuddyTokenRouteImport.update({
+  id: '/buddy/$token',
+  path: '/buddy/$token',
+  getParentRoute: () => LocaleRoute,
 } as any)
 const LocaleRCodeRoute = LocaleRCodeRouteImport.update({
   id: '/r/$code',
@@ -144,6 +169,11 @@ const ApiCronVerificationReminderV2Route =
     path: '/api/cron/verification-reminder-v2',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiReferralLeaderboardRoute = ApiReferralLeaderboardRouteImport.update({
+  id: '/api/referral/leaderboard',
+  path: '/api/referral/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReservationCheckoutRoute = ApiReservationCheckoutRouteImport.update({
   id: '/api/reservation/checkout',
   path: '/api/reservation/checkout',
@@ -173,25 +203,30 @@ const ApiAuthGoogleCallbackRoute = ApiAuthGoogleCallbackRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteWithChildren
+  '/buddy-rules': typeof BuddyRulesRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
+  '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
+  '/buddy/$token': typeof BuddyTokenRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/buddy/$token': typeof LocaleBuddyTokenRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
@@ -200,25 +235,30 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/buddy-rules': typeof BuddyRulesRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
+  '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
+  '/buddy/$token': typeof BuddyTokenRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale': typeof LocaleIndexRoute
+  '/$locale/buddy/$token': typeof LocaleBuddyTokenRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
@@ -229,25 +269,30 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteWithChildren
+  '/buddy-rules': typeof BuddyRulesRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
+  '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
+  '/buddy/$token': typeof BuddyTokenRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/buddy/$token': typeof LocaleBuddyTokenRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
@@ -259,25 +304,30 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$locale'
+    | '/buddy-rules'
     | '/privacy'
     | '/reservation'
     | '/terms'
     | '/verify'
+    | '/$locale/buddy-rules'
     | '/$locale/privacy'
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
     | '/api/experiment-report'
     | '/api/maya-report'
+    | '/buddy/$token'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale/'
+    | '/$locale/buddy/$token'
     | '/$locale/r/$code'
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
@@ -286,25 +336,30 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/buddy-rules'
     | '/privacy'
     | '/reservation'
     | '/terms'
     | '/verify'
+    | '/$locale/buddy-rules'
     | '/$locale/privacy'
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
     | '/api/experiment-report'
     | '/api/maya-report'
+    | '/buddy/$token'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale'
+    | '/$locale/buddy/$token'
     | '/$locale/r/$code'
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
@@ -314,25 +369,30 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$locale'
+    | '/buddy-rules'
     | '/privacy'
     | '/reservation'
     | '/terms'
     | '/verify'
+    | '/$locale/buddy-rules'
     | '/$locale/privacy'
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
     | '/api/experiment-report'
     | '/api/maya-report'
+    | '/buddy/$token'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale/'
+    | '/$locale/buddy/$token'
     | '/$locale/r/$code'
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
@@ -343,6 +403,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LocaleRoute: typeof LocaleRouteWithChildren
+  BuddyRulesRoute: typeof BuddyRulesRoute
   PrivacyRoute: typeof PrivacyRoute
   ReservationRoute: typeof ReservationRoute
   TermsRoute: typeof TermsRoute
@@ -350,6 +411,7 @@ export interface RootRouteChildren {
   AdminBehaviorRoute: typeof AdminBehaviorRoute
   ApiExperimentReportRoute: typeof ApiExperimentReportRoute
   ApiMayaReportRoute: typeof ApiMayaReportRoute
+  BuddyTokenRoute: typeof BuddyTokenRoute
   RCodeRoute: typeof RCodeRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ApiAuthProvidersRoute: typeof ApiAuthProvidersRoute
@@ -357,6 +419,7 @@ export interface RootRouteChildren {
   ApiCronManualVerification20261019Route: typeof ApiCronManualVerification20261019Route
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
   ApiCronVerificationReminderV2Route: typeof ApiCronVerificationReminderV2Route
+  ApiReferralLeaderboardRoute: typeof ApiReferralLeaderboardRoute
   ApiReservationCheckoutRoute: typeof ApiReservationCheckoutRoute
   ApiReservationStatusRoute: typeof ApiReservationStatusRoute
   ApiReservationWebhookRoute: typeof ApiReservationWebhookRoute
@@ -378,6 +441,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale'
       fullPath: '/$locale'
       preLoaderRoute: typeof LocaleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buddy-rules': {
+      id: '/buddy-rules'
+      path: '/buddy-rules'
+      fullPath: '/buddy-rules'
+      preLoaderRoute: typeof BuddyRulesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -413,6 +483,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/$locale/'
       preLoaderRoute: typeof LocaleIndexRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/buddy-rules': {
+      id: '/$locale/buddy-rules'
+      path: '/buddy-rules'
+      fullPath: '/$locale/buddy-rules'
+      preLoaderRoute: typeof LocaleBuddyRulesRouteImport
       parentRoute: typeof LocaleRoute
     }
     '/$locale/privacy': {
@@ -457,6 +534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMayaReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/buddy/$token': {
+      id: '/buddy/$token'
+      path: '/buddy/$token'
+      fullPath: '/buddy/$token'
+      preLoaderRoute: typeof BuddyTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/r/$code': {
       id: '/r/$code'
       path: '/r/$code'
@@ -470,6 +554,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/unsubscribe/$token'
       preLoaderRoute: typeof UnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$locale/buddy/$token': {
+      id: '/$locale/buddy/$token'
+      path: '/buddy/$token'
+      fullPath: '/$locale/buddy/$token'
+      preLoaderRoute: typeof LocaleBuddyTokenRouteImport
+      parentRoute: typeof LocaleRoute
     }
     '/$locale/r/$code': {
       id: '/$locale/r/$code'
@@ -513,6 +604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronVerificationReminderV2RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/referral/leaderboard': {
+      id: '/api/referral/leaderboard'
+      path: '/api/referral/leaderboard'
+      fullPath: '/api/referral/leaderboard'
+      preLoaderRoute: typeof ApiReferralLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/reservation/checkout': {
       id: '/api/reservation/checkout'
       path: '/api/reservation/checkout'
@@ -552,18 +650,22 @@ declare module '@tanstack/react-router' {
 }
 
 interface LocaleRouteChildren {
+  LocaleBuddyRulesRoute: typeof LocaleBuddyRulesRoute
   LocalePrivacyRoute: typeof LocalePrivacyRoute
   LocaleTermsRoute: typeof LocaleTermsRoute
   LocaleVerifyRoute: typeof LocaleVerifyRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
+  LocaleBuddyTokenRoute: typeof LocaleBuddyTokenRoute
   LocaleRCodeRoute: typeof LocaleRCodeRoute
 }
 
 const LocaleRouteChildren: LocaleRouteChildren = {
+  LocaleBuddyRulesRoute: LocaleBuddyRulesRoute,
   LocalePrivacyRoute: LocalePrivacyRoute,
   LocaleTermsRoute: LocaleTermsRoute,
   LocaleVerifyRoute: LocaleVerifyRoute,
   LocaleIndexRoute: LocaleIndexRoute,
+  LocaleBuddyTokenRoute: LocaleBuddyTokenRoute,
   LocaleRCodeRoute: LocaleRCodeRoute,
 }
 
@@ -573,6 +675,7 @@ const LocaleRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LocaleRoute: LocaleRouteWithChildren,
+  BuddyRulesRoute: BuddyRulesRoute,
   PrivacyRoute: PrivacyRoute,
   ReservationRoute: ReservationRoute,
   TermsRoute: TermsRoute,
@@ -580,6 +683,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminBehaviorRoute: AdminBehaviorRoute,
   ApiExperimentReportRoute: ApiExperimentReportRoute,
   ApiMayaReportRoute: ApiMayaReportRoute,
+  BuddyTokenRoute: BuddyTokenRoute,
   RCodeRoute: RCodeRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ApiAuthProvidersRoute: ApiAuthProvidersRoute,
@@ -588,6 +692,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiCronManualVerification20261019Route,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
   ApiCronVerificationReminderV2Route: ApiCronVerificationReminderV2Route,
+  ApiReferralLeaderboardRoute: ApiReferralLeaderboardRoute,
   ApiReservationCheckoutRoute: ApiReservationCheckoutRoute,
   ApiReservationStatusRoute: ApiReservationStatusRoute,
   ApiReservationWebhookRoute: ApiReservationWebhookRoute,

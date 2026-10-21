@@ -1,7 +1,6 @@
 import type { Locale } from "@/lib/i18n/locale";
 import { homePath } from "@/lib/i18n/locale";
 import { fill, referralCopy } from "@/lib/referral/copy";
-import { EARLY_NOTICE_HOURS } from "@/lib/referral/program";
 import { copyValues } from "@/lib/referral/values";
 
 /**
@@ -11,13 +10,7 @@ import { copyValues } from "@/lib/referral/values";
  */
 export function RulesPage({ locale }: { locale: Locale }) {
   const copy = referralCopy(locale);
-  // The rules text names the first two notice tiers' hours separately; supply
-  // them from program.ts in case copyValues only carries one {hours}.
-  const values = {
-    hoursFirst: EARLY_NOTICE_HOURS.first,
-    hoursBuddy: EARLY_NOTICE_HOURS.buddy,
-    ...copyValues(locale),
-  };
+  const values = copyValues(locale);
   const back = referralCopy(locale).programName;
 
   return (

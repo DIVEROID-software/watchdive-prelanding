@@ -208,7 +208,11 @@ export async function updateReferralSettingsService(
     leaderboard: input.leaderboard === true,
     noticesOff: input.noticesOff === true,
   };
-  await deps.store.writeSettings(row.pageId, settings);
+  const changed = (row.nickname ?? "") !== (nickname ?? "");
+  await deps.store.writeSettings(row.pageId, {
+    ...settings,
+    ...(row.nicknameHidden && changed && nickname ? { clearHidden: true } : {}),
+  });
   // The public board may now show a different name; the next reader rebuilds it.
   deps.leaderboardCache.invalidate();
   return { status: "ok", settings: { ...settings } };
