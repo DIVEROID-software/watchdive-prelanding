@@ -54,6 +54,19 @@ export type ReferralRow = {
   notifiedAt?: string;
   rewardReview?: "pending" | "approved" | "rejected";
   signupLocale?: string;
+  /**
+   * Opaque `Lead ID`, server-only: signs the referrer's own opt-out link
+   * (launch-mail /unsubscribe token). Never shown on a page or to anyone else.
+   */
+  leadId?: string;
+  /** Coarse signup country (`KR` applies the Korean advertising rules to mail). */
+  signupCountry?: string;
+  /**
+   * Raw `Launch mail` / `Reservation mail` cells. An `unsubscribed` marker on
+   * any row of an address stops every Buddy Invite mail to that address.
+   */
+  launchMail?: string;
+  reservationMail?: string;
   email: string;
 };
 
@@ -162,6 +175,13 @@ export type ReferralNoticeMail = {
   nextTier: ReferralTierId | null;
   remainingToNext: number | null;
   statusUrl: string;
+  /**
+   * The referrer's https one-click opt-out (launch-mail /unsubscribe token).
+   * The mailer refuses to send without it.
+   */
+  unsubscribeUrl?: string;
+  /** Coarse signup country; `KR` applies the Korean advertising rules. */
+  signupCountry?: string;
   /** Idempotency: `${REFERRAL_PROGRAM_ID}-notice-${refCode}-${credited}`. */
   idempotencyKey: string;
 };

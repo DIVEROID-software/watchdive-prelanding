@@ -10,6 +10,8 @@
 | `WATCHDIVE_REFERRAL_CLOSES_AT` | 마감 시각(ISO). 이 시각 이후 인증된 친구는 누구에게도 집계되지 않습니다. 비어 있으면 미정. |
 | `WATCHDIVE_REFERRAL_NOTICES_ENABLED` | 친구 참여 알림 메일(1시간당 1통 이하). 릴리스 순서 마지막 단계에서만 켭니다. |
 | `WATCHDIVE_REFERRAL_RELEASED_AT` | 프로그램 공개 시각. 공지 대상(그 이전 인증자) 판정용. `--released-at`으로도 줄 수 있습니다. |
+| `WATCHDIVE_SENDER_PHONE` | 한국 광고성 메일(ko 로케일 또는 가입 국가 KR) 발신자 블록의 전화번호. **값: `+82 10-6517-6232`** (오너 확정). 비어 있으면 ko/KR 대상 환영 안내·알림은 발송이 거부(throw)되고, 공지 `--apply`는 첫 발송 전에 `sender_phone_missing`으로 중단됩니다. |
+| `WATCHDIVE_VERIFICATION_SECRET` | 기존 인증 비밀키. 모든 Buddy 메일의 수신거부 링크(`/unsubscribe/<token>`) 서명에 씁니다. 없으면 Buddy 메일은 발송되지 않습니다. |
 | `NOTION_API_KEY`, `NOTION_WAITLIST_DB_ID`, `WATCHDIVE_PUBLIC_ORIGIN`, 상태 토큰 비밀키, 발송 시 `RESEND_API_KEY`·`WATCHDIVE_EMAIL_FROM` | 기존 스크립트와 동일. 값은 출력하지 않습니다. |
 
 ## 릴리스 순서 (이 순서를 지킨다)
@@ -17,17 +19,18 @@
 오너의 최종 확인 전에는 어떤 메일도 나가지 않습니다.
 
 1. **스키마**: `node --experimental-strip-types --env-file=.env scripts/referral-schema.ts` 로 계획 확인 → 타입 충돌 없으면 `--apply`. 일곱 개 속성(닉네임, 리더보드 동의, 닉네임 숨김, 알림 끄기, 마지막 알림 수, 알림 시각, 보상 검수)만 추가하고 재조회로 검증합니다. 기존 속성은 건드리지 않습니다.
-2. **스위치 끈 채로 배포**: Production에 코드를 올립니다. 이때 사용자에게는 아무 변화가 없어야 합니다.
-3. **Preview 확인**: Preview 환경에만 스위치를 `1`로 켜고 화면·문구·링크·리더보드를 검토합니다(Production 데이터 쓰기 금지, 실제 메일 금지).
-4. **오너 최종 확인**: 오너가 명시적으로 승인합니다.
-5. **Production 스위치 ON**.
-6. **자기 테스트**: 새 가입(또는 본인 계정)으로 환영 메일이 정상 도착하는지 확인. 공지 메일은 `referral-announce --only <내 이메일> --apply --confirm <프로그램ID>`.
-7. **공지 배치 발송**(아래 참고): 소량 → 나머지.
-8. **알림 켜기**: `WATCHDIVE_REFERRAL_NOTICES_ENABLED` ON.
+2. **발신자 전화번호 설정**: Vercel **Production과 Preview** 모두에 `WATCHDIVE_SENDER_PHONE=+82 10-6517-6232` 를 넣고, 공지 스크립트를 돌리는 서버(Mac mini)의 env 파일에도 같은 값을 넣습니다. 없으면 한국어/KR 메일은 나가지 않습니다(의도된 차단).
+3. **스위치 끈 채로 배포**: Production에 코드를 올립니다. 이때 사용자에게는 아무 변화가 없어야 합니다.
+4. **Preview 확인**: Preview 환경에만 스위치를 `1`로 켜고 화면·문구·링크·리더보드를 검토합니다(Production 데이터 쓰기 금지, 실제 메일 금지).
+5. **오너 최종 확인**: 오너가 명시적으로 승인합니다.
+6. **Production 스위치 ON**.
+7. **자기 테스트**: 새 가입(또는 본인 계정)으로 환영 메일이 정상 도착하는지 확인. 공지 메일은 `referral-announce --only <내 이메일> --apply --confirm <프로그램ID>`.
+8. **공지 배치 발송**(아래 참고): 소량 → 나머지.
+9. **알림 켜기**: `WATCHDIVE_REFERRAL_NOTICES_ENABLED` ON.
 
 ## 기존 인증자 공지 (`referral-announce`)
 
-프로그램 공개 이전에 인증한 사람은 새 환영 메일(안내)을 받지 못했으므로 한 번만 보냅니다. 인증됨·수신거부 아님·suspect/중복 아님·`Ref code` 있음 조건이며, 공개 시각 이후 인증자는 대상이 아닙니다(새 환영 메일을 받음).
+프로그램 공개 이전에 인증한 사람은 새 환영 메일(안내)을 받지 못했으므로 한 번만 보냅니다. 인증됨·수신거부 아님(상태 unsubscribed/suppressed, `Launch mail`·`Reservation mail`의 `unsubscribed` 표시 — 같은 받은편지함의 다른 행 포함)·suspect/중복 아님·`Ref code`와 `Lead ID` 있음 조건이며, 공개 시각 이후 인증자는 대상이 아닙니다(새 환영 메일을 받음).
 
 ```
 # 건수와 샘플(주소 마스킹) 확인, 발송 없음
@@ -43,6 +46,8 @@ node --experimental-strip-types --env-file=.env scripts/referral-announce.ts --r
 - 멱등 키 `wd-buddy-invite-20261022-announce-<leadId 또는 pageId>`. 영수증(`<receipt-dir>/…announce.jsonl`)에는 주소 없이 해시만 남고 fsync 됩니다.
 - 이미 수락된 사람은 건너뜁니다. 실패(제공자 거절)는 다음 실행에서 재시도, 결과 불명(intent만 있음)은 `heldUnresolved`로 보류되고 재발송하지 않습니다. 보류 건은 Resend 대시보드에서 확인한 뒤 판단합니다.
 - 발송은 순차·속도제한(기본 초당 2통)이며 영수증 잠금으로 동시 실행을 막습니다.
+- 본문은 새 환영 안내 메일과 같은 렌더러(`buddyGuideBody`)입니다. 모든 Buddy 메일(환영 안내·알림·공지)은 `List-Unsubscribe`(https 원클릭 + mailto)와 `List-Unsubscribe-Post`를 달고, 수신거부 링크는 기존 `/unsubscribe/<token>`을 씁니다(POST 시 `Launch mail`에 `unsubscribed` 기록 → 출시·예약·Buddy 알림·공지 모두 중단).
+- ko 로케일 또는 가입 국가 KR: 제목 앞 `(광고) `, 하단에 `보내는 곳: DIVEROID LTD · help@diveroid.com · <전화> · <주소>`와 한/영 수신거부 문구(정보통신망법 제50조).
 
 ## 마감 시각 설정
 

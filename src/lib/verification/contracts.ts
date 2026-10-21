@@ -233,6 +233,12 @@ export type LeadRecord = {
   verifiedAt?: string;
   /** Set once the welcome mail has been accepted by the provider. */
   welcomeAt?: string;
+  /**
+   * Raw `Launch mail` / `Reservation mail` cells, read only for their opt-out
+   * markers (`unsubscribed …`, written by /unsubscribe). Absent when empty.
+   */
+  launchMail?: string;
+  reservationMail?: string;
   /** Raw `Verification reminder` cell. Non-empty = reminder already claimed. */
   reminder?: string;
   /** First-touch landing path, read only to pick the reminder's language. */

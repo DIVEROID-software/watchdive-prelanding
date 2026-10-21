@@ -50,6 +50,7 @@ import type { TokenEnvironment } from "./token.ts";
 // locale, secret)` and `rulesUrl(origin, locale)` build the guide's links.
 import { referralSecret, rulesUrl, statusUrl } from "../referral/statusToken.ts";
 import { referralProgramEnabled } from "../referral/program.ts";
+import { rowOptedOut } from "../referral/notices.ts";
 import {
   PRESS_SYNC_ACCEPTED,
   PRESS_SYNC_CONFIRMED,
@@ -543,6 +544,9 @@ async function scheduleWelcome(
   try {
     publicOrigin = requirePublicOrigin(env);
     if (referralProgramEnabled(env)) {
+      // The guide is promotional: a row that opted out of mail (status or an
+      // `unsubscribed` Launch/Reservation mail marker) gets no guide at all.
+      if (rowOptedOut(record)) return;
       // The guide links the signed status page. Without the referral signing
       // secret there is no page to link, so the welcome waits, exactly like a
       // missing public origin: `Welcome email` stays empty and a later
@@ -569,6 +573,7 @@ async function scheduleWelcome(
       scheduledAt,
       locale,
       ...(guideLinks ?? {}),
+      ...(guideLinks && record.signupCountry ? { signupCountry: record.signupCountry } : {}),
     });
     await dependencies.store.markWelcomeScheduled(record.pageId, { scheduledAt });
   } catch {

@@ -124,6 +124,8 @@ function createScenario(on: boolean) {
   const env: Record<string, string> = {
     ...BASE_ENV,
     ...(on ? { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" } : {}),
+    // Korean advertising mail must name the sender's phone, or it is refused.
+    WATCHDIVE_SENDER_PHONE: "+82 10-6517-6232",
   };
   const net = createFakeNetwork(DB);
   const request = createNotionRequest(net.fetch, env);
@@ -333,7 +335,9 @@ function assertNoPii(
   value: unknown,
   options: { refCodes?: string[] } = {},
 ) {
-  const text = JSON.stringify(value);
+  // The sender's own published contact address is required in every mail
+  // footer (opt-out and Korean advertising rules); nothing else may carry "@".
+  const text = JSON.stringify(value).replaceAll("help@diveroid.com", "");
   assert.equal(text.includes("@"), false, `${label}: no "@" in ${text}`);
   for (const email of s.participants)
     assert.equal(text.includes(email), false, `${label}: no ${email}`);
@@ -455,9 +459,8 @@ async function runStory(on: boolean) {
   const bEmail = friends[0];
   const bCode = net.notion.text(net.notion.pageByEmail(bEmail)!.id, "Ref code");
   const bShare = /https:\/\/\S+?\/r\/[a-z0-9]{8}/.exec(s.welcomeOf(bEmail)[0].body.text)![0];
-  // The mail's share link carries the sender's locale (/ko/r/<code>, both routes redirect to
-  // the same ?ref=); the status page's share link is unprefixed (core shareUrl).
-  assert.equal(bShare, `${ORIGIN}/ko/r/${bCode}`);
+  // Every share link is the unprefixed /r/<code>: the friend's own language picks the page.
+  assert.equal(bShare, `${ORIGIN}/r/${bCode}`);
   if (on)
     assert.match(
       s.welcomeOf(bEmail)[0].body.text,
