@@ -82,11 +82,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "WatchDive" },
     ],
     links: [
+      // The official square DIVEROID symbol set, shared with diveroid.ai. The
+      // old icon was the 1033x527 wordmark lockup, squashed into the tab square.
+      { rel: "icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48" },
       {
         rel: "icon",
         type: "image/png",
         href: "/favicon.png",
+        sizes: "180x180",
       },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg", sizes: "any" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
       {
         rel: "stylesheet",
         href: appCss,
