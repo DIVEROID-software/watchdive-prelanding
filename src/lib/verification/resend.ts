@@ -8,7 +8,13 @@ import { phoneOptInCopy } from "../phoneOptInCopy.ts";
 // but keep their own list state in Notion.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
-import { verificationTokenLocale, verificationUrl } from "./token.ts";
+import {
+  isLeadId,
+  requireSecret,
+  verificationTokenLocale,
+  verificationUrl,
+  type TokenEnvironment,
+} from "./token.ts";
 import { buildReminderEmail } from "./reminderEmail.ts";
 import { DEFAULT_LOCALE, referralPath, type Locale } from "../i18n/locale.ts";
 import type { ReferralMailer, ReferralNoticeMail } from "../referral/contract.ts";
@@ -18,6 +24,15 @@ import { EARLY_NOTICE_HOURS, REFERRAL_TIERS, referralProgramEnabled } from "../r
 // program.ts number pre-formatted for the locale ({price}, {seats}, {stock},
 // {winners}, {cap}, {noticeDays}, ...). `{hours}` is per tier and filled here.
 import { copyValues } from "../referral/values.ts";
+import { LABEL_SEPARATOR, LAUNCH_COPY } from "../launchMail/copy.ts";
+import {
+  createUnsubscribeToken,
+  unsubscribeUrl as launchUnsubscribeUrl,
+} from "../launchMail/unsubscribeToken.ts";
+import {
+  RESERVATION_LEGAL_NAME,
+  RESERVATION_REGISTERED_OFFICE,
+} from "../reservation-mail/merchant.ts";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -43,6 +58,10 @@ export type ResendEnvironment = {
   WATCHDIVE_EMAIL_REPLY_TO?: string;
   /** Buddy Invite master switch (program.ts `referralProgramEnabled`). */
   WATCHDIVE_REFERRAL_PROGRAM_ENABLED?: string;
+  /** Signs the Buddy Invite opt-out link (launch-mail unsubscribe token). */
+  WATCHDIVE_VERIFICATION_SECRET?: string;
+  /** Sender phone for the Korean advertising sender block. */
+  WATCHDIVE_SENDER_PHONE?: string;
 };
 
 export type ResendConfig = {
@@ -84,6 +103,8 @@ export type WelcomeMail = {
    */
   statusUrl?: string;
   rulesUrl?: string;
+  /** Coarse signup country; `KR` applies the Korean advertising rules to the guide. */
+  signupCountry?: string;
 };
 
 export type VerificationMailer = {
@@ -553,42 +574,269 @@ async function deliverWithRetries(
   throw lastError ?? new ResendDeliveryError("Resend request failed", 0);
 }
 
-// Shared inline styles. Mail clients drop <style> blocks, so every element
-// carries its own, matching the confirmation mail.
-const STYLE_WRAP = "font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px";
-const STYLE_H1 = "font-size:20px;margin:0 0 12px";
-const STYLE_H2 = "font-size:16px;margin:0 0 8px";
-const STYLE_BODY = "font-size:15px;line-height:1.6;color:#334155;margin:0 0 24px";
-const STYLE_SMALL = "font-size:13px;line-height:1.6;color:#64748b;margin:0 0 8px";
-const STYLE_BUTTON =
-  "display:inline-block;background:#0ea5e9;color:#04121f;font-weight:600;" +
-  "font-size:16px;padding:14px 28px;border-radius:12px;text-decoration:none";
-const STYLE_TIER = "font-size:14px;line-height:1.6;color:#334155;margin:0 0 10px";
-const STYLE_LINK = "color:#0369a1;word-break:break-all";
+// ---- Buddy Invite mails ------------------------------------------------------
+//
+// The welcome guide, the friend-joined notice and the one-off announcement
+// (scripts/referral-announce.ts) all render here, so the three can never drift.
+//
+// Built for the clients the waitlist actually opens mail in (Gmail web/app,
+// Naver, Outlook desktop/web, iOS Mail): presentation tables, inline styles on
+// every element (Gmail and Naver drop or rewrite <style>), a bulletproof button
+// whose coloured cell still shows when the link's padding is ignored (Outlook's
+// Word engine), explicit background colours so auto dark modes keep contrast,
+// no web font, no image, no flex or grid. Long links break anywhere so a phone
+// never scrolls sideways.
+//
+// These are promotional messages, so each carries the sender's identity and a
+// working opt-out: the launch-mail /unsubscribe/<token> endpoint, which records
+// `unsubscribed` in the row's `Launch mail` cell. Every later launch,
+// reservation, Buddy Invite notice and announcement run treats that marker as
+// final. For Korean readers (ko locale, or a KR signup country) Korean law
+// (정보통신망법 제50조, 시행령 별표6) adds a "(광고)" subject prefix and a
+// Korean sender block with a phone number; without that number the mail is
+// refused rather than sent non-compliant.
 
+const FONT_STACK =
+  "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial," +
+  "'Apple SD Gothic Neo','Malgun Gothic','Hiragino Sans','Hiragino Kaku Gothic ProN'," +
+  "'Microsoft YaHei','PingFang SC','PingFang TC',sans-serif";
+const PAGE_BG = "#eef2f6";
+const CARD_BG = "#ffffff";
+const INK = "#0f172a";
+const BODY_INK = "#334155";
+const MUTED_INK = "#5b6778";
+const LINK_INK = "#0369a1";
+const BUTTON_BG = "#0ea5e9";
+const BUTTON_INK = "#04121f";
+
+/** Env var holding the sender phone the Korean sender block must show. */
+export const SENDER_PHONE_ENV = "WATCHDIVE_SENDER_PHONE";
+/** Required first characters of a Korean advertising subject line. */
+export const KR_AD_SUBJECT_PREFIX = "(광고) ";
+export const KR_SENDER_ADDRESS =
+  "Office 12146, 182-184 High Street North, East Ham, London E6 2JA, United Kingdom";
+export const KR_OPT_OUT_LINE =
+  "수신을 원하지 않으시면 수신거부를 눌러 주세요. If you do not wish to receive these emails, click Unsubscribe.";
+const KR_OPT_OUT_LABEL = "수신거부 / Unsubscribe";
+const SENDER_EMAIL = "help@diveroid.com";
+
+/** The Korean advertising rules apply to a Korean-language mail or a KR signup. */
+export function koreanAdRulesApply(locale: Locale, signupCountry?: string): boolean {
+  return locale === "ko" || (signupCountry ?? "").trim().toUpperCase() === "KR";
+}
+
+/** A plausible phone number from env, or undefined. Never invented. */
+export function readSenderPhone(env: Record<string, string | undefined>): string | undefined {
+  const value = (env[SENDER_PHONE_ENV] ?? "").trim();
+  return /^\+?[0-9][0-9 ().-]{5,24}[0-9]$/.test(value) ? value : undefined;
+}
+
+export class AdComplianceError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AdComplianceError";
+  }
+}
+
+/** What every Buddy Invite mail needs to say about who sent it and how to stop it. */
+export type AdFooter = {
+  /** https one-click opt-out (launch-mail endpoint). */
+  unsubscribeUrl: string;
+  /** Korean advertising rules (see koreanAdRulesApply). */
+  korean: boolean;
+  /** Required when `korean`. */
+  senderPhone?: string;
+};
+
+/**
+ * Builds the footer for one recipient or throws, so a caller can never send a
+ * Buddy Invite mail without a working https opt-out, or a Korean one without
+ * the sender phone the law requires.
+ */
+export function buddyAdFooter(input: {
+  locale: Locale;
+  signupCountry?: string;
+  unsubscribeUrl: string | undefined;
+  env: Record<string, string | undefined>;
+}): AdFooter {
+  if (!input.unsubscribeUrl || !/^https:\/\/[^\s<>"]+$/.test(input.unsubscribeUrl)) {
+    throw new AdComplianceError("Buddy Invite mail needs an https unsubscribe link");
+  }
+  const korean = koreanAdRulesApply(input.locale, input.signupCountry);
+  if (!korean) return { unsubscribeUrl: input.unsubscribeUrl, korean };
+  const senderPhone = readSenderPhone(input.env);
+  if (!senderPhone) {
+    throw new AdComplianceError(`${SENDER_PHONE_ENV} is required for Korean advertising mail`);
+  }
+  return { unsubscribeUrl: input.unsubscribeUrl, korean, senderPhone };
+}
+
+/** The signed launch-mail opt-out for one lead, or undefined when it cannot be signed. */
+export function buddyUnsubscribeUrl(
+  publicOrigin: string,
+  leadId: string,
+  locale: Locale,
+  env: TokenEnvironment,
+): string | undefined {
+  if (!isLeadId(leadId)) return undefined;
+  let secret: string;
+  try {
+    secret = requireSecret(env);
+  } catch {
+    return undefined;
+  }
+  return launchUnsubscribeUrl(publicOrigin, createUnsubscribeToken(leadId, locale, secret));
+}
+
+/** RFC 2369 + RFC 8058 headers: https one-click first, mailto as the fallback. */
+export function buddyListUnsubscribeHeaders(
+  unsubscribeUrl: string,
+  mailto: string = SENDER_EMAIL,
+): Record<string, string> {
+  return {
+    "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:${mailto}?subject=unsubscribe>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
+}
+
+function adSubject(subject: string, footer: AdFooter): string {
+  return footer.korean ? `${KR_AD_SUBJECT_PREFIX}${subject}` : subject;
+}
+
+function wordBreakFor(locale: Locale): string {
+  // Korean breaks between words, as on the landing and in the launch mail.
+  return locale === "ko" ? "word-break:keep-all;" : "";
+}
+
+function para(style: string, content: string, locale: Locale): string {
+  return (
+    `<p style="margin:0;font-family:${FONT_STACK};${wordBreakFor(locale)}` +
+    `overflow-wrap:break-word;${style}">${content}</p>`
+  );
+}
+
+function linkHtml(url: string, label?: string): string {
+  const safeUrl = escapeHtml(url);
+  return (
+    `<a href="${safeUrl}" rel="noreferrer noopener" style="color:${LINK_INK};` +
+    `text-decoration:underline;word-break:break-all;overflow-wrap:anywhere;">` +
+    `${label === undefined ? safeUrl : escapeHtml(label)}</a>`
+  );
+}
+
+/**
+ * A button that survives Outlook: the colour sits on the table cell, the link
+ * fills it, and `mso-padding-alt` restores the padding Word ignores on <a>.
+ */
 function buttonHtml(url: string, label: string): string {
   return (
-    `<p style="margin:0 0 24px"><a href="${escapeHtml(url)}" rel="noreferrer noopener" ` +
-    `style="${STYLE_BUTTON}">${escapeHtml(label)}</a></p>`
+    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:separate;">' +
+    `<tr><td align="center" bgcolor="${BUTTON_BG}" style="background-color:${BUTTON_BG};border-radius:12px;mso-padding-alt:14px 28px;">` +
+    `<a href="${escapeHtml(url)}" rel="noreferrer noopener" style="display:inline-block;padding:14px 28px;` +
+    `font-family:${FONT_STACK};font-size:16px;font-weight:600;line-height:20px;color:${BUTTON_INK};` +
+    `text-decoration:none;border-radius:12px;">${escapeHtml(label)}</a></td></tr></table>`
   );
 }
 
-function bareLinkHtml(url: string): string {
-  const safeUrl = escapeHtml(url);
-  return (
-    `<p style="${STYLE_SMALL}">` +
-    `<a href="${safeUrl}" rel="noreferrer noopener" style="${STYLE_LINK}">${safeUrl}</a></p>`
+function labelledLinkHtml(label: string, url: string, locale: Locale): string {
+  return para(
+    `margin:0 0 14px;font-size:13px;line-height:1.6;color:${MUTED_INK};`,
+    `${escapeHtml(label)}<br>${linkHtml(url)}`,
+    locale,
   );
 }
 
-/** A label followed by the bare link, so the address survives a stripped button. */
-function labelledLinkHtml(label: string, url: string): string {
-  const safeUrl = escapeHtml(url);
+/** Sender identity and opt-out, as HTML rows and as plain-text lines. */
+function footerParts(locale: Locale, footer: AdFooter): { html: string; text: string[] } {
+  const launch = LAUNCH_COPY[locale];
+  const small = `margin:0 0 8px;font-size:12px;line-height:1.6;color:${MUTED_INK};`;
+  const html: string[] = [para(small, escapeHtml(launch.reason), locale)];
+  const text: string[] = ["—", launch.reason];
+  if (footer.korean) {
+    const sender = `보내는 곳: ${RESERVATION_LEGAL_NAME} · ${SENDER_EMAIL} · ${footer.senderPhone} · ${KR_SENDER_ADDRESS}`;
+    // The phone number stays on one line; a wrapped number reads as two.
+    const phone = escapeHtml(footer.senderPhone ?? "");
+    html.push(
+      para(
+        small,
+        escapeHtml(sender).replace(phone, `<span style="white-space:nowrap;">${phone}</span>`),
+        "ko",
+      ),
+      para(small, escapeHtml(KR_OPT_OUT_LINE), "ko"),
+      para(small, linkHtml(footer.unsubscribeUrl, KR_OPT_OUT_LABEL), "ko"),
+    );
+    text.push(sender, KR_OPT_OUT_LINE, `${KR_OPT_OUT_LABEL}: ${footer.unsubscribeUrl}`);
+  } else {
+    const sender = `${RESERVATION_LEGAL_NAME} · ${RESERVATION_REGISTERED_OFFICE}`;
+    const sep = LABEL_SEPARATOR[locale];
+    html.push(
+      para(small, linkHtml(footer.unsubscribeUrl, launch.page.confirmButton), locale),
+      para(small, escapeHtml(sender), locale),
+      para(small, escapeHtml(launch.help), locale),
+    );
+    text.push(
+      `${launch.page.confirmButton}${sep}${footer.unsubscribeUrl}`,
+      sender,
+      launch.help,
+    );
+  }
+  return { html: html.join(""), text };
+}
+
+/** The one document shell every Buddy Invite mail uses. */
+function buddyDocument(input: {
+  locale: Locale;
+  subject: string;
+  preheader: string;
+  content: string;
+  footer: AdFooter;
+}): string {
+  const { locale } = input;
+  const foot = footerParts(locale, input.footer);
+  return [
+    "<!doctype html>",
+    `<html lang="${escapeHtml(locale)}" dir="ltr">`,
+    '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">',
+    '<meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">',
+    `<title>${escapeHtml(input.subject)}</title>`,
+    // Outlook's Word engine falls back to Times for an unknown first font.
+    "<!--[if mso]><style>body,table,td,p,a,h1,h2{font-family:Arial,sans-serif !important;}</style><![endif]-->",
+    "</head>",
+    `<body style="margin:0;padding:0;width:100%;background-color:${PAGE_BG};-webkit-text-size-adjust:100%;">`,
+    // Inbox preview text. The trailing spacers keep the body from bleeding in.
+    `<div style="display:none;font-size:1px;line-height:1px;color:${PAGE_BG};max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">` +
+      `${escapeHtml(input.preheader)}${"&#8199;&#65279;&#847; ".repeat(12)}</div>`,
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${PAGE_BG}" style="width:100%;background-color:${PAGE_BG};border-collapse:collapse;">`,
+    '<tr><td align="center" style="padding:24px 12px;">',
+    '<!--[if mso]><table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->',
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;border-collapse:separate;">',
+    `<tr><td bgcolor="${CARD_BG}" style="background-color:${CARD_BG};border-radius:16px;padding:28px 22px;color:${BODY_INK};font-family:${FONT_STACK};">`,
+    input.content,
+    "</td></tr>",
+    `<tr><td style="padding:20px 22px 0;font-family:${FONT_STACK};">${foot.html}</td></tr>`,
+    "</table>",
+    "<!--[if mso]></td></tr></table><![endif]-->",
+    "</td></tr></table>",
+    "</body></html>",
+  ].join("\n");
+}
+
+function headingHtml(text: string, locale: Locale): string {
   return (
-    `<p style="${STYLE_SMALL}">${escapeHtml(label)}<br>` +
-    `<a href="${safeUrl}" rel="noreferrer noopener" style="${STYLE_LINK}">${safeUrl}</a></p>`
+    `<h1 style="margin:0 0 12px;font-family:${FONT_STACK};font-size:22px;line-height:1.3;` +
+    `font-weight:700;color:${INK};${wordBreakFor(locale)}overflow-wrap:break-word;">${escapeHtml(text)}</h1>`
   );
 }
+
+function subheadingHtml(text: string, locale: Locale): string {
+  return (
+    `<h2 style="margin:24px 0 10px;font-family:${FONT_STACK};font-size:16px;line-height:1.4;` +
+    `font-weight:700;color:${INK};${wordBreakFor(locale)}">${escapeHtml(text)}</h2>`
+  );
+}
+
+const STYLE_BODY_P = `margin:0 0 20px;font-size:15px;line-height:1.6;color:${BODY_INK};`;
+const STYLE_TIER_P = `margin:0 0 12px;font-size:14px;line-height:1.55;color:${BODY_INK};`;
 
 /**
  * The five reward lines (four tiers + top prize) with every number filled from
@@ -609,61 +857,62 @@ export function referralRewardLines(locale: Locale): { name: string; reward: str
   return lines;
 }
 
-function tierLineHtml({ name, reward }: { name: string; reward: string }): string {
-  return `<p style="${STYLE_TIER}"><strong>${escapeHtml(name)}</strong><br>${escapeHtml(reward)}</p>`;
-}
-
 export type WelcomeLinks = { shareUrl: string; statusUrl: string; rulesUrl: string };
 
 /**
- * The welcome mail while Buddy Invite is switched on: the program guide. The
+ * The Buddy Invite guide: the welcome mail while the program is switched on,
+ * and the one-off announcement to people who verified before the release. The
  * invite link comes first (it is the one action), then what it earns, then
- * where to check progress and read the rules. Every value, copy included, is
- * escaped before it reaches the HTML.
+ * where to check progress and read the rules. Every value is escaped.
  */
 export function buddyGuideBody(
   links: WelcomeLinks,
   locale: Locale,
+  footer: AdFooter,
 ): { subject: string; text: string; html: string } {
   const copy = referralCopy(locale);
   const values = copyValues(locale);
   const mail = copy.mail;
+  const t = (template: string) => fill(template, values);
   const rewards = referralRewardLines(locale);
-  const countingNote = fill(copy.countingNote, values);
+  const subject = adSubject(t(mail.welcomeSubject), footer);
+  const content = [
+    headingHtml(t(mail.welcomeHeading), locale),
+    para(STYLE_BODY_P, escapeHtml(t(mail.welcomeIntro)), locale),
+    buttonHtml(links.shareUrl, t(mail.welcomeButton)),
+    labelledLinkHtml(t(mail.welcomeFallback), links.shareUrl, locale),
+    subheadingHtml(t(mail.welcomeTiersHeading), locale),
+    ...rewards.map((line) =>
+      para(STYLE_TIER_P, `<strong style="color:${INK};">${escapeHtml(line.name)}</strong><br>${escapeHtml(line.reward)}`, locale),
+    ),
+    para(`margin:0 0 22px;font-size:13px;line-height:1.6;color:${MUTED_INK};`, escapeHtml(t(copy.countingNote)), locale),
+    labelledLinkHtml(t(mail.welcomeStatus), links.statusUrl, locale),
+    labelledLinkHtml(t(mail.welcomeRules), links.rulesUrl, locale),
+    para(`margin:8px 0 0;font-size:14px;line-height:1.6;color:${BODY_INK};`, escapeHtml(t(mail.welcomeOutro)), locale),
+  ].join("\n");
   return {
-    subject: fill(mail.welcomeSubject, values),
+    subject,
     text: [
-      fill(mail.welcomeHeading, values),
+      t(mail.welcomeHeading),
       "",
-      fill(mail.welcomeIntro, values),
+      t(mail.welcomeIntro),
       links.shareUrl,
       "",
-      fill(mail.welcomeTiersHeading, values),
+      t(mail.welcomeTiersHeading),
       ...rewards.map((line) => `- ${line.name}: ${line.reward}`),
-      countingNote,
+      t(copy.countingNote),
       "",
-      fill(mail.welcomeStatus, values),
+      t(mail.welcomeStatus),
       links.statusUrl,
       "",
-      fill(mail.welcomeRules, values),
+      t(mail.welcomeRules),
       links.rulesUrl,
       "",
-      fill(mail.welcomeOutro, values),
+      t(mail.welcomeOutro),
+      "",
+      ...footerParts(locale, footer).text,
     ].join("\n"),
-    html: [
-      `<div lang="${escapeHtml(locale)}" style="${STYLE_WRAP}">`,
-      `<h1 style="${STYLE_H1}">${escapeHtml(fill(mail.welcomeHeading, values))}</h1>`,
-      `<p style="${STYLE_BODY}">${escapeHtml(fill(mail.welcomeIntro, values))}</p>`,
-      buttonHtml(links.shareUrl, fill(mail.welcomeButton, values)),
-      labelledLinkHtml(fill(mail.welcomeFallback, values), links.shareUrl),
-      `<h2 style="${STYLE_H2};margin-top:24px">${escapeHtml(fill(mail.welcomeTiersHeading, values))}</h2>`,
-      ...rewards.map(tierLineHtml),
-      `<p style="${STYLE_SMALL};margin-bottom:24px">${escapeHtml(countingNote)}</p>`,
-      labelledLinkHtml(fill(mail.welcomeStatus, values), links.statusUrl),
-      labelledLinkHtml(fill(mail.welcomeRules, values), links.rulesUrl),
-      `<p style="${STYLE_SMALL};margin:16px 0 0">${escapeHtml(fill(mail.welcomeOutro, values))}</p>`,
-      "</div>",
-    ].join(""),
+    html: buddyDocument({ locale, subject, preheader: t(mail.welcomeIntro), content, footer }),
   };
 }
 
@@ -676,6 +925,7 @@ export function referralNoticeBody(
     ReferralNoticeMail,
     "locale" | "credited" | "crossed" | "nextTier" | "remainingToNext" | "statusUrl"
   >,
+  footer: AdFooter,
 ): { subject: string; text: string; html: string } {
   const { locale } = input;
   const copy = referralCopy(locale);
@@ -697,21 +947,35 @@ export function referralNoticeBody(
       : fill(mail.noticeMax, values);
   const heading = fill(mail.noticeHeading, values);
   const body = fill(mail.noticeBody, values);
-  const footer = fill(mail.noticeFooter, values);
+  const noticeFooter = fill(mail.noticeFooter, values);
+  const subject = adSubject(fill(mail.noticeSubject, values), footer);
+  const content = [
+    headingHtml(heading, locale),
+    para(`${STYLE_BODY_P}margin-bottom:14px;`, escapeHtml(body), locale),
+    ...reached.map((line) =>
+      para(STYLE_TIER_P, `<strong style="color:${INK};">${escapeHtml(line)}</strong>`, locale),
+    ),
+    para(STYLE_BODY_P, escapeHtml(next), locale),
+    buttonHtml(input.statusUrl, fill(mail.noticeButton, values)),
+    para(`margin:0 0 14px;font-size:13px;line-height:1.6;`, linkHtml(input.statusUrl), locale),
+    para(`margin:8px 0 0;font-size:13px;line-height:1.6;color:${MUTED_INK};`, escapeHtml(noticeFooter), locale),
+  ].join("\n");
   return {
-    subject: fill(mail.noticeSubject, values),
-    text: [heading, "", body, ...reached, next, "", input.statusUrl, "", footer].join("\n"),
-    html: [
-      `<div lang="${escapeHtml(locale)}" style="${STYLE_WRAP}">`,
-      `<h1 style="${STYLE_H1}">${escapeHtml(heading)}</h1>`,
-      `<p style="${STYLE_BODY};margin-bottom:12px">${escapeHtml(body)}</p>`,
-      ...reached.map((line) => `<p style="${STYLE_TIER}"><strong>${escapeHtml(line)}</strong></p>`),
-      `<p style="${STYLE_BODY}">${escapeHtml(next)}</p>`,
-      buttonHtml(input.statusUrl, fill(mail.noticeButton, values)),
-      bareLinkHtml(input.statusUrl),
-      `<p style="${STYLE_SMALL};margin:16px 0 0">${escapeHtml(footer)}</p>`,
-      "</div>",
-    ].join(""),
+    subject,
+    text: [
+      heading,
+      "",
+      body,
+      ...reached,
+      next,
+      "",
+      input.statusUrl,
+      "",
+      noticeFooter,
+      "",
+      ...footerParts(locale, footer).text,
+    ].join("\n"),
+    html: buddyDocument({ locale, subject, preheader: body, content, footer }),
   };
 }
 
@@ -754,6 +1018,7 @@ export async function deliver(
     | "verification_reminder"
     | "welcome"
     | "referral_notice"
+    | "referral_announce"
     | "launch_mail"
     | "reservation_mail",
   payload: Record<string, unknown>,
@@ -823,35 +1088,61 @@ export function createResendMailer(
       locale,
       statusUrl,
       rulesUrl,
+      signupCountry,
     }) {
-      const shareUrl = referralUrl(publicOrigin, refCode, locale);
-      // Off, or missing either link: the legacy welcome, byte for byte.
-      const content =
-        programOn && statusUrl && rulesUrl
-          ? buddyGuideBody({ shareUrl, statusUrl, rulesUrl }, locale)
-          : welcomeBody(shareUrl, locale);
       // The key is the same for both bodies, so one lead still gets one mail.
       // Keyed on the lead, not the moment: two confirmations that race, or a
       // retry from a later click, all collapse onto one scheduled message.
-      await deliver(config, fetchImpl, sleep, `watchdive-welcome-${leadId}`, "welcome", {
+      const idempotencyKey = `watchdive-welcome-${leadId}`;
+      if (!(programOn && statusUrl && rulesUrl)) {
+        // Off, or missing either link: the legacy welcome, byte for byte.
+        const content = welcomeBody(referralUrl(publicOrigin, refCode, locale), locale);
+        await deliver(config, fetchImpl, sleep, idempotencyKey, "welcome", {
+          to: [to],
+          subject: content.subject,
+          text: content.text,
+          html: content.html,
+          scheduled_at: scheduledAt,
+          // This message is closer to marketing than the confirmation is, so it
+          // carries a working opt-out that needs no new endpoint.
+          headers: {
+            "List-Unsubscribe": listUnsubscribe(config),
+          },
+        });
+        return;
+      }
+      // The guide is promotional: it refuses (throws, nothing sent) without an
+      // https opt-out, or without the sender phone a Korean reader must see.
+      // scheduleWelcome then leaves `Welcome email` empty for a later retry.
+      const unsubscribeUrl = buddyUnsubscribeUrl(publicOrigin, leadId, locale, env);
+      const footer = buddyAdFooter({ locale, signupCountry, unsubscribeUrl, env });
+      // The share link is the unprefixed /r/<code> (core `shareUrl`): the
+      // friend's own language picks the page, and the status page, the
+      // announcement and this guide all hand out the same link.
+      const content = buddyGuideBody(
+        { shareUrl: referralUrl(publicOrigin, refCode), statusUrl, rulesUrl },
+        locale,
+        footer,
+      );
+      await deliver(config, fetchImpl, sleep, idempotencyKey, "welcome", {
         to: [to],
         subject: content.subject,
         text: content.text,
         html: content.html,
         scheduled_at: scheduledAt,
-        // This message is closer to marketing than the confirmation is, so it
-        // carries a working opt-out that needs no new endpoint.
-        headers: {
-          "List-Unsubscribe": listUnsubscribe(config),
-        },
+        headers: buddyListUnsubscribeHeaders(footer.unsubscribeUrl, mailtoAddress(config)),
       });
     },
   };
 }
 
+function mailtoAddress(config: ResendConfig): string {
+  return config.replyTo || "help@diveroid.com";
+}
+
 /** A Resend header value only ever carries this fixed opt-out address shape. */
 function listUnsubscribe(config: ResendConfig): string {
-  return `<mailto:${config.replyTo || "help@diveroid.com"}?subject=unsubscribe>`;
+  return `<mailto:${mailtoAddress(config)}?subject=unsubscribe>`;
 }
 
 /**
@@ -873,13 +1164,21 @@ export function createResendReferralMailer(
       // Second lock behind runReferralNotices: with the master switch off this
       // mailer cannot send a notice even if a caller forgets the gate.
       if (!programOn) throw new Error("Buddy Invite is switched off");
-      const content = referralNoticeBody(input);
+      // Refuses (throws, nothing sent) without an https opt-out or, for a
+      // Korean reader, without the sender phone.
+      const footer = buddyAdFooter({
+        locale: input.locale,
+        signupCountry: input.signupCountry,
+        unsubscribeUrl: input.unsubscribeUrl,
+        env,
+      });
+      const content = referralNoticeBody(input, footer);
       await deliver(config, fetchImpl, sleep, input.idempotencyKey, "referral_notice", {
         to: [input.to],
         subject: content.subject,
         text: content.text,
         html: content.html,
-        headers: { "List-Unsubscribe": listUnsubscribe(config) },
+        headers: buddyListUnsubscribeHeaders(footer.unsubscribeUrl, mailtoAddress(config)),
       });
     },
   };

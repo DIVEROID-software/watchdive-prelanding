@@ -11,12 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleRouteImport } from './routes/$locale'
+import { Route as BuddyRouteImport } from './routes/buddy'
 import { Route as BuddyRulesRouteImport } from './routes/buddy-rules'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReservationRouteImport } from './routes/reservation'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as LocaleIndexRouteImport } from './routes/$locale.index'
+import { Route as LocaleBuddyRouteImport } from './routes/$locale.buddy'
 import { Route as LocaleBuddyRulesRouteImport } from './routes/$locale.buddy-rules'
 import { Route as LocalePrivacyRouteImport } from './routes/$locale.privacy'
 import { Route as LocaleTermsRouteImport } from './routes/$locale.terms'
@@ -24,10 +26,8 @@ import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
 import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
 import { Route as ApiExperimentReportRouteImport } from './routes/api.experiment-report'
 import { Route as ApiMayaReportRouteImport } from './routes/api.maya-report'
-import { Route as BuddyTokenRouteImport } from './routes/buddy.$token'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
-import { Route as LocaleBuddyTokenRouteImport } from './routes/$locale.buddy.$token'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
 import { Route as ApiAuthProvidersRouteImport } from './routes/api/auth/providers'
 import { Route as ApiAuthStartRouteImport } from './routes/api/auth/start'
@@ -49,6 +49,11 @@ const IndexRoute = IndexRouteImport.update({
 const LocaleRoute = LocaleRouteImport.update({
   id: '/$locale',
   path: '/$locale',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuddyRoute = BuddyRouteImport.update({
+  id: '/buddy',
+  path: '/buddy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuddyRulesRoute = BuddyRulesRouteImport.update({
@@ -79,6 +84,11 @@ const VerifyRoute = VerifyRouteImport.update({
 const LocaleIndexRoute = LocaleIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => LocaleRoute,
+} as any)
+const LocaleBuddyRoute = LocaleBuddyRouteImport.update({
+  id: '/buddy',
+  path: '/buddy',
   getParentRoute: () => LocaleRoute,
 } as any)
 const LocaleBuddyRulesRoute = LocaleBuddyRulesRouteImport.update({
@@ -116,11 +126,6 @@ const ApiMayaReportRoute = ApiMayaReportRouteImport.update({
   path: '/api/maya-report',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BuddyTokenRoute = BuddyTokenRouteImport.update({
-  id: '/buddy/$token',
-  path: '/buddy/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const RCodeRoute = RCodeRouteImport.update({
   id: '/r/$code',
   path: '/r/$code',
@@ -130,11 +135,6 @@ const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
   id: '/unsubscribe/$token',
   path: '/unsubscribe/$token',
   getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleBuddyTokenRoute = LocaleBuddyTokenRouteImport.update({
-  id: '/buddy/$token',
-  path: '/buddy/$token',
-  getParentRoute: () => LocaleRoute,
 } as any)
 const LocaleRCodeRoute = LocaleRCodeRouteImport.update({
   id: '/r/$code',
@@ -203,11 +203,13 @@ const ApiAuthGoogleCallbackRoute = ApiAuthGoogleCallbackRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteWithChildren
+  '/buddy': typeof BuddyRoute
   '/buddy-rules': typeof BuddyRulesRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
+  '/$locale/buddy': typeof LocaleBuddyRoute
   '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
   '/$locale/terms': typeof LocaleTermsRoute
@@ -215,11 +217,9 @@ export interface FileRoutesByFullPath {
   '/admin/behavior': typeof AdminBehaviorRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
-  '/buddy/$token': typeof BuddyTokenRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
-  '/$locale/buddy/$token': typeof LocaleBuddyTokenRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
@@ -235,11 +235,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/buddy': typeof BuddyRoute
   '/buddy-rules': typeof BuddyRulesRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
+  '/$locale/buddy': typeof LocaleBuddyRoute
   '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
   '/$locale/terms': typeof LocaleTermsRoute
@@ -247,11 +249,9 @@ export interface FileRoutesByTo {
   '/admin/behavior': typeof AdminBehaviorRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
-  '/buddy/$token': typeof BuddyTokenRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale': typeof LocaleIndexRoute
-  '/$locale/buddy/$token': typeof LocaleBuddyTokenRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
@@ -269,11 +269,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteWithChildren
+  '/buddy': typeof BuddyRoute
   '/buddy-rules': typeof BuddyRulesRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
+  '/$locale/buddy': typeof LocaleBuddyRoute
   '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
   '/$locale/terms': typeof LocaleTermsRoute
@@ -281,11 +283,9 @@ export interface FileRoutesById {
   '/admin/behavior': typeof AdminBehaviorRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
-  '/buddy/$token': typeof BuddyTokenRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
-  '/$locale/buddy/$token': typeof LocaleBuddyTokenRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
@@ -304,11 +304,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$locale'
+    | '/buddy'
     | '/buddy-rules'
     | '/privacy'
     | '/reservation'
     | '/terms'
     | '/verify'
+    | '/$locale/buddy'
     | '/$locale/buddy-rules'
     | '/$locale/privacy'
     | '/$locale/terms'
@@ -316,11 +318,9 @@ export interface FileRouteTypes {
     | '/admin/behavior'
     | '/api/experiment-report'
     | '/api/maya-report'
-    | '/buddy/$token'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale/'
-    | '/$locale/buddy/$token'
     | '/$locale/r/$code'
     | '/api/auth/providers'
     | '/api/auth/start'
@@ -336,11 +336,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/buddy'
     | '/buddy-rules'
     | '/privacy'
     | '/reservation'
     | '/terms'
     | '/verify'
+    | '/$locale/buddy'
     | '/$locale/buddy-rules'
     | '/$locale/privacy'
     | '/$locale/terms'
@@ -348,11 +350,9 @@ export interface FileRouteTypes {
     | '/admin/behavior'
     | '/api/experiment-report'
     | '/api/maya-report'
-    | '/buddy/$token'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale'
-    | '/$locale/buddy/$token'
     | '/$locale/r/$code'
     | '/api/auth/providers'
     | '/api/auth/start'
@@ -369,11 +369,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$locale'
+    | '/buddy'
     | '/buddy-rules'
     | '/privacy'
     | '/reservation'
     | '/terms'
     | '/verify'
+    | '/$locale/buddy'
     | '/$locale/buddy-rules'
     | '/$locale/privacy'
     | '/$locale/terms'
@@ -381,11 +383,9 @@ export interface FileRouteTypes {
     | '/admin/behavior'
     | '/api/experiment-report'
     | '/api/maya-report'
-    | '/buddy/$token'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale/'
-    | '/$locale/buddy/$token'
     | '/$locale/r/$code'
     | '/api/auth/providers'
     | '/api/auth/start'
@@ -403,6 +403,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LocaleRoute: typeof LocaleRouteWithChildren
+  BuddyRoute: typeof BuddyRoute
   BuddyRulesRoute: typeof BuddyRulesRoute
   PrivacyRoute: typeof PrivacyRoute
   ReservationRoute: typeof ReservationRoute
@@ -411,7 +412,6 @@ export interface RootRouteChildren {
   AdminBehaviorRoute: typeof AdminBehaviorRoute
   ApiExperimentReportRoute: typeof ApiExperimentReportRoute
   ApiMayaReportRoute: typeof ApiMayaReportRoute
-  BuddyTokenRoute: typeof BuddyTokenRoute
   RCodeRoute: typeof RCodeRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ApiAuthProvidersRoute: typeof ApiAuthProvidersRoute
@@ -441,6 +441,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale'
       fullPath: '/$locale'
       preLoaderRoute: typeof LocaleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buddy': {
+      id: '/buddy'
+      path: '/buddy'
+      fullPath: '/buddy'
+      preLoaderRoute: typeof BuddyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/buddy-rules': {
@@ -483,6 +490,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/$locale/'
       preLoaderRoute: typeof LocaleIndexRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/buddy': {
+      id: '/$locale/buddy'
+      path: '/buddy'
+      fullPath: '/$locale/buddy'
+      preLoaderRoute: typeof LocaleBuddyRouteImport
       parentRoute: typeof LocaleRoute
     }
     '/$locale/buddy-rules': {
@@ -534,13 +548,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMayaReportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/buddy/$token': {
-      id: '/buddy/$token'
-      path: '/buddy/$token'
-      fullPath: '/buddy/$token'
-      preLoaderRoute: typeof BuddyTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/r/$code': {
       id: '/r/$code'
       path: '/r/$code'
@@ -554,13 +561,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/unsubscribe/$token'
       preLoaderRoute: typeof UnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/$locale/buddy/$token': {
-      id: '/$locale/buddy/$token'
-      path: '/buddy/$token'
-      fullPath: '/$locale/buddy/$token'
-      preLoaderRoute: typeof LocaleBuddyTokenRouteImport
-      parentRoute: typeof LocaleRoute
     }
     '/$locale/r/$code': {
       id: '/$locale/r/$code'
@@ -650,22 +650,22 @@ declare module '@tanstack/react-router' {
 }
 
 interface LocaleRouteChildren {
+  LocaleBuddyRoute: typeof LocaleBuddyRoute
   LocaleBuddyRulesRoute: typeof LocaleBuddyRulesRoute
   LocalePrivacyRoute: typeof LocalePrivacyRoute
   LocaleTermsRoute: typeof LocaleTermsRoute
   LocaleVerifyRoute: typeof LocaleVerifyRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
-  LocaleBuddyTokenRoute: typeof LocaleBuddyTokenRoute
   LocaleRCodeRoute: typeof LocaleRCodeRoute
 }
 
 const LocaleRouteChildren: LocaleRouteChildren = {
+  LocaleBuddyRoute: LocaleBuddyRoute,
   LocaleBuddyRulesRoute: LocaleBuddyRulesRoute,
   LocalePrivacyRoute: LocalePrivacyRoute,
   LocaleTermsRoute: LocaleTermsRoute,
   LocaleVerifyRoute: LocaleVerifyRoute,
   LocaleIndexRoute: LocaleIndexRoute,
-  LocaleBuddyTokenRoute: LocaleBuddyTokenRoute,
   LocaleRCodeRoute: LocaleRCodeRoute,
 }
 
@@ -675,6 +675,7 @@ const LocaleRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LocaleRoute: LocaleRouteWithChildren,
+  BuddyRoute: BuddyRoute,
   BuddyRulesRoute: BuddyRulesRoute,
   PrivacyRoute: PrivacyRoute,
   ReservationRoute: ReservationRoute,
@@ -683,7 +684,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminBehaviorRoute: AdminBehaviorRoute,
   ApiExperimentReportRoute: ApiExperimentReportRoute,
   ApiMayaReportRoute: ApiMayaReportRoute,
-  BuddyTokenRoute: BuddyTokenRoute,
   RCodeRoute: RCodeRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ApiAuthProvidersRoute: ApiAuthProvidersRoute,

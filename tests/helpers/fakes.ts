@@ -70,6 +70,8 @@ export class FakeLeadStore implements LeadStore {
       ...(record.expiresAt ? { expiresAt: record.expiresAt } : {}),
       ...(record.verifiedAt ? { verifiedAt: record.verifiedAt } : {}),
       ...(record.welcomeAt ? { welcomeAt: record.welcomeAt } : {}),
+      ...(record.launchMail ? { launchMail: record.launchMail } : {}),
+      ...(record.reservationMail ? { reservationMail: record.reservationMail } : {}),
       ...(record.reminder ? { reminder: record.reminder } : {}),
       ...(record.landingPath ? { landingPath: record.landingPath } : {}),
       ...(record.measurementConsent ? { measurementConsent: record.measurementConsent } : {}),

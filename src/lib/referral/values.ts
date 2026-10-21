@@ -14,6 +14,13 @@ import {
   EARLY_BIRD_SEATS,
   EARLY_NOTICE_HOURS,
   GUARANTEED_PRICE_USD_CENTS,
+  KR_PRIZE_TAX_FREE_KRW,
+  KR_PRIZE_WITHHOLDING_RATE,
+  LIGHT_VALUE_USD,
+  MIN_AGE_KR,
+  MIN_AGE_OTHER,
+  PRIZE_DELIVERY_BY,
+  PRIZE_VALUE_USD,
   LEADER_LIGHT_STOCK,
   NICKNAME_MAX,
   NICKNAME_MIN,
@@ -33,6 +40,17 @@ export type CopyValues = {
   noticeDays: number;
   min: number;
   max: number;
+  /** Prize and eligibility facts for the rules (program.ts). */
+  lightValue: string;
+  prizeValue: string;
+  ageKr: number;
+  ageOther: number;
+  /** Long-stop close, e.g. "2027-01-31 23:59 KST" — locale-neutral on purpose. */
+  longStop: string;
+  /** "2027-03" — the rules phrase it as "before March 2027" per locale. */
+  deliveryBy: string;
+  taxFree: string;
+  taxRate: number;
 };
 
 /**
@@ -72,6 +90,14 @@ export function copyValues(locale: Locale): CopyValues {
     noticeDays: CLOSE_NOTICE_DAYS,
     min: NICKNAME_MIN,
     max: NICKNAME_MAX,
+    lightValue: formatOfferPrice(locale, LIGHT_VALUE_USD * 100),
+    prizeValue: formatOfferPrice(locale, PRIZE_VALUE_USD * 100),
+    ageKr: MIN_AGE_KR,
+    ageOther: MIN_AGE_OTHER,
+    longStop: "2027-01-31 23:59 KST",
+    deliveryBy: PRIZE_DELIVERY_BY,
+    taxFree: `KRW ${KR_PRIZE_TAX_FREE_KRW.toLocaleString("en-US")}`,
+    taxRate: Math.round(KR_PRIZE_WITHHOLDING_RATE * 100),
   };
 }
 

@@ -83,6 +83,12 @@ export function toReferralRow(page: Record<string, unknown>): ReferralRow | unde
     ...(notifiedAt ? { notifiedAt } : {}),
     ...(rewardReview ? { rewardReview } : {}),
     ...(lead.signupLocale ? { signupLocale: lead.signupLocale } : {}),
+    ...(lead.leadId ? { leadId: lead.leadId } : {}),
+    ...(lead.signupCountry ? { signupCountry: lead.signupCountry } : {}),
+    // Opt-out markers, so an unsubscribe from any mail also stops Buddy Invite
+    // mail to that address (notices.ts `optedOutAddresses`).
+    ...(lead.launchMail ? { launchMail: lead.launchMail } : {}),
+    ...(lead.reservationMail ? { reservationMail: lead.reservationMail } : {}),
     email: lead.email,
   };
 }

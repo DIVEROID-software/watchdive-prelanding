@@ -289,6 +289,18 @@ export function readStatus(property: unknown): VerificationStatus {
   return "legacy";
 }
 
+/** Raw `Launch mail` / `Reservation mail` cells, present only when non-empty. */
+function optOutCells(
+  properties: Record<string, unknown>,
+): Pick<LeadRecord, "launchMail" | "reservationMail"> {
+  const launchMail = readText(properties["Launch mail"]);
+  const reservationMail = readText(properties["Reservation mail"]);
+  return {
+    ...(launchMail ? { launchMail } : {}),
+    ...(reservationMail ? { reservationMail } : {}),
+  };
+}
+
 export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefined {
   const pageId = typeof page.id === "string" ? page.id : "";
   if (!pageId) return undefined;
@@ -339,6 +351,8 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     ...(expiresAt ? { expiresAt } : {}),
     ...(verifiedAt ? { verifiedAt } : {}),
     ...(welcomeAt ? { welcomeAt } : {}),
+    // Opt-out markers only (launchMail/audience.ts, reservation-mail/campaign.ts).
+    ...optOutCells(properties),
     ...(reminder ? { reminder } : {}),
     ...(landingPath ? { landingPath } : {}),
     ...(measurementConsent ? { measurementConsent } : {}),

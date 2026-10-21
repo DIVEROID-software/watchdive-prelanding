@@ -16,7 +16,12 @@ import { NOTICE_MIN_INTERVAL_MS } from "../src/lib/referral/program.ts";
 import { sendReferralNotices } from "../src/lib/verification/reminderCron.server.ts";
 
 const NOW = new Date("2026-10-23T12:00:00.000Z");
-const ON = { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1", WATCHDIVE_REFERRAL_NOTICES_ENABLED: "1" };
+const ON = {
+  WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1",
+  WATCHDIVE_REFERRAL_NOTICES_ENABLED: "1",
+  // Signs each referrer's opt-out link (launch-mail unsubscribe token).
+  WATCHDIVE_VERIFICATION_SECRET: "v".repeat(40),
+};
 const SECRET = "status-secret-for-tests";
 
 let pageCounter = 0;
@@ -25,6 +30,7 @@ function row(overrides: Partial<ReferralRow>): ReferralRow {
   const id = `page-${String(pageCounter).padStart(4, "0")}`;
   return {
     pageId: id,
+    leadId: `aaaaaaaa-bbbb-4ccc-8ddd-${String(pageCounter).padStart(12, "0")}`,
     refCode: `c${String(pageCounter).padStart(7, "0")}`,
     canonicalEmail: `${id}@divers.example`,
     email: `${id}@divers.example`,
@@ -227,7 +233,7 @@ test("a first friend sends one notice that announces the first tier", async () =
   assert.equal(mail.remainingToNext, 2);
   assert.equal(mail.idempotencyKey, `wd-buddy-invite-20261022-notice-${rows[0]!.refCode}-1`);
   assert.equal(mail.idempotencyKey, noticeIdempotencyKey(rows[0]!.refCode, 1));
-  assert.match(mail.statusUrl, /^https:\/\/watchdive\.example\/buddy\/[^=?#]+$/);
+  assert.match(mail.statusUrl, /^https:\/\/watchdive\.example\/buddy#[^=?#/]+$/);
   assert.deepEqual(store.marks, [{ pageId: rows[0]!.pageId, count: 1, at: NOW.toISOString() }]);
   // The friend's row is never the recipient and no friend data is in the mail.
   const serialized = JSON.stringify(mail);
@@ -391,4 +397,70 @@ test("the result carries counts only", async () => {
   for (const [key, value] of Object.entries(result)) {
     assert.ok(typeof value === "number" || typeof value === "boolean", key);
   }
+});
+
+// --- Opt-outs and the opt-out link ------------------------------------------
+
+test("every notice carries the referrer's https one-click opt-out and signup country", async () => {
+  const rows = referrerWith(1, { signupCountry: "KR" });
+  const mailer = new FakeNoticeMailer();
+  await runReferralNotices(deps(new FakeStore(rows), mailer));
+  const mail = mailer.sent[0]!;
+  assert.match(
+    mail.unsubscribeUrl ?? "",
+    new RegExp(
+      `^https://watchdive\\.example/unsubscribe/u1\\.${rows[0]!.leadId}\\.en\\.[A-Za-z0-9_-]{43}$`,
+    ),
+  );
+  assert.equal(mail.signupCountry, "KR");
+});
+
+test("a referrer opted out by a Launch mail or Reservation mail marker gets no notice", async () => {
+  for (const overrides of [
+    { launchMail: "unsubscribed 2026-10-20T00:00:00.000Z" },
+    { reservationMail: "unsubscribed 2026-10-20T00:00:00.000Z" },
+    { launchMail: "Unsubscribe" },
+    { status: "suppressed" },
+  ] as Partial<ReferralRow>[]) {
+    const store = new FakeStore(referrerWith(3, overrides));
+    const mailer = new FakeNoticeMailer();
+    const result = await runReferralNotices(deps(store, mailer));
+    assert.equal(mailer.sent.length, 0, JSON.stringify(overrides));
+    assert.equal(result.sent, 0);
+    assert.equal(store.marks.length, 0);
+  }
+});
+
+test("an opt-out on ANY row of the same inbox stops the notice", async () => {
+  const rows = referrerWith(3, { email: "Diver.One+x@gmail.com" });
+  // A second, unrelated signup row of the same Gmail inbox that unsubscribed.
+  rows.push(
+    row({
+      email: "diverone@googlemail.com",
+      refCode: "zzzz9999",
+      launchMail: "unsubscribed 2026-10-21T00:00:00.000Z",
+    }),
+  );
+  const mailer = new FakeNoticeMailer();
+  const result = await runReferralNotices(deps(new FakeStore(rows), mailer));
+  assert.equal(mailer.sent.length, 0);
+  assert.equal(result.skippedUnsubscribed, 1);
+});
+
+test("no Lead ID or no signing secret: no opt-out link, so no notice", async () => {
+  const a = await runReferralNotices(
+    deps(new FakeStore(referrerWith(1, { leadId: undefined })), new FakeNoticeMailer()),
+  );
+  assert.equal(a.sent, 0);
+  assert.equal(a.skippedNoOptOut, 1);
+  const noSecret = {
+    WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1",
+    WATCHDIVE_REFERRAL_NOTICES_ENABLED: "1",
+  };
+  const mailer = new FakeNoticeMailer();
+  const b = await runReferralNotices(
+    deps(new FakeStore(referrerWith(1)), mailer, { env: noSecret }),
+  );
+  assert.equal(b.skippedNoOptOut, 1);
+  assert.equal(mailer.sent.length, 0);
 });

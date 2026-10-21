@@ -294,6 +294,38 @@ test("status: one Notion pass, own data only, allow-listed fields", async () => 
   assertNoPrivateData(response, "owner001");
 });
 
+test("status: a scripted valid link cannot force a full Notion scan per request", async () => {
+  const { deps, store } = setup();
+  for (let i = 0; i < 50; i++) {
+    const r = await getReferralStatusService(tokenFor("owner001"), "en", deps);
+    assert.equal(r.status, "ok");
+  }
+  // Every read is served by the one shared pass (the same one the board uses).
+  assert.equal(store.listCalls, 1);
+  assert.equal(store.findCalls, 0);
+});
+
+test("status: a link whose row is gone costs one small lookup, never another scan", async () => {
+  const { deps, store } = setup();
+  for (let i = 0; i < 5; i++) {
+    assert.deepEqual(await getReferralStatusService(tokenFor("gone0000"), "en", deps), {
+      status: "invalid",
+    });
+  }
+  assert.equal(store.listCalls, 1);
+  assert.equal(store.findCalls, 5);
+});
+
+test("status: a row newer than the cached pass is found by refreshing once", async () => {
+  const { deps, store } = setup();
+  await getReferralStatusService(tokenFor("owner001"), "en", deps);
+  store.rows.push(row({ refCode: "newbie01" }));
+  const r = await getReferralStatusService(tokenFor("newbie01"), "en", deps);
+  assert.equal(r.status, "ok");
+  assert.equal(store.listCalls, 2);
+  assert.equal(store.findCalls, 1);
+});
+
 test("closed is derived from referralClosesAt at the server clock", async () => {
   const { deps, clock } = setup({ closesAt: () => new Date("2026-10-22T10:00:01.000Z") });
   let r = await getReferralStatusService(tokenFor("owner001"), "en", deps);
@@ -387,6 +419,36 @@ test("settings: choosing a new nickname lifts an ops hide server-side; keeping i
     deps,
   );
   assert.equal(store.writes[1].input.clearHidden, undefined);
+});
+
+test("settings: an ops hide cannot be lifted by a variant of the hidden name or by clear-then-retype", async () => {
+  {
+    const { deps, store } = setup();
+    for (const variant of ["rival", "RIVAL", "R i v a l", "r.i.v.a.l", "Ｒｉｖａｌ"]) {
+      await updateReferralSettingsService(
+        tokenFor("rival001"),
+        { nickname: variant, leaderboard: true, noticesOff: false },
+        deps,
+      );
+    }
+    assert.ok(store.writes.length >= 5);
+    for (const write of store.writes) assert.equal((write.input as ReferralSettingsInput).clearHidden, undefined);
+  }
+  {
+    const { deps, store } = setup();
+    await updateReferralSettingsService(
+      tokenFor("rival001"),
+      { nickname: null, leaderboard: true, noticesOff: false },
+      deps,
+    );
+    await updateReferralSettingsService(
+      tokenFor("rival001"),
+      { nickname: "Rival", leaderboard: true, noticesOff: false },
+      deps,
+    );
+    assert.equal(store.writes.length, 2);
+    assert.equal((store.writes[1].input as ReferralSettingsInput).clearHidden, undefined);
+  }
 });
 
 test("settings: the zod schema in the server fn does not accept nicknameHidden either", () => {
@@ -568,7 +630,7 @@ test("server fns and routes check the switch before building Notion deps", () =>
     assert.ok(gate > 0 && gate < body.indexOf("referralServiceDeps()"), `${name} must gate first`);
   }
   assert.match(fns, /export const getReferralProgramState = createServerFn/);
-  for (const file of ["../src/routes/buddy.$token.tsx", "../src/routes/$locale.buddy.$token.tsx"]) {
+  for (const file of ["../src/routes/buddy.tsx", "../src/routes/$locale.buddy.tsx"]) {
     const route = readFileSync(new URL(file, import.meta.url), "utf8");
     assert.match(route, /requireReferralProgram/);
     assert.match(route, /no-referrer|BUDDY_PAGE_META/);

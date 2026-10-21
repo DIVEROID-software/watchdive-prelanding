@@ -142,6 +142,13 @@ function publicSnapshot(snapshot: LeaderboardSnapshot): LeaderboardSnapshot {
  * The signed status page. A token that does not verify returns `invalid`
  * before the store is touched, so a guessed link costs no Notion read and
  * cannot be told apart from a valid link whose row has since been removed.
+ *
+ * Answered from the shared leaderboard pass, not a fresh scan: anyone can sign
+ * up, verify and hold a valid token, and one full paged read of the waitlist
+ * per page load would let a single scripted link drain the Notion integration
+ * quota that signups and confirmations share. The owner's own settings write
+ * invalidates the pass, so their change shows at once; counts are at most
+ * LEADERBOARD_CACHE_SECONDS old, the same as the public board.
  */
 export async function getReferralStatusService(
   token: unknown,
@@ -152,22 +159,32 @@ export async function getReferralStatusService(
   const refCode = await refCodeFor(token, deps);
   if (!refCode) return INVALID;
 
-  // One full pass: the owner's rank and count depend on every other row
-  // (self-referral, duplicates, daily caps), so a single-row read is not enough.
-  const rows = await deps.store.listProgramRows();
-  // Cells are normalized the way share links and `Referred by` are, so a code
-  // stored with stray case or whitespace still finds its owner.
-  const row = rows.find((candidate) => normalizeCode(candidate.refCode) === refCode);
-  if (!row) return INVALID;
+  // The owner's rank and count depend on every other row (self-referral,
+  // duplicates, daily caps), so the whole pass is needed, not one row.
+  let pass = await deps.leaderboardCache.get(deps);
+  let row = ownRow(pass.rows, refCode);
+  if (!row) {
+    // Only a row newer than the cached pass gets here with a valid signature.
+    // One filtered lookup decides whether a fresh pass is worth it, so a link
+    // whose row was removed costs a single small query, never a full scan.
+    if (!(await deps.store.findByRefCode(refCode))) return INVALID;
+    deps.leaderboardCache.invalidate();
+    pass = await deps.leaderboardCache.get(deps);
+    row = ownRow(pass.rows, refCode);
+    if (!row) return INVALID;
+  }
 
-  const now = deps.now();
-  const closesAt = deps.closesAt();
-  const ledger = deps.computeLedger(rows, { closesAt });
-  const status = deps.statusFor(row, ledger, {
+  const status = deps.statusFor(row, pass.ledger, {
     shareUrl: deps.shareUrl(deps.origin, refCode),
-    closed: isClosed(deps, now),
+    closed: isClosed(deps),
   });
   return { status: "ok", referral: publicStatus(status) };
+}
+
+// Cells are normalized the way share links and `Referred by` are, so a code
+// stored with stray case or whitespace still finds its owner.
+function ownRow(rows: readonly ReferralRow[], refCode: string): ReferralRow | undefined {
+  return rows.find((candidate) => normalizeCode(candidate.refCode) === refCode);
 }
 
 /**
@@ -208,20 +225,37 @@ export async function updateReferralSettingsService(
     leaderboard: input.leaderboard === true,
     noticesOff: input.noticesOff === true,
   };
-  const changed = (row.nickname ?? "") !== (nickname ?? "");
+  // An ops hide lifts only for a genuinely different name. Compared folded, so
+  // a case, width or separator variant of the hidden name is the same name.
+  // And only against a name still on the row: after "clear" the hidden value
+  // is gone, so "clear, then type the hidden name again" must not lift it;
+  // that person stays hidden until ops look again.
+  const liftHide =
+    row.nicknameHidden &&
+    Boolean(nickname) &&
+    Boolean(row.nickname) &&
+    foldNickname(row.nickname ?? "") !== foldNickname(nickname ?? "");
   await deps.store.writeSettings(row.pageId, {
     ...settings,
-    ...(row.nicknameHidden && changed && nickname ? { clearHidden: true } : {}),
+    ...(liftHide ? { clearHidden: true } : {}),
   });
   // The public board may now show a different name; the next reader rebuilds it.
   deps.leaderboardCache.invalidate();
   return { status: "ok", settings: { ...settings } };
 }
 
+/** Same folding the nickname check uses for its reserved-word match. */
+function foldNickname(value: string): string {
+  return value.normalize("NFKC").toLowerCase().replace(/[\s._\-()+/]/gu, "");
+}
+
 type LeaderboardPass = {
   snapshot: LeaderboardSnapshot;
   /** Server-only: credited count per code, for the landing card progress. */
   credited: Map<string, number>;
+  /** Server-only (emails, page ids): the rows and ledger the status page reads. */
+  rows: readonly ReferralRow[];
+  ledger: LedgerResult;
 };
 
 export type LeaderboardCache = {
@@ -259,7 +293,7 @@ export function createLeaderboardCache(ttlMs = LEADERBOARD_CACHE_SECONDS * 1000)
         );
         const credited = new Map<string, number>();
         for (const [code, standing] of ledger.standings) credited.set(code, standing.credited);
-        const pass = { snapshot, credited };
+        const pass = { snapshot, credited, rows, ledger };
         // A settings write during this pass may not be reflected in it, so it
         // is served to the readers already waiting but not kept.
         if (started === generation) cached = { at: now.getTime(), pass };

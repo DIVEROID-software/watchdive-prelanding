@@ -1,18 +1,49 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 
+import { getReferralProgramState } from "@/lib/api/referral.functions";
 import { SOCIAL_SIGNUP_PRIVACY } from "@/lib/socialSignupPrivacy";
-import { homePath } from "@/lib/i18n/locale";
+import { buddyInvitePrivacy, type PrivacyLead } from "@/lib/referralPrivacy";
+import { homePath, type Locale } from "@/lib/i18n/locale";
 import { legalHead } from "@/lib/i18n/seo";
 import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 
 export const Route = createFileRoute("/privacy")({
+  loader: loadPrivacyPageData,
   head: () => legalHead("en", "privacy"),
   component: PrivacyPage,
 });
 
+/** Loader data of /privacy and /$locale/privacy. */
+export type PrivacyPageData = { buddyInvite: true };
+
+const PRIVACY_ROUTE_IDS = new Set(["/privacy", "/$locale/privacy"]);
+
+/**
+ * The Buddy Invite section describes processing that exists only while the
+ * owner's switch is on, so the server decides per request whether it is shown.
+ * Off, or a failed check, returns no loader data at all: the policy then
+ * renders exactly as it did before the program existed.
+ */
+export async function loadPrivacyPageData(): Promise<PrivacyPageData | undefined> {
+  const state = await getReferralProgramState().catch(() => ({ enabled: false }));
+  return state.enabled ? { buddyInvite: true } : undefined;
+}
+
+function useBuddyInviteSection(): boolean {
+  return useRouterState({
+    select: (state) =>
+      state.matches.some(
+        (match) =>
+          PRIVACY_ROUTE_IDS.has(match.routeId) &&
+          (match.loaderData as PrivacyPageData | undefined)?.buddyInvite === true,
+      ),
+  });
+}
+
 export function PrivacyPage() {
   const locale = useCurrentLocale();
   const copy = useFrozenLandingMessages().privacy;
+  const showBuddyInvite = useBuddyInviteSection();
   const company = splitLabel(copy.s1Company);
   const representative = splitLabel(copy.s1Rep);
   const address = splitLabel(copy.s1Addr);
@@ -156,11 +187,64 @@ export function PrivacyPage() {
             </p>
           </Section>
 
+          {showBuddyInvite ? <BuddyInviteSection locale={locale} /> : null}
+
           <hr className="border-border" />
           <p className="text-caption italic text-muted-foreground">{copy.footerLine}</p>
         </div>
       </article>
     </div>
+  );
+}
+
+function BuddyInviteSection({ locale }: { locale: Locale }) {
+  const text = buddyInvitePrivacy(locale);
+  const [rightsLead, rightsBody] = text.rights;
+  const rights = splitAroundEmail(rightsBody);
+  return (
+    <section id="buddy-invite" className="space-y-3">
+      <h2 className="text-heading">{text.title}</h2>
+      <p>{text.intro}</p>
+      <p>{text.storedIntro}</p>
+      <ul className="list-disc space-y-1 pl-6">
+        {text.stored.map((item) => (
+          <li key={item[0]}>
+            <Lead item={item} />
+          </li>
+        ))}
+      </ul>
+      <p>
+        <Lead item={text.friends} />
+      </p>
+      <p>{text.purposesIntro}</p>
+      <ul className="list-disc space-y-1 pl-6">
+        {text.purposes.map((purpose) => (
+          <li key={purpose}>{purpose}</li>
+        ))}
+      </ul>
+      {[text.visibility, text.prizes, text.legalBasis, text.sharing, text.retention].map((item) => (
+        <p key={item[0]}>
+          <Lead item={item} />
+        </p>
+      ))}
+      <p>
+        <strong>{rightsLead}</strong>
+        {rights[0]}
+        <a className="text-primary underline underline-offset-4" href="mailto:help@diveroid.com">
+          help@diveroid.com
+        </a>
+        {rights[1]}
+      </p>
+    </section>
+  );
+}
+
+function Lead({ item }: { item: PrivacyLead }) {
+  return (
+    <>
+      <strong>{item[0]}</strong>
+      {item[1]}
+    </>
   );
 }
 

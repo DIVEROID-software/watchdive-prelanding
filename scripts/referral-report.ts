@@ -12,6 +12,10 @@
 // The ledger, leaderboard and disposable-domain list come from the core
 // modules (loaded lazily by main()), so the logic below stays testable with
 // fakes. The review signals only ever flag; ops decides (see the runbook).
+// A candidate is `review_needed` when any reason fires: verification bursts,
+// signup bursts, disposable or rare domains, one non-mainstream domain
+// concentration, alias/forwarding services, same locale/path/UTM, fast
+// signup→verify, quick mail confirmations, or many never-confirmed sign-ups.
 import { chmod, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
@@ -33,6 +37,8 @@ import {
   highestTier,
   type ReferralTierId,
 } from "../src/lib/referral/program.ts";
+import { samePerson } from "../src/lib/referral/eligibility.ts";
+import { heldCount } from "../src/lib/referral/ledger.ts";
 
 /** Review thresholds. Signals only flag a person for a human look. */
 export const REVIEW = {
@@ -47,6 +53,21 @@ export const REVIEW = {
   fastVerifyMs: 60 * 1000,
   fastVerifyShare: 0.5,
   fastVerifyMinFriends: 3,
+  /**
+   * `Verified at` − `Verification sent` under this reads as an automated
+   * confirmation: a person has to switch to the mail app and press the button.
+   * Google/Apple sign-ins are exempt (verified at once, no mail). Mail security
+   * scanners can also click fast, hence a review signal, never an exclusion.
+   */
+  quickConfirmMs: 20 * 1000,
+  quickConfirmMinFriends: 2,
+  /** More alias/forwarding-service friends than this is worth a look. */
+  aliasMaxFriends: 2,
+  /** More friends than this on ONE non-mainstream domain (catch-all custom domains). */
+  domainConcentrationMax: 3,
+  /** Many referred sign-ups that never confirm (addresses entered for other people). */
+  pendingMinFriends: 5,
+  pendingShare: 0.67,
 } as const;
 
 /** Domains big enough that a single occurrence is not "rare". */
@@ -55,11 +76,19 @@ const COMMON_DOMAINS = new Set([
   "outlook.com", "hotmail.com", "live.com", "msn.com", "yahoo.com", "yahoo.co.jp", "yahoo.co.kr",
   "icloud.com", "me.com", "qq.com", "163.com", "126.com", "gmx.de", "web.de", "t-online.de",
   "orange.fr", "free.fr", "uol.com.br", "bol.com.br", "proton.me", "protonmail.com",
+  "mac.com", "pm.me", "yahoo.co.uk", "hotmail.co.uk", "naver.co.kr", "aol.com", "yandex.ru",
+  "mail.ru", "docomo.ne.jp", "ezweb.ne.jp", "softbank.ne.jp", "i.softbank.jp",
 ]);
 
 /** Friend-level facts the ledger rows do not carry. Never leave this process. */
 export type RowSignals = {
   signedUpAt?: string;
+  /** `Verification sent`: when the (last) confirmation mail went out. */
+  verificationSentAt?: string;
+  /** `Signup method`; google/apple rows are verified without a mail click. */
+  signupMethod?: string;
+  /** `Auth verification provenance` was written (a social sign-in verified the row). */
+  socialVerified?: boolean;
   landingPath?: string;
   utm?: { source?: string; medium?: string; campaign?: string; content?: string; term?: string };
 };
@@ -75,6 +104,18 @@ export type ReviewSignals = {
   sameLandingPathShare: number;
   sameUtmShare: number;
   fastVerifyShare: number;
+  /** Mail confirmations faster than REVIEW.quickConfirmMs (social sign-ins exempt). */
+  quickConfirmations: number;
+  aliasFriends: number;
+  aliasShare: number;
+  /** Friends on the single most common non-mainstream, non-alias domain. */
+  topOtherDomainFriends: number;
+  /** Referred sign-ups that are still pending (never confirmed). */
+  pendingFriends: number;
+  /** pending / (pending + verified friends). */
+  pendingShare: number;
+  /** Largest number of referred sign-ups (any status) inside one burst window. */
+  maxSignedUpInBurstWindow: number;
 };
 
 export type ReviewReason =
@@ -84,7 +125,19 @@ export type ReviewReason =
   | "same_locale"
   | "same_landing_path"
   | "same_utm"
-  | "fast_verify";
+  | "fast_verify"
+  | "quick_confirmation"
+  | "alias_services"
+  | "domain_concentration"
+  | "pending_ratio"
+  | "burst_signups";
+
+export type ReviewOptions = {
+  /** Alias/forwarding service test (core `isAliasServiceEmail`). Default: none. */
+  isAliasService?: (email: string) => boolean;
+  /** The referrer's referred rows that never confirmed (for the pending ratio and signup bursts). */
+  pending?: ReferralRow[];
+};
 
 const ZERO = 0;
 
@@ -133,25 +186,48 @@ export function computeReviewSignals(
   signals: Map<string, RowSignals>,
   population: { domainCounts: Map<string, number> },
   isDisposable: (email: string) => boolean,
+  options: ReviewOptions = {},
 ): { signals: ReviewSignals; reasons: ReviewReason[] } {
   const n = friends.length;
+  const isAlias = options.isAliasService ?? (() => false);
+  const pending = options.pending ?? [];
   const perDomain = new Map<string, number>();
+  const perOtherDomain = new Map<string, number>();
   let disposable = 0;
   let rare = 0;
   let fast = 0;
   let fastKnown = 0;
+  let quick = 0;
+  let alias = 0;
   for (const friend of friends) {
     const domain = domainOf(friend.email);
+    const signal = signals.get(friend.pageId);
     perDomain.set(domain, (perDomain.get(domain) ?? 0) + 1);
     if (isDisposable(friend.email)) disposable += 1;
+    if (isAlias(friend.email)) alias += 1;
+    else if (domain && !COMMON_DOMAINS.has(domain)) {
+      perOtherDomain.set(domain, (perOtherDomain.get(domain) ?? 0) + 1);
+    }
     if (!COMMON_DOMAINS.has(domain) && (population.domainCounts.get(domain) ?? 0) <= 1) rare += 1;
-    const signedUp = Date.parse(signals.get(friend.pageId)?.signedUpAt ?? "");
+    const signedUp = Date.parse(signal?.signedUpAt ?? "");
     const verified = Date.parse(friend.verifiedAt ?? "");
     if (Number.isFinite(signedUp) && Number.isFinite(verified)) {
       fastKnown += 1;
       if (verified - signedUp < REVIEW.fastVerifyMs) fast += 1;
     }
+    const sent = Date.parse(signal?.verificationSentAt ?? "");
+    const social =
+      signal?.socialVerified === true ||
+      signal?.signupMethod === "google" ||
+      signal?.signupMethod === "apple";
+    if (!social && Number.isFinite(sent) && Number.isFinite(verified)) {
+      const delta = verified - sent;
+      if (delta >= 0 && delta < REVIEW.quickConfirmMs) quick += 1;
+    }
   }
+  const signupTimes = [...friends, ...pending].map((row) =>
+    Date.parse(signals.get(row.pageId)?.signedUpAt ?? ""),
+  );
   // Only domains shared by two or more friends are listed, so a one-off
   // domain (often a person's own) never appears in the summary.
   const shared = [...perDomain.entries()].filter(([, count]) => count >= 2).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
@@ -166,6 +242,13 @@ export function computeReviewSignals(
     sameLandingPathShare: topShare(friends.map((f) => signals.get(f.pageId)?.landingPath)),
     sameUtmShare: topShare(friends.map((f) => utmKey(signals.get(f.pageId)))),
     fastVerifyShare: share(fast, fastKnown),
+    quickConfirmations: quick,
+    aliasFriends: alias,
+    aliasShare: share(alias, n),
+    topOtherDomainFriends: Math.max(0, ...perOtherDomain.values()),
+    pendingFriends: pending.length,
+    pendingShare: share(pending.length, pending.length + n),
+    maxSignedUpInBurstWindow: maxInWindow(signupTimes, REVIEW.burstWindowMs),
   };
   const reasons: ReviewReason[] = [];
   if (out.maxVerifiedInBurstWindow >= REVIEW.burstMinFriends) reasons.push("burst_verifications");
@@ -177,6 +260,11 @@ export function computeReviewSignals(
     if (out.sameUtmShare >= REVIEW.sameValueShare) reasons.push("same_utm");
   }
   if (fastKnown >= REVIEW.fastVerifyMinFriends && out.fastVerifyShare >= REVIEW.fastVerifyShare) reasons.push("fast_verify");
+  if (quick >= REVIEW.quickConfirmMinFriends) reasons.push("quick_confirmation");
+  if (alias > REVIEW.aliasMaxFriends) reasons.push("alias_services");
+  if (out.topOtherDomainFriends > REVIEW.domainConcentrationMax) reasons.push("domain_concentration");
+  if (pending.length >= REVIEW.pendingMinFriends && out.pendingShare >= REVIEW.pendingShare) reasons.push("pending_ratio");
+  if (out.maxSignedUpInBurstWindow >= REVIEW.burstMinFriends) reasons.push("burst_signups");
   return { signals: out, reasons };
 }
 
@@ -199,6 +287,8 @@ export type ReportInput = {
   now: Date;
   closesAt: Date | null;
   isDisposable: (email: string) => boolean;
+  /** Core `isAliasServiceEmail`; without it the alias signal stays 0. */
+  isAliasService?: (email: string) => boolean;
 };
 
 export type ReportSummary = {
@@ -224,8 +314,8 @@ export function rankStandings(standings: Iterable<ReferrerStanding>): ReferrerSt
     .sort(
       (a, b) =>
         b.credited - a.credited ||
-        (a.lastCreditAt ?? "").localeCompare(b.lastCreditAt ?? "") ||
-        a.refCode.localeCompare(b.refCode),
+        Date.parse(a.lastCreditAt ?? "") - Date.parse(b.lastCreditAt ?? "") ||
+        (a.refCode < b.refCode ? -1 : a.refCode > b.refCode ? 1 : 0),
     );
 }
 
@@ -235,15 +325,32 @@ function safeNickname(value: string | undefined): string | null {
   return value.includes("@") ? "[redacted]" : value;
 }
 
-/** Verified friends of one referrer, as the review sees them (before caps). */
+/**
+ * Verified friends of one referrer, as the review sees them (before caps). A
+ * friend who confirmed and later unsubscribed still counts in the ledger, so
+ * the review sees them too. The referrer's own rows are left out by the
+ * ledger's same-person rule (canonical email or referral identity key).
+ */
 function friendsOf(refCode: string, referrer: ReferralRow | undefined, byReferrer: Map<string, ReferralRow[]>): ReferralRow[] {
   return (byReferrer.get(refCode) ?? []).filter(
     (row) =>
       row.emailVerified &&
-      row.status === "verified" &&
+      (row.status === "verified" || row.status === "unsubscribed") &&
       !row.suspect &&
       !row.duplicate &&
-      row.canonicalEmail !== referrer?.canonicalEmail,
+      !(referrer && samePerson(row, referrer)),
+  );
+}
+
+/** Every standing in code order (the ranking drops credited 0; reward lists must not). */
+function holders(standings: Iterable<ReferrerStanding>): ReferrerStanding[] {
+  return [...standings].sort((a, b) => (a.refCode < b.refCode ? -1 : a.refCode > b.refCode ? 1 : 0));
+}
+
+/** Referred sign-ups that never confirmed (still pending). */
+function pendingOf(refCode: string, referrer: ReferralRow | undefined, byReferrer: Map<string, ReferralRow[]>): ReferralRow[] {
+  return (byReferrer.get(refCode) ?? []).filter(
+    (row) => !row.emailVerified && row.status === "pending" && !(referrer && samePerson(row, referrer)),
   );
 }
 
@@ -251,13 +358,18 @@ export function buildReport(input: ReportInput): {
   summary: ReportSummary;
   ranked: ReferrerStanding[];
   rowsByRef: Map<string, ReferralRow>;
+  /** Every standing, credited 0 included (held tiers after removals). */
+  holders: ReferrerStanding[];
 } {
   const ranked = rankStandings(input.ledger.standings.values());
   const rowsByRef = new Map<string, ReferralRow>();
   const byReferrer = new Map<string, ReferralRow[]>();
   const domainCounts = new Map<string, number>();
+  // First row by page id owns a code, exactly as in the ledger.
+  for (const row of [...input.rows].sort((a, b) => (a.pageId < b.pageId ? -1 : a.pageId > b.pageId ? 1 : 0))) {
+    if (row.refCode && !rowsByRef.has(row.refCode)) rowsByRef.set(row.refCode, row);
+  }
   for (const row of input.rows) {
-    if (row.refCode) rowsByRef.set(row.refCode, row);
     if (row.referredBy) byReferrer.set(row.referredBy, [...(byReferrer.get(row.referredBy) ?? []), row]);
     const domain = domainOf(row.email);
     if (domain) domainCounts.set(domain, (domainCounts.get(domain) ?? 0) + 1);
@@ -277,6 +389,10 @@ export function buildReport(input: ReportInput): {
       input.signals,
       { domainCounts },
       input.isDisposable,
+      {
+        ...(input.isAliasService ? { isAliasService: input.isAliasService } : {}),
+        pending: pendingOf(standing.refCode, referrer, byReferrer),
+      },
     );
     flags.set(standing.refCode, reasons.length > 0);
     review.push({
@@ -291,11 +407,14 @@ export function buildReport(input: ReportInput): {
     });
   }
 
+  // Every standing, including people whose friends were removed after a tier
+  // was announced (credited may be below the tier, even 0; legal review D7).
+  const all = holders(input.ledger.standings.values());
   const tierCounts = Object.fromEntries(
-    REFERRAL_TIERS.map((t) => [t.id, ranked.filter((s) => s.reachedAt[t.id] !== undefined).length]),
+    REFERRAL_TIERS.map((t) => [t.id, all.filter((s) => s.reachedAt[t.id] !== undefined).length]),
   ) as Record<ReferralTierId, number>;
 
-  const lightAllocation = ranked
+  const lightAllocation = all
     .filter((s) => s.leaderOrder !== null && s.leaderOrder <= LEADER_LIGHT_STOCK)
     .sort((a, b) => (a.leaderOrder ?? 0) - (b.leaderOrder ?? 0))
     .map((s) => ({
@@ -328,7 +447,7 @@ export function buildReport(input: ReportInput): {
     leaderboardSnapshot: input.leaderboard,
     review,
   };
-  return { summary, ranked, rowsByRef };
+  return { summary, ranked, rowsByRef, holders: all };
 }
 
 // ---- address files (--with-emails) -----------------------------------------
@@ -350,50 +469,82 @@ export function mailable(row: ReferralRow | undefined): row is ReferralRow {
   );
 }
 
+/**
+ * May receive a reward they reached: like `mailable`, but an unsubscribed
+ * person keeps their reward (legal review D7). Their row is marked
+ * `unsubscribed` so the contact is about that reward only.
+ */
+function rewardable(row: ReferralRow | undefined): row is ReferralRow {
+  return Boolean(
+    row &&
+      row.emailVerified &&
+      (row.status === "verified" || row.status === "unsubscribed") &&
+      !row.suspect &&
+      !row.duplicate &&
+      row.rewardReview !== "rejected" &&
+      row.email.includes("@"),
+  );
+}
+
 export function buildAddressFiles(
   summary: ReportSummary,
   ranked: ReferrerStanding[],
   rowsByRef: Map<string, ReferralRow>,
+  /** Every standing (buildReport `holders`); defaults to `ranked`. */
+  everyone: ReferrerStanding[] = ranked,
 ): AddressFiles {
   const reviewByRef = new Map(summary.review.map((c) => [c.refCode, c]));
   // A rejected reward review withdraws the reward from every list below.
-  const eligible = (refCode: string): ReferralRow | undefined => {
+  // The launch notice is a mail like any other: never to an unsubscribed person.
+  const notifiable = (refCode: string): ReferralRow | undefined => {
     const row = rowsByRef.get(refCode);
     return mailable(row) && row.rewardReview !== "rejected" ? row : undefined;
   };
+  const rewardee = (refCode: string): ReferralRow | undefined => {
+    const row = rowsByRef.get(refCode);
+    return rewardable(row) ? row : undefined;
+  };
+  const contact = (row: ReferralRow) => (row.status === "unsubscribed" ? "unsubscribed" : "");
+  const all = holders(everyone);
 
   const oneHour: string[][] = [];
   const twoHour: string[][] = [];
-  for (const s of ranked) {
-    const row = eligible(s.refCode);
-    const tier = highestTier(s.credited);
-    if (!row || !tier) continue;
+  for (const s of all) {
+    const row = notifiable(s.refCode);
+    if (!row) continue;
+    // The held tier: a tier announced by mail stays, even if friends were removed since.
+    const tier = highestTier(heldCount(row, s.credited));
+    if (!tier) continue;
     (EARLY_NOTICE_HOURS[tier.id] >= 2 ? twoHour : oneHour).push([row.email, s.refCode, String(s.credited)]);
   }
-  const team = ranked
-    .filter((s) => s.reachedAt.team !== undefined)
-    .flatMap((s) => {
-      const row = eligible(s.refCode);
-      return row ? [[row.email, s.refCode, s.credited, s.reachedAt.team ?? ""]] : [];
-    });
+  const teamMin = REFERRAL_TIERS.find((t) => t.id === "team")?.minFriends ?? Infinity;
+  const team = all.flatMap((s) => {
+    const row = rewardee(s.refCode);
+    // Held, not only credited: a Dive Team we announced stays on this list.
+    return row && heldCount(row, s.credited) >= teamMin
+      ? [[row.email, s.refCode, s.credited, s.reachedAt.team ?? "", contact(row)]]
+      : [];
+  });
   const light = summary.lightAllocation.flatMap((entry) => {
-    const row = eligible(entry.refCode);
-    return row ? [[entry.order, row.email, entry.refCode, entry.reachedLeaderAt ?? "", entry.review_needed ? "review_needed" : ""]] : [];
+    const row = rewardee(entry.refCode);
+    return row
+      ? [[entry.order, row.email, entry.refCode, entry.reachedLeaderAt ?? "", entry.review_needed ? "review_needed" : "", contact(row)]]
+      : [];
   });
   const top = ranked.slice(0, TOP_PRIZE_WINNERS + 7).flatMap((s, index) => {
-    const row = eligible(s.refCode);
+    const row = rewardee(s.refCode);
     const review = reviewByRef.get(s.refCode);
     return row
-      ? [[index + 1, row.email, s.refCode, s.credited, review?.review_needed ? "review_needed" : "", (review?.reasons ?? []).join("|")]]
+      ? [[index + 1, row.email, s.refCode, s.credited, review?.review_needed ? "review_needed" : "", (review?.reasons ?? []).join("|"), contact(row)]]
       : [];
   });
 
   return {
     "early-notice-1h.csv": csv(["email", "refCode", "credited"], oneHour),
     "early-notice-2h.csv": csv(["email", "refCode", "credited"], twoHour),
-    "dive-team.csv": csv(["email", "refCode", "credited", "reachedTeamAt"], team),
-    "light-winners.csv": csv(["order", "email", "refCode", "reachedLeaderAt", "flag"], light),
-    "top-candidates.csv": csv(["rank", "email", "refCode", "credited", "flag", "reasons"], top),
+    "dive-team.csv": csv(["email", "refCode", "credited", "reachedTeamAt", "contact"], team),
+    "light-winners.csv": csv(["order", "email", "refCode", "reachedLeaderAt", "flag", "contact"], light),
+    "top-candidates.csv": csv(["rank", "email", "refCode", "credited", "flag", "reasons", "contact"], top),
   };
 }
 
@@ -483,12 +634,21 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     })) as { results?: Record<string, unknown>[]; has_more?: boolean; next_cursor?: string | null };
     for (const result of page.results ?? []) {
       const lead = toLeadRecord(result);
-      if (lead) signals.set(lead.pageId, { signedUpAt: lead.signedUpAt, landingPath: lead.landingPath, utm: lead.utm });
+      if (lead) {
+        signals.set(lead.pageId, {
+          signedUpAt: lead.signedUpAt,
+          verificationSentAt: lead.sentAt,
+          signupMethod: lead.signupMethod,
+          socialVerified: Boolean(lead.authVerificationProvenance),
+          landingPath: lead.landingPath,
+          utm: lead.utm,
+        });
+      }
     }
     cursor = page.has_more ? (page.next_cursor ?? undefined) : undefined;
   } while (cursor);
 
-  const { summary, ranked, rowsByRef } = buildReport({
+  const { summary, ranked, rowsByRef, holders: everyone } = buildReport({
     rows,
     signals,
     ledger,
@@ -496,6 +656,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     now,
     closesAt,
     isDisposable: eligibilityMod.isDisposableEmail,
+    isAliasService: eligibilityMod.isAliasServiceEmail,
   });
   const json = `${JSON.stringify(summary, null, 2)}\n`;
   if (json.includes("@")) {
@@ -505,7 +666,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
   if (values.out) await writeFile(values.out, json, { mode: 0o600 });
   else process.stdout.write(json);
   if (values["with-emails"] && values["out-dir"]) {
-    const written = await writePrivateFiles(values["out-dir"], buildAddressFiles(summary, ranked, rowsByRef));
+    const written = await writePrivateFiles(values["out-dir"], buildAddressFiles(summary, ranked, rowsByRef, everyone));
     process.stderr.write(`wrote ${written.length} private files (0600) to ${values["out-dir"]}\n`);
   }
   return 0;

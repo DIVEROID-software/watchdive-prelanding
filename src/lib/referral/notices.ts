@@ -15,7 +15,11 @@
 //   computeLedger(rows, { closesAt }) → LedgerResult   (./ledger.ts)
 //   statusUrl(origin, refCode, locale, secret) → string (./statusToken.ts)
 import { DEFAULT_LOCALE, isLocale, type Locale } from "../i18n/locale.ts";
+import { parseLaunchMarker } from "../launchMail/audience.ts";
+import { reservationCanonicalEmail } from "../reservation/emailIdentity.ts";
+import { parseReservationMarker } from "../reservation-mail/campaign.ts";
 import { conversionBlocked } from "../verification/contracts.ts";
+import { buddyUnsubscribeUrl } from "../verification/resend.ts";
 import type { ReferralMailer, ReferralRow, ReferralStore } from "./contract.ts";
 import { computeLedger } from "./ledger.ts";
 import {
@@ -36,6 +40,44 @@ export function referralNoticesEnabled(env: Record<string, string | undefined>):
   return referralProgramEnabled(env) && env.WATCHDIVE_REFERRAL_NOTICES_ENABLED === "1";
 }
 
+/**
+ * Whether this row says its address opted out of mail: the status, or an
+ * `unsubscribed` marker the /unsubscribe endpoint (or a person) wrote in the
+ * `Launch mail` or `Reservation mail` cell — the same rules the launch and
+ * reservation mail runs apply (reservation-mail/audience.ts).
+ */
+export function rowOptedOut(row: {
+  status: string;
+  launchMail?: string;
+  reservationMail?: string;
+}): boolean {
+  return (
+    row.status === "unsubscribed" ||
+    row.status === "suppressed" ||
+    parseLaunchMarker(row.launchMail).kind === "unsubscribed" ||
+    parseReservationMarker(row.reservationMail).kind === "unsubscribed"
+  );
+}
+
+/** The inbox key opt-outs are shared by (Gmail dots/plus and googlemail fold). */
+export function optOutAddressKey(email: string): string {
+  return reservationCanonicalEmail(email);
+}
+
+/**
+ * Every inbox opted out on ANY of its rows. An unsubscribe on one signup row
+ * holds all rows of that address, so a second row cannot reopen mail.
+ */
+export function optedOutAddresses(
+  rows: readonly { email: string; status: string; launchMail?: string; reservationMail?: string }[],
+): Set<string> {
+  const out = new Set<string>();
+  for (const row of rows) {
+    if (row.email && rowOptedOut(row)) out.add(optOutAddressKey(row.email));
+  }
+  return out;
+}
+
 /** Upper bound on notices handed to the provider in one tick. */
 export const DEFAULT_NOTICE_MAX_SENDS = 50;
 
@@ -48,6 +90,12 @@ export type ReferralNoticeDeps = {
   publicOrigin: string;
   /** Status-page signing secret (core `referralSecret`). */
   secret: string;
+  /**
+   * Env that signs the referrer's opt-out link (WATCHDIVE_VERIFICATION_SECRET,
+   * launch-mail unsubscribe token). Without it no notice can carry a working
+   * opt-out, so none is sent. Defaults to `env`.
+   */
+  unsubscribeEnv?: Record<string, string | undefined>;
   closesAt: Date | null;
   /** Count what would be sent; send nothing and write nothing. */
   dryRun?: boolean;
@@ -73,6 +121,10 @@ export type ReferralNoticeResult = {
   wouldSend: number;
   skippedIneligible: number;
   skippedNoticesOff: number;
+  /** The address opted out on one of its rows (Launch/Reservation mail marker, status). */
+  skippedUnsubscribed: number;
+  /** No signable opt-out link (no Lead ID or no signing secret). */
+  skippedNoOptOut: number;
   skippedInterval: number;
   /** Left for a later tick by the per-tick cap or the time budget. */
   deferred: number;
@@ -123,6 +175,8 @@ export async function runReferralNotices(deps: ReferralNoticeDeps): Promise<Refe
     wouldSend: 0,
     skippedIneligible: 0,
     skippedNoticesOff: 0,
+    skippedUnsubscribed: 0,
+    skippedNoOptOut: 0,
     skippedInterval: 0,
     deferred: 0,
     sendFailed: 0,
@@ -146,6 +200,7 @@ export async function runReferralNotices(deps: ReferralNoticeDeps): Promise<Refe
     if (code && !byRefCode.has(code)) byRefCode.set(code, row);
   }
 
+  const optedOut = optedOutAddresses(rows);
   const now = deps.now();
   const nowMs = now.getTime();
   // Deterministic order, so a capped tick and the next one agree on who waits.
@@ -164,8 +219,23 @@ export async function runReferralNotices(deps: ReferralNoticeDeps): Promise<Refe
       result.skippedIneligible++;
       continue;
     }
+    if (rowOptedOut(row) || optedOut.has(optOutAddressKey(row.email))) {
+      result.skippedUnsubscribed++;
+      continue;
+    }
     if (row.noticesOff) {
       result.skippedNoticesOff++;
+      continue;
+    }
+    const locale = rowLocale(row);
+    const unsubscribeUrl = buddyUnsubscribeUrl(
+      deps.publicOrigin,
+      row.leadId ?? "",
+      locale,
+      deps.unsubscribeEnv ?? deps.env,
+    );
+    if (!unsubscribeUrl) {
+      result.skippedNoOptOut++;
       continue;
     }
     if (throttled(row, nowMs)) {
@@ -187,7 +257,6 @@ export async function runReferralNotices(deps: ReferralNoticeDeps): Promise<Refe
     }
 
     const credited = standing.credited;
-    const locale = rowLocale(row);
     const next = nextTier(credited);
     try {
       await deps.mailer.sendReferralNotice({
@@ -198,6 +267,8 @@ export async function runReferralNotices(deps: ReferralNoticeDeps): Promise<Refe
         nextTier: next ? next.id : null,
         remainingToNext: next ? next.minFriends - credited : null,
         statusUrl: statusUrl(deps.publicOrigin, standing.refCode, locale, deps.secret),
+        unsubscribeUrl,
+        ...(row.signupCountry ? { signupCountry: row.signupCountry } : {}),
         idempotencyKey: noticeIdempotencyKey(standing.refCode, credited),
       });
     } catch {

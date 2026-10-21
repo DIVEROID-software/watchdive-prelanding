@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import {
@@ -57,13 +58,45 @@ test("signing refuses anything but an 8-char lowercase code", () => {
   assert.throws(() => signStatusToken("ab12cd34", ""));
 });
 
+test("the status token is only ever in the fragment, never the path or query", () => {
+  for (const locale of ["en", "ko", "ja", "pt-BR"] as const) {
+    const url = new URL(statusUrl(ORIGIN, "ab12cd34", locale, SECRET));
+    assert.equal(url.search, "");
+    assert.match(url.pathname, /^(\/[a-z-]+)?\/buddy$/);
+    assert.equal(url.pathname.includes("ab12cd34"), false);
+    assert.equal(verifyStatusToken(url.hash.slice(1), SECRET), "ab12cd34");
+  }
+});
+
 test("status and rules URLs are localized; the share link is the unprefixed /r path", () => {
   const token = signStatusToken("ab12cd34", SECRET);
-  assert.equal(statusUrl(ORIGIN, "ab12cd34", "en", SECRET), `${ORIGIN}/buddy/${token}`);
-  assert.equal(statusUrl(ORIGIN, "ab12cd34", "ko", SECRET), `${ORIGIN}/ko/buddy/${token}`);
-  assert.equal(statusUrl(ORIGIN, "ab12cd34", "zh-TW", SECRET), `${ORIGIN}/zh-tw/buddy/${token}`);
+  assert.equal(statusUrl(ORIGIN, "ab12cd34", "en", SECRET), `${ORIGIN}/buddy#${token}`);
+  assert.equal(statusUrl(ORIGIN, "ab12cd34", "ko", SECRET), `${ORIGIN}/ko/buddy#${token}`);
+  assert.equal(statusUrl(ORIGIN, "ab12cd34", "zh-TW", SECRET), `${ORIGIN}/zh-tw/buddy#${token}`);
   assert.equal(rulesUrl(ORIGIN, "en"), `${ORIGIN}/buddy-rules`);
   assert.equal(rulesUrl(ORIGIN, "pt-BR"), `${ORIGIN}/pt-br/buddy-rules`);
   assert.equal(shareUrl(ORIGIN, "ab12cd34"), `${ORIGIN}/r/ab12cd34`);
   assert.equal(shareUrl(ORIGIN, "ab12cd34").includes("="), false);
+});
+
+test("the status page reads the token from location.hash and routes carry no token segment", () => {
+  const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+  const page = read("../src/components/referral/StatusPage.tsx");
+  assert.match(page, /window\.location\.hash/);
+  assert.match(page, /addEventListener\("hashchange"/);
+  assert.doesNotMatch(page, /useParams|useSearch|location\.search/);
+  // The token reaches the server only in the server functions' POST body.
+  assert.match(page, /getReferralStatus\(\{ data: \{ token, locale \} \}\)/);
+  // An empty fragment is "invalid" without any request.
+  assert.match(page, /if \(!token\) \{\s*setLoad\(\{ state: "invalid" \}\);\s*return;/);
+  for (const route of ["../src/routes/buddy.tsx", "../src/routes/$locale.buddy.tsx"]) {
+    const source = read(route);
+    assert.doesNotMatch(source, /\$token|useParams/);
+    assert.match(source, /BUDDY_PAGE_META/);
+  }
+  assert.match(read("../src/routes/buddy.tsx"), /createFileRoute\("\/buddy"\)/);
+  assert.match(read("../src/routes/$locale.buddy.tsx"), /createFileRoute\("\/\$locale\/buddy"\)/);
+  for (const gone of ["../src/routes/buddy.$token.tsx", "../src/routes/$locale.buddy.$token.tsx"]) {
+    assert.equal(existsSync(new URL(gone, import.meta.url)), false, gone);
+  }
 });
