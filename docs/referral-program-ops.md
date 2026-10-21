@@ -60,7 +60,7 @@ node --experimental-strip-types --env-file=.env scripts/referral-report.ts --out
 ```
 
 - 요약은 이메일·페이지 ID가 없는 JSON입니다(티어별 인원, 제외 건수, 상위 10, 라이트 배분 순번 1..30, 리더보드 스냅샷).
-- 상위 20명과 10명 이상 달성자는 `review_needed`와 사유 코드로 표시됩니다: `burst_verifications`(10분 안 5명 이상 인증), `disposable_domains`, `rare_domains`, `same_locale`/`same_landing_path`/`same_utm`(80% 이상 동일), `fast_verify`(가입 후 60초 내 인증이 절반 이상). 신호는 사람이 보는 단서일 뿐 자동 제외가 아닙니다. 친구 이메일은 요약에 나오지 않으며 두 명 이상이 공유한 도메인만 집계됩니다.
+- 상위 20명과 10명 이상 달성자는 `review_needed`와 사유 코드로 표시됩니다: `burst_verifications`(10분 안 5명 이상 인증), `disposable_domains`, `rare_domains`, `same_locale`/`same_landing_path`/`same_utm`(80% 이상 동일), `fast_verify`(가입 후 60초 내 인증이 절반 이상), `quick_confirmation`(인증 메일 발송 후 20초 안에 인증한 친구 2명 이상, Google/Apple 로그인은 제외), `alias_services`(duck.com·mozmail.com·SimpleLogin·addy.io·Proton Pass 등 별칭/포워딩 주소 친구 3명 이상; 친구로는 인정됨), `domain_concentration`(주요 메일 서비스가 아닌 한 도메인에 친구 4명 이상), `pending_ratio`(미인증 가입 5건 이상이고 전체의 67% 이상), `burst_signups`(10분 안 가입 5건 이상, 미인증 포함). 신호는 사람이 보는 단서일 뿐 자동 제외가 아닙니다. 친구 이메일은 요약에 나오지 않으며 두 명 이상이 공유한 도메인만 집계됩니다.
 - 의심되면 Notion에서 해당 행의 `Referral reward review`를 `pending`으로 두고 조사, 문제 없으면 `approved`, 부정이면 `rejected`로 바꿉니다. `rejected`는 리포트의 조기 안내·Dive Team·라이트·상위 후보 파일에서 빠집니다. 집계 자체(친구 수)를 고치려면 해당 친구 행의 Suspect/Duplicate를 사용합니다.
 - 닉네임 숨김: 부적절하거나 사칭이면 해당 행의 **`Referral nickname hidden`** 체크. 공개 리더보드에는 "비공개 다이버"로 표시됩니다.
 

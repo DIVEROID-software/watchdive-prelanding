@@ -12,9 +12,14 @@
 // Decisions (documented for review):
 //   - One person counts once: only the person's first confirmed sign-up (by
 //     `Verified at`, then page id, over every row, referred or not, flagged or
-//     not) may be a friend; any later row for the same canonical email is
-//     `duplicate`, whoever referred it. A row ops ticked Duplicate is not the
-//     sign-up of record, so the person's other row takes its place.
+//     not) may be a friend; any later row sharing its canonical email or its
+//     referral identity key (identity.ts: Gmail dots/+tags, Apple
+//     me.com/mac.com, documented +tags) is `duplicate`, whoever referred it.
+//     A row ops ticked Duplicate is not the sign-up of record, so the
+//     person's other row takes its place.
+//   - A friend who confirmed and later unsubscribed keeps counting
+//     (`wasConfirmed`, legal review D7): counts never drop because a friend
+//     left the list.
 //   - The daily cap is per referrer per Asia/Seoul calendar day of the friend's
 //     `Verified at`. Friends over the cap are `daily_cap` and never roll over.
 //   - A referrer gets a standing only while their own row is a confirmed
@@ -47,6 +52,7 @@ import type {
   ReferrerStanding,
 } from "./contract.ts";
 import { excludeReason, normalizeRefCode, referrerEligible, verifiedAtMs } from "./eligibility.ts";
+import { referralIdentityKey } from "./identity.ts";
 import { checkNickname } from "./nickname.ts";
 import {
   CREDIT_DAY_TIME_ZONE,
@@ -120,24 +126,28 @@ export function computeLedger(
 
   // Each person's sign-up of record: the earliest confirmed row over the
   // whole list, so a repeat row through a link never counts even when the
-  // first row came in directly or was itself excluded.
-  const firstSignup = new Map<string, { at: number; pageId: string }>();
+  // first row came in directly or was itself excluded. A person is seen under
+  // both keys, the signup's canonical email and the referral identity key
+  // (documented provider aliases, identity.ts); a friend counts only when it
+  // is the first row under each, so the ledger is never laxer than either.
+  const firstByCanonical = new Map<string, { at: number; pageId: string }>();
+  const firstByIdentity = new Map<string, { at: number; pageId: string }>();
   for (const row of rows) {
     const at = verifiedAtMs(row);
     if (!row.emailVerified || at === null || row.duplicate) continue;
-    const person = personKey(row);
-    if (!person) continue;
-    const seen = firstSignup.get(person);
-    if (!seen || at < seen.at || (at === seen.at && compare(row.pageId, seen.pageId) < 0)) {
-      firstSignup.set(person, { at, pageId: row.pageId });
-    }
+    keepEarliest(firstByCanonical, personKey(row), at, row.pageId);
+    keepEarliest(firstByIdentity, identityKey(row), at, row.pageId);
   }
 
   const perDay = new Map<string, number>();
   const credits = new Map<string, number[]>();
   for (const { friend, code, at } of candidates) {
-    const person = personKey(friend);
-    if (person && firstSignup.get(person)?.pageId !== friend.pageId) {
+    const canonical = personKey(friend);
+    const identity = identityKey(friend);
+    if (
+      (canonical && firstByCanonical.get(canonical)?.pageId !== friend.pageId) ||
+      (identity && firstByIdentity.get(identity)?.pageId !== friend.pageId)
+    ) {
       excluded.duplicate += 1;
       continue;
     }
@@ -294,6 +304,25 @@ export function statusFor(
 
 function personKey(row: ReferralRow): string {
   return row.canonicalEmail || row.email.trim().toLowerCase();
+}
+
+/** The referral identity key, or "" for a value that is not an address. */
+function identityKey(row: ReferralRow): string {
+  const key = referralIdentityKey(row.email);
+  return key.includes("@") ? key : "";
+}
+
+function keepEarliest(
+  first: Map<string, { at: number; pageId: string }>,
+  key: string,
+  at: number,
+  pageId: string,
+): void {
+  if (!key) return;
+  const seen = first.get(key);
+  if (!seen || at < seen.at || (at === seen.at && compare(pageId, seen.pageId) < 0)) {
+    first.set(key, { at, pageId });
+  }
 }
 
 function compare(a: string, b: string): number {

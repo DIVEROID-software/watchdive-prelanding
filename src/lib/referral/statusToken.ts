@@ -65,9 +65,15 @@ function absolute(origin: string, path: string, locale: Locale): string {
   return new URL(localizePath(path, locale), origin).toString();
 }
 
-/** `/buddy/<token>` for English, `/<segment>/buddy/<token>` otherwise. */
+/**
+ * `/buddy#<token>` for English, `/<segment>/buddy#<token>` otherwise. The
+ * token rides in the fragment, as the verification link's does: browsers never
+ * send a fragment to the server, so it stays out of access logs, CDN and
+ * analytics URLs, Referer headers and link prefetchers. The page reads it
+ * client-side and POSTs it (StatusPage).
+ */
 export function statusUrl(origin: string, refCode: string, locale: Locale, secret: string): string {
-  return absolute(origin, `/buddy/${signStatusToken(refCode, secret)}`, locale);
+  return `${absolute(origin, "/buddy", locale)}#${signStatusToken(refCode, secret)}`;
 }
 
 export function rulesUrl(origin: string, locale: Locale): string {

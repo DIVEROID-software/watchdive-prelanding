@@ -19,9 +19,14 @@ test("the reservation page does not load chat, analytics, or other third-party s
   assert.equal(allowsThirdPartyScripts("/terms"), true);
 });
 
-test("the Buddy Invite status page keeps its signed path token away from every third-party tag", () => {
+test("the Buddy Invite status page keeps its signed token away from every third-party tag", () => {
   const token = "abcd2345.1.AAAAAAAAAAAAAAAAAAAAAAAA";
   for (const path of [
+    // Current links carry the token in the fragment; the pathname is bare.
+    "/ko/buddy",
+    "/en/buddy",
+    "/zh-tw/buddy/",
+    // Retired path-token links stay isolated too.
     `/buddy/${token}`,
     `/buddy/${token}/`,
     `/ko/buddy/${token}`,

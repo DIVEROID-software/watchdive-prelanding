@@ -34,6 +34,7 @@ import {
   tiersCrossed,
   tiersHeld,
 } from "../src/lib/referral/program.ts";
+import { referralIdentityKey } from "../src/lib/referral/identity.ts";
 import { createNotionReferralStore, toReferralRow } from "../src/lib/referral/store.ts";
 import { conversionBlocked } from "../src/lib/verification/contracts.ts";
 import type { NotionRequest } from "../src/lib/verification/notionLead.ts";
@@ -228,19 +229,34 @@ function oracle(rows: readonly ReferralRow[], closesAt: Date | null) {
   }
   const personOf = (row: ReferralRow) => row.canonicalEmail || row.email.trim().toLowerCase();
 
+  // The same mailbox under either key: the signup's canonical email (or the
+  // address when the column is empty) or the referral identity key
+  // (documented provider aliases, identity.ts, tested on its own).
+  const identityOf = (row: ReferralRow) => {
+    const key = referralIdentityKey(row.email);
+    return key.includes("@") ? key : "";
+  };
+  const samePerson = (a: ReferralRow, b: ReferralRow) =>
+    (a.canonicalEmail !== "" && a.canonicalEmail === b.canonicalEmail) ||
+    (identityOf(a) !== "" && identityOf(a) === identityOf(b));
+
   // "Repeat sign-ups by the same person do not count": a person's first
   // confirmed sign-up is the only one that may be a friend. Rows ops marked
-  // Duplicate are, by that mark, not the person's sign-up of record.
-  const firstSignup = new Map<string, { at: number; pageId: string }>();
-  for (const row of rows) {
-    const at = atOf(row);
-    if (!row.emailVerified || at === null || row.duplicate) continue;
-    const key = personOf(row);
-    const seen = firstSignup.get(key);
-    if (!seen || at < seen.at || (at === seen.at && row.pageId < seen.pageId)) {
-      firstSignup.set(key, { at, pageId: row.pageId });
-    }
-  }
+  // Duplicate are, by that mark, not the person's sign-up of record. Naive
+  // on purpose: a friend is a repeat when any earlier confirmed row shares
+  // either key with it.
+  const recordRows = rows.filter(
+    (row) => row.emailVerified && atOf(row) !== null && !row.duplicate,
+  );
+  const isRepeat = (friend: ReferralRow, at: number) =>
+    recordRows.some((row) => {
+      if (row.pageId === friend.pageId) return false;
+      const sharesKey =
+        (personOf(row) !== "" && personOf(row) === personOf(friend)) ||
+        (identityOf(row) !== "" && identityOf(row) === identityOf(friend));
+      const rowAt = atOf(row) as number;
+      return sharesKey && (rowAt < at || (rowAt === at && row.pageId < friend.pageId));
+    });
 
   const countable: { code: string; at: number; pageId: string }[] = [];
   let referred = 0;
@@ -252,7 +268,7 @@ function oracle(rows: readonly ReferralRow[], closesAt: Date | null) {
     const at = atOf(friend);
     if (!ref) continue;
     if (ref.pageId === friend.pageId || friend.refCode.trim().toLowerCase() === code) continue;
-    if (friend.canonicalEmail && friend.canonicalEmail === ref.canonicalEmail) continue;
+    if (samePerson(friend, ref)) continue;
     // D7: a confirmation stands after an unsubscribe.
     if (
       !(friend.status === "verified" || friend.status === "unsubscribed") ||
@@ -264,7 +280,7 @@ function oracle(rows: readonly ReferralRow[], closesAt: Date | null) {
     if (isDisposableEmail(friend.email) || friend.flags.includes("disposable")) continue;
     if (conversionBlocked(friend.flags)) continue;
     if (closesAt && at >= closesAt.getTime()) continue;
-    if (firstSignup.get(personOf(friend))?.pageId !== friend.pageId) continue;
+    if (isRepeat(friend, at)) continue;
     countable.push({ code, at, pageId: friend.pageId });
   }
   countable.sort((a, b) => a.at - b.at || (a.pageId < b.pageId ? -1 : a.pageId > b.pageId ? 1 : 0));

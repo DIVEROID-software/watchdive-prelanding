@@ -2,6 +2,8 @@ import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+// Pure helper with no secrets or Notion client of its own; safe in any bundle.
+import { withRateLimitBackoff } from "@/lib/api/referralCount";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { referralProgramEnabled } from "@/lib/referral/program";
 import type {
@@ -50,7 +52,13 @@ export async function referralServiceDeps(): Promise<ReferralServiceDeps> {
   }
   return {
     enabled: () => program.referralProgramEnabled(process.env),
-    store: store.createNotionReferralStore(notion.createNotionRequest(), dbId),
+    // Every leaderboard pass, status read and settings write retries a Notion
+    // 429 with backoff instead of failing (a 429 is never applied, so a
+    // retried write is safe).
+    store: store.createNotionReferralStore(
+      withRateLimitBackoff(notion.createNotionRequest()),
+      dbId,
+    ),
     secret: statusToken.referralSecret(process.env),
     origin: publicOrigin,
     now: () => new Date(),
@@ -144,7 +152,7 @@ export const getReferralProgress = createServerFn({ method: "POST" })
     }
   });
 
-/** Route loader for /buddy/$token and /$locale/buddy/$token: 404 unless WATCHDIVE_REFERRAL_PROGRAM_ENABLED=1. */
+/** Route loader for /buddy and /$locale/buddy: 404 unless WATCHDIVE_REFERRAL_PROGRAM_ENABLED=1. */
 export async function requireReferralProgram(): Promise<void> {
   let enabled = false;
   try {
@@ -155,7 +163,8 @@ export async function requireReferralProgram(): Promise<void> {
   if (!enabled) throw notFound();
 }
 
-// The status link carries its signed token in the path.
+// The status link carries its signed token in the URL fragment, which no
+// Referer ever includes; no-referrer and noindex stay as defence in depth.
 export const BUDDY_PAGE_META = [
   { name: "referrer", content: "no-referrer" },
   { name: "robots", content: "noindex, nofollow, noarchive" },

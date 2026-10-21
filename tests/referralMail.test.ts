@@ -71,7 +71,7 @@ function welcome(locale: Locale, extra: Partial<WelcomeMail> = {}): WelcomeMail 
 function guideLinks(locale: Locale) {
   const prefix = locale === "en" ? "" : `/${locale}`;
   return {
-    statusUrl: `${ORIGIN}${prefix}/buddy/abc12345.v1.Zm9vYmFy`,
+    statusUrl: `${ORIGIN}${prefix}/buddy#abc12345.v1.Zm9vYmFy`,
     rulesUrl: `${ORIGIN}${prefix}/buddy-rules`,
   };
 }
@@ -159,7 +159,7 @@ test("switch on: confirmation schedules the guide 30 minutes out with signed sta
   );
   // After the ~3-minute reservation invite, well before the old 24 hours.
   assert.ok(BUDDY_GUIDE_DELAY_MS > 3 * 60 * 1000);
-  assert.match(sent.statusUrl ?? "", new RegExp(`^${TEST_ORIGIN}/ko/buddy/[^/?#=]+$`));
+  assert.match(sent.statusUrl ?? "", new RegExp(`^${TEST_ORIGIN}/ko/buddy#[^/?#=]+$`));
   assert.equal(sent.rulesUrl, `${TEST_ORIGIN}/ko/buddy-rules`);
 });
 
@@ -241,7 +241,7 @@ for (const locale of ["en", "ko"] as const) {
 
 test("switch on: every interpolated value is escaped in the guide HTML", async () => {
   const { calls, impl } = capture();
-  const hostile = `${ORIGIN}/buddy/x"><script>alert(1)</script>`;
+  const hostile = `${ORIGIN}/buddy#x"><script>alert(1)</script>`;
   await createResendMailer(ON_ENV, impl, async () => {}).sendWelcome(
     welcome("en", { statusUrl: hostile, rulesUrl: `${ORIGIN}/buddy-rules?a=1&b=<i>` }),
   );
@@ -272,7 +272,7 @@ function notice(overrides: Partial<ReferralNoticeMail> = {}): ReferralNoticeMail
     crossed: ["buddy"],
     nextTier: "team",
     remainingToNext: 2,
-    statusUrl: `${ORIGIN}/buddy/abc12345.v1.Zm9vYmFy`,
+    statusUrl: `${ORIGIN}/buddy#abc12345.v1.Zm9vYmFy`,
     unsubscribeUrl: `${ORIGIN}/unsubscribe/u1.${LEAD_ID}.en.${"A".repeat(43)}`,
     idempotencyKey: "wd-buddy-invite-20261022-notice-abc12345-3",
     ...overrides,

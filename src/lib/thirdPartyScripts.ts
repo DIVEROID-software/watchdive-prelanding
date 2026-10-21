@@ -6,11 +6,13 @@
 // gated on the route rather than mounted globally. External CSS and fonts are
 // unaffected — a stylesheet cannot read a fragment.
 //
-// The Buddy Invite status page (/buddy/<token>, /<locale>/buddy/<token>)
-// carries its signed token in the path itself. The token is the owner's only
-// credential for their nickname and mail settings, and every tag here reports
-// the page URL (Meta `dl`, Google `page_location`, Clarity, Vercel Analytics),
-// so the whole path prefix is isolated, not just one exact route.
+// The Buddy Invite status page (/buddy#<token>, /<locale>/buddy#<token>)
+// carries its signed token in the URL fragment, which any script on the page
+// can read from location.hash just as on /verify. The token is the owner's
+// only credential for their nickname and mail settings, and every tag here
+// reports the page URL (Meta `dl`, Google `page_location`, Clarity, Vercel
+// Analytics), so /buddy and everything under it stay isolated: that also
+// covers the retired /buddy/<token> path links, should an old mail be opened.
 import { stripLocalePrefix } from "./i18n/locale.ts";
 
 const TOKEN_BEARING_ROUTES = new Set(["/verify", "/admin/behavior", "/reservation"]);
