@@ -7,13 +7,19 @@ import { formatNumber, homePath, privacyPath, termsPath, type Locale } from "@/l
 import { useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 import type { ReferralStatus } from "@/lib/referral/contract";
 import { fill, referralCopy } from "@/lib/referral/copy";
-import { NICKNAME_MAX, NICKNAME_MIN } from "@/lib/referral/program";
+import { NICKNAME_MAX, NICKNAME_MIN, REFERRAL_TIERS } from "@/lib/referral/program";
 import { copyValues } from "@/lib/referral/values";
 
 // The private Buddy Invite page, opened from the signed link in the welcome
 // and friend-joined mails. The token is in the path, so the route sets
 // no-referrer and noindex; the status itself is fetched after mount so the
 // server-rendered HTML carries nothing personal a cache could keep.
+
+/** The count whose tiers the person holds: never below their highest held tier. */
+function heldFriends(status: ReferralStatus): number {
+  const tier = REFERRAL_TIERS.find((t) => t.id === status.highestTier);
+  return Math.max(status.credited, tier?.minFriends ?? 0);
+}
 
 type Load =
   | { state: "loading" }
@@ -287,7 +293,9 @@ function StatusCard({
       </Card>
 
       <Card>
-        <TierList locale={locale} credited={status.credited} />
+        {/* Held tiers (legal review D7): a tier announced by mail stays ticked
+            even when friends were removed later, so tick from the held tier. */}
+        <TierList locale={locale} credited={heldFriends(status)} />
       </Card>
 
       <Card>

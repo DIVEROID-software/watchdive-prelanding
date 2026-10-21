@@ -33,6 +33,7 @@ import {
   highestTier,
   type ReferralTierId,
 } from "../src/lib/referral/program.ts";
+import { heldCount } from "../src/lib/referral/ledger.ts";
 
 /** Review thresholds. Signals only flag a person for a human look. */
 export const REVIEW = {
@@ -224,8 +225,8 @@ export function rankStandings(standings: Iterable<ReferrerStanding>): ReferrerSt
     .sort(
       (a, b) =>
         b.credited - a.credited ||
-        (a.lastCreditAt ?? "").localeCompare(b.lastCreditAt ?? "") ||
-        a.refCode.localeCompare(b.refCode),
+        Date.parse(a.lastCreditAt ?? "") - Date.parse(b.lastCreditAt ?? "") ||
+        (a.refCode < b.refCode ? -1 : a.refCode > b.refCode ? 1 : 0),
     );
 }
 
@@ -247,17 +248,27 @@ function friendsOf(refCode: string, referrer: ReferralRow | undefined, byReferre
   );
 }
 
+/** Every standing in code order (the ranking drops credited 0; reward lists must not). */
+function holders(standings: Iterable<ReferrerStanding>): ReferrerStanding[] {
+  return [...standings].sort((a, b) => (a.refCode < b.refCode ? -1 : a.refCode > b.refCode ? 1 : 0));
+}
+
 export function buildReport(input: ReportInput): {
   summary: ReportSummary;
   ranked: ReferrerStanding[];
   rowsByRef: Map<string, ReferralRow>;
+  /** Every standing, credited 0 included (held tiers after removals). */
+  holders: ReferrerStanding[];
 } {
   const ranked = rankStandings(input.ledger.standings.values());
   const rowsByRef = new Map<string, ReferralRow>();
   const byReferrer = new Map<string, ReferralRow[]>();
   const domainCounts = new Map<string, number>();
+  // First row by page id owns a code, exactly as in the ledger.
+  for (const row of [...input.rows].sort((a, b) => (a.pageId < b.pageId ? -1 : a.pageId > b.pageId ? 1 : 0))) {
+    if (row.refCode && !rowsByRef.has(row.refCode)) rowsByRef.set(row.refCode, row);
+  }
   for (const row of input.rows) {
-    if (row.refCode) rowsByRef.set(row.refCode, row);
     if (row.referredBy) byReferrer.set(row.referredBy, [...(byReferrer.get(row.referredBy) ?? []), row]);
     const domain = domainOf(row.email);
     if (domain) domainCounts.set(domain, (domainCounts.get(domain) ?? 0) + 1);
@@ -291,11 +302,14 @@ export function buildReport(input: ReportInput): {
     });
   }
 
+  // Every standing, including people whose friends were removed after a tier
+  // was announced (credited may be below the tier, even 0; legal review D7).
+  const all = holders(input.ledger.standings.values());
   const tierCounts = Object.fromEntries(
-    REFERRAL_TIERS.map((t) => [t.id, ranked.filter((s) => s.reachedAt[t.id] !== undefined).length]),
+    REFERRAL_TIERS.map((t) => [t.id, all.filter((s) => s.reachedAt[t.id] !== undefined).length]),
   ) as Record<ReferralTierId, number>;
 
-  const lightAllocation = ranked
+  const lightAllocation = all
     .filter((s) => s.leaderOrder !== null && s.leaderOrder <= LEADER_LIGHT_STOCK)
     .sort((a, b) => (a.leaderOrder ?? 0) - (b.leaderOrder ?? 0))
     .map((s) => ({
@@ -328,7 +342,7 @@ export function buildReport(input: ReportInput): {
     leaderboardSnapshot: input.leaderboard,
     review,
   };
-  return { summary, ranked, rowsByRef };
+  return { summary, ranked, rowsByRef, holders: all };
 }
 
 // ---- address files (--with-emails) -----------------------------------------
@@ -350,50 +364,82 @@ export function mailable(row: ReferralRow | undefined): row is ReferralRow {
   );
 }
 
+/**
+ * May receive a reward they reached: like `mailable`, but an unsubscribed
+ * person keeps their reward (legal review D7). Their row is marked
+ * `unsubscribed` so the contact is about that reward only.
+ */
+function rewardable(row: ReferralRow | undefined): row is ReferralRow {
+  return Boolean(
+    row &&
+      row.emailVerified &&
+      (row.status === "verified" || row.status === "unsubscribed") &&
+      !row.suspect &&
+      !row.duplicate &&
+      row.rewardReview !== "rejected" &&
+      row.email.includes("@"),
+  );
+}
+
 export function buildAddressFiles(
   summary: ReportSummary,
   ranked: ReferrerStanding[],
   rowsByRef: Map<string, ReferralRow>,
+  /** Every standing (buildReport `holders`); defaults to `ranked`. */
+  everyone: ReferrerStanding[] = ranked,
 ): AddressFiles {
   const reviewByRef = new Map(summary.review.map((c) => [c.refCode, c]));
   // A rejected reward review withdraws the reward from every list below.
-  const eligible = (refCode: string): ReferralRow | undefined => {
+  // The launch notice is a mail like any other: never to an unsubscribed person.
+  const notifiable = (refCode: string): ReferralRow | undefined => {
     const row = rowsByRef.get(refCode);
     return mailable(row) && row.rewardReview !== "rejected" ? row : undefined;
   };
+  const rewardee = (refCode: string): ReferralRow | undefined => {
+    const row = rowsByRef.get(refCode);
+    return rewardable(row) ? row : undefined;
+  };
+  const contact = (row: ReferralRow) => (row.status === "unsubscribed" ? "unsubscribed" : "");
+  const all = holders(everyone);
 
   const oneHour: string[][] = [];
   const twoHour: string[][] = [];
-  for (const s of ranked) {
-    const row = eligible(s.refCode);
-    const tier = highestTier(s.credited);
-    if (!row || !tier) continue;
+  for (const s of all) {
+    const row = notifiable(s.refCode);
+    if (!row) continue;
+    // The held tier: a tier announced by mail stays, even if friends were removed since.
+    const tier = highestTier(heldCount(row, s.credited));
+    if (!tier) continue;
     (EARLY_NOTICE_HOURS[tier.id] >= 2 ? twoHour : oneHour).push([row.email, s.refCode, String(s.credited)]);
   }
-  const team = ranked
-    .filter((s) => s.reachedAt.team !== undefined)
-    .flatMap((s) => {
-      const row = eligible(s.refCode);
-      return row ? [[row.email, s.refCode, s.credited, s.reachedAt.team ?? ""]] : [];
-    });
+  const teamMin = REFERRAL_TIERS.find((t) => t.id === "team")?.minFriends ?? Infinity;
+  const team = all.flatMap((s) => {
+    const row = rewardee(s.refCode);
+    // Held, not only credited: a Dive Team we announced stays on this list.
+    return row && heldCount(row, s.credited) >= teamMin
+      ? [[row.email, s.refCode, s.credited, s.reachedAt.team ?? "", contact(row)]]
+      : [];
+  });
   const light = summary.lightAllocation.flatMap((entry) => {
-    const row = eligible(entry.refCode);
-    return row ? [[entry.order, row.email, entry.refCode, entry.reachedLeaderAt ?? "", entry.review_needed ? "review_needed" : ""]] : [];
+    const row = rewardee(entry.refCode);
+    return row
+      ? [[entry.order, row.email, entry.refCode, entry.reachedLeaderAt ?? "", entry.review_needed ? "review_needed" : "", contact(row)]]
+      : [];
   });
   const top = ranked.slice(0, TOP_PRIZE_WINNERS + 7).flatMap((s, index) => {
-    const row = eligible(s.refCode);
+    const row = rewardee(s.refCode);
     const review = reviewByRef.get(s.refCode);
     return row
-      ? [[index + 1, row.email, s.refCode, s.credited, review?.review_needed ? "review_needed" : "", (review?.reasons ?? []).join("|")]]
+      ? [[index + 1, row.email, s.refCode, s.credited, review?.review_needed ? "review_needed" : "", (review?.reasons ?? []).join("|"), contact(row)]]
       : [];
   });
 
   return {
     "early-notice-1h.csv": csv(["email", "refCode", "credited"], oneHour),
     "early-notice-2h.csv": csv(["email", "refCode", "credited"], twoHour),
-    "dive-team.csv": csv(["email", "refCode", "credited", "reachedTeamAt"], team),
-    "light-winners.csv": csv(["order", "email", "refCode", "reachedLeaderAt", "flag"], light),
-    "top-candidates.csv": csv(["rank", "email", "refCode", "credited", "flag", "reasons"], top),
+    "dive-team.csv": csv(["email", "refCode", "credited", "reachedTeamAt", "contact"], team),
+    "light-winners.csv": csv(["order", "email", "refCode", "reachedLeaderAt", "flag", "contact"], light),
+    "top-candidates.csv": csv(["rank", "email", "refCode", "credited", "flag", "reasons", "contact"], top),
   };
 }
 
@@ -488,7 +534,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
     cursor = page.has_more ? (page.next_cursor ?? undefined) : undefined;
   } while (cursor);
 
-  const { summary, ranked, rowsByRef } = buildReport({
+  const { summary, ranked, rowsByRef, holders: everyone } = buildReport({
     rows,
     signals,
     ledger,
@@ -505,7 +551,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
   if (values.out) await writeFile(values.out, json, { mode: 0o600 });
   else process.stdout.write(json);
   if (values["with-emails"] && values["out-dir"]) {
-    const written = await writePrivateFiles(values["out-dir"], buildAddressFiles(summary, ranked, rowsByRef));
+    const written = await writePrivateFiles(values["out-dir"], buildAddressFiles(summary, ranked, rowsByRef, everyone));
     process.stderr.write(`wrote ${written.length} private files (0600) to ${values["out-dir"]}\n`);
   }
   return 0;

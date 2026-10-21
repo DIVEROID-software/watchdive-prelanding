@@ -10,15 +10,29 @@
 // whichever order Notion returns them in.
 //
 // Decisions (documented for review):
-//   - One person counts once: a second confirmed row with the same canonical
-//     email is `duplicate`, whoever referred it. The earliest confirmation wins.
+//   - One person counts once: only the person's first confirmed sign-up (by
+//     `Verified at`, then page id, over every row, referred or not, flagged or
+//     not) may be a friend; any later row for the same canonical email is
+//     `duplicate`, whoever referred it. A row ops ticked Duplicate is not the
+//     sign-up of record, so the person's other row takes its place.
 //   - The daily cap is per referrer per Asia/Seoul calendar day of the friend's
 //     `Verified at`. Friends over the cap are `daily_cap` and never roll over.
-//   - A referrer gets a standing only while their own row is a confirmed,
-//     unflagged single sign-up (`referrerEligible`). Their friends' credits are
+//   - A referrer gets a standing only while their own row is a confirmed
+//     (possibly since unsubscribed), unflagged single sign-up whose reward
+//     review is not `rejected` (`referrerEligible`, legal review D7). Their friends' credits are
 //     still computed, so a cleared row gets them back; while ineligible the
 //     credits are counted in `ineligibleReferrerCredits`, not in `excluded`
 //     (the contract has no reason for it).
+//   - A tier the person was told about is kept (legal review D7): the held
+//     count is max(credited, `Referral notified count`), see `heldCount`.
+//     Removing friends later lowers `credited` (the ranking, the top 3) but
+//     not the tiers already announced, and the instant a held tier was reached
+//     is never later than the notice that announced it (`Referral notified
+//     at`). That bound is approximate: the column holds the latest notice, so
+//     an exact original instant needs a write-once column (owner decision).
+//   - The ledger is live until the close and keeps moving afterwards only by
+//     ops withdrawals. The official frozen result is the ops report
+//     (scripts/referral-report.ts) generated at the close.
 //   - Friends confirmed before the program start (22 Oct 2026) through an
 //     existing link still count: the rules do not exclude them.
 //
@@ -104,16 +118,29 @@ export function computeLedger(
   }
   candidates.sort((a, b) => a.at - b.at || compare(a.friend.pageId, b.friend.pageId));
 
-  const seenPeople = new Set<string>();
+  // Each person's sign-up of record: the earliest confirmed row over the
+  // whole list, so a repeat row through a link never counts even when the
+  // first row came in directly or was itself excluded.
+  const firstSignup = new Map<string, { at: number; pageId: string }>();
+  for (const row of rows) {
+    const at = verifiedAtMs(row);
+    if (!row.emailVerified || at === null || row.duplicate) continue;
+    const person = personKey(row);
+    if (!person) continue;
+    const seen = firstSignup.get(person);
+    if (!seen || at < seen.at || (at === seen.at && compare(row.pageId, seen.pageId) < 0)) {
+      firstSignup.set(person, { at, pageId: row.pageId });
+    }
+  }
+
   const perDay = new Map<string, number>();
   const credits = new Map<string, number[]>();
   for (const { friend, code, at } of candidates) {
-    const person = friend.canonicalEmail || friend.email.trim().toLowerCase();
-    if (person && seenPeople.has(person)) {
+    const person = personKey(friend);
+    if (person && firstSignup.get(person)?.pageId !== friend.pageId) {
       excluded.duplicate += 1;
       continue;
     }
-    if (person) seenPeople.add(person);
     const dayKey = `${code}|${creditDayKey(at)}`;
     const today = perDay.get(dayKey) ?? 0;
     if (today >= DAILY_CREDIT_CAP) {
@@ -126,19 +153,29 @@ export function computeLedger(
     credits.set(code, list);
   }
 
-  const standings = new Map<string, ReferrerStanding>();
   let ineligibleReferrerCredits = 0;
   for (const [code, times] of credits) {
     const referrer = byCode.get(code);
-    if (!referrer || !referrerEligible(referrer)) {
-      ineligibleReferrerCredits += times.length;
-      continue;
-    }
+    if (!referrer || !referrerEligible(referrer)) ineligibleReferrerCredits += times.length;
+  }
+
+  // Code order, so the map iterates the same way whatever order rows came in.
+  const standings = new Map<string, ReferrerStanding>();
+  for (const [code, referrer] of [...byCode].sort((a, b) => compare(a[0], b[0]))) {
+    const times = credits.get(code) ?? [];
+    const held = heldCount(referrer, times.length);
+    if (held === 0 || !referrerEligible(referrer)) continue;
+    const noticeMs = referrer.notifiedAt ? Date.parse(referrer.notifiedAt) : NaN;
     const reachedAt: ReferrerStanding["reachedAt"] = {};
     for (const tier of REFERRAL_TIERS) {
-      if (times.length >= tier.minFriends) {
-        reachedAt[tier.id] = new Date(times[tier.minFriends - 1]).toISOString();
-      }
+      const fromCredits =
+        times.length >= tier.minFriends ? times[tier.minFriends - 1] : Number.POSITIVE_INFINITY;
+      const fromNotice =
+        referrer.notifiedCount >= tier.minFriends && Number.isFinite(noticeMs)
+          ? noticeMs
+          : Number.POSITIVE_INFINITY;
+      const at = Math.min(fromCredits, fromNotice);
+      if (Number.isFinite(at)) reachedAt[tier.id] = new Date(at).toISOString();
     }
     standings.set(code, {
       refCode: code,
@@ -146,7 +183,7 @@ export function computeLedger(
       reachedAt,
       leaderOrder: null,
       lightEligible: false,
-      lastCreditAt: new Date(times[times.length - 1]).toISOString(),
+      lastCreditAt: times.length ? new Date(times[times.length - 1]).toISOString() : null,
     });
   }
 
@@ -163,6 +200,18 @@ export function computeLedger(
   });
 
   return { standings, excluded, ineligibleReferrerCredits };
+}
+
+/**
+ * The count whose tiers the person holds: the credited count, or the count
+ * last announced by mail when that is higher (a tier we told someone about is
+ * kept when friends are removed later, legal review D7). A rejected reward
+ * review keeps only what is credited now.
+ */
+export function heldCount(row: ReferralRow, credited: number): number {
+  if (row.rewardReview === "rejected") return credited;
+  const announced = Number.isSafeInteger(row.notifiedCount) ? row.notifiedCount : 0;
+  return Math.max(credited, announced, 0);
 }
 
 /**
@@ -220,8 +269,10 @@ export function statusFor(
   const code = normalizeRefCode(row.refCode);
   const standing = ledger.standings.get(code);
   const credited = standing?.credited ?? 0;
-  const top = highestTier(credited);
-  const next = nextTier(credited);
+  // No standing (an ineligible referrer) holds nothing, announced or not.
+  const held = standing ? heldCount(row, credited) : 0;
+  const top = highestTier(held);
+  const next = nextTier(held);
   const rankIndex =
     credited > 0 ? rankedStandings(ledger).findIndex((s) => s.refCode === code) : -1;
   return {
@@ -239,6 +290,10 @@ export function statusFor(
     shareUrl: options.shareUrl,
     closed: options.closed,
   };
+}
+
+function personKey(row: ReferralRow): string {
+  return row.canonicalEmail || row.email.trim().toLowerCase();
 }
 
 function compare(a: string, b: string): number {

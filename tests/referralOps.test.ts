@@ -168,8 +168,12 @@ test("report summary is PII-free and address files respect eligibility", async (
   assert.equal(summary.top10[0].refCode, "aaaaaaaa");
   const files = buildAddressFiles(summary, ranked, rowsByRef);
   assert.match(files["dive-team.csv"], /boss@example.com/);
-  // The unsubscribed referrer is in no segment.
-  for (const content of Object.values(files)) assert.equal(content.includes("gone@example.com"), false);
+  // The unsubscribed referrer gets no launch notice (it is a mail), but keeps
+  // a reached reward, marked for reward-only contact (legal review D7).
+  for (const name of ["early-notice-1h.csv", "early-notice-2h.csv"]) {
+    assert.equal(files[name].includes("gone@example.com"), false);
+  }
+  assert.match(files["top-candidates.csv"], /gone@example\.com,cccccccc,1,,,unsubscribed/);
   assert.match(files["early-notice-2h.csv"], /boss@example.com/);
   assert.equal(files["early-notice-1h.csv"].includes("boss@example.com"), false);
 
