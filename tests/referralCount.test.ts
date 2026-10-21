@@ -161,17 +161,15 @@ test("the tally pages fully, keeps the countable filter and counts exact codes",
         }
       : { results: [page("abcd1234"), page("ABCD1234"), page("abcd1234 junk")], has_more: false };
   };
-  const countable = [{ property: "Suspect", checkbox: { equals: false } }];
-  const tally = await loadReferralTally(request, "db", countable);
+  const filter = { and: [{ property: "Suspect", checkbox: { equals: false } }] };
+  const tally = await loadReferralTally(request, "db", filter);
   assert.deepEqual([...tally].sort(), [
     ["abcd1234", 3],
     ["wxyz9876", 1],
   ]);
   assert.equal(bodies.length, 2);
   assert.equal(bodies[1].start_cursor, "c2");
-  assert.deepEqual(bodies[0].filter, {
-    and: [{ property: "Referred by", rich_text: { is_not_empty: true } }, ...countable],
-  });
+  assert.deepEqual(bodies[0].filter, filter);
 });
 
 test("getReferralCount gates the code shape, never scans per request, and follows the switch", () => {
@@ -188,7 +186,11 @@ test("getReferralCount gates the code shape, never scans per request, and follow
   assert.doesNotMatch(body, /notionFetch|databases\//);
   assert.match(
     source,
-    /loadReferralTally\(withRateLimitBackoff\(createNotionRequest\(\)\), dbId, COUNTABLE\.and\)/,
+    /loadReferralTally\(withRateLimitBackoff\(createNotionRequest\(\)\), dbId, \{/,
+  );
+  assert.match(
+    source,
+    /and: \[\{ property: "Referred by", rich_text: \{ is_not_empty: true \} \}, \.\.\.COUNTABLE\.and\],/,
   );
   const fns = readFileSync(
     new URL("../src/lib/api/referral.functions.ts", import.meta.url),

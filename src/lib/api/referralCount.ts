@@ -124,22 +124,21 @@ function referredByOf(page: unknown): string {
 }
 
 /**
- * Tally of countable rows per `Referred by` value. `countableFilter` is the
- * public counters' filter (not Suspect; verified or legacy status), so a code
- * gets exactly the number the old per-code `equals` query returned.
+ * Tally per `Referred by` value of the rows `filter` selects. The caller passes
+ * the public counters' filter (not Suspect; verified or legacy status) plus
+ * "Referred by is not empty", so a code gets exactly the number the old
+ * per-code `equals` query returned.
  */
 export async function loadReferralTally(
   request: NotionRequest,
   databaseId: string,
-  countableFilter: readonly unknown[],
+  filter: unknown,
 ): Promise<Map<string, number>> {
   const tally = new Map<string, number>();
   let cursor: string | undefined;
   do {
     const page = (await request("POST", `databases/${databaseId}/query`, {
-      filter: {
-        and: [{ property: "Referred by", rich_text: { is_not_empty: true } }, ...countableFilter],
-      },
+      filter,
       page_size: 100,
       ...(cursor ? { start_cursor: cursor } : {}),
     })) as QueryPage;

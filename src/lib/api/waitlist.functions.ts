@@ -166,7 +166,10 @@ const COUNTABLE = { and: [NOT_SUSPECT, COUNTABLE_STATUS_FILTER] } as const;
 const referralCounts = createReferralCountCache(() => {
   const dbId = process.env.NOTION_WAITLIST_DB_ID;
   if (!dbId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
-  return loadReferralTally(withRateLimitBackoff(createNotionRequest()), dbId, COUNTABLE.and);
+  // Countable rows that name a referrer: the same filter as every public number.
+  return loadReferralTally(withRateLimitBackoff(createNotionRequest()), dbId, {
+    and: [{ property: "Referred by", rich_text: { is_not_empty: true } }, ...COUNTABLE.and],
+  });
 });
 
 export const getReferralCount = createServerFn({ method: "POST" })
