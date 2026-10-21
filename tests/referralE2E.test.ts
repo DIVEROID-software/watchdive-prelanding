@@ -475,7 +475,7 @@ async function runStory(on: boolean) {
   if (on) {
     assert.equal(delay, BUDDY_GUIDE_DELAY_MS, "the guide is held 30 minutes");
     assert.equal(welcome.body.subject, "You’re on the WatchDive waitlist — invite your buddies");
-    const status = /https:\/\/\S+?\/buddy\/([a-z0-9]{8}\.1\.[A-Za-z0-9_-]{24})/.exec(
+    const status = /https:\/\/\S+?\/buddy#([a-z0-9]{8}\.1\.[A-Za-z0-9_-]{24})/.exec(
       welcome.body.text,
     );
     assert.ok(status, "the guide links the signed status page");
@@ -486,7 +486,7 @@ async function runStory(on: boolean) {
       new RegExp(`${ORIGIN}/buddy-rules(\\s|$)`),
       "the guide links the rules",
     );
-    assert.ok((welcome.body.html as string).includes(`href="${ORIGIN}/buddy/${aStatusToken}"`));
+    assert.ok((welcome.body.html as string).includes(`href="${ORIGIN}/buddy#${aStatusToken}"`));
     assert.equal(assertNotKoreanAdMail(welcome), unsubscribeFor(A_LEAD, "en"), "A's own opt-out");
   } else {
     assert.equal(delay, WELCOME_DELAY_MS, "the legacy welcome is held 24 hours");
@@ -533,7 +533,7 @@ async function runStory(on: boolean) {
   if (on) {
     assert.match(
       s.welcomeOf(bEmail)[0].body.text,
-      new RegExp(`${ORIGIN}/ko/buddy/${bCode}\\.1\\.`),
+      new RegExp(`${ORIGIN}/ko/buddy#${bCode}\\.1\\.`),
     );
     // B's guide is Korean advertising mail.
     assert.equal(assertKoreanAdMail(s.welcomeOf(bEmail)[0]), unsubscribeFor(bLead, "ko"));
@@ -648,7 +648,7 @@ async function runStory(on: boolean) {
     const notice = toA[0];
     assert.deepEqual(notice.body.to, [A_EMAIL]);
     assert.equal(notice.idempotencyKey, `${REFERRAL_PROGRAM_ID}-notice-${A_CODE}-11`);
-    const statusUrl = /https:\/\/\S+?\/buddy\/([a-z0-9]{8}\.1\.[A-Za-z0-9_-]{24})/.exec(
+    const statusUrl = /https:\/\/\S+?\/buddy#([a-z0-9]{8}\.1\.[A-Za-z0-9_-]{24})/.exec(
       notice.body.text,
     );
     assert.equal(verifyStatusToken(statusUrl?.[1], referralSecret(env)), A_CODE);
@@ -673,7 +673,7 @@ async function runStory(on: boolean) {
     assert.equal(toB[0].idempotencyKey, `${REFERRAL_PROGRAM_ID}-notice-${bCode}-1`);
     // B's notice is the Korean one, byte for byte: "(광고)" subject, Korean
     // sender block with the phone, Korean opt-out line.
-    const bStatusUrl = /https:\/\/\S+?\/ko\/buddy\/[a-z0-9]{8}\.1\.[A-Za-z0-9_-]{24}/.exec(
+    const bStatusUrl = /https:\/\/\S+?\/ko\/buddy#[a-z0-9]{8}\.1\.[A-Za-z0-9_-]{24}/.exec(
       toB[0].body.text,
     )?.[0];
     assert.ok(bStatusUrl, "B's notice links B's Korean status page");
@@ -700,7 +700,7 @@ async function runStory(on: boolean) {
         { subject: m.body.subject, text: m.body.text, html: m.body.html },
         {
           refCodes: [A_CODE, bCode].filter(
-            (code) => !(m.body.text as string).includes(`/buddy/${code}.`),
+            (code) => !(m.body.text as string).includes(`/buddy#${code}.`),
           ),
         },
       );
@@ -743,7 +743,7 @@ async function runStory(on: boolean) {
   // second tick inside the hour.
   const bToken = signStatusToken(bCode, referralSecret(env));
   if (on) {
-    const bWelcomeToken = /\/buddy\/([a-z0-9]{8}\.1\.[A-Za-z0-9_-]{24})/.exec(
+    const bWelcomeToken = /\/buddy#([a-z0-9]{8}\.1\.[A-Za-z0-9_-]{24})/.exec(
       s.welcomeOf(bEmail)[0].body.text,
     )?.[1];
     assert.equal(bWelcomeToken, bToken, "B's guide links B's own status page");
@@ -952,7 +952,14 @@ async function runStory(on: boolean) {
     );
     const aReview = summary.review.find((c) => c.refCode === A_CODE)!;
     // Eleven friends two minutes apart, all on the same link and language: flagged for a look.
-    assert.deepEqual(aReview.reasons, ["burst_verifications", "same_locale", "same_landing_path"]);
+    // …and every one of them on example.net, signed up minutes apart.
+    assert.deepEqual(aReview.reasons, [
+      "burst_verifications",
+      "same_locale",
+      "same_landing_path",
+      "domain_concentration",
+      "burst_signups",
+    ]);
     assert.equal(aReview.review_needed, true);
     assert.deepEqual(
       summary.leaderboardSnapshot.entries.map((e) => e.credited),
