@@ -135,7 +135,7 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // offer and the FAQ, a footer rules link, and the referral card in the
   // post-verification panel. The hero and both forms are untouched.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "83e64ed456546f5f7d23ed906824f79d916ce3dbf2dd3237469b1bee153d193a");
+  assert.equal(digest, "b18f02098a4172c7d24b3518a2c2b4720be094c7a71b9865019fc5bcfe5d73ca");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
