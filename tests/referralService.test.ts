@@ -91,6 +91,9 @@ class FakeStore implements ReferralStore {
   async markNotified() {
     throw new Error("not used by the service");
   }
+  async missingColumns(): Promise<string[]> {
+    throw new Error("not used by the service");
+  }
 }
 
 // Fake token: "tok." + refCode, signed by the secret's first char. Anything
@@ -639,4 +642,66 @@ test("server fns and routes check the switch before building Notion deps", () =>
   assert.match(fns, /if \(!enabled\) throw notFound\(\)/);
   assert.match(fns, /"no-referrer"/);
   assert.match(fns, /noindex, nofollow/);
+});
+
+// ---- one ref-code rule (eligibility.normalizeRefCode) for every lookup ----------
+
+test("status, settings and progress normalize the code exactly like the ledger", async () => {
+  // A signed code with stray case/whitespace, and a row whose cell has it too.
+  const { deps, store } = setup({
+    verifyStatusToken: () => " OWNER001 ",
+    // The fake board keys rows by the raw cell; the real one is covered in core.
+    buildLeaderboard: (_rows, _ledger, o) => ({ entries: [], asOf: o.now.toISOString(), closed: o.closed }),
+  });
+  store.rows = store.rows.map((r) => (r.refCode === "owner001" ? { ...r, refCode: " Owner001" } : r));
+  const status = await getReferralStatusService("any-token", "en", deps);
+  assert.equal(status.status, "ok");
+  assert.equal(status.status === "ok" && status.referral.shareUrl, `${ORIGIN}/r/owner001`);
+
+  const seen: string[] = [];
+  store.findByRefCode = async (code: string) => {
+    seen.push(code);
+    return store.rows.find((r) => r.refCode.trim().toLowerCase() === code);
+  };
+  const saved = await updateReferralSettingsService(
+    "any-token",
+    { nickname: "Reefy", leaderboard: true, noticesOff: false },
+    deps,
+  );
+  assert.equal(saved.status, "ok");
+  assert.deepEqual(seen, ["owner001"], "the store is asked for the normalized code");
+
+  const progress = setup();
+  for (const code of ["owner001", " OWNER001 ", "Owner001\n"]) {
+    assert.deepEqual(await getReferralProgressService(code, progress.deps), {
+      enabled: true,
+      credited: 2,
+    });
+  }
+  const reads = progress.store.listCalls;
+  for (const bad of ["owner00", "owner0012", "owner-01", "owner00!"]) {
+    assert.deepEqual(await getReferralProgressService(bad, progress.deps), {
+      enabled: true,
+      credited: 0,
+    });
+  }
+  assert.equal(progress.store.listCalls, reads, "a non-code never costs a read");
+});
+
+test("a signed value that is not a code is invalid, like a forged token", async () => {
+  for (const value of ["owner00", "owner0012", "owner-01", "", "   "]) {
+    const { deps, store } = setup({ verifyStatusToken: () => value });
+    assert.deepEqual(await getReferralStatusService("t", "en", deps), { status: "invalid" });
+    assert.equal(store.listCalls + store.findCalls, 0, value);
+  }
+});
+
+test("on a code collision the status page reads the lowest page id, as the ledger does", async () => {
+  const { deps, store } = setup({ verifyStatusToken: () => "owner001" });
+  store.rows = [
+    row({ refCode: "owner001", pageId: "page-z", nickname: "Later" }),
+    row({ refCode: "OWNER001", pageId: "page-a", nickname: "First" }),
+  ];
+  const status = await getReferralStatusService("t", "en", deps);
+  assert.equal(status.status === "ok" && status.referral.nickname, "First");
 });

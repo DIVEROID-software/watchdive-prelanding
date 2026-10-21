@@ -33,8 +33,12 @@
 //     Removing friends later lowers `credited` (the ranking, the top 3) but
 //     not the tiers already announced, and the instant a held tier was reached
 //     is never later than the notice that announced it (`Referral notified
-//     at`). That bound is approximate: the column holds the latest notice, so
-//     an exact original instant needs a write-once column (owner decision).
+//     at`). That bound alone is approximate (the column holds the latest
+//     notice), so Dive Leader also has a write-once column, `Referral leader
+//     reached at`, set by the notice that first announced it. When present
+//     it IS the leader instant for the light order (`leaderInstant`); rows
+//     without it (never announced, or announced before the column existed)
+//     fall back to the credited timeline bounded by the notice.
 //   - The ledger is live until the close and keeps moving afterwards only by
 //     ops withdrawals. The official frozen result is the ops report
 //     (scripts/referral-report.ts) generated at the close.
@@ -114,7 +118,11 @@ export function computeLedger(
   const candidates: Candidate[] = [];
   for (const friend of rows) {
     const code = normalizeRefCode(friend.referredBy);
-    if (!code) continue;
+    if (!code) {
+      // A `Referred by` that is not a code at all still came in on a link.
+      if ((friend.referredBy ?? "").trim()) excluded.unknown_referrer += 1;
+      continue;
+    }
     const reason = excludeReason(friend, byCode.get(code), options);
     if (reason) {
       excluded[reason] += 1;
@@ -187,6 +195,8 @@ export function computeLedger(
       const at = Math.min(fromCredits, fromNotice);
       if (Number.isFinite(at)) reachedAt[tier.id] = new Date(at).toISOString();
     }
+    const recorded = leaderInstant(referrer, held);
+    if (recorded !== null) reachedAt.leader = new Date(recorded).toISOString();
     standings.set(code, {
       refCode: code,
       credited: times.length,
@@ -222,6 +232,20 @@ export function heldCount(row: ReferralRow, credited: number): number {
   if (row.rewardReview === "rejected") return credited;
   const announced = Number.isSafeInteger(row.notifiedCount) ? row.notifiedCount : 0;
   return Math.max(credited, announced, 0);
+}
+
+/**
+ * The recorded Dive Leader instant (epoch ms), or null to use the timeline.
+ * Only a readable stamp on a row that still holds the tier and whose reward
+ * review was not rejected counts; it is never moved by later credits or
+ * removals, which is what makes the light order exact and stable.
+ */
+export function leaderInstant(row: ReferralRow, held: number): number | null {
+  if (!row.leaderReachedAt || row.rewardReview === "rejected") return null;
+  const leader = REFERRAL_TIERS.find((tier) => tier.id === "leader");
+  if (!leader || held < leader.minFriends) return null;
+  const ms = Date.parse(row.leaderReachedAt);
+  return Number.isFinite(ms) ? ms : null;
 }
 
 /**

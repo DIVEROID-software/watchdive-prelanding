@@ -104,9 +104,19 @@ export function samePerson(
   return key.includes("@") && key === referralIdentityKey(b.email);
 }
 
-/** Lowercased, trimmed ref code; the share link and the signup both store `[a-z0-9]{8}`. */
-export function normalizeRefCode(value: string | undefined): string {
-  return (value ?? "").trim().toLowerCase();
+/** The only shape a ref code has: the share link and the signup both store it. */
+export const REF_CODE_PATTERN = /^[a-z0-9]{8}$/;
+
+/**
+ * A ref code as every lookup compares it — the ledger, notices, status,
+ * settings, progress and the ops report: trimmed, lowercased, and exactly
+ * eight `[a-z0-9]`; anything else is "" (no code). One rule, so a cell with
+ * stray case or whitespace matches the same owner everywhere, and a value
+ * that is not a code can never match one.
+ */
+export function normalizeRefCode(value: unknown): string {
+  const code = (typeof value === "string" ? value : "").trim().toLowerCase();
+  return REF_CODE_PATTERN.test(code) ? code : "";
 }
 
 /** Verified at, as epoch ms, or null when absent or unparseable. */

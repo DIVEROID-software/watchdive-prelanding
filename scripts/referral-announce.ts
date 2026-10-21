@@ -18,6 +18,7 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
 
+import { normalizeRefCode } from "../src/lib/referral/eligibility.ts";
 import { optedOutAddresses, optOutAddressKey, rowOptedOut } from "../src/lib/referral/notices.ts";
 import { REFERRAL_PROGRAM_ID, referralProgramEnabled } from "../src/lib/referral/program.ts";
 import { DEFAULT_LOCALE, localeFromPathname, matchLocale, type Locale } from "../src/lib/i18n/locale.ts";
@@ -82,7 +83,7 @@ export function announceSkipReason(
   if (conversionBlocked(row.flags ?? [])) return "blocked_flag";
   if (row.duplicate) return "duplicate";
   if (!row.email.includes("@")) return "no_email";
-  if (!/^[a-z0-9]{8}$/.test(row.refCode)) return "no_ref_code";
+  if (!normalizeRefCode(row.refCode)) return "no_ref_code";
   // The opt-out link is signed over the Lead ID; without one, no compliant mail.
   if (!LEAD_ID.test(row.leadId)) return "no_opt_out";
   if (!ignoreRelease) {
@@ -439,7 +440,9 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env)
       rows.push({
         pageId: lead.pageId, leadId: lead.leadId, email: lead.email, status: lead.status,
         emailVerified: lead.emailVerified, suspect: lead.suspect, duplicate: Boolean(lead.duplicate),
-        verifiedAt: lead.verifiedAt, refCode: lead.refCode, signupLocale: lead.signupLocale, landingPath: lead.landingPath,
+        verifiedAt: lead.verifiedAt,
+        // The lookup rule everywhere (normalizeRefCode); "" is skipped as no_ref_code.
+        refCode: normalizeRefCode(lead.refCode), signupLocale: lead.signupLocale, landingPath: lead.landingPath,
         flags: lead.flags,
         signupCountry: lead.signupCountry, launchMail: lead.launchMail, reservationMail: lead.reservationMail,
       });

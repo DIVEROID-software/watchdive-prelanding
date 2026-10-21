@@ -6,6 +6,8 @@ import { test } from "node:test";
 
 import { BUDDY_GUIDE_DELAY_MS, WELCOME_DELAY_MS } from "../src/lib/verification/contracts.ts";
 import {
+  BUTTON_BG,
+  BUTTON_INK,
   createResendMailer,
   createResendReferralMailer,
   KR_AD_SUBJECT_PREFIX,
@@ -526,7 +528,8 @@ test("every Buddy mail in every locale: email-safe HTML, absolute https links wi
     );
     assert.equal(/<(script|img|link)\b/.test(html), false);
     assert.ok(html.includes('role="presentation"'));
-    assert.ok(html.includes('bgcolor="#0ea5e9"'), "bulletproof button cell");
+    assert.ok(html.includes(`bgcolor="${BUTTON_BG}"`), "bulletproof button cell");
+    assert.ok(html.includes(`color:${BUTTON_INK};`), "button label colour");
     for (const [, href] of html.matchAll(/href="([^"]+)"/g)) {
       assert.match(href, /^https:\/\//, href);
       assert.equal(new URL(href.replaceAll("&amp;", "&")).pathname.includes("="), false, href);
@@ -591,4 +594,189 @@ test("sender phone: the owner's number is accepted as written; junk or blank is 
   for (const bad of [undefined, "", "TBD", "<script>", "+82"]) {
     assert.equal(readSenderPhone({ WATCHDIVE_SENDER_PHONE: bad }), undefined, String(bad));
   }
+});
+
+// --- Opt-outs on ANY row of the address --------------------------------------
+
+function confirmableWithSibling(
+  sibling: Record<string, unknown>,
+  siblingEmail = "diver@example.com",
+) {
+  const env = { ...TEST_ENV, WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" };
+  const setup = confirmable(env);
+  const store = setup.deps.store as FakeLeadStore;
+  const [own] = [...store.rows.values()];
+  // An older row of the same inbox (a second signup), seeded without
+  // replacing the canonical lookup that confirmation uses.
+  store.rows.set("sibling-page", {
+    ...own!,
+    pageId: "sibling-page",
+    email: siblingEmail,
+    leadId: "",
+    status: "verified",
+    emailVerified: true,
+    ...sibling,
+  });
+  return { ...setup, store };
+}
+
+test("switch on: an opt-out marker on ANOTHER row of the same address stops the guide", async () => {
+  for (const sibling of [
+    { launchMail: "unsubscribed 2026-10-01T00:00:00.000Z" },
+    { reservationMail: "unsubscribed 2026-10-01T00:00:00.000Z" },
+    { status: "unsubscribed" },
+  ]) {
+    const { mailer, token, deps, store } = confirmableWithSibling(sibling);
+    assert.equal((await confirmVerificationService(token, deps)).status, "verified");
+    assert.equal(mailer.welcomes.length, 0, JSON.stringify(sibling));
+    assert.equal(store.markWelcomeCalls, 0, "Welcome email stays empty");
+  }
+});
+
+test("switch on: the address match is the notices' inbox key (Gmail dots/plus fold, other domains exact)", async () => {
+  // Gmail: d.iver+x@googlemail.com is the same inbox as diver@gmail.com.
+  {
+    const env = { ...TEST_ENV, WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" };
+    const setup = confirmable(env);
+    const store = setup.deps.store as FakeLeadStore;
+    const [own] = [...store.rows.values()];
+    store.rows.set(own!.pageId, { ...own!, email: "diver@gmail.com" });
+    store.rows.set("sib", {
+      ...own!,
+      pageId: "sib",
+      email: "d.iver+x@googlemail.com",
+      leadId: "",
+      launchMail: "unsubscribed 2026-10-01T00:00:00.000Z",
+    });
+    assert.equal((await confirmVerificationService(setup.token, setup.deps)).status, "verified");
+    assert.equal(setup.mailer.welcomes.length, 0, "gmail alias opt-out holds");
+  }
+  // Elsewhere a +tag is a different address for opt-outs, as in notices.ts.
+  {
+    const { mailer, token, deps } = confirmableWithSibling(
+      { launchMail: "unsubscribed 2026-10-01T00:00:00.000Z" },
+      "diver+news@example.com",
+    );
+    assert.equal((await confirmVerificationService(token, deps)).status, "verified");
+    assert.equal(mailer.welcomes.length, 1);
+  }
+});
+
+test("switch on: a clean sibling row does not block, and a failed lookup fails closed", async () => {
+  const clean = confirmableWithSibling({});
+  assert.equal((await confirmVerificationService(clean.token, clean.deps)).status, "verified");
+  assert.equal(clean.mailer.welcomes.length, 1);
+  assert.ok(clean.mailer.welcomes[0]!.statusUrl);
+  assert.equal(clean.store.listByAddressCalls, 1);
+
+  const failing = confirmableWithSibling({});
+  failing.store.failListByAddress = true;
+  assert.equal((await confirmVerificationService(failing.token, failing.deps)).status, "verified");
+  assert.equal(failing.mailer.welcomes.length, 0, "no guide without a complete opt-out check");
+  assert.equal(failing.store.markWelcomeCalls, 0);
+
+  // A store without the lookup at all: no guide either.
+  const bare = confirmableWithSibling({});
+  (bare.store as { listByAddress?: unknown }).listByAddress = undefined;
+  assert.equal((await confirmVerificationService(bare.token, bare.deps)).status, "verified");
+  assert.equal(bare.mailer.welcomes.length, 0);
+});
+
+test("switch off: the legacy welcome never consults other rows (byte-identical legacy path)", async () => {
+  const { mailer, token, deps } = confirmable(TEST_ENV);
+  const store = deps.store as FakeLeadStore;
+  const [own] = [...store.rows.values()];
+  store.rows.set("sib", {
+    ...own!,
+    pageId: "sib",
+    leadId: "",
+    launchMail: "unsubscribed 2026-10-01T00:00:00.000Z",
+  });
+  assert.equal((await confirmVerificationService(token, deps)).status, "verified");
+  assert.equal(mailer.welcomes.length, 1);
+  assert.equal(store.listByAddressCalls, 0);
+  assert.equal("statusUrl" in mailer.welcomes[0]!, false);
+});
+
+test("the Notion store lists an address by canonical email or exact title, fully paged", async () => {
+  const { createNotionLeadStore } = await import("../src/lib/verification/notionLead.ts");
+  const calls: { method: string; path: string; body: any }[] = [];
+  const pages = [
+    {
+      results: [{ id: "p1", properties: { Email: { title: [{ plain_text: "a@x.example" }] } } }],
+      has_more: true,
+      next_cursor: "c1",
+    },
+    {
+      results: [{ id: "p2", properties: { Email: { title: [{ plain_text: "a@x.example" }] } } }],
+      has_more: false,
+    },
+  ];
+  const store = createNotionLeadStore(async (method, path, body) => {
+    calls.push({ method, path, body });
+    return pages.shift() ?? {};
+  }, "db1");
+  const rows = await store.listByAddress!("a@x.example", "A@x.example");
+  assert.deepEqual(
+    rows.map((r) => r.pageId),
+    ["p1", "p2"],
+  );
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0]!.path, "databases/db1/query");
+  const or = calls[0]!.body.filter.or as Record<string, unknown>[];
+  assert.ok(or.some((c) => (c as any).property === "Canonical email"));
+  assert.ok(
+    or.some(
+      (c) =>
+        JSON.stringify(c) ===
+        JSON.stringify({ property: "Email", title: { equals: "A@x.example" } }),
+    ),
+  );
+  assert.equal(calls[1]!.body.start_cursor, "c1");
+
+  // Beyond the page bound it throws rather than return a partial list.
+  const endless = createNotionLeadStore(
+    async () => ({ results: [], has_more: true, next_cursor: "n" }),
+    "db1",
+  );
+  await assert.rejects(endless.listByAddress!("a@x.example", "a@x.example"));
+});
+
+// --- Buttons in forced dark mode -----------------------------------------------
+
+function luminance(hex: string): number {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+function invert(hex: string): string {
+  return `#${(0xffffff ^ parseInt(hex.slice(1), 16)).toString(16).padStart(6, "0")}`;
+}
+
+test("Buddy buttons keep >= 4.5:1 as authored, fully inverted, and under partial dark modes", () => {
+  // As authored (light mode).
+  assert.ok(contrast(BUTTON_INK, BUTTON_BG) >= 4.5, `${contrast(BUTTON_INK, BUTTON_BG)}`);
+  // Full inversion (both colours flipped).
+  assert.ok(contrast(invert(BUTTON_INK), invert(BUTTON_BG)) >= 4.5);
+  // Partial modes recolour only dark text and only light backgrounds. A light
+  // label on a dark fill is neither, so neither half moves: the pair as
+  // authored is what such a client shows. (The old sky-blue fill with dark
+  // text had its label lightened against an unchanged fill: ~2.6:1.)
+  assert.ok(luminance(BUTTON_INK) > 0.9, "the label is light, never recoloured as dark text");
+  assert.ok(luminance(BUTTON_BG) < 0.2, "the fill is dark, never recoloured as a light background");
+  assert.ok(contrast("#ffffff", "#0ea5e9") < 4.5, "the failure mode this replaces");
+});
+
+test("the legacy welcome keeps its own button colours untouched", async () => {
+  const { calls, impl } = capture();
+  await createResendMailer(BASE_ENV, impl, async () => {}).sendWelcome(welcome("en"));
+  const html = calls[0]!.body.html as string;
+  assert.ok(html.includes("background:#0ea5e9;color:#04121f"));
+  assert.equal(html.includes(BUTTON_BG), false);
 });

@@ -37,7 +37,7 @@ import {
   highestTier,
   type ReferralTierId,
 } from "../src/lib/referral/program.ts";
-import { samePerson } from "../src/lib/referral/eligibility.ts";
+import { normalizeRefCode, samePerson } from "../src/lib/referral/eligibility.ts";
 import { heldCount } from "../src/lib/referral/ledger.ts";
 
 /** Review thresholds. Signals only flag a person for a human look. */
@@ -365,12 +365,15 @@ export function buildReport(input: ReportInput): {
   const rowsByRef = new Map<string, ReferralRow>();
   const byReferrer = new Map<string, ReferralRow[]>();
   const domainCounts = new Map<string, number>();
-  // First row by page id owns a code, exactly as in the ledger.
+  // First row by page id owns a code, and codes compare by normalizeRefCode,
+  // exactly as in the ledger, the notices and the status page.
   for (const row of [...input.rows].sort((a, b) => (a.pageId < b.pageId ? -1 : a.pageId > b.pageId ? 1 : 0))) {
-    if (row.refCode && !rowsByRef.has(row.refCode)) rowsByRef.set(row.refCode, row);
+    const code = normalizeRefCode(row.refCode);
+    if (code && !rowsByRef.has(code)) rowsByRef.set(code, row);
   }
   for (const row of input.rows) {
-    if (row.referredBy) byReferrer.set(row.referredBy, [...(byReferrer.get(row.referredBy) ?? []), row]);
+    const by = normalizeRefCode(row.referredBy);
+    if (by) byReferrer.set(by, [...(byReferrer.get(by) ?? []), row]);
     const domain = domainOf(row.email);
     if (domain) domainCounts.set(domain, (domainCounts.get(domain) ?? 0) + 1);
   }

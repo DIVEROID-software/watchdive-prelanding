@@ -4,7 +4,9 @@ import { test } from "node:test";
 import { REFERRAL_COLUMNS } from "../src/lib/referral/contract.ts";
 import {
   PROGRAM_ROWS_FILTER,
+  SCHEMA_CACHE_MS,
   createNotionReferralStore,
+  resetReferralSchemaCache,
   toReferralRow,
 } from "../src/lib/referral/store.ts";
 import type { NotionRequest } from "../src/lib/verification/notionLead.ts";
@@ -177,4 +179,95 @@ test("writeSettings and markNotified write only their own columns", async () => 
     },
   });
   await assert.rejects(store.markNotified("p1", { count: -1, at: "x" }));
+});
+
+test("the write-once leader column parses, and markNotified names it only when asked", async () => {
+  const row = toReferralRow(
+    page("p1", { "Referral leader reached at": { date: { start: "2026-10-24T03:00:00.000Z" } } }),
+  );
+  assert.equal(row?.leaderReachedAt, "2026-10-24T03:00:00.000Z");
+  assert.equal("leaderReachedAt" in (toReferralRow(page("p2")) ?? {}), false);
+  assert.equal(
+    "leaderReachedAt" in
+      (toReferralRow(page("p3", { "Referral leader reached at": { date: null } })) ?? {}),
+    false,
+  );
+
+  const { request, calls } = fake([{}, {}]);
+  const store = createNotionReferralStore(request, "db1");
+  await store.markNotified("p1", {
+    count: 10,
+    at: "2026-10-24T04:00:00.000Z",
+    leaderReachedAt: "2026-10-24T03:00:00.000Z",
+  });
+  assert.deepEqual(calls[0], {
+    method: "PATCH",
+    path: "pages/p1",
+    body: {
+      properties: {
+        "Referral notified count": { number: 10 },
+        "Referral notified at": { date: { start: "2026-10-24T04:00:00.000Z" } },
+        "Referral leader reached at": { date: { start: "2026-10-24T03:00:00.000Z" } },
+      },
+    },
+  });
+  await assert.rejects(
+    store.markNotified("p1", {
+      count: 10,
+      at: "2026-10-24T04:00:00.000Z",
+      leaderReachedAt: "soon",
+    }),
+  );
+  assert.equal(calls.length, 1, "an unreadable stamp is refused before any write");
+});
+
+test("missingColumns: one schema GET, names only; success is cached per process, a miss is not", async () => {
+  resetReferralSchemaCache();
+  const all = Object.fromEntries(
+    Object.values(REFERRAL_COLUMNS).map((name) => [name, { type: "x" }]),
+  );
+  const { [REFERRAL_COLUMNS.leaderReachedAt]: _gone, ...partial } = all;
+  let nowMs = 1_000_000;
+  const { request, calls } = fake([
+    { properties: partial },
+    { properties: all },
+    { properties: all },
+  ]);
+  const store = createNotionReferralStore(request, "db1", { clock: () => nowMs });
+  assert.deepEqual(await store.missingColumns(), ["Referral leader reached at"]);
+  assert.deepEqual(calls[0], { method: "GET", path: "databases/db1", body: undefined });
+  // A miss is re-checked on the next pass, so adding the column takes effect at once.
+  assert.deepEqual(await store.missingColumns(), []);
+  assert.equal(calls.length, 2);
+  // Cached across store instances (one per cron tick) within the window…
+  const again = createNotionReferralStore(request, "db1", { clock: () => nowMs });
+  nowMs += SCHEMA_CACHE_MS - 1;
+  assert.deepEqual(await again.missingColumns(), []);
+  assert.equal(calls.length, 2);
+  // …and read again after it.
+  nowMs += 2;
+  assert.deepEqual(await again.missingColumns(), []);
+  assert.equal(calls.length, 3);
+  // Another database is its own entry.
+  const other = fake([{ properties: {} }]);
+  const missing = await createNotionReferralStore(other.request, "db2").missingColumns();
+  assert.deepEqual(missing, Object.values(REFERRAL_COLUMNS));
+  resetReferralSchemaCache();
+});
+
+test("a failed schema read propagates and caches nothing", async () => {
+  resetReferralSchemaCache();
+  let fail = true;
+  let reads = 0;
+  const request: NotionRequest = async () => {
+    reads++;
+    if (fail) throw new Error("notion down");
+    return { properties: Object.fromEntries(Object.values(REFERRAL_COLUMNS).map((n) => [n, {}])) };
+  };
+  const store = createNotionReferralStore(request, "db9");
+  await assert.rejects(store.missingColumns());
+  fail = false;
+  assert.deepEqual(await store.missingColumns(), []);
+  assert.equal(reads, 2);
+  resetReferralSchemaCache();
 });

@@ -4,7 +4,8 @@
 // Everything this file needs from the core modules (ledger, token, nickname,
 // store) arrives through `ReferralServiceDeps`, so these rules can be tested
 // against fakes and the server-fn wrapper wires the real implementations. Only
-// `program.ts` (numbers) and `contract.ts` (types) are imported directly.
+// `program.ts` (numbers), `contract.ts` (types) and the pure ref-code rule
+// `normalizeRefCode` (eligibility.ts) are imported directly.
 //
 // Privacy: every response is rebuilt field by field from an allow-list. Rows
 // carry emails, canonical emails and Notion page ids, and the ledger carries
@@ -21,6 +22,7 @@ import type {
   ReferralStatus,
   ReferralStore,
 } from "./contract.ts";
+import { normalizeRefCode } from "./eligibility.ts";
 import { LEADERBOARD_CACHE_SECONDS, LEADERBOARD_SIZE } from "./program.ts";
 
 /** The core functions this service composes (signatures from the shared brief). */
@@ -92,15 +94,11 @@ function isClosed(deps: Pick<ReferralServiceDeps, "now" | "closesAt">, now = dep
   return at !== null && now.getTime() >= at.getTime();
 }
 
-function normalizeCode(value: string | undefined): string {
-  return (value ?? "").trim().toLowerCase();
-}
-
 async function refCodeFor(token: unknown, deps: ReferralServiceDeps): Promise<string | null> {
   if (typeof token !== "string" || token.length === 0 || token.length > TOKEN_MAX) return null;
   try {
-    const code = await deps.verifyStatusToken(token, deps.secret);
-    return typeof code === "string" && normalizeCode(code) ? normalizeCode(code) : null;
+    // The signed code goes through the same rule as every other lookup.
+    return normalizeRefCode(await deps.verifyStatusToken(token, deps.secret)) || null;
   } catch {
     // A malformed token must look exactly like a forged one.
     return null;
@@ -181,10 +179,16 @@ export async function getReferralStatusService(
   return { status: "ok", referral: publicStatus(status) };
 }
 
-// Cells are normalized the way share links and `Referred by` are, so a code
-// stored with stray case or whitespace still finds its owner.
+// Cells go through normalizeRefCode like every lookup, so a code stored with
+// stray case or whitespace still finds its owner; on a (never expected)
+// collision the lowest page id owns the code, exactly as in the ledger.
 function ownRow(rows: readonly ReferralRow[], refCode: string): ReferralRow | undefined {
-  return rows.find((candidate) => normalizeCode(candidate.refCode) === refCode);
+  let owner: ReferralRow | undefined;
+  for (const candidate of rows) {
+    if (normalizeRefCode(candidate.refCode) !== refCode) continue;
+    if (!owner || candidate.pageId < owner.pageId) owner = candidate;
+  }
+  return owner;
 }
 
 /**
@@ -331,9 +335,10 @@ export async function getReferralProgressService(
   deps: ReferralServiceDeps,
 ): Promise<ReferralProgressResponse> {
   if (!deps.enabled()) return { enabled: false };
-  if (!/^[a-z0-9]{8}$/.test(refCode)) return { enabled: true, credited: 0 };
+  const code = normalizeRefCode(refCode);
+  if (!code) return { enabled: true, credited: 0 };
   const { credited } = await deps.leaderboardCache.get(deps);
-  return { enabled: true, credited: credited.get(refCode) ?? 0 };
+  return { enabled: true, credited: credited.get(code) ?? 0 };
 }
 
 export type RateLimiter = { take(key: string, nowMs: number): boolean };

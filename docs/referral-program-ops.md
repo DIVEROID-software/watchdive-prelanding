@@ -18,7 +18,7 @@
 
 오너의 최종 확인 전에는 어떤 메일도 나가지 않습니다.
 
-1. **스키마**: `node --experimental-strip-types --env-file=.env scripts/referral-schema.ts` 로 계획 확인 → 타입 충돌 없으면 `--apply`. 일곱 개 속성(닉네임, 리더보드 동의, 닉네임 숨김, 알림 끄기, 마지막 알림 수, 알림 시각, 보상 검수)만 추가하고 재조회로 검증합니다. 기존 속성은 건드리지 않습니다.
+1. **스키마**: `node --experimental-strip-types --env-file=.env scripts/referral-schema.ts` 로 계획 확인 → 타입 충돌 없으면 `--apply`. 여덟 개 속성(닉네임, 리더보드 동의, 닉네임 숨김, 알림 끄기, 마지막 알림 수, 알림 시각, 보상 검수, Dive Leader 도달 시각 `Referral leader reached at`)만 추가하고 재조회로 검증합니다. 이 속성들이 하나라도 없으면 알림 패스는 아무것도 읽거나 보내지 않고 `referral_notices_schema_missing` 로그를 남깁니다. 기존 속성은 건드리지 않습니다.
 2. **발신자 전화번호 설정**: Vercel **Production과 Preview** 모두에 `WATCHDIVE_SENDER_PHONE=+82 10-6517-6232` 를 넣고, 공지 스크립트를 돌리는 서버(Mac mini)의 env 파일에도 같은 값을 넣습니다. 없으면 한국어/KR 메일은 나가지 않습니다(의도된 차단).
 3. **스위치 끈 채로 배포**: Production에 코드를 올립니다. 이때 사용자에게는 아무 변화가 없어야 합니다.
 4. **Preview 확인**: Preview 환경에만 스위치를 `1`로 켜고 화면·문구·링크·리더보드를 검토합니다(Production 데이터 쓰기 금지, 실제 메일 금지).
@@ -88,7 +88,7 @@ node --experimental-strip-types --env-file=.env scripts/referral-report.ts --wit
 ## 법무 검토 D7 (2026-10-22) — 집계·보상 유지 규칙
 
 - **안내한 티어는 유지**: 보유 티어 = max(현재 인정 수, `Referral notified count`). 알림 메일 이후 친구가 Suspect 등으로 빠져도 이미 안내한 티어(조기 안내 시간, Dive Team, Dive Leader)는 유지됩니다. 단 `Referral reward review` = `rejected`이면 유지되지 않습니다. 순위(상위 3명)는 현재 인정 수 기준입니다.
-- **라이트 순번**: 10명 도달 시각은 현재 인정 기록과 10명 이상을 안내한 메일 시각(`Referral notified at`) 중 이른 값입니다. 이 열은 마지막 알림 시각으로 덮어써지므로 근사값입니다(정확히 보존하려면 1회 기록 열이 필요 — 오너 결정 사항).
+- **라이트 순번**: Dive Leader(10명)를 처음 안내한 알림이 발송(공급자 수락)된 뒤, 같은 기록에서 `Referral leader reached at`(날짜, 1회 기록)에 그 시점의 10번째 인정 친구 인증 시각을 씁니다. 이미 값이 있으면 절대 덮어쓰지 않고, 발송이 실패하면 쓰지 않습니다. 값이 있으면(보상 검수 `rejected` 아님) 그 값이 라이트 순번 기준입니다. 값이 없는 행(아직 안내 전, 또는 이 열 추가 전에 안내됨)은 현재 인정 기록과 10명 이상을 안내한 메일 시각(`Referral notified at`) 중 이른 값을 씁니다. 운영자는 이 열을 수정하지 않습니다.
 - **수신 거부**: 친구가 인증 후 수신 거부해도 계속 집계됩니다. 초대한 사람이 수신 거부해도 달성한 보상과 라이트·상위 3명 순위는 유지되며, 알림·조기 안내 메일은 보내지 않습니다. 보상 파일(`dive-team.csv`, `light-winners.csv`, `top-candidates.csv`)의 `contact` 열이 `unsubscribed`이면 해당 보상 처리 목적의 연락만 합니다.
 - **순위 제외**: Suspect, Duplicate, 차단 플래그, `rejected` 검수인 초대자만 순위·보상에서 빠지며, 그 자리는 다음 순서로 넘어갑니다(라이트 30개는 항상 다음 순번으로 채워짐).
 - **마감 후 결과 확정**: 마감 시각 이후 인증한 친구는 집계되지 않습니다. 공식 확정 결과는 **마감 직후 실행해 보관한 ops 리포트**(`--out`, `--with-emails`)입니다. `--now`는 마감 판정과 생성 시각만 바꾸고 과거 행 상태를 재현하지 않으므로, 나중에 다시 돌려 확정 결과를 대신하지 않습니다. 이후 화면·리더보드는 ops 조치(친구 제외 등)로만 바뀌며, 그 변경은 확정 리포트를 기준으로 검토합니다.

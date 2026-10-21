@@ -32,6 +32,8 @@ export const REFERRAL_COLUMN_SPECS: readonly ReferralColumnSpec[] = [
   { name: REFERRAL_COLUMNS.notifiedCount, type: "number" },
   { name: REFERRAL_COLUMNS.notifiedAt, type: "date" },
   { name: REFERRAL_COLUMNS.rewardReview, type: "select", options: REVIEW_OPTIONS },
+  // Write-once (notices.ts); the exact Dive Leader light-order key.
+  { name: REFERRAL_COLUMNS.leaderReachedAt, type: "date" },
 ];
 
 export type ReferralSchemaDatabase = {

@@ -48,6 +48,18 @@ export type LaunchCopy = {
     unavailableHeading: string;
     unavailableBody: string;
   };
+  /**
+   * The same page while Buddy Invite is switched on: one opt-out then also
+   * stops every Buddy Invite mail, so the page says so. `{program}` is the
+   * localized program name (src/lib/referral/copy.ts `programName`).
+   */
+  programPage: {
+    title: string;
+    confirmHeading: string;
+    confirmBody: string;
+    doneHeading: string;
+    doneBody: string;
+  };
 };
 
 /**
@@ -123,6 +135,15 @@ export const LAUNCH_COPY = {
       unavailableHeading: "We couldn’t save that just now",
       unavailableBody: "Please try again in a minute, or email help@diveroid.com.",
     },
+    programPage: {
+      title: "WatchDive emails — WatchDive",
+      confirmHeading: "Stop WatchDive emails?",
+      confirmBody:
+        "This address will stop getting WatchDive emails (launch updates and {program}).",
+      doneHeading: "You’re unsubscribed",
+      doneBody:
+        "We won’t send this address any more WatchDive emails (launch updates and {program}).",
+    },
   },
   ko: {
     waves: {
@@ -166,6 +187,13 @@ export const LAUNCH_COPY = {
       invalidBody: "help@diveroid.com으로 메일을 주시면 직접 명단에서 빼드릴게요.",
       unavailableHeading: "지금은 처리하지 못했어요",
       unavailableBody: "잠시 후 다시 시도하시거나 help@diveroid.com으로 알려 주세요.",
+    },
+    programPage: {
+      title: "WatchDive 메일 — WatchDive",
+      confirmHeading: "WatchDive 메일을 그만 받으시겠어요?",
+      confirmBody: "이 주소로는 WatchDive 메일(출시 알림, {program})을 더 이상 보내지 않습니다.",
+      doneHeading: "수신 거부가 완료되었습니다",
+      doneBody: "이 주소로는 더 이상 WatchDive 메일(출시 알림, {program})을 보내지 않습니다.",
     },
   },
   "zh-CN": {
@@ -211,6 +239,13 @@ export const LAUNCH_COPY = {
       unavailableHeading: "暂时没能保存",
       unavailableBody: "请稍后再试，或发邮件至 help@diveroid.com。",
     },
+    programPage: {
+      title: "WatchDive 邮件 — WatchDive",
+      confirmHeading: "不再接收 WatchDive 邮件？",
+      confirmBody: "我们将不再向这个邮箱发送 WatchDive 邮件（上线通知和{program}）。",
+      doneHeading: "已退订",
+      doneBody: "我们不会再向这个邮箱发送 WatchDive 邮件（上线通知和{program}）。",
+    },
   },
   "zh-TW": {
     waves: {
@@ -254,6 +289,13 @@ export const LAUNCH_COPY = {
       invalidBody: "請寄信到 help@diveroid.com，我們會手動幫你取消。",
       unavailableHeading: "目前無法儲存",
       unavailableBody: "請稍後再試，或寄信到 help@diveroid.com。",
+    },
+    programPage: {
+      title: "WatchDive 郵件 — WatchDive",
+      confirmHeading: "不再收到 WatchDive 郵件？",
+      confirmBody: "我們將不再寄送 WatchDive 郵件（上線通知與{program}）到這個信箱。",
+      doneHeading: "已取消訂閱",
+      doneBody: "我們不會再寄 WatchDive 郵件（上線通知與{program}）到這個信箱。",
     },
   },
   ja: {
@@ -300,6 +342,15 @@ export const LAUNCH_COPY = {
       unavailableHeading: "ただいま処理できませんでした",
       unavailableBody:
         "しばらくしてからもう一度お試しいただくか、help@diveroid.comまでご連絡ください。",
+    },
+    programPage: {
+      title: "WatchDiveからのメール — WatchDive",
+      confirmHeading: "WatchDiveからのメールを停止しますか？",
+      confirmBody:
+        "このアドレスには、WatchDiveからのメール（ローンチのお知らせ・{program}）をお送りしなくなります。",
+      doneHeading: "配信を停止しました",
+      doneBody:
+        "このアドレスにWatchDiveからのメール（ローンチのお知らせ・{program}）をお送りすることはありません。",
     },
   },
   es: {
@@ -349,6 +400,15 @@ export const LAUNCH_COPY = {
       unavailableHeading: "No hemos podido guardarlo ahora",
       unavailableBody: "Vuelve a intentarlo en un minuto o escríbenos a help@diveroid.com.",
     },
+    programPage: {
+      title: "Correos de WatchDive — WatchDive",
+      confirmHeading: "¿Dejar de recibir los correos de WatchDive?",
+      confirmBody:
+        "No enviaremos más correos de WatchDive a esta dirección (avisos de lanzamiento e {program}).",
+      doneHeading: "Te has dado de baja",
+      doneBody:
+        "No volveremos a enviar correos de WatchDive a esta dirección (avisos de lanzamiento e {program}).",
+    },
   },
   fr: {
     waves: {
@@ -396,6 +456,15 @@ export const LAUNCH_COPY = {
       invalidBody: "Écrivez à help@diveroid.com et nous vous retirerons de la liste nous-mêmes.",
       unavailableHeading: "Impossible d’enregistrer pour le moment",
       unavailableBody: "Réessayez dans une minute ou écrivez à help@diveroid.com.",
+    },
+    programPage: {
+      title: "E-mails WatchDive — WatchDive",
+      confirmHeading: "Ne plus recevoir les e-mails WatchDive ?",
+      confirmBody:
+        "Cette adresse ne recevra plus d’e-mails WatchDive (annonces de lancement et {program}).",
+      doneHeading: "Vous êtes désabonné",
+      doneBody:
+        "Nous n’enverrons plus d’e-mails WatchDive à cette adresse (annonces de lancement et {program}).",
     },
   },
   de: {
@@ -445,6 +514,15 @@ export const LAUNCH_COPY = {
       unavailableHeading: "Das hat gerade nicht geklappt",
       unavailableBody: "Versuch es in einer Minute noch einmal oder schreib an help@diveroid.com.",
     },
+    programPage: {
+      title: "WatchDive-E-Mails — WatchDive",
+      confirmHeading: "WatchDive-E-Mails abbestellen?",
+      confirmBody:
+        "An diese Adresse schicken wir dann keine WatchDive-E-Mails mehr (Launch-Infos und {program}).",
+      doneHeading: "Du hast dich abgemeldet",
+      doneBody:
+        "An diese Adresse schicken wir keine WatchDive-E-Mails mehr (Launch-Infos und {program}).",
+    },
   },
   "pt-BR": {
     waves: {
@@ -492,6 +570,15 @@ export const LAUNCH_COPY = {
       invalidBody: "Escreva para help@diveroid.com e tiramos você da lista manualmente.",
       unavailableHeading: "Não conseguimos salvar agora",
       unavailableBody: "Tente de novo em um minuto ou escreva para help@diveroid.com.",
+    },
+    programPage: {
+      title: "E-mails do WatchDive — WatchDive",
+      confirmHeading: "Parar de receber os e-mails do WatchDive?",
+      confirmBody:
+        "Este endereço vai deixar de receber e-mails do WatchDive (avisos de lançamento e {program}).",
+      doneHeading: "Inscrição cancelada",
+      doneBody:
+        "Não vamos mais mandar e-mails do WatchDive para este endereço (avisos de lançamento e {program}).",
     },
   },
 } as const satisfies Record<Locale, LaunchCopy>;

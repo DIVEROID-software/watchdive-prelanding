@@ -606,8 +606,13 @@ const INK = "#0f172a";
 const BODY_INK = "#334155";
 const MUTED_INK = "#5b6778";
 const LINK_INK = "#0369a1";
-const BUTTON_BG = "#0ea5e9";
-const BUTTON_INK = "#04121f";
+// Light text on a deep blue, never dark text on a mid-tone: forced dark modes
+// (Gmail apps, Outlook, Chrome's auto-dark) recolour dark text to light and
+// light backgrounds to dark, but leave a light-on-dark pair alone, so the
+// label stays >= 4.5:1 whether or not the client inverts (sky-blue with dark
+// text became white on sky-blue, ~2.6:1). The legacy welcome keeps its own.
+export const BUTTON_BG = "#0369a1";
+export const BUTTON_INK = "#ffffff";
 
 /** Env var holding the sender phone the Korean sender block must show. */
 export const SENDER_PHONE_ENV = "WATCHDIVE_SENDER_PHONE";
@@ -731,7 +736,7 @@ function linkHtml(url: string, label?: string): string {
 function buttonHtml(url: string, label: string): string {
   return (
     '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:separate;">' +
-    `<tr><td align="center" bgcolor="${BUTTON_BG}" style="background-color:${BUTTON_BG};border-radius:12px;mso-padding-alt:14px 28px;">` +
+    `<tr><td align="center" bgcolor="${BUTTON_BG}" style="background-color:${BUTTON_BG};border:1px solid ${BUTTON_BG};border-radius:12px;mso-padding-alt:14px 28px;">` +
     `<a href="${escapeHtml(url)}" rel="noreferrer noopener" style="display:inline-block;padding:14px 28px;` +
     `font-family:${FONT_STACK};font-size:16px;font-weight:600;line-height:20px;color:${BUTTON_INK};` +
     `text-decoration:none;border-radius:12px;">${escapeHtml(label)}</a></td></tr></table>`
