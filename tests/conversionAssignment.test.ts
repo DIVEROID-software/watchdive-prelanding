@@ -6,17 +6,15 @@ import { webcrypto } from "node:crypto";
 import ts from "typescript";
 import {
   experimentBootstrap,
-  variantFromRandomByte,
+  assignedVariant,
   experimentTeam,
   EXPERIMENT_STORAGE_KEY,
 } from "../src/lib/conversionExperimentClient.ts";
 import { CONSENT_STORAGE_KEY } from "../src/lib/consentRegion.ts";
 import { competitionRegistry } from "../src/lib/competitionRegistry.ts";
 
-test("128 of 256 random byte values select each arm", () => {
-  const variants = Array.from({ length: 256 }, (_, n) => variantFromRandomByte(n));
-  assert.equal(variants.filter((v) => v === "control").length, 128);
-  assert.equal(variants.filter((v) => v === "form_first").length, 128);
+test("every visitor is assigned form_first after the 2026-10-21 full rollout", () => {
+  assert.equal(assignedVariant(), "form_first");
 });
 
 function bootstrap({
@@ -64,27 +62,28 @@ function bootstrap({
   return { window, read, document };
 }
 
-test("EU unknown and denied visitors get ephemeral visual assignment without stored variant read", () => {
+test("EU unknown, denied and returning control visitors all see form_first without a stored read", () => {
   for (const opts of [
     {},
     { cookie: "" },
     { cookie: "wd_geo=US", choice: "denied" },
     { cookie: "wd_geo=US", gpc: true },
+    { choice: "granted", stored: "control" },
+    { cookie: "wd_geo=US", stored: "control", random: 255 },
   ]) {
     const r = bootstrap(opts);
-    assert.equal(r.window.__wdLandingVariant, "control");
+    assert.equal(r.window.__wdLandingVariant, "form_first");
+    assert.equal(r.document.documentElement.dataset.wdLanding, "form_first");
     assert.ok(!r.read.includes(EXPERIMENT_STORAGE_KEY));
   }
 });
 
-test("permitted return visits keep the saved variant; QA does not change saved assignment", () => {
-  assert.equal(bootstrap({ choice: "granted" }).window.__wdLandingVariant, "form_first");
-  assert.equal(bootstrap({ cookie: "wd_geo=US" }).window.__wdLandingVariant, "form_first");
+test("QA can still preview control without changing saved assignment; non-QA override is ignored", () => {
   const qa = bootstrap({ choice: "granted", query: "?wd_qa=1&wd_variant=control" });
   assert.equal(qa.window.__wdLandingVariant, "control");
   assert.equal(qa.window.__wdLandingQa, true);
   assert.ok(!qa.read.includes(EXPERIMENT_STORAGE_KEY));
-  assert.equal(bootstrap({ query: "?wd_variant=form_first" }).window.__wdLandingVariant, "control");
+  assert.equal(bootstrap({ query: "?wd_variant=control" }).window.__wdLandingVariant, "form_first");
 });
 
 test("only registered campaign/adset/ad combinations receive paid team labels", () => {

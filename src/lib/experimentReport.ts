@@ -158,7 +158,7 @@ const CAVEATS = [
   "Diagnostic stage rates divide each observed stage by exposed sessions. They are not a conditional funnel. The primary visit conversion is distinct sessions with a new email divided by those exposures.",
   "A saved email does not count as a frontend milestone. Raw email counts can be higher than distinct converting sessions, so a raw-email rate is not the visit conversion.",
   "Obvious crawler and headless clients are dropped before storage and are absent here. Ordinary browser strings can still be bots. This denominator is not a count of humans and is not the historical Clarity denominator.",
-  "Assignment is 50:50 within each paid team only in expectation. A finite sample is not exactly balanced.",
+  "Assignment was 50:50 within each paid team only in expectation until the 2026-10-21 full form_first rollout; split cohorts at that deploy. A finite sample is not exactly balanced.",
   "Spend is shared by both variants after the click. This report does not attribute cost or CPA.",
   "A measurement denial or withdrawal does not remove an exposure already stored, and a later grant does not backfill one that was not.",
   "New email and verified email come only from the CRM row saved at create time. A generic accepted submit is not a new email.",
