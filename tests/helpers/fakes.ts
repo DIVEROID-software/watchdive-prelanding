@@ -14,6 +14,7 @@ import type {
   WelcomeMail,
 } from "../../src/lib/verification/resend.ts";
 import { verificationUrl } from "../../src/lib/verification/token.ts";
+import { canonicalEmail } from "../../src/lib/api/abuse.ts";
 
 export const TEST_SECRET = "test-verification-secret-at-least-32b";
 export const TEST_ORIGIN = "https://watchdive.diveroid.com";
@@ -101,6 +102,18 @@ export class FakeLeadStore implements LeadStore {
   async findByEmail(canonical: string): Promise<LeadRecord | undefined> {
     const pageId = this.byCanonical.get(canonical);
     return pageId ? this.rows.get(pageId) : undefined;
+  }
+
+  listByAddressCalls = 0;
+  /** Lets a test simulate a Notion failure on the address lookup. */
+  failListByAddress = false;
+  /** Same match as the Notion store: canonical email, or the exact address. */
+  async listByAddress(canonical: string, email: string): Promise<LeadRecord[]> {
+    this.listByAddressCalls += 1;
+    if (this.failListByAddress) throw new Error("notion down");
+    return [...this.rows.values()].filter(
+      (row) => canonicalEmail(row.email) === canonical || row.email === email,
+    );
   }
 
   async recordPhoneOptIn(pageId: string, phone: string, consent: string): Promise<void> {

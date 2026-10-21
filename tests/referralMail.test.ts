@@ -592,3 +592,149 @@ test("sender phone: the owner's number is accepted as written; junk or blank is 
     assert.equal(readSenderPhone({ WATCHDIVE_SENDER_PHONE: bad }), undefined, String(bad));
   }
 });
+
+// --- Opt-outs on ANY row of the address --------------------------------------
+
+function confirmableWithSibling(
+  sibling: Record<string, unknown>,
+  siblingEmail = "diver@example.com",
+) {
+  const env = { ...TEST_ENV, WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" };
+  const setup = confirmable(env);
+  const store = setup.deps.store as FakeLeadStore;
+  const [own] = [...store.rows.values()];
+  // An older row of the same inbox (a second signup), seeded without
+  // replacing the canonical lookup that confirmation uses.
+  store.rows.set("sibling-page", {
+    ...own!,
+    pageId: "sibling-page",
+    email: siblingEmail,
+    leadId: "",
+    status: "verified",
+    emailVerified: true,
+    ...sibling,
+  });
+  return { ...setup, store };
+}
+
+test("switch on: an opt-out marker on ANOTHER row of the same address stops the guide", async () => {
+  for (const sibling of [
+    { launchMail: "unsubscribed 2026-10-01T00:00:00.000Z" },
+    { reservationMail: "unsubscribed 2026-10-01T00:00:00.000Z" },
+    { status: "unsubscribed" },
+  ]) {
+    const { mailer, token, deps, store } = confirmableWithSibling(sibling);
+    assert.equal((await confirmVerificationService(token, deps)).status, "verified");
+    assert.equal(mailer.welcomes.length, 0, JSON.stringify(sibling));
+    assert.equal(store.markWelcomeCalls, 0, "Welcome email stays empty");
+  }
+});
+
+test("switch on: the address match is the notices' inbox key (Gmail dots/plus fold, other domains exact)", async () => {
+  // Gmail: d.iver+x@googlemail.com is the same inbox as diver@gmail.com.
+  {
+    const env = { ...TEST_ENV, WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" };
+    const setup = confirmable(env);
+    const store = setup.deps.store as FakeLeadStore;
+    const [own] = [...store.rows.values()];
+    store.rows.set(own!.pageId, { ...own!, email: "diver@gmail.com" });
+    store.rows.set("sib", {
+      ...own!,
+      pageId: "sib",
+      email: "d.iver+x@googlemail.com",
+      leadId: "",
+      launchMail: "unsubscribed 2026-10-01T00:00:00.000Z",
+    });
+    assert.equal((await confirmVerificationService(setup.token, setup.deps)).status, "verified");
+    assert.equal(setup.mailer.welcomes.length, 0, "gmail alias opt-out holds");
+  }
+  // Elsewhere a +tag is a different address for opt-outs, as in notices.ts.
+  {
+    const { mailer, token, deps } = confirmableWithSibling(
+      { launchMail: "unsubscribed 2026-10-01T00:00:00.000Z" },
+      "diver+news@example.com",
+    );
+    assert.equal((await confirmVerificationService(token, deps)).status, "verified");
+    assert.equal(mailer.welcomes.length, 1);
+  }
+});
+
+test("switch on: a clean sibling row does not block, and a failed lookup fails closed", async () => {
+  const clean = confirmableWithSibling({});
+  assert.equal((await confirmVerificationService(clean.token, clean.deps)).status, "verified");
+  assert.equal(clean.mailer.welcomes.length, 1);
+  assert.ok(clean.mailer.welcomes[0]!.statusUrl);
+  assert.equal(clean.store.listByAddressCalls, 1);
+
+  const failing = confirmableWithSibling({});
+  failing.store.failListByAddress = true;
+  assert.equal((await confirmVerificationService(failing.token, failing.deps)).status, "verified");
+  assert.equal(failing.mailer.welcomes.length, 0, "no guide without a complete opt-out check");
+  assert.equal(failing.store.markWelcomeCalls, 0);
+
+  // A store without the lookup at all: no guide either.
+  const bare = confirmableWithSibling({});
+  (bare.store as { listByAddress?: unknown }).listByAddress = undefined;
+  assert.equal((await confirmVerificationService(bare.token, bare.deps)).status, "verified");
+  assert.equal(bare.mailer.welcomes.length, 0);
+});
+
+test("switch off: the legacy welcome never consults other rows (byte-identical legacy path)", async () => {
+  const { mailer, token, deps } = confirmable(TEST_ENV);
+  const store = deps.store as FakeLeadStore;
+  const [own] = [...store.rows.values()];
+  store.rows.set("sib", {
+    ...own!,
+    pageId: "sib",
+    leadId: "",
+    launchMail: "unsubscribed 2026-10-01T00:00:00.000Z",
+  });
+  assert.equal((await confirmVerificationService(token, deps)).status, "verified");
+  assert.equal(mailer.welcomes.length, 1);
+  assert.equal(store.listByAddressCalls, 0);
+  assert.equal("statusUrl" in mailer.welcomes[0]!, false);
+});
+
+test("the Notion store lists an address by canonical email or exact title, fully paged", async () => {
+  const { createNotionLeadStore } = await import("../src/lib/verification/notionLead.ts");
+  const calls: { method: string; path: string; body: any }[] = [];
+  const pages = [
+    {
+      results: [{ id: "p1", properties: { Email: { title: [{ plain_text: "a@x.example" }] } } }],
+      has_more: true,
+      next_cursor: "c1",
+    },
+    {
+      results: [{ id: "p2", properties: { Email: { title: [{ plain_text: "a@x.example" }] } } }],
+      has_more: false,
+    },
+  ];
+  const store = createNotionLeadStore(async (method, path, body) => {
+    calls.push({ method, path, body });
+    return pages.shift() ?? {};
+  }, "db1");
+  const rows = await store.listByAddress!("a@x.example", "A@x.example");
+  assert.deepEqual(
+    rows.map((r) => r.pageId),
+    ["p1", "p2"],
+  );
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0]!.path, "databases/db1/query");
+  const or = calls[0]!.body.filter.or as Record<string, unknown>[];
+  assert.ok(or.some((c) => (c as any).property === "Canonical email"));
+  assert.ok(
+    or.some(
+      (c) =>
+        JSON.stringify(c) ===
+        JSON.stringify({ property: "Email", title: { equals: "A@x.example" } }),
+    ),
+  );
+  assert.equal(calls[1]!.body.start_cursor, "c1");
+
+  // Beyond the page bound it throws rather than return a partial list.
+  const endless = createNotionLeadStore(
+    async () => ({ results: [], has_more: true, next_cursor: "n" }),
+    "db1",
+  );
+  await assert.rejects(endless.listByAddress!("a@x.example", "a@x.example"));
+});

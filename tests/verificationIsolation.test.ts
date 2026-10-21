@@ -370,9 +370,9 @@ test("the canonical-email dual-shape hotfix is untouched and still in the path",
   assert.ok(hotfix.includes("isCanonicalEmailShapeError"));
 
   const store = read("src/lib/verification/notionLead.ts");
-  // Both the lookup and the create must go through it, or a live schema flip
-  // breaks Claim again.
-  assert.equal(store.split("withCanonicalEmailShape(() =>").length - 1, 2);
+  // The lookup, the create and the address listing (Buddy guide opt-out
+  // check) must all go through it, or a live schema flip breaks Claim again.
+  assert.equal(store.split("withCanonicalEmailShape(() =>").length - 1, 3);
 });
 
 test("the Claim form still submits through joinWaitlist with its honeypot", () => {

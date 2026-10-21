@@ -50,7 +50,7 @@ import type { TokenEnvironment } from "./token.ts";
 // locale, secret)` and `rulesUrl(origin, locale)` build the guide's links.
 import { referralSecret, rulesUrl, statusUrl } from "../referral/statusToken.ts";
 import { referralProgramEnabled } from "../referral/program.ts";
-import { rowOptedOut } from "../referral/notices.ts";
+import { optOutAddressKey, rowOptedOut } from "../referral/notices.ts";
 import {
   PRESS_SYNC_ACCEPTED,
   PRESS_SYNC_CONFIRMED,
@@ -544,9 +544,12 @@ async function scheduleWelcome(
   try {
     publicOrigin = requirePublicOrigin(env);
     if (referralProgramEnabled(env)) {
-      // The guide is promotional: a row that opted out of mail (status or an
-      // `unsubscribed` Launch/Reservation mail marker) gets no guide at all.
+      // The guide is promotional: an address that opted out of mail (status or
+      // an `unsubscribed` Launch/Reservation mail marker) on this row OR ANY
+      // other row of the same inbox gets no guide at all — the same rule the
+      // Buddy Invite notices apply (notices.ts `optedOutAddresses`).
       if (rowOptedOut(record)) return;
+      if (await addressOptedOut(record, dependencies.store)) return;
       // The guide links the signed status page. Without the referral signing
       // secret there is no page to link, so the welcome waits, exactly like a
       // missing public origin: `Welcome email` stays empty and a later
@@ -579,6 +582,22 @@ async function scheduleWelcome(
   } catch {
     // Best effort by design. The confirmation already succeeded.
   }
+}
+
+/**
+ * Whether any row of this inbox carries an opt-out. Rows are matched by the
+ * opt-out inbox key (Gmail dots/plus, googlemail), the key notices use, so
+ * the guide and the notices always agree on who opted out. Fails closed: a
+ * store that cannot list the rows means no guide (and `Welcome email` stays
+ * empty, so a later confirmation tries again).
+ */
+async function addressOptedOut(record: LeadRecord, store: LeadStore): Promise<boolean> {
+  if (!store.listByAddress) return true;
+  const key = optOutAddressKey(record.email);
+  const rows = await store.listByAddress(canonicalEmail(record.email), record.email);
+  return rows.some(
+    (row) => Boolean(row.email) && optOutAddressKey(row.email) === key && rowOptedOut(row),
+  );
 }
 
 function welcomeLocale(record: LeadRecord): Locale {

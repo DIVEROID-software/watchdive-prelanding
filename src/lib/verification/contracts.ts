@@ -421,6 +421,12 @@ export type MarkVerifiedInput = {
 
 export interface LeadStore {
   findByEmail(canonical: string, email: string): Promise<LeadRecord | undefined>;
+  /**
+   * Every row of an address (same canonical email or exact email), for the
+   * opt-out check before a promotional mail. Read-only. Throws rather than
+   * return a partial list.
+   */
+  listByAddress?(canonical: string, email: string): Promise<LeadRecord[]>;
   findByLeadId(leadId: string): Promise<LeadRecord | undefined>;
   createPending(input: CreatePendingInput): Promise<LeadRecord>;
   startAttempt(pageId: string, input: StartAttemptInput): Promise<void>;

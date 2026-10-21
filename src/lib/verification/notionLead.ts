@@ -631,6 +631,35 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
       );
     },
 
+    async listByAddress(canonical, email) {
+      // A handful of rows per address at most; more than this many pages is
+      // not a person, and a partial list could miss the opt-out, so it throws.
+      const rows: LeadRecord[] = [];
+      let cursor: string | undefined;
+      for (let page = 0; ; page++) {
+        if (page >= 3) throw new Error("Too many rows for one address");
+        const result = await withCanonicalEmailShape(() =>
+          request("POST", `databases/${databaseId}/query`, {
+            filter: {
+              or: [
+                ...canonicalEmailFilters(canonical),
+                { property: "Email", title: { equals: email } },
+              ],
+            },
+            page_size: 100,
+            ...(cursor ? { start_cursor: cursor } : {}),
+          }),
+        );
+        for (const raw of (result.results as Record<string, unknown>[] | undefined) ?? []) {
+          const row = toLeadRecord(raw);
+          if (row) rows.push(row);
+        }
+        if (!result.has_more || typeof result.next_cursor !== "string") break;
+        cursor = result.next_cursor;
+      }
+      return rows;
+    },
+
     async findByLeadId(leadId) {
       return queryOne({ property: FIELD_LEAD_ID, rich_text: { equals: leadId } });
     },
