@@ -131,8 +131,11 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // 2026-10-19: signup-state QA repair adds a non-DOM React provider and
   // replaces both forms with a completion panel only for a one-time social
   // callback acknowledgement. Fresh signup structure and allocation stay.
+  // 2026-10-22: Buddy Invite adds a client-only leaderboard section between the
+  // offer and the FAQ, a footer rules link, and the referral card in the
+  // post-verification panel. The hero and both forms are untouched.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "d657a598030611916b200f29ab31254b9fe7d2f5277bafd053b7b3f2a776e3fb");
+  assert.equal(digest, "b18f02098a4172c7d24b3518a2c2b4720be094c7a71b9865019fc5bcfe5d73ca");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -147,6 +150,7 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
     "<ReviewTicker />",
     "<Credentials />",
     "<OfferSection />",
+    "<LeaderboardSection locale={locale} />",
     "<FAQ />",
     "<Footer />",
   ];
