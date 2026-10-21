@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { ReferralRow } from "../src/lib/referral/contract.ts";
-import { excludeReason, isDisposableEmail } from "../src/lib/referral/eligibility.ts";
+import {
+  ALIAS_SERVICE_DOMAINS,
+  excludeReason,
+  isAliasServiceEmail,
+  isDisposableEmail,
+} from "../src/lib/referral/eligibility.ts";
 import {
   buildLeaderboard,
   computeLedger,
@@ -64,8 +69,76 @@ test("disposable domains match exactly and by subdomain, case-insensitively", ()
   assert.equal(isDisposableEmail("a@Foo.MAILINATOR.com"), true);
   assert.equal(isDisposableEmail("a@yopmail.fr."), true);
   assert.equal(isDisposableEmail("a@gmail.com"), false);
-  assert.equal(isDisposableEmail("a@notmailinator.com"), false);
+  assert.equal(isDisposableEmail("a@mailinator.com.reefdivers.org"), false);
   assert.equal(isDisposableEmail("not-an-email"), false);
+});
+
+test("the disposable list is the vendored snapshot, matched on every parent domain", () => {
+  // Upstream-only entries (not on the earlier hand-made list).
+  assert.equal(isDisposableEmail("a@0-mail.com"), true);
+  assert.equal(isDisposableEmail("a@0815.ru"), true);
+  assert.equal(isDisposableEmail("a@deep.sub.0815.ru"), true);
+  // Entries the hand-made list had and upstream lacks are kept.
+  assert.equal(isDisposableEmail("a@tempmail.dev"), true);
+  assert.equal(isDisposableEmail("a@spamgourmet.com"), true);
+});
+
+test("mainstream providers are never disposable", () => {
+  for (const domain of [
+    "gmail.com",
+    "googlemail.com",
+    "naver.com",
+    "daum.net",
+    "hanmail.net",
+    "kakao.com",
+    "nate.com",
+    "outlook.com",
+    "hotmail.com",
+    "live.com",
+    "yahoo.com",
+    "yahoo.co.jp",
+    "icloud.com",
+    "me.com",
+    "mac.com",
+    "qq.com",
+    "163.com",
+    "126.com",
+    "gmx.de",
+    "web.de",
+    "proton.me",
+    "protonmail.com",
+    "pm.me",
+    "fastmail.com",
+    "yandex.ru",
+    "mail.ru",
+    "docomo.ne.jp",
+    "aol.com",
+    "diveroid.com",
+  ]) {
+    assert.equal(isDisposableEmail(`diver@${domain}`), false, domain);
+  }
+});
+
+test("alias and forwarding services count: never disposable, flagged as alias", () => {
+  for (const domain of ALIAS_SERVICE_DOMAINS) {
+    assert.equal(isDisposableEmail(`x@${domain}`), false, domain);
+    assert.equal(isAliasServiceEmail(`x@${domain}`), true, domain);
+  }
+  assert.equal(isAliasServiceEmail("shop@reefer.mozmail.com"), true);
+  assert.equal(isAliasServiceEmail("shop@kim.anonaddy.com"), true);
+  assert.equal(isAliasServiceEmail("X@DUCK.COM"), true);
+  assert.equal(isAliasServiceEmail("x@gmail.com"), false);
+  assert.equal(isAliasServiceEmail("x@icloud.com"), false);
+  assert.equal(isAliasServiceEmail("x@notduck.com"), false);
+  const ref = referrer(1);
+  assert.equal(
+    excludeReason(row({ referredBy: ref.refCode, email: "a@duck.com" }), ref, OPEN),
+    null,
+  );
+  assert.equal(
+    excludeReason(row({ referredBy: ref.refCode, email: "a@33mail.com" }), ref, OPEN),
+    null,
+  );
 });
 
 test("excludeReason covers every friend-level rule", () => {
@@ -78,9 +151,12 @@ test("excludeReason covers every friend-level rule", () => {
     "self_referral",
   );
   assert.equal(excludeReason({ ...ref, referredBy: ref.refCode }, ref, OPEN), "self_referral");
-  // Legal review D7: a confirmation stands after an unsubscribe; only an
-  // unsubscribe before confirming is refused.
-  assert.equal(excludeReason(row({ referredBy: ref.refCode, status: "unsubscribed" }), ref, OPEN), null);
+  // Confirmed, then unsubscribed: still a friend (counts never drop on unsubscribe).
+  assert.equal(
+    excludeReason(row({ referredBy: ref.refCode, status: "unsubscribed" }), ref, OPEN),
+    null,
+  );
+  // Unsubscribed without ever confirming: never a friend.
   assert.equal(
     excludeReason(
       row({ referredBy: ref.refCode, status: "unsubscribed", emailVerified: false }),
@@ -88,6 +164,23 @@ test("excludeReason covers every friend-level rule", () => {
       OPEN,
     ),
     "unsubscribed",
+  );
+  assert.equal(
+    excludeReason(
+      row({ referredBy: ref.refCode, status: "unsubscribed", verifiedAt: undefined }),
+      ref,
+      OPEN,
+    ),
+    "unsubscribed",
+  );
+  // Unsubscribed and excluded for abuse still does not count.
+  assert.equal(
+    excludeReason(
+      row({ referredBy: ref.refCode, status: "unsubscribed", suspect: true }),
+      ref,
+      OPEN,
+    ),
+    "suspect",
   );
   assert.equal(
     excludeReason(
@@ -233,8 +326,9 @@ test("an ineligible referrer holds no standing; credits return when cleared", ()
   }
   // D7: an unsubscribed referrer keeps the standing they reached.
   assert.equal(
-    computeLedger([referrer(1, { status: "unsubscribed" }), ...friends], OPEN).standings.get(a.refCode)
-      ?.credited,
+    computeLedger([referrer(1, { status: "unsubscribed" }), ...friends], OPEN).standings.get(
+      a.refCode,
+    )?.credited,
     2,
   );
   const cleared = { ...a, suspect: false };
@@ -385,4 +479,95 @@ test("statusFor reports tiers, rank and early notice for the owner", () => {
     closed: false,
   });
   assert.equal(first.credited, 0);
+});
+
+test("a friend who unsubscribes after confirming keeps the referrer's count", () => {
+  const ref = referrer(1);
+  const friends = friendsOf(ref.refCode, 3, "2026-10-23T01:00:00Z");
+  const before = computeLedger([ref, ...friends], OPEN).standings.get(ref.refCode);
+  const left = friends.map((f, i) => (i === 1 ? { ...f, status: "unsubscribed" } : f));
+  const after = computeLedger([ref, ...left], OPEN).standings.get(ref.refCode);
+  assert.equal(before?.credited, 3);
+  assert.equal(after?.credited, 3);
+  assert.deepEqual(after?.reachedAt, before?.reachedAt);
+  // Abuse exclusions still remove the friend.
+  const flagged = left.map((f, i) => (i === 1 ? { ...f, suspect: true } : f));
+  assert.equal(computeLedger([ref, ...flagged], OPEN).standings.get(ref.refCode)?.credited, 2);
+});
+
+test("self-referral and duplicates use the referral identity key as well as the canonical", () => {
+  // Stored canonicals differ (as on rows written before a canonical rule
+  // existed); the identity key still sees one Gmail mailbox.
+  const ref = referrer(1, { email: "J.Doe@gmail.com", canonicalEmail: "j.doe@gmail.com" });
+  const selfGmail = row({
+    referredBy: ref.refCode,
+    email: "jdoe+buddy@googlemail.com",
+    canonicalEmail: "legacy-a",
+  });
+  assert.equal(excludeReason(selfGmail, ref, OPEN), "self_referral");
+
+  const apple = referrer(2, { email: "reef@me.com", canonicalEmail: "reef@me.com" });
+  const selfApple = row({
+    referredBy: apple.refCode,
+    email: "reef@icloud.com",
+    canonicalEmail: "reef@icloud.com",
+  });
+  assert.equal(excludeReason(selfApple, apple, OPEN), "self_referral");
+
+  // Two friends that are one Apple mailbox count once, the earlier confirmation.
+  const other = referrer(3);
+  const first = row({
+    referredBy: other.refCode,
+    email: "kim@mac.com",
+    canonicalEmail: "kim@mac.com",
+    verifiedAt: "2026-10-23T01:00:00.000Z",
+  });
+  const second = row({
+    referredBy: other.refCode,
+    email: "KIM@icloud.com",
+    canonicalEmail: "kim@icloud.com",
+    verifiedAt: "2026-10-23T02:00:00.000Z",
+  });
+  const ledger = computeLedger([other, second, first], OPEN);
+  assert.equal(ledger.standings.get(other.refCode)?.credited, 1);
+  assert.equal(ledger.excluded.duplicate, 1);
+
+  // Undocumented aliases stay distinct: Outlook +tags and Proton domains.
+  const third = referrer(4);
+  const distinct = [
+    row({ referredBy: third.refCode, email: "sea@outlook.com", canonicalEmail: "a1" }),
+    row({ referredBy: third.refCode, email: "sea+x@outlook.com", canonicalEmail: "a2" }),
+    row({ referredBy: third.refCode, email: "sea@proton.me", canonicalEmail: "a3" }),
+    row({ referredBy: third.refCode, email: "sea@pm.me", canonicalEmail: "a4" }),
+  ];
+  assert.equal(computeLedger([third, ...distinct], OPEN).standings.get(third.refCode)?.credited, 4);
+});
+
+test("the sign-up of record is the earliest confirmed row on the whole list under either key", () => {
+  // The person first joined directly (no link) as kim@mac.com, then again
+  // through a link as KIM@icloud.com: one Apple mailbox, so the linked row is
+  // a repeat even though the first row was never anyone's friend.
+  const ref = referrer(1);
+  const direct = row({
+    email: "kim@mac.com",
+    canonicalEmail: "kim@mac.com",
+    verifiedAt: "2026-10-23T01:00:00.000Z",
+  });
+  const repeat = row({
+    referredBy: ref.refCode,
+    email: "KIM@icloud.com",
+    canonicalEmail: "kim@icloud.com",
+    verifiedAt: "2026-10-23T02:00:00.000Z",
+  });
+  const ledger = computeLedger([ref, repeat, direct], OPEN);
+  assert.equal(ledger.standings.get(ref.refCode), undefined);
+  assert.equal(ledger.excluded.duplicate, 1);
+
+  // An earlier row ops ticked Duplicate is not the sign-up of record, and a
+  // friend who confirmed then unsubscribed is still the one that counts.
+  const ticked = { ...direct, duplicate: true };
+  const left = { ...repeat, status: "unsubscribed" as const };
+  const cleared = computeLedger([ref, left, ticked], OPEN);
+  assert.equal(cleared.standings.get(ref.refCode)?.credited, 1);
+  assert.equal(cleared.excluded.duplicate, 0);
 });

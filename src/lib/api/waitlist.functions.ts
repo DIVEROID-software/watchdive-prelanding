@@ -3,6 +3,12 @@ import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse";
 import {
+  REF_CODE_PATTERN,
+  createReferralCountCache,
+  loadReferralTally,
+  withRateLimitBackoff,
+} from "./referralCount";
+import {
   ATTRIBUTION_VALUE_MAX,
   FBCLID_MAX,
   readSignupCountryProbe,
@@ -15,6 +21,7 @@ import { COUNTABLE_STATUS_FILTER, createNotionRequest } from "@/lib/verification
 import { persistableExperimentContext } from "@/lib/conversionExperimentContract";
 import { conversionBlocked, WAITLIST_CLOSED_MESSAGE } from "@/lib/verification/contracts";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
+import { referralProgramEnabled } from "@/lib/referral/program";
 import { waitlistClosed } from "@/lib/waitlistProgress";
 import { COUNT_RENDER_BUDGET_MS, createCountReader } from "@/lib/waitlistCount";
 import { createNetworkGate } from "@/lib/verification/networkGate";
@@ -148,31 +155,41 @@ const NOT_SUSPECT = { property: "Suspect", checkbox: { equals: false } } as cons
 // confirmed rows plus legacy single opt-in rows, never pending or unsubscribed.
 const COUNTABLE = { and: [NOT_SUSPECT, COUNTABLE_STATUS_FILTER] } as const;
 
-// How many people signed up through a given referral code (Referred by == code).
-// Powers the "N friends joined · $N off so far" progress in the success card.
-// Suspect rows are excluded so a farmer can't inflate their own discount.
+// How many people signed up through a given referral code. Powers the
+// "N friends joined" progress in the success card. Public and
+// unauthenticated, so it never queries Notion per request (referralCount.ts):
+// a malformed code is 0 without any read; with Buddy Invite off, one cached
+// tally of countable rows (Suspect excluded, so a farmer can't inflate it)
+// answers every code; with it on, the ledger's credited count from the shared
+// leaderboard pass answers, so no surface shows a number the ledger disagrees
+// with.
+const referralCounts = createReferralCountCache(() => {
+  const dbId = process.env.NOTION_WAITLIST_DB_ID;
+  if (!dbId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
+  // Countable rows that name a referrer: the same filter as every public number.
+  return loadReferralTally(withRateLimitBackoff(createNotionRequest()), dbId, {
+    and: [{ property: "Referred by", rich_text: { is_not_empty: true } }, ...COUNTABLE.and],
+  });
+});
+
 export const getReferralCount = createServerFn({ method: "POST" })
   .validator(z.object({ refCode: z.string().max(40) }))
   .handler(async ({ data }) => {
-    const dbId = process.env.NOTION_WAITLIST_DB_ID;
     const code = sanitizeRef(data.refCode);
-    if (!dbId || !code) return { count: 0 };
-    let count = 0;
-    let cursor: string | undefined = undefined;
-    let hasMore = true;
-    while (hasMore) {
-      const res = await notionFetch(`databases/${dbId}/query`, {
-        filter: {
-          and: [{ property: "Referred by", rich_text: { equals: code } }, ...COUNTABLE.and],
-        },
-        page_size: 100,
-        ...(cursor ? { start_cursor: cursor } : {}),
-      });
-      count += res.results?.length ?? 0;
-      hasMore = Boolean(res.has_more);
-      cursor = res.next_cursor ?? undefined;
+    if (!process.env.NOTION_WAITLIST_DB_ID || !REF_CODE_PATTERN.test(code)) return { count: 0 };
+    try {
+      if (referralProgramEnabled(process.env)) {
+        const [{ referralServiceDeps }, { getReferralProgressService }] = await Promise.all([
+          import("@/lib/api/referral.functions"),
+          import("@/lib/referral/service.server"),
+        ]);
+        const progress = await getReferralProgressService(code, await referralServiceDeps());
+        return { count: progress.enabled ? progress.credited : 0 };
+      }
+      return { count: await referralCounts.count(code) };
+    } catch (error) {
+      throw sanitizeServerError("referral-count", error);
     }
-    return { count };
   });
 
 // Total signups — social proof ("N divers on the waitlist") and the "spots left"
@@ -466,11 +483,18 @@ export const pollVerification = createServerFn({ method: "POST" })
 
 /** Explicit, optional SMS preference attached to the caller's signed signup. */
 export const savePhoneOptIn = createServerFn({ method: "POST" })
-  .validator(z.object({
-    credential: z.object({ kind: z.enum(["attempt", "confirmation"]), value: z.string().max(1000) }),
-    phone: z.string().max(40), country: z.string().length(2).optional(),
-    consent: z.boolean(), locale: z.enum(SUPPORTED_LOCALES),
-  }))
+  .validator(
+    z.object({
+      credential: z.object({
+        kind: z.enum(["attempt", "confirmation"]),
+        value: z.string().max(1000),
+      }),
+      phone: z.string().max(40),
+      country: z.string().length(2).optional(),
+      consent: z.boolean(),
+      locale: z.enum(SUPPORTED_LOCALES),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
       return await savePhoneOptInService(data, serviceDependencies());
