@@ -28,6 +28,7 @@ import {
   FIELD_CONVERSION_EXPERIMENT,
 } from "../conversionExperimentContract.ts";
 import type { ReminderStore } from "./reminder.ts";
+import { FIELD_PRESS_EVENT, FIELD_PRESS_SYNC, PRESS_SYNC_HELD } from "../press/pressAttribution.server.ts";
 import type {
   CreatePendingInput,
   LeadAttribution,
@@ -216,6 +217,8 @@ function optionalColumnsMentioned(rawBody: string): string[] {
     FIELD_AUTH_VERIFICATION_PROVENANCE,
     FIELD_SIGNUP_LOCALE,
     FIELD_DUPLICATE,
+    FIELD_PRESS_EVENT,
+    FIELD_PRESS_SYNC,
     process.env.NOTION_META_FBC_PROPERTY?.trim() ?? "",
     process.env.NOTION_FBCLID_PROPERTY?.trim() ?? "",
   ].filter((name) => name.length > 0);
@@ -308,6 +311,8 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     term: readText(properties[FIELD_UTM_TERM]),
   };
   const hasUtm = Object.values(utm).some(Boolean);
+  const pressOutbox = readText(properties[FIELD_PRESS_EVENT]);
+  const pressSync = readText(properties[FIELD_PRESS_SYNC]);
 
   return {
     pageId,
@@ -340,6 +345,8 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     ...(isMetaFbc(metaFbc) ? { metaFbc } : {}),
     ...(hasUtm ? { utm } : {}),
     ...readSocialIdentity(properties),
+    ...(pressOutbox ? { pressOutbox } : {}),
+    ...(pressSync ? { pressSync } : {}),
   };
 }
 
@@ -480,6 +487,7 @@ type OptionalLeadWrite = {
   provenance: boolean;
   locale: boolean;
   subject: boolean;
+  press: boolean;
 };
 
 type LeadWriteContext = {
@@ -535,6 +543,7 @@ async function createLeadPage(
     if (options.provenance && named.has(FIELD_AUTH_VERIFICATION_PROVENANCE)) next.provenance = false;
     if (options.locale && named.has(FIELD_SIGNUP_LOCALE)) next.locale = false;
     if (options.subject && columns.subjectField && named.has(columns.subjectField)) next.subject = false;
+    if (options.press && (named.has(FIELD_PRESS_EVENT) || named.has(FIELD_PRESS_SYNC))) next.press = false;
     const dropped =
       next.experiment !== options.experiment ||
       next.fbc !== options.fbc ||
@@ -543,7 +552,8 @@ async function createLeadPage(
       next.method !== options.method ||
       next.provenance !== options.provenance ||
       next.locale !== options.locale ||
-      next.subject !== options.subject;
+      next.subject !== options.subject ||
+      next.press !== options.press;
     if (dropped) {
       if (options.experiment && !next.experiment) {
         console.error("[conversion-experiment] optional context omitted", {
@@ -553,6 +563,12 @@ async function createLeadPage(
       }
       if (options.country && !next.country) {
         console.error("[signup-country] optional columns omitted", {
+          status: error instanceof NotionRequestError ? error.status : 0,
+          code: error instanceof NotionRequestError ? error.code : "",
+        });
+      }
+      if (options.press && !next.press) {
+        console.error("[press-attribution] optional columns omitted", {
           status: error instanceof NotionRequestError ? error.status : 0,
           code: error instanceof NotionRequestError ? error.code : "",
         });
@@ -706,6 +722,7 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
         provenance: Boolean(input.authVerificationProvenance),
         locale: Boolean(input.signupLocale),
         subject: Boolean(subjectField),
+        press: Boolean(input.pressOutbox),
       };
       const create = (options: OptionalLeadWrite) => {
         const attribution = input.attribution
@@ -760,6 +777,12 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
                 : {}),
               ...(options.experiment && experimentJson
                 ? { [FIELD_CONVERSION_EXPERIMENT]: textProp(experimentJson) }
+                : {}),
+              ...(options.press && input.pressOutbox
+                ? {
+                    [FIELD_PRESS_EVENT]: textProp(input.pressOutbox),
+                    [FIELD_PRESS_SYNC]: textProp(input.pressSync ?? PRESS_SYNC_HELD),
+                  }
                 : {}),
             },
           }),

@@ -25,6 +25,7 @@ import { startPageBehavior } from "@/lib/pageBehavior";
 import { experimentBootstrap, EXPERIMENT_ENABLED } from "@/lib/conversionExperimentClient";
 import { allowsThirdPartyScripts, SUPPORT_WIDGET_SRC } from "@/lib/thirdPartyScripts";
 import { CookieChoiceBar } from "@/components/cookie-choice-bar";
+import { PRESS_REF_BOOTSTRAP } from "@/lib/pressRef";
 
 function NotFoundComponent() {
   const locale = useCurrentLocale();
@@ -144,6 +145,8 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang={locale} suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* Before every analytics bootstrap: keeps ?press_ref= and removes it from the URL. */}
+        <script dangerouslySetInnerHTML={{ __html: PRESS_REF_BOOTSTRAP }} />
         {thirdParty && EXPERIMENT_ENABLED && (
           <script dangerouslySetInnerHTML={{ __html: experimentBootstrap(true) }} />
         )}

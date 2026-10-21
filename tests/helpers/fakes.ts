@@ -88,6 +88,8 @@ export class FakeLeadStore implements LeadStore {
       ...(record.signupLocale ? { signupLocale: record.signupLocale } : {}),
       ...(record.signedUpAt ? { signedUpAt: record.signedUpAt } : {}),
       ...(record.duplicate ? { duplicate: true } : {}),
+      ...(record.pressOutbox ? { pressOutbox: record.pressOutbox } : {}),
+      ...(record.pressSync ? { pressSync: record.pressSync } : {}),
     };
     this.rows.set(row.pageId, row);
     this.byCanonical.set(record.canonical, row.pageId);
@@ -133,6 +135,8 @@ export class FakeLeadStore implements LeadStore {
             signupCountryObservedAt: input.signupCountry.countryObservedAt,
           }
         : {}),
+      ...(input.pressOutbox ? { pressOutbox: input.pressOutbox } : {}),
+      ...(input.pressSync ? { pressSync: input.pressSync } : {}),
       ...(input.signupMethod ? { signupMethod: input.signupMethod } : {}),
       ...(input.googleSubject ? { googleSubject: input.googleSubject } : {}),
       ...(input.appleSubject ? { appleSubject: input.appleSubject } : {}),

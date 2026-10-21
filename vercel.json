@@ -1,4 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": []
+  "crons": [],
+  "buildCommand": "node --experimental-strip-types scripts/press-production-build.ts"
 }

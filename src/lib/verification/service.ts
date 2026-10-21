@@ -44,6 +44,17 @@ import { canonicalEmail } from "../api/abuse.ts";
 import { DEFAULT_LOCALE, isLocale, parseLocalePath, type Locale } from "../i18n/locale.ts";
 import type { TokenEnvironment } from "./token.ts";
 import {
+  PRESS_SYNC_ACCEPTED,
+  PRESS_SYNC_CONFIRMED,
+  PRESS_SYNC_HELD,
+  PRESS_SYNC_IGNORED,
+  PRESS_SYNC_INVALID,
+  PRESS_SYNC_PENDING,
+  pressOutboxFor,
+  type PressEnvironment,
+  type PressStage,
+} from "../press/pressAttribution.server.ts";
+import {
   createVerificationToken,
   deterministicMetaEventId,
   deterministicSubmitEventId,
@@ -142,6 +153,8 @@ export type RequestVerificationInput = {
   signupLocale?: string;
   /** Social creates fail closed when the provider subject column is missing. */
   requireProviderSubject?: boolean;
+  /** Well-formed press link reference (`?press_ref=`), kept on a new row only. */
+  pressRef?: string;
 };
 
 export type ServiceDependencies = {
@@ -169,7 +182,58 @@ export type ServiceDependencies = {
    * but the fixed failure class into an alert. Never allowed to fail a submit.
    */
   onDeliveryFailure?: (error: unknown) => Promise<void> | void;
+  /**
+   * Reports a completed press-attributed signup to the press tracker
+   * (pressAttribution.server.ts). Absent = no live report; the row still keeps
+   * the reference and the replay sends what is owed. Must not throw.
+   */
+  reportPress?: (
+    stage: PressStage,
+    row: { pageId: string; pressOutbox?: string; occurredAt: string },
+  ) => Promise<unknown>;
 };
+
+/** Longest a live press report may hold a response; the replay covers the rest. */
+const PRESS_REPORT_WAIT_MS = 1500;
+
+/**
+ * The press reference a brand-new row keeps. Held, not reported: a submitted
+ * form only arms a verification attempt and is not a signup.
+ */
+function pressOutboxField(
+  input: RequestVerificationInput,
+  signedUpAt: string,
+  flagged: boolean,
+  env: unknown,
+): { pressOutbox?: string; pressSync?: string } {
+  const pressOutbox = pressOutboxFor(
+    { pressRef: input.pressRef, canonical: input.canonical, signedUpAt, flagged },
+    env as PressEnvironment,
+  );
+  return pressOutbox ? { pressOutbox, pressSync: PRESS_SYNC_HELD } : {};
+}
+
+function pressOwed(stage: PressStage, state: string | undefined): boolean {
+  if (stage === "accepted") return !state || state === PRESS_SYNC_HELD || state === PRESS_SYNC_PENDING;
+  return state !== PRESS_SYNC_CONFIRMED && state !== PRESS_SYNC_IGNORED && state !== PRESS_SYNC_INVALID;
+}
+
+/**
+ * Live report for a row that just became a completed signup. Never throws and
+ * waits at most PRESS_REPORT_WAIT_MS; what does not finish is replayed.
+ */
+export async function reportPressNow(
+  dependencies: ServiceDependencies,
+  stage: PressStage,
+  row: Pick<LeadRecord, "pageId" | "pressOutbox" | "pressSync">,
+  now: Date,
+): Promise<void> {
+  if (!row.pressOutbox || !dependencies.reportPress || !pressOwed(stage, row.pressSync)) return;
+  const report = dependencies
+    .reportPress(stage, { pageId: row.pageId, pressOutbox: row.pressOutbox, occurredAt: now.toISOString() })
+    .catch(() => undefined);
+  await Promise.race([report, (dependencies.sleep ?? defaultSleep)(PRESS_REPORT_WAIT_MS)]);
+}
 
 function newSignupCountry(
   input: RequestVerificationInput,
@@ -355,6 +419,7 @@ export async function requestVerificationService(
         // still open its one submit Lead. Empty is only for pre-release rows.
         measurementState: MEASUREMENT_CONSENT_WITHHELD,
         ...newRowIdentity(input),
+        ...pressOutboxField(input, now.toISOString(), true, env),
       });
     }
     return floor(pendingResponse(decoyHandle()));
@@ -387,6 +452,7 @@ export async function requestVerificationService(
         ? MEASUREMENT_CONSENT_GRANTED
         : MEASUREMENT_CONSENT_WITHHELD,
       ...newRowIdentity(input),
+      ...pressOutboxField(input, now.toISOString(), input.suspect, env),
     });
     // The server leg of the browser's submit Lead, same id, through the row
     // gate (a No thanks may already have landed). Never fails the signup.
@@ -544,6 +610,7 @@ export async function completeSocialVerification(
     now,
     welcomeLocale(fresh),
   );
+  await reportPressNow(dependencies, "confirmed", fresh, now);
   return "verified";
 }
 
@@ -703,6 +770,8 @@ export async function confirmVerificationService(
     secret,
   );
   await scheduleWelcome(record, dependencies, now, parsed.locale);
+  // First confirmation: the signup is complete and its address verified.
+  await reportPressNow(dependencies, "confirmed", record, now);
 
   return {
     ok: true,

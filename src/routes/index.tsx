@@ -38,6 +38,7 @@ import {
   type MeasurementChoiceDetail,
 } from "@/components/measurement-ask";
 import { rememberSignupHandle } from "@/lib/signupHandles";
+import { getPressRef } from "@/lib/pressRef";
 import { withdrawEverySignup } from "@/lib/signupHandleWithdrawal";
 import { initGoogleTag } from "@/lib/googleTag";
 import { initClarity } from "@/lib/clarity";
@@ -1046,6 +1047,8 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         // First touch, not this click: the URL here is whatever the visitor
         // last navigated to, which for a scrolled page is nothing at all.
         attribution: getAttribution(),
+        // Opaque press link reference; kept on the row, reported only once the signup completes.
+        pressRef: getPressRef(),
         honeypot: hp,
         measurementConsent: hasMetaMeasurementConsent(),
         experiment: getConversionExperiment(),

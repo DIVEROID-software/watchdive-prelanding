@@ -6,6 +6,7 @@ import { socialAckCookie } from "../socialAuthAcknowledgement.ts";
 import { createNetworkGate, type NetworkGate } from "../verification/networkGate.ts";
 import { firstIp, isHeadlessUA } from "../api/abuse.ts";
 import { readSignupCountryProbe, sanitizeSignupAttribution, toLeadAttribution } from "../attribution.ts";
+import { sanitizePressRef } from "../press/pressAttribution.server.ts";
 import { experimentContextSchema } from "../conversionExperimentContract.ts";
 import { homePath, isLocale, type Locale } from "../i18n/locale.ts";
 import type { ServiceDependencies } from "../verification/service.ts";
@@ -177,6 +178,8 @@ export async function handleSocialStart(
       : "";
   const fbp = measurementConsent && typeof body.fbp === "string" && META_COOKIE.test(body.fbp) ? body.fbp : undefined;
   const fbc = measurementConsent && typeof body.fbc === "string" && META_COOKIE.test(body.fbc) ? body.fbc : undefined;
+  // Survives the provider round trip inside the signed state; malformed = dropped.
+  const pressRef = sanitizePressRef(body.pressRef);
   const now = (dependencies.now ?? (() => new Date()))();
   const state = newSocialState(
     {
@@ -197,6 +200,7 @@ export async function handleSocialStart(
       ...(fbp ? { fbp } : {}),
       ...(fbc ? { fbc } : {}),
       ...(referredBy ? { referredBy } : {}),
+      ...(pressRef ? { pressRef } : {}),
     },
     now.getTime(),
   );

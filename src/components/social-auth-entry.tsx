@@ -3,6 +3,7 @@ import { hasSocialAcknowledgement, socialAckCookie } from "@/lib/socialAuthAckno
 
 import { SocialSignupButtons, type SocialProvider } from "@/components/SocialSignupButtons";
 import { getAttribution } from "@/lib/attribution";
+import { getPressRef } from "@/lib/pressRef";
 import { getConversionExperiment } from "@/lib/conversionExperimentClient";
 import type { Locale } from "@/lib/i18n/locale";
 import { getMetaCookies, hasMetaMeasurementConsent } from "@/lib/metaPixel";
@@ -58,6 +59,7 @@ export function SocialAuthEntry({
           attribution,
           measurementConsent: hasMetaMeasurementConsent(),
           experiment: getConversionExperiment(),
+          pressRef: getPressRef(),
           ...(referredBy ? { referredBy } : {}),
           ...cookies,
         }),

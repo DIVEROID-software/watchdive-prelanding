@@ -245,6 +245,9 @@ export type LeadRecord = {
   /** `Signed up` instant, used only to pick the earliest of two raced pages. */
   signedUpAt?: string;
   duplicate?: boolean;
+  /** Raw `Press event` / `Press sync` cells; absent unless the row came through a press link. */
+  pressOutbox?: string;
+  pressSync?: string;
 };
 
 /**
@@ -364,6 +367,12 @@ export type CreatePendingInput = {
    * Email creates leave this unset so a missing `Signup method` column is dropped.
    */
   requireProviderSubject?: boolean;
+  /**
+   * Press link reference kept on a new row (pressAttribution.server.ts): the
+   * `Press event` cell and the initial `Press sync` state. Optional columns.
+   */
+  pressOutbox?: string;
+  pressSync?: string;
 };
 
 /** Written when a new attempt is minted — this is what kills the previous link. */

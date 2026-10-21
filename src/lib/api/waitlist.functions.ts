@@ -10,6 +10,7 @@ import {
   toLeadAttribution,
 } from "@/lib/attribution";
 import { createServiceDependencies, sanitizeServerError } from "@/lib/verification/deps.server";
+import { sanitizePressRef } from "@/lib/press/pressAttribution.server";
 import { COUNTABLE_STATUS_FILTER, createNotionRequest } from "@/lib/verification/notionLead";
 import { persistableExperimentContext } from "@/lib/conversionExperimentContract";
 import { conversionBlocked, WAITLIST_CLOSED_MESSAGE } from "@/lib/verification/contracts";
@@ -303,6 +304,9 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       // Same-session experiment context. A bad object is ignored below so it
       // cannot reject the signup or change this response.
       experiment: z.unknown().optional(),
+      // Press link reference (?press_ref=). Loose on purpose: a malformed value
+      // is dropped below rather than rejecting the signup.
+      pressRef: z.string().max(100).optional(),
     }),
   )
   .handler(async ({ data }) => {
@@ -385,6 +389,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
             ? { submitEventId: data.submitEventId }
             : {}),
           locale: data.locale,
+          ...(sanitizePressRef(data.pressRef) ? { pressRef: sanitizePressRef(data.pressRef) } : {}),
           networkSendBlocked: verdict.blocked,
           // New consented rows only. The service drops it again for repeats,
           // suspect rows, and blocked sends. The response stays generic.

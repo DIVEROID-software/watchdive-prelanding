@@ -5,6 +5,7 @@
 import { createBehaviorNotion } from "../api/behaviorNotion.ts";
 import { checkCronAuthorization } from "./cronAuth.ts";
 import { createNotionReminderStore, createNotionRequest } from "./notionLead.ts";
+import { replayPressOutbox } from "../press/pressReplay.server.ts";
 import { runVerificationReminders } from "./reminder.ts";
 import { createResendMailer } from "./resend.ts";
 
@@ -49,8 +50,27 @@ export async function handleVerificationReminderCron(request: Request): Promise<
 
   // Counts only — the same object is safe for the log, Slack and the response.
   console.log("[watchdive] verification_reminder_run", result);
+  if (!dryRun) await replayPressAttribution(databaseId);
   if (maintenance) await purgeExpiredBehavior();
   return json(200, { ok: !result.aborted, policy: "wd-verification-reminder-24h-v1", ...result });
+}
+
+/**
+ * Press attribution replay rides the same tick. It is off unless
+ * PRESS_ATTRIBUTION_ENABLED=1, bounded in rows and time, and can never change
+ * the reminder result: anything thrown is reduced to one line.
+ */
+export async function replayPressAttribution(
+  databaseId: string,
+  replay: typeof replayPressOutbox = replayPressOutbox,
+  log: (line: string) => void = (line) => console.log(line),
+): Promise<void> {
+  try {
+    const outcome = await replay({ request: createNotionRequest(), databaseId, maxRows: 60, budgetMs: 15_000 });
+    if (!outcome.skipped) log(`[press-attribution] replay ${JSON.stringify(outcome)}`);
+  } catch (error) {
+    log(`[press-attribution] replay failed — unexpected ${error instanceof Error ? error.name : "error"}`);
+  }
 }
 
 /**

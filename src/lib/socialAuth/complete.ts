@@ -18,10 +18,12 @@ import {
 } from "../verification/contracts.ts";
 import {
   completeSocialVerification,
+  reportPressNow,
   requestVerificationService,
   sendSocialVerificationMail,
   type ServiceDependencies,
 } from "../verification/service.ts";
+import { PRESS_SYNC_PENDING, pressOutboxFor } from "../press/pressAttribution.server.ts";
 import { newLeadId } from "../verification/token.ts";
 import { SocialAuthSchemaError } from "../verification/notionLead.ts";
 import { classifyProviderClaims, isDocumentedRelayDomain, validSubject, type ProviderClaims } from "./claims.ts";
@@ -217,6 +219,8 @@ export async function completeSocialIdentity(input: {
           authVerificationProvenance: identity.provenance,
           signupLocale: input.bound.locale,
           requireProviderSubject: true,
+          // Held on the row until the mailed link verifies the address.
+          ...(input.bound.pressRef ? { pressRef: input.bound.pressRef } : {}),
         },
         input.dependencies,
       );
@@ -252,12 +256,19 @@ export async function completeSocialIdentity(input: {
       authVerificationProvenance: identity.provenance,
       signupLocale: input.bound.locale,
       requireProviderSubject: true,
+      ...socialPressOutbox(input.bound, canonical, input.now),
     });
     return settleCreated(created, identity.provider, identity.sub, authoritative, input);
   } catch (error) {
     if (error instanceof SocialAuthSchemaError) return "error";
     return "error";
   }
+}
+
+/** A social lead write from a press link owes an "accepted" report (CONTRACT §3). */
+function socialPressOutbox(bound: SocialState, canonical: string, now: Date): { pressOutbox?: string; pressSync?: string } {
+  const pressOutbox = pressOutboxFor({ pressRef: bound.pressRef, canonical, signedUpAt: now.toISOString(), flagged: false });
+  return pressOutbox ? { pressOutbox, pressSync: PRESS_SYNC_PENDING } : {};
 }
 
 function conversionContext(bound: SocialState): { fbp?: string; fbc?: string } {
@@ -324,7 +335,11 @@ async function settleCreated(
     await store.markDuplicate?.(created.pageId);
     return "error";
   }
-  if (!verify) return "pending";
+  if (!verify) {
+    // The lead is written without a verified address: a completed signup, not a confirmed one.
+    await reportPressNow(input.dependencies, "accepted", created, input.now);
+    return "pending";
+  }
   const fresh = await store.reread(created.pageId);
   if (!fresh || fresh.duplicate || fresh.status === "unsubscribed") return "error";
   if (alreadyVerified(fresh)) return "confirmed";

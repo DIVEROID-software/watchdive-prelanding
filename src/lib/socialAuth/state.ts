@@ -34,6 +34,8 @@ export type SocialState = {
   fbp?: string;
   fbc?: string;
   referredBy?: string;
+  /** Press link reference (pressAttribution.server.ts); opaque, never a person. */
+  pressRef?: string;
   exp: number;
   jti: string;
 };
@@ -107,6 +109,9 @@ export function readSocialState(
   if (country.header !== null && typeof country.header !== "string") return undefined;
   if (!row.attribution || typeof row.attribution !== "object") return undefined;
   if (row.referredBy !== undefined && (typeof row.referredBy !== "string" || !/^[a-z0-9]{1,8}$/.test(row.referredBy))) {
+    return undefined;
+  }
+  if (row.pressRef !== undefined && (typeof row.pressRef !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(row.pressRef))) {
     return undefined;
   }
   return row as SocialState;

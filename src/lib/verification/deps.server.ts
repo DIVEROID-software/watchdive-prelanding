@@ -10,6 +10,7 @@ import {
 import type { PollResponse } from "./contracts.ts";
 import { createDeliveryAlerter, createSlackPoster } from "./deliveryAlert.ts";
 import { createNotionLeadStore, createNotionRequest } from "./notionLead.ts";
+import { reportPressStage } from "../press/pressAttribution.server.ts";
 import { createPollGate } from "./pollGate.ts";
 import { createResendMailer } from "./resend.ts";
 import type { ServiceDependencies } from "./service.ts";
@@ -37,9 +38,12 @@ export function createServiceDependencies(
   };
   const databaseId = process.env.NOTION_WAITLIST_DB_ID;
   if (!databaseId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
+  const notionRequest = createNotionRequest();
   return {
-    store: createNotionLeadStore(createNotionRequest(), databaseId),
+    store: createNotionLeadStore(notionRequest, databaseId),
     mailer: createResendMailer(),
+    // Completed press-attributed signups (pressAttribution.server.ts). Off unless configured.
+    reportPress: (stage, row) => reportPressStage(stage, row, notionRequest),
     pollGate,
     ...(request.gpc ? { gpc: true as const } : {}),
     onDeliveryFailure: (error) => deliveryAlerter.record(error),
