@@ -218,24 +218,55 @@ test("announce idempotency key", () => {
   assert.notEqual(announceKey(arow(), true), announceKey(arow()));
 });
 
-test("announce render escapes every value", () => {
+const PHONE = "+82 10-0000-0000";
+const UNSUB = `https://x.test/unsubscribe/u1.${LEAD}.ko.${"A".repeat(43)}`;
+const LINKS = {
+  share: "https://x.test/r/abcd1234",
+  status: "https://x.test/buddy/t",
+  rules: "https://x.test/buddy-rules",
+  unsubscribe: UNSUB,
+};
+
+test("announce render is the welcome guide and escapes every value", async () => {
+  const { buddyGuideBody } = await import("../src/lib/verification/resend.ts");
   const mail = renderAnnouncement(
     "en",
-    { share: "https://x.test/r/abcd1234", status: "https://x.test/buddy/t", rules: "https://x.test/buddy-rules" },
-    { price: "<b>$149</b>", seats: 100, stock: 30, winners: 3, hours: 1 },
+    { ...LINKS, status: 'https://x.test/buddy/t"><script>x</script>' },
+    { env: {} },
   );
-  assert.equal(mail.html.includes("<b>$149</b>"), false);
-  assert.ok(mail.html.includes("&lt;b&gt;$149"));
+  assert.equal(mail.html.includes("<script>"), false);
+  assert.ok(mail.html.includes("&lt;script&gt;"));
+  // Single source: byte-identical to the welcome-guide renderer.
+  const guide = buddyGuideBody(
+    { shareUrl: LINKS.share, statusUrl: LINKS.status, rulesUrl: LINKS.rules },
+    "fr",
+    { unsubscribeUrl: UNSUB, korean: false },
+  );
+  const announce = renderAnnouncement("fr", LINKS, { env: {} });
+  assert.equal(announce.html, guide.html);
+  assert.equal(announce.text, guide.text);
+  assert.equal(announce.subject, guide.subject);
+  assert.equal(announce.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
+  assert.ok(announce.headers["List-Unsubscribe"].startsWith(`<${UNSUB}>`));
   assert.equal(maskEmail("diver@example.com"), "d***@example.com");
+});
+
+test("announce render: Korean rules for ko or KR, refused without the sender phone", () => {
+  assert.throws(() => renderAnnouncement("ko", LINKS, { env: {} }), /WATCHDIVE_SENDER_PHONE/);
+  assert.throws(() => renderAnnouncement("en", LINKS, { signupCountry: "KR", env: {} }), /WATCHDIVE_SENDER_PHONE/);
+  const ko = renderAnnouncement("ko", LINKS, { env: { WATCHDIVE_SENDER_PHONE: PHONE } });
+  assert.ok(ko.subject.startsWith("(광고) "));
+  assert.ok(ko.text.includes(`보내는 곳: DIVEROID LTD · help@diveroid.com · ${PHONE} · `));
+  assert.ok(ko.html.includes(`href="${UNSUB}"`));
+  assert.throws(() => renderAnnouncement("en", { ...LINKS, unsubscribe: undefined }, { env: {} }), /https unsubscribe/);
 });
 
 async function setup(rows: AnnounceRow[], env: Record<string, string | undefined>) {
   const sent: AnnounceMessage[] = [];
   const dir = await mkdtemp(join(tmpdir(), "refann-"));
   const deps: AnnounceDeps = {
-    rows, env,
-    values: () => ({ price: "$149", seats: 100, stock: 30, winners: 3, hours: 1 }),
-    links: (r) => ({ share: `https://x.test/r/${r.refCode}`, status: "https://x.test/buddy/t", rules: "https://x.test/buddy-rules" }),
+    rows, env: { WATCHDIVE_SENDER_PHONE: PHONE, ...env },
+    links: (r) => ({ ...LINKS, share: `https://x.test/r/${r.refCode}` }),
     send: async (m) => void sent.push(m),
     sleep: async () => {},
   };
@@ -243,7 +274,7 @@ async function setup(rows: AnnounceRow[], env: Record<string, string | undefined
 }
 
 test("announce: dry run sends and writes nothing, sample address is masked", async () => {
-  const { sent, dir, deps } = await setup([arow(), arow({ pageId: "p2", leadId: "", email: "late@example.com", verifiedAt: "2026-11-05T00:00:00Z" })], {});
+  const { sent, dir, deps } = await setup([arow(), arow({ pageId: "p2", leadId: "22222222-2222-4222-8222-222222222222", email: "late@example.com", verifiedAt: "2026-11-05T00:00:00Z" })], {});
   const result = await runAnnounce({ apply: false, releasedAt: RELEASE, receiptDir: dir }, deps);
   assert.equal(sent.length, 0);
   assert.equal(result.eligible, 1);
@@ -262,7 +293,7 @@ test("announce: --apply is refused without the switch or the confirm flag", asyn
 });
 
 test("announce: staged batches resume without duplicates; receipts hold no address", async () => {
-  const rows = ["a", "b", "c"].map((id, i) => arow({ pageId: id, leadId: "", email: `${id}@example.com`, refCode: `abcd123${i}` }));
+  const rows = ["a", "b", "c"].map((id, i) => arow({ pageId: id, leadId: `3333333${i}-3333-4333-8333-333333333333`, email: `${id}@example.com`, refCode: `abcd123${i}` }));
   const { sent, dir, deps } = await setup(rows, { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" });
   const opts = { apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: dir };
   const first = await runAnnounce({ ...opts, limit: 1 }, deps);
@@ -308,4 +339,43 @@ test("announce: a crash after intent holds the recipient instead of resending", 
   const result = await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: dir }, deps);
   assert.equal(result.heldUnresolved, 1);
   assert.equal(sent.length, 0);
+});
+
+test("announce: rows opted out by a marker, or sharing an opted-out inbox, are skipped", async () => {
+  const rows = [
+    arow({ pageId: "a", email: "one@example.com", launchMail: "unsubscribed 2026-10-01T00:00:00Z" }),
+    arow({ pageId: "b", email: "two@example.com", reservationMail: "unsubscribed 2026-10-01T00:00:00Z" }),
+    // Same Gmail inbox as an opted-out legacy row.
+    arow({ pageId: "c", email: "Three.X+promo@gmail.com" }),
+    arow({ pageId: "d", email: "threex@googlemail.com", status: "unsubscribed" }),
+    arow({ pageId: "e", email: "four@example.com", leadId: "" }),
+    arow({ pageId: "f", email: "ok@example.com" }),
+  ];
+  const { sent, dir, deps } = await setup(rows, { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" });
+  const result = await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: dir }, deps);
+  assert.deepEqual(sent.map((m) => m.to), ["ok@example.com"]);
+  assert.equal(result.skipped.unsubscribed, 3);
+  assert.equal(result.skipped.unsubscribed_address, 1);
+  assert.equal(result.skipped.no_opt_out, 1);
+  assert.equal(sent[0]!.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
+});
+
+test("announce: a Korean recipient without WATCHDIVE_SENDER_PHONE aborts the whole run before any send", async () => {
+  const rows = [arow({ pageId: "en", email: "en@example.com", signupLocale: "en" }), arow()];
+  const { sent, dir, deps } = await setup(rows, { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" });
+  const noPhone = { ...deps, env: { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" } };
+  const opts = { apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: dir };
+  const refused = await runAnnounce(opts, noPhone);
+  assert.equal(refused.aborted, "sender_phone_missing");
+  assert.equal(refused.senderPhoneMissing, 1);
+  assert.equal(sent.length, 0);
+  await assert.rejects(stat(join(dir, `${REFERRAL_PROGRAM_ID}-announce.jsonl`)));
+  // Dry run reports it and still samples the renderable English row.
+  const dry = await runAnnounce({ ...opts, apply: false }, noPhone);
+  assert.equal(dry.senderPhoneMissing, 1);
+  assert.equal(dry.sample?.locale, "en");
+  // With the phone set both go out; the ko one carries the prefix.
+  const ok = await runAnnounce(opts, deps);
+  assert.equal(ok.sent, 2);
+  assert.ok(sent.find((m) => m.to === "diver@example.com")!.subject.startsWith("(광고) "));
 });
