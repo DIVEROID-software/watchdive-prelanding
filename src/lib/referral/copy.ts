@@ -4,7 +4,10 @@
 //
 // Placeholders: {count} {remaining} {tier} {hours} {price} {seats} {stock}
 // {winners} {cap} {noticeDays} {min} {max} {hoursFirst} {hoursBuddy} {nickname}
-// {time} {reward} {closeDate}
+// {time} {reward} {lightValue} {prizeValue} {ageKr} {ageOther} {longStop}
+// {deliveryBy} {taxFree} {taxRate} — {longStop} and {deliveryBy} arrive already
+// written in the locale's own date form (values.ts), so each sentence around
+// them is phrased for that form.
 //
 // ko and en are the reviewed source; the other seven locales are native edits
 // of them (tests/referralCopy.test.ts checks keys, placeholders and claim words).
@@ -95,6 +98,12 @@ export type ReferralCopy = {
   rules: {
     title: string;
     updated: string;
+    /**
+     * The words in the "Leaderboard and privacy" section that name the privacy
+     * policy, exactly as they appear there; the rules page links them to the
+     * policy's Buddy Invite section (`#buddy-invite`).
+     */
+    privacyLink: string;
     sections: { heading: string; paragraphs: string[] }[];
   };
 };
@@ -159,7 +168,8 @@ const en: ReferralCopy = {
     lightGone: "All {stock} underwater lights have been claimed.",
     shareTitle: "Your invite link",
     nicknameLabel: "Nickname for the leaderboard",
-    nicknameHelp: "{min}–{max} characters. No email addresses, phone numbers or links.",
+    nicknameHelp:
+      "{min}–{max} characters: letters, numbers, spaces, dots, hyphens or underscores. No email addresses, phone numbers, links or names that could pass for WatchDive staff.",
     nicknameHiddenNote: "This nickname was hidden by our team. Please choose another.",
     leaderboardToggle: "Show my nickname on the top {winners} leaderboard",
     noticesToggle: "Email me when a friend joins",
@@ -173,7 +183,8 @@ const en: ReferralCopy = {
       contact_info: "A nickname cannot contain an email address or phone number.",
       link: "A nickname cannot contain a link.",
       reserved: "Please choose a different nickname.",
-      invalid_chars: "Use letters, numbers, spaces, dots, hyphens or underscores.",
+      invalid_chars:
+        "Use only letters, numbers, spaces, dots, hyphens or underscores, and don’t mix Latin with Cyrillic or Greek letters.",
       failed: "Could not save. Please try again.",
     },
   },
@@ -200,6 +211,7 @@ const en: ReferralCopy = {
   rules: {
     title: "Buddy Invite official rules",
     updated: "Last updated: 22 October 2026",
+    privacyLink: "privacy policy",
     sections: [
       {
         heading: "Organizer",
@@ -216,7 +228,7 @@ const en: ReferralCopy = {
       {
         heading: "Period",
         paragraphs: [
-          "The program starts on 22 October 2026 and closes immediately before the WatchDive Kickstarter campaign goes live, and at {longStop} at the latest. The campaign is planned for December 2026. We will announce the exact closing time on this page and by email at least {noticeDays} days in advance.",
+          "The program starts on 22 October 2026 and closes immediately before the WatchDive Kickstarter campaign goes live, and no later than {longStop}. The campaign is planned for December 2026. We will announce the exact closing time on this page and by email at least {noticeDays} days in advance.",
         ],
       },
       {
@@ -229,9 +241,9 @@ const en: ReferralCopy = {
       {
         heading: "What counts",
         paragraphs: [
-          "Only friends who confirm their email count. Your own addresses, repeat sign-ups by the same person, disposable email addresses and sign-ups flagged as abusive do not count.",
-          "A friend counts for the invite link they used when they joined the waitlist. Friends who joined through your link and confirmed their email before the program started on 22 October 2026 also count.",
-          "At most {cap} friends are counted for one person per day (Korea Standard Time). Friends over that limit are not counted, and they do not carry over to a later day. Friends who confirm after the closing time do not count.",
+          "Only friends who confirm their email count, and each person counts once. A repeat sign-up by the same person does not count again, including the same mailbox written another way (for example a Gmail address with dots or a +tag, or the same name at icloud.com, me.com and mac.com). Your own address never counts for you, and inviting yourself with another address breaks the fair play rules. Addresses from known disposable email services and sign-ups flagged as abusive do not count either.",
+          "A friend counts for the invite link they used when they first joined the waitlist. Joining again through another link does not move them to another inviter or count them twice. Friends who joined through your link and confirmed their email before the program started on 22 October 2026 also count.",
+          "At most {cap} friends are counted for one person per day, by the day each friend confirms (Korea Standard Time). Friends over that limit are not counted, and they do not carry over to a later day. Friends who confirm after the closing time do not count.",
           "Counts are frozen at the closing time. A counted friend who later unsubscribes from WatchDive emails still counts. A friend who asks us to delete their data, or whom we remove in review, stops counting.",
           "Once you reach a tier and we tell you, you keep it unless our review finds that the friends who got you there broke these rules. If you unsubscribe from WatchDive emails yourself, you keep the rewards you have reached, but we can no longer send you the early launch email or notices.",
         ],
@@ -269,14 +281,14 @@ const en: ReferralCopy = {
       {
         heading: "Delivery, shipping and taxes",
         paragraphs: [
-          "Recipients pay shipping and any import duties or taxes. We ship only to countries the WatchDive Kickstarter campaign ships to. Lights are sent after review, and all physical rewards are sent before March 2027.",
+          "Recipients pay shipping and any import duties or taxes. We ship only to countries the WatchDive Kickstarter campaign ships to. Lights are sent after review, and all physical rewards are sent before {deliveryBy}.",
           "For winners who live in South Korea, Korean law requires the payer to withhold {taxRate}% income tax (other income tax plus local income tax) on a prize whose taxable value is over {taxFree}. This applies to both the underwater light (worth about {lightValue}) and the WatchDive. Before we ship, we tell you the amount and ask you to pay it to us, and we report and pay it to the tax office. For this we ask Korean winners for their legal name, resident registration number and address, used only for the tax report and kept only as long as tax law requires.",
         ],
       },
       {
         heading: "Leaderboard and privacy",
         paragraphs: [
-          "The leaderboard shows only a nickname you set and choose to show. Your email address is never shown. People who do not choose to show a nickname appear as “Private diver”. We may hide a nickname that is offensive or impersonates someone.",
+          "The leaderboard shows only a nickname you set and choose to show. Your email address is never shown. People who do not choose to show a nickname appear as “Private diver”. A nickname has {min} to {max} characters: letters, numbers, spaces, dots, hyphens and underscores, without mixing Latin with Cyrillic or Greek letters. It cannot contain an email address, phone number or link, or look like a name of WatchDive, Kickstarter or their staff (such as “admin” or “official”). We may hide a nickname that is offensive or impersonates someone. The leaderboard and the counts on your invite page are updated every few minutes, so a new friend can take a few minutes to appear.",
           "We never tell you which friends joined, only how many. See our privacy policy for how we handle waitlist data.",
         ],
       },
@@ -350,7 +362,8 @@ const ko: ReferralCopy = {
     lightGone: "수중 라이트 {stock}개가 모두 소진되었습니다.",
     shareTitle: "내 초대 링크",
     nicknameLabel: "랭킹에 표시할 닉네임",
-    nicknameHelp: "{min}~{max}자. 이메일 주소, 전화번호, 링크는 쓸 수 없어요.",
+    nicknameHelp:
+      "{min}~{max}자, 글자·숫자·공백·점(.)·하이픈(-)·밑줄(_)만 쓸 수 있어요. 이메일 주소, 전화번호, 링크, WatchDive 운영진으로 오해될 수 있는 이름은 쓸 수 없어요.",
     nicknameHiddenNote: "운영팀이 이 닉네임을 숨겼어요. 다른 닉네임을 정해 주세요.",
     leaderboardToggle: "랭킹 Top {winners}에 내 닉네임 표시하기",
     noticesToggle: "친구가 참여하면 이메일로 알림 받기",
@@ -364,7 +377,8 @@ const ko: ReferralCopy = {
       contact_info: "닉네임에 이메일 주소나 전화번호를 넣을 수 없어요.",
       link: "닉네임에 링크를 넣을 수 없어요.",
       reserved: "다른 닉네임을 정해 주세요.",
-      invalid_chars: "글자, 숫자, 공백, 점(.), 하이픈(-), 밑줄(_)만 쓸 수 있어요.",
+      invalid_chars:
+        "글자, 숫자, 공백, 점(.), 하이픈(-), 밑줄(_)만 쓸 수 있고, 라틴 문자와 키릴·그리스 문자는 섞어 쓸 수 없어요.",
       failed: "저장하지 못했어요. 다시 시도해 주세요.",
     },
   },
@@ -391,6 +405,7 @@ const ko: ReferralCopy = {
   rules: {
     title: "버디 초대 공식 규칙",
     updated: "최종 수정: 2026년 10월 22일",
+    privacyLink: "개인정보 처리방침",
     sections: [
       {
         heading: "주최",
@@ -420,9 +435,9 @@ const ko: ReferralCopy = {
       {
         heading: "집계 기준",
         paragraphs: [
-          "이메일 인증을 마친 친구만 집계합니다. 본인의 다른 주소, 같은 사람의 중복 가입, 일회용 이메일, 부정 가입으로 표시된 가입은 집계하지 않습니다.",
-          "친구는 알림을 신청할 때 사용한 초대 링크의 주인에게 집계됩니다. 프로그램 시작일(2026년 10월 22일) 전에 내 링크로 신청해 이메일 인증을 마친 친구도 집계합니다.",
-          "한 사람당 하루 최대 {cap}명까지 집계합니다(한국 시간 기준). 이 한도를 넘은 친구는 집계하지 않으며, 다음 날로 넘어가지도 않습니다. 마감 시각 이후에 인증한 친구도 집계하지 않습니다.",
+          "이메일 인증을 마친 친구만 집계하며, 한 사람은 한 번만 집계합니다. 같은 사람이 다시 가입해도 다시 집계하지 않으며, 같은 메일함을 다른 형태로 쓴 주소(예: 점(.)이나 +태그를 넣은 Gmail 주소, 같은 이름의 icloud.com·me.com·mac.com 주소)도 같은 사람으로 봅니다. 본인 주소는 집계하지 않으며, 본인의 다른 주소로 자신을 초대하는 것은 공정한 참여 규칙 위반입니다. 알려진 일회용 이메일 서비스의 주소와 부정 가입으로 표시된 가입도 집계하지 않습니다.",
+          "친구는 처음 알림을 신청할 때 사용한 초대 링크의 주인에게 집계됩니다. 나중에 다른 링크로 다시 신청해도 초대한 사람이 바뀌거나 두 번 집계되지 않습니다. 프로그램 시작일(2026년 10월 22일) 전에 내 링크로 신청해 이메일 인증을 마친 친구도 집계합니다.",
+          "한 사람당 하루 최대 {cap}명까지 집계하며, 날짜는 친구가 인증한 날(한국 시간 기준)로 셉니다. 이 한도를 넘은 친구는 집계하지 않으며, 다음 날로 넘어가지도 않습니다. 마감 시각 이후에 인증한 친구도 집계하지 않습니다.",
           "집계는 마감 시각 기준으로 확정됩니다. 집계된 친구가 나중에 WatchDive 메일 수신을 거부해도 계속 집계되지만, 정보 삭제를 요청했거나 검수에서 제외된 친구는 집계에서 빠집니다.",
           "단계를 달성했다는 안내를 받은 뒤에는, 검수에서 그 단계를 채운 가입이 규칙 위반으로 확인되지 않는 한 그 단계가 유지됩니다. 본인이 WatchDive 메일 수신을 거부해도 이미 달성한 혜택은 유지되지만, 오픈 소식 선공개 메일과 알림은 보내드릴 수 없습니다.",
         ],
@@ -460,14 +475,14 @@ const ko: ReferralCopy = {
       {
         heading: "배송과 제세공과금",
         paragraphs: [
-          "배송비와 관세·세금 등 제세공과금은 받는 분이 부담합니다. 배송은 WatchDive Kickstarter 캠페인의 배송 대상 국가로만 가능합니다. 수중 라이트는 검수 후 발송하며, 모든 실물 혜택은 2027년 3월 전에 발송합니다.",
+          "배송비와 관세·세금 등 제세공과금은 받는 분이 부담합니다. 배송은 WatchDive Kickstarter 캠페인의 배송 대상 국가로만 가능합니다. 수중 라이트는 검수 후 발송하며, 모든 실물 혜택은 {deliveryBy} 전에 발송합니다.",
           "대한민국 거주 당첨자의 경우, 과세 대상 금액이 {taxFree}을 넘는 경품에는 소득세법에 따라 지급자가 {taxRate}%(기타소득세 및 지방소득세)를 원천징수해야 합니다. 이는 수중 라이트(약 {lightValue} 상당)와 WatchDive 모두에 해당합니다. 발송 전에 해당 금액을 안내드리며, 이를 회사에 입금해 주시면 회사가 세무서에 신고·납부합니다. 이를 위해 한국 당첨자에게 성명, 주민등록번호, 주소를 받으며, 세무 신고에만 쓰고 세법이 정한 기간만 보관합니다.",
         ],
       },
       {
         heading: "랭킹과 개인정보",
         paragraphs: [
-          "랭킹에는 본인이 정하고 공개를 선택한 닉네임만 표시합니다. 이메일 주소는 절대 공개하지 않습니다. 닉네임 공개를 선택하지 않은 분은 ‘비공개 다이버’로 표시됩니다. 불쾌하거나 타인을 사칭하는 닉네임은 숨길 수 있습니다.",
+          "랭킹에는 본인이 정하고 공개를 선택한 닉네임만 표시합니다. 이메일 주소는 절대 공개하지 않습니다. 닉네임 공개를 선택하지 않은 분은 ‘비공개 다이버’로 표시됩니다. 닉네임은 {min}~{max}자의 글자, 숫자, 공백, 점(.), 하이픈(-), 밑줄(_)로 정하며, 라틴 문자와 키릴·그리스 문자를 섞어 쓸 수 없습니다. 이메일 주소, 전화번호, 링크를 넣거나 WatchDive·Kickstarter 또는 운영진으로 보일 수 있는 이름(예: admin, 공식)은 쓸 수 없습니다. 불쾌하거나 타인을 사칭하는 닉네임은 숨길 수 있습니다. 랭킹과 초대 현황 페이지의 인원수는 몇 분마다 갱신되므로, 새로 참여한 친구가 반영되기까지 몇 분 걸릴 수 있습니다.",
           "초대한 친구가 누구인지는 알려드리지 않고, 참여한 인원수만 알려드립니다. 대기 명단 정보 처리는 개인정보 처리방침을 따릅니다.",
         ],
       },
@@ -541,7 +556,8 @@ const zhCN: ReferralCopy = {
     lightGone: "{stock} 个潜水灯已全部送完。",
     shareTitle: "你的邀请链接",
     nicknameLabel: "排行榜昵称",
-    nicknameHelp: "{min}–{max} 个字符，不能包含邮箱地址、电话号码或链接。",
+    nicknameHelp:
+      "{min}–{max} 个字符，可使用文字、数字、空格、点（.）、连字符（-）和下划线（_）；不能包含邮箱地址、电话号码、链接，或可能被误认为 WatchDive 工作人员的名称。",
     nicknameHiddenNote: "这个昵称已被我们隐藏，请换一个。",
     leaderboardToggle: "在前 {winners} 名排行榜上显示我的昵称",
     noticesToggle: "有朋友加入时发邮件通知我",
@@ -555,7 +571,8 @@ const zhCN: ReferralCopy = {
       contact_info: "昵称不能包含邮箱地址或电话号码。",
       link: "昵称不能包含链接。",
       reserved: "请换一个昵称。",
-      invalid_chars: "只能使用文字、数字、空格、点（.）、连字符（-）和下划线（_）。",
+      invalid_chars:
+        "只能使用文字、数字、空格、点（.）、连字符（-）和下划线（_），且不能混用拉丁字母与西里尔字母或希腊字母。",
       failed: "保存失败，请重试。",
     },
   },
@@ -582,6 +599,7 @@ const zhCN: ReferralCopy = {
   rules: {
     title: "潜伴邀请官方规则",
     updated: "最后更新：2026 年 10 月 22 日",
+    privacyLink: "隐私政策",
     sections: [
       {
         heading: "主办方",
@@ -598,7 +616,7 @@ const zhCN: ReferralCopy = {
       {
         heading: "活动时间",
         paragraphs: [
-          "活动自 2026 年 10 月 22 日开始，至 WatchDive 的 Kickstarter 众筹开启前一刻结束，最迟于 {longStop} 结束。众筹计划于 2026 年 12 月开启。确切的截止时间将至少提前 {noticeDays} 天在本页面公布，并通过邮件通知。",
+          "活动自 2026 年 10 月 22 日开始，至 WatchDive 的 Kickstarter 众筹开启前一刻结束，最迟于 {longStop}结束。众筹计划于 2026 年 12 月开启。确切的截止时间将至少提前 {noticeDays} 天在本页面公布，并通过邮件通知。",
         ],
       },
       {
@@ -611,9 +629,9 @@ const zhCN: ReferralCopy = {
       {
         heading: "计入规则",
         paragraphs: [
-          "只有确认邮箱的朋友才会计入。你自己的其他邮箱、同一人的重复报名、一次性邮箱，以及被标记为滥用的报名，均不计入。",
-          "朋友计入其加入候补名单时所用邀请链接的主人名下。在活动开始日（2026 年 10 月 22 日）之前通过你的链接加入并确认邮箱的朋友，同样计入。",
-          "每人每天最多计入 {cap} 位朋友（以韩国标准时间为准）。超出上限的朋友不计入，也不会顺延到之后的日期。截止时间之后才确认邮箱的朋友不计入。",
+          "只有确认邮箱的朋友才会计入，且每人只计入一次。同一人重复报名不会再次计入，同一邮箱的其他写法也视为同一人（例如加了点号或 +标签的 Gmail 地址，或 icloud.com、me.com、mac.com 下的同名地址）。你自己的邮箱不会计入，用自己的其他邮箱邀请自己也违反公平参与规则。来自已知一次性邮箱服务的地址，以及被标记为滥用的报名，同样不计入。",
+          "朋友计入其首次加入候补名单时所用邀请链接的主人名下。之后通过其他链接再次报名，既不会改记到别人名下，也不会重复计入。在活动开始日（2026 年 10 月 22 日）之前通过你的链接加入并确认邮箱的朋友，同样计入。",
+          "每人每天最多计入 {cap} 位朋友，按朋友确认邮箱的日期计算（以韩国标准时间为准）。超出上限的朋友不计入，也不会顺延到之后的日期。截止时间之后才确认邮箱的朋友不计入。",
           "计入数以截止时间为准锁定。已计入的朋友之后即使退订 WatchDive 邮件，仍继续计入；但要求删除个人数据、或在审核中被剔除的朋友不再计入。",
           "你达成某个等级并收到我们的通知后，该等级将一直保留，除非审核发现帮你达成该等级的朋友违反了本规则。你自己退订 WatchDive 邮件后，已达成的奖励仍会保留，但我们将无法再给你发送提前的开启通知邮件和邀请通知。",
         ],
@@ -639,7 +657,7 @@ const zhCN: ReferralCopy = {
       {
         heading: "众筹延期或未能进行时",
         paragraphs: [
-          "如果 Kickstarter 众筹在 {longStop} 前仍未开启，活动将于该时间照常结束。截止时间公布后最多只调整一次，且会在原定截止时间至少 48 小时前通过邮件通知。即使众筹未达成目标、被取消或延期，前 {winners} 名仍各获得 1 台 WatchDive。如果我们提前结束活动，将按结束时的计入数排名，并据此发放前 {winners} 名奖品。",
+          "如果 Kickstarter 众筹在 {longStop}前仍未开启，活动将于该时间照常结束。截止时间公布后最多只调整一次，且会在原定截止时间至少 48 小时前通过邮件通知。即使众筹未达成目标、被取消或延期，前 {winners} 名仍各获得 1 台 WatchDive。如果我们提前结束活动，将按结束时的计入数排名，并据此发放前 {winners} 名奖品。",
         ],
       },
       {
@@ -651,14 +669,14 @@ const zhCN: ReferralCopy = {
       {
         heading: "配送、运费与税费",
         paragraphs: [
-          "收件人需承担运费及任何关税或税费。我们只寄送到 WatchDive Kickstarter 众筹可配送的国家和地区。潜水灯在审核后寄出；所有实物奖励都会在 2027 年 3 月前寄出。",
+          "收件人需承担运费及任何关税或税费。我们只寄送到 WatchDive Kickstarter 众筹可配送的国家和地区。潜水灯在审核后寄出；所有实物奖励都会在 {deliveryBy}前寄出。",
           "对于居住在韩国的获奖者，根据韩国法律，应税价值超过 {taxFree} 的奖品须由支付方代扣 {taxRate}% 的所得税（其他所得税及地方所得税）。潜水灯（价值约 {lightValue}）和 WatchDive 均适用。寄送前，我们会告知你应缴金额，请你先支付给我们，由我们向税务机关申报并缴纳。为此，我们会向韩国获奖者收集法定姓名、居民登记号码和地址，仅用于税务申报，并只在税法规定的期限内保存。",
         ],
       },
       {
         heading: "排行榜与隐私",
         paragraphs: [
-          "排行榜只显示你自己设置并选择公开的昵称，绝不显示你的邮箱地址。未选择公开昵称的人显示为“匿名潜水员”。带有冒犯性或冒充他人的昵称，我们可能会隐藏。",
+          "排行榜只显示你自己设置并选择公开的昵称，绝不显示你的邮箱地址。未选择公开昵称的人显示为“匿名潜水员”。昵称须为 {min}–{max} 个字符，只能使用文字、数字、空格、点（.）、连字符（-）和下划线（_），且不能混用拉丁字母与西里尔字母或希腊字母；不能包含邮箱地址、电话号码或链接，也不能使用可能被误认为 WatchDive、Kickstarter 或其工作人员的名称（如 admin、官方）。带有冒犯性或冒充他人的昵称，我们可能会隐藏。排行榜和邀请页面上的人数每隔几分钟更新一次，新加入的朋友可能要过几分钟才会显示。",
           "我们不会告诉你是哪些朋友加入，只告诉你加入的人数。候补名单数据的处理方式，请参阅我们的隐私政策。",
         ],
       },
@@ -731,7 +749,8 @@ const zhTW: ReferralCopy = {
     lightGone: "{stock} 支潛水燈已全數送出。",
     shareTitle: "你的邀請連結",
     nicknameLabel: "排行榜暱稱",
-    nicknameHelp: "{min}–{max} 個字元，不能包含電子郵件地址、電話號碼或連結。",
+    nicknameHelp:
+      "{min}–{max} 個字元，可使用文字、數字、空格、句點（.）、連字號（-）和底線（_）；不能包含電子郵件地址、電話號碼、連結，或可能被誤認為 WatchDive 工作人員的名稱。",
     nicknameHiddenNote: "這個暱稱已被我們隱藏，請換一個。",
     leaderboardToggle: "在前 {winners} 名排行榜上顯示我的暱稱",
     noticesToggle: "有朋友加入時寄信通知我",
@@ -745,7 +764,8 @@ const zhTW: ReferralCopy = {
       contact_info: "暱稱不能包含電子郵件地址或電話號碼。",
       link: "暱稱不能包含連結。",
       reserved: "請換一個暱稱。",
-      invalid_chars: "只能使用文字、數字、空格、句點（.）、連字號（-）和底線（_）。",
+      invalid_chars:
+        "只能使用文字、數字、空格、句點（.）、連字號（-）和底線（_），且不能混用拉丁字母與西里爾字母或希臘字母。",
       failed: "儲存失敗，請再試一次。",
     },
   },
@@ -772,6 +792,7 @@ const zhTW: ReferralCopy = {
   rules: {
     title: "潛伴邀請官方規則",
     updated: "最後更新：2026 年 10 月 22 日",
+    privacyLink: "隱私權政策",
     sections: [
       {
         heading: "主辦單位",
@@ -788,7 +809,7 @@ const zhTW: ReferralCopy = {
       {
         heading: "活動期間",
         paragraphs: [
-          "活動自 2026 年 10 月 22 日開始，至 WatchDive 的 Kickstarter 募資開跑前一刻結束，最遲於 {longStop} 結束。募資預計於 2026 年 12 月開跑。確切的截止時間將至少提前 {noticeDays} 天在本頁面公布，並寄信通知。",
+          "活動自 2026 年 10 月 22 日開始，至 WatchDive 的 Kickstarter 募資開跑前一刻結束，最遲於 {longStop}結束。募資預計於 2026 年 12 月開跑。確切的截止時間將至少提前 {noticeDays} 天在本頁面公布，並寄信通知。",
         ],
       },
       {
@@ -801,9 +822,9 @@ const zhTW: ReferralCopy = {
       {
         heading: "計入規則",
         paragraphs: [
-          "只有確認信箱的朋友才會計入。你自己的其他信箱、同一人的重複登記、拋棄式信箱，以及被標記為濫用的登記，均不計入。",
-          "朋友會計入其加入等候名單時所用邀請連結的主人名下。在活動開始日（2026 年 10 月 22 日）之前透過你的連結加入並確認信箱的朋友，同樣計入。",
-          "每人每天最多計入 {cap} 位朋友（以韓國標準時間為準）。超出上限的朋友不計入，也不會順延到之後的日期。截止時間之後才確認信箱的朋友不計入。",
+          "只有確認信箱的朋友才會計入，且每人只計入一次。同一人重複登記不會再次計入，同一信箱的其他寫法也視為同一人（例如加了句點或 +標籤的 Gmail 地址，或 icloud.com、me.com、mac.com 下的同名地址）。你自己的信箱不會計入，用自己的其他信箱邀請自己也違反公平參加規則。來自已知拋棄式信箱服務的地址，以及被標記為濫用的登記，同樣不計入。",
+          "朋友會計入其首次加入等候名單時所用邀請連結的主人名下。之後透過其他連結再次登記，既不會改記到別人名下，也不會重複計入。在活動開始日（2026 年 10 月 22 日）之前透過你的連結加入並確認信箱的朋友，同樣計入。",
+          "每人每天最多計入 {cap} 位朋友，依朋友確認信箱的日期計算（以韓國標準時間為準）。超出上限的朋友不計入，也不會順延到之後的日期。截止時間之後才確認信箱的朋友不計入。",
           "計入數以截止時間為準鎖定。已計入的朋友之後即使取消訂閱 WatchDive 信件，仍繼續計入；但要求刪除個人資料、或在審核中被剔除的朋友不再計入。",
           "你達成某個等級並收到我們的通知後，該等級會一直保留，除非審核發現幫你達成該等級的朋友違反本規則。你自己取消訂閱 WatchDive 信件後，已達成的獎勵仍會保留，但我們將無法再寄給你提前的開跑通知信和邀請通知。",
         ],
@@ -829,7 +850,7 @@ const zhTW: ReferralCopy = {
       {
         heading: "募資延期或未能進行時",
         paragraphs: [
-          "如果 Kickstarter 募資在 {longStop} 前仍未開跑，活動將於該時間照常結束。截止時間公布後最多只調整一次，且會在原定截止時間至少 48 小時前寄信通知。即使募資未達目標、被取消或延期，前 {winners} 名仍各獲得 1 台 WatchDive。如果我們提前結束活動，將依結束時的計入數排名，並據此發送前 {winners} 名獎品。",
+          "如果 Kickstarter 募資在 {longStop}前仍未開跑，活動將於該時間照常結束。截止時間公布後最多只調整一次，且會在原定截止時間至少 48 小時前寄信通知。即使募資未達目標、被取消或延期，前 {winners} 名仍各獲得 1 台 WatchDive。如果我們提前結束活動，將依結束時的計入數排名，並據此發送前 {winners} 名獎品。",
         ],
       },
       {
@@ -841,14 +862,14 @@ const zhTW: ReferralCopy = {
       {
         heading: "配送、運費與稅費",
         paragraphs: [
-          "收件人須負擔運費及任何關稅或稅費。我們只寄送到 WatchDive Kickstarter 募資可配送的國家和地區。潛水燈在審核後寄出；所有實體獎勵都會在 2027 年 3 月前寄出。",
+          "收件人須負擔運費及任何關稅或稅費。我們只寄送到 WatchDive Kickstarter 募資可配送的國家和地區。潛水燈在審核後寄出；所有實體獎勵都會在 {deliveryBy}前寄出。",
           "對於居住在韓國的得獎者，依韓國法律，應稅價值超過 {taxFree} 的獎品須由支付方代扣 {taxRate}% 的所得稅（其他所得稅及地方所得稅）。潛水燈（價值約 {lightValue}）和 WatchDive 皆適用。寄送前，我們會告知你應繳金額，請你先支付給我們，由我們向稅務機關申報並繳納。為此，我們會向韓國得獎者蒐集法定姓名、居民登錄號碼和地址，僅用於稅務申報，並只在稅法規定的期間內保存。",
         ],
       },
       {
         heading: "排行榜與隱私",
         paragraphs: [
-          "排行榜只顯示你自己設定並選擇公開的暱稱，絕不顯示你的電子郵件地址。未選擇公開暱稱的人會顯示為「匿名潛水員」。帶有冒犯性或冒充他人的暱稱，我們可能會隱藏。",
+          "排行榜只顯示你自己設定並選擇公開的暱稱，絕不顯示你的電子郵件地址。未選擇公開暱稱的人會顯示為「匿名潛水員」。暱稱須為 {min}–{max} 個字元，只能使用文字、數字、空格、句點（.）、連字號（-）和底線（_），且不能混用拉丁字母與西里爾字母或希臘字母；不能包含電子郵件地址、電話號碼或連結，也不能使用可能被誤認為 WatchDive、Kickstarter 或其工作人員的名稱（如 admin、官方）。帶有冒犯性或冒充他人的暱稱，我們可能會隱藏。排行榜和邀請頁面上的人數每隔幾分鐘更新一次，新加入的朋友可能要過幾分鐘才會顯示。",
           "我們不會告訴你是哪些朋友加入，只告訴你加入的人數。等候名單資料的處理方式，請參閱我們的隱私權政策。",
         ],
       },
@@ -923,7 +944,8 @@ const ja: ReferralCopy = {
     lightGone: "水中ライト{stock}個は、すべてなくなりました。",
     shareTitle: "あなたの招待リンク",
     nicknameLabel: "ランキングに表示するニックネーム",
-    nicknameHelp: "{min}〜{max}文字。メールアドレス・電話番号・リンクは使えません。",
+    nicknameHelp:
+      "{min}〜{max}文字。文字・数字・スペース・ドット（.）・ハイフン（-）・アンダースコア（_）が使えます。メールアドレス・電話番号・リンクや、WatchDive の運営者と誤解される名前は使えません。",
     nicknameHiddenNote:
       "このニックネームは運営により非表示になりました。別のニックネームを設定してください。",
     leaderboardToggle: "上位{winners}名のランキングにニックネームを表示する",
@@ -939,7 +961,7 @@ const ja: ReferralCopy = {
       link: "ニックネームにリンクは使えません。",
       reserved: "別のニックネームを設定してください。",
       invalid_chars:
-        "使えるのは文字、数字、スペース、ドット（.）、ハイフン（-）、アンダースコア（_）です。",
+        "使えるのは文字、数字、スペース、ドット（.）、ハイフン（-）、アンダースコア（_）です。ラテン文字とキリル文字・ギリシャ文字は混ぜられません。",
       failed: "保存できませんでした。もう一度お試しください。",
     },
   },
@@ -967,6 +989,7 @@ const ja: ReferralCopy = {
   rules: {
     title: "バディ招待 公式ルール",
     updated: "最終更新：2026年10月22日",
+    privacyLink: "プライバシーポリシー",
     sections: [
       {
         heading: "主催者",
@@ -996,9 +1019,9 @@ const ja: ReferralCopy = {
       {
         heading: "カウント対象",
         paragraphs: [
-          "カウントされるのは、メールアドレスを確認した友だちだけです。ご自身の別のアドレス、同一人物による重複登録、使い捨てメールアドレス、不正と判断された登録はカウントされません。",
-          "友だちは、ウェイトリストに登録したときに使った招待リンクの持ち主にカウントされます。プログラム開始日（2026年10月22日）より前にあなたのリンクから登録し、メールアドレスを確認した友だちもカウントされます。",
-          "カウントは1人につき1日最大{cap}人までです（韓国標準時）。上限を超えた友だちはカウントされず、翌日以降に繰り越されることもありません。終了日時より後にメールアドレスを確認した友だちもカウントされません。",
+          "カウントされるのは、メールアドレスを確認した友だちだけで、1人につき1回だけカウントされます。同一人物が再度登録してもカウントは増えず、同じメールボックスを別の書き方にしたアドレス（例：ドットや +タグを付けた Gmail アドレス、icloud.com・me.com・mac.com の同じ名前のアドレス）も同一人物として扱います。ご自身のアドレスはカウントされず、ご自身の別のアドレスで自分を招待することはフェアプレーのルール違反です。既知の使い捨てメールサービスのアドレスと、不正と判断された登録もカウントされません。",
+          "友だちは、最初にウェイトリストに登録したときに使った招待リンクの持ち主にカウントされます。あとから別のリンクで登録し直しても、カウント先が変わったり、二重にカウントされたりすることはありません。プログラム開始日（2026年10月22日）より前にあなたのリンクから登録し、メールアドレスを確認した友だちもカウントされます。",
+          "カウントは1人につき1日最大{cap}人までで、日付は友だちがメールアドレスを確認した日（韓国標準時）で数えます。上限を超えた友だちはカウントされず、翌日以降に繰り越されることもありません。終了日時より後にメールアドレスを確認した友だちもカウントされません。",
           "カウントは終了日時の時点で確定します。カウントされた友だちが後で WatchDive のメール配信を停止しても、引き続きカウントされます。ただし、データの削除を依頼した友だちや、審査で除外された友だちはカウントされなくなります。",
           "段階を達成し、そのお知らせを受け取ったあとは、その段階に到達させた友だちのルール違反が審査で判明しないかぎり、その段階はそのまま有効です。ご自身が WatchDive のメール配信を停止しても、達成済みの特典は有効ですが、開始のお知らせメールの先行配信や招待のお知らせはお送りできなくなります。",
         ],
@@ -1036,14 +1059,14 @@ const ja: ReferralCopy = {
       {
         heading: "配送・送料・税金",
         paragraphs: [
-          "送料と、関税を含む各種税金は受取人のご負担です。発送先は、WatchDive の Kickstarter キャンペーンの発送対象国に限ります。水中ライトは審査後に発送し、物品の特典はすべて2027年3月より前に発送します。",
+          "送料と、関税を含む各種税金は受取人のご負担です。発送先は、WatchDive の Kickstarter キャンペーンの発送対象国に限ります。水中ライトは審査後に発送し、物品の特典はすべて{deliveryBy}より前に発送します。",
           "韓国にお住まいの当選者の場合、韓国の法律により、課税対象額が{taxFree}を超える賞品には、支払者が{taxRate}%（その他所得税と地方所得税）を源泉徴収する必要があります。これは水中ライト（約{lightValue}相当）と WatchDive の両方に当てはまります。発送前に金額をお知らせしますので、その額を当社にお支払いください。当社が税務署へ申告・納付します。このため、韓国の当選者からは法的な氏名、住民登録番号、住所をお預かりします。これらは税務申告にのみ使い、税法で定められた期間だけ保管します。",
         ],
       },
       {
         heading: "ランキングとプライバシー",
         paragraphs: [
-          "ランキングに表示されるのは、ご自身で設定し、表示を選んだニックネームだけです。メールアドレスが表示されることはありません。ニックネームの表示を選ばなかった方は「匿名ダイバー」と表示されます。不適切なニックネームや、他人になりすましたニックネームは非表示にすることがあります。",
+          "ランキングに表示されるのは、ご自身で設定し、表示を選んだニックネームだけです。メールアドレスが表示されることはありません。ニックネームの表示を選ばなかった方は「匿名ダイバー」と表示されます。ニックネームは{min}〜{max}文字で、使えるのは文字、数字、スペース、ドット（.）、ハイフン（-）、アンダースコア（_）です。ラテン文字とキリル文字・ギリシャ文字を混ぜることはできません。メールアドレス・電話番号・リンクを含むものや、WatchDive・Kickstarter やその運営者と誤解されるおそれのある名前（例：admin、公式）は使えません。不適切なニックネームや、他人になりすましたニックネームは非表示にすることがあります。ランキングと招待ページの人数は数分ごとに更新されるため、新しく参加した友だちが反映されるまで数分かかることがあります。",
           "どの友だちが参加したかはお知らせせず、人数だけをお知らせします。ウェイトリストのデータの取り扱いについては、プライバシーポリシーをご覧ください。",
         ],
       },
@@ -1121,7 +1144,8 @@ const es: ReferralCopy = {
     lightGone: "Ya no quedan linternas: las {stock} están asignadas.",
     shareTitle: "Tu enlace de invitación",
     nicknameLabel: "Alias para la clasificación",
-    nicknameHelp: "De {min} a {max} caracteres. Sin correos, teléfonos ni enlaces.",
+    nicknameHelp:
+      "De {min} a {max} caracteres: letras, números, espacios, puntos, guiones o guiones bajos. Sin correos, teléfonos, enlaces ni nombres que parezcan del equipo de WatchDive.",
     nicknameHiddenNote: "Nuestro equipo ha ocultado este alias. Elige otro, por favor.",
     leaderboardToggle: "Mostrar mi alias en el top {winners}",
     noticesToggle: "Avisarme por correo cuando se una un amigo",
@@ -1135,7 +1159,8 @@ const es: ReferralCopy = {
       contact_info: "El alias no puede incluir un correo ni un teléfono.",
       link: "El alias no puede incluir enlaces.",
       reserved: "Elige otro alias, por favor.",
-      invalid_chars: "Usa solo letras, números, espacios, puntos, guiones o guiones bajos.",
+      invalid_chars:
+        "Usa solo letras, números, espacios, puntos, guiones o guiones bajos, sin mezclar letras latinas con cirílicas o griegas.",
       failed: "No se ha podido guardar. Inténtalo de nuevo.",
     },
   },
@@ -1162,6 +1187,7 @@ const es: ReferralCopy = {
   rules: {
     title: "Bases oficiales de “Invita a tu compañero”",
     updated: "Última actualización: 22 de octubre de 2026",
+    privacyLink: "política de privacidad",
     sections: [
       {
         heading: "Organizador",
@@ -1191,9 +1217,9 @@ const es: ReferralCopy = {
       {
         heading: "Qué cuenta",
         paragraphs: [
-          "Solo cuentan los amigos que confirman su correo. No cuentan tus propias direcciones, los registros repetidos de una misma persona, las direcciones de correo desechables ni los registros marcados como abusivos.",
-          "Cada amigo cuenta para el enlace de invitación con el que se unió a la lista de espera. También cuentan los amigos que se unieron con tu enlace y confirmaron su correo antes del inicio del programa, el 22 de octubre de 2026.",
-          "Se cuentan como máximo {cap} amigos por persona y día (hora estándar de Corea). Los amigos que superen ese límite no se cuentan, tampoco en días posteriores. Los amigos que confirmen después de la hora de cierre no cuentan.",
+          "Solo cuentan los amigos que confirman su correo, y cada persona cuenta una sola vez. Si la misma persona vuelve a registrarse, no cuenta de nuevo, aunque use el mismo buzón escrito de otra forma (por ejemplo, una dirección de Gmail con puntos o con una +etiqueta, o el mismo nombre en icloud.com, me.com y mac.com). Tu propia dirección nunca cuenta para ti, e invitarte a ti mismo con otra dirección incumple las reglas de juego limpio. Tampoco cuentan las direcciones de servicios conocidos de correo desechable ni los registros marcados como abusivos.",
+          "Cada amigo cuenta para el enlace de invitación con el que se unió por primera vez a la lista de espera. Si vuelve a registrarse con otro enlace, no pasa a contar para otra persona ni cuenta dos veces. También cuentan los amigos que se unieron con tu enlace y confirmaron su correo antes del inicio del programa, el 22 de octubre de 2026.",
+          "Se cuentan como máximo {cap} amigos por persona y día, según el día en que cada amigo confirma su correo (hora estándar de Corea). Los amigos que superen ese límite no se cuentan, tampoco en días posteriores. Los amigos que confirmen después de la hora de cierre no cuentan.",
           "Los recuentos quedan fijados a la hora de cierre. Un amigo ya contado que más adelante se da de baja de los correos de WatchDive sigue contando; deja de contar si nos pide borrar sus datos o si lo retiramos en la revisión.",
           "Cuando alcanzas un nivel y te lo comunicamos, lo conservas, salvo que la revisión demuestre que los amigos con los que lo alcanzaste incumplían estas bases. Si te das de baja de los correos de WatchDive, conservas las recompensas ya alcanzadas, pero ya no podremos enviarte el correo anticipado del lanzamiento ni los avisos.",
         ],
@@ -1219,7 +1245,7 @@ const es: ReferralCopy = {
       {
         heading: "Si la campaña se retrasa o no sale adelante",
         paragraphs: [
-          "Si la campaña de Kickstarter no ha abierto el {longStop}, el programa se cierra igualmente en ese momento. Una vez anunciada la hora de cierre, la cambiaremos como máximo una vez, avisando por correo con al menos 48 horas de antelación sobre la hora original. Aunque la campaña no alcance su objetivo, se cancele o se retrase, las personas del top {winners} recibirán igualmente un WatchDive cada una. Si terminamos el programa antes de tiempo, la clasificación se hará con los recuentos de ese momento y los premios del top {winners} se darán según esa clasificación.",
+          "Si la campaña de Kickstarter no ha abierto antes del {longStop}, el programa se cierra igualmente en ese momento. Una vez anunciada la hora de cierre, la cambiaremos como máximo una vez, avisando por correo con al menos 48 horas de antelación sobre la hora original. Aunque la campaña no alcance su objetivo, se cancele o se retrase, las personas del top {winners} recibirán igualmente un WatchDive cada una. Si terminamos el programa antes de tiempo, la clasificación se hará con los recuentos de ese momento y los premios del top {winners} se darán según esa clasificación.",
         ],
       },
       {
@@ -1231,14 +1257,14 @@ const es: ReferralCopy = {
       {
         heading: "Entrega, envío e impuestos",
         paragraphs: [
-          "Quien recibe el premio paga el envío y cualquier arancel o impuesto. Solo enviamos a los países a los que envía la campaña de WatchDive en Kickstarter. Las linternas se envían tras la revisión, y todos los premios físicos se envían antes de marzo de 2027.",
+          "Quien recibe el premio paga el envío y cualquier arancel o impuesto. Solo enviamos a los países a los que envía la campaña de WatchDive en Kickstarter. Las linternas se envían tras la revisión, y todos los premios físicos se envían antes de {deliveryBy}.",
           "Si la persona ganadora vive en Corea del Sur, la ley coreana obliga a quien paga el premio a retener un {taxRate} % de impuesto sobre la renta (impuesto sobre otros ingresos más impuesto local) en los premios cuyo valor imponible supere {taxFree}. Esto se aplica tanto a la linterna (valorada en unos {lightValue}) como al WatchDive. Antes del envío te indicaremos el importe y te pediremos que nos lo abones; nosotros lo declaramos e ingresamos en la administración tributaria. Para ello pediremos a los ganadores residentes en Corea su nombre legal, su número de registro de residente y su dirección, que usaremos solo para la declaración fiscal y conservaremos solo el tiempo que exija la ley tributaria.",
         ],
       },
       {
         heading: "Clasificación y privacidad",
         paragraphs: [
-          "La clasificación solo muestra el alias que tú eliges y decides mostrar. Tu correo nunca se muestra. Quien no decide mostrar un alias aparece como “Buceador anónimo”. Podemos ocultar alias ofensivos o que suplanten a otra persona.",
+          "La clasificación solo muestra el alias que tú eliges y decides mostrar. Tu correo nunca se muestra. Quien no decide mostrar un alias aparece como “Buceador anónimo”. El alias debe tener entre {min} y {max} caracteres: letras, números, espacios, puntos, guiones y guiones bajos, sin mezclar letras latinas con cirílicas o griegas. No puede contener correos, teléfonos ni enlaces, ni parecer un nombre de WatchDive, de Kickstarter o de su equipo (como “admin” o “staff”). Podemos ocultar alias ofensivos o que suplanten a otra persona. La clasificación y los recuentos de tu página de invitaciones se actualizan cada pocos minutos, así que un amigo nuevo puede tardar unos minutos en aparecer.",
           "Nunca te decimos qué amigos se han unido, solo cuántos. Consulta nuestra política de privacidad para saber cómo tratamos los datos de la lista de espera.",
         ],
       },
@@ -1317,7 +1343,8 @@ const fr: ReferralCopy = {
     lightGone: "Les {stock} lampes de plongée ont toutes été attribuées.",
     shareTitle: "Votre lien d’invitation",
     nicknameLabel: "Pseudo affiché dans le classement",
-    nicknameHelp: "{min} à {max} caractères. Ni adresse e-mail, ni numéro de téléphone, ni lien.",
+    nicknameHelp:
+      "{min} à {max} caractères : lettres, chiffres, espaces, points, tirets et tirets bas. Ni adresse e-mail, ni numéro de téléphone, ni lien, ni nom pouvant passer pour l’équipe WatchDive.",
     nicknameHiddenNote: "Notre équipe a masqué ce pseudo. Merci d’en choisir un autre.",
     leaderboardToggle: "Afficher mon pseudo dans le top {winners}",
     noticesToggle: "Me prévenir par e-mail quand un ami s’inscrit",
@@ -1331,7 +1358,8 @@ const fr: ReferralCopy = {
       contact_info: "Le pseudo ne peut pas contenir d’adresse e-mail ni de numéro de téléphone.",
       link: "Le pseudo ne peut pas contenir de lien.",
       reserved: "Merci de choisir un autre pseudo.",
-      invalid_chars: "Lettres, chiffres, espaces, points, tirets et tirets bas uniquement.",
+      invalid_chars:
+        "Lettres, chiffres, espaces, points, tirets et tirets bas uniquement, sans mélanger lettres latines et lettres cyrilliques ou grecques.",
       failed: "Enregistrement impossible. Veuillez réessayer.",
     },
   },
@@ -1358,6 +1386,7 @@ const fr: ReferralCopy = {
   rules: {
     title: "Règlement officiel « Invitez votre binôme »",
     updated: "Dernière mise à jour : 22 octobre 2026",
+    privacyLink: "politique de confidentialité",
     sections: [
       {
         heading: "Organisateur",
@@ -1387,9 +1416,9 @@ const fr: ReferralCopy = {
       {
         heading: "Ce qui compte",
         paragraphs: [
-          "Seuls les amis qui confirment leur adresse e-mail comptent. Vos propres adresses, les inscriptions répétées d’une même personne, les adresses e-mail jetables et les inscriptions signalées comme abusives ne comptent pas.",
-          "Un ami compte pour le lien d’invitation qu’il a utilisé lors de son inscription sur la liste d’attente. Les amis inscrits via votre lien qui ont confirmé leur adresse avant le début du programme, le 22 octobre 2026, comptent aussi.",
-          "Au maximum {cap} amis sont comptés par personne et par jour (heure normale de Corée). Les amis au-delà de cette limite ne sont pas comptés, ni ce jour-là ni plus tard. Les amis qui confirment après l’heure de clôture ne comptent pas.",
+          "Seuls les amis qui confirment leur adresse e-mail comptent, et chaque personne ne compte qu’une fois. Une nouvelle inscription de la même personne ne compte pas, même si elle utilise la même boîte de réception sous une autre forme (par exemple une adresse Gmail avec des points ou un +libellé, ou le même nom chez icloud.com, me.com et mac.com). Votre propre adresse ne compte jamais pour vous, et vous inviter vous-même avec une autre adresse enfreint les règles de fair-play. Les adresses de services d’e-mail jetable connus et les inscriptions signalées comme abusives ne comptent pas non plus.",
+          "Un ami compte pour le lien d’invitation qu’il a utilisé lors de sa première inscription sur la liste d’attente. S’il se réinscrit via un autre lien, il ne change pas de parrain et ne compte pas deux fois. Les amis inscrits via votre lien qui ont confirmé leur adresse avant le début du programme, le 22 octobre 2026, comptent aussi.",
+          "Au maximum {cap} amis sont comptés par personne et par jour, selon le jour où chaque ami confirme son adresse (heure normale de Corée). Les amis au-delà de cette limite ne sont pas comptés, ni ce jour-là ni plus tard. Les amis qui confirment après l’heure de clôture ne comptent pas.",
           "Les compteurs sont figés à l’heure de clôture. Un ami déjà compté qui se désinscrit ensuite des e-mails WatchDive reste compté ; il cesse de compter s’il nous demande de supprimer ses données ou si nous le retirons lors de la vérification.",
           "Une fois qu’un palier est atteint et que nous vous l’avons annoncé, vous le conservez, sauf si notre vérification établit que les amis qui vous l’ont fait atteindre enfreignaient ce règlement. Si vous vous désinscrivez des e-mails WatchDive, vous conservez les récompenses déjà obtenues, mais nous ne pourrons plus vous envoyer l’e-mail de lancement en avance ni les notifications.",
         ],
@@ -1415,7 +1444,7 @@ const fr: ReferralCopy = {
       {
         heading: "Si la campagne est retardée ou n’a pas lieu",
         paragraphs: [
-          "Si la campagne Kickstarter n’a pas ouvert le {longStop}, le programme se termine quand même à ce moment-là. Une fois l’heure de clôture annoncée, nous ne la modifierons qu’une seule fois au plus, en prévenant par e-mail au moins 48 heures avant l’heure initiale. Même si la campagne n’atteint pas son objectif, est annulée ou retardée, les personnes du top {winners} reçoivent chacune un WatchDive. Si nous arrêtons le programme plus tôt, le classement sera établi d’après les compteurs à ce moment-là et les lots du top {winners} seront attribués sur cette base.",
+          "Si la campagne Kickstarter n’a pas ouvert d’ici le {longStop}, le programme se termine quand même à ce moment-là. Une fois l’heure de clôture annoncée, nous ne la modifierons qu’une seule fois au plus, en prévenant par e-mail au moins 48 heures avant l’heure initiale. Même si la campagne n’atteint pas son objectif, est annulée ou retardée, les personnes du top {winners} reçoivent chacune un WatchDive. Si nous arrêtons le programme plus tôt, le classement sera établi d’après les compteurs à ce moment-là et les lots du top {winners} seront attribués sur cette base.",
         ],
       },
       {
@@ -1427,14 +1456,14 @@ const fr: ReferralCopy = {
       {
         heading: "Livraison, frais de port et taxes",
         paragraphs: [
-          "Les destinataires paient les frais de port ainsi que les éventuels droits de douane et taxes. Nous expédions uniquement vers les pays desservis par la campagne Kickstarter de WatchDive. Les lampes sont envoyées après vérification, et tous les lots physiques sont envoyés avant mars 2027.",
+          "Les destinataires paient les frais de port ainsi que les éventuels droits de douane et taxes. Nous expédions uniquement vers les pays desservis par la campagne Kickstarter de WatchDive. Les lampes sont envoyées après vérification, et tous les lots physiques sont envoyés avant {deliveryBy}.",
           "Pour les gagnants résidant en Corée du Sud, la loi coréenne impose à celui qui remet le lot de retenir {taxRate} % d’impôt sur le revenu (impôt sur les autres revenus et impôt local) sur tout lot dont la valeur imposable dépasse {taxFree}. Cela concerne aussi bien la lampe (d’une valeur d’environ {lightValue}) que le WatchDive. Avant l’envoi, nous vous indiquons le montant et vous demandons de nous le régler ; nous le déclarons et le versons ensuite à l’administration fiscale. Pour cela, nous demandons aux gagnants résidant en Corée leur nom légal, leur numéro d’enregistrement de résident et leur adresse, utilisés uniquement pour la déclaration fiscale et conservés seulement pendant la durée exigée par la loi fiscale.",
         ],
       },
       {
         heading: "Classement et confidentialité",
         paragraphs: [
-          "Le classement n’affiche que le pseudo que vous avez choisi et décidé d’afficher. Votre adresse e-mail n’est jamais affichée. Les personnes qui n’affichent pas de pseudo apparaissent sous le nom « Plongeur anonyme ». Nous pouvons masquer un pseudo offensant ou qui usurpe l’identité de quelqu’un.",
+          "Le classement n’affiche que le pseudo que vous avez choisi et décidé d’afficher. Votre adresse e-mail n’est jamais affichée. Les personnes qui n’affichent pas de pseudo apparaissent sous le nom « Plongeur anonyme ». Un pseudo compte de {min} à {max} caractères : lettres, chiffres, espaces, points, tirets et tirets bas, sans mélanger lettres latines et lettres cyrilliques ou grecques. Il ne peut contenir ni adresse e-mail, ni numéro de téléphone, ni lien, ni ressembler à un nom de WatchDive, de Kickstarter ou de leurs équipes (comme « admin » ou « staff »). Nous pouvons masquer un pseudo offensant ou qui usurpe l’identité de quelqu’un. Le classement et les compteurs de votre page d’invitations sont actualisés à quelques minutes d’intervalle : un nouvel ami peut donc mettre quelques minutes à apparaître.",
           "Nous ne vous disons jamais quels amis se sont inscrits, seulement combien. Consultez notre politique de confidentialité pour savoir comment nous traitons les données de la liste d’attente.",
         ],
       },
@@ -1512,7 +1541,8 @@ const de: ReferralCopy = {
     lightGone: "Alle {stock} Tauchlampen sind vergeben.",
     shareTitle: "Dein Einladungslink",
     nicknameLabel: "Nickname für die Rangliste",
-    nicknameHelp: "{min}–{max} Zeichen. Keine E-Mail-Adressen, Telefonnummern oder Links.",
+    nicknameHelp:
+      "{min}–{max} Zeichen: Buchstaben, Zahlen, Leerzeichen, Punkte, Binde- und Unterstriche. Keine E-Mail-Adressen, Telefonnummern, Links oder Namen, die nach dem WatchDive-Team aussehen.",
     nicknameHiddenNote: "Unser Team hat diesen Nickname ausgeblendet. Bitte wähle einen anderen.",
     leaderboardToggle: "Meinen Nickname in der Top-{winners}-Rangliste zeigen",
     noticesToggle: "Mir eine E-Mail schicken, wenn ein Freund dazukommt",
@@ -1527,7 +1557,7 @@ const de: ReferralCopy = {
       link: "Ein Nickname darf keinen Link enthalten.",
       reserved: "Bitte wähle einen anderen Nickname.",
       invalid_chars:
-        "Erlaubt sind Buchstaben, Zahlen, Leerzeichen, Punkte, Bindestriche und Unterstriche.",
+        "Erlaubt sind Buchstaben, Zahlen, Leerzeichen, Punkte, Bindestriche und Unterstriche – ohne lateinische mit kyrillischen oder griechischen Buchstaben zu mischen.",
       failed: "Speichern hat nicht geklappt. Bitte versuch es noch einmal.",
     },
   },
@@ -1554,6 +1584,7 @@ const de: ReferralCopy = {
   rules: {
     title: "Teilnahmebedingungen der Buddy-Einladung",
     updated: "Zuletzt aktualisiert: 22. Oktober 2026",
+    privacyLink: "Datenschutzerklärung",
     sections: [
       {
         heading: "Veranstalter",
@@ -1583,9 +1614,9 @@ const de: ReferralCopy = {
       {
         heading: "Was zählt",
         paragraphs: [
-          "Es zählen nur Freunde, die ihre E-Mail-Adresse bestätigen. Deine eigenen Adressen, wiederholte Anmeldungen derselben Person, Wegwerf-E-Mail-Adressen und als missbräuchlich markierte Anmeldungen zählen nicht.",
-          "Ein Freund zählt für den Einladungslink, über den er sich auf die Warteliste eingetragen hat. Auch Freunde, die sich vor dem Programmstart am 22. Oktober 2026 über deinen Link eingetragen und ihre E-Mail-Adresse bestätigt haben, zählen.",
-          "Pro Person werden höchstens {cap} Freunde pro Tag gezählt (koreanische Standardzeit). Freunde über diesem Limit werden nicht gezählt, auch nicht an einem späteren Tag. Freunde, die erst nach dem Endzeitpunkt bestätigen, zählen nicht.",
+          "Es zählen nur Freunde, die ihre E-Mail-Adresse bestätigen, und jede Person zählt nur einmal. Meldet sich dieselbe Person erneut an, zählt sie nicht noch einmal – auch nicht mit demselben Postfach in anderer Schreibweise (zum Beispiel eine Gmail-Adresse mit Punkten oder einem +Zusatz oder derselbe Name bei icloud.com, me.com und mac.com). Deine eigene Adresse zählt nie für dich, und wer sich mit einer anderen eigenen Adresse selbst einlädt, verstößt gegen die Fair-Play-Regeln. Adressen bekannter Wegwerf-E-Mail-Dienste und als missbräuchlich markierte Anmeldungen zählen ebenfalls nicht.",
+          "Ein Freund zählt für den Einladungslink, über den er sich zum ersten Mal auf die Warteliste eingetragen hat. Trägt er sich über einen anderen Link erneut ein, zählt er weder für jemand anderen noch doppelt. Auch Freunde, die sich vor dem Programmstart am 22. Oktober 2026 über deinen Link eingetragen und ihre E-Mail-Adresse bestätigt haben, zählen.",
+          "Pro Person werden höchstens {cap} Freunde pro Tag gezählt; maßgeblich ist der Tag, an dem der Freund bestätigt (koreanische Standardzeit). Freunde über diesem Limit werden nicht gezählt, auch nicht an einem späteren Tag. Freunde, die erst nach dem Endzeitpunkt bestätigen, zählen nicht.",
           "Die Zahlen werden zum Endzeitpunkt eingefroren. Ein bereits gezählter Freund, der sich später von den WatchDive-E-Mails abmeldet, zählt weiter. Wer uns bittet, seine Daten zu löschen, oder bei der Prüfung entfernt wird, zählt nicht mehr.",
           "Hast du eine Stufe erreicht und wir haben es dir mitgeteilt, behältst du sie – es sei denn, unsere Prüfung ergibt, dass die Freunde, mit denen du sie erreicht hast, gegen diese Bedingungen verstoßen haben. Meldest du dich selbst von den WatchDive-E-Mails ab, behältst du deine erreichten Belohnungen, wir können dir dann aber weder die frühe Start-E-Mail noch Benachrichtigungen schicken.",
         ],
@@ -1611,7 +1642,7 @@ const de: ReferralCopy = {
       {
         heading: "Wenn sich die Kampagne verzögert oder nicht stattfindet",
         paragraphs: [
-          "Ist die Kickstarter-Kampagne bis {longStop} nicht gestartet, endet das Programm trotzdem zu diesem Zeitpunkt. Einen angekündigten Endzeitpunkt verschieben wir höchstens einmal und nur mit einer E-Mail mindestens 48 Stunden vor dem ursprünglichen Zeitpunkt. Auch wenn die Kampagne ihr Ziel nicht erreicht, abgesagt wird oder sich verzögert, bekommen die Top {winners} je ein WatchDive. Beenden wir das Programm vorzeitig, ermitteln wir die Rangfolge nach den Zahlen zu diesem Zeitpunkt und vergeben die Gewinne der Top {winners} auf dieser Grundlage.",
+          "Ist die Kickstarter-Kampagne bis zum {longStop} nicht gestartet, endet das Programm trotzdem zu diesem Zeitpunkt. Einen angekündigten Endzeitpunkt verschieben wir höchstens einmal und nur mit einer E-Mail mindestens 48 Stunden vor dem ursprünglichen Zeitpunkt. Auch wenn die Kampagne ihr Ziel nicht erreicht, abgesagt wird oder sich verzögert, bekommen die Top {winners} je ein WatchDive. Beenden wir das Programm vorzeitig, ermitteln wir die Rangfolge nach den Zahlen zu diesem Zeitpunkt und vergeben die Gewinne der Top {winners} auf dieser Grundlage.",
         ],
       },
       {
@@ -1623,14 +1654,14 @@ const de: ReferralCopy = {
       {
         heading: "Lieferung, Versand und Steuern",
         paragraphs: [
-          "Empfänger tragen die Versandkosten sowie alle Zölle und Steuern. Wir versenden nur in Länder, die auch die WatchDive-Kampagne auf Kickstarter beliefert. Tauchlampen werden nach der Prüfung verschickt, alle Sachpreise vor März 2027.",
+          "Empfänger tragen die Versandkosten sowie alle Zölle und Steuern. Wir versenden nur in Länder, die auch die WatchDive-Kampagne auf Kickstarter beliefert. Tauchlampen werden nach der Prüfung verschickt, alle Sachpreise vor {deliveryBy}.",
           "Für Gewinner mit Wohnsitz in Südkorea muss der Zahlende nach koreanischem Recht {taxRate} % Einkommensteuer (Steuer auf sonstige Einkünfte und lokale Einkommensteuer) auf Gewinne einbehalten, deren steuerpflichtiger Wert {taxFree} übersteigt. Das gilt für die Tauchlampe (Wert rund {lightValue}) ebenso wie für das WatchDive. Vor dem Versand nennen wir dir den Betrag und bitten dich, ihn an uns zu zahlen; wir melden und zahlen ihn dann an das Finanzamt. Dafür erfragen wir bei Gewinnern in Korea den amtlichen Namen, die koreanische Einwohnernummer und die Adresse. Wir nutzen sie nur für die Steuermeldung und bewahren sie nur so lange auf, wie das Steuerrecht es verlangt.",
         ],
       },
       {
         heading: "Rangliste und Datenschutz",
         paragraphs: [
-          "Die Rangliste zeigt nur einen Nickname, den du selbst festlegst und anzeigen lässt. Deine E-Mail-Adresse wird nie angezeigt. Wer keinen Nickname anzeigen lässt, erscheint als „Anonymer Taucher“. Beleidigende Nicknames oder solche, mit denen sich jemand als eine andere Person ausgibt, können wir ausblenden.",
+          "Die Rangliste zeigt nur einen Nickname, den du selbst festlegst und anzeigen lässt. Deine E-Mail-Adresse wird nie angezeigt. Wer keinen Nickname anzeigen lässt, erscheint als „Anonymer Taucher“. Ein Nickname hat {min} bis {max} Zeichen: Buchstaben, Zahlen, Leerzeichen, Punkte, Bindestriche und Unterstriche, ohne lateinische mit kyrillischen oder griechischen Buchstaben zu mischen. Er darf weder eine E-Mail-Adresse noch eine Telefonnummer oder einen Link enthalten und nicht nach WatchDive, Kickstarter oder deren Team aussehen (etwa „admin“ oder „staff“). Beleidigende Nicknames oder solche, mit denen sich jemand als eine andere Person ausgibt, können wir ausblenden. Die Rangliste und die Zahlen auf deiner Einladungsseite werden alle paar Minuten aktualisiert; ein neuer Freund kann also ein paar Minuten brauchen, bis er erscheint.",
           "Wir sagen dir nie, welche Freunde dazugekommen sind, nur wie viele. Wie wir mit Wartelistendaten umgehen, steht in unserer Datenschutzerklärung.",
         ],
       },
@@ -1705,7 +1736,8 @@ const ptBR: ReferralCopy = {
     lightGone: "As {stock} lanternas de mergulho já foram todas distribuídas.",
     shareTitle: "Seu link de convite",
     nicknameLabel: "Apelido no ranking",
-    nicknameHelp: "De {min} a {max} caracteres. Sem e-mails, telefones ou links.",
+    nicknameHelp:
+      "De {min} a {max} caracteres: letras, números, espaços, pontos, hifens ou sublinhados. Sem e-mails, telefones, links ou nomes que pareçam da equipe do WatchDive.",
     nicknameHiddenNote: "Nossa equipe ocultou este apelido. Escolha outro, por favor.",
     leaderboardToggle: "Mostrar meu apelido no ranking do top {winners}",
     noticesToggle: "Me avisar por e-mail quando um amigo entrar",
@@ -1719,7 +1751,8 @@ const ptBR: ReferralCopy = {
       contact_info: "O apelido não pode ter endereço de e-mail nem telefone.",
       link: "O apelido não pode ter links.",
       reserved: "Escolha outro apelido, por favor.",
-      invalid_chars: "Use só letras, números, espaços, pontos, hifens ou sublinhados.",
+      invalid_chars:
+        "Use só letras, números, espaços, pontos, hifens ou sublinhados, sem misturar letras latinas com cirílicas ou gregas.",
       failed: "Não foi possível salvar. Tente de novo.",
     },
   },
@@ -1746,6 +1779,7 @@ const ptBR: ReferralCopy = {
   rules: {
     title: "Regulamento oficial do “Convide seu parceiro”",
     updated: "Última atualização: 22 de outubro de 2026",
+    privacyLink: "política de privacidade",
     sections: [
       {
         heading: "Organizador",
@@ -1762,7 +1796,7 @@ const ptBR: ReferralCopy = {
       {
         heading: "Período",
         paragraphs: [
-          "O programa começa em 22 de outubro de 2026 e termina imediatamente antes de a campanha do WatchDive abrir no Kickstarter, prevista para dezembro de 2026, e no máximo em {longStop}. Vamos anunciar o horário exato de encerramento nesta página e por e-mail com pelo menos {noticeDays} dias de antecedência.",
+          "O programa começa em 22 de outubro de 2026 e termina imediatamente antes de a campanha do WatchDive abrir no Kickstarter, prevista para dezembro de 2026, e, no máximo, até {longStop}. Vamos anunciar o horário exato de encerramento nesta página e por e-mail com pelo menos {noticeDays} dias de antecedência.",
         ],
       },
       {
@@ -1775,9 +1809,9 @@ const ptBR: ReferralCopy = {
       {
         heading: "O que conta",
         paragraphs: [
-          "Só contam os amigos que confirmam o e-mail. Não contam seus próprios endereços, cadastros repetidos da mesma pessoa, e-mails descartáveis nem cadastros marcados como abusivos.",
-          "Cada amigo conta para o link de convite que usou ao entrar na lista de espera. Amigos que entraram pelo seu link e confirmaram o e-mail antes do início do programa, em 22 de outubro de 2026, também contam.",
-          "São contados no máximo {cap} amigos por pessoa por dia (horário padrão da Coreia). Amigos acima desse limite não são contados, nem em dias seguintes. Amigos que confirmarem depois do horário de encerramento não contam.",
+          "Só contam os amigos que confirmam o e-mail, e cada pessoa conta uma única vez. Se a mesma pessoa se cadastrar de novo, ela não conta outra vez, mesmo usando a mesma caixa de entrada escrita de outro jeito (por exemplo, um endereço do Gmail com pontos ou com uma +etiqueta, ou o mesmo nome em icloud.com, me.com e mac.com). Seu próprio endereço nunca conta para você, e convidar a si mesmo com outro endereço descumpre as regras de jogo limpo. Também não contam endereços de serviços conhecidos de e-mail descartável nem cadastros marcados como abusivos.",
+          "Cada amigo conta para o link de convite que usou na primeira vez que entrou na lista de espera. Se ele se cadastrar de novo por outro link, não passa a contar para outra pessoa nem conta duas vezes. Amigos que entraram pelo seu link e confirmaram o e-mail antes do início do programa, em 22 de outubro de 2026, também contam.",
+          "São contados no máximo {cap} amigos por pessoa por dia, pelo dia em que cada amigo confirma o e-mail (horário padrão da Coreia). Amigos acima desse limite não são contados, nem em dias seguintes. Amigos que confirmarem depois do horário de encerramento não contam.",
           "As contagens ficam congeladas no horário de encerramento. Um amigo já contado que depois cancelar a inscrição nos e-mails do WatchDive continua contando; ele deixa de contar se pedir que apaguemos os dados dele ou se for removido na análise.",
           "Depois que você alcança um nível e nós avisamos, ele continua seu, a menos que a análise mostre que os amigos que levaram você até lá descumpriram este regulamento. Se você cancelar a inscrição nos e-mails do WatchDive, mantém as recompensas já alcançadas, mas não poderemos mais enviar o e-mail de lançamento antecipado nem os avisos.",
         ],
@@ -1815,14 +1849,14 @@ const ptBR: ReferralCopy = {
       {
         heading: "Entrega, frete e impostos",
         paragraphs: [
-          "Quem recebe paga o frete e quaisquer impostos ou taxas de importação. Só enviamos para os países atendidos pela campanha do WatchDive no Kickstarter. As lanternas são enviadas após a análise, e todos os prêmios físicos são enviados antes de março de 2027.",
+          "Quem recebe paga o frete e quaisquer impostos ou taxas de importação. Só enviamos para os países atendidos pela campanha do WatchDive no Kickstarter. As lanternas são enviadas após a análise, e todos os prêmios físicos são enviados antes de {deliveryBy}.",
           "Para ganhadores que moram na Coreia do Sul, a lei coreana exige que quem paga o prêmio retenha {taxRate}% de imposto de renda (imposto sobre outros rendimentos e imposto local) sobre prêmios com valor tributável acima de {taxFree}. Isso vale tanto para a lanterna (avaliada em cerca de {lightValue}) quanto para o WatchDive. Antes do envio, informamos o valor e pedimos que você o pague a nós; nós declaramos e recolhemos o imposto. Para isso, pedimos aos ganhadores na Coreia o nome civil, o número de registro de residente e o endereço, usados só para a declaração fiscal e guardados apenas pelo prazo exigido pela lei tributária.",
         ],
       },
       {
         heading: "Ranking e privacidade",
         paragraphs: [
-          "O ranking mostra apenas o apelido que você definiu e escolheu exibir. Seu e-mail nunca aparece. Quem não escolhe exibir um apelido aparece como “Mergulhador anônimo”. Podemos ocultar apelidos ofensivos ou que se passem por outra pessoa.",
+          "O ranking mostra apenas o apelido que você definiu e escolheu exibir. Seu e-mail nunca aparece. Quem não escolhe exibir um apelido aparece como “Mergulhador anônimo”. O apelido deve ter de {min} a {max} caracteres: letras, números, espaços, pontos, hifens e sublinhados, sem misturar letras latinas com cirílicas ou gregas. Ele não pode ter e-mail, telefone ou link, nem parecer um nome do WatchDive, do Kickstarter ou das suas equipes (como “admin” ou “staff”). Podemos ocultar apelidos ofensivos ou que se passem por outra pessoa. O ranking e as contagens da sua página de convites são atualizados a cada poucos minutos, então um amigo novo pode levar alguns minutos para aparecer.",
           "Nunca dizemos quais amigos entraram, só quantos. Veja nossa política de privacidade para saber como tratamos os dados da lista de espera.",
         ],
       },
