@@ -6,8 +6,19 @@
 // {winners} {cap} {noticeDays} {min} {max} {hoursFirst} {hoursBuddy} {nickname}
 // {time} {reward} {closeDate}
 //
-// ko and en are the reviewed source; the other seven locales are translations
+// ko and en are the reviewed source; the other seven locales are native edits
 // of them (tests/referralCopy.test.ts checks keys, placeholders and claim words).
+//
+// Editing rules every locale follows (2026-10-22 copy review):
+//   - Same words as the frozen landing (src/lib/i18n/frozen-landing-messages.ts)
+//     for waitlist, Kickstarter, early bird, backer, confirm and buddy, and the
+//     same form of address (du / tú / vous / você / 你).
+//   - Tier names keep " · " before the friend count: the landing card shows
+//     only the part before it (src/routes/index.tsx).
+//   - A string that takes {count} or {remaining} must read correctly for 1 as
+//     well as for 12. Languages with plural nouns use "Label: {count}" or
+//     "{remaining} more" shapes instead of "{count} friends".
+//   - The rules state only what the ledger and ops review actually do.
 
 import type { Locale } from "../i18n/locale.ts";
 import type { ReferralTierId } from "./program.ts";
@@ -25,6 +36,8 @@ export type ReferralCopy = {
     progressMax: string;
     statusLink: string;
     rulesLink: string;
+    /** For someone who arrived through an invite link: what the inviter can see. */
+    invitedNote: string;
   };
   leaderboard: {
     title: string;
@@ -100,18 +113,18 @@ const en: ReferralCopy = {
     team: {
       name: "Dive Team · 5 friends",
       reward:
-        "Keep the {price} early-bird price with a private Kickstarter reward link, even after the first {seats} backers are gone.",
+        "Get a private Kickstarter reward link at the {price} early-bird price. It works during the live campaign on the Kickstarter website, even after the early-bird spots for the first {seats} backers are gone. One pledge per Dive Team member. Please don’t share the link.",
     },
     leader: {
       name: "Dive Leader · 10 friends",
       reward:
-        "Get a free underwater light. {stock} in stock, awarded in the order people reach 10. Shipping and taxes are paid by the recipient.",
+        "Get an underwater light worth about {lightValue}. {stock} in stock, awarded in the order people reach 10. Shipping and taxes are paid by the recipient.",
     },
   },
   top: {
     name: "Top {winners} inviters",
     reward:
-      "The {winners} people with the most verified friends when the Kickstarter campaign goes live each get one WatchDive. Shipping and taxes are paid by the recipient.",
+      "The {winners} people with the most verified friends at the closing time each get one WatchDive, even if the campaign is late or does not go ahead. Shipping and taxes are paid by the recipient.",
   },
   countingNote: "Only friends who confirm their email count.",
   card: {
@@ -122,11 +135,12 @@ const en: ReferralCopy = {
     progressMax: "{count} joined · every tier reached. Go for the top {winners}.",
     statusLink: "See my invites",
     rulesLink: "Official rules",
+    invitedNote: "The person who invited you sees only how many friends joined, never who.",
   },
   leaderboard: {
     title: "Buddy Invite top {winners}",
-    subtitle: "Verified friends only · as of {time}",
-    entry: "{count} friends",
+    subtitle: "Verified friends only · as of {time} · subject to review",
+    entry: "{count} joined",
     privateDiver: "Private diver",
     empty: "No one is on the board yet. Your first invite could put you here.",
     closed: "The Buddy Invite contest has closed. Winners are being reviewed.",
@@ -139,9 +153,9 @@ const en: ReferralCopy = {
     tierNone: "None yet",
     rankLabel: "Leaderboard rank",
     rankNone: "Not ranked yet",
-    earlyNotice: "You will get the Kickstarter launch email {hours} hour(s) early.",
+    earlyNotice: "You will get the Kickstarter launch email {hours} h before the general list.",
     lightEligible:
-      "You are among the first {stock} Dive Leaders. We will contact you about your underwater light.",
+      "You are provisionally among the first {stock} Dive Leaders. After our review we will email you about your underwater light.",
     lightGone: "All {stock} underwater lights have been claimed.",
     shareTitle: "Your invite link",
     nicknameLabel: "Nickname for the leaderboard",
@@ -190,27 +204,43 @@ const en: ReferralCopy = {
       {
         heading: "Organizer",
         paragraphs: [
-          "Buddy Invite is run by DIVEROID LTD (United Kingdom), the maker of WatchDive. Questions: help@diveroid.com.",
+          "Buddy Invite is run by DIVEROID LTD, the maker of WatchDive (company no. 16343651, Office 12146, 182-184 High Street North, East Ham, London E6 2JA, United Kingdom). Questions: help@diveroid.com.",
+        ],
+      },
+      {
+        heading: "Who can take part",
+        paragraphs: [
+          "You must be {ageOther} or older, or {ageKr} or older if you live in South Korea, and at least the age of majority where you live. Employees and contractors of DIVEROID LTD and its group companies, people who help run this program, and their households cannot receive physical rewards. You may join from anywhere, but underwater lights and WatchDive prizes can only be sent to a country the WatchDive Kickstarter campaign ships to. We will publish that list on this page before the closing time. If you live elsewhere, you still get the early launch email and the Dive Team link, but a physical reward passes to the next person in order. The program is void where prohibited by law.",
         ],
       },
       {
         heading: "Period",
         paragraphs: [
-          "The program starts on 22 October 2026 and closes immediately before the WatchDive Kickstarter campaign goes live. The campaign is planned for December 2026. We will announce the exact closing time on this page and by email at least {noticeDays} days in advance.",
+          "The program starts on 22 October 2026 and closes immediately before the WatchDive Kickstarter campaign goes live, and at {longStop} at the latest. The campaign is planned for December 2026. We will announce the exact closing time on this page and by email at least {noticeDays} days in advance.",
         ],
       },
       {
         heading: "How to take part",
         paragraphs: [
           "Join the WatchDive waitlist and confirm your email. You then get a personal invite link. A friend counts for you when they open your link, join the waitlist and confirm their email.",
-          "No purchase or Kickstarter pledge is needed to take part or to win. The early-bird price link is used when you choose to back the campaign.",
+          "No purchase or Kickstarter pledge is needed to take part or to win. You use the early-bird price link only if you choose to back the campaign.",
         ],
       },
       {
         heading: "What counts",
         paragraphs: [
           "Only friends who confirm their email count. Your own addresses, repeat sign-ups by the same person, disposable email addresses and sign-ups flagged as abusive do not count.",
-          "At most {cap} friends are counted for one person per day (Korea Standard Time). Friends who confirm after the closing time do not count.",
+          "A friend counts for the invite link they used when they joined the waitlist. Friends who joined through your link and confirmed their email before the program started on 22 October 2026 also count.",
+          "At most {cap} friends are counted for one person per day (Korea Standard Time). Friends over that limit are not counted, and they do not carry over to a later day. Friends who confirm after the closing time do not count.",
+          "Counts are frozen at the closing time. A counted friend who later unsubscribes from WatchDive emails still counts. A friend who asks us to delete their data, or whom we remove in review, stops counting.",
+          "Once you reach a tier and we tell you, you keep it unless our review finds that the friends who got you there broke these rules. If you unsubscribe from WatchDive emails yourself, you keep the rewards you have reached, but we can no longer send you the early launch email or notices.",
+        ],
+      },
+      {
+        heading: "Fair play",
+        paragraphs: [
+          "One entry per person. You may not sign up other people without their consent, pay or reward anyone for signing up, use referral-exchange sites, or post your link in replies or comments on WatchDive’s own ads.",
+          "Each person and each household can receive at most one underwater light and one WatchDive prize; one person can win both. We check this at shipping by name, address and phone number.",
         ],
       },
       {
@@ -218,34 +248,42 @@ const en: ReferralCopy = {
         paragraphs: [
           "1 friend: the Kickstarter launch email {hoursFirst} hour before the general list.",
           "3 friends (Buddy): the launch email {hoursBuddy} hours before the general list.",
-          "5 friends (Dive Team): a private Kickstarter reward link at the {price} early-bird price, available even after the first {seats} backers are gone.",
-          "10 friends (Dive Leader): one free underwater light. We have {stock}. They go to the first {stock} people to reach 10 friends, in the order they reach it. When they are gone, we will say so on this page.",
+          "5 friends (Dive Team): before the campaign goes live, we email you a private Kickstarter reward link at the {price} early-bird price. You can use it while the campaign is live, on the Kickstarter website (desktop or mobile browser, signed in), even after the early-bird spots for the first {seats} backers are gone. It does not work in the Kickstarter app, for late pledges or in the pledge manager. One pledge per Dive Team member; please do not share the link. Shipping and any taxes are charged as for other backers.",
+          "10 friends (Dive Leader): one underwater light worth about {lightValue}. We have {stock}. They go to the first {stock} people to reach 10 friends, in the order they reach it. When they are gone, we will say so on this page.",
           "Top {winners}: the {winners} people with the most counted friends at the closing time each get one WatchDive. If two people have the same count, the one who reached it first ranks higher.",
+          "A WatchDive prize is one WatchDive sensor housing, in the Apple Watch or Galaxy Watch version of the winner’s choice, worth {prizeValue} (the planned public price). The watch is not included, and WatchDive works only with the supported watch models listed on our site. Prizes have no cash alternative.",
+        ],
+      },
+      {
+        heading: "If the campaign is late or does not go ahead",
+        paragraphs: [
+          "If the Kickstarter campaign has not gone live by {longStop}, the program closes at that time anyway. Once we have announced the closing time, we move it at most once, and only with at least 48 hours’ email notice before the original time. Even if the campaign does not reach its goal, is cancelled or is delayed, the top {winners} still each receive a WatchDive. If we end the program early, we rank people by their counts at that time and award the top {winners} prizes on that basis.",
         ],
       },
       {
         heading: "Review and disqualification",
         paragraphs: [
-          "Before any light or WatchDive is sent, we review the counted friends. We may remove friends that break these rules and disqualify anyone who uses fake or automated sign-ups. We contact winners by email. If a winner does not reply within 14 days, the reward passes to the next person in order.",
+          "The underwater light order and the leaderboard ranking are provisional until review. Before any light or WatchDive is sent, we review the counted friends. We may remove friends that break these rules and disqualify anyone who uses fake or automated sign-ups or breaks the fair play rules. We email winners within 14 days after the closing time (lights: within 14 days after review). If a winner does not reply within 14 days, or cannot receive the reward under these rules, the light passes to the next Dive Leader in the order of reaching 10 friends, and a WatchDive prize passes to the next person in the ranking.",
         ],
       },
       {
         heading: "Delivery, shipping and taxes",
         paragraphs: [
-          "Recipients pay shipping and any taxes or duties, including Korean withholding tax on prizes where it applies. We ship only to countries the WatchDive Kickstarter campaign ships to. Underwater lights are sent after review. A WatchDive prize is sent when WatchDive ships to backers.",
+          "Recipients pay shipping and any import duties or taxes. We ship only to countries the WatchDive Kickstarter campaign ships to. Lights are sent after review, and all physical rewards are sent before March 2027.",
+          "For winners who live in South Korea, Korean law requires the payer to withhold {taxRate}% income tax (other income tax plus local income tax) on a prize whose taxable value is over {taxFree}. This applies to both the underwater light (worth about {lightValue}) and the WatchDive. Before we ship, we tell you the amount and ask you to pay it to us, and we report and pay it to the tax office. For this we ask Korean winners for their legal name, resident registration number and address, used only for the tax report and kept only as long as tax law requires.",
         ],
       },
       {
         heading: "Leaderboard and privacy",
         paragraphs: [
           "The leaderboard shows only a nickname you set and choose to show. Your email address is never shown. People who do not choose to show a nickname appear as “Private diver”. We may hide a nickname that is offensive or impersonates someone.",
-          "We never tell you who your friends are, only how many joined. See our privacy policy for how we handle waitlist data.",
+          "We never tell you which friends joined, only how many. See our privacy policy for how we handle waitlist data.",
         ],
       },
       {
         heading: "Changes",
         paragraphs: [
-          "If we must change or end the program, we will announce it here and by email first. Rewards already reached before a change are kept.",
+          "If we must change or end the program, we will announce it here and by email first. Changes never take away a reward you have already reached and never reduce the prizes for the top {winners}.",
         ],
       },
     ],
@@ -257,41 +295,42 @@ const ko: ReferralCopy = {
   tiers: {
     first: {
       name: "첫 초대 · 1명",
-      reward: "킥스타터 오픈 소식을 일반 명단보다 {hours}시간 먼저 이메일로 받아요.",
+      reward: "Kickstarter 오픈 소식을 일반 명단보다 {hours}시간 먼저 이메일로 받아요.",
     },
     buddy: {
       name: "버디 · 3명",
-      reward: "킥스타터 오픈 소식을 일반 명단보다 {hours}시간 먼저 이메일로 받아요.",
+      reward: "Kickstarter 오픈 소식을 일반 명단보다 {hours}시간 먼저 이메일로 받아요.",
     },
     team: {
       name: "다이브 팀 · 5명",
       reward:
-        "선착순 {seats}명이 마감돼도 얼리버드 가격 {price}로 후원할 수 있는 킥스타터 전용 리워드 링크를 드려요.",
+        "얼리버드 가격 {price}로 후원할 수 있는 Kickstarter 전용 리워드 링크를 드려요. 선착순 {seats}명 공개 얼리버드가 마감된 뒤에도 캠페인 기간 중 Kickstarter 웹사이트에서 쓸 수 있어요. 다이브 팀 회원 1명당 1건이며, 링크는 다른 사람과 공유하지 말아 주세요.",
     },
     leader: {
       name: "다이브 리더 · 10명",
       reward:
-        "수중 라이트 1개를 드려요. 준비된 수량은 {stock}개이며, 10명을 먼저 달성한 순서대로 드립니다. 배송비와 제세공과금은 받는 분이 부담합니다.",
+        "약 {lightValue} 상당의 수중 라이트 1개를 드려요. 준비된 수량은 {stock}개로, 10명을 먼저 달성한 순서대로 드려요. 배송비와 제세공과금은 받는 분이 부담합니다.",
     },
   },
   top: {
     name: "초대 랭킹 Top {winners}",
     reward:
-      "킥스타터 캠페인 오픈 직전 기준으로 인증을 마친 친구를 가장 많이 초대한 {winners}명에게 WatchDive를 1개씩 드려요. 배송비와 제세공과금은 받는 분이 부담합니다.",
+      "마감 시각 기준 인증을 마친 친구가 가장 많은 {winners}명에게 WatchDive를 1개씩 드려요. 캠페인이 늦어지거나 진행되지 않아도 드립니다. 배송비와 제세공과금은 받는 분이 부담합니다.",
   },
   countingNote: "이메일 인증을 마친 친구만 집계됩니다.",
   card: {
     title: "다이빙 버디를 초대하세요",
     body: "내 링크를 보내 주세요. 이메일 인증을 마친 친구가 늘어날수록 혜택이 커집니다.",
     progress: "{count}명 참여 · {tier}까지 {remaining}명 남았어요",
-    progressNone: "아직 참여한 친구가 없어요 · {tier}까지 {remaining}명",
+    progressNone: "아직 참여한 친구가 없어요 · {tier}까지 {remaining}명 남았어요",
     progressMax: "{count}명 참여 · 모든 단계를 달성했어요. 랭킹 Top {winners}에 도전해 보세요.",
     statusLink: "내 초대 현황 보기",
     rulesLink: "공식 규칙",
+    invitedNote: "초대한 분에게는 참여 인원수만 보이고, 누가 참여했는지는 보이지 않아요.",
   },
   leaderboard: {
     title: "버디 초대 랭킹 Top {winners}",
-    subtitle: "인증을 마친 친구만 집계 · {time} 기준",
+    subtitle: "인증을 마친 친구만 집계 · {time} 기준 · 검수 전 잠정 순위",
     entry: "{count}명",
     privateDiver: "비공개 다이버",
     empty: "아직 랭킹에 오른 분이 없어요. 첫 초대로 이 자리에 올라 보세요.",
@@ -305,8 +344,9 @@ const ko: ReferralCopy = {
     tierNone: "아직 없음",
     rankLabel: "랭킹 순위",
     rankNone: "아직 순위 없음",
-    earlyNotice: "킥스타터 오픈 소식을 {hours}시간 먼저 이메일로 받습니다.",
-    lightEligible: "수중 라이트 {stock}개 대상에 들었어요. 검수 후 이메일로 연락드릴게요.",
+    earlyNotice: "Kickstarter 오픈 소식을 일반 명단보다 {hours}시간 먼저 이메일로 받아요.",
+    lightEligible:
+      "수중 라이트 {stock}개 대상에 잠정적으로 들었어요. 검수를 마치면 이메일로 연락드릴게요.",
     lightGone: "수중 라이트 {stock}개가 모두 소진되었습니다.",
     shareTitle: "내 초대 링크",
     nicknameLabel: "랭킹에 표시할 닉네임",
@@ -330,7 +370,7 @@ const ko: ReferralCopy = {
   },
   mail: {
     welcomeSubject: "WatchDive 출시 알림 신청 완료 · 버디를 초대하세요",
-    welcomeHeading: "WatchDive 출시 알림 신청이 완료되었습니다.",
+    welcomeHeading: "WatchDive 출시 알림 신청이 완료되었습니다",
     welcomeIntro:
       "이메일 인증이 완료되었습니다. 아래 내 초대 링크를 함께 다이빙하는 버디에게 보내 주세요. 이메일 인증을 마친 친구가 늘어날수록 혜택이 커집니다.",
     welcomeTiersHeading: "버디 초대 혜택",
@@ -355,49 +395,73 @@ const ko: ReferralCopy = {
       {
         heading: "주최",
         paragraphs: [
-          "버디 초대는 WatchDive를 만드는 DIVEROID LTD(영국)가 운영합니다. 문의: help@diveroid.com",
+          "버디 초대는 WatchDive를 만드는 DIVEROID LTD(영국 회사번호 16343651, Office 12146, 182-184 High Street North, East Ham, London E6 2JA, United Kingdom)가 운영합니다. 문의: help@diveroid.com",
+        ],
+      },
+      {
+        heading: "참여 자격",
+        paragraphs: [
+          "만 {ageKr}세 이상만 참여할 수 있습니다(대한민국 외 거주자는 만 {ageOther}세 이상이면서 거주지 법상 성년이어야 합니다). DIVEROID LTD 및 계열사의 임직원·계약자, 이 프로그램 운영에 참여하는 분과 그 가구원은 실물 혜택을 받을 수 없습니다. 어느 나라에서든 참여할 수 있지만, 수중 라이트와 WatchDive 경품은 WatchDive Kickstarter 캠페인의 배송 국가로만 보낼 수 있으며, 그 목록은 마감 전에 이 페이지에 공개합니다. 배송 국가 밖에 사는 분도 오픈 소식 선공개 메일과 다이브 팀 링크는 받을 수 있지만, 실물 혜택은 다음 순서의 분에게 넘어갑니다. 법으로 금지된 지역에서는 이 프로그램이 적용되지 않습니다.",
         ],
       },
       {
         heading: "기간",
         paragraphs: [
-          "2026년 10월 22일에 시작해 WatchDive 킥스타터 캠페인이 공개되기 직전에 마감합니다. 캠페인은 2026년 12월에 공개할 예정이며, 정확한 마감 시각은 최소 {noticeDays}일 전에 이 페이지와 이메일로 알려드립니다.",
+          "2026년 10월 22일에 시작해 WatchDive Kickstarter 캠페인이 공개되기 직전에 마감하며, 늦어도 {longStop}에는 마감합니다. 캠페인은 2026년 12월에 공개할 예정이며, 정확한 마감 시각은 최소 {noticeDays}일 전에 이 페이지와 이메일로 알려드립니다.",
         ],
       },
       {
         heading: "참여 방법",
         paragraphs: [
           "WatchDive 출시 알림을 신청하고 이메일을 인증하면 내 초대 링크가 생깁니다. 친구가 내 링크로 들어와 알림을 신청하고 이메일 인증까지 마치면 1명으로 집계됩니다.",
-          "참여와 당첨에 구매나 킥스타터 후원 조건은 없습니다. 얼리버드 가격 링크는 캠페인을 후원하기로 했을 때 사용합니다.",
+          "참여와 당첨에 구매나 Kickstarter 후원 조건은 없습니다. 얼리버드 가격 링크는 캠페인을 후원하기로 했을 때만 사용합니다.",
         ],
       },
       {
         heading: "집계 기준",
         paragraphs: [
           "이메일 인증을 마친 친구만 집계합니다. 본인의 다른 주소, 같은 사람의 중복 가입, 일회용 이메일, 부정 가입으로 표시된 가입은 집계하지 않습니다.",
-          "한 사람당 하루 최대 {cap}명까지 집계합니다(한국 시간 기준). 마감 시각 이후에 인증한 친구는 집계하지 않습니다.",
+          "친구는 알림을 신청할 때 사용한 초대 링크의 주인에게 집계됩니다. 프로그램 시작일(2026년 10월 22일) 전에 내 링크로 신청해 이메일 인증을 마친 친구도 집계합니다.",
+          "한 사람당 하루 최대 {cap}명까지 집계합니다(한국 시간 기준). 이 한도를 넘은 친구는 집계하지 않으며, 다음 날로 넘어가지도 않습니다. 마감 시각 이후에 인증한 친구도 집계하지 않습니다.",
+          "집계는 마감 시각 기준으로 확정됩니다. 집계된 친구가 나중에 WatchDive 메일 수신을 거부해도 계속 집계되지만, 정보 삭제를 요청했거나 검수에서 제외된 친구는 집계에서 빠집니다.",
+          "단계를 달성했다는 안내를 받은 뒤에는, 검수에서 그 단계를 채운 가입이 규칙 위반으로 확인되지 않는 한 그 단계가 유지됩니다. 본인이 WatchDive 메일 수신을 거부해도 이미 달성한 혜택은 유지되지만, 오픈 소식 선공개 메일과 알림은 보내드릴 수 없습니다.",
+        ],
+      },
+      {
+        heading: "공정한 참여",
+        paragraphs: [
+          "1인 1회만 참여할 수 있습니다. 본인 동의 없이 다른 사람을 신청시키는 행위, 돈이나 보상을 주고 가입을 유도하는 행위, 추천 링크 교환 사이트 이용, WatchDive 광고의 댓글이나 답글에 링크를 올리는 행위는 허용되지 않습니다.",
+          "수중 라이트와 WatchDive 경품은 1인당, 1가구당 각각 1개까지 받을 수 있으며, 한 사람이 둘 다 받을 수도 있습니다. 발송 시 이름, 주소, 전화번호로 확인합니다.",
         ],
       },
       {
         heading: "혜택",
         paragraphs: [
-          "1명: 킥스타터 오픈 소식을 일반 명단보다 {hoursFirst}시간 먼저 이메일로 받습니다.",
+          "1명: Kickstarter 오픈 소식을 일반 명단보다 {hoursFirst}시간 먼저 이메일로 받습니다.",
           "3명(버디): 오픈 소식을 일반 명단보다 {hoursBuddy}시간 먼저 받습니다.",
-          "5명(다이브 팀): 선착순 {seats}명이 마감된 뒤에도 얼리버드 가격 {price}로 후원할 수 있는 킥스타터 전용 리워드 링크를 받습니다.",
-          "10명(다이브 리더): 수중 라이트 1개를 받습니다. 준비된 수량은 {stock}개이며, 10명을 먼저 달성한 {stock}명에게 달성 순서대로 드립니다. 모두 소진되면 이 페이지에 알립니다.",
+          "5명(다이브 팀): 캠페인 공개 전에 얼리버드 가격 {price}로 후원할 수 있는 Kickstarter 전용 리워드 링크를 이메일로 보내 드립니다. 선착순 {seats}명 공개 얼리버드가 마감된 뒤에도 캠페인 진행 기간에 Kickstarter 웹사이트(PC 또는 모바일 브라우저, 로그인 상태)에서 사용할 수 있습니다. Kickstarter 앱, 레이트 플레지, 플레지 매니저에서는 쓸 수 없습니다. 다이브 팀 회원 1명당 1건만 후원할 수 있으며, 링크는 다른 사람과 공유하지 말아 주세요. 배송비와 세금은 다른 후원자와 같은 기준으로 부과됩니다.",
+          "10명(다이브 리더): 약 {lightValue} 상당의 수중 라이트 1개를 받습니다. 준비된 수량은 {stock}개이며, 10명을 먼저 달성한 {stock}명에게 달성 순서대로 드립니다. 모두 소진되면 이 페이지에 알립니다.",
           "Top {winners}: 마감 시각 기준 집계된 친구가 가장 많은 {winners}명에게 WatchDive를 1개씩 드립니다. 집계 수가 같으면 그 수에 먼저 도달한 분이 앞섭니다.",
+          "WatchDive 경품은 당첨자가 고른 Apple Watch용 또는 Galaxy Watch용 WatchDive 센서 하우징 1개(예정 정가 {prizeValue} 상당)입니다. 스마트워치는 포함되지 않으며, 사이트에 안내된 지원 모델에서만 작동합니다. 경품은 현금으로 대신 지급하지 않습니다.",
+        ],
+      },
+      {
+        heading: "캠페인이 늦어지거나 진행되지 않는 경우",
+        paragraphs: [
+          "Kickstarter 캠페인이 {longStop}까지 공개되지 않으면 이 프로그램은 그 시각에 마감합니다. 마감 시각을 알린 뒤에는 한 번만 변경할 수 있으며, 변경할 때는 원래 마감 시각 최소 48시간 전에 이메일로 알려드립니다. 캠페인이 목표 금액에 도달하지 못하거나 취소되거나 늦어지더라도 Top {winners}에게는 WatchDive를 1개씩 드립니다. 프로그램을 일찍 종료하는 경우 종료 시점의 집계로 순위를 정해 Top {winners} 경품을 드립니다.",
         ],
       },
       {
         heading: "검수와 실격",
         paragraphs: [
-          "수중 라이트와 WatchDive를 보내기 전에 집계된 친구를 검수합니다. 규칙에 맞지 않는 가입은 집계에서 빼고, 가짜 또는 자동화된 가입을 이용한 경우 실격 처리할 수 있습니다. 당첨자에게는 이메일로 연락드리며, 14일 안에 회신이 없으면 다음 순서의 분에게 혜택이 넘어갑니다.",
+          "수중 라이트 지급 순서와 랭킹은 검수 전까지 잠정적입니다. 수중 라이트와 WatchDive를 보내기 전에 집계된 친구를 검수합니다. 규칙에 맞지 않는 가입은 집계에서 빼고, 가짜 또는 자동화된 가입을 이용하거나 공정한 참여 규칙을 어긴 경우 실격 처리할 수 있습니다. 당첨자에게는 마감 후 14일 안에(수중 라이트는 검수 후 14일 안에) 이메일로 연락드립니다. 14일 안에 회신이 없거나 이 규칙상 받을 수 없는 경우, 수중 라이트는 10명 달성 순서상 다음 다이브 리더에게, WatchDive 경품은 랭킹상 다음 분에게 넘어갑니다.",
         ],
       },
       {
         heading: "배송과 제세공과금",
         paragraphs: [
-          "배송비와 세금·관세 등 제세공과금은 받는 분이 부담합니다. 한국에서는 경품에 대한 기타소득세 원천징수가 적용될 수 있습니다. 배송은 WatchDive 킥스타터 캠페인의 배송 대상 국가로만 가능합니다. 수중 라이트는 검수 후 발송하며, WatchDive 경품은 후원자 배송 시점에 함께 발송합니다.",
+          "배송비와 관세·세금 등 제세공과금은 받는 분이 부담합니다. 배송은 WatchDive Kickstarter 캠페인의 배송 대상 국가로만 가능합니다. 수중 라이트는 검수 후 발송하며, 모든 실물 혜택은 2027년 3월 전에 발송합니다.",
+          "대한민국 거주 당첨자의 경우, 과세 대상 금액이 {taxFree}을 넘는 경품에는 소득세법에 따라 지급자가 {taxRate}%(기타소득세 및 지방소득세)를 원천징수해야 합니다. 이는 수중 라이트(약 {lightValue} 상당)와 WatchDive 모두에 해당합니다. 발송 전에 해당 금액을 안내드리며, 이를 회사에 입금해 주시면 회사가 세무서에 신고·납부합니다. 이를 위해 한국 당첨자에게 성명, 주민등록번호, 주소를 받으며, 세무 신고에만 쓰고 세법이 정한 기간만 보관합니다.",
         ],
       },
       {
@@ -410,7 +474,7 @@ const ko: ReferralCopy = {
       {
         heading: "변경",
         paragraphs: [
-          "프로그램을 변경하거나 종료해야 하는 경우 이 페이지와 이메일로 먼저 알려드립니다. 변경 전에 이미 달성한 혜택은 유지됩니다.",
+          "프로그램을 변경하거나 종료해야 하는 경우 이 페이지와 이메일로 먼저 알려드립니다. 변경으로 이미 달성한 혜택이 없어지거나 Top {winners} 경품이 줄어드는 일은 없습니다.",
         ],
       },
     ],
@@ -422,44 +486,45 @@ const zhCN: ReferralCopy = {
   tiers: {
     first: {
       name: "首次邀请 · 1 位朋友",
-      reward: "比普通名单提前 {hours} 小时收到 Kickstarter 上线邮件。",
+      reward: "比普通名单早 {hours} 小时收到 Kickstarter 开启通知邮件。",
     },
     buddy: {
       name: "潜伴 · 3 位朋友",
-      reward: "比普通名单提前 {hours} 小时收到 Kickstarter 上线邮件。",
+      reward: "比普通名单早 {hours} 小时收到 Kickstarter 开启通知邮件。",
     },
     team: {
       name: "潜水小队 · 5 位朋友",
       reward:
-        "保留 {price} 的早鸟价：获得 Kickstarter 专属奖励链接，即使前 {seats} 名支持者的名额已满，也能用它支持。",
+        "获得以 {price} 早鸟价支持的专属 Kickstarter 回报链接。众筹进行期间可在 Kickstarter 网站使用，即使前 {seats} 名支持者的早鸟名额已满也可以。每位潜水小队成员限支持 1 次，请勿分享此链接。",
     },
     leader: {
       name: "潜水队长 · 10 位朋友",
       reward:
-        "免费获赠 1 个水下灯。库存 {stock} 个，按达到 10 位朋友的先后顺序发放。运费和税费由收件人承担。",
+        "获得 1 个价值约 {lightValue} 的潜水灯。共 {stock} 个，按达到 10 位朋友的先后顺序发放。运费和税费由收件人承担。",
     },
   },
   top: {
     name: "邀请榜前 {winners} 名",
     reward:
-      "Kickstarter 众筹上线时，已验证朋友最多的 {winners} 位，各获赠一台 WatchDive。运费和税费由收件人承担。",
+      "截止时已验证朋友最多的 {winners} 位各获得 1 台 WatchDive；即使众筹延期或未能进行，也照常发放。运费和税费由收件人承担。",
   },
-  countingNote: "只有确认了邮箱的朋友才会计入。",
+  countingNote: "只有确认邮箱的朋友才会计入。",
   card: {
     title: "邀请你的潜伴",
-    body: "把你的链接发出去。每多一位确认邮箱的朋友，奖励就更进一步。",
-    progress: "已有 {count} 位加入 · 再邀请 {remaining} 位达到“{tier}”",
-    progressNone: "还没有朋友加入 · 再邀请 {remaining} 位达到“{tier}”",
-    progressMax: "已有 {count} 位加入 · 所有等级都已达成。冲击前 {winners} 名吧。",
+    body: "把你的链接发给潜伴。每多一位朋友确认邮箱，奖励就更进一步。",
+    progress: "已加入 {count} 位 · 再邀 {remaining} 位达成“{tier}”",
+    progressNone: "还没有朋友加入 · 再邀 {remaining} 位达成“{tier}”",
+    progressMax: "已加入 {count} 位 · 所有等级均已达成，冲刺前 {winners} 名吧。",
     statusLink: "查看我的邀请",
     rulesLink: "官方规则",
+    invitedNote: "邀请你的人只能看到有多少位朋友加入，看不到具体是谁。",
   },
   leaderboard: {
-    title: "潜伴邀请前 {winners} 名",
-    subtitle: "仅统计已验证的朋友 · 截至 {time}",
+    title: "潜伴邀请榜 前 {winners} 名",
+    subtitle: "仅计已验证的朋友 · 截至 {time} · 以审核结果为准",
     entry: "{count} 位朋友",
     privateDiver: "匿名潜水员",
-    empty: "榜单上还没有人。你的第一次邀请，说不定就能让你上榜。",
+    empty: "榜单上还没有人。发出第一个邀请，下一个上榜的也许就是你。",
     closed: "潜伴邀请活动已结束，正在审核获奖者。",
     rulesLink: "官方规则",
   },
@@ -470,48 +535,49 @@ const zhCN: ReferralCopy = {
     tierNone: "暂无",
     rankLabel: "排行榜名次",
     rankNone: "暂未上榜",
-    earlyNotice: "你将提前 {hours} 小时收到 Kickstarter 上线邮件。",
-    lightEligible: "你已位列前 {stock} 位潜水队长之中，我们会就水下灯与你联系。",
-    lightGone: "{stock} 个水下灯已全部送出。",
+    earlyNotice: "你将比普通名单早 {hours} 小时收到 Kickstarter 开启通知邮件。",
+    lightEligible:
+      "你已暂列前 {stock} 位潜水队长之中。审核完成后，我们会发邮件与你联系潜水灯事宜。",
+    lightGone: "{stock} 个潜水灯已全部送完。",
     shareTitle: "你的邀请链接",
     nicknameLabel: "排行榜昵称",
-    nicknameHelp: "{min}–{max} 个字符。不能包含邮箱地址、电话号码或链接。",
-    nicknameHiddenNote: "这个昵称已被我们的团队隐藏，请另选一个。",
+    nicknameHelp: "{min}–{max} 个字符，不能包含邮箱地址、电话号码或链接。",
+    nicknameHiddenNote: "这个昵称已被我们隐藏，请换一个。",
     leaderboardToggle: "在前 {winners} 名排行榜上显示我的昵称",
-    noticesToggle: "有朋友加入时，用邮件通知我",
+    noticesToggle: "有朋友加入时发邮件通知我",
     save: "保存",
     saving: "保存中…",
     saved: "已保存",
-    invalidLink: "这个链接无效。请打开 WatchDive 邮件中最新的链接。",
+    invalidLink: "链接无效。请打开 WatchDive 最近一封邮件中的链接。",
     errors: {
-      too_short: "至少需要 {min} 个字符。",
+      too_short: "请至少输入 {min} 个字符。",
       too_long: "最多 {max} 个字符。",
       contact_info: "昵称不能包含邮箱地址或电话号码。",
       link: "昵称不能包含链接。",
       reserved: "请换一个昵称。",
-      invalid_chars: "只能使用字母、数字、空格、点、连字符或下划线。",
-      failed: "保存失败，请再试一次。",
+      invalid_chars: "只能使用文字、数字、空格、点（.）、连字符（-）和下划线（_）。",
+      failed: "保存失败，请重试。",
     },
   },
   mail: {
-    welcomeSubject: "您已加入 WatchDive 候补名单 — 邀请您的潜伴",
-    welcomeHeading: "您已加入 WatchDive 候补名单",
+    welcomeSubject: "你已加入 WatchDive 候补名单 — 邀请你的潜伴",
+    welcomeHeading: "你已加入 WatchDive 候补名单",
     welcomeIntro:
-      "邮箱已确认。请把您的专属邀请链接发给一起潜水的朋友。每多一位确认邮箱的朋友，奖励就更进一步。",
+      "邮箱已确认。把你的专属邀请链接发给一起潜水的潜伴吧。每多一位朋友确认邮箱，奖励就更进一步。",
     welcomeTiersHeading: "潜伴邀请奖励",
     welcomeButton: "分享我的邀请链接",
-    welcomeFallback: "也可以复制此链接：",
-    welcomeStatus: "查看邀请进度，并设置排行榜昵称：",
+    welcomeFallback: "或复制此链接：",
+    welcomeStatus: "查看邀请进度、设置排行榜昵称：",
     welcomeRules: "官方规则：",
-    welcomeOutro: "WatchDive 在 Kickstarter 上线时，我们会通过邮件通知您。",
-    noticeSubject: "有潜伴通过您的链接加入了（目前共 {count} 位）",
-    noticeHeading: "有潜伴通过您的链接加入了",
-    noticeBody: "已有 {count} 位朋友通过您的链接加入，并确认了邮箱。",
-    noticeTierReached: "您已达成“{tier}”：{reward}",
-    noticeNext: "再邀请 {remaining} 位，即可达到“{tier}”。",
-    noticeMax: "所有等级都已达成。继续冲击前 {winners} 名吧。",
+    welcomeOutro: "WatchDive 在 Kickstarter 开启时，我们会发邮件通知你。",
+    noticeSubject: "有潜伴通过你的链接加入了（目前共 {count} 位）",
+    noticeHeading: "有潜伴通过你的链接加入了",
+    noticeBody: "目前已有 {count} 位朋友通过你的链接加入并确认了邮箱。",
+    noticeTierReached: "你已达成“{tier}”：{reward}",
+    noticeNext: "再邀 {remaining} 位即可达成“{tier}”。",
+    noticeMax: "所有等级均已达成，继续冲刺前 {winners} 名吧。",
     noticeButton: "查看我的邀请",
-    noticeFooter: "您可以在邀请页面关闭这些邮件。",
+    noticeFooter: "你可以在邀请页面关闭此类邮件。",
   },
   rules: {
     title: "潜伴邀请官方规则",
@@ -520,62 +586,86 @@ const zhCN: ReferralCopy = {
       {
         heading: "主办方",
         paragraphs: [
-          "潜伴邀请由 WatchDive 的制造商 DIVEROID LTD（英国）运营。咨询请联系：help@diveroid.com。",
+          "潜伴邀请由 WatchDive 的制造商 DIVEROID LTD 主办（英国公司编号 16343651，地址：Office 12146, 182-184 High Street North, East Ham, London E6 2JA, United Kingdom）。咨询：help@diveroid.com。",
         ],
       },
       {
-        heading: "活动期间",
+        heading: "参与资格",
         paragraphs: [
-          "活动自 2026 年 10 月 22 日开始，在 WatchDive 的 Kickstarter 众筹上线前一刻结束。众筹计划于 2026 年 12 月上线。我们会至少提前 {noticeDays} 天，在本页面并通过邮件公布确切的截止时间。",
+          "参与者须年满 {ageOther} 岁，并已达到居住地的法定成年年龄；居住在韩国的参与者须年满 {ageKr} 岁。DIVEROID LTD 及其关联公司的员工和合同方、协助运营本活动的人员及其家庭成员，不能获得实物奖励。任何国家和地区的人都可以参与，但潜水灯和 WatchDive 奖品只能寄往 WatchDive Kickstarter 众筹可配送的国家和地区，该名单将在截止时间前在本页面公布。居住在其他地区的人仍可获得提前的开启通知邮件和潜水小队链接，但实物奖励将顺延给下一位。在法律禁止的地区，本活动无效。",
+        ],
+      },
+      {
+        heading: "活动时间",
+        paragraphs: [
+          "活动自 2026 年 10 月 22 日开始，至 WatchDive 的 Kickstarter 众筹开启前一刻结束，最迟于 {longStop} 结束。众筹计划于 2026 年 12 月开启。确切的截止时间将至少提前 {noticeDays} 天在本页面公布，并通过邮件通知。",
         ],
       },
       {
         heading: "参与方式",
         paragraphs: [
-          "加入 WatchDive 候补名单并确认邮箱，即可获得您的专属邀请链接。朋友打开您的链接、加入候补名单并确认邮箱后，就会计入您的邀请数。",
-          "参与或获奖都无需购买，也无需在 Kickstarter 上支持。早鸟价链接只在您自己决定支持众筹时使用。",
+          "加入 WatchDive 候补名单并确认邮箱后，你会获得专属邀请链接。朋友打开你的链接、加入候补名单并确认邮箱后，即计为你邀请的 1 位朋友。",
+          "参与和获奖均无需购买，也无需在 Kickstarter 上支持。早鸟价链接仅在你自己决定支持众筹时使用。",
         ],
       },
       {
         heading: "计入规则",
         paragraphs: [
-          "只有确认了邮箱的朋友才会计入。您自己的其他邮箱、同一个人的重复报名、一次性邮箱，以及被标记为滥用的报名，均不计入。",
-          "每人每天最多计入 {cap} 位朋友（以韩国标准时间为准）。在截止时间之后才确认的朋友不计入。",
+          "只有确认邮箱的朋友才会计入。你自己的其他邮箱、同一人的重复报名、一次性邮箱，以及被标记为滥用的报名，均不计入。",
+          "朋友计入其加入候补名单时所用邀请链接的主人名下。在活动开始日（2026 年 10 月 22 日）之前通过你的链接加入并确认邮箱的朋友，同样计入。",
+          "每人每天最多计入 {cap} 位朋友（以韩国标准时间为准）。超出上限的朋友不计入，也不会顺延到之后的日期。截止时间之后才确认邮箱的朋友不计入。",
+          "计入数以截止时间为准锁定。已计入的朋友之后即使退订 WatchDive 邮件，仍继续计入；但要求删除个人数据、或在审核中被剔除的朋友不再计入。",
+          "你达成某个等级并收到我们的通知后，该等级将一直保留，除非审核发现帮你达成该等级的朋友违反了本规则。你自己退订 WatchDive 邮件后，已达成的奖励仍会保留，但我们将无法再给你发送提前的开启通知邮件和邀请通知。",
+        ],
+      },
+      {
+        heading: "公平参与",
+        paragraphs: [
+          "每人只能参与一次。禁止未经本人同意替他人报名、以金钱或奖励换取报名、使用互换邀请的网站，以及在 WatchDive 官方广告的评论或回复中发布邀请链接。",
+          "潜水灯和 WatchDive 奖品，每人、每户各限 1 份；同一人可以同时获得两者。寄送时我们会核对姓名、地址和电话号码。",
         ],
       },
       {
         heading: "奖励",
         paragraphs: [
-          "1 位朋友：比普通名单提前 {hoursFirst} 小时收到 Kickstarter 上线邮件。",
-          "3 位朋友（潜伴）：比普通名单提前 {hoursBuddy} 小时收到上线邮件。",
-          "5 位朋友（潜水小队）：获得一个 Kickstarter 专属奖励链接，保留 {price} 的早鸟价，即使前 {seats} 名支持者的名额已满也可使用。",
-          "10 位朋友（潜水队长）：免费获赠 1 个水下灯。共 {stock} 个，发给最先达到 10 位朋友的前 {stock} 人，并按达到的先后顺序发放。发完后，我们会在本页面说明。",
-          "前 {winners} 名：截止时间时计入朋友数最多的 {winners} 位，各获赠一台 WatchDive。若人数相同，先达到该人数者排名靠前。",
+          "1 位朋友：比普通名单早 {hoursFirst} 小时收到 Kickstarter 开启通知邮件。",
+          "3 位朋友（潜伴）：比普通名单早 {hoursBuddy} 小时收到开启通知邮件。",
+          "5 位朋友（潜水小队）：众筹开启前，我们会通过邮件发给你以 {price} 早鸟价支持的专属 Kickstarter 回报链接。众筹进行期间，即使前 {seats} 名支持者的早鸟名额已满，你仍可在 Kickstarter 网站（电脑或手机浏览器，需登录）使用。该链接不适用于 Kickstarter App、延迟支持（Late Pledge）或 Pledge Manager。每位潜水小队成员限支持 1 次，请勿分享此链接。运费和税费与其他支持者按相同标准收取。",
+          "10 位朋友（潜水队长）：获得 1 个价值约 {lightValue} 的潜水灯。共 {stock} 个，按达到 10 位朋友的先后顺序，发给最先达到的 {stock} 人。送完后，我们会在本页面说明。",
+          "前 {winners} 名：截止时计入朋友数最多的 {winners} 位，各获得 1 台 WatchDive。人数相同时，先达到该人数者排名靠前。",
+          "WatchDive 奖品为 1 个 WatchDive 传感器外壳，Apple Watch 版或 Galaxy Watch 版由获奖者选择，价值 {prizeValue}（计划公开售价）。不含手表，且仅适用于我们网站列出的支持机型。奖品不可兑换现金。",
+        ],
+      },
+      {
+        heading: "众筹延期或未能进行时",
+        paragraphs: [
+          "如果 Kickstarter 众筹在 {longStop} 前仍未开启，活动将于该时间照常结束。截止时间公布后最多只调整一次，且会在原定截止时间至少 48 小时前通过邮件通知。即使众筹未达成目标、被取消或延期，前 {winners} 名仍各获得 1 台 WatchDive。如果我们提前结束活动，将按结束时的计入数排名，并据此发放前 {winners} 名奖品。",
         ],
       },
       {
         heading: "审核与取消资格",
         paragraphs: [
-          "在寄出任何水下灯或 WatchDive 之前，我们都会审核计入的朋友。我们可能剔除违反本规则的朋友，并取消使用虚假或自动化报名者的资格。我们会通过邮件联系获奖者。如果获奖者在 14 天内没有回复，奖励将顺延给排在后面的下一位。",
+          "潜水灯的发放顺序和排行榜名次在审核完成前均为暂定。寄出潜水灯或 WatchDive 之前，我们会审核已计入的朋友。我们可能剔除违反本规则的朋友，并取消使用虚假或自动化报名、或违反公平参与规则者的资格。我们会在截止后 14 天内（潜水灯为审核后 14 天内）通过邮件联系获奖者。获奖者如在 14 天内未回复，或按本规则无法领取奖励，潜水灯将顺延给按达到 10 位朋友先后顺序的下一位潜水队长，WatchDive 奖品将顺延给排行榜上的下一位。",
         ],
       },
       {
         heading: "配送、运费与税费",
         paragraphs: [
-          "收件人需承担运费以及任何税费或关税，其中包括适用情况下韩国对奖品征收的预扣税。我们只寄送到 WatchDive Kickstarter 众筹支持寄送的国家和地区。水下灯在审核后寄出。WatchDive 奖品会在 WatchDive 向支持者发货时寄出。",
+          "收件人需承担运费及任何关税或税费。我们只寄送到 WatchDive Kickstarter 众筹可配送的国家和地区。潜水灯在审核后寄出；所有实物奖励都会在 2027 年 3 月前寄出。",
+          "对于居住在韩国的获奖者，根据韩国法律，应税价值超过 {taxFree} 的奖品须由支付方代扣 {taxRate}% 的所得税（其他所得税及地方所得税）。潜水灯（价值约 {lightValue}）和 WatchDive 均适用。寄送前，我们会告知你应缴金额，请你先支付给我们，由我们向税务机关申报并缴纳。为此，我们会向韩国获奖者收集法定姓名、居民登记号码和地址，仅用于税务申报，并只在税法规定的期限内保存。",
         ],
       },
       {
         heading: "排行榜与隐私",
         paragraphs: [
-          "排行榜只显示您自己设置并选择公开的昵称，绝不会显示您的邮箱地址。没有选择公开昵称的人，会显示为“匿名潜水员”。对于带有冒犯性或冒充他人的昵称，我们可能会将其隐藏。",
-          "我们不会告诉您朋友是谁，只告知有多少位加入。我们如何处理候补名单数据，请参阅隐私政策。",
+          "排行榜只显示你自己设置并选择公开的昵称，绝不显示你的邮箱地址。未选择公开昵称的人显示为“匿名潜水员”。带有冒犯性或冒充他人的昵称，我们可能会隐藏。",
+          "我们不会告诉你是哪些朋友加入，只告诉你加入的人数。候补名单数据的处理方式，请参阅我们的隐私政策。",
         ],
       },
       {
         heading: "变更",
         paragraphs: [
-          "如果我们必须变更或终止本活动，会先在本页面并通过邮件公布。变更之前已经达成的奖励予以保留。",
+          "如需变更或终止本活动，我们会事先在本页面公布并通过邮件通知。任何变更都不会取消你已达成的奖励，也不会减少前 {winners} 名的奖品。",
         ],
       },
     ],
@@ -587,44 +677,45 @@ const zhTW: ReferralCopy = {
   tiers: {
     first: {
       name: "首次邀請 · 1 位朋友",
-      reward: "比一般名單提前 {hours} 小時收到 Kickstarter 開跑通知信。",
+      reward: "比一般名單早 {hours} 小時收到 Kickstarter 募資開跑通知信。",
     },
     buddy: {
       name: "潛伴 · 3 位朋友",
-      reward: "比一般名單提前 {hours} 小時收到 Kickstarter 開跑通知信。",
+      reward: "比一般名單早 {hours} 小時收到 Kickstarter 募資開跑通知信。",
     },
     team: {
       name: "潛水小隊 · 5 位朋友",
       reward:
-        "保留 {price} 的早鳥價：取得 Kickstarter 專屬回饋連結，即使前 {seats} 名贊助者的名額已滿，也能用它贊助。",
+        "取得以 {price} 早鳥價贊助的專屬 Kickstarter 回饋連結。募資期間可在 Kickstarter 網站使用，即使前 {seats} 名贊助者的早鳥名額已滿也可以。每位潛水小隊成員限贊助 1 次，請勿分享此連結。",
     },
     leader: {
       name: "潛水隊長 · 10 位朋友",
       reward:
-        "免費獲贈 1 盞水下燈。庫存 {stock} 盞，依達到 10 位朋友的先後順序發送。運費與稅費由收件人負擔。",
+        "獲得 1 支價值約 {lightValue} 的潛水燈。共 {stock} 支，依達到 10 位朋友的先後順序發送。運費與稅費由收件人負擔。",
     },
   },
   top: {
     name: "邀請榜前 {winners} 名",
     reward:
-      "Kickstarter 募資開跑時，已驗證朋友最多的 {winners} 位，各獲贈一支 WatchDive。運費與稅費由收件人負擔。",
+      "截止時已驗證朋友最多的 {winners} 位各獲得 1 台 WatchDive；即使募資延期或未能進行，也照常發送。運費與稅費由收件人負擔。",
   },
-  countingNote: "只有確認了信箱的朋友才會計入。",
+  countingNote: "只有確認信箱的朋友才會計入。",
   card: {
     title: "邀請你的潛伴",
-    body: "把你的連結傳出去。每多一位確認信箱的朋友，獎勵就更進一步。",
-    progress: "已有 {count} 位加入 · 再邀請 {remaining} 位達到「{tier}」",
-    progressNone: "還沒有朋友加入 · 再邀請 {remaining} 位達到「{tier}」",
-    progressMax: "已有 {count} 位加入 · 所有等級都已達成。衝刺前 {winners} 名吧。",
+    body: "把你的連結傳給潛伴。每多一位朋友確認信箱，獎勵就更進一步。",
+    progress: "已加入 {count} 位 · 再邀 {remaining} 位達成「{tier}」",
+    progressNone: "還沒有朋友加入 · 再邀 {remaining} 位達成「{tier}」",
+    progressMax: "已加入 {count} 位 · 所有等級皆已達成，衝刺前 {winners} 名吧。",
     statusLink: "查看我的邀請",
     rulesLink: "官方規則",
+    invitedNote: "邀請你的人只會看到有多少位朋友加入，看不到是誰。",
   },
   leaderboard: {
-    title: "潛伴邀請前 {winners} 名",
-    subtitle: "僅統計已驗證的朋友 · 截至 {time}",
+    title: "潛伴邀請榜 前 {winners} 名",
+    subtitle: "僅計已驗證的朋友 · 截至 {time} · 以審核結果為準",
     entry: "{count} 位朋友",
     privateDiver: "匿名潛水員",
-    empty: "排行榜上還沒有人。你的第一次邀請，說不定就能讓你上榜。",
+    empty: "排行榜上還沒有人。送出第一個邀請，下一個上榜的也許就是你。",
     closed: "潛伴邀請活動已結束，正在審核得獎者。",
     rulesLink: "官方規則",
   },
@@ -635,48 +726,48 @@ const zhTW: ReferralCopy = {
     tierNone: "尚無",
     rankLabel: "排行榜名次",
     rankNone: "尚未上榜",
-    earlyNotice: "你將提前 {hours} 小時收到 Kickstarter 開跑通知信。",
-    lightEligible: "你已名列前 {stock} 位潛水隊長之中，我們會就水下燈與你聯絡。",
-    lightGone: "{stock} 盞水下燈已全數送出。",
+    earlyNotice: "你將比一般名單早 {hours} 小時收到 Kickstarter 募資開跑通知信。",
+    lightEligible: "你已暫列前 {stock} 位潛水隊長之中。審核完成後，我們會寄信與你聯絡潛水燈事宜。",
+    lightGone: "{stock} 支潛水燈已全數送出。",
     shareTitle: "你的邀請連結",
     nicknameLabel: "排行榜暱稱",
-    nicknameHelp: "{min}–{max} 個字元。不能包含電子郵件地址、電話號碼或連結。",
-    nicknameHiddenNote: "這個暱稱已被我們的團隊隱藏，請另選一個。",
+    nicknameHelp: "{min}–{max} 個字元，不能包含電子郵件地址、電話號碼或連結。",
+    nicknameHiddenNote: "這個暱稱已被我們隱藏，請換一個。",
     leaderboardToggle: "在前 {winners} 名排行榜上顯示我的暱稱",
-    noticesToggle: "有朋友加入時，用電子郵件通知我",
+    noticesToggle: "有朋友加入時寄信通知我",
     save: "儲存",
     saving: "儲存中…",
     saved: "已儲存",
-    invalidLink: "這個連結無效。請開啟 WatchDive 信件中最新的連結。",
+    invalidLink: "連結無效。請開啟 WatchDive 最近一封信中的連結。",
     errors: {
-      too_short: "至少需要 {min} 個字元。",
+      too_short: "請至少輸入 {min} 個字元。",
       too_long: "最多 {max} 個字元。",
       contact_info: "暱稱不能包含電子郵件地址或電話號碼。",
       link: "暱稱不能包含連結。",
       reserved: "請換一個暱稱。",
-      invalid_chars: "只能使用字母、數字、空格、句點、連字號或底線。",
+      invalid_chars: "只能使用文字、數字、空格、句點（.）、連字號（-）和底線（_）。",
       failed: "儲存失敗，請再試一次。",
     },
   },
   mail: {
-    welcomeSubject: "您已加入 WatchDive 等候名單 — 邀請您的潛伴",
-    welcomeHeading: "您已加入 WatchDive 等候名單",
+    welcomeSubject: "你已加入 WatchDive 等候名單 — 邀請你的潛伴",
+    welcomeHeading: "你已加入 WatchDive 等候名單",
     welcomeIntro:
-      "電子郵件已確認。請把您的專屬邀請連結傳給一起潛水的朋友。每多一位確認信箱的朋友，獎勵就更進一步。",
+      "信箱已確認。把你的專屬邀請連結傳給一起潛水的潛伴吧。每多一位朋友確認信箱，獎勵就更進一步。",
     welcomeTiersHeading: "潛伴邀請獎勵",
     welcomeButton: "分享我的邀請連結",
-    welcomeFallback: "也可以複製此連結：",
-    welcomeStatus: "查看邀請進度，並設定排行榜暱稱：",
+    welcomeFallback: "或複製此連結：",
+    welcomeStatus: "查看邀請進度、設定排行榜暱稱：",
     welcomeRules: "官方規則：",
-    welcomeOutro: "WatchDive 在 Kickstarter 上線時，我們會寄信通知您。",
-    noticeSubject: "有潛伴透過您的連結加入了（目前共 {count} 位）",
-    noticeHeading: "有潛伴透過您的連結加入了",
-    noticeBody: "已有 {count} 位朋友透過您的連結加入，並確認了信箱。",
-    noticeTierReached: "您已達成「{tier}」：{reward}",
-    noticeNext: "再邀請 {remaining} 位，即可達到「{tier}」。",
-    noticeMax: "所有等級都已達成。繼續衝刺前 {winners} 名吧。",
+    welcomeOutro: "WatchDive 在 Kickstarter 開賣時，我們會寄信通知你。",
+    noticeSubject: "有潛伴透過你的連結加入了（目前共 {count} 位）",
+    noticeHeading: "有潛伴透過你的連結加入了",
+    noticeBody: "目前已有 {count} 位朋友透過你的連結加入並確認了信箱。",
+    noticeTierReached: "你已達成「{tier}」：{reward}",
+    noticeNext: "再邀 {remaining} 位即可達成「{tier}」。",
+    noticeMax: "所有等級皆已達成，繼續衝刺前 {winners} 名吧。",
     noticeButton: "查看我的邀請",
-    noticeFooter: "您可以在邀請頁面關閉這些通知信。",
+    noticeFooter: "你可以在邀請頁面關閉這類通知信。",
   },
   rules: {
     title: "潛伴邀請官方規則",
@@ -685,62 +776,86 @@ const zhTW: ReferralCopy = {
       {
         heading: "主辦單位",
         paragraphs: [
-          "潛伴邀請由 WatchDive 的製造商 DIVEROID LTD（英國）營運。洽詢請聯絡：help@diveroid.com。",
+          "潛伴邀請由 WatchDive 的製造商 DIVEROID LTD 主辦（英國公司編號 16343651，地址：Office 12146, 182-184 High Street North, East Ham, London E6 2JA, United Kingdom）。洽詢：help@diveroid.com。",
+        ],
+      },
+      {
+        heading: "參加資格",
+        paragraphs: [
+          "參加者須年滿 {ageOther} 歲，並已達居住地的法定成年年齡；居住在韓國的參加者須年滿 {ageKr} 歲。DIVEROID LTD 及其關係企業的員工與約聘人員、協助營運本活動的人員及其家庭成員，不能獲得實體獎勵。任何國家和地區的人都可以參加，但潛水燈和 WatchDive 獎品只能寄往 WatchDive Kickstarter 募資可配送的國家和地區，該名單將在截止時間前於本頁面公布。居住在其他地區的人仍可收到提前的開跑通知信和潛水小隊連結，但實體獎勵將順延給下一位。在法律禁止的地區，本活動無效。",
         ],
       },
       {
         heading: "活動期間",
         paragraphs: [
-          "活動自 2026 年 10 月 22 日開始，在 WatchDive 的 Kickstarter 募資上線前一刻結束。募資預計於 2026 年 12 月上線。我們會至少提前 {noticeDays} 天，在本頁面並透過電子郵件公布確切的截止時間。",
+          "活動自 2026 年 10 月 22 日開始，至 WatchDive 的 Kickstarter 募資開跑前一刻結束，最遲於 {longStop} 結束。募資預計於 2026 年 12 月開跑。確切的截止時間將至少提前 {noticeDays} 天在本頁面公布，並寄信通知。",
         ],
       },
       {
         heading: "參加方式",
         paragraphs: [
-          "加入 WatchDive 等候名單並確認信箱，即可取得您的專屬邀請連結。朋友開啟您的連結、加入等候名單並確認信箱後，就會計入您的邀請數。",
-          "參加或得獎都不需要購買，也不需要在 Kickstarter 上贊助。早鳥價連結只在您自己決定贊助募資時使用。",
+          "加入 WatchDive 等候名單並確認信箱後，你會取得專屬邀請連結。朋友開啟你的連結、加入等候名單並確認信箱後，即計為你邀請的 1 位朋友。",
+          "參加和得獎都不需要購買，也不需要在 Kickstarter 上贊助。早鳥價連結只在你自己決定贊助募資時使用。",
         ],
       },
       {
         heading: "計入規則",
         paragraphs: [
-          "只有確認了信箱的朋友才會計入。您自己的其他信箱、同一個人的重複登記、拋棄式電子郵件，以及被標記為濫用的登記，均不計入。",
-          "每人每天最多計入 {cap} 位朋友（以韓國標準時間為準）。在截止時間之後才確認的朋友不計入。",
+          "只有確認信箱的朋友才會計入。你自己的其他信箱、同一人的重複登記、拋棄式信箱，以及被標記為濫用的登記，均不計入。",
+          "朋友會計入其加入等候名單時所用邀請連結的主人名下。在活動開始日（2026 年 10 月 22 日）之前透過你的連結加入並確認信箱的朋友，同樣計入。",
+          "每人每天最多計入 {cap} 位朋友（以韓國標準時間為準）。超出上限的朋友不計入，也不會順延到之後的日期。截止時間之後才確認信箱的朋友不計入。",
+          "計入數以截止時間為準鎖定。已計入的朋友之後即使取消訂閱 WatchDive 信件，仍繼續計入；但要求刪除個人資料、或在審核中被剔除的朋友不再計入。",
+          "你達成某個等級並收到我們的通知後，該等級會一直保留，除非審核發現幫你達成該等級的朋友違反本規則。你自己取消訂閱 WatchDive 信件後，已達成的獎勵仍會保留，但我們將無法再寄給你提前的開跑通知信和邀請通知。",
+        ],
+      },
+      {
+        heading: "公平參加",
+        paragraphs: [
+          "每人只能參加一次。禁止未經本人同意替他人登記、以金錢或獎勵換取登記、使用互換邀請的網站，以及在 WatchDive 官方廣告的留言或回覆中張貼邀請連結。",
+          "潛水燈和 WatchDive 獎品，每人、每戶各限 1 份；同一人可以同時獲得兩者。寄送時我們會核對姓名、地址和電話號碼。",
         ],
       },
       {
         heading: "獎勵",
         paragraphs: [
-          "1 位朋友：比一般名單提前 {hoursFirst} 小時收到 Kickstarter 開跑通知信。",
-          "3 位朋友（潛伴）：比一般名單提前 {hoursBuddy} 小時收到開跑通知信。",
-          "5 位朋友（潛水小隊）：取得一個 Kickstarter 專屬回饋連結，保留 {price} 的早鳥價，即使前 {seats} 名贊助者的名額已滿也可使用。",
-          "10 位朋友（潛水隊長）：免費獲贈 1 盞水下燈。共 {stock} 盞，送給最先達到 10 位朋友的前 {stock} 人，並依達到的先後順序發送。送完後，我們會在本頁面說明。",
-          "前 {winners} 名：截止時間時計入朋友數最多的 {winners} 位，各獲贈一支 WatchDive。若人數相同，先達到該人數者排名在前。",
+          "1 位朋友：比一般名單早 {hoursFirst} 小時收到 Kickstarter 募資開跑通知信。",
+          "3 位朋友（潛伴）：比一般名單早 {hoursBuddy} 小時收到開跑通知信。",
+          "5 位朋友（潛水小隊）：募資開跑前，我們會寄給你以 {price} 早鳥價贊助的專屬 Kickstarter 回饋連結。募資期間，即使前 {seats} 名贊助者的早鳥名額已滿，你仍可在 Kickstarter 網站（電腦或手機瀏覽器，需登入）使用。此連結不適用於 Kickstarter App、延遲贊助（Late Pledge）或 Pledge Manager。每位潛水小隊成員限贊助 1 次，請勿分享此連結。運費與稅費依其他贊助者的相同標準收取。",
+          "10 位朋友（潛水隊長）：獲得 1 支價值約 {lightValue} 的潛水燈。共 {stock} 支，依達到 10 位朋友的先後順序，送給最先達到的 {stock} 人。送完後，我們會在本頁面說明。",
+          "前 {winners} 名：截止時計入朋友數最多的 {winners} 位，各獲得 1 台 WatchDive。人數相同時，先達到該人數者排名在前。",
+          "WatchDive 獎品為 1 個 WatchDive 感測器外殼，Apple Watch 版或 Galaxy Watch 版由得獎者選擇，價值 {prizeValue}（預計公開售價）。不含手錶，且僅適用於我們網站列出的支援機型。獎品不可兌換現金。",
+        ],
+      },
+      {
+        heading: "募資延期或未能進行時",
+        paragraphs: [
+          "如果 Kickstarter 募資在 {longStop} 前仍未開跑，活動將於該時間照常結束。截止時間公布後最多只調整一次，且會在原定截止時間至少 48 小時前寄信通知。即使募資未達目標、被取消或延期，前 {winners} 名仍各獲得 1 台 WatchDive。如果我們提前結束活動，將依結束時的計入數排名，並據此發送前 {winners} 名獎品。",
         ],
       },
       {
         heading: "審核與取消資格",
         paragraphs: [
-          "在寄出任何水下燈或 WatchDive 之前，我們都會審核計入的朋友。我們可能剔除違反本規則的朋友，並取消使用虛假或自動化登記者的資格。我們會透過電子郵件聯絡得獎者。如果得獎者在 14 天內沒有回覆，獎勵將順延給排在後面的下一位。",
+          "潛水燈的發送順序和排行榜名次在審核完成前皆為暫定。寄出潛水燈或 WatchDive 之前，我們會審核已計入的朋友。我們可能剔除違反本規則的朋友，並取消使用虛假或自動化登記、或違反公平參加規則者的資格。我們會在截止後 14 天內（潛水燈為審核後 14 天內）寄信聯絡得獎者。得獎者若在 14 天內未回覆，或依本規則無法領取獎勵，潛水燈將順延給依達到 10 位朋友先後順序的下一位潛水隊長，WatchDive 獎品將順延給排行榜上的下一位。",
         ],
       },
       {
         heading: "配送、運費與稅費",
         paragraphs: [
-          "收件人須負擔運費以及任何稅費或關稅，其中包括適用情況下韓國對獎品課徵的預扣稅。我們只寄送到 WatchDive Kickstarter 募資支援寄送的國家和地區。水下燈在審核後寄出。WatchDive 獎品會在 WatchDive 向贊助者出貨時寄出。",
+          "收件人須負擔運費及任何關稅或稅費。我們只寄送到 WatchDive Kickstarter 募資可配送的國家和地區。潛水燈在審核後寄出；所有實體獎勵都會在 2027 年 3 月前寄出。",
+          "對於居住在韓國的得獎者，依韓國法律，應稅價值超過 {taxFree} 的獎品須由支付方代扣 {taxRate}% 的所得稅（其他所得稅及地方所得稅）。潛水燈（價值約 {lightValue}）和 WatchDive 皆適用。寄送前，我們會告知你應繳金額，請你先支付給我們，由我們向稅務機關申報並繳納。為此，我們會向韓國得獎者蒐集法定姓名、居民登錄號碼和地址，僅用於稅務申報，並只在稅法規定的期間內保存。",
         ],
       },
       {
         heading: "排行榜與隱私",
         paragraphs: [
-          "排行榜只顯示您自己設定並選擇公開的暱稱，絕不會顯示您的電子郵件地址。沒有選擇公開暱稱的人，會顯示為「匿名潛水員」。對於帶有冒犯性或冒充他人的暱稱，我們可能會將其隱藏。",
-          "我們不會告訴您朋友是誰，只告知有多少位加入。我們如何處理等候名單資料，請參閱隱私權政策。",
+          "排行榜只顯示你自己設定並選擇公開的暱稱，絕不顯示你的電子郵件地址。未選擇公開暱稱的人會顯示為「匿名潛水員」。帶有冒犯性或冒充他人的暱稱，我們可能會隱藏。",
+          "我們不會告訴你是哪些朋友加入，只告訴你加入的人數。等候名單資料的處理方式，請參閱我們的隱私權政策。",
         ],
       },
       {
         heading: "變更",
         paragraphs: [
-          "如果我們必須變更或終止本活動，會先在本頁面並透過電子郵件公布。變更之前已經達成的獎勵予以保留。",
+          "如需變更或終止本活動，我們會事先在本頁面公布並寄信通知。任何變更都不會取消你已達成的獎勵，也不會減少前 {winners} 名的獎品。",
         ],
       },
     ],
@@ -752,45 +867,47 @@ const ja: ReferralCopy = {
   tiers: {
     first: {
       name: "はじめての招待 · 友だち1人",
-      reward: "Kickstarter ローンチのお知らせメールを、一般リストより{hours}時間早く受け取れます。",
+      reward: "Kickstarter 開始のお知らせメールを、一般リストより{hours}時間早く受け取れます。",
     },
     buddy: {
       name: "バディ · 友だち3人",
-      reward: "Kickstarter ローンチのお知らせメールを、一般リストより{hours}時間早く受け取れます。",
+      reward: "Kickstarter 開始のお知らせメールを、一般リストより{hours}時間早く受け取れます。",
     },
     team: {
       name: "ダイブチーム · 友だち5人",
       reward:
-        "{price}の早割価格をそのまま維持。先着{seats}名の支援枠が終了したあとも、Kickstarter の専用リワードリンクから支援できます。",
+        "{price}の早割価格で支援できる、専用の Kickstarter リワードリンクをお送りします。先着{seats}名の早割枠が埋まったあとも、キャンペーン期間中に Kickstarter のウェブサイトで使えます。ダイブチームのメンバー1人につき支援は1件までです。リンクはほかの人と共有しないでください。",
     },
     leader: {
       name: "ダイブリーダー · 友だち10人",
       reward:
-        "水中ライトを1個プレゼント。在庫は{stock}個で、10人に到達した順にお渡しします。送料と税金は受取人の負担です。",
+        "約{lightValue}相当の水中ライトを1個プレゼント。在庫は{stock}個で、友だち10人に到達した順にお渡しします。送料・税金は受取人のご負担です。",
     },
   },
   top: {
     name: "招待ランキング上位{winners}名",
     reward:
-      "Kickstarter キャンペーン公開時点で、確認済みの友だちが最も多い{winners}名に、WatchDive を1台ずつプレゼントします。送料と税金は受取人の負担です。",
+      "終了日時の時点で確認済みの友だちが最も多い{winners}名に、WatchDive を1台ずつプレゼントします。キャンペーンが遅れたり実施されなかったりした場合も同様です。送料・税金は受取人のご負担です。",
   },
-  countingNote: "メールアドレスを確認した友だちだけがカウントされます。",
+  countingNote: "カウントされるのは、メールアドレスを確認した友だちだけです。",
   card: {
     title: "ダイビングバディを招待しよう",
-    body: "あなたのリンクを送ってください。メールアドレスを確認した友だちが増えるほど、特典が広がります。",
+    body: "あなたのリンクを送りましょう。メールアドレスを確認した友だちが増えるほど、特典が増えていきます。",
     progress: "{count}人が参加 · 「{tier}」まであと{remaining}人",
-    progressNone: "まだ友だちはいません · 「{tier}」まであと{remaining}人",
-    progressMax: "{count}人が参加 · すべての段階に到達しました。上位{winners}名を目指しましょう。",
+    progressNone: "まだ参加した友だちはいません · 「{tier}」まであと{remaining}人",
+    progressMax: "{count}人が参加 · すべての段階を達成しました。上位{winners}名を目指しましょう。",
     statusLink: "招待状況を見る",
     rulesLink: "公式ルール",
+    invitedNote:
+      "あなたを招待した人に見えるのは参加した人数だけで、誰が参加したかは表示されません。",
   },
   leaderboard: {
-    title: "バディ招待 上位{winners}名",
-    subtitle: "確認済みの友だちのみ · {time}時点",
+    title: "バディ招待ランキング 上位{winners}名",
+    subtitle: "確認済みの友だちのみ · {time}時点 · 審査前の暫定順位",
     entry: "{count}人",
-    privateDiver: "非公開ダイバー",
-    empty: "まだランキングに誰もいません。最初の招待で、あなたがここに載るかもしれません。",
-    closed: "バディ招待は終了しました。当選者を確認しています。",
+    privateDiver: "匿名ダイバー",
+    empty: "まだランキングには誰もいません。最初の招待で、ここに載るのはあなたかもしれません。",
+    closed: "バディ招待は終了しました。現在、当選者を審査しています。",
     rulesLink: "公式ルール",
   },
   status: {
@@ -800,50 +917,52 @@ const ja: ReferralCopy = {
     tierNone: "まだありません",
     rankLabel: "ランキング順位",
     rankNone: "まだランク外です",
-    earlyNotice: "Kickstarter ローンチのお知らせメールを{hours}時間早くお届けします。",
+    earlyNotice: "Kickstarter 開始のお知らせメールを、一般リストより{hours}時間早くお届けします。",
     lightEligible:
-      "ダイブリーダーの先着{stock}名に入っています。水中ライトについて、改めてご連絡します。",
-    lightGone: "水中ライト{stock}個は、すべてお渡し済みです。",
+      "ダイブリーダーの先着{stock}名に暫定で入っています。審査が終わったら、水中ライトについてメールでご連絡します。",
+    lightGone: "水中ライト{stock}個は、すべてなくなりました。",
     shareTitle: "あなたの招待リンク",
     nicknameLabel: "ランキングに表示するニックネーム",
-    nicknameHelp: "{min}〜{max}文字。メールアドレス、電話番号、リンクは使えません。",
+    nicknameHelp: "{min}〜{max}文字。メールアドレス・電話番号・リンクは使えません。",
     nicknameHiddenNote:
-      "運営がこのニックネームを非表示にしました。別のニックネームを選んでください。",
+      "このニックネームは運営により非表示になりました。別のニックネームを設定してください。",
     leaderboardToggle: "上位{winners}名のランキングにニックネームを表示する",
     noticesToggle: "友だちが参加したらメールで知らせる",
     save: "保存",
     saving: "保存中…",
     saved: "保存しました",
-    invalidLink: "このリンクは無効です。WatchDive からの最新のメールのリンクを開いてください。",
+    invalidLink: "このリンクは無効です。WatchDive から届いた最新のメールのリンクを開いてください。",
     errors: {
       too_short: "{min}文字以上で入力してください。",
       too_long: "{max}文字以内で入力してください。",
       contact_info: "ニックネームにメールアドレスや電話番号は使えません。",
       link: "ニックネームにリンクは使えません。",
-      reserved: "別のニックネームを選んでください。",
-      invalid_chars: "使えるのは、文字、数字、スペース、ドット、ハイフン、アンダースコアです。",
+      reserved: "別のニックネームを設定してください。",
+      invalid_chars:
+        "使えるのは文字、数字、スペース、ドット（.）、ハイフン（-）、アンダースコア（_）です。",
       failed: "保存できませんでした。もう一度お試しください。",
     },
   },
   mail: {
-    welcomeSubject: "WatchDiveウェイトリストに登録されました — バディを招待しましょう",
-    welcomeHeading: "WatchDiveウェイトリストに登録されました",
+    welcomeSubject: "WatchDive のウェイトリストに登録されました — バディを招待しましょう",
+    welcomeHeading: "WatchDive のウェイトリストに登録されました",
     welcomeIntro:
-      "メールアドレスの確認が完了しました。あなた専用の招待リンクを、一緒に潜るダイバーに送ってください。メールアドレスを確認した友だちが増えるほど、特典が広がります。",
+      "メールアドレスの確認が完了しました。あなた専用の招待リンクを、一緒に潜るバディに送りましょう。メールアドレスを確認した友だちが増えるほど、特典が増えていきます。",
     welcomeTiersHeading: "バディ招待の特典",
     welcomeButton: "招待リンクをシェアする",
-    welcomeFallback: "リンクをコピーする場合：",
+    welcomeFallback: "またはこのリンクをコピー：",
     welcomeStatus: "招待状況の確認と、ランキング用ニックネームの設定：",
     welcomeRules: "公式ルール：",
-    welcomeOutro: "WatchDiveがKickstarterで公開される際に、メールでお知らせします。",
-    noticeSubject: "バディがあなたのリンクから参加しました（これまでに{count}人）",
-    noticeHeading: "バディがあなたのリンクから参加しました",
-    noticeBody: "あなたのリンクから{count}人の友だちが参加し、メールアドレスを確認しました。",
-    noticeTierReached: "「{tier}」に到達しました：{reward}",
-    noticeNext: "「{tier}」まであと{remaining}人です。",
-    noticeMax: "すべての段階に到達しました。上位{winners}名を目指して続けましょう。",
+    welcomeOutro: "WatchDive の Kickstarter キャンペーンが始まったら、メールでお知らせします。",
+    noticeSubject: "あなたのリンクからバディが参加しました（これまでに{count}人）",
+    noticeHeading: "あなたのリンクからバディが参加しました",
+    noticeBody:
+      "これまでに{count}人の友だちがあなたのリンクから参加し、メールアドレスを確認しました。",
+    noticeTierReached: "「{tier}」を達成しました：{reward}",
+    noticeNext: "「{tier}」まで、あと{remaining}人です。",
+    noticeMax: "すべての段階を達成しました。引き続き上位{winners}名を目指しましょう。",
     noticeButton: "招待状況を見る",
-    noticeFooter: "このメールは、招待ページでオフにできます。",
+    noticeFooter: "このお知らせメールは、招待状況のページで停止できます。",
   },
   rules: {
     title: "バディ招待 公式ルール",
@@ -852,62 +971,86 @@ const ja: ReferralCopy = {
       {
         heading: "主催者",
         paragraphs: [
-          "バディ招待は、WatchDive を開発する DIVEROID LTD（英国）が運営しています。お問い合わせ：help@diveroid.com",
+          "バディ招待は、WatchDive を開発・製造する DIVEROID LTD（英国法人、会社番号 16343651、所在地：Office 12146, 182-184 High Street North, East Ham, London E6 2JA, United Kingdom）が運営しています。お問い合わせ：help@diveroid.com",
+        ],
+      },
+      {
+        heading: "参加資格",
+        paragraphs: [
+          "参加できるのは{ageOther}歳以上で、お住まいの国・地域の法律上の成年に達している方です（韓国にお住まいの方は{ageKr}歳以上）。DIVEROID LTD とそのグループ会社の従業員・業務委託先、本プログラムの運営に関わる方、およびその同一世帯の方は、物品の特典を受け取れません。どの国・地域からでも参加できますが、水中ライトと賞品の WatchDive の発送先は、WatchDive の Kickstarter キャンペーンの発送対象国に限ります。対象国の一覧は、終了日時までにこのページで公開します。対象国以外にお住まいの方も、開始のお知らせメールの先行配信とダイブチームのリンクは受け取れますが、物品の特典は次の順位の方に移ります。法律で禁止されている地域では、本プログラムは無効です。",
         ],
       },
       {
         heading: "期間",
         paragraphs: [
-          "プログラムは2026年10月22日に始まり、WatchDive の Kickstarter キャンペーンが公開される直前に終了します。キャンペーンは2026年12月の公開を予定しています。正確な終了時刻は、少なくとも{noticeDays}日前までに、このページとメールでお知らせします。",
+          "本プログラムは2026年10月22日に始まり、WatchDive の Kickstarter キャンペーン開始の直前に終了します。遅くとも{longStop}には終了します。キャンペーンは2026年12月に開始予定です。正確な終了日時は、少なくとも{noticeDays}日前までに、このページとメールでお知らせします。",
         ],
       },
       {
         heading: "参加方法",
         paragraphs: [
-          "WatchDive のウェイトリストに登録し、メールアドレスを確認すると、あなた専用の招待リンクが発行されます。友だちがあなたのリンクを開き、ウェイトリストに登録してメールアドレスを確認すると、あなたの招待数に加わります。",
-          "参加や当選に、購入や Kickstarter での支援は必要ありません。早割価格のリンクは、キャンペーンを支援すると決めたときにお使いいただくものです。",
+          "WatchDive のウェイトリストに登録してメールアドレスを確認すると、あなた専用の招待リンクが届きます。友だちがそのリンクを開いてウェイトリストに登録し、メールアドレスを確認すると、あなたの招待1人としてカウントされます。",
+          "参加や当選に、購入や Kickstarter での支援は必要ありません。早割価格のリンクは、キャンペーンを支援すると決めた場合にのみお使いいただくものです。",
         ],
       },
       {
         heading: "カウント対象",
         paragraphs: [
-          "メールアドレスを確認した友だちだけがカウントされます。ご自身の別のアドレス、同一人物による重複登録、使い捨てメールアドレス、不正と判断された登録はカウントされません。",
-          "1人につき1日あたり最大{cap}人までカウントされます（韓国標準時）。終了時刻より後に確認した友だちはカウントされません。",
+          "カウントされるのは、メールアドレスを確認した友だちだけです。ご自身の別のアドレス、同一人物による重複登録、使い捨てメールアドレス、不正と判断された登録はカウントされません。",
+          "友だちは、ウェイトリストに登録したときに使った招待リンクの持ち主にカウントされます。プログラム開始日（2026年10月22日）より前にあなたのリンクから登録し、メールアドレスを確認した友だちもカウントされます。",
+          "カウントは1人につき1日最大{cap}人までです（韓国標準時）。上限を超えた友だちはカウントされず、翌日以降に繰り越されることもありません。終了日時より後にメールアドレスを確認した友だちもカウントされません。",
+          "カウントは終了日時の時点で確定します。カウントされた友だちが後で WatchDive のメール配信を停止しても、引き続きカウントされます。ただし、データの削除を依頼した友だちや、審査で除外された友だちはカウントされなくなります。",
+          "段階を達成し、そのお知らせを受け取ったあとは、その段階に到達させた友だちのルール違反が審査で判明しないかぎり、その段階はそのまま有効です。ご自身が WatchDive のメール配信を停止しても、達成済みの特典は有効ですが、開始のお知らせメールの先行配信や招待のお知らせはお送りできなくなります。",
+        ],
+      },
+      {
+        heading: "フェアプレー",
+        paragraphs: [
+          "参加は1人1回までです。本人の同意なく他人を登録すること、お金や見返りと引き換えに登録してもらうこと、紹介リンク交換サイトの利用、WatchDive の広告のコメント欄や返信へのリンク投稿は禁止します。",
+          "水中ライトと賞品の WatchDive は、それぞれ1人・1世帯につき1つまでです。1人で両方を受け取ることはできます。発送時に、氏名・住所・電話番号で確認します。",
         ],
       },
       {
         heading: "特典",
         paragraphs: [
-          "友だち1人：Kickstarter ローンチのお知らせメールを、一般リストより{hoursFirst}時間早く受け取れます。",
-          "友だち3人（バディ）：ローンチのお知らせメールを、一般リストより{hoursBuddy}時間早く受け取れます。",
-          "友だち5人（ダイブチーム）：先着{seats}名の支援枠が終了したあとも、{price}の早割価格で支援できる Kickstarter の専用リワードリンクを受け取れます。",
-          "友だち10人（ダイブリーダー）：水中ライトを1個プレゼントします。在庫は{stock}個で、10人に最初に到達した{stock}名に、到達した順にお渡しします。なくなった場合は、このページでお知らせします。",
-          "上位{winners}名：終了時刻の時点でカウントされた友だちが最も多い{winners}名に、WatchDive を1台ずつプレゼントします。人数が同じ場合は、先にその人数に到達した方が上位になります。",
+          "友だち1人：Kickstarter 開始のお知らせメールを、一般リストより{hoursFirst}時間早く受け取れます。",
+          "友だち3人（バディ）：開始のお知らせメールを、一般リストより{hoursBuddy}時間早く受け取れます。",
+          "友だち5人（ダイブチーム）：キャンペーン開始前に、{price}の早割価格で支援できる専用の Kickstarter リワードリンクをメールでお送りします。先着{seats}名の早割枠が埋まったあとも、キャンペーン期間中に Kickstarter のウェブサイト（パソコンまたはスマートフォンのブラウザで、ログインした状態）で使えます。Kickstarter アプリ、レイトプレッジ、プレッジマネージャーでは使えません。ダイブチームのメンバー1人につき支援は1件までで、リンクはほかの人と共有しないでください。送料と税金は、ほかの支援者と同じ基準でかかります。",
+          "友だち10人（ダイブリーダー）：約{lightValue}相当の水中ライトを1個プレゼントします。在庫は{stock}個で、友だち10人に到達した最初の{stock}名に、到達した順にお渡しします。なくなった場合は、このページでお知らせします。",
+          "上位{winners}名：終了日時の時点でカウントされた友だちが最も多い{winners}名に、WatchDive を1台ずつプレゼントします。人数が同じ場合は、先にその人数に到達した方が上位になります。",
+          "賞品の WatchDive は、当選者が選べる Apple Watch 用または Galaxy Watch 用の WatchDive センサーハウジング1個（予定一般価格{prizeValue}相当）です。スマートウォッチは含まれず、サイトに掲載している対応モデルでのみ使えます。賞品を現金に換えることはできません。",
+        ],
+      },
+      {
+        heading: "キャンペーンが遅れた場合・実施されない場合",
+        paragraphs: [
+          "{longStop}までに Kickstarter キャンペーンが始まらない場合も、本プログラムはその時点で終了します。終了日時をお知らせしたあとに変更するのは1回だけで、その場合は元の終了日時の48時間以上前にメールでお知らせします。キャンペーンが目標金額に届かなかった場合、中止された場合、または遅れた場合でも、上位{winners}名には WatchDive を1台ずつお贈りします。本プログラムを早期に終了する場合は、その時点のカウントで順位を決め、上位{winners}名に賞品をお贈りします。",
         ],
       },
       {
         heading: "審査と失格",
         paragraphs: [
-          "水中ライトや WatchDive を発送する前に、カウントされた友だちを審査します。ルールに反する友だちはカウントから外すことがあり、偽の登録や自動化された登録を使った方は失格となる場合があります。当選者にはメールでご連絡します。14日以内にご返信がない場合、特典は順位が次の方に移ります。",
+          "水中ライトをお渡しする順番とランキングの順位は、審査が終わるまで暫定です。水中ライトや WatchDive を発送する前に、カウントされた友だちを審査します。ルールに反する友だちはカウントから除外することがあり、偽の登録や自動化された登録を使った方、フェアプレーのルールに違反した方は失格となる場合があります。当選者には、終了日時から14日以内（水中ライトは審査から14日以内）にメールでご連絡します。14日以内にご返信がない場合や、このルール上受け取れない場合、水中ライトは友だち10人に到達した順で次のダイブリーダーに、WatchDive はランキングで次の方に移ります。",
         ],
       },
       {
         heading: "配送・送料・税金",
         paragraphs: [
-          "送料と、関税を含む各種税金は受取人の負担です。韓国では、賞品に対する源泉徴収税が適用される場合があります。発送先は、WatchDive の Kickstarter キャンペーンが発送に対応している国に限ります。水中ライトは審査後に発送します。賞品の WatchDive は、支援者への発送時に合わせて発送します。",
+          "送料と、関税を含む各種税金は受取人のご負担です。発送先は、WatchDive の Kickstarter キャンペーンの発送対象国に限ります。水中ライトは審査後に発送し、物品の特典はすべて2027年3月より前に発送します。",
+          "韓国にお住まいの当選者の場合、韓国の法律により、課税対象額が{taxFree}を超える賞品には、支払者が{taxRate}%（その他所得税と地方所得税）を源泉徴収する必要があります。これは水中ライト（約{lightValue}相当）と WatchDive の両方に当てはまります。発送前に金額をお知らせしますので、その額を当社にお支払いください。当社が税務署へ申告・納付します。このため、韓国の当選者からは法的な氏名、住民登録番号、住所をお預かりします。これらは税務申告にのみ使い、税法で定められた期間だけ保管します。",
         ],
       },
       {
         heading: "ランキングとプライバシー",
         paragraphs: [
-          "ランキングに表示されるのは、ご自身で設定し、表示を選んだニックネームだけです。メールアドレスが表示されることはありません。ニックネームの表示を選ばなかった方は「非公開ダイバー」と表示されます。不適切なニックネームや、他人になりすましたニックネームは、非表示にすることがあります。",
-          "どの友だちが参加したかはお知らせせず、参加した人数のみお知らせします。ウェイトリストのデータの取り扱いについては、プライバシーポリシーをご覧ください。",
+          "ランキングに表示されるのは、ご自身で設定し、表示を選んだニックネームだけです。メールアドレスが表示されることはありません。ニックネームの表示を選ばなかった方は「匿名ダイバー」と表示されます。不適切なニックネームや、他人になりすましたニックネームは非表示にすることがあります。",
+          "どの友だちが参加したかはお知らせせず、人数だけをお知らせします。ウェイトリストのデータの取り扱いについては、プライバシーポリシーをご覧ください。",
         ],
       },
       {
         heading: "変更",
         paragraphs: [
-          "プログラムを変更または終了する必要がある場合は、事前にこのページとメールでお知らせします。変更前にすでに達成した特典は維持されます。",
+          "プログラムを変更または終了する必要がある場合は、事前にこのページとメールでお知らせします。変更によって、達成済みの特典がなくなったり、上位{winners}名の賞品が減ったりすることはありません。",
         ],
       },
     ],
@@ -915,168 +1058,194 @@ const ja: ReferralCopy = {
 };
 
 const es: ReferralCopy = {
-  programName: "Invitación de compañeros",
+  programName: "Invita a tu compañero",
   tiers: {
     first: {
       name: "Primera invitación · 1 amigo",
       reward:
-        "Recibe el correo de lanzamiento de Kickstarter {hours} hora antes que la lista general.",
+        "Recibe el correo del lanzamiento en Kickstarter {hours} hora antes que la lista general.",
     },
     buddy: {
       name: "Compañero · 3 amigos",
       reward:
-        "Recibe el correo de lanzamiento de Kickstarter {hours} horas antes que la lista general.",
+        "Recibe el correo del lanzamiento en Kickstarter {hours} horas antes que la lista general.",
     },
     team: {
       name: "Equipo de buceo · 5 amigos",
       reward:
-        "Conserva el precio early bird de {price} con un enlace de recompensa privado de Kickstarter, incluso cuando ya no queden los primeros {seats} patrocinadores.",
+        "Consigue un enlace privado de recompensa en Kickstarter con el precio early bird de {price}. Funciona durante la campaña en la web de Kickstarter, aunque ya se hayan cubierto las plazas de los {seats} primeros patrocinadores. Un apoyo por cada miembro del Equipo de buceo. Por favor, no compartas el enlace.",
     },
     leader: {
       name: "Líder de buceo · 10 amigos",
       reward:
-        "Consigue una luz subacuática gratis. Hay {stock} en stock y se entregan por orden de llegada a los 10 amigos. El envío y los impuestos los paga quien la recibe.",
+        "Llévate una linterna de buceo valorada en unos {lightValue}. Hay {stock} unidades y se entregan por orden de llegada a los 10 amigos. Envío e impuestos a cargo de quien la recibe.",
     },
   },
   top: {
-    name: "Top {winners} de invitaciones",
+    name: "Top {winners} en invitaciones",
     reward:
-      "Cuando la campaña de Kickstarter salga en directo, las {winners} personas con más amigos verificados reciben un WatchDive cada una. El envío y los impuestos los paga quien lo recibe.",
+      "Las {winners} personas con más amigos verificados a la hora de cierre se llevan un WatchDive cada una, aunque la campaña se retrase o no salga adelante. Envío e impuestos a cargo de quien lo recibe.",
   },
   countingNote: "Solo cuentan los amigos que confirman su correo.",
   card: {
     title: "Invita a tus compañeros de buceo",
-    body: "Envía tu enlace. Las recompensas crecen con cada amigo que confirma su correo.",
-    progress: "Amigos unidos: {count} · {remaining} más para {tier}",
+    body: "Comparte tu enlace. Cada amigo que confirma su correo te acerca a la siguiente recompensa.",
+    progress: "Amigos: {count} · {remaining} más para {tier}",
     progressNone: "Aún no se ha unido nadie · {remaining} más para {tier}",
-    progressMax:
-      "Amigos unidos: {count} · has alcanzado todos los niveles. Ve a por el top {winners}.",
+    progressMax: "Amigos: {count} · has alcanzado todos los niveles. ¡Ve a por el top {winners}!",
     statusLink: "Ver mis invitaciones",
-    rulesLink: "Reglas oficiales",
+    rulesLink: "Bases oficiales",
+    invitedNote: "Quien te invitó solo ve cuántos amigos se han unido, nunca quiénes.",
   },
   leaderboard: {
-    title: "Top {winners} de Invitación de compañeros",
-    subtitle: "Solo amigos verificados · a {time}",
+    title: "Top {winners} · Invita a tu compañero",
+    subtitle: "Solo amigos verificados · actualizado: {time} · pendiente de revisión",
     entry: "Amigos: {count}",
     privateDiver: "Buceador anónimo",
-    empty: "Todavía no hay nadie en la clasificación. Tu primera invitación podría ponerte aquí.",
-    closed: "El concurso Invitación de compañeros ha terminado. Estamos revisando a los ganadores.",
-    rulesLink: "Reglas oficiales",
+    empty:
+      "Todavía no hay nadie en la clasificación. Con tu primera invitación podrías aparecer aquí.",
+    closed: "El concurso “Invita a tu compañero” ha terminado. Estamos revisando a los ganadores.",
+    rulesLink: "Bases oficiales",
   },
   status: {
-    title: "Mi Invitación de compañeros",
+    title: "Mis invitaciones",
     countLabel: "Amigos que se han unido",
     tierLabel: "Nivel actual",
-    tierNone: "Todavía ninguno",
+    tierNone: "Ninguno todavía",
     rankLabel: "Puesto en la clasificación",
     rankNone: "Aún sin puesto",
-    earlyNotice: "Recibirás el correo de lanzamiento de Kickstarter con {hours} h de antelación.",
+    earlyNotice:
+      "Recibirás el correo del lanzamiento en Kickstarter {hours} h antes que la lista general.",
     lightEligible:
-      "Estás entre los primeros {stock} Líderes de buceo. Te escribiremos sobre tu luz subacuática.",
-    lightGone: "Ya se han entregado las {stock} luces subacuáticas.",
+      "De forma provisional, estás entre los primeros {stock} en llegar a Líder de buceo. Tras nuestra revisión, te escribiremos por correo sobre tu linterna de buceo.",
+    lightGone: "Ya no quedan linternas: las {stock} están asignadas.",
     shareTitle: "Tu enlace de invitación",
-    nicknameLabel: "Apodo para la clasificación",
-    nicknameHelp: "De {min} a {max} caracteres. Sin direcciones de correo, teléfonos ni enlaces.",
-    nicknameHiddenNote: "Nuestro equipo ha ocultado este apodo. Elige otro, por favor.",
-    leaderboardToggle: "Mostrar mi apodo en la clasificación del top {winners}",
+    nicknameLabel: "Alias para la clasificación",
+    nicknameHelp: "De {min} a {max} caracteres. Sin correos, teléfonos ni enlaces.",
+    nicknameHiddenNote: "Nuestro equipo ha ocultado este alias. Elige otro, por favor.",
+    leaderboardToggle: "Mostrar mi alias en el top {winners}",
     noticesToggle: "Avisarme por correo cuando se una un amigo",
     save: "Guardar",
     saving: "Guardando…",
     saved: "Guardado",
-    invalidLink: "Este enlace no es válido. Abre el enlace más reciente de tu correo de WatchDive.",
+    invalidLink: "Este enlace no es válido. Abre el enlace del correo más reciente de WatchDive.",
     errors: {
       too_short: "Usa al menos {min} caracteres.",
       too_long: "Usa como máximo {max} caracteres.",
-      contact_info: "Un apodo no puede contener una dirección de correo ni un teléfono.",
-      link: "Un apodo no puede contener un enlace.",
-      reserved: "Elige otro apodo, por favor.",
-      invalid_chars: "Usa letras, números, espacios, puntos, guiones o guiones bajos.",
-      failed: "No se pudo guardar. Inténtalo de nuevo.",
+      contact_info: "El alias no puede incluir un correo ni un teléfono.",
+      link: "El alias no puede incluir enlaces.",
+      reserved: "Elige otro alias, por favor.",
+      invalid_chars: "Usa solo letras, números, espacios, puntos, guiones o guiones bajos.",
+      failed: "No se ha podido guardar. Inténtalo de nuevo.",
     },
   },
   mail: {
     welcomeSubject: "Ya estás en la lista de espera de WatchDive — invita a tus compañeros",
     welcomeHeading: "Ya estás en la lista de espera de WatchDive",
     welcomeIntro:
-      "Tu correo está confirmado. Envía tu enlace de invitación personal a las personas con las que buceas. Las recompensas crecen con cada amigo que confirma su correo.",
-    welcomeTiersHeading: "Recompensas de Invitación de compañeros",
-    welcomeButton: "Compartir mi enlace de invitación",
+      "Tu correo está confirmado. Pasa tu enlace de invitación personal a los buceadores con los que te metes al agua. Cada amigo que confirma su correo te acerca a la siguiente recompensa.",
+    welcomeTiersHeading: "Recompensas por invitar",
+    welcomeButton: "Compartir mi enlace",
     welcomeFallback: "O copia este enlace:",
-    welcomeStatus: "Consulta tus invitaciones y elige un apodo para la clasificación:",
-    welcomeRules: "Reglas oficiales:",
-    welcomeOutro: "Te avisaremos por correo cuando WatchDive se publique en Kickstarter.",
+    welcomeStatus: "Consulta tus invitaciones y elige un alias para la clasificación:",
+    welcomeRules: "Bases oficiales:",
+    welcomeOutro: "Te escribiremos en cuanto WatchDive abra en Kickstarter.",
     noticeSubject: "Un compañero se ha unido con tu enlace ({count} en total)",
     noticeHeading: "Un compañero se ha unido con tu enlace",
     noticeBody: "Amigos que se han unido con tu enlace y han confirmado su correo: {count}.",
-    noticeTierReached: "Has alcanzado {tier}: {reward}",
+    noticeTierReached: "Has llegado a {tier}: {reward}",
     noticeNext: "Para {tier}: {remaining} más.",
-    noticeMax: "Has alcanzado todos los niveles. Sigue a por el top {winners}.",
+    noticeMax: "Has alcanzado todos los niveles. ¡Sigue a por el top {winners}!",
     noticeButton: "Ver mis invitaciones",
     noticeFooter: "Puedes desactivar estos correos en tu página de invitaciones.",
   },
   rules: {
-    title: "Reglas oficiales de Invitación de compañeros",
+    title: "Bases oficiales de “Invita a tu compañero”",
     updated: "Última actualización: 22 de octubre de 2026",
     sections: [
       {
         heading: "Organizador",
         paragraphs: [
-          "Invitación de compañeros la organiza DIVEROID LTD (Reino Unido), la empresa que fabrica WatchDive. Consultas: help@diveroid.com.",
+          "“Invita a tu compañero” lo organiza DIVEROID LTD, la empresa que fabrica WatchDive (n.º de sociedad 16343651, Office 12146, 182-184 High Street North, East Ham, London E6 2JA, Reino Unido). Consultas: help@diveroid.com.",
+        ],
+      },
+      {
+        heading: "Quién puede participar",
+        paragraphs: [
+          "Debes tener al menos {ageOther} años, o {ageKr} si vives en Corea del Sur, y ser mayor de edad donde vivas. Los empleados y colaboradores de DIVEROID LTD y de las empresas de su grupo, las personas que ayudan a gestionar este programa y quienes conviven con ellos no pueden recibir premios físicos. Puedes participar desde cualquier lugar, pero las linternas y los premios WatchDive solo pueden enviarse a los países a los que envía la campaña de WatchDive en Kickstarter. Publicaremos esa lista en esta página antes de la hora de cierre. Si vives en otro país, sigues recibiendo el correo anticipado del lanzamiento y el enlace del Equipo de buceo, pero el premio físico pasa a la siguiente persona por orden. El programa no es válido donde la ley lo prohíba.",
         ],
       },
       {
         heading: "Periodo",
         paragraphs: [
-          "El programa empieza el 22 de octubre de 2026 y termina justo antes de que la campaña de WatchDive en Kickstarter salga en directo. La campaña está prevista para diciembre de 2026. Anunciaremos la hora exacta de cierre en esta página y por correo con al menos {noticeDays} días de antelación.",
+          "El programa empieza el 22 de octubre de 2026 y termina justo antes de que abra la campaña de WatchDive en Kickstarter, prevista para diciembre de 2026, y como muy tarde el {longStop}. Anunciaremos la hora exacta de cierre en esta página y por correo con al menos {noticeDays} días de antelación.",
         ],
       },
       {
         heading: "Cómo participar",
         paragraphs: [
-          "Únete a la lista de espera de WatchDive y confirma tu correo. Recibirás un enlace de invitación personal. Un amigo cuenta para ti cuando abre tu enlace, se une a la lista de espera y confirma su correo.",
-          "No hace falta comprar nada ni apoyar la campaña de Kickstarter para participar ni para ganar. El enlace del precio early bird se usa cuando decides apoyar la campaña.",
+          "Únete a la lista de espera de WatchDive y confirma tu correo: recibirás un enlace de invitación personal. Un amigo cuenta para ti cuando abre tu enlace, se une a la lista de espera y confirma su correo.",
+          "No hace falta comprar nada ni apoyar la campaña en Kickstarter para participar ni para ganar. El enlace con el precio early bird solo se usa si decides apoyar la campaña.",
         ],
       },
       {
         heading: "Qué cuenta",
         paragraphs: [
           "Solo cuentan los amigos que confirman su correo. No cuentan tus propias direcciones, los registros repetidos de una misma persona, las direcciones de correo desechables ni los registros marcados como abusivos.",
-          "Se cuentan como máximo {cap} amigos por persona y día (hora estándar de Corea). Los amigos que confirmen después de la hora de cierre no cuentan.",
+          "Cada amigo cuenta para el enlace de invitación con el que se unió a la lista de espera. También cuentan los amigos que se unieron con tu enlace y confirmaron su correo antes del inicio del programa, el 22 de octubre de 2026.",
+          "Se cuentan como máximo {cap} amigos por persona y día (hora estándar de Corea). Los amigos que superen ese límite no se cuentan, tampoco en días posteriores. Los amigos que confirmen después de la hora de cierre no cuentan.",
+          "Los recuentos quedan fijados a la hora de cierre. Un amigo ya contado que más adelante se da de baja de los correos de WatchDive sigue contando; deja de contar si nos pide borrar sus datos o si lo retiramos en la revisión.",
+          "Cuando alcanzas un nivel y te lo comunicamos, lo conservas, salvo que la revisión demuestre que los amigos con los que lo alcanzaste incumplían estas bases. Si te das de baja de los correos de WatchDive, conservas las recompensas ya alcanzadas, pero ya no podremos enviarte el correo anticipado del lanzamiento ni los avisos.",
+        ],
+      },
+      {
+        heading: "Juego limpio",
+        paragraphs: [
+          "Cada persona puede participar una sola vez. No está permitido apuntar a otras personas sin su consentimiento, pagar u ofrecer incentivos a cambio de registros, usar webs de intercambio de referidos ni publicar tu enlace en respuestas o comentarios de los anuncios de WatchDive.",
+          "Cada persona y cada hogar puede recibir como máximo una linterna de buceo y un premio WatchDive; una misma persona puede ganar ambos. Lo comprobamos al hacer el envío, por nombre, dirección y teléfono.",
         ],
       },
       {
         heading: "Recompensas",
         paragraphs: [
-          "1 amigo: el correo de lanzamiento de Kickstarter {hoursFirst} hora antes que la lista general.",
-          "3 amigos (Compañero): el correo de lanzamiento {hoursBuddy} horas antes que la lista general.",
-          "5 amigos (Equipo de buceo): un enlace de recompensa privado de Kickstarter con el precio early bird de {price}, disponible incluso cuando ya no queden los primeros {seats} patrocinadores.",
-          "10 amigos (Líder de buceo): una luz subacuática gratis. Tenemos {stock}. Se entregan a las primeras {stock} personas que lleguen a 10 amigos, por el orden en que lo logren. Cuando se agoten, lo indicaremos en esta página.",
-          "Top {winners}: las {winners} personas con más amigos contados a la hora de cierre reciben un WatchDive cada una. Si dos personas tienen la misma cifra, queda por delante quien la alcanzó antes.",
+          "1 amigo: el correo del lanzamiento en Kickstarter {hoursFirst} hora antes que la lista general.",
+          "3 amigos (Compañero): el correo del lanzamiento {hoursBuddy} horas antes que la lista general.",
+          "5 amigos (Equipo de buceo): antes de que abra la campaña, te enviamos por correo un enlace privado de recompensa en Kickstarter con el precio early bird de {price}. Puedes usarlo mientras la campaña esté activa, en la web de Kickstarter (en el navegador del ordenador o del móvil, con la sesión iniciada), aunque ya se hayan cubierto las plazas de los {seats} primeros patrocinadores. No funciona en la app de Kickstarter, en los apoyos tardíos (late pledges) ni en el pledge manager. Un apoyo por cada miembro del Equipo de buceo; por favor, no compartas el enlace. El envío y los impuestos se cobran igual que al resto de patrocinadores.",
+          "10 amigos (Líder de buceo): una linterna de buceo valorada en unos {lightValue}. Tenemos {stock} y son para las primeras {stock} personas que lleguen a 10 amigos, por orden de llegada. Cuando se agoten, lo indicaremos en esta página.",
+          "Top {winners}: las {winners} personas con más amigos contados a la hora de cierre se llevan un WatchDive cada una. En caso de empate, queda por delante quien alcanzó antes esa cifra.",
+          "Un premio WatchDive es una carcasa con sensor WatchDive, en la versión para Apple Watch o para Galaxy Watch que elija la persona ganadora, valorada en {prizeValue} (el precio público previsto). El reloj no está incluido y WatchDive solo funciona con los modelos compatibles indicados en nuestra web. Los premios no se pueden cambiar por dinero.",
+        ],
+      },
+      {
+        heading: "Si la campaña se retrasa o no sale adelante",
+        paragraphs: [
+          "Si la campaña de Kickstarter no ha abierto el {longStop}, el programa se cierra igualmente en ese momento. Una vez anunciada la hora de cierre, la cambiaremos como máximo una vez, avisando por correo con al menos 48 horas de antelación sobre la hora original. Aunque la campaña no alcance su objetivo, se cancele o se retrase, las personas del top {winners} recibirán igualmente un WatchDive cada una. Si terminamos el programa antes de tiempo, la clasificación se hará con los recuentos de ese momento y los premios del top {winners} se darán según esa clasificación.",
         ],
       },
       {
         heading: "Revisión y descalificación",
         paragraphs: [
-          "Antes de enviar cualquier luz o WatchDive, revisamos a los amigos contados. Podemos retirar a los amigos que incumplan estas reglas y descalificar a quien use registros falsos o automatizados. Contactamos con los ganadores por correo. Si un ganador no responde en 14 días, la recompensa pasa a la siguiente persona por orden.",
+          "El orden de entrega de las linternas y la clasificación son provisionales hasta la revisión. Antes de enviar cualquier linterna o WatchDive, revisamos los amigos contados. Podemos retirar a los amigos que incumplan estas bases y descalificar a quien use registros falsos o automatizados o no respete las normas de juego limpio. Escribimos a los ganadores en los 14 días siguientes al cierre (en el caso de las linternas, en los 14 días siguientes a la revisión). Si un ganador no responde en 14 días o no puede recibir la recompensa según estas bases, la linterna pasa al siguiente Líder de buceo por orden de llegada a los 10 amigos, y el premio WatchDive, a la siguiente persona de la clasificación.",
         ],
       },
       {
         heading: "Entrega, envío e impuestos",
         paragraphs: [
-          "Quien recibe el premio paga el envío y cualquier impuesto o arancel, incluida la retención fiscal coreana sobre premios cuando corresponda. Solo enviamos a los países a los que envía la campaña de WatchDive en Kickstarter. Las luces subacuáticas se envían tras la revisión. Un premio WatchDive se envía cuando WatchDive se envíe a los patrocinadores.",
+          "Quien recibe el premio paga el envío y cualquier arancel o impuesto. Solo enviamos a los países a los que envía la campaña de WatchDive en Kickstarter. Las linternas se envían tras la revisión, y todos los premios físicos se envían antes de marzo de 2027.",
+          "Si la persona ganadora vive en Corea del Sur, la ley coreana obliga a quien paga el premio a retener un {taxRate} % de impuesto sobre la renta (impuesto sobre otros ingresos más impuesto local) en los premios cuyo valor imponible supere {taxFree}. Esto se aplica tanto a la linterna (valorada en unos {lightValue}) como al WatchDive. Antes del envío te indicaremos el importe y te pediremos que nos lo abones; nosotros lo declaramos e ingresamos en la administración tributaria. Para ello pediremos a los ganadores residentes en Corea su nombre legal, su número de registro de residente y su dirección, que usaremos solo para la declaración fiscal y conservaremos solo el tiempo que exija la ley tributaria.",
         ],
       },
       {
         heading: "Clasificación y privacidad",
         paragraphs: [
-          "La clasificación solo muestra un apodo que tú eliges y decides mostrar. Tu correo nunca se muestra. Quienes no deciden mostrar un apodo aparecen como “Buceador anónimo”. Podemos ocultar un apodo ofensivo o que suplante a alguien.",
-          "Nunca te decimos quiénes son tus amigos, solo cuántos se han unido. Consulta nuestra política de privacidad para saber cómo tratamos los datos de la lista de espera.",
+          "La clasificación solo muestra el alias que tú eliges y decides mostrar. Tu correo nunca se muestra. Quien no decide mostrar un alias aparece como “Buceador anónimo”. Podemos ocultar alias ofensivos o que suplanten a otra persona.",
+          "Nunca te decimos qué amigos se han unido, solo cuántos. Consulta nuestra política de privacidad para saber cómo tratamos los datos de la lista de espera.",
         ],
       },
       {
         heading: "Cambios",
         paragraphs: [
-          "Si tenemos que cambiar o terminar el programa, lo anunciaremos antes aquí y por correo. Las recompensas ya alcanzadas antes de un cambio se mantienen.",
+          "Si tenemos que cambiar o terminar el programa, lo anunciaremos antes aquí y por correo. Ningún cambio te quitará una recompensa ya alcanzada ni reducirá los premios del top {winners}.",
         ],
       },
     ],
@@ -1084,83 +1253,85 @@ const es: ReferralCopy = {
 };
 
 const fr: ReferralCopy = {
-  programName: "Invitation binôme",
+  programName: "Invitez votre binôme",
   tiers: {
     first: {
       name: "Première invitation · 1 ami",
-      reward: "Recevez l’e-mail de lancement Kickstarter {hours} heure avant la liste générale.",
+      reward: "Recevez l’e-mail de lancement Kickstarter {hours} heure avant le reste de la liste.",
     },
     buddy: {
       name: "Binôme · 3 amis",
-      reward: "Recevez l’e-mail de lancement Kickstarter {hours} heures avant la liste générale.",
+      reward:
+        "Recevez l’e-mail de lancement Kickstarter {hours} heures avant le reste de la liste.",
     },
     team: {
-      name: "Équipe de plongée · 5 amis",
+      name: "Palanquée · 5 amis",
       reward:
-        "Gardez le tarif early bird de {price} grâce à un lien de récompense Kickstarter privé, même quand les {seats} premiers contributeurs sont déjà passés.",
+        "Recevez un lien de contrepartie Kickstarter privé au tarif early bird de {price}. Il fonctionne pendant la campagne sur le site Kickstarter, même quand les places des {seats} premiers contributeurs sont prises. Une contribution par membre de la Palanquée. Merci de ne pas partager ce lien.",
     },
     leader: {
-      name: "Leader de plongée · 10 amis",
+      name: "Chef de file · 10 amis",
       reward:
-        "Recevez une lampe sous-marine offerte. {stock} en stock, attribuées dans l’ordre où l’on atteint 10 amis. L’expédition et les taxes sont à la charge du destinataire.",
+        "Recevez une lampe de plongée d’une valeur d’environ {lightValue}. {stock} exemplaires, attribués dans l’ordre où chacun atteint 10 amis. Frais de port et taxes à la charge du destinataire.",
     },
   },
   top: {
     name: "Top {winners} des invitations",
     reward:
-      "À l’ouverture de la campagne Kickstarter, les {winners} personnes qui comptent le plus d’amis vérifiés reçoivent chacune un WatchDive. L’expédition et les taxes sont à la charge du destinataire.",
+      "À l’heure de clôture, les {winners} personnes qui comptent le plus d’amis vérifiés reçoivent chacune un WatchDive, même si la campagne est retardée ou n’a pas lieu. Frais de port et taxes à la charge du destinataire.",
   },
   countingNote: "Seuls les amis qui confirment leur e-mail comptent.",
   card: {
     title: "Invitez vos binômes de plongée",
-    body: "Envoyez votre lien. Les récompenses grandissent avec chaque ami qui confirme son e-mail.",
-    progress: "Amis inscrits : {count} · encore {remaining} pour {tier}",
-    progressNone: "Aucun ami pour l’instant · encore {remaining} pour {tier}",
+    body: "Envoyez votre lien. Chaque ami qui confirme son e-mail vous rapproche de la récompense suivante.",
+    progress: "Amis inscrits : {count} · encore {remaining} pour {tier}",
+    progressNone: "Aucun ami inscrit pour l’instant · encore {remaining} pour {tier}",
     progressMax:
-      "Amis inscrits : {count} · tous les paliers sont atteints. Visez le top {winners}.",
+      "Amis inscrits : {count} · tous les paliers sont atteints. Visez le top {winners} !",
     statusLink: "Voir mes invitations",
     rulesLink: "Règlement officiel",
+    invitedNote:
+      "La personne qui vous invite ne voit que le nombre d’amis inscrits, jamais leur identité.",
   },
   leaderboard: {
-    title: "Top {winners} de l’Invitation binôme",
-    subtitle: "Amis vérifiés uniquement · au {time}",
-    entry: "Amis : {count}",
+    title: "Top {winners} · Invitez votre binôme",
+    subtitle: "Amis vérifiés uniquement · mis à jour : {time} · sous réserve de vérification",
+    entry: "Amis : {count}",
     privateDiver: "Plongeur anonyme",
-    empty: "Personne n’est encore au classement. Votre première invitation pourrait vous y placer.",
-    closed: "Le concours Invitation binôme est terminé. Nous examinons les gagnants.",
+    empty:
+      "Personne n’est encore au classement. Votre première invitation pourrait vous y faire entrer.",
+    closed: "Le concours « Invitez votre binôme » est terminé. Nous vérifions les gagnants.",
     rulesLink: "Règlement officiel",
   },
   status: {
-    title: "Mon Invitation binôme",
+    title: "Mes invitations",
     countLabel: "Amis inscrits",
     tierLabel: "Palier actuel",
     tierNone: "Aucun pour l’instant",
     rankLabel: "Rang au classement",
     rankNone: "Pas encore classé",
-    earlyNotice: "Vous recevrez l’e-mail de lancement Kickstarter {hours} h plus tôt.",
+    earlyNotice:
+      "Vous recevrez l’e-mail de lancement Kickstarter {hours} h avant le reste de la liste.",
     lightEligible:
-      "Vous faites partie des {stock} premiers Leaders de plongée. Nous vous écrirons au sujet de votre lampe sous-marine.",
-    lightGone: "Les {stock} lampes sous-marines ont toutes été attribuées.",
+      "Vous faites provisoirement partie des {stock} premiers à atteindre le palier Chef de file. Après notre vérification, nous vous écrirons au sujet de votre lampe de plongée.",
+    lightGone: "Les {stock} lampes de plongée ont toutes été attribuées.",
     shareTitle: "Votre lien d’invitation",
-    nicknameLabel: "Pseudo pour le classement",
-    nicknameHelp:
-      "De {min} à {max} caractères. Pas d’adresse e-mail, de numéro de téléphone ni de lien.",
-    nicknameHiddenNote: "Notre équipe a masqué ce pseudo. Veuillez en choisir un autre.",
-    leaderboardToggle: "Afficher mon pseudo dans le classement du top {winners}",
+    nicknameLabel: "Pseudo affiché dans le classement",
+    nicknameHelp: "{min} à {max} caractères. Ni adresse e-mail, ni numéro de téléphone, ni lien.",
+    nicknameHiddenNote: "Notre équipe a masqué ce pseudo. Merci d’en choisir un autre.",
+    leaderboardToggle: "Afficher mon pseudo dans le top {winners}",
     noticesToggle: "Me prévenir par e-mail quand un ami s’inscrit",
     save: "Enregistrer",
     saving: "Enregistrement…",
     saved: "Enregistré",
-    invalidLink:
-      "Ce lien n’est pas valide. Ouvrez le lien le plus récent dans votre e-mail WatchDive.",
+    invalidLink: "Ce lien n’est pas valide. Ouvrez le lien du dernier e-mail reçu de WatchDive.",
     errors: {
-      too_short: "Utilisez au moins {min} caractères.",
-      too_long: "Utilisez au plus {max} caractères.",
-      contact_info: "Un pseudo ne peut pas contenir d’adresse e-mail ni de numéro de téléphone.",
-      link: "Un pseudo ne peut pas contenir de lien.",
-      reserved: "Veuillez choisir un autre pseudo.",
-      invalid_chars:
-        "Utilisez des lettres, des chiffres, des espaces, des points, des tirets ou des tirets bas.",
+      too_short: "Au moins {min} caractères.",
+      too_long: "{max} caractères maximum.",
+      contact_info: "Le pseudo ne peut pas contenir d’adresse e-mail ni de numéro de téléphone.",
+      link: "Le pseudo ne peut pas contenir de lien.",
+      reserved: "Merci de choisir un autre pseudo.",
+      invalid_chars: "Lettres, chiffres, espaces, points, tirets et tirets bas uniquement.",
       failed: "Enregistrement impossible. Veuillez réessayer.",
     },
   },
@@ -1168,85 +1339,109 @@ const fr: ReferralCopy = {
     welcomeSubject: "Vous êtes sur la liste d’attente WatchDive — invitez vos binômes",
     welcomeHeading: "Vous êtes sur la liste d’attente WatchDive",
     welcomeIntro:
-      "Votre adresse e-mail est confirmée. Envoyez votre lien d’invitation personnel aux plongeurs avec qui vous plongez. Les récompenses grandissent avec chaque ami qui confirme son e-mail.",
-    welcomeTiersHeading: "Récompenses de l’Invitation binôme",
-    welcomeButton: "Partager mon lien d’invitation",
-    welcomeFallback: "Ou copiez ce lien :",
-    welcomeStatus: "Suivez vos invitations et choisissez un pseudo pour le classement :",
-    welcomeRules: "Règlement officiel :",
-    welcomeOutro: "Nous vous préviendrons par e-mail lorsque WatchDive sera lancé sur Kickstarter.",
-    noticeSubject: "Un binôme a rejoint via votre lien (total : {count})",
-    noticeHeading: "Un binôme a rejoint via votre lien",
-    noticeBody: "Amis ayant rejoint via votre lien et confirmé leur e-mail : {count}.",
-    noticeTierReached: "Vous avez atteint {tier} : {reward}",
-    noticeNext: "Pour {tier} : encore {remaining}.",
-    noticeMax: "Tous les paliers sont atteints. Continuez vers le top {winners}.",
+      "Votre adresse e-mail est confirmée. Envoyez votre lien d’invitation personnel aux plongeurs avec qui vous descendez. Chaque ami qui confirme son e-mail vous rapproche de la récompense suivante.",
+    welcomeTiersHeading: "Vos récompenses",
+    welcomeButton: "Partager mon lien",
+    welcomeFallback: "Ou copiez ce lien :",
+    welcomeStatus: "Suivez vos invitations et choisissez un pseudo pour le classement :",
+    welcomeRules: "Règlement officiel :",
+    welcomeOutro: "Nous vous écrirons dès l’ouverture de WatchDive sur Kickstarter.",
+    noticeSubject: "Un binôme s’est inscrit via votre lien (total : {count})",
+    noticeHeading: "Un binôme s’est inscrit via votre lien",
+    noticeBody: "Amis inscrits via votre lien qui ont confirmé leur e-mail : {count}.",
+    noticeTierReached: "Palier atteint — {tier} : {reward}",
+    noticeNext: "Pour {tier} : encore {remaining}.",
+    noticeMax: "Tous les paliers sont atteints. Continuez, visez le top {winners} !",
     noticeButton: "Voir mes invitations",
     noticeFooter: "Vous pouvez désactiver ces e-mails depuis votre page d’invitations.",
   },
   rules: {
-    title: "Règlement officiel de l’Invitation binôme",
-    updated: "Dernière mise à jour : 22 octobre 2026",
+    title: "Règlement officiel « Invitez votre binôme »",
+    updated: "Dernière mise à jour : 22 octobre 2026",
     sections: [
       {
         heading: "Organisateur",
         paragraphs: [
-          "L’Invitation binôme est organisée par DIVEROID LTD (Royaume-Uni), le fabricant de WatchDive. Questions : help@diveroid.com.",
+          "« Invitez votre binôme » est organisé par DIVEROID LTD, fabricant de WatchDive (société n° 16343651, Office 12146, 182-184 High Street North, East Ham, London E6 2JA, Royaume-Uni). Questions : help@diveroid.com.",
+        ],
+      },
+      {
+        heading: "Qui peut participer",
+        paragraphs: [
+          "Vous devez avoir au moins {ageOther} ans, ou {ageKr} ans si vous résidez en Corée du Sud, et être majeur selon la loi de votre lieu de résidence. Les salariés et prestataires de DIVEROID LTD et des sociétés de son groupe, les personnes qui participent à l’organisation de ce programme et les membres de leur foyer ne peuvent pas recevoir de lots physiques. Vous pouvez participer depuis n’importe quel pays, mais les lampes et les WatchDive ne peuvent être envoyés que dans un pays desservi par la campagne Kickstarter de WatchDive. Nous publierons cette liste sur cette page avant l’heure de clôture. Si vous résidez ailleurs, vous recevez quand même l’e-mail de lancement en avance et le lien Palanquée, mais le lot physique passe à la personne suivante dans l’ordre. Le programme est nul là où la loi l’interdit.",
         ],
       },
       {
         heading: "Période",
         paragraphs: [
-          "Le programme commence le 22 octobre 2026 et se termine juste avant le lancement de la campagne WatchDive sur Kickstarter. La campagne est prévue en décembre 2026. Nous annoncerons l’heure exacte de clôture sur cette page et par e-mail au moins {noticeDays} jours à l’avance.",
+          "Le programme commence le 22 octobre 2026 et se termine juste avant l’ouverture de la campagne WatchDive sur Kickstarter, prévue en décembre 2026, et au plus tard le {longStop}. Nous annoncerons l’heure exacte de clôture sur cette page et par e-mail au moins {noticeDays} jours à l’avance.",
         ],
       },
       {
         heading: "Comment participer",
         paragraphs: [
-          "Inscrivez-vous à la liste d’attente WatchDive et confirmez votre adresse e-mail. Vous obtenez alors un lien d’invitation personnel. Un ami compte pour vous lorsqu’il ouvre votre lien, rejoint la liste d’attente et confirme son adresse e-mail.",
-          "Aucun achat ni aucune contribution Kickstarter n’est nécessaire pour participer ou gagner. Le lien du tarif early bird sert si vous choisissez de soutenir la campagne.",
+          "Inscrivez-vous sur la liste d’attente WatchDive et confirmez votre adresse e-mail : vous recevez alors un lien d’invitation personnel. Un ami compte pour vous lorsqu’il ouvre votre lien, s’inscrit sur la liste d’attente et confirme son adresse e-mail.",
+          "Aucun achat ni aucune contribution Kickstarter n’est nécessaire pour participer ou gagner. Le lien au tarif early bird ne sert que si vous décidez de soutenir la campagne.",
         ],
       },
       {
         heading: "Ce qui compte",
         paragraphs: [
           "Seuls les amis qui confirment leur adresse e-mail comptent. Vos propres adresses, les inscriptions répétées d’une même personne, les adresses e-mail jetables et les inscriptions signalées comme abusives ne comptent pas.",
-          "Au maximum {cap} amis sont comptés par personne et par jour (heure standard de la Corée). Les amis qui confirment après l’heure de clôture ne comptent pas.",
+          "Un ami compte pour le lien d’invitation qu’il a utilisé lors de son inscription sur la liste d’attente. Les amis inscrits via votre lien qui ont confirmé leur adresse avant le début du programme, le 22 octobre 2026, comptent aussi.",
+          "Au maximum {cap} amis sont comptés par personne et par jour (heure normale de Corée). Les amis au-delà de cette limite ne sont pas comptés, ni ce jour-là ni plus tard. Les amis qui confirment après l’heure de clôture ne comptent pas.",
+          "Les compteurs sont figés à l’heure de clôture. Un ami déjà compté qui se désinscrit ensuite des e-mails WatchDive reste compté ; il cesse de compter s’il nous demande de supprimer ses données ou si nous le retirons lors de la vérification.",
+          "Une fois qu’un palier est atteint et que nous vous l’avons annoncé, vous le conservez, sauf si notre vérification établit que les amis qui vous l’ont fait atteindre enfreignaient ce règlement. Si vous vous désinscrivez des e-mails WatchDive, vous conservez les récompenses déjà obtenues, mais nous ne pourrons plus vous envoyer l’e-mail de lancement en avance ni les notifications.",
+        ],
+      },
+      {
+        heading: "Fair-play",
+        paragraphs: [
+          "Une seule participation par personne. Il est interdit d’inscrire d’autres personnes sans leur accord, de payer ou de récompenser des inscriptions, d’utiliser des sites d’échange de parrainages et de publier votre lien en réponse ou en commentaire des publicités de WatchDive.",
+          "Chaque personne et chaque foyer peut recevoir au maximum une lampe de plongée et un WatchDive gagné ; une même personne peut gagner les deux. Nous le vérifions à l’expédition, d’après le nom, l’adresse et le numéro de téléphone.",
         ],
       },
       {
         heading: "Récompenses",
         paragraphs: [
-          "1 ami : l’e-mail de lancement Kickstarter {hoursFirst} heure avant la liste générale.",
-          "3 amis (Binôme) : l’e-mail de lancement {hoursBuddy} heures avant la liste générale.",
-          "5 amis (Équipe de plongée) : un lien de récompense Kickstarter privé au tarif early bird de {price}, utilisable même quand les {seats} premiers contributeurs sont déjà passés.",
-          "10 amis (Leader de plongée) : une lampe sous-marine offerte. Nous en avons {stock}. Elles reviennent aux {stock} premières personnes à atteindre 10 amis, dans l’ordre où elles y parviennent. Quand il n’y en a plus, nous l’indiquerons sur cette page.",
-          "Top {winners} : les {winners} personnes qui comptent le plus d’amis à l’heure de clôture reçoivent chacune un WatchDive. En cas d’égalité, celle qui a atteint le nombre en premier est mieux classée.",
+          "1 ami : l’e-mail de lancement Kickstarter {hoursFirst} heure avant le reste de la liste.",
+          "3 amis (Binôme) : l’e-mail de lancement {hoursBuddy} heures avant le reste de la liste.",
+          "5 amis (Palanquée) : avant l’ouverture de la campagne, nous vous envoyons par e-mail un lien de contrepartie Kickstarter privé au tarif early bird de {price}. Vous pouvez l’utiliser pendant la campagne, sur le site Kickstarter (navigateur sur ordinateur ou mobile, en étant connecté), même quand les places des {seats} premiers contributeurs sont prises. Il ne fonctionne ni dans l’application Kickstarter, ni pour les contributions tardives (late pledges), ni dans le pledge manager. Une contribution par membre de la Palanquée ; merci de ne pas partager ce lien. Les frais de port et les taxes sont facturés comme pour les autres contributeurs.",
+          "10 amis (Chef de file) : une lampe de plongée d’une valeur d’environ {lightValue}. Nous en avons {stock}, attribuées aux {stock} premières personnes qui atteignent 10 amis, dans l’ordre où elles y parviennent. Quand il n’y en aura plus, nous l’indiquerons sur cette page.",
+          "Top {winners} : les {winners} personnes qui comptent le plus d’amis à l’heure de clôture reçoivent chacune un WatchDive. En cas d’égalité, la personne qui a atteint ce nombre en premier est mieux classée.",
+          "Un WatchDive gagné correspond à un caisson à capteur WatchDive, en version Apple Watch ou Galaxy Watch au choix du gagnant, d’une valeur de {prizeValue} (prix public prévu). La montre n’est pas incluse et WatchDive ne fonctionne qu’avec les modèles compatibles indiqués sur notre site. Les lots ne peuvent pas être échangés contre de l’argent.",
+        ],
+      },
+      {
+        heading: "Si la campagne est retardée ou n’a pas lieu",
+        paragraphs: [
+          "Si la campagne Kickstarter n’a pas ouvert le {longStop}, le programme se termine quand même à ce moment-là. Une fois l’heure de clôture annoncée, nous ne la modifierons qu’une seule fois au plus, en prévenant par e-mail au moins 48 heures avant l’heure initiale. Même si la campagne n’atteint pas son objectif, est annulée ou retardée, les personnes du top {winners} reçoivent chacune un WatchDive. Si nous arrêtons le programme plus tôt, le classement sera établi d’après les compteurs à ce moment-là et les lots du top {winners} seront attribués sur cette base.",
         ],
       },
       {
         heading: "Vérification et disqualification",
         paragraphs: [
-          "Avant l’envoi de toute lampe ou de tout WatchDive, nous vérifions les amis comptés. Nous pouvons retirer les amis qui enfreignent ce règlement et disqualifier toute personne qui utilise de fausses inscriptions ou des inscriptions automatisées. Nous contactons les gagnants par e-mail. Si un gagnant ne répond pas sous 14 jours, la récompense passe à la personne suivante dans l’ordre.",
+          "L’ordre d’attribution des lampes et le classement restent provisoires jusqu’à la vérification. Avant l’envoi de toute lampe ou de tout WatchDive, nous vérifions les amis comptés. Nous pouvons retirer les amis qui enfreignent ce règlement et disqualifier toute personne qui utilise des inscriptions fausses ou automatisées ou qui ne respecte pas les règles de fair-play. Nous contactons les gagnants par e-mail dans les 14 jours suivant la clôture (pour les lampes : dans les 14 jours suivant la vérification). Si un gagnant ne répond pas sous 14 jours ou ne peut pas recevoir la récompense selon ce règlement, la lampe passe au Chef de file suivant dans l’ordre d’arrivée à 10 amis, et le WatchDive à la personne suivante du classement.",
         ],
       },
       {
-        heading: "Livraison, expédition et taxes",
+        heading: "Livraison, frais de port et taxes",
         paragraphs: [
-          "Les destinataires paient l’expédition ainsi que les éventuelles taxes ou droits de douane, y compris la retenue à la source coréenne sur les lots lorsqu’elle s’applique. Nous n’expédions que dans les pays où la campagne Kickstarter de WatchDive livre. Les lampes sous-marines sont envoyées après vérification. Un WatchDive gagné est envoyé lorsque WatchDive est expédié aux contributeurs.",
+          "Les destinataires paient les frais de port ainsi que les éventuels droits de douane et taxes. Nous expédions uniquement vers les pays desservis par la campagne Kickstarter de WatchDive. Les lampes sont envoyées après vérification, et tous les lots physiques sont envoyés avant mars 2027.",
+          "Pour les gagnants résidant en Corée du Sud, la loi coréenne impose à celui qui remet le lot de retenir {taxRate} % d’impôt sur le revenu (impôt sur les autres revenus et impôt local) sur tout lot dont la valeur imposable dépasse {taxFree}. Cela concerne aussi bien la lampe (d’une valeur d’environ {lightValue}) que le WatchDive. Avant l’envoi, nous vous indiquons le montant et vous demandons de nous le régler ; nous le déclarons et le versons ensuite à l’administration fiscale. Pour cela, nous demandons aux gagnants résidant en Corée leur nom légal, leur numéro d’enregistrement de résident et leur adresse, utilisés uniquement pour la déclaration fiscale et conservés seulement pendant la durée exigée par la loi fiscale.",
         ],
       },
       {
         heading: "Classement et confidentialité",
         paragraphs: [
-          "Le classement n’affiche qu’un pseudo que vous avez défini et choisi d’afficher. Votre adresse e-mail n’est jamais affichée. Les personnes qui ne choisissent pas d’afficher un pseudo apparaissent comme « Plongeur anonyme ». Nous pouvons masquer un pseudo offensant ou qui usurpe l’identité de quelqu’un.",
-          "Nous ne vous disons jamais qui sont vos amis, seulement combien ont rejoint. Consultez notre politique de confidentialité pour savoir comment nous traitons les données de la liste d’attente.",
+          "Le classement n’affiche que le pseudo que vous avez choisi et décidé d’afficher. Votre adresse e-mail n’est jamais affichée. Les personnes qui n’affichent pas de pseudo apparaissent sous le nom « Plongeur anonyme ». Nous pouvons masquer un pseudo offensant ou qui usurpe l’identité de quelqu’un.",
+          "Nous ne vous disons jamais quels amis se sont inscrits, seulement combien. Consultez notre politique de confidentialité pour savoir comment nous traitons les données de la liste d’attente.",
         ],
       },
       {
         heading: "Modifications",
         paragraphs: [
-          "Si nous devons modifier ou arrêter le programme, nous l’annoncerons d’abord ici et par e-mail. Les récompenses déjà atteintes avant une modification sont conservées.",
+          "Si nous devons modifier ou arrêter le programme, nous l’annoncerons d’abord ici et par e-mail. Une modification ne vous retire jamais une récompense déjà obtenue et ne réduit jamais les lots du top {winners}.",
         ],
       },
     ],
@@ -1258,164 +1453,191 @@ const de: ReferralCopy = {
   tiers: {
     first: {
       name: "Erste Einladung · 1 Freund",
-      reward: "Erhalte die Kickstarter-Start-E-Mail {hours} Stunde vor der allgemeinen Liste.",
+      reward:
+        "Du bekommst die E-Mail zum Kickstarter-Start {hours} Stunde vor der allgemeinen Liste.",
     },
     buddy: {
       name: "Buddy · 3 Freunde",
-      reward: "Erhalte die Kickstarter-Start-E-Mail {hours} Stunden vor der allgemeinen Liste.",
+      reward:
+        "Du bekommst die E-Mail zum Kickstarter-Start {hours} Stunden vor der allgemeinen Liste.",
     },
     team: {
       name: "Tauchteam · 5 Freunde",
       reward:
-        "Behalte den Early-Bird-Preis von {price} mit einem privaten Kickstarter-Reward-Link, auch wenn die ersten {seats} Unterstützer schon vergeben sind.",
+        "Du bekommst einen privaten Kickstarter-Reward-Link zum Early-Bird-Preis von {price}. Er funktioniert während der laufenden Kampagne auf der Kickstarter-Website, auch wenn die Plätze für die ersten {seats} Unterstützer schon vergeben sind. Eine Unterstützung pro Tauchteam-Mitglied. Bitte gib den Link nicht weiter.",
     },
     leader: {
-      name: "Tauch-Leader · 10 Freunde",
+      name: "Teamleiter · 10 Freunde",
       reward:
-        "Erhalte eine Unterwasserlampe gratis. {stock} sind auf Lager, vergeben in der Reihenfolge, in der 10 Freunde erreicht werden. Versand und Steuern trägt der Empfänger.",
+        "Du bekommst eine Tauchlampe im Wert von rund {lightValue}. {stock} Stück sind da, vergeben in der Reihenfolge, in der 10 Freunde erreicht werden. Versand und Steuern zahlt der Empfänger.",
     },
   },
   top: {
     name: "Top {winners} der Einladenden",
     reward:
-      "Die {winners} Personen mit den meisten verifizierten Freunden beim Start der Kickstarter-Kampagne erhalten je ein WatchDive. Versand und Steuern trägt der Empfänger.",
+      "Die {winners} Personen mit den meisten bestätigten Freunden zum Endzeitpunkt bekommen je ein WatchDive, auch wenn sich die Kampagne verzögert oder nicht stattfindet. Versand und Steuern zahlt der Empfänger.",
   },
   countingNote: "Es zählen nur Freunde, die ihre E-Mail-Adresse bestätigen.",
   card: {
     title: "Lade deine Tauchbuddys ein",
-    body: "Schick deinen Link los. Die Belohnungen wachsen mit jedem Freund, der seine E-Mail-Adresse bestätigt.",
+    body: "Schick deinen Link los. Jeder Freund, der seine E-Mail-Adresse bestätigt, bringt dich der nächsten Belohnung näher.",
     progress: "{count} dabei · noch {remaining} bis {tier}",
-    progressNone: "Noch keine Freunde · noch {remaining} bis {tier}",
-    progressMax: "{count} dabei · alle Stufen erreicht. Greif nach den Top {winners}.",
-    statusLink: "Meine Einladungen ansehen",
-    rulesLink: "Offizielle Teilnahmebedingungen",
+    progressNone: "Noch niemand dabei · noch {remaining} bis {tier}",
+    progressMax: "{count} dabei · alle Stufen erreicht. Jetzt geht’s um die Top {winners}.",
+    statusLink: "Meine Einladungen",
+    rulesLink: "Teilnahmebedingungen",
+    invitedNote: "Wer dich eingeladen hat, sieht nur, wie viele Freunde dabei sind – nie, wer.",
   },
   leaderboard: {
     title: "Buddy-Einladung: Top {winners}",
-    subtitle: "Nur verifizierte Freunde · Stand {time}",
+    subtitle: "Nur bestätigte Freunde · Stand: {time} · vorläufig bis zur Prüfung",
     entry: "Freunde: {count}",
     privateDiver: "Anonymer Taucher",
     empty:
-      "Noch steht niemand in der Rangliste. Deine erste Einladung könnte dich hierher bringen.",
-    closed: "Die Buddy-Einladung ist beendet. Wir prüfen die Gewinner.",
-    rulesLink: "Offizielle Teilnahmebedingungen",
+      "Noch steht niemand in der Rangliste. Mit deiner ersten Einladung könntest du hier auftauchen.",
+    closed: "Die Buddy-Einladung ist beendet. Wir prüfen gerade die Gewinner.",
+    rulesLink: "Teilnahmebedingungen",
   },
   status: {
     title: "Meine Buddy-Einladung",
-    countLabel: "Freunde, die dabei sind",
+    countLabel: "Freunde dabei",
     tierLabel: "Aktuelle Stufe",
     tierNone: "Noch keine",
     rankLabel: "Platz in der Rangliste",
     rankNone: "Noch nicht platziert",
-    earlyNotice: "Du bekommst die Kickstarter-Start-E-Mail {hours} Std. früher.",
+    earlyNotice:
+      "Du bekommst die E-Mail zum Kickstarter-Start {hours} Std. vor der allgemeinen Liste.",
     lightEligible:
-      "Du gehörst zu den ersten {stock} Tauch-Leadern. Wir melden uns wegen deiner Unterwasserlampe bei dir.",
-    lightGone: "Alle {stock} Unterwasserlampen sind vergeben.",
+      "Du bist vorläufig unter den ersten {stock}, die die Stufe Teamleiter erreicht haben. Nach unserer Prüfung melden wir uns per E-Mail wegen deiner Tauchlampe.",
+    lightGone: "Alle {stock} Tauchlampen sind vergeben.",
     shareTitle: "Dein Einladungslink",
-    nicknameLabel: "Spitzname für die Rangliste",
+    nicknameLabel: "Nickname für die Rangliste",
     nicknameHelp: "{min}–{max} Zeichen. Keine E-Mail-Adressen, Telefonnummern oder Links.",
-    nicknameHiddenNote: "Unser Team hat diesen Spitznamen ausgeblendet. Bitte wähle einen anderen.",
-    leaderboardToggle: "Meinen Spitznamen in der Top-{winners}-Rangliste anzeigen",
-    noticesToggle: "Per E-Mail benachrichtigen, wenn ein Freund dazukommt",
+    nicknameHiddenNote: "Unser Team hat diesen Nickname ausgeblendet. Bitte wähle einen anderen.",
+    leaderboardToggle: "Meinen Nickname in der Top-{winners}-Rangliste zeigen",
+    noticesToggle: "Mir eine E-Mail schicken, wenn ein Freund dazukommt",
     save: "Speichern",
     saving: "Wird gespeichert…",
     saved: "Gespeichert",
-    invalidLink: "Dieser Link ist ungültig. Öffne den neuesten Link aus deiner WatchDive-E-Mail.",
+    invalidLink: "Dieser Link ist ungültig. Öffne den Link aus deiner neuesten WatchDive-E-Mail.",
     errors: {
       too_short: "Verwende mindestens {min} Zeichen.",
       too_long: "Verwende höchstens {max} Zeichen.",
-      contact_info: "Ein Spitzname darf keine E-Mail-Adresse und keine Telefonnummer enthalten.",
-      link: "Ein Spitzname darf keinen Link enthalten.",
-      reserved: "Bitte wähle einen anderen Spitznamen.",
+      contact_info: "Ein Nickname darf keine E-Mail-Adresse und keine Telefonnummer enthalten.",
+      link: "Ein Nickname darf keinen Link enthalten.",
+      reserved: "Bitte wähle einen anderen Nickname.",
       invalid_chars:
-        "Verwende Buchstaben, Zahlen, Leerzeichen, Punkte, Bindestriche oder Unterstriche.",
-      failed: "Speichern fehlgeschlagen. Bitte versuche es noch einmal.",
+        "Erlaubt sind Buchstaben, Zahlen, Leerzeichen, Punkte, Bindestriche und Unterstriche.",
+      failed: "Speichern hat nicht geklappt. Bitte versuch es noch einmal.",
     },
   },
   mail: {
     welcomeSubject: "Du bist auf der WatchDive-Warteliste — lade deine Buddys ein",
     welcomeHeading: "Du bist auf der WatchDive-Warteliste",
     welcomeIntro:
-      "Deine E-Mail-Adresse ist bestätigt. Schick deinen persönlichen Einladungslink an die Taucher, mit denen du tauchst. Die Belohnungen wachsen mit jedem Freund, der seine E-Mail-Adresse bestätigt.",
-    welcomeTiersHeading: "Belohnungen der Buddy-Einladung",
-    welcomeButton: "Meinen Einladungslink teilen",
+      "Deine E-Mail-Adresse ist bestätigt. Schick deinen persönlichen Einladungslink an die Taucher, mit denen du ins Wasser gehst. Jeder Freund, der seine E-Mail-Adresse bestätigt, bringt dich der nächsten Belohnung näher.",
+    welcomeTiersHeading: "Deine Belohnungen",
+    welcomeButton: "Einladungslink teilen",
     welcomeFallback: "Oder kopiere diesen Link:",
-    welcomeStatus:
-      "Sieh dir deine Einladungen an und lege einen Spitznamen für die Rangliste fest:",
-    welcomeRules: "Offizielle Teilnahmebedingungen:",
-    welcomeOutro: "Wir informieren dich per E-Mail, sobald WatchDive auf Kickstarter startet.",
-    noticeSubject: "Ein Buddy ist über deinen Link dazugekommen ({count} insgesamt)",
+    welcomeStatus: "Einladungen ansehen und Nickname für die Rangliste festlegen:",
+    welcomeRules: "Teilnahmebedingungen:",
+    welcomeOutro: "Wir schreiben dir, sobald WatchDive auf Kickstarter startet.",
+    noticeSubject: "Ein Buddy ist über deinen Link dazugekommen (insgesamt {count})",
     noticeHeading: "Ein Buddy ist über deinen Link dazugekommen",
-    noticeBody: "Bisher über deinen Link dazugekommen und per E-Mail bestätigt: {count}.",
-    noticeTierReached: "Du hast {tier} erreicht: {reward}",
+    noticeBody: "Freunde über deinen Link, die ihre E-Mail-Adresse bestätigt haben: {count}.",
+    noticeTierReached: "Stufe erreicht – {tier}: {reward}",
     noticeNext: "Noch {remaining} bis {tier}.",
-    noticeMax: "Alle Stufen erreicht. Mach weiter in Richtung Top {winners}.",
-    noticeButton: "Meine Einladungen ansehen",
-    noticeFooter: "Du kannst diese E-Mails auf deiner Einladungsseite abschalten.",
+    noticeMax: "Alle Stufen erreicht. Jetzt geht’s um die Top {winners}.",
+    noticeButton: "Meine Einladungen",
+    noticeFooter: "Du kannst diese E-Mails auf deiner Einladungsseite ausschalten.",
   },
   rules: {
-    title: "Offizielle Teilnahmebedingungen der Buddy-Einladung",
+    title: "Teilnahmebedingungen der Buddy-Einladung",
     updated: "Zuletzt aktualisiert: 22. Oktober 2026",
     sections: [
       {
         heading: "Veranstalter",
         paragraphs: [
-          "Die Buddy-Einladung wird von DIVEROID LTD (Vereinigtes Königreich), dem Hersteller von WatchDive, durchgeführt. Fragen: help@diveroid.com.",
+          "Veranstalter der Buddy-Einladung ist DIVEROID LTD, der Hersteller von WatchDive (Company No. 16343651, Office 12146, 182-184 High Street North, East Ham, London E6 2JA, Vereinigtes Königreich). Fragen: help@diveroid.com.",
+        ],
+      },
+      {
+        heading: "Wer teilnehmen kann",
+        paragraphs: [
+          "Du musst mindestens {ageOther} Jahre alt sein, in Südkorea mindestens {ageKr}, und an deinem Wohnort volljährig. Beschäftigte und Auftragnehmer von DIVEROID LTD und seinen Konzerngesellschaften, Personen, die an der Durchführung dieses Programms mitwirken, sowie ihre Haushaltsangehörigen können keine Sachpreise erhalten. Teilnehmen kannst du von überall, aber Tauchlampen und WatchDive-Gewinne können wir nur in Länder schicken, die die WatchDive-Kampagne auf Kickstarter beliefert. Diese Liste veröffentlichen wir vor dem Endzeitpunkt auf dieser Seite. Wohnst du woanders, bekommst du trotzdem die frühe Start-E-Mail und den Tauchteam-Link, der Sachpreis geht aber an die nächste Person in der Reihenfolge. Wo das Programm gesetzlich verboten ist, ist die Teilnahme ungültig.",
         ],
       },
       {
         heading: "Zeitraum",
         paragraphs: [
-          "Das Programm beginnt am 22. Oktober 2026 und endet unmittelbar, bevor die WatchDive-Kampagne auf Kickstarter startet. Die Kampagne ist für Dezember 2026 geplant. Den genauen Endzeitpunkt geben wir mindestens {noticeDays} Tage vorher auf dieser Seite und per E-Mail bekannt.",
+          "Das Programm beginnt am 22. Oktober 2026 und endet unmittelbar vor dem Start der WatchDive-Kampagne auf Kickstarter, der für Dezember 2026 geplant ist, spätestens jedoch am {longStop}. Den genauen Endzeitpunkt geben wir mindestens {noticeDays} Tage vorher auf dieser Seite und per E-Mail bekannt.",
         ],
       },
       {
         heading: "So nimmst du teil",
         paragraphs: [
           "Trag dich auf die WatchDive-Warteliste ein und bestätige deine E-Mail-Adresse. Danach bekommst du deinen persönlichen Einladungslink. Ein Freund zählt für dich, wenn er deinen Link öffnet, sich auf die Warteliste einträgt und seine E-Mail-Adresse bestätigt.",
-          "Für die Teilnahme und für einen Gewinn ist weder ein Kauf noch eine Unterstützung auf Kickstarter nötig. Der Link zum Early-Bird-Preis kommt zum Einsatz, wenn du dich entscheidest, die Kampagne zu unterstützen.",
+          "Für die Teilnahme und einen Gewinn ist weder ein Kauf noch eine Unterstützung auf Kickstarter nötig. Den Link zum Early-Bird-Preis nutzt du nur, wenn du dich entscheidest, die Kampagne zu unterstützen.",
         ],
       },
       {
         heading: "Was zählt",
         paragraphs: [
           "Es zählen nur Freunde, die ihre E-Mail-Adresse bestätigen. Deine eigenen Adressen, wiederholte Anmeldungen derselben Person, Wegwerf-E-Mail-Adressen und als missbräuchlich markierte Anmeldungen zählen nicht.",
-          "Pro Person werden höchstens {cap} Freunde pro Tag gezählt (koreanische Standardzeit). Freunde, die nach dem Endzeitpunkt bestätigen, zählen nicht.",
+          "Ein Freund zählt für den Einladungslink, über den er sich auf die Warteliste eingetragen hat. Auch Freunde, die sich vor dem Programmstart am 22. Oktober 2026 über deinen Link eingetragen und ihre E-Mail-Adresse bestätigt haben, zählen.",
+          "Pro Person werden höchstens {cap} Freunde pro Tag gezählt (koreanische Standardzeit). Freunde über diesem Limit werden nicht gezählt, auch nicht an einem späteren Tag. Freunde, die erst nach dem Endzeitpunkt bestätigen, zählen nicht.",
+          "Die Zahlen werden zum Endzeitpunkt eingefroren. Ein bereits gezählter Freund, der sich später von den WatchDive-E-Mails abmeldet, zählt weiter. Wer uns bittet, seine Daten zu löschen, oder bei der Prüfung entfernt wird, zählt nicht mehr.",
+          "Hast du eine Stufe erreicht und wir haben es dir mitgeteilt, behältst du sie – es sei denn, unsere Prüfung ergibt, dass die Freunde, mit denen du sie erreicht hast, gegen diese Bedingungen verstoßen haben. Meldest du dich selbst von den WatchDive-E-Mails ab, behältst du deine erreichten Belohnungen, wir können dir dann aber weder die frühe Start-E-Mail noch Benachrichtigungen schicken.",
+        ],
+      },
+      {
+        heading: "Fair Play",
+        paragraphs: [
+          "Pro Person ist nur eine Teilnahme erlaubt. Nicht erlaubt ist, andere ohne ihre Zustimmung anzumelden, Anmeldungen zu bezahlen oder mit Gegenleistungen zu belohnen, Empfehlungs-Tauschbörsen zu nutzen oder deinen Link in Antworten oder Kommentaren unter WatchDive-Anzeigen zu posten.",
+          "Jede Person und jeder Haushalt kann höchstens eine Tauchlampe und ein WatchDive als Gewinn erhalten; eine Person kann beides gewinnen. Das prüfen wir beim Versand anhand von Name, Adresse und Telefonnummer.",
         ],
       },
       {
         heading: "Belohnungen",
         paragraphs: [
-          "1 Freund: die Kickstarter-Start-E-Mail {hoursFirst} Stunde vor der allgemeinen Liste.",
+          "1 Freund: die E-Mail zum Kickstarter-Start {hoursFirst} Stunde vor der allgemeinen Liste.",
           "3 Freunde (Buddy): die Start-E-Mail {hoursBuddy} Stunden vor der allgemeinen Liste.",
-          "5 Freunde (Tauchteam): ein privater Kickstarter-Reward-Link zum Early-Bird-Preis von {price}, auch wenn die ersten {seats} Unterstützer schon vergeben sind.",
-          "10 Freunde (Tauch-Leader): eine Unterwasserlampe gratis. Wir haben {stock} Stück. Sie gehen an die ersten {stock} Personen, die 10 Freunde erreichen, in der Reihenfolge, in der sie das schaffen. Wenn sie vergeben sind, schreiben wir das auf dieser Seite.",
-          "Top {winners}: Die {winners} Personen mit den meisten gezählten Freunden zum Endzeitpunkt erhalten je ein WatchDive. Bei gleicher Anzahl liegt vorn, wer sie zuerst erreicht hat.",
+          "5 Freunde (Tauchteam): Vor dem Start der Kampagne schicken wir dir per E-Mail einen privaten Kickstarter-Reward-Link zum Early-Bird-Preis von {price}. Du kannst ihn während der laufenden Kampagne auf der Kickstarter-Website nutzen (im Browser am Computer oder Smartphone, angemeldet), auch wenn die Plätze für die ersten {seats} Unterstützer schon vergeben sind. In der Kickstarter-App, bei Late Pledges und im Pledge Manager funktioniert er nicht. Eine Unterstützung pro Tauchteam-Mitglied; bitte gib den Link nicht weiter. Versand und Steuern werden wie bei anderen Unterstützern berechnet.",
+          "10 Freunde (Teamleiter): eine Tauchlampe im Wert von rund {lightValue}. Wir haben {stock} Stück. Sie gehen an die ersten {stock} Personen, die 10 Freunde erreichen, in der Reihenfolge, in der sie das schaffen. Sind alle vergeben, steht das auf dieser Seite.",
+          "Top {winners}: Die {winners} Personen mit den meisten gezählten Freunden zum Endzeitpunkt bekommen je ein WatchDive. Bei Gleichstand liegt vorn, wer die Zahl zuerst erreicht hat.",
+          "Ein WatchDive-Gewinn ist ein WatchDive-Sensorgehäuse in der Version für Apple Watch oder Galaxy Watch nach Wahl des Gewinners, im Wert von {prizeValue} (geplanter regulärer Preis). Die Uhr ist nicht enthalten, und WatchDive funktioniert nur mit den unterstützten Uhrenmodellen, die auf unserer Website aufgeführt sind. Eine Barauszahlung ist nicht möglich.",
+        ],
+      },
+      {
+        heading: "Wenn sich die Kampagne verzögert oder nicht stattfindet",
+        paragraphs: [
+          "Ist die Kickstarter-Kampagne bis {longStop} nicht gestartet, endet das Programm trotzdem zu diesem Zeitpunkt. Einen angekündigten Endzeitpunkt verschieben wir höchstens einmal und nur mit einer E-Mail mindestens 48 Stunden vor dem ursprünglichen Zeitpunkt. Auch wenn die Kampagne ihr Ziel nicht erreicht, abgesagt wird oder sich verzögert, bekommen die Top {winners} je ein WatchDive. Beenden wir das Programm vorzeitig, ermitteln wir die Rangfolge nach den Zahlen zu diesem Zeitpunkt und vergeben die Gewinne der Top {winners} auf dieser Grundlage.",
         ],
       },
       {
         heading: "Prüfung und Ausschluss",
         paragraphs: [
-          "Bevor eine Lampe oder ein WatchDive verschickt wird, prüfen wir die gezählten Freunde. Wir können Freunde entfernen, die gegen diese Regeln verstoßen, und jeden ausschließen, der gefälschte oder automatisierte Anmeldungen nutzt. Wir kontaktieren Gewinner per E-Mail. Antwortet ein Gewinner nicht innerhalb von 14 Tagen, geht die Belohnung an die nächste Person in der Reihenfolge.",
+          "Die Reihenfolge bei den Tauchlampen und die Rangliste sind bis zur Prüfung vorläufig. Bevor eine Lampe oder ein WatchDive verschickt wird, prüfen wir die gezählten Freunde. Wir können Freunde streichen, die gegen diese Bedingungen verstoßen, und alle ausschließen, die gefälschte oder automatisierte Anmeldungen nutzen oder gegen die Fair-Play-Regeln verstoßen. Gewinner benachrichtigen wir innerhalb von 14 Tagen nach dem Endzeitpunkt per E-Mail (Tauchlampen: innerhalb von 14 Tagen nach der Prüfung). Antwortet ein Gewinner nicht innerhalb von 14 Tagen oder kann er die Belohnung nach diesen Bedingungen nicht erhalten, geht die Lampe an den nächsten Teamleiter in der Reihenfolge, in der 10 Freunde erreicht wurden, und ein WatchDive an die nächste Person in der Rangliste.",
         ],
       },
       {
         heading: "Lieferung, Versand und Steuern",
         paragraphs: [
-          "Empfänger tragen den Versand sowie alle Steuern und Zölle, einschließlich der koreanischen Quellensteuer auf Gewinne, soweit sie anfällt. Wir versenden nur in Länder, in die die WatchDive-Kampagne auf Kickstarter liefert. Unterwasserlampen werden nach der Prüfung verschickt. Ein WatchDive als Preis wird verschickt, wenn WatchDive an die Unterstützer ausgeliefert wird.",
+          "Empfänger tragen die Versandkosten sowie alle Zölle und Steuern. Wir versenden nur in Länder, die auch die WatchDive-Kampagne auf Kickstarter beliefert. Tauchlampen werden nach der Prüfung verschickt, alle Sachpreise vor März 2027.",
+          "Für Gewinner mit Wohnsitz in Südkorea muss der Zahlende nach koreanischem Recht {taxRate} % Einkommensteuer (Steuer auf sonstige Einkünfte und lokale Einkommensteuer) auf Gewinne einbehalten, deren steuerpflichtiger Wert {taxFree} übersteigt. Das gilt für die Tauchlampe (Wert rund {lightValue}) ebenso wie für das WatchDive. Vor dem Versand nennen wir dir den Betrag und bitten dich, ihn an uns zu zahlen; wir melden und zahlen ihn dann an das Finanzamt. Dafür erfragen wir bei Gewinnern in Korea den amtlichen Namen, die koreanische Einwohnernummer und die Adresse. Wir nutzen sie nur für die Steuermeldung und bewahren sie nur so lange auf, wie das Steuerrecht es verlangt.",
         ],
       },
       {
         heading: "Rangliste und Datenschutz",
         paragraphs: [
-          "Die Rangliste zeigt nur einen Spitznamen, den du selbst festlegst und anzeigen lassen willst. Deine E-Mail-Adresse wird nie angezeigt. Wer keinen Spitznamen anzeigen lässt, erscheint als „Anonymer Taucher“. Wir können einen Spitznamen ausblenden, der beleidigend ist oder jemanden imitiert.",
-          "Wir sagen dir nie, wer deine Freunde sind, nur wie viele dazugekommen sind. Wie wir mit Wartelistendaten umgehen, steht in unserer Datenschutzerklärung.",
+          "Die Rangliste zeigt nur einen Nickname, den du selbst festlegst und anzeigen lässt. Deine E-Mail-Adresse wird nie angezeigt. Wer keinen Nickname anzeigen lässt, erscheint als „Anonymer Taucher“. Beleidigende Nicknames oder solche, mit denen sich jemand als eine andere Person ausgibt, können wir ausblenden.",
+          "Wir sagen dir nie, welche Freunde dazugekommen sind, nur wie viele. Wie wir mit Wartelistendaten umgehen, steht in unserer Datenschutzerklärung.",
         ],
       },
       {
         heading: "Änderungen",
         paragraphs: [
-          "Müssen wir das Programm ändern oder beenden, geben wir das vorher hier und per E-Mail bekannt. Belohnungen, die vor einer Änderung bereits erreicht wurden, bleiben erhalten.",
+          "Müssen wir das Programm ändern oder beenden, geben wir das vorher hier und per E-Mail bekannt. Eine Änderung nimmt dir nie eine bereits erreichte Belohnung und verringert nie die Gewinne der Top {winners}.",
         ],
       },
     ],
@@ -1423,80 +1645,81 @@ const de: ReferralCopy = {
 };
 
 const ptBR: ReferralCopy = {
-  programName: "Convite de parceiros",
+  programName: "Convide seu parceiro",
   tiers: {
     first: {
       name: "Primeiro convite · 1 amigo",
-      reward: "Receba o e-mail de lançamento do Kickstarter {hours} hora antes da lista geral.",
+      reward: "Receba o e-mail de lançamento no Kickstarter {hours} hora antes da lista geral.",
     },
     buddy: {
       name: "Parceiro · 3 amigos",
-      reward: "Receba o e-mail de lançamento do Kickstarter {hours} horas antes da lista geral.",
+      reward: "Receba o e-mail de lançamento no Kickstarter {hours} horas antes da lista geral.",
     },
     team: {
       name: "Equipe de mergulho · 5 amigos",
       reward:
-        "Mantenha o preço early bird de {price} com um link de recompensa privado do Kickstarter, mesmo depois que os primeiros {seats} apoiadores já tiverem entrado.",
+        "Ganhe um link de recompensa exclusivo no Kickstarter com o preço early bird de {price}. Ele funciona durante a campanha, no site do Kickstarter, mesmo depois que as vagas dos primeiros {seats} apoiadores acabarem. Um apoio por membro da Equipe de mergulho. Por favor, não compartilhe o link.",
     },
     leader: {
       name: "Líder de mergulho · 10 amigos",
       reward:
-        "Ganhe uma lanterna subaquática grátis. Há {stock} em estoque, entregues na ordem em que as pessoas chegam a 10. Frete e impostos ficam por conta de quem recebe.",
+        "Ganhe uma lanterna de mergulho avaliada em cerca de {lightValue}. São {stock} unidades, entregues na ordem em que as pessoas chegam a 10 amigos. Frete e impostos por conta de quem recebe.",
     },
   },
   top: {
-    name: "Top {winners} de convites",
+    name: "Top {winners} em convites",
     reward:
-      "Quando a campanha do Kickstarter entrar no ar, as {winners} pessoas com mais amigos verificados ganham um WatchDive cada. Frete e impostos ficam por conta de quem recebe.",
+      "As {winners} pessoas com mais amigos verificados no horário de encerramento ganham um WatchDive cada, mesmo que a campanha atrase ou não aconteça. Frete e impostos por conta de quem recebe.",
   },
   countingNote: "Só contam os amigos que confirmam o e-mail.",
   card: {
     title: "Convide seus parceiros de mergulho",
-    body: "Envie seu link. As recompensas crescem a cada amigo que confirma o e-mail.",
-    progress: "Amigos que entraram: {count} · mais {remaining} para {tier}",
+    body: "Mande seu link. Cada amigo que confirma o e-mail deixa você mais perto da próxima recompensa.",
+    progress: "Amigos: {count} · mais {remaining} para {tier}",
     progressNone: "Nenhum amigo ainda · mais {remaining} para {tier}",
-    progressMax:
-      "Amigos que entraram: {count} · você chegou a todos os níveis. Vá atrás do top {winners}.",
+    progressMax: "Amigos: {count} · você chegou a todos os níveis. Agora é buscar o top {winners}.",
     statusLink: "Ver meus convites",
-    rulesLink: "Regras oficiais",
+    rulesLink: "Regulamento oficial",
+    invitedNote: "Quem convidou você vê só quantos amigos entraram, nunca quem.",
   },
   leaderboard: {
-    title: "Top {winners} do Convite de parceiros",
-    subtitle: "Só amigos verificados · em {time}",
+    title: "Top {winners} · Convide seu parceiro",
+    subtitle: "Só amigos verificados · atualizado em {time} · sujeito a análise",
     entry: "Amigos: {count}",
     privateDiver: "Mergulhador anônimo",
-    empty: "Ainda não há ninguém no ranking. Seu primeiro convite pode colocar você aqui.",
-    closed: "O Convite de parceiros foi encerrado. Estamos analisando os ganhadores.",
-    rulesLink: "Regras oficiais",
+    empty: "Ainda não tem ninguém no ranking. Seu primeiro convite pode colocar você aqui.",
+    closed: "O “Convide seu parceiro” foi encerrado. Estamos analisando os ganhadores.",
+    rulesLink: "Regulamento oficial",
   },
   status: {
-    title: "Meu Convite de parceiros",
+    title: "Meus convites",
     countLabel: "Amigos que entraram",
     tierLabel: "Nível atual",
     tierNone: "Nenhum ainda",
     rankLabel: "Posição no ranking",
     rankNone: "Ainda sem posição",
-    earlyNotice: "Você vai receber o e-mail de lançamento do Kickstarter {hours} h antes.",
+    earlyNotice:
+      "Você vai receber o e-mail de lançamento no Kickstarter {hours} h antes da lista geral.",
     lightEligible:
-      "Você está entre os primeiros {stock} Líderes de mergulho. Vamos entrar em contato sobre a sua lanterna subaquática.",
-    lightGone: "As {stock} lanternas subaquáticas já foram todas reivindicadas.",
+      "Você está, provisoriamente, entre os primeiros {stock} a chegar a Líder de mergulho. Depois da nossa análise, vamos falar com você por e-mail sobre a sua lanterna de mergulho.",
+    lightGone: "As {stock} lanternas de mergulho já foram todas distribuídas.",
     shareTitle: "Seu link de convite",
-    nicknameLabel: "Apelido para o ranking",
-    nicknameHelp: "De {min} a {max} caracteres. Sem endereços de e-mail, telefones ou links.",
+    nicknameLabel: "Apelido no ranking",
+    nicknameHelp: "De {min} a {max} caracteres. Sem e-mails, telefones ou links.",
     nicknameHiddenNote: "Nossa equipe ocultou este apelido. Escolha outro, por favor.",
     leaderboardToggle: "Mostrar meu apelido no ranking do top {winners}",
-    noticesToggle: "Avisar por e-mail quando um amigo entrar",
+    noticesToggle: "Me avisar por e-mail quando um amigo entrar",
     save: "Salvar",
     saving: "Salvando…",
     saved: "Salvo",
-    invalidLink: "Este link não é válido. Abra o link mais recente do seu e-mail do WatchDive.",
+    invalidLink: "Este link não é válido. Abra o link do e-mail mais recente do WatchDive.",
     errors: {
       too_short: "Use pelo menos {min} caracteres.",
       too_long: "Use no máximo {max} caracteres.",
-      contact_info: "Um apelido não pode conter endereço de e-mail nem telefone.",
-      link: "Um apelido não pode conter um link.",
+      contact_info: "O apelido não pode ter endereço de e-mail nem telefone.",
+      link: "O apelido não pode ter links.",
       reserved: "Escolha outro apelido, por favor.",
-      invalid_chars: "Use letras, números, espaços, pontos, hifens ou sublinhados.",
+      invalid_chars: "Use só letras, números, espaços, pontos, hifens ou sublinhados.",
       failed: "Não foi possível salvar. Tente de novo.",
     },
   },
@@ -1504,85 +1727,109 @@ const ptBR: ReferralCopy = {
     welcomeSubject: "Você está na lista de espera do WatchDive — convide seus parceiros",
     welcomeHeading: "Você está na lista de espera do WatchDive",
     welcomeIntro:
-      "Seu e-mail foi confirmado. Envie seu link de convite pessoal para as pessoas com quem você mergulha. As recompensas crescem a cada amigo que confirma o e-mail.",
-    welcomeTiersHeading: "Recompensas do Convite de parceiros",
-    welcomeButton: "Compartilhar meu link de convite",
+      "Seu e-mail foi confirmado. Mande seu link de convite pessoal para quem mergulha com você. Cada amigo que confirma o e-mail deixa você mais perto da próxima recompensa.",
+    welcomeTiersHeading: "Recompensas por convite",
+    welcomeButton: "Compartilhar meu link",
     welcomeFallback: "Ou copie este link:",
     welcomeStatus: "Veja seus convites e escolha um apelido para o ranking:",
-    welcomeRules: "Regras oficiais:",
-    welcomeOutro: "Vamos avisar por e-mail quando o WatchDive entrar no ar no Kickstarter.",
+    welcomeRules: "Regulamento oficial:",
+    welcomeOutro: "A gente avisa por e-mail assim que o WatchDive abrir no Kickstarter.",
     noticeSubject: "Um parceiro entrou pelo seu link ({count} no total)",
     noticeHeading: "Um parceiro entrou pelo seu link",
     noticeBody: "Amigos que entraram pelo seu link e confirmaram o e-mail: {count}.",
     noticeTierReached: "Você chegou a {tier}: {reward}",
     noticeNext: "Para {tier}: mais {remaining}.",
-    noticeMax: "Você chegou a todos os níveis. Continue rumo ao top {winners}.",
+    noticeMax: "Você chegou a todos os níveis. Agora é buscar o top {winners}.",
     noticeButton: "Ver meus convites",
     noticeFooter: "Você pode desativar estes e-mails na sua página de convites.",
   },
   rules: {
-    title: "Regras oficiais do Convite de parceiros",
+    title: "Regulamento oficial do “Convide seu parceiro”",
     updated: "Última atualização: 22 de outubro de 2026",
     sections: [
       {
         heading: "Organizador",
         paragraphs: [
-          "O Convite de parceiros é realizado pela DIVEROID LTD (Reino Unido), fabricante do WatchDive. Dúvidas: help@diveroid.com.",
+          "O “Convide seu parceiro” é realizado pela DIVEROID LTD, fabricante do WatchDive (empresa nº 16343651, Office 12146, 182-184 High Street North, East Ham, London E6 2JA, Reino Unido). Dúvidas: help@diveroid.com.",
+        ],
+      },
+      {
+        heading: "Quem pode participar",
+        paragraphs: [
+          "Você precisa ter pelo menos {ageOther} anos, ou {ageKr} se morar na Coreia do Sul, e ser maior de idade segundo a lei do lugar onde mora. Funcionários e prestadores de serviço da DIVEROID LTD e das empresas do seu grupo, pessoas que ajudam a conduzir este programa e quem mora com elas não podem receber prêmios físicos. Você pode participar de qualquer lugar, mas lanternas e prêmios WatchDive só podem ser enviados para países atendidos pela campanha do WatchDive no Kickstarter. Vamos publicar essa lista nesta página antes do horário de encerramento. Se você mora em outro país, continua recebendo o e-mail de lançamento antecipado e o link da Equipe de mergulho, mas o prêmio físico passa para a próxima pessoa na ordem. O programa não vale onde for proibido por lei.",
         ],
       },
       {
         heading: "Período",
         paragraphs: [
-          "O programa começa em 22 de outubro de 2026 e termina imediatamente antes de a campanha do WatchDive no Kickstarter entrar no ar. A campanha está prevista para dezembro de 2026. Vamos anunciar o horário exato de encerramento nesta página e por e-mail com pelo menos {noticeDays} dias de antecedência.",
+          "O programa começa em 22 de outubro de 2026 e termina imediatamente antes de a campanha do WatchDive abrir no Kickstarter, prevista para dezembro de 2026, e no máximo em {longStop}. Vamos anunciar o horário exato de encerramento nesta página e por e-mail com pelo menos {noticeDays} dias de antecedência.",
         ],
       },
       {
         heading: "Como participar",
         paragraphs: [
-          "Entre na lista de espera do WatchDive e confirme seu e-mail. Você recebe então um link de convite pessoal. Um amigo conta para você quando abre seu link, entra na lista de espera e confirma o e-mail.",
-          "Não é preciso comprar nada nem apoiar a campanha no Kickstarter para participar ou ganhar. O link do preço early bird é usado quando você decide apoiar a campanha.",
+          "Entre na lista de espera do WatchDive e confirme seu e-mail para receber um link de convite pessoal. Um amigo conta para você quando abre seu link, entra na lista de espera e confirma o e-mail.",
+          "Não é preciso comprar nada nem apoiar a campanha no Kickstarter para participar ou ganhar. O link com o preço early bird só é usado se você decidir apoiar a campanha.",
         ],
       },
       {
         heading: "O que conta",
         paragraphs: [
-          "Só contam os amigos que confirmam o e-mail. Seus próprios endereços, cadastros repetidos da mesma pessoa, e-mails descartáveis e cadastros marcados como abusivos não contam.",
-          "No máximo {cap} amigos são contados por pessoa por dia (horário padrão da Coreia). Amigos que confirmarem depois do horário de encerramento não contam.",
+          "Só contam os amigos que confirmam o e-mail. Não contam seus próprios endereços, cadastros repetidos da mesma pessoa, e-mails descartáveis nem cadastros marcados como abusivos.",
+          "Cada amigo conta para o link de convite que usou ao entrar na lista de espera. Amigos que entraram pelo seu link e confirmaram o e-mail antes do início do programa, em 22 de outubro de 2026, também contam.",
+          "São contados no máximo {cap} amigos por pessoa por dia (horário padrão da Coreia). Amigos acima desse limite não são contados, nem em dias seguintes. Amigos que confirmarem depois do horário de encerramento não contam.",
+          "As contagens ficam congeladas no horário de encerramento. Um amigo já contado que depois cancelar a inscrição nos e-mails do WatchDive continua contando; ele deixa de contar se pedir que apaguemos os dados dele ou se for removido na análise.",
+          "Depois que você alcança um nível e nós avisamos, ele continua seu, a menos que a análise mostre que os amigos que levaram você até lá descumpriram este regulamento. Se você cancelar a inscrição nos e-mails do WatchDive, mantém as recompensas já alcançadas, mas não poderemos mais enviar o e-mail de lançamento antecipado nem os avisos.",
+        ],
+      },
+      {
+        heading: "Jogo limpo",
+        paragraphs: [
+          "Cada pessoa pode participar uma única vez. Não é permitido cadastrar outras pessoas sem o consentimento delas, pagar ou oferecer vantagens em troca de cadastros, usar sites de troca de indicações nem publicar seu link em respostas ou comentários dos anúncios do WatchDive.",
+          "Cada pessoa e cada domicílio pode receber no máximo uma lanterna de mergulho e um WatchDive como prêmio; a mesma pessoa pode ganhar os dois. Conferimos isso no envio, por nome, endereço e telefone.",
         ],
       },
       {
         heading: "Recompensas",
         paragraphs: [
-          "1 amigo: o e-mail de lançamento do Kickstarter {hoursFirst} hora antes da lista geral.",
+          "1 amigo: o e-mail de lançamento no Kickstarter {hoursFirst} hora antes da lista geral.",
           "3 amigos (Parceiro): o e-mail de lançamento {hoursBuddy} horas antes da lista geral.",
-          "5 amigos (Equipe de mergulho): um link de recompensa privado do Kickstarter com o preço early bird de {price}, disponível mesmo depois que os primeiros {seats} apoiadores já tiverem entrado.",
-          "10 amigos (Líder de mergulho): uma lanterna subaquática grátis. Temos {stock}. Elas vão para as primeiras {stock} pessoas a chegar a 10 amigos, na ordem em que chegarem. Quando acabarem, avisaremos nesta página.",
+          "5 amigos (Equipe de mergulho): antes de a campanha abrir, enviamos por e-mail um link de recompensa exclusivo no Kickstarter com o preço early bird de {price}. Você pode usá-lo durante a campanha, no site do Kickstarter (navegador no computador ou no celular, com login feito), mesmo depois que as vagas dos primeiros {seats} apoiadores acabarem. Ele não funciona no app do Kickstarter, em apoios atrasados (late pledges) nem no pledge manager. Um apoio por membro da Equipe de mergulho; por favor, não compartilhe o link. Frete e impostos são cobrados como para os demais apoiadores.",
+          "10 amigos (Líder de mergulho): uma lanterna de mergulho avaliada em cerca de {lightValue}. Temos {stock} unidades, que vão para as primeiras {stock} pessoas a chegar a 10 amigos, na ordem em que chegarem. Quando acabarem, avisaremos nesta página.",
           "Top {winners}: as {winners} pessoas com mais amigos contados no horário de encerramento ganham um WatchDive cada. Em caso de empate, fica na frente quem chegou primeiro àquele número.",
+          "Um prêmio WatchDive é uma caixa com sensor WatchDive, na versão para Apple Watch ou Galaxy Watch à escolha de quem ganhar, avaliada em {prizeValue} (o preço público previsto). O relógio não está incluído, e o WatchDive só funciona com os modelos compatíveis listados no nosso site. Os prêmios não podem ser trocados por dinheiro.",
+        ],
+      },
+      {
+        heading: "Se a campanha atrasar ou não acontecer",
+        paragraphs: [
+          "Se a campanha no Kickstarter não tiver aberto até {longStop}, o programa termina nesse horário mesmo assim. Depois de anunciado, o horário de encerramento muda no máximo uma vez, com aviso por e-mail pelo menos 48 horas antes do horário original. Mesmo que a campanha não atinja a meta, seja cancelada ou atrase, as pessoas do top {winners} ganham um WatchDive cada. Se encerrarmos o programa antes, o ranking será definido pelas contagens daquele momento, e os prêmios do top {winners} serão entregues com base nele.",
         ],
       },
       {
         heading: "Análise e desclassificação",
         paragraphs: [
-          "Antes de enviar qualquer lanterna ou WatchDive, analisamos os amigos contados. Podemos remover amigos que descumpram estas regras e desclassificar quem usar cadastros falsos ou automatizados. Entramos em contato com os ganhadores por e-mail. Se um ganhador não responder em até 14 dias, a recompensa passa para a próxima pessoa na ordem.",
+          "A ordem de entrega das lanternas e o ranking são provisórios até a análise. Antes de enviar qualquer lanterna ou WatchDive, analisamos os amigos contados. Podemos remover amigos que descumpram este regulamento e desclassificar quem usar cadastros falsos ou automatizados ou desrespeitar as regras de jogo limpo. Entramos em contato com os ganhadores por e-mail em até 14 dias após o encerramento (lanternas: em até 14 dias após a análise). Se um ganhador não responder em até 14 dias ou não puder receber a recompensa por este regulamento, a lanterna passa para o próximo Líder de mergulho na ordem de chegada a 10 amigos, e o prêmio WatchDive passa para a próxima pessoa do ranking.",
         ],
       },
       {
         heading: "Entrega, frete e impostos",
         paragraphs: [
-          "Quem recebe paga o frete e quaisquer impostos ou taxas, inclusive o imposto retido na fonte coreano sobre prêmios, quando aplicável. Enviamos apenas para os países atendidos pela campanha do WatchDive no Kickstarter. As lanternas subaquáticas são enviadas após a análise. Um WatchDive como prêmio é enviado quando o WatchDive for enviado aos apoiadores.",
+          "Quem recebe paga o frete e quaisquer impostos ou taxas de importação. Só enviamos para os países atendidos pela campanha do WatchDive no Kickstarter. As lanternas são enviadas após a análise, e todos os prêmios físicos são enviados antes de março de 2027.",
+          "Para ganhadores que moram na Coreia do Sul, a lei coreana exige que quem paga o prêmio retenha {taxRate}% de imposto de renda (imposto sobre outros rendimentos e imposto local) sobre prêmios com valor tributável acima de {taxFree}. Isso vale tanto para a lanterna (avaliada em cerca de {lightValue}) quanto para o WatchDive. Antes do envio, informamos o valor e pedimos que você o pague a nós; nós declaramos e recolhemos o imposto. Para isso, pedimos aos ganhadores na Coreia o nome civil, o número de registro de residente e o endereço, usados só para a declaração fiscal e guardados apenas pelo prazo exigido pela lei tributária.",
         ],
       },
       {
         heading: "Ranking e privacidade",
         paragraphs: [
-          "O ranking mostra apenas um apelido que você definiu e escolheu exibir. Seu e-mail nunca é exibido. Quem não escolhe exibir um apelido aparece como “Mergulhador anônimo”. Podemos ocultar um apelido ofensivo ou que se passe por outra pessoa.",
-          "Nunca dizemos quem são seus amigos, apenas quantos entraram. Veja nossa política de privacidade para saber como tratamos os dados da lista de espera.",
+          "O ranking mostra apenas o apelido que você definiu e escolheu exibir. Seu e-mail nunca aparece. Quem não escolhe exibir um apelido aparece como “Mergulhador anônimo”. Podemos ocultar apelidos ofensivos ou que se passem por outra pessoa.",
+          "Nunca dizemos quais amigos entraram, só quantos. Veja nossa política de privacidade para saber como tratamos os dados da lista de espera.",
         ],
       },
       {
         heading: "Mudanças",
         paragraphs: [
-          "Se precisarmos alterar ou encerrar o programa, vamos avisar antes, aqui e por e-mail. As recompensas já alcançadas antes de uma mudança são mantidas.",
+          "Se precisarmos alterar ou encerrar o programa, vamos avisar antes, aqui e por e-mail. Nenhuma mudança tira uma recompensa que você já alcançou nem reduz os prêmios do top {winners}.",
         ],
       },
     ],

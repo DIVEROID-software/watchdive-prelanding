@@ -116,7 +116,65 @@ test("every locale's tier name states the threshold program.ts enforces", async 
   for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
     for (const tier of REFERRAL_TIERS) {
       const digits = copy.tiers[tier.id].name.match(/\d+/g) ?? [];
-      assert.deepEqual(digits, [String(tier.minFriends)], `${locale} ${tier.id}: ${copy.tiers[tier.id].name}`);
+      assert.deepEqual(
+        digits,
+        [String(tier.minFriends)],
+        `${locale} ${tier.id}: ${copy.tiers[tier.id].name}`,
+      );
     }
+  }
+});
+
+test("tier names keep the ' · ' separator the landing card splits on", () => {
+  for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
+    for (const [id, tier] of Object.entries(copy.tiers)) {
+      assert.equal(tier.name.split(" · ").length, 2, `${locale} ${id}: ${tier.name}`);
+    }
+  }
+});
+
+test("rules state every owner-decided fact through its program.ts placeholder", () => {
+  const required = [
+    "{longStop}",
+    "{taxRate}",
+    "{taxFree}",
+    "{lightValue}",
+    "{prizeValue}",
+    "{ageKr}",
+    "{ageOther}",
+    "{noticeDays}",
+    "{cap}",
+  ];
+  for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
+    const rules = copy.rules.sections.flatMap((s) => s.paragraphs).join("\n");
+    for (const token of required)
+      assert.ok(rules.includes(token), `${locale}: rules omit ${token}`);
+    assert.ok(rules.includes("16343651"), `${locale}: company number missing`);
+    assert.ok(rules.includes("E6 2JA"), `${locale}: postal address missing`);
+  }
+});
+
+test("every placeholder is either a copyValues key or a documented per-call value", async () => {
+  const { copyValues } = await import("../src/lib/referral/values.ts");
+  const perCall = new Set(["count", "remaining", "tier", "nickname", "time", "reward"]);
+  for (const locale of SUPPORTED_LOCALES) {
+    const known = new Set([...Object.keys(copyValues(locale)), ...perCall]);
+    for (const [path, text] of flatten(REFERRAL_COPY[locale])) {
+      for (const token of text.match(/\{(\w+)\}/g) ?? []) {
+        assert.ok(
+          known.has(token.slice(1, -1)),
+          `${locale}: unknown placeholder ${token} at ${path}`,
+        );
+      }
+    }
+  }
+});
+
+test("the Dive Leader light is never called free (the recipient pays shipping and taxes)", () => {
+  const FREE = /\bfree\b|gratis|grátis|gratuit|offert|kostenlos|geschenkt|免费|免費|無料|무료/iu;
+  for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
+    assert.doesNotMatch(copy.tiers.leader.reward, FREE, `${locale}: tier reward`);
+    for (const p of copy.rules.sections.flatMap((s) => s.paragraphs))
+      assert.doesNotMatch(p, FREE, `${locale}: rules`);
   }
 });
