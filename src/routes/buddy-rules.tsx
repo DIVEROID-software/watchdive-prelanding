@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 
+import { getReferralProgramState } from "@/lib/api/referral.functions";
 import { RulesPage } from "@/components/referral/RulesPage";
 import { localizePath, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/locale";
 import { absoluteWatchDivePath } from "@/lib/i18n/seo";
@@ -34,7 +35,14 @@ export function buddyRulesHead(locale: Locale) {
   };
 }
 
+/** The rules page is part of the program: 404 until the owner turns it on. */
+export async function requireReferralProgram() {
+  const state = await getReferralProgramState().catch(() => ({ enabled: false }));
+  if (!state.enabled) throw notFound();
+}
+
 export const Route = createFileRoute("/buddy-rules")({
+  beforeLoad: requireReferralProgram,
   head: () => buddyRulesHead("en"),
   component: BuddyRulesRoute,
 });

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { getReferralProgramState } from "@/lib/api/referral.functions";
 import { formatNumber, getDateTimeFormatter, localizePath, type Locale } from "@/lib/i18n/locale";
 import type { LeaderboardSnapshot } from "@/lib/referral/contract";
 import { fill, referralCopy } from "@/lib/referral/copy";
@@ -100,13 +101,36 @@ function isSnapshot(value: unknown): value is LeaderboardSnapshot {
 }
 
 /**
+ * Whether the program is live, asked once per page load. False until the server
+ * answers yes, so a disabled (or unreachable) program adds nothing to the page.
+ */
+let programState: Promise<boolean> | null = null;
+export function useReferralProgramEnabled(): boolean {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    programState ??= getReferralProgramState()
+      .then((r) => r.enabled === true)
+      .catch(() => false);
+    void programState.then((v) => alive && setOn(v));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return on;
+}
+
+/**
  * Fetches after hydration so the leaderboard never delays first paint, and
  * renders nothing on any failure: a missing board is better than a broken one.
  */
 export function LeaderboardSection({ locale }: { locale: Locale }) {
   const [snapshot, setSnapshot] = useState<LeaderboardSnapshot | null>(null);
 
+  const enabled = useReferralProgramEnabled();
+
   useEffect(() => {
+    if (!enabled) return;
     const controller = new AbortController();
     fetch("/api/referral/leaderboard", { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
@@ -115,8 +139,8 @@ export function LeaderboardSection({ locale }: { locale: Locale }) {
       })
       .catch(() => {});
     return () => controller.abort();
-  }, []);
+  }, [enabled]);
 
-  if (!snapshot) return null;
+  if (!enabled || !snapshot) return null;
   return <LeaderboardView locale={locale} snapshot={snapshot} />;
 }

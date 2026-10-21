@@ -138,3 +138,43 @@ test("rules page renders every section for every locale with no unfilled placeho
     assert.doesNotMatch(html, /\{\w+\}/, `${locale} unfilled placeholder`);
   }
 });
+
+// Owner requirement: until the program is switched on, visitors see exactly
+// today's landing. The card lives inside index.tsx (router hooks), so these
+// checks read its source: every new element must sit behind `programOn`, and
+// the off branch must still use the frozen landing messages.
+import { readFileSync } from "node:fs";
+
+const indexSource = readFileSync(join(root, "src/routes/index.tsx"), "utf8");
+const successSource = indexSource.slice(
+  indexSource.indexOf("function ReferralSuccess("),
+  indexSource.indexOf("// Shown from submit until the mailed link is confirmed"),
+);
+
+test("referral card off state keeps today's text and count behaviour", () => {
+  assert.match(successSource, /useState\(false\)/); // programOn starts false
+  assert.match(successSource, /if \(!alive \|\| !r\.enabled\) return;/);
+  // Old copy and the raw-count line are still the default branch.
+  assert.match(successSource, /programOn \? card\.title : m\.referral\.buddyTitle/);
+  assert.match(successSource, /programOn \? card\.body : m\.referral\.buddyBody/);
+  assert.match(successSource, /getReferralCount\(\{ data: \{ refCode \} \}\)/);
+  assert.match(successSource, /m\.referral\.joinedOne/);
+  // New elements only inside the programOn gate.
+  const tier = successSource.indexOf("<TierList");
+  const gate = successSource.lastIndexOf("{programOn && (", tier);
+  assert.ok(gate > 0 && tier > gate, "TierList must sit behind programOn");
+  const rules = successSource.indexOf("card.rulesLink");
+  assert.ok(rules > gate, "rules link must sit behind programOn");
+});
+
+test("leaderboard, footer link and rules routes are gated by the program state", () => {
+  const lb = readFileSync(join(root, "src/components/referral/LeaderboardSection.tsx"), "utf8");
+  assert.match(lb, /if \(!enabled\) return;/);
+  assert.match(lb, /if \(!enabled \|\| !snapshot\) return null;/);
+  assert.match(indexSource, /\{referralOn && \(\s*<Link\s+to=\{buddyRulesPath\(locale\)\}/);
+  const en = readFileSync(join(root, "src/routes/buddy-rules.tsx"), "utf8");
+  const loc = readFileSync(join(root, "src/routes/$locale.buddy-rules.tsx"), "utf8");
+  assert.match(en, /beforeLoad: requireReferralProgram/);
+  assert.match(en, /if \(!state\.enabled\) throw notFound\(\)/);
+  assert.match(loc, /await requireReferralProgram\(\)/);
+});
