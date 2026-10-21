@@ -137,17 +137,32 @@ export function isConfirmed(row: ReferralRow): boolean {
 }
 
 /**
+ * Confirmed at some point, even if the person unsubscribed since. Legal
+ * review D7 (2026-10-22): unsubscribing stops our mail, it does not undo a
+ * confirmation. A friend who confirmed and later unsubscribed still counts,
+ * and a referrer who unsubscribes keeps the standing they reached.
+ */
+export function wasConfirmed(row: ReferralRow): boolean {
+  return (
+    (row.status === "verified" || row.status === "unsubscribed") &&
+    row.emailVerified &&
+    verifiedAtMs(row) !== null
+  );
+}
+
+/**
  * A referrer may hold a standing (and so a reward) only while their own row is
- * a confirmed, unflagged, single sign-up. Their friends' credits are still
- * computed, so a referrer whose row is later cleared by ops gets them back.
+ * a confirmed (possibly since unsubscribed), unflagged single sign-up whose
+ * reward review was not rejected. Their friends' credits are still computed,
+ * so a referrer whose row is later cleared by ops gets them back.
  */
 export function referrerEligible(row: ReferralRow): boolean {
   return (
-    row.status !== "unsubscribed" &&
-    isConfirmed(row) &&
+    wasConfirmed(row) &&
     !row.suspect &&
     !row.duplicate &&
-    !conversionBlocked(row.flags)
+    !conversionBlocked(row.flags) &&
+    row.rewardReview !== "rejected"
   );
 }
 
@@ -173,8 +188,9 @@ export function excludeReason(
   ) {
     return "self_referral";
   }
-  if (friend.status === "unsubscribed") return "unsubscribed";
-  if (!isConfirmed(friend)) return "not_verified";
+  // Never confirmed: an unsubscribe before confirming keeps its own reason.
+  if (!wasConfirmed(friend))
+    return friend.status === "unsubscribed" ? "unsubscribed" : "not_verified";
   if (friend.suspect) return "suspect";
   if (friend.duplicate) return "duplicate";
   if (isDisposableEmail(friend.email) || friend.flags.includes("disposable")) {

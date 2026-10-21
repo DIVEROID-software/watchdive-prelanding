@@ -78,8 +78,15 @@ test("excludeReason covers every friend-level rule", () => {
     "self_referral",
   );
   assert.equal(excludeReason({ ...ref, referredBy: ref.refCode }, ref, OPEN), "self_referral");
+  // Legal review D7: a confirmation stands after an unsubscribe; only an
+  // unsubscribe before confirming is refused.
+  assert.equal(excludeReason(row({ referredBy: ref.refCode, status: "unsubscribed" }), ref, OPEN), null);
   assert.equal(
-    excludeReason(row({ referredBy: ref.refCode, status: "unsubscribed" }), ref, OPEN),
+    excludeReason(
+      row({ referredBy: ref.refCode, status: "unsubscribed", emailVerified: false }),
+      ref,
+      OPEN,
+    ),
     "unsubscribed",
   );
   assert.equal(
@@ -216,7 +223,7 @@ test("an ineligible referrer holds no standing; credits return when cleared", ()
   assert.equal(ledger.standings.has(a.refCode), false);
   assert.equal(ledger.ineligibleReferrerCredits, 2);
   for (const bad of [
-    { status: "unsubscribed" },
+    { rewardReview: "rejected" as const },
     { status: "pending", emailVerified: false },
     { duplicate: true },
     { flags: ["headless"] },
@@ -224,6 +231,12 @@ test("an ineligible referrer holds no standing; credits return when cleared", ()
     const r = referrer(1, bad);
     assert.equal(computeLedger([r, ...friends], OPEN).standings.has(r.refCode), false);
   }
+  // D7: an unsubscribed referrer keeps the standing they reached.
+  assert.equal(
+    computeLedger([referrer(1, { status: "unsubscribed" }), ...friends], OPEN).standings.get(a.refCode)
+      ?.credited,
+    2,
+  );
   const cleared = { ...a, suspect: false };
   assert.equal(computeLedger([cleared, ...friends], OPEN).standings.get(a.refCode)?.credited, 2);
 });
