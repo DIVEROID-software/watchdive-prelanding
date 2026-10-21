@@ -2,6 +2,8 @@ import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+// Pure helper with no secrets or Notion client of its own; safe in any bundle.
+import { withRateLimitBackoff } from "@/lib/api/referralCount";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { referralProgramEnabled } from "@/lib/referral/program";
 import type {
@@ -50,7 +52,13 @@ export async function referralServiceDeps(): Promise<ReferralServiceDeps> {
   }
   return {
     enabled: () => program.referralProgramEnabled(process.env),
-    store: store.createNotionReferralStore(notion.createNotionRequest(), dbId),
+    // Every leaderboard pass, status read and settings write retries a Notion
+    // 429 with backoff instead of failing (a 429 is never applied, so a
+    // retried write is safe).
+    store: store.createNotionReferralStore(
+      withRateLimitBackoff(notion.createNotionRequest()),
+      dbId,
+    ),
     secret: statusToken.referralSecret(process.env),
     origin: publicOrigin,
     now: () => new Date(),
