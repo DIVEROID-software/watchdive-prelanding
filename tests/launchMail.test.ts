@@ -28,7 +28,9 @@ import {
   type LaunchMessage,
   type LaunchRunOptions,
 } from "../src/lib/launchMail/run.ts";
-import { handleUnsubscribe } from "../src/lib/launchMail/unsubscribe.ts";
+import { handleUnsubscribe, unsubscribePage } from "../src/lib/launchMail/unsubscribe.ts";
+import { REFERRAL_COPY } from "../src/lib/referral/copy.ts";
+import { createHash } from "node:crypto";
 import {
   createUnsubscribeToken,
   parseUnsubscribeToken,
@@ -320,6 +322,74 @@ test("GET only asks; POST records the opt-out once; bad tokens and a missing pro
     assert.equal(response.status, 503);
   } finally {
     console.error = originalError;
+  }
+});
+
+// --- the page while Buddy Invite is on --------------------------------------
+
+/** Every OFF page (4 states x 9 locales), pinned to the pre-program bytes. */
+const LEGACY_UNSUBSCRIBE_PAGES_SHA256 =
+  "57e1f5d8b69f97cda8fe9eca87994ea46e177b2e1a5ece0bb44b6855790879c1";
+
+test("switch off: the unsubscribe pages are byte-identical to the pre-program pages", () => {
+  const hash = createHash("sha256");
+  for (const locale of SUPPORTED_LOCALES) {
+    for (const state of ["confirm", "done", "invalid", "unavailable"] as const) {
+      const page = unsubscribePage(state, locale);
+      assert.equal(page, unsubscribePage(state, locale, { program: false }));
+      hash.update(page);
+    }
+  }
+  assert.equal(hash.digest("hex"), LEGACY_UNSUBSCRIBE_PAGES_SHA256);
+});
+
+test("switch on: confirm and done name WatchDive emails, launch updates and Buddy Invite, in every locale", async () => {
+  const env = { ...TEST_ENV, WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" };
+  for (const locale of SUPPORTED_LOCALES) {
+    const target = row();
+    const store = new FakeLaunchStore([target]);
+    const token = createUnsubscribeToken(target.leadId, locale, TEST_SECRET);
+    const program = REFERRAL_COPY[locale].programName;
+    const expected = LAUNCH_COPY[locale].programPage;
+    const fill = (value: string) => value.replaceAll("{program}", program);
+    const confirm = await (await handleUnsubscribe("GET", token, { store, env })).text();
+    const done = await (await handleUnsubscribe("POST", token, { store, env })).text();
+    for (const [html, heading, body] of [
+      [confirm, expected.confirmHeading, expected.confirmBody],
+      [done, expected.doneHeading, expected.doneBody],
+    ] as const) {
+      // Escaped as the page escapes (no markup in this copy, so exact text).
+      assert.ok(html.includes(fill(heading)), `${locale}: ${heading}`);
+      assert.ok(html.includes(fill(body)), `${locale}: ${body}`);
+      assert.ok(html.includes(program), `${locale}: names ${program}`);
+      assert.ok(html.includes("WatchDive"), locale);
+      assert.equal(html.includes("{program}"), false, `${locale}: unfilled placeholder`);
+      assert.ok(html.includes(`<title>${fill(expected.title)}</title>`), locale);
+    }
+    assert.ok(confirm.includes('<form method="post">'), "the confirm button stays");
+    assert.equal(store.writes.length, 1, "the opt-out itself is unchanged");
+    // The wording differs from the launch-only page for both states.
+    assert.notEqual(confirm, unsubscribePage("confirm", locale));
+    assert.notEqual(done, unsubscribePage("done", locale));
+  }
+  // The English copy says what it now covers.
+  assert.match(
+    unsubscribePage("done", "en", { program: true }),
+    /WatchDive emails \(launch updates and Buddy Invite\)/,
+  );
+});
+
+test("the switch is read exactly: anything but 1 keeps the launch-only wording", async () => {
+  const target = row();
+  const store = new FakeLaunchStore([target]);
+  const token = createUnsubscribeToken(target.leadId, "en", TEST_SECRET);
+  for (const flag of [undefined, "0", "true", " 1"]) {
+    const env = {
+      ...TEST_ENV,
+      ...(flag === undefined ? {} : { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: flag }),
+    };
+    const html = await (await handleUnsubscribe("GET", token, { store, env })).text();
+    assert.equal(html, unsubscribePage("confirm", "en"), String(flag));
   }
 });
 

@@ -10,8 +10,14 @@
 // changes: `Verification status` stays as it is, so the confirmed-signup count
 // is not touched by this.
 //
+// While Buddy Invite is switched on, that same marker also stops every Buddy
+// Invite mail (guide, notices, announcement), so the page names both; with
+// the switch off it reads exactly as before.
+//
 // Kept free of path-alias imports so `npm test` can load it directly.
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
+import { REFERRAL_COPY } from "../referral/copy.ts";
+import { referralProgramEnabled } from "../referral/program.ts";
 import { requireSecret, type TokenEnvironment } from "../verification/token.ts";
 import { parseLaunchMarker, unsubscribedMarker } from "./audience.ts";
 import { LAUNCH_COPY } from "./copy.ts";
@@ -21,7 +27,11 @@ import { parseUnsubscribeToken, unsubscribeTokenLocale } from "./unsubscribeToke
 export type UnsubscribeDependencies = {
   /** Undefined when the database is not configured. */
   store?: LaunchStore;
-  env?: TokenEnvironment & { WATCHDIVE_RESERVATION_UNSUBSCRIBE_SECRET?: string };
+  env?: TokenEnvironment & {
+    WATCHDIVE_RESERVATION_UNSUBSCRIBE_SECRET?: string;
+    /** Buddy Invite master switch (referralProgramEnabled); widens the page wording. */
+    WATCHDIVE_REFERRAL_PROGRAM_ENABLED?: string;
+  };
   now?: () => Date;
 };
 
@@ -35,8 +45,24 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-export function unsubscribePage(state: PageState, locale: Locale): string {
-  const copy = LAUNCH_COPY[locale].page;
+export function unsubscribePage(
+  state: PageState,
+  locale: Locale,
+  options: { program?: boolean } = {},
+): string {
+  const launch = LAUNCH_COPY[locale];
+  const program = REFERRAL_COPY[locale].programName;
+  const copy = options.program
+    ? {
+        ...launch.page,
+        ...Object.fromEntries(
+          Object.entries(launch.programPage).map(([key, value]) => [
+            key,
+            value.replaceAll("{program}", program),
+          ]),
+        ),
+      }
+    : launch.page;
   const [heading, body] = {
     confirm: [copy.confirmHeading, copy.confirmBody],
     done: [copy.doneHeading, copy.doneBody],
@@ -64,8 +90,13 @@ export function unsubscribePage(state: PageState, locale: Locale): string {
   ].join("");
 }
 
-function htmlResponse(status: number, state: PageState, locale: Locale): Response {
-  return new Response(unsubscribePage(state, locale), {
+function htmlResponse(
+  status: number,
+  state: PageState,
+  locale: Locale,
+  program = false,
+): Response {
+  return new Response(unsubscribePage(state, locale, { program }), {
     status,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
@@ -82,6 +113,10 @@ export async function handleUnsubscribe(
   dependencies: UnsubscribeDependencies,
 ): Promise<Response> {
   const fallbackLocale = unsubscribeTokenLocale(token) ?? DEFAULT_LOCALE;
+  // Read once per request, so the wording follows the switch with no deploy.
+  const program = referralProgramEnabled(dependencies.env ?? process.env);
+  const respond = (status: number, state: PageState, locale: Locale) =>
+    htmlResponse(status, state, locale, program);
   let secret: string;
   const version = token.startsWith("u2.") ? "u2" : "u1";
   try {
@@ -91,29 +126,29 @@ export async function handleUnsubscribe(
       : requireSecret(env);
     if (Buffer.byteLength(secret, "utf8") < 32) throw new Error("unsubscribe signing key unavailable");
   } catch {
-    return htmlResponse(503, "unavailable", fallbackLocale);
+    return respond(503, "unavailable", fallbackLocale);
   }
   const parsed = parseUnsubscribeToken(token, secret, version);
-  if (!parsed) return htmlResponse(400, "invalid", fallbackLocale);
+  if (!parsed) return respond(400, "invalid", fallbackLocale);
   const { locale } = parsed;
 
-  if (method === "GET" || method === "HEAD") return htmlResponse(200, "confirm", locale);
-  if (method !== "POST") return htmlResponse(405, "invalid", locale);
+  if (method === "GET" || method === "HEAD") return respond(200, "confirm", locale);
+  if (method !== "POST") return respond(405, "invalid", locale);
 
   const { store } = dependencies;
-  if (!store) return htmlResponse(503, "unavailable", locale);
+  if (!store) return respond(503, "unavailable", locale);
   try {
     const row = await store.findByLeadId(parsed.leadId);
-    if (!row) return htmlResponse(404, "invalid", locale);
+    if (!row) return respond(404, "invalid", locale);
     // Already recorded: answer the same way, write nothing.
     if (parseLaunchMarker(row.launchMail).kind === "unsubscribed") {
-      return htmlResponse(200, "done", locale);
+      return respond(200, "done", locale);
     }
     await store.recordLaunchMail(
       row.pageId,
       unsubscribedMarker((dependencies.now ?? (() => new Date()))()),
     );
-    return htmlResponse(200, "done", locale);
+    return respond(200, "done", locale);
   } catch (error) {
     // Never the message: it can quote the row. Only whether the property is missing.
     console.error("[watchdive] launch_unsubscribe_failed", {
@@ -122,6 +157,6 @@ export async function handleUnsubscribe(
           ? "launch_mail_property_missing"
           : "store_error",
     });
-    return htmlResponse(503, "unavailable", locale);
+    return respond(503, "unavailable", locale);
   }
 }
