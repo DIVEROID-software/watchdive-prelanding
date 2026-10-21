@@ -17,10 +17,15 @@ import {
   joinWaitlist,
   withdrawAttemptMeasurement,
   pollVerification,
-  getReferralCount,
   loadWaitlistCount,
 } from "@/lib/api/waitlist.functions";
 import { EarlyBirdRace } from "@/components/early-bird-race";
+import { getReferralProgress } from "@/lib/api/referral.functions";
+import { LeaderboardSection, buddyRulesPath } from "@/components/referral/LeaderboardSection";
+import { TierList } from "@/components/referral/TierList";
+import { fill, referralCopy } from "@/lib/referral/copy";
+import { nextTier } from "@/lib/referral/program";
+import { copyValues } from "@/lib/referral/values";
 import { SocialAuthEntry, SocialAuthResult, SocialSignupResultProvider, useSocialSignupCompleted } from "@/components/social-auth-entry";
 import { HeroPhoto } from "@/components/hero-photo";
 import { ProductGallery } from "@/components/product-gallery";
@@ -211,6 +216,7 @@ export function DesignFrozenLanding() {
         <ReviewTicker />
         <Credentials />
         <OfferSection />
+        <LeaderboardSection locale={locale} />
         <FAQ />
         <Footer />
       </div>
@@ -570,23 +576,39 @@ function ReferralWelcome() {
 
 function ReferralSuccess({ refCode }: { refCode: string }) {
   const m = useFrozenLandingMessages();
+  const locale = useCurrentLocale();
+  const card = referralCopy(locale).card;
   const [copied, setCopied] = useState(false);
-  const [count, setCount] = useState<number | null>(null);
-  const joinedTemplate = count === 1 ? m.referral.joinedOne : m.referral.joinedOther;
-  const [joinedBefore, , joinedAfter] = splitHighlightedCopy(joinedTemplate, "{count}");
+  const [credited, setCredited] = useState<number | null>(null);
   const shareUrl =
     typeof window !== "undefined" && refCode ? `${window.location.origin}/?ref=${refCode}` : "";
 
+  // Progress counts credited (verified, eligible) friends, not raw sign-ups.
   useEffect(() => {
     if (!refCode) return;
     let alive = true;
-    getReferralCount({ data: { refCode } })
-      .then((r) => alive && setCount(r.count))
+    getReferralProgress({ data: { refCode } })
+      .then((r) => alive && setCredited(r.credited))
       .catch(() => {});
     return () => {
       alive = false;
     };
   }, [refCode]);
+
+  const progressText = (() => {
+    if (credited === null) return null;
+    const values = copyValues(locale);
+    const next = nextTier(credited);
+    if (!next) return fill(card.progressMax, { ...values, count: credited });
+    // Tier names carry "· N friends"; the sentence already states the remaining count.
+    const tierName = referralCopy(locale).tiers[next.id].name.split(" · ")[0];
+    return fill(credited === 0 ? card.progressNone : card.progress, {
+      ...values,
+      count: credited,
+      remaining: next.minFriends - credited,
+      tier: tierName,
+    });
+  })();
 
   return (
     <div className="rounded-2xl bg-white/10 backdrop-blur p-5 text-white">
@@ -596,20 +618,14 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
       {shareUrl && (
         <div className="mt-4 rounded-xl border border-white/15 bg-[color:var(--color-deep-2)]/50 p-4">
           <div className="text-sm font-semibold text-[color:var(--color-cyan-glow)]">
-            {m.referral.buddyTitle}
+            {card.title}
           </div>
-          <p className="mt-1 text-xs text-white/70">{m.referral.buddyBody}</p>
+          <p className="mt-1 text-xs text-white/70">{card.body}</p>
 
-          {count !== null && (
-            <div className="mt-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-white/85">
-                  {joinedBefore}
-                  <span className="font-semibold text-[color:var(--color-cyan-glow)]">{count}</span>
-                  {joinedAfter}
-                </span>
-              </div>
-            </div>
+          {progressText && (
+            <p className="mt-3 text-xs font-medium text-white/85" aria-live="polite">
+              {progressText}
+            </p>
           )}
 
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -643,6 +659,16 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
               {copied ? m.referral.copied : m.referral.shareButton}
             </button>
           </div>
+
+          <TierList locale={locale} credited={credited} className="mt-4" />
+          <p className="mt-3 text-xs">
+            <Link
+              to={buddyRulesPath(locale)}
+              className="text-[color:var(--color-cyan-glow)] underline underline-offset-4"
+            >
+              {card.rulesLink}
+            </Link>
+          </p>
         </div>
       )}
     </div>
@@ -2410,6 +2436,12 @@ function Footer() {
             className="inline-flex min-h-11 items-center px-3 underline-offset-4 hover:underline"
           >
             {m.footer.privacy}
+          </Link>
+          <Link
+            to={buddyRulesPath(locale)}
+            className="inline-flex min-h-11 items-center px-3 underline-offset-4 hover:underline"
+          >
+            {referralCopy(locale).programName}
           </Link>
           <CookieSettingsLink className="inline-flex min-h-11 items-center px-3 underline-offset-4 hover:underline" />
         </nav>
