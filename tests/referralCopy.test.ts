@@ -109,3 +109,14 @@ test("rules mention the nickname shown for hidden entries, 14 days and Korea Sta
     );
   }
 });
+
+test("every locale's tier name states the threshold program.ts enforces", async () => {
+  const { REFERRAL_TIERS } = await import("../src/lib/referral/program.ts");
+  const { REFERRAL_COPY } = await import("../src/lib/referral/copy.ts");
+  for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
+    for (const tier of REFERRAL_TIERS) {
+      const digits = copy.tiers[tier.id].name.match(/\d+/g) ?? [];
+      assert.deepEqual(digits, [String(tier.minFriends)], `${locale} ${tier.id}: ${copy.tiers[tier.id].name}`);
+    }
+  }
+});

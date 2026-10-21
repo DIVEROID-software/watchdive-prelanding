@@ -351,7 +351,8 @@ test("settings: the normalized nickname is written; blank clears it", async () =
 test("settings: nicknameHidden (or any other key) can never be set by the person", async () => {
   const { deps, store } = setup();
   const sneaky = {
-    nickname: "Rival2",
+    // Same nickname as stored, so the server has no reason to lift the hide.
+    nickname: "Rival",
     leaderboard: true,
     noticesOff: false,
     nicknameHidden: false,
@@ -367,6 +368,25 @@ test("settings: nicknameHidden (or any other key) can never be set by the person
   ]);
   assert.equal(store.writes[0].pageId, "page-rival001");
   assert.equal(store.rows.find((r) => r.refCode === "rival001")?.nicknameHidden, true);
+});
+
+test("settings: choosing a new nickname lifts an ops hide server-side; keeping it does not", async () => {
+  const { deps, store } = setup();
+  await updateReferralSettingsService(
+    tokenFor("rival001"),
+    { nickname: "Rival2", leaderboard: true, noticesOff: false },
+    deps,
+  );
+  assert.equal(store.writes.length, 1);
+  assert.equal(store.writes[0].input.clearHidden, true);
+  assert.equal(store.writes[0].input.nickname, "Rival2");
+  // Clearing the nickname is not a new nickname: the hide stays.
+  await updateReferralSettingsService(
+    tokenFor("rival001"),
+    { nickname: null, leaderboard: true, noticesOff: false },
+    deps,
+  );
+  assert.equal(store.writes[1].input.clearHidden, undefined);
 });
 
 test("settings: the zod schema in the server fn does not accept nicknameHidden either", () => {
