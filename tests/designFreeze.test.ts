@@ -190,9 +190,12 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // 16px mobile inputs, visible focus and a stacked narrow-screen layout.
   // 2026-10-12: shared app-screen rows align images and captions across wrapped
   // headings; 22 locale/viewport cases and mobile navigation were reviewed.
+  // 2026-10-21: owner-requested FOMO motion on the launch-alert CTAs (sweep,
+  // halo, brighten; notify-bar arrow nudge). Off under reduced motion and while
+  // hovered, focused or submitting; checked at 390px with no horizontal scroll.
   assert.equal(
     sha256(read("src/styles.css")),
-    "14e9f987912e12f15a74e6527ea8460af1627602c5c2fb074c034fff32a17074",
+    "cb30a660d3fc4d03b653b2e41f3610eeceb4b8f4511944cccd3d2127bcf3447e",
   );
 });
 
