@@ -10,11 +10,19 @@ import {
   EARLY_BIRD_SEATS,
   EARLY_NOTICE_HOURS,
   LEADER_LIGHT_STOCK,
+  LONG_STOP_CLOSE,
   NICKNAME_MAX,
   NICKNAME_MIN,
+  PRIZE_DELIVERY_BY,
   TOP_PRIZE_WINNERS,
 } from "../src/lib/referral/program.ts";
-import { copyValues, formatOfferPrice, tierValues } from "../src/lib/referral/values.ts";
+import {
+  copyValues,
+  formatKstDateTime,
+  formatKstMonth,
+  formatOfferPrice,
+  tierValues,
+} from "../src/lib/referral/values.ts";
 
 const PER_CALL = new Set(["count", "remaining", "tier", "nickname", "time", "reward"]);
 
@@ -52,8 +60,8 @@ test("values come from program.ts", () => {
     prizeValue: "$299",
     ageKr: 19,
     ageOther: 18,
-    longStop: "2027-01-31 23:59 KST",
-    deliveryBy: "2027-03",
+    longStop: "31 January 2027, 23:59 Korea Standard Time",
+    deliveryBy: "March 2027",
     taxFree: "KRW 50,000",
     taxRate: 22,
   });
@@ -70,4 +78,59 @@ test("every non-per-call placeholder in copy is filled by copyValues", () => {
       }
     }
   }
+});
+
+test("the long-stop close and delivery month are program.ts constants, written per locale in Korea Standard Time", () => {
+  assert.equal(LONG_STOP_CLOSE, "2027-01-31T23:59:00+09:00");
+  assert.equal(PRIZE_DELIVERY_BY, "2027-03");
+  const expected: Record<string, [string, string]> = {
+    en: ["31 January 2027, 23:59 Korea Standard Time", "March 2027"],
+    ko: ["2027년 1월 31일 오후 11시 59분(한국 시간)", "2027년 3월"],
+    "zh-CN": ["2027 年 1 月 31 日 23:59（韩国标准时间）", "2027 年 3 月"],
+    "zh-TW": ["2027 年 1 月 31 日 23:59（韓國標準時間）", "2027 年 3 月"],
+    ja: ["2027年1月31日 23:59（韓国標準時）", "2027年3月"],
+    es: ["31 de enero de 2027, a las 23:59 (hora estándar de Corea)", "marzo de 2027"],
+    fr: ["31 janvier 2027 à 23 h 59 (heure normale de Corée)", "mars 2027"],
+    de: ["31. Januar 2027, 23:59 Uhr (koreanische Standardzeit)", "März 2027"],
+    "pt-BR": ["31 de janeiro de 2027, às 23h59 (horário padrão da Coreia)", "março de 2027"],
+  };
+  for (const locale of SUPPORTED_LOCALES) {
+    const values = copyValues(locale);
+    // Tied to the constants, not to the literals above: the same functions
+    // applied to program.ts give the values copy interpolates.
+    assert.equal(values.longStop, formatKstDateTime(locale, LONG_STOP_CLOSE), locale);
+    assert.equal(values.deliveryBy, formatKstMonth(locale, PRIZE_DELIVERY_BY), locale);
+    assert.deepEqual([values.longStop, values.deliveryBy], expected[locale], locale);
+  }
+});
+
+test("KST formatting follows the instant, not the server's time zone", () => {
+  // 15:00 UTC is midnight in Seoul: the next calendar day there.
+  assert.equal(
+    formatKstDateTime("en", "2027-01-30T15:00:00Z"),
+    "31 January 2027, 00:00 Korea Standard Time",
+  );
+  assert.equal(
+    formatKstDateTime("ko", "2027-01-30T15:05:00Z"),
+    "2027년 1월 31일 오전 12시 5분(한국 시간)",
+  );
+  assert.equal(
+    formatKstDateTime("ko", "2027-01-31T03:00:00Z"),
+    "2027년 1월 31일 오후 12시(한국 시간)",
+  );
+  assert.equal(
+    formatKstDateTime("es", "2027-01-30T16:30:00Z"),
+    "31 de enero de 2027, a la 1:30 (hora estándar de Corea)",
+  );
+  assert.equal(
+    formatKstDateTime("pt-BR", "2027-01-30T16:30:00Z"),
+    "31 de janeiro de 2027, à 1h30 (horário padrão da Coreia)",
+  );
+  assert.equal(
+    formatKstDateTime("de", "2026-12-15T00:00:00Z"),
+    "15. Dezember 2026, 9:00 Uhr (koreanische Standardzeit)",
+  );
+  assert.equal(formatKstMonth("fr", "2027-12"), "décembre 2027");
+  assert.throws(() => formatKstDateTime("en", "not a date"));
+  assert.throws(() => formatKstMonth("en", "2027-3"));
 });

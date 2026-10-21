@@ -178,3 +178,62 @@ test("the Dive Leader light is never called free (the recipient pays shipping an
       assert.doesNotMatch(p, FREE, `${locale}: rules`);
   }
 });
+
+test("rules name the privacy policy with exactly the words the rules page links", () => {
+  for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
+    const hits = copy.rules.sections
+      .flatMap((s) => s.paragraphs)
+      .filter((p) => p.includes(copy.rules.privacyLink));
+    assert.equal(hits.length, 1, `${locale}: "${copy.rules.privacyLink}" must name one paragraph`);
+    assert.equal(hits[0].split(copy.rules.privacyLink).length, 2, `${locale}: named once`);
+  }
+});
+
+test("rules state the dates through their program.ts placeholders, never as typed literals", () => {
+  for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
+    const rules = copy.rules.sections.flatMap((s) => s.paragraphs).join("\n");
+    assert.ok(rules.includes("{deliveryBy}"), `${locale}: delivery month must be {deliveryBy}`);
+    assert.doesNotMatch(
+      rules,
+      /2027-0|23:59|March 2027|2027\s*년\s*3\s*월|2027\s*年\s*[13]\s*月|marzo|mars 2027|März|março/u,
+      `${locale}: a long-stop or delivery date is typed in copy`,
+    );
+  }
+});
+
+test("rules state the rules ledger.ts, identity.ts and nickname.ts enforce", () => {
+  for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
+    const sections = copy.rules.sections;
+    const counts = sections[4].paragraphs.join("\n");
+    // One person counts once, under the documented provider aliases (identity.ts).
+    for (const alias of ["Gmail", "+", "icloud.com", "me.com", "mac.com"])
+      assert.ok(counts.includes(alias), `${locale}: "What counts" omits ${alias}`);
+    // The nickname rule (nickname.ts) is stated on the rules page with its bounds.
+    const board = sections[10].paragraphs.join("\n");
+    assert.ok(board.includes("{min}") && board.includes("{max}"), `${locale}: nickname bounds`);
+    assert.ok(/admin/.test(board), `${locale}: reserved-name example`);
+  }
+  const en = REFERRAL_COPY.en.rules.sections.flatMap((s) => s.paragraphs).join("\n");
+  assert.match(en, /known disposable email services/);
+  assert.match(en, /first joined the waitlist/);
+  assert.match(en, /later unsubscribes from WatchDive emails still counts/);
+  assert.match(en, /updated every few minutes/);
+  assert.match(en, /without mixing Latin with Cyrillic or Greek letters/);
+});
+
+test("the reserved-name examples in the rules are ones nickname.ts actually rejects", async () => {
+  const { checkNickname } = await import("../src/lib/referral/nickname.ts");
+  for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
+    const board = copy.rules.sections[10].paragraphs[0];
+    // Examples are quoted or listed after "admin" in each locale.
+    const examples =
+      board.match(
+        /(?<=[“«„(（：:、\s])(?:admin|official|staff|공식|官方|公式)(?=[”»“)）、\s,])/gu,
+      ) ?? [];
+    assert.ok(examples.length >= 2, `${locale}: examples ${examples.join(",")}`);
+    for (const word of examples) {
+      const check = checkNickname(`${word}`.padEnd(2, "x"));
+      assert.equal(check.ok ? "ok" : check.reason, "reserved", `${locale}: ${word}`);
+    }
+  }
+});
