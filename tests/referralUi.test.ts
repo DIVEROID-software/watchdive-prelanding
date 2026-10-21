@@ -7,7 +7,7 @@ import { build } from "esbuild";
 import { createElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
+import { privacyPath, SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
 import type { LeaderboardSnapshot } from "../src/lib/referral/contract.ts";
 import { REFERRAL_TIERS } from "../src/lib/referral/program.ts";
 import { referralCopy } from "../src/lib/referral/copy.ts";
@@ -199,4 +199,24 @@ test("program-on share copy is neutral in every locale and off keeps the frozen 
   const status = readFileSync(join(root, "src/components/referral/StatusPage.tsx"), "utf8");
   assert.match(status, /text: shareCopy\.text/);
   assert.doesNotMatch(status, /landing\.shareText|landing\.shareButton/);
+});
+
+test("rules link the privacy policy's Buddy Invite section in every locale", async () => {
+  const { RulesPage } = await load<RulesModule>("RulesPage.tsx");
+  for (const locale of SUPPORTED_LOCALES) {
+    const html = renderToStaticMarkup(createElement(RulesPage, { locale }));
+    const privacy = privacyPath(locale);
+    assert.ok(
+      html.includes(`href="${privacy}#buddy-invite"`) && html.includes(`>${referralCopy(locale).rules.privacyLink}</a>`),
+      `${locale}: privacy phrase not linked (copy.ts wording changed?)`,
+    );
+  }
+});
+
+test("invited banner shows the inviter-visibility note only with the program on", () => {
+  const welcome = indexSource.slice(
+    indexSource.indexOf("function ReferralWelcome("),
+    indexSource.indexOf("function ReferralSuccess("),
+  );
+  assert.match(welcome, /\{programOn && \(\s*<span[^>]*>\s*\{referralCopy\(locale\)\.card\.invitedNote\}/);
 });

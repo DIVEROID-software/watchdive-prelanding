@@ -30,7 +30,11 @@ export function buddyRulesHead(locale: Locale) {
         hrefLang: alternate,
         href: absoluteWatchDivePath(rulesPath(alternate)),
       })),
-      { rel: "alternate" as const, hrefLang: "x-default", href: absoluteWatchDivePath(rulesPath("en")) },
+      {
+        rel: "alternate" as const,
+        hrefLang: "x-default",
+        href: absoluteWatchDivePath(rulesPath("en")),
+      },
     ],
   };
 }

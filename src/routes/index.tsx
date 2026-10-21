@@ -557,6 +557,10 @@ function getRef(): string | undefined {
 // Client-only welcome banner shown when a visitor arrives via a friend's link.
 function ReferralWelcome() {
   const m = useFrozenLandingMessages();
+  const locale = useCurrentLocale();
+  // Program on: tell the invited visitor what the inviter can see. Inside the
+  // same banner, so the form moves by one short line at most and only then.
+  const programOn = useReferralProgramEnabled();
   const [ref, setRef] = useState<string | undefined>(undefined);
   const [before, highlight, after] = splitHighlightedCopy(
     m.referral.welcome,
@@ -571,6 +575,11 @@ function ReferralWelcome() {
         {before}
         <span className="font-semibold text-white">{highlight}</span>
         {after}
+        {programOn && (
+          <span className="mt-0.5 block text-xs text-white/70">
+            {referralCopy(locale).card.invitedNote}
+          </span>
+        )}
       </span>
     </div>
   );

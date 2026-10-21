@@ -54,6 +54,12 @@ function heldFriends(status: ReferralStatus): number {
   return Math.max(status.credited, tier?.minFriends ?? 0);
 }
 
+// The brutal theme sets every h1 to the 44–84px display scale for page
+// sections (`html:root h1 { … !important }`). Inside this card that broke
+// Japanese mid-word (バディ招 / 待の状況) and filled a phone screen with the
+// title, so the card heading is capped the way the theme caps dialog titles.
+const TITLE = "text-heading [html:root_&]:text-[2rem]! sm:[html:root_&]:text-[2.5rem]!";
+
 type Load =
   | { state: "loading" }
   | { state: "ready"; status: ReferralStatus }
@@ -145,14 +151,14 @@ export function StatusPage({ locale }: { locale: Locale }) {
 
         {load.state === "loading" && (
           <Card role="status">
-            <h1 className="text-heading">{copy.status.title}</h1>
+            <h1 className={TITLE}>{copy.status.title}</h1>
             <div aria-hidden className="mt-5 h-24 animate-pulse rounded-xl bg-white/10" />
           </Card>
         )}
 
         {load.state === "invalid" && (
           <Card role="alert">
-            <h1 className="text-heading">{copy.status.title}</h1>
+            <h1 className={TITLE}>{copy.status.title}</h1>
             <p className="mt-3 text-body leading-relaxed text-white/75">
               {copy.status.invalidLink}
             </p>
@@ -161,7 +167,7 @@ export function StatusPage({ locale }: { locale: Locale }) {
 
         {load.state === "error" && (
           <Card role="alert">
-            <h1 className="text-heading">{copy.status.title}</h1>
+            <h1 className={TITLE}>{copy.status.title}</h1>
             {/* A load failure, not a save: "Could not save" would be wrong here. */}
             <p className="mt-3 text-body leading-relaxed text-white/75">
               {frozen.errors.errorBody}
@@ -190,10 +196,16 @@ export function StatusPage({ locale }: { locale: Locale }) {
 
         <footer className="mt-8 text-center text-caption text-white/55">
           <nav className="flex justify-center gap-4">
-            <Link to={privacyPath(locale)} className="inline-flex min-h-11 items-center underline">
+            <Link
+              to={privacyPath(locale)}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center px-1 underline"
+            >
               {site.footerPrivacy}
             </Link>
-            <Link to={termsPath(locale)} className="inline-flex min-h-11 items-center underline">
+            <Link
+              to={termsPath(locale)}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center px-1 underline"
+            >
               {site.footerTerms}
             </Link>
           </nav>
@@ -279,7 +291,7 @@ function StatusCard({
   return (
     <div className="space-y-4">
       <Card>
-        <h1 className="text-heading">{copy.title}</h1>
+        <h1 className={TITLE}>{copy.title}</h1>
 
         <dl className="mt-5 grid grid-cols-2 gap-3">
           <Stat label={copy.countLabel} value={formatNumber(status.credited, locale)} />
