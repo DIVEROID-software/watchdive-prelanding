@@ -8,16 +8,18 @@ import { copyValues } from "@/lib/referral/values";
  * program.ts (via copyValues), so the page cannot state a rule the counter does
  * not enforce. Layout mirrors the terms page.
  */
-export function RulesPage({ locale }: { locale: Locale }) {
+export function RulesPage({ locale, back = "← WatchDive" }: { locale: Locale; back?: string }) {
   const copy = referralCopy(locale);
   const values = copyValues(locale);
-  const back = referralCopy(locale).programName;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <article className="mx-auto max-w-3xl px-5 py-16 sm:py-24">
-        <a href={homePath(locale)} className="text-body text-primary underline-offset-4 hover:underline">
-          ← {back}
+        <a
+          href={homePath(locale)}
+          className="inline-flex min-h-11 items-center text-body text-primary underline-offset-4 hover:underline"
+        >
+          {back}
         </a>
         <h1 className="mt-6 text-title">{copy.rules.title}</h1>
         <p className="mt-3 text-caption text-muted-foreground">{copy.rules.updated}</p>

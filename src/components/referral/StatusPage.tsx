@@ -8,6 +8,7 @@ import { useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 import type { ReferralStatus } from "@/lib/referral/contract";
 import { fill, referralCopy } from "@/lib/referral/copy";
 import { NICKNAME_MAX, NICKNAME_MIN } from "@/lib/referral/program";
+import { referralShareCopy } from "@/lib/referral/shareCopy";
 import { copyValues } from "@/lib/referral/values";
 
 // The private Buddy Invite page, opened from the signed link in the welcome
@@ -64,7 +65,8 @@ function Stat({ label, value }: { label: string; value: string }) {
 export function StatusPage({ token, locale }: { token: string; locale: Locale }) {
   const copy = referralCopy(locale);
   // Navigation and retry labels come from the site's existing reviewed catalog.
-  const site = useFrozenLandingMessages().verify;
+  const frozen = useFrozenLandingMessages();
+  const site = frozen.verify;
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const [attempt, setAttempt] = useState(0);
 
@@ -115,8 +117,9 @@ export function StatusPage({ token, locale }: { token: string; locale: Locale })
         {load.state === "error" && (
           <Card role="alert">
             <h1 className="text-heading">{copy.status.title}</h1>
+            {/* A load failure, not a save: "Could not save" would be wrong here. */}
             <p className="mt-3 text-body leading-relaxed text-white/75">
-              {copy.status.errors.failed}
+              {frozen.errors.errorBody}
             </p>
             <button
               type="button"
@@ -169,6 +172,8 @@ function StatusCard({
   const tiers = referralCopy(locale).tiers;
   const values = { ...copyValues(locale), min: NICKNAME_MIN, max: NICKNAME_MAX };
   const landing = useFrozenLandingMessages().referral;
+  // Legal review D9: neutral "Share" label and prefilled text, no reward claim.
+  const shareCopy = referralShareCopy(locale);
   const ids = { nickname: useId(), help: useId(), error: useId() };
 
   const [nickname, setNickname] = useState(status.nickname ?? "");
@@ -186,7 +191,7 @@ function StatusCard({
       if (navigator.share) {
         await navigator.share({
           title: "WatchDive",
-          text: landing.shareText,
+          text: shareCopy.text,
           url: status.shareUrl,
         });
         return;
@@ -270,14 +275,16 @@ function StatusCard({
               aria-label={copy.shareTitle}
               value={status.shareUrl}
               onFocus={(event) => event.currentTarget.select()}
-              className="h-11 flex-1 rounded-lg bg-white/95 px-3 text-body text-[color:var(--color-deep-2)] outline-none"
+              // `flex-1` only in the row layout: in the phone column it means
+              // flex-basis 0 along the column axis and collapses the field.
+              className="h-11 min-h-11 w-full min-w-0 shrink-0 rounded-lg bg-white/95 px-3 sm:w-auto sm:flex-1 text-body text-[color:var(--color-deep-2)] outline-none"
             />
             <button
               type="button"
               onClick={share}
               className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-body font-semibold text-[#F6FAFC] hover:brightness-110"
             >
-              {copied ? landing.copied : landing.shareButton}
+              {copied ? landing.copied : shareCopy.button}
             </button>
           </div>
           <span className="sr-only" aria-live="polite">

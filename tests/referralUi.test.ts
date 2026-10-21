@@ -178,3 +178,25 @@ test("leaderboard, footer link and rules routes are gated by the program state",
   assert.match(en, /if \(!state\.enabled\) throw notFound\(\)/);
   assert.match(loc, /await requireReferralProgram\(\)/);
 });
+
+// Legal review D9 (2026-10-22): with the program on, the share action says
+// "Share" and the prefilled text carries no reward, price or scarcity claim.
+test("program-on share copy is neutral in every locale and off keeps the frozen strings", async () => {
+  const { REFERRAL_SHARE_COPY } = await import("../src/lib/referral/shareCopy.ts");
+  assert.deepEqual(Object.keys(REFERRAL_SHARE_COPY).sort(), [...SUPPORTED_LOCALES].sort());
+  assert.equal(REFERRAL_SHARE_COPY.en.button, "Share my link");
+  assert.equal(REFERRAL_SHARE_COPY.ko.button, "내 링크 공유하기");
+  for (const locale of SUPPORTED_LOCALES) {
+    const { button, text } = REFERRAL_SHARE_COPY[locale];
+    assert.ok(button.trim() && text.trim(), locale);
+    // No currency, price, count or reward vocabulary in the message a person sends.
+    assert.doesNotMatch(text, /[$€£¥₩]|R\$|\d|reward|early.?bird|discount|free|보상|혜택|할인|얼리버드|선착순|特典|早割|奖励|獎勵|早鸟|早鳥|recompens|récompens|Belohnung|gratis|gratuit|kostenlos/i, locale);
+    assert.match(text, /WatchDive/, locale);
+  }
+  // Landing card: the frozen strings stay the off branch.
+  assert.match(successSource, /programOn \? share\.text : m\.referral\.shareText/);
+  assert.match(successSource, /programOn \? share\.button : m\.referral\.shareButton/);
+  const status = readFileSync(join(root, "src/components/referral/StatusPage.tsx"), "utf8");
+  assert.match(status, /text: shareCopy\.text/);
+  assert.doesNotMatch(status, /landing\.shareText|landing\.shareButton/);
+});

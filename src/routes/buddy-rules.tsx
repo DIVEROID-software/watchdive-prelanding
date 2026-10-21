@@ -4,7 +4,7 @@ import { getReferralProgramState } from "@/lib/api/referral.functions";
 import { RulesPage } from "@/components/referral/RulesPage";
 import { localizePath, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/locale";
 import { absoluteWatchDivePath } from "@/lib/i18n/seo";
-import { useCurrentLocale } from "@/lib/i18n/use-current-locale";
+import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 import { referralCopy } from "@/lib/referral/copy";
 
 const rulesPath = (locale: Locale) => localizePath("/buddy-rules", locale);
@@ -48,5 +48,8 @@ export const Route = createFileRoute("/buddy-rules")({
 });
 
 export function BuddyRulesRoute() {
-  return <RulesPage locale={useCurrentLocale()} />;
+  // The back link goes home, so it carries the site's reviewed home label (the
+  // status page uses the same one), not the program name.
+  const back = useFrozenLandingMessages().verify.back;
+  return <RulesPage locale={useCurrentLocale()} back={back} />;
 }
