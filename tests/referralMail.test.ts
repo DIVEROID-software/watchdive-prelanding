@@ -6,6 +6,8 @@ import { test } from "node:test";
 
 import { BUDDY_GUIDE_DELAY_MS, WELCOME_DELAY_MS } from "../src/lib/verification/contracts.ts";
 import {
+  BUTTON_BG,
+  BUTTON_INK,
   createResendMailer,
   createResendReferralMailer,
   KR_AD_SUBJECT_PREFIX,
@@ -526,7 +528,8 @@ test("every Buddy mail in every locale: email-safe HTML, absolute https links wi
     );
     assert.equal(/<(script|img|link)\b/.test(html), false);
     assert.ok(html.includes('role="presentation"'));
-    assert.ok(html.includes('bgcolor="#0ea5e9"'), "bulletproof button cell");
+    assert.ok(html.includes(`bgcolor="${BUTTON_BG}"`), "bulletproof button cell");
+    assert.ok(html.includes(`color:${BUTTON_INK};`), "button label colour");
     for (const [, href] of html.matchAll(/href="([^"]+)"/g)) {
       assert.match(href, /^https:\/\//, href);
       assert.equal(new URL(href.replaceAll("&amp;", "&")).pathname.includes("="), false, href);
@@ -737,4 +740,43 @@ test("the Notion store lists an address by canonical email or exact title, fully
     "db1",
   );
   await assert.rejects(endless.listByAddress!("a@x.example", "a@x.example"));
+});
+
+// --- Buttons in forced dark mode -----------------------------------------------
+
+function luminance(hex: string): number {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+function invert(hex: string): string {
+  return `#${(0xffffff ^ parseInt(hex.slice(1), 16)).toString(16).padStart(6, "0")}`;
+}
+
+test("Buddy buttons keep >= 4.5:1 as authored, fully inverted, and under partial dark modes", () => {
+  // As authored (light mode).
+  assert.ok(contrast(BUTTON_INK, BUTTON_BG) >= 4.5, `${contrast(BUTTON_INK, BUTTON_BG)}`);
+  // Full inversion (both colours flipped).
+  assert.ok(contrast(invert(BUTTON_INK), invert(BUTTON_BG)) >= 4.5);
+  // Partial modes recolour only dark text and only light backgrounds. A light
+  // label on a dark fill is neither, so neither half moves: the pair as
+  // authored is what such a client shows. (The old sky-blue fill with dark
+  // text had its label lightened against an unchanged fill: ~2.6:1.)
+  assert.ok(luminance(BUTTON_INK) > 0.9, "the label is light, never recoloured as dark text");
+  assert.ok(luminance(BUTTON_BG) < 0.2, "the fill is dark, never recoloured as a light background");
+  assert.ok(contrast("#ffffff", "#0ea5e9") < 4.5, "the failure mode this replaces");
+});
+
+test("the legacy welcome keeps its own button colours untouched", async () => {
+  const { calls, impl } = capture();
+  await createResendMailer(BASE_ENV, impl, async () => {}).sendWelcome(welcome("en"));
+  const html = calls[0]!.body.html as string;
+  assert.ok(html.includes("background:#0ea5e9;color:#04121f"));
+  assert.equal(html.includes(BUTTON_BG), false);
 });
