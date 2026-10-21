@@ -256,7 +256,7 @@ test("notice: count in subject, crossed tier with its reward, next tier, status 
   const { body, init } = calls[0]!;
   assert.equal(body.subject, "A buddy joined through your link (3 so far)");
   for (const part of [body.html, body.text]) {
-    assert.ok(part.includes("3 friends have joined through your link"));
+    assert.ok(part.includes("Friends who joined through your link and confirmed their email: 3."));
     assert.ok(
       part.includes(
         "You reached Buddy · 3 friends: Get the Kickstarter launch email 2 hours before",
