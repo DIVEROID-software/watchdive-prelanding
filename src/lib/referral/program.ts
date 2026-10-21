@@ -6,9 +6,7 @@
 //
 // Owner decisions, 2026-10-22:
 //   1 verified friend   → launch notice 1 hour before the general list
-//   3  Buddy            → launch notice 2 hours before (root default: the owner
-//                         approved 1 hour from the first friend and named the
-//                         3-friend tier "Buddy" without a separate reward)
+//   3  Buddy            → launch notice 2 hours before (owner confirmed 2026-10-22)
 //   5  Dive Team        → $149 early-bird price kept by a private Kickstarter
 //                         reward link even after the first 100 are gone
 //   10 Dive Leader      → one underwater light, first 30 people to reach it
@@ -18,6 +16,17 @@
 //                         live; date not set yet (planned for December 2026)
 
 export const REFERRAL_PROGRAM_ID = "wd-buddy-invite-20261022" as const;
+
+/**
+ * Master switch. Off unless `WATCHDIVE_REFERRAL_PROGRAM_ENABLED=1` (server env).
+ * The owner releases the program only after a final review, so a deploy with
+ * the switch off must change nothing a visitor or inbox can see: the old
+ * welcome mail, the old referral card, no leaderboard, no status or rules page
+ * (404), no notices. Every surface checks this on the server.
+ */
+export function referralProgramEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.WATCHDIVE_REFERRAL_PROGRAM_ENABLED === "1";
+}
 
 export type ReferralTierId = "first" | "buddy" | "team" | "leader";
 
