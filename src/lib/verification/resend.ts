@@ -11,6 +11,13 @@ import { phoneOptInCopy } from "../phoneOptInCopy.ts";
 import { verificationTokenLocale, verificationUrl } from "./token.ts";
 import { buildReminderEmail } from "./reminderEmail.ts";
 import { DEFAULT_LOCALE, referralPath, type Locale } from "../i18n/locale.ts";
+import type { ReferralMailer, ReferralNoticeMail } from "../referral/contract.ts";
+import { fill, referralCopy } from "../referral/copy.ts";
+import { EARLY_NOTICE_HOURS, REFERRAL_TIERS, referralProgramEnabled } from "../referral/program.ts";
+// Core-owned (feat/referral-core): `copyValues(locale)` returns every
+// program.ts number pre-formatted for the locale ({price}, {seats}, {stock},
+// {winners}, {cap}, {noticeDays}, ...). `{hours}` is per tier and filled here.
+import { copyValues } from "../referral/values.ts";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -34,6 +41,8 @@ export type ResendEnvironment = {
   /** Display name shown in the inbox. Defaults to "DIVEROID". */
   WATCHDIVE_EMAIL_FROM_NAME?: string;
   WATCHDIVE_EMAIL_REPLY_TO?: string;
+  /** Buddy Invite master switch (program.ts `referralProgramEnabled`). */
+  WATCHDIVE_REFERRAL_PROGRAM_ENABLED?: string;
 };
 
 export type ResendConfig = {
@@ -67,6 +76,14 @@ export type WelcomeMail = {
   /** ISO 8601 instant. Resend holds the message until then, up to 30 days out. */
   scheduledAt: string;
   locale: Locale;
+  /**
+   * Signed Buddy Invite status page (core `statusUrl`) and the locale's
+   * official rules page (core `rulesUrl`). Set by scheduleWelcome only while
+   * WATCHDIVE_REFERRAL_PROGRAM_ENABLED=1; without both, and without the switch
+   * in the mailer's own env, the legacy welcome goes out unchanged.
+   */
+  statusUrl?: string;
+  rulesUrl?: string;
 };
 
 export type VerificationMailer = {
@@ -186,10 +203,19 @@ type EmailCopy = {
 };
 
 // These messages intentionally say only what the flow has actually done.
-// Price, discount, product performance and referral rewards are still
-// unconfirmed in docs/01-product-truth.md, so none is introduced in any
-// language. Copy is reviewed again through the independent native-tone gate
-// before release.
+// Price, discount and product performance are still unconfirmed in
+// docs/01-product-truth.md, so none is introduced in any language. Copy is
+// reviewed again through the independent native-tone gate before release.
+//
+// Referral rewards are no longer unconfirmed: the owner approved the Buddy
+// Invite program on 2026-10-22 and its tiers, rewards and limits are defined in
+// src/lib/referral/program.ts. They appear only in the Buddy Invite guide and
+// the friend-joined notice (buddyGuideBody / referralNoticeBody), whose words
+// come from src/lib/referral/copy.ts and whose numbers come from program.ts.
+// Until the owner's final go-live (WATCHDIVE_REFERRAL_PROGRAM_ENABLED=1) the
+// neutral `welcomeBody` below is still what people receive, byte for byte
+// (its source is hash-frozen in tests/reminder-email.test.ts, so it is left
+// exactly as reviewed, comment included).
 const EMAIL_COPY = {
   en: {
     verification: {
@@ -527,6 +553,168 @@ async function deliverWithRetries(
   throw lastError ?? new ResendDeliveryError("Resend request failed", 0);
 }
 
+// Shared inline styles. Mail clients drop <style> blocks, so every element
+// carries its own, matching the confirmation mail.
+const STYLE_WRAP = "font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px";
+const STYLE_H1 = "font-size:20px;margin:0 0 12px";
+const STYLE_H2 = "font-size:16px;margin:0 0 8px";
+const STYLE_BODY = "font-size:15px;line-height:1.6;color:#334155;margin:0 0 24px";
+const STYLE_SMALL = "font-size:13px;line-height:1.6;color:#64748b;margin:0 0 8px";
+const STYLE_BUTTON =
+  "display:inline-block;background:#0ea5e9;color:#04121f;font-weight:600;" +
+  "font-size:16px;padding:14px 28px;border-radius:12px;text-decoration:none";
+const STYLE_TIER = "font-size:14px;line-height:1.6;color:#334155;margin:0 0 10px";
+const STYLE_LINK = "color:#0369a1;word-break:break-all";
+
+function buttonHtml(url: string, label: string): string {
+  return (
+    `<p style="margin:0 0 24px"><a href="${escapeHtml(url)}" rel="noreferrer noopener" ` +
+    `style="${STYLE_BUTTON}">${escapeHtml(label)}</a></p>`
+  );
+}
+
+function bareLinkHtml(url: string): string {
+  const safeUrl = escapeHtml(url);
+  return (
+    `<p style="${STYLE_SMALL}">` +
+    `<a href="${safeUrl}" rel="noreferrer noopener" style="${STYLE_LINK}">${safeUrl}</a></p>`
+  );
+}
+
+/** A label followed by the bare link, so the address survives a stripped button. */
+function labelledLinkHtml(label: string, url: string): string {
+  const safeUrl = escapeHtml(url);
+  return (
+    `<p style="${STYLE_SMALL}">${escapeHtml(label)}<br>` +
+    `<a href="${safeUrl}" rel="noreferrer noopener" style="${STYLE_LINK}">${safeUrl}</a></p>`
+  );
+}
+
+/**
+ * The five reward lines (four tiers + top prize) with every number filled from
+ * program.ts. `{hours}` differs per tier, so it is filled from the tier itself
+ * rather than from the shared values.
+ */
+export function referralRewardLines(locale: Locale): { name: string; reward: string }[] {
+  const copy = referralCopy(locale);
+  const values = copyValues(locale);
+  const lines = REFERRAL_TIERS.map((tier) => {
+    const tierValues = { ...values, hours: EARLY_NOTICE_HOURS[tier.id] };
+    return {
+      name: fill(copy.tiers[tier.id].name, tierValues),
+      reward: fill(copy.tiers[tier.id].reward, tierValues),
+    };
+  });
+  lines.push({ name: fill(copy.top.name, values), reward: fill(copy.top.reward, values) });
+  return lines;
+}
+
+function tierLineHtml({ name, reward }: { name: string; reward: string }): string {
+  return `<p style="${STYLE_TIER}"><strong>${escapeHtml(name)}</strong><br>${escapeHtml(reward)}</p>`;
+}
+
+export type WelcomeLinks = { shareUrl: string; statusUrl: string; rulesUrl: string };
+
+/**
+ * The welcome mail while Buddy Invite is switched on: the program guide. The
+ * invite link comes first (it is the one action), then what it earns, then
+ * where to check progress and read the rules. Every value, copy included, is
+ * escaped before it reaches the HTML.
+ */
+export function buddyGuideBody(
+  links: WelcomeLinks,
+  locale: Locale,
+): { subject: string; text: string; html: string } {
+  const copy = referralCopy(locale);
+  const values = copyValues(locale);
+  const mail = copy.mail;
+  const rewards = referralRewardLines(locale);
+  const countingNote = fill(copy.countingNote, values);
+  return {
+    subject: fill(mail.welcomeSubject, values),
+    text: [
+      fill(mail.welcomeHeading, values),
+      "",
+      fill(mail.welcomeIntro, values),
+      links.shareUrl,
+      "",
+      fill(mail.welcomeTiersHeading, values),
+      ...rewards.map((line) => `- ${line.name}: ${line.reward}`),
+      countingNote,
+      "",
+      fill(mail.welcomeStatus, values),
+      links.statusUrl,
+      "",
+      fill(mail.welcomeRules, values),
+      links.rulesUrl,
+      "",
+      fill(mail.welcomeOutro, values),
+    ].join("\n"),
+    html: [
+      `<div lang="${escapeHtml(locale)}" style="${STYLE_WRAP}">`,
+      `<h1 style="${STYLE_H1}">${escapeHtml(fill(mail.welcomeHeading, values))}</h1>`,
+      `<p style="${STYLE_BODY}">${escapeHtml(fill(mail.welcomeIntro, values))}</p>`,
+      buttonHtml(links.shareUrl, fill(mail.welcomeButton, values)),
+      labelledLinkHtml(fill(mail.welcomeFallback, values), links.shareUrl),
+      `<h2 style="${STYLE_H2};margin-top:24px">${escapeHtml(fill(mail.welcomeTiersHeading, values))}</h2>`,
+      ...rewards.map(tierLineHtml),
+      `<p style="${STYLE_SMALL};margin-bottom:24px">${escapeHtml(countingNote)}</p>`,
+      labelledLinkHtml(fill(mail.welcomeStatus, values), links.statusUrl),
+      labelledLinkHtml(fill(mail.welcomeRules, values), links.rulesUrl),
+      `<p style="${STYLE_SMALL};margin:16px 0 0">${escapeHtml(fill(mail.welcomeOutro, values))}</p>`,
+      "</div>",
+    ].join(""),
+  };
+}
+
+/**
+ * Friend-joined notice. It carries counts and tiers only: nothing about who
+ * joined, which the referrer is never told (contract.ts privacy invariants).
+ */
+export function referralNoticeBody(
+  input: Pick<
+    ReferralNoticeMail,
+    "locale" | "credited" | "crossed" | "nextTier" | "remainingToNext" | "statusUrl"
+  >,
+): { subject: string; text: string; html: string } {
+  const { locale } = input;
+  const copy = referralCopy(locale);
+  const values = { ...copyValues(locale), count: input.credited };
+  const mail = copy.mail;
+  const rewards = referralRewardLines(locale);
+  const rewardByTier = new Map(REFERRAL_TIERS.map((tier, index) => [tier.id, rewards[index]!]));
+  const reached = input.crossed.map((id) => {
+    const line = rewardByTier.get(id)!;
+    return fill(mail.noticeTierReached, { ...values, tier: line.name, reward: line.reward });
+  });
+  const next =
+    input.nextTier && input.remainingToNext !== null
+      ? fill(mail.noticeNext, {
+          ...values,
+          remaining: input.remainingToNext,
+          tier: rewardByTier.get(input.nextTier)!.name,
+        })
+      : fill(mail.noticeMax, values);
+  const heading = fill(mail.noticeHeading, values);
+  const body = fill(mail.noticeBody, values);
+  const footer = fill(mail.noticeFooter, values);
+  return {
+    subject: fill(mail.noticeSubject, values),
+    text: [heading, "", body, ...reached, next, "", input.statusUrl, "", footer].join("\n"),
+    html: [
+      `<div lang="${escapeHtml(locale)}" style="${STYLE_WRAP}">`,
+      `<h1 style="${STYLE_H1}">${escapeHtml(heading)}</h1>`,
+      `<p style="${STYLE_BODY};margin-bottom:12px">${escapeHtml(body)}</p>`,
+      ...reached.map((line) => `<p style="${STYLE_TIER}"><strong>${escapeHtml(line)}</strong></p>`),
+      `<p style="${STYLE_BODY}">${escapeHtml(next)}</p>`,
+      buttonHtml(input.statusUrl, fill(mail.noticeButton, values)),
+      bareLinkHtml(input.statusUrl),
+      `<p style="${STYLE_SMALL};margin:16px 0 0">${escapeHtml(footer)}</p>`,
+      "</div>",
+    ].join(""),
+  };
+}
+
 export type DeliveryFailureReason =
   "unexpected_error" | "transport_error" | "invalid_provider_response" | "provider_rejected";
 
@@ -561,7 +749,13 @@ export async function deliver(
   fetchImpl: typeof fetch,
   sleep: (ms: number) => Promise<void>,
   idempotencyKey: string,
-  operation: "verification" | "verification_reminder" | "welcome" | "launch_mail" | "reservation_mail",
+  operation:
+    | "verification"
+    | "verification_reminder"
+    | "welcome"
+    | "referral_notice"
+    | "launch_mail"
+    | "reservation_mail",
   payload: Record<string, unknown>,
 ): Promise<void> {
   try {
@@ -584,6 +778,9 @@ export function createResendMailer(
   sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
 ): VerificationMailer {
   const config = readResendConfig(env);
+  // Read once per mailer, from the same env as the Resend key, so the guide can
+  // only go out where the operator turned the program on.
+  const programOn = referralProgramEnabled(env);
 
   return {
     async send({ to, token, leadId, publicOrigin, locale, reminder, manualCampaign }) {
@@ -617,8 +814,23 @@ export function createResendMailer(
       );
     },
 
-    async sendWelcome({ to, refCode, leadId, publicOrigin, scheduledAt, locale }) {
-      const content = welcomeBody(referralUrl(publicOrigin, refCode, locale), locale);
+    async sendWelcome({
+      to,
+      refCode,
+      leadId,
+      publicOrigin,
+      scheduledAt,
+      locale,
+      statusUrl,
+      rulesUrl,
+    }) {
+      const shareUrl = referralUrl(publicOrigin, refCode, locale);
+      // Off, or missing either link: the legacy welcome, byte for byte.
+      const content =
+        programOn && statusUrl && rulesUrl
+          ? buddyGuideBody({ shareUrl, statusUrl, rulesUrl }, locale)
+          : welcomeBody(shareUrl, locale);
+      // The key is the same for both bodies, so one lead still gets one mail.
       // Keyed on the lead, not the moment: two confirmations that race, or a
       // retry from a later click, all collapse onto one scheduled message.
       await deliver(config, fetchImpl, sleep, `watchdive-welcome-${leadId}`, "welcome", {
@@ -630,8 +842,44 @@ export function createResendMailer(
         // This message is closer to marketing than the confirmation is, so it
         // carries a working opt-out that needs no new endpoint.
         headers: {
-          "List-Unsubscribe": `<mailto:${config.replyTo || "help@diveroid.com"}?subject=unsubscribe>`,
+          "List-Unsubscribe": listUnsubscribe(config),
         },
+      });
+    },
+  };
+}
+
+/** A Resend header value only ever carries this fixed opt-out address shape. */
+function listUnsubscribe(config: ResendConfig): string {
+  return `<mailto:${config.replyTo || "help@diveroid.com"}?subject=unsubscribe>`;
+}
+
+/**
+ * Friend-joined notices go through the same `deliver` path as every other
+ * mail: same retries, same idempotency handling, same silent failure logging,
+ * under their own operation label. The caller supplies the idempotency key
+ * (`${REFERRAL_PROGRAM_ID}-notice-${refCode}-${credited}`), so a notice whose
+ * Notion bookkeeping failed collapses at Resend when the next tick retries it.
+ */
+export function createResendReferralMailer(
+  env: ResendEnvironment = process.env,
+  fetchImpl: typeof fetch = fetch,
+  sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
+): ReferralMailer {
+  const config = readResendConfig(env);
+  const programOn = referralProgramEnabled(env);
+  return {
+    async sendReferralNotice(input) {
+      // Second lock behind runReferralNotices: with the master switch off this
+      // mailer cannot send a notice even if a caller forgets the gate.
+      if (!programOn) throw new Error("Buddy Invite is switched off");
+      const content = referralNoticeBody(input);
+      await deliver(config, fetchImpl, sleep, input.idempotencyKey, "referral_notice", {
+        to: [input.to],
+        subject: content.subject,
+        text: content.text,
+        html: content.html,
+        headers: { "List-Unsubscribe": listUnsubscribe(config) },
       });
     },
   };
