@@ -176,7 +176,7 @@ const en: ReferralCopy = {
     welcomeOutro: "We will email you when WatchDive goes live on Kickstarter.",
     noticeSubject: "A buddy joined through your link ({count} so far)",
     noticeHeading: "A buddy joined through your link",
-    noticeBody: "{count} friends have joined through your link and confirmed their email.",
+    noticeBody: "Friends who joined through your link and confirmed their email: {count}.",
     noticeTierReached: "You reached {tier}: {reward}",
     noticeNext: "{remaining} more for {tier}.",
     noticeMax: "Every tier reached. Keep going for the top {winners}.",
