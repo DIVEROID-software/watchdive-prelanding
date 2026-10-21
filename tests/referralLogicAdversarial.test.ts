@@ -19,7 +19,12 @@ import {
   rankedStandings,
   statusFor,
 } from "../src/lib/referral/ledger.ts";
-import { noticeIdempotencyKey, runReferralNotices } from "../src/lib/referral/notices.ts";
+import {
+  noticeIdempotencyKey,
+  optOutAddressKey,
+  optedOutAddresses,
+  runReferralNotices,
+} from "../src/lib/referral/notices.ts";
 import {
   DAILY_CREDIT_CAP,
   LEADER_LIGHT_STOCK,
@@ -816,9 +821,23 @@ test("close instant: a friend verified exactly at the close does not count, 1 ms
 
 // ---- notices ----------------------------------------------------------------
 
-const ON = { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1", WATCHDIVE_REFERRAL_NOTICES_ENABLED: "1" };
+// Every notice carries the referrer's signed one-click opt-out, so the pass
+// needs the launch-mail signing secret and each referrer's Lead ID; without
+// either it sends nothing (skippedNoOptOut).
+const ON = {
+  WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1",
+  WATCHDIVE_REFERRAL_NOTICES_ENABLED: "1",
+  WATCHDIVE_VERIFICATION_SECRET: "adversarial-unsubscribe-secret-32bytes+",
+};
+
+/** A valid v4-shaped Lead ID per row number, as createPending would mint one. */
+function leadIdFor(id: number): string {
+  return `00000000-0000-4000-8000-${String(id).padStart(12, "0")}`;
+}
 
 test("notices over 40 random ticks: once per (code,count), never to opted-out, ineligible or shrunk referrers", async () => {
+  // The random world must actually reach the opt-out paths it claims to cover.
+  const covered = { skippedUnsubscribed: 0, skippedNoOptOut: 0, sent: 0 };
   for (const seed of SEEDS.slice(0, 40)) {
     const rng = mulberry32(seed);
     const rows: ReferralRow[] = [];
@@ -831,6 +850,8 @@ test("notices over 40 random ticks: once per (code,count), never to opted-out, i
         `nr${seed}-${r}@example.com`,
         {
           signupLocale: pick(rng, ["ko", "en", "ja", "xx"]),
+          // Referrer 5 predates Lead IDs: no signable opt-out, so never mailed.
+          ...(r === 5 ? {} : { leadId: leadIdFor(id - 1) }),
         },
       );
       rows.push(row);
@@ -874,6 +895,21 @@ test("notices over 40 random ticks: once per (code,count), never to opted-out, i
         ref.noticesOff = !ref.noticesOff;
       }
       if (chance(rng, 0.05)) pick(rng, referrers).suspect = chance(rng, 0.5);
+      // An opt-out on another row of the same inbox (a repeat sign-up whose
+      // Launch or Reservation mail cell says unsubscribed) holds every row.
+      if (chance(rng, 0.04)) {
+        const ref = pick(rng, referrers);
+        rows.push(
+          baseRow(id++, `o${String(id).padStart(7, "0")}`, ref.email.toUpperCase(), {
+            status: "pending",
+            emailVerified: false,
+            verifiedAt: undefined,
+            ...(chance(rng, 0.5)
+              ? { launchMail: `unsubscribed ${new Date(now).toISOString()}` }
+              : { reservationMail: "unsubscribed" }),
+          }),
+        );
+      }
       failMark = chance(rng, 0.1);
 
       const snapshot = rows.map((row) => ({ ...row }));
@@ -894,12 +930,18 @@ test("notices over 40 random ticks: once per (code,count), never to opted-out, i
         maxSends: 3,
       });
       const sentNow = mails.slice(before);
+      const optedOut = optedOutAddresses(snapshot);
+      covered.skippedUnsubscribed += result.skippedUnsubscribed;
+      covered.skippedNoOptOut += result.skippedNoOptOut;
+      covered.sent += result.sent;
       assert.equal(result.sent, sentNow.length, `seed ${seed} tick ${tick}`);
       assert.equal(
         result.pending,
         result.sent +
           result.skippedIneligible +
+          result.skippedUnsubscribed +
           result.skippedNoticesOff +
+          result.skippedNoOptOut +
           result.skippedInterval +
           result.deferred +
           result.sendFailed,
@@ -914,6 +956,16 @@ test("notices over 40 random ticks: once per (code,count), never to opted-out, i
         assert.equal(owner.status, "verified");
         assert.equal(owner.suspect, false);
         assert.equal(owner.noticesOff, false, `seed ${seed}: opted-out referrer mailed`);
+        assert.equal(
+          optedOut.has(optOutAddressKey(owner.email)),
+          false,
+          `seed ${seed}: an address unsubscribed on another row was mailed`,
+        );
+        assert.ok(owner.leadId, `seed ${seed}: a referrer without a Lead ID was mailed`);
+        assert.ok(
+          mail.unsubscribeUrl?.startsWith("https://watchdive.example/unsubscribe/"),
+          `seed ${seed}: the notice carries its https opt-out`,
+        );
         assert.equal(mail.credited, standing.credited);
         assert.ok(mail.credited > owner.notifiedCount, `seed ${seed}: count did not rise`);
         assert.deepEqual(
@@ -950,10 +1002,14 @@ test("notices over 40 random ticks: once per (code,count), never to opted-out, i
       now += (5 + Math.floor(rng() * 50)) * 60 * 1000;
     }
   }
+  for (const [path, count] of Object.entries(covered)) assert.ok(count > 0, `${path} never hit`);
 });
 
 test("a friend withdrawn after the notice: status shows the lower count but keeps the announced tier; no mail until it passes the announced count", async () => {
-  const ref = baseRow(0, "wdwdwd01", "ref@example.com", { signupLocale: "ko" });
+  const ref = baseRow(0, "wdwdwd01", "ref@example.com", {
+    signupLocale: "ko",
+    leadId: leadIdFor(0),
+  });
   const friends = Array.from({ length: 5 }, (_, i) =>
     baseRow(i + 1, `wf${String(i).padStart(6, "0")}`, `wf${i}@example.com`, {
       referredBy: "wdwdwd01",

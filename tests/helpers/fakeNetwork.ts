@@ -55,6 +55,10 @@ export const LIVE_WAITLIST_SCHEMA: Record<string, ColumnType> = {
   "Conversion experiment": "rich_text",
   "Press event": "rich_text",
   "Press sync": "rich_text",
+  // Opt-out markers the /unsubscribe endpoint and the launch/reservation mail
+  // runs write; every Buddy Invite mail path honours them across an address.
+  "Launch mail": "rich_text",
+  "Reservation mail": "rich_text",
 };
 
 export type NotionCall = { method: string; path: string; body: unknown };

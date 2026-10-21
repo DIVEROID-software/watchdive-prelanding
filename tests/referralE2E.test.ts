@@ -50,9 +50,19 @@ import {
   verifyStatusToken,
 } from "../src/lib/referral/statusToken.ts";
 import { createNotionReferralStore } from "../src/lib/referral/store.ts";
+import { handleUnsubscribeRequest } from "../src/lib/launchMail/unsubscribe.server.ts";
 import { createNotionLeadStore, createNotionRequest } from "../src/lib/verification/notionLead.ts";
 import { handleVerificationReminderCron } from "../src/lib/verification/reminderCron.server.ts";
-import { createResendMailer, referralNoticeBody } from "../src/lib/verification/resend.ts";
+import {
+  KR_AD_SUBJECT_PREFIX,
+  KR_OPT_OUT_LINE,
+  KR_SENDER_ADDRESS,
+  buddyAdFooter,
+  buddyListUnsubscribeHeaders,
+  buddyUnsubscribeUrl,
+  createResendMailer,
+  referralNoticeBody,
+} from "../src/lib/verification/resend.ts";
 import {
   confirmVerificationService,
   requestVerificationService,
@@ -76,6 +86,7 @@ const DAY = 24 * 60 * 60 * 1000;
 const KST_OFFSET = 9 * 60 * 60 * 1000;
 const MIN = 60 * 1000;
 const LEGACY_ROWS = 230;
+const SENDER_PHONE = "+82 10-6517-6232";
 
 // sha256 of the request body createResendMailer().sendWelcome produced at
 // b364429 (before any Buddy Invite mail work) for exactly A's welcome:
@@ -125,7 +136,7 @@ function createScenario(on: boolean) {
     ...BASE_ENV,
     ...(on ? { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" } : {}),
     // Korean advertising mail must name the sender's phone, or it is refused.
-    WATCHDIVE_SENDER_PHONE: "+82 10-6517-6232",
+    WATCHDIVE_SENDER_PHONE: SENDER_PHONE,
   };
   const net = createFakeNetwork(DB);
   const request = createNotionRequest(net.fetch, env);
@@ -349,9 +360,63 @@ function assertNoPii(
   }
 }
 
+/**
+ * Every Buddy Invite mail: RFC 8058 one-click https opt-out first, the mailto
+ * fallback second, and the same https link in the footer. Returns that link.
+ */
+function assertBuddyOptOut(m: ResendMessage): string {
+  const header = String(m.body.headers?.["List-Unsubscribe"] ?? "");
+  const match =
+    /^<(https:\/\/watchdive\.diveroid\.com\/unsubscribe\/[^>\s]+)>, <mailto:help@diveroid\.com\?subject=unsubscribe>$/.exec(
+      header,
+    );
+  assert.ok(match, `one-click https + mailto List-Unsubscribe, got ${header}`);
+  assert.equal(m.body.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
+  assert.ok((m.body.text as string).includes(match[1]), "the text footer carries the opt-out");
+  assert.ok((m.body.html as string).includes(`href="${match[1]}"`), "so does the HTML footer");
+  assert.ok((m.body.text as string).includes("help@diveroid.com"), "the sender's contact");
+  return match[1];
+}
+
+/** Korean reader: "(광고)" subject, Korean sender block with the phone, Korean opt-out line. */
+function assertKoreanAdMail(m: ResendMessage): string {
+  const link = assertBuddyOptOut(m);
+  assert.ok((m.body.subject as string).startsWith("(광고) "), m.body.subject);
+  assert.equal(KR_AD_SUBJECT_PREFIX, "(광고) ");
+  assert.ok(
+    (m.body.text as string).includes(
+      `보내는 곳: DIVEROID LTD · help@diveroid.com · ${SENDER_PHONE} · ${KR_SENDER_ADDRESS}`,
+    ),
+    "the Korean sender block names company, contact, phone and address",
+  );
+  assert.ok((m.body.text as string).includes(KR_OPT_OUT_LINE));
+  assert.ok((m.body.text as string).includes(`수신거부 / Unsubscribe: ${link}`));
+  assert.ok(
+    (m.body.html as string).includes(`<span style="white-space:nowrap;">${SENDER_PHONE}</span>`),
+  );
+  return link;
+}
+
+/** Everyone else: no ad prefix, no Korean sender block, the company footer. */
+function assertNotKoreanAdMail(m: ResendMessage): string {
+  const link = assertBuddyOptOut(m);
+  assert.equal((m.body.subject as string).includes("(광고)"), false);
+  assert.equal((m.body.text as string).includes("보내는 곳"), false);
+  assert.equal((m.body.text as string).includes(SENDER_PHONE), false);
+  assert.ok((m.body.text as string).includes("DIVEROID LTD · "), "company footer");
+  return link;
+}
+
 async function runStory(on: boolean) {
   const s = createScenario(on);
   const { net, env } = s;
+  const unsubscribeFor = (lead: string, locale: Locale): string => {
+    const url = buddyUnsubscribeUrl(ORIGIN, lead, locale, env);
+    assert.ok(url, "an opt-out link can be signed for this lead");
+    return url;
+  };
+  const footerFor = (lead: string, locale: Locale) =>
+    buddyAdFooter({ locale, unsubscribeUrl: unsubscribeFor(lead, locale), env });
   const realNow = Date.now();
   const day1 = kstMidnight(realNow - 2 * DAY);
 
@@ -422,6 +487,7 @@ async function runStory(on: boolean) {
       "the guide links the rules",
     );
     assert.ok((welcome.body.html as string).includes(`href="${ORIGIN}/buddy/${aStatusToken}"`));
+    assert.equal(assertNotKoreanAdMail(welcome), unsubscribeFor(A_LEAD, "en"), "A's own opt-out");
   } else {
     assert.equal(delay, WELCOME_DELAY_MS, "the legacy welcome is held 24 hours");
     assert.equal(sha256(welcome.raw), LEGACY_A_WELCOME_SHA256, "legacy welcome, byte for byte");
@@ -458,14 +524,28 @@ async function runStory(on: boolean) {
   // f01 (B) shares too: one friend of their own.
   const bEmail = friends[0];
   const bCode = net.notion.text(net.notion.pageByEmail(bEmail)!.id, "Ref code");
+  const bLead = net.notion.text(net.notion.pageByEmail(bEmail)!.id, "Lead ID");
   const bShare = /https:\/\/\S+?\/r\/[a-z0-9]{8}/.exec(s.welcomeOf(bEmail)[0].body.text)![0];
-  // Every share link is the unprefixed /r/<code>: the friend's own language picks the page.
-  assert.equal(bShare, `${ORIGIN}/r/${bCode}`);
-  if (on)
+  // Every Buddy Invite mail hands out the unprefixed /r/<code>: the friend's own
+  // language picks the page. The legacy welcome (OFF) keeps the sender's locale
+  // prefix, exactly as at b364429; both routes redirect to the same ?ref=.
+  assert.equal(bShare, on ? `${ORIGIN}/r/${bCode}` : `${ORIGIN}/ko/r/${bCode}`);
+  if (on) {
     assert.match(
       s.welcomeOf(bEmail)[0].body.text,
       new RegExp(`${ORIGIN}/ko/buddy/${bCode}\\.1\\.`),
     );
+    // B's guide is Korean advertising mail.
+    assert.equal(assertKoreanAdMail(s.welcomeOf(bEmail)[0]), unsubscribeFor(bLead, "ko"));
+  } else {
+    // The legacy Korean welcome stays the pre-program mail: no ad block, mailto only.
+    const legacy = s.welcomeOf(bEmail)[0];
+    assert.equal(legacy.body.subject.startsWith("(광고)"), false);
+    assert.equal(legacy.body.text.includes(SENDER_PHONE), false);
+    assert.deepEqual(legacy.body.headers, {
+      "List-Unsubscribe": "<mailto:help@diveroid.com?subject=unsubscribe>",
+    });
+  }
   assert.equal(refFromShareLink(bShare), bCode);
   await s.submit("m@example.org", { at: day1 + 5 * 60 * MIN, ref: refFromShareLink(bShare) });
   assert.equal(
@@ -573,14 +653,17 @@ async function runStory(on: boolean) {
     );
     assert.equal(verifyStatusToken(statusUrl?.[1], referralSecret(env)), A_CODE);
     // 11 credited: ten on day one (the eleventh is over the cap), one on day two.
-    const expected = referralNoticeBody({
-      locale: "en",
-      credited: 11,
-      crossed: ["first", "buddy", "team", "leader"],
-      nextTier: null,
-      remainingToNext: null,
-      statusUrl: statusUrl![0],
-    });
+    const expected = referralNoticeBody(
+      {
+        locale: "en",
+        credited: 11,
+        crossed: ["first", "buddy", "team", "leader"],
+        nextTier: null,
+        remainingToNext: null,
+        statusUrl: statusUrl![0],
+      },
+      footerFor(A_LEAD, "en"),
+    );
     assert.deepEqual(
       { subject: notice.body.subject, text: notice.body.text, html: notice.body.html },
       expected,
@@ -588,18 +671,28 @@ async function runStory(on: boolean) {
     const toB = notices().filter((m) => m.body.to.includes(bEmail));
     assert.equal(toB.length, 1);
     assert.equal(toB[0].idempotencyKey, `${REFERRAL_PROGRAM_ID}-notice-${bCode}-1`);
-    assert.ok(
-      (toB[0].body.text as string).includes(
-        referralNoticeBody({
+    // B's notice is the Korean one, byte for byte: "(광고)" subject, Korean
+    // sender block with the phone, Korean opt-out line.
+    const bStatusUrl = /https:\/\/\S+?\/ko\/buddy\/[a-z0-9]{8}\.1\.[A-Za-z0-9_-]{24}/.exec(
+      toB[0].body.text,
+    )?.[0];
+    assert.ok(bStatusUrl, "B's notice links B's Korean status page");
+    assert.deepEqual(
+      { subject: toB[0].body.subject, text: toB[0].body.text, html: toB[0].body.html },
+      referralNoticeBody(
+        {
           locale: "ko",
           credited: 1,
           crossed: ["first"],
           nextTier: "buddy",
           remainingToNext: 2,
-          statusUrl: "x",
-        }).text.split("\n")[2],
+          statusUrl: bStatusUrl,
+        },
+        footerFor(bLead, "ko"),
       ),
     );
+    assertKoreanAdMail(toB[0], bLead);
+    assertNotKoreanAdMail(notice);
     for (const m of notices()) {
       assertNoPii(
         s,
@@ -621,9 +714,13 @@ async function runStory(on: boolean) {
         "text",
         "to",
       ]);
-      assert.equal(
-        m.body.headers["List-Unsubscribe"],
-        "<mailto:help@diveroid.com?subject=unsubscribe>",
+      // RFC 8058 one-click (https first) plus the mailto fallback, for the
+      // recipient's own lead.
+      const lead = m.body.to[0] === A_EMAIL ? A_LEAD : bLead;
+      const locale = m.body.to[0] === A_EMAIL ? "en" : "ko";
+      assert.deepEqual(
+        m.body.headers,
+        buddyListUnsubscribeHeaders(unsubscribeFor(lead, locale), "help@diveroid.com"),
       );
     }
     const aCells = net.notion.pages.get(aPage.id)!.properties as Record<
@@ -941,6 +1038,7 @@ async function runStory(on: boolean) {
       const announced = net.resend.messages.slice(mailsBefore);
       assert.equal(announced.length, 1);
       assert.deepEqual(announced[0].body.to, [A_EMAIL]);
+      assert.equal(assertNotKoreanAdMail(announced[0]), unsubscribeFor(A_LEAD, "en"));
       assert.equal(
         announced[0].idempotencyKey,
         `${REFERRAL_PROGRAM_ID}-announce-${A_LEAD}-selftest`,
@@ -977,6 +1075,174 @@ async function runStory(on: boolean) {
         [1, mailsBefore + 1],
         "a re-run skips the receipt instead of mailing again",
       );
+
+      const announce = (only: string, runEnv: Record<string, string> = s.env) =>
+        withGlobals(s, () =>
+          captureStdio(() =>
+            announceMain(
+              [
+                "--released-at",
+                releasedAt,
+                "--only",
+                only,
+                "--apply",
+                "--confirm",
+                REFERRAL_PROGRAM_ID,
+                "--rate",
+                "10",
+                "--receipt-dir",
+                join(dir, "receipts"),
+              ],
+              runEnv,
+            ),
+          ),
+        );
+      // A Korean recipient without WATCHDIVE_SENDER_PHONE: the run is refused
+      // before any send, not mailed without the sender block.
+      const { WATCHDIVE_SENDER_PHONE: _phone, ...noPhoneEnv } = s.env;
+      const noPhone = await announce(bEmail, noPhoneEnv);
+      assert.equal(noPhone.result, 2, noPhone.stdout);
+      assert.deepEqual(
+        [
+          (JSON.parse(noPhone.stdout) as { aborted?: string }).aborted,
+          (JSON.parse(noPhone.stdout) as { senderPhoneMissing?: number }).senderPhoneMissing,
+          net.resend.messages.length,
+        ],
+        ["sender_phone_missing", 1, mailsBefore + 1],
+      );
+
+      // ---- 7b. Opt-outs, through the real one-click endpoint, and legal
+      // review D7: unsubscribing stops mail, it never removes standing.
+      const pageOf = (email: string) => net.notion.pageByEmail(email)!.id;
+      const oneClick = async (link: string, method: "GET" | "POST") => {
+        const token = /\/unsubscribe\/([^/?#]+)$/.exec(new URL(link).pathname)![1];
+        return withGlobals(s, () =>
+          handleUnsubscribeRequest(
+            new Request(link, {
+              method,
+              ...(method === "POST"
+                ? {
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "List-Unsubscribe=One-Click",
+                  }
+                : {}),
+            }),
+            decodeURIComponent(token),
+          ),
+        );
+      };
+      // B turns notices back on, and an hour passes since the last notices, so
+      // both referrers have a pending, sendable notice again.
+      assert.equal(
+        (
+          await updateReferralSettingsService(
+            bToken,
+            { nickname: null, leaderboard: false, noticesOff: false },
+            s.referralDeps(),
+          )
+        ).status,
+        "ok",
+      );
+      const hourAgo = new Date(Date.now() - 61 * MIN).toISOString();
+      for (const page of [aPage.id, pageOf(bEmail)]) {
+        net.notion.setCell(page, REFERRAL_COLUMNS.notifiedAt, { date: { start: hourAgo } });
+      }
+      const wouldTick = await withGlobals(s, () => s.cronTick("?mode=dry-run"));
+      assert.deepEqual(
+        [wouldTick.notices?.pending, wouldTick.notices?.wouldSend],
+        [2, 2],
+        "before the opt-outs both notices would go",
+      );
+
+      // A uses the one-click link from the notice's List-Unsubscribe header. A
+      // link scanner's GET only shows the confirm page and writes nothing.
+      const aLink = assertBuddyOptOut(notices().find((m) => m.body.to[0] === A_EMAIL)!);
+      const callsBeforeGet = net.notion.calls.length;
+      assert.equal((await oneClick(aLink, "GET")).status, 200);
+      assert.equal(net.notion.calls.length, callsBeforeGet, "GET writes nothing");
+      assert.equal(net.notion.text(aPage.id, "Launch mail"), "");
+      assert.equal((await oneClick(aLink, "POST")).status, 200);
+      assert.match(net.notion.text(aPage.id, "Launch mail"), /^unsubscribed \d{4}-/);
+      // B opted out on another row of the same inbox (an older repeat sign-up,
+      // different case): that holds every row of the address.
+      const bOther = await net.notion.handle("https://api.notion.com/v1/pages", {
+        method: "POST",
+        headers: { Authorization: "Bearer seed" },
+        body: JSON.stringify({
+          parent: { database_id: DB },
+          properties: {
+            Email: { title: [{ text: { content: bEmail.toUpperCase() } }] },
+            "Canonical email": { email: bEmail },
+            Source: { select: { name: "hero" } },
+            "Signed up": { date: { start: "2026-07-20T00:00:00.000Z" } },
+            "Ref code": { rich_text: [{ text: { content: "bother00" } }] },
+            Suspect: { checkbox: false },
+            "Reservation mail": { rich_text: [{ text: { content: "unsubscribed" } }] },
+          },
+        }),
+      });
+      assert.equal(bOther.status, 200);
+      assert.equal(net.notion.text(pageOf(bEmail), "Reservation mail"), "", "B's own row is clean");
+      // Two of A's friends unsubscribe after confirming: f02 by its guide's
+      // one-click link, f12 marked unsubscribed by ops. f12 is the day-two
+      // friend, so losing it would show (a day-one loss is refilled by the
+      // friend over that day's cap).
+      const f02Link = assertBuddyOptOut(s.welcomeOf(friends[1])[0]);
+      assert.equal((await oneClick(f02Link, "POST")).status, 200);
+      assert.match(net.notion.text(pageOf(friends[1]), "Launch mail"), /^unsubscribed /);
+      net.notion.setCell(pageOf(friends[11]), "Verification status", {
+        select: { name: "unsubscribed" },
+      });
+
+      const mailsBeforeTick3 = net.resend.messages.length;
+      const tick3 = await withGlobals(s, () => s.cronTick());
+      assert.equal(tick3.status, 200);
+      assert.deepEqual(
+        {
+          pending: tick3.notices?.pending,
+          sent: tick3.notices?.sent,
+          skippedUnsubscribed: tick3.notices?.skippedUnsubscribed,
+        },
+        { pending: 2, sent: 0, skippedUnsubscribed: 2 },
+        "A opted out on its row, B on another row of its inbox: no notice to either",
+      );
+      assert.equal(net.resend.messages.length, mailsBeforeTick3, "the opt-out tick mails nobody");
+      assertNoPii(s, "opt-out tick", { body: tick3.body, lines: tick3.lines });
+      // Neither can be re-announced either, whatever row the run would pick.
+      const aAgain = await announce(A_EMAIL);
+      assert.equal(aAgain.result, 0, aAgain.stderr);
+      assert.deepEqual(
+        (JSON.parse(aAgain.stdout) as { skipped: Record<string, number> }).skipped.unsubscribed,
+        1,
+      );
+      const bAgain = await announce(bEmail);
+      assert.equal(bAgain.result, 0, bAgain.stderr);
+      assert.equal(
+        (JSON.parse(bAgain.stdout) as { skipped: Record<string, number> }).skipped
+          .unsubscribed_address,
+        1,
+      );
+      assert.equal(net.resend.messages.length, mailsBeforeTick3);
+
+      // D7: every standing is kept — the unsubscribed referrer, and the friends
+      // who unsubscribed after confirming.
+      s.advance(301 * 1000);
+      const kept = await getReferralStatusService(aStatusToken, "en", s.referralDeps());
+      assert.ok(kept.status === "ok");
+      assert.deepEqual(
+        [kept.referral.credited, kept.referral.rank, kept.referral.highestTier],
+        [12, 1, "leader"],
+      );
+      const keptBoard = await leaderboardResponse(true, async () => s.referralDeps());
+      const keptBody = (await keptBoard.json()) as LeaderboardSnapshot;
+      assert.deepEqual(
+        keptBody.entries.map((e) => [e.rank, e.credited]),
+        [
+          [1, 12],
+          [2, 2],
+        ],
+      );
+      assertNoPii(s, "board after opt-outs", keptBody, { refCodes: [A_CODE, bCode] });
     } else {
       assert.match(noConfirm.stderr, /WATCHDIVE_REFERRAL_PROGRAM_ENABLED is not 1/);
       const withConfirm = await withGlobals(s, () =>
@@ -1001,6 +1267,37 @@ async function runStory(on: boolean) {
     }
   } finally {
     await rm(dir, { recursive: true, force: true });
+  }
+
+  // ---- 7c. A Korean sign-up while WATCHDIVE_SENDER_PHONE is unset. ON: the
+  // guide is refused (no mail, `Welcome email` stays empty) and goes out on
+  // the next click once the phone is set. OFF: the legacy welcome never
+  // depended on it.
+  const kEmail = "k@example.net";
+  const kAt = Date.now() - 10 * MIN;
+  delete env.WATCHDIVE_SENDER_PHONE;
+  try {
+    assert.equal((await s.submit(kEmail, { at: kAt, locale: "ko" })).status, "pending");
+    assert.equal((await s.confirm(kEmail, kAt + MIN)).status, "verified");
+  } finally {
+    env.WATCHDIVE_SENDER_PHONE = SENDER_PHONE;
+  }
+  const kPage = net.notion.pageByEmail(kEmail)!.id;
+  if (on) {
+    assert.equal(s.welcomeOf(kEmail).length, 0, "no Korean guide without the sender phone");
+    assert.equal(net.notion.pages.get(kPage)!.properties["Welcome email"], undefined);
+    assert.equal((await s.confirm(kEmail, kAt + 2 * MIN)).status, "already_verified");
+    const [kGuide, ...extra] = s.welcomeOf(kEmail);
+    assert.ok(kGuide, "the next click sends the guide once the phone is set");
+    assert.equal(extra.length, 0);
+    assertKoreanAdMail(kGuide);
+    assert.ok(net.notion.pages.get(kPage)!.properties["Welcome email"]);
+  } else {
+    const [kWelcome, ...extra] = s.welcomeOf(kEmail);
+    assert.ok(kWelcome, "OFF: the legacy Korean welcome goes out without the phone");
+    assert.equal(extra.length, 0);
+    assert.equal(kWelcome.body.subject.startsWith("(광고)"), false);
+    assert.equal(/buddy/i.test(kWelcome.raw), false);
   }
 
   // ---- 8. The close (ON): friends confirmed at or after it count for nobody.
