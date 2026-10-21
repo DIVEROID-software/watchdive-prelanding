@@ -10,6 +10,7 @@ import {
   createResendReferralMailer,
   KR_AD_SUBJECT_PREFIX,
   KR_OPT_OUT_LINE,
+  readSenderPhone,
   referralNoticeBody,
   type AdFooter,
   type WelcomeMail,
@@ -580,4 +581,14 @@ test("the opt-out cells are parsed from Notion into the lead and the referral ro
     properties: { Email: { type: "email", email: "a@b.example" } },
   })!;
   assert.equal("launchMail" in empty, false);
+});
+
+test("sender phone: the owner's number is accepted as written; junk or blank is not", () => {
+  assert.equal(
+    readSenderPhone({ WATCHDIVE_SENDER_PHONE: " +82 10-6517-6232 " }),
+    "+82 10-6517-6232",
+  );
+  for (const bad of [undefined, "", "TBD", "<script>", "+82"]) {
+    assert.equal(readSenderPhone({ WATCHDIVE_SENDER_PHONE: bad }), undefined, String(bad));
+  }
 });
