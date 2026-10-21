@@ -421,6 +421,36 @@ test("settings: choosing a new nickname lifts an ops hide server-side; keeping i
   assert.equal(store.writes[1].input.clearHidden, undefined);
 });
 
+test("settings: an ops hide cannot be lifted by a variant of the hidden name or by clear-then-retype", async () => {
+  {
+    const { deps, store } = setup();
+    for (const variant of ["rival", "RIVAL", "R i v a l", "r.i.v.a.l", "Ｒｉｖａｌ"]) {
+      await updateReferralSettingsService(
+        tokenFor("rival001"),
+        { nickname: variant, leaderboard: true, noticesOff: false },
+        deps,
+      );
+    }
+    assert.ok(store.writes.length >= 5);
+    for (const write of store.writes) assert.equal((write.input as ReferralSettingsInput).clearHidden, undefined);
+  }
+  {
+    const { deps, store } = setup();
+    await updateReferralSettingsService(
+      tokenFor("rival001"),
+      { nickname: null, leaderboard: true, noticesOff: false },
+      deps,
+    );
+    await updateReferralSettingsService(
+      tokenFor("rival001"),
+      { nickname: "Rival", leaderboard: true, noticesOff: false },
+      deps,
+    );
+    assert.equal(store.writes.length, 2);
+    assert.equal((store.writes[1].input as ReferralSettingsInput).clearHidden, undefined);
+  }
+});
+
 test("settings: the zod schema in the server fn does not accept nicknameHidden either", () => {
   const source = readFileSync(
     new URL("../src/lib/api/referral.functions.ts", import.meta.url),

@@ -225,14 +225,28 @@ export async function updateReferralSettingsService(
     leaderboard: input.leaderboard === true,
     noticesOff: input.noticesOff === true,
   };
-  const changed = (row.nickname ?? "") !== (nickname ?? "");
+  // An ops hide lifts only for a genuinely different name. Compared folded, so
+  // a case, width or separator variant of the hidden name is the same name.
+  // And only against a name still on the row: after "clear" the hidden value
+  // is gone, so "clear, then type the hidden name again" must not lift it;
+  // that person stays hidden until ops look again.
+  const liftHide =
+    row.nicknameHidden &&
+    Boolean(nickname) &&
+    Boolean(row.nickname) &&
+    foldNickname(row.nickname ?? "") !== foldNickname(nickname ?? "");
   await deps.store.writeSettings(row.pageId, {
     ...settings,
-    ...(row.nicknameHidden && changed && nickname ? { clearHidden: true } : {}),
+    ...(liftHide ? { clearHidden: true } : {}),
   });
   // The public board may now show a different name; the next reader rebuilds it.
   deps.leaderboardCache.invalidate();
   return { status: "ok", settings: { ...settings } };
+}
+
+/** Same folding the nickname check uses for its reserved-word match. */
+function foldNickname(value: string): string {
+  return value.normalize("NFKC").toLowerCase().replace(/[\s._\-()+/]/gu, "");
 }
 
 type LeaderboardPass = {
