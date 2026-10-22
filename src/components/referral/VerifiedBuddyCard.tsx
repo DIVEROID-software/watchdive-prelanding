@@ -117,7 +117,7 @@ export function VerifiedBuddyCard({
   return (
     <section
       aria-labelledby={id + "-title"}
-      className="mt-5 space-y-5 rounded-xl border border-white/15 bg-white/[0.06] p-4"
+      className="wd-buddy-card mt-5 space-y-5 rounded-xl border border-white/15 bg-white/[0.06] p-4"
     >
       <div>
         <h2 id={id + "-title"} className="text-lead font-semibold [html:root_&]:text-[1.5rem]!">

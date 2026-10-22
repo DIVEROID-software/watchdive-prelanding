@@ -32,7 +32,7 @@ export function LeaderboardView({
     <section
       id="buddy-leaderboard"
       aria-labelledby="buddy-leaderboard-title"
-      className="wd-section mx-auto max-w-3xl"
+      className="wd-buddy-board wd-section mx-auto max-w-3xl"
     >
       <div className="mb-6 text-center">
         <h2 id="buddy-leaderboard-title" className="text-title">
