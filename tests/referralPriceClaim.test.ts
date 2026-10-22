@@ -28,7 +28,7 @@ import {
   launchWaveCopy,
 } from "../src/lib/launchMail/copy.ts";
 import type { LaunchSchema, LaunchStore } from "../src/lib/launchMail/notionLaunchStore.ts";
-import { renderLaunchMail } from "../src/lib/launchMail/render.ts";
+import { formatLaunchTime, renderLaunchMail } from "../src/lib/launchMail/render.ts";
 import { runLaunchMail } from "../src/lib/launchMail/run.ts";
 import type { LaunchRow } from "../src/lib/launchMail/audience.ts";
 import { phoneOptInCopy } from "../src/lib/phoneOptInCopy.ts";
@@ -76,8 +76,20 @@ test("off: rendered copy hashes equal the pre-change baseline (fd2e434)", () => 
   const race = SUPPORTED_LOCALES.map((l) =>
     earlyBirdRace(l, FROZEN_LANDING_MESSAGES[l].hero.nowPrice),
   );
+  // The launch time is formatted with Intl, whose output varies by Node/ICU
+  // version (CI runs a newer Node than the machine that took the baseline).
+  // Mask the formatter's own output so the hash pins only this change's copy;
+  // formatLaunchTime itself is unchanged since fd2e434.
+  const maskTime = (mail: unknown, locale: Locale) => {
+    let text = JSON.stringify(mail);
+    const time = formatLaunchTime(new Date(LAUNCH_AT), locale);
+    for (const value of [time.local, time.utc]) {
+      text = text.split(JSON.stringify(value).slice(1, -1)).join("<T>").split(value).join("<T>");
+    }
+    return text;
+  };
   const mails = SUPPORTED_LOCALES.flatMap((l) =>
-    WAVES.map((w) => renderLaunchMail(mailInput(l, w))),
+    WAVES.map((w) => maskTime(renderLaunchMail(mailInput(l, w)), l)),
   );
   assert.equal(
     sha256(FROZEN_LANDING_MESSAGES),
@@ -92,7 +104,7 @@ test("off: rendered copy hashes equal the pre-change baseline (fd2e434)", () => 
     sha256(phoneOptInCopy),
     "5da27009d4661df3099eaaab47e64fa7c039f1c864613b44cbf16ba462d83d0d",
   );
-  assert.equal(sha256(mails), "c365f9225f9e0f252967733f875977f7ebe14af313bba6fb2988bc6e3006db5e");
+  assert.equal(sha256(mails), "2058e290c5ad1a1cb7db1eec5b792a733782c47515a929a473c336f8bc9afc31");
   // `referralProgram: false` is the same mail as no flag at all.
   for (const locale of SUPPORTED_LOCALES) {
     for (const wave of WAVES) {
