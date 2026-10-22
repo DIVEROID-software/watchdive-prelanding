@@ -25,6 +25,7 @@ export type ReferralColumnSpec = {
 
 /** Only the NEW columns. `Ref code` and `Referred by` already exist and are not ours to touch. */
 export const REFERRAL_COLUMN_SPECS: readonly ReferralColumnSpec[] = [
+  { name: REFERRAL_COLUMNS.announce, type: "rich_text" },
   { name: REFERRAL_COLUMNS.nickname, type: "rich_text" },
   { name: REFERRAL_COLUMNS.leaderboard, type: "checkbox" },
   { name: REFERRAL_COLUMNS.nicknameHidden, type: "checkbox" },

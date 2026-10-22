@@ -36,21 +36,25 @@
 
 프로그램 공개 이전에 인증한 사람은 새 환영 메일(안내)을 받지 못했으므로 한 번만 보냅니다. 인증됨·수신거부 아님(상태 unsubscribed/suppressed, `Launch mail`·`Reservation mail`의 `unsubscribed` 표시 — 같은 받은편지함의 다른 행 포함)·suspect/중복 아님·`Ref code`와 `Lead ID` 있음 조건이며, 공개 시각 이후 인증자는 대상이 아닙니다(새 환영 메일을 받음).
 
+서버 `POST /api/cron/referral-announce`가 서명·조회·발송을 담당합니다. Mac mini에는 기존 `WATCHDIVE_REMINDER_CRON_SECRET`에 해당하는 bearer secret만 필요하며, Vercel의 `WATCHDIVE_VERIFICATION_SECRET`을 내보내지 않습니다. 먼저 스키마 계획/적용 절차로 `Referral announce` rich_text 열을 추가하고 확인합니다.
+
+Mac mini 전용 비공개 JSON 파일(권한 600)에 `{"secret":"<기존 reminder cron secret>"}`를 저장합니다. 아래 `<config>`는 그 파일 경로입니다. 기존 reminder 설정 파일도 `secret` 필드가 있으면 사용할 수 있습니다.
+
 ```
-# 건수와 샘플(주소 마스킹) 확인, 발송 없음
-node --experimental-strip-types --env-file=.env scripts/referral-announce.ts --released-at <공개시각>
-# 자기 테스트 (공개 시각 조건 무시, 별도 멱등 키)
-... --released-at <T> --only me@example.com --apply --confirm wd-buddy-invite-20261022
-# 소량 배치 → 나머지 (재실행하면 이어서 진행)
-... --released-at <T> --limit 20 --apply --confirm wd-buddy-invite-20261022
-... --released-at <T> --apply --confirm wd-buddy-invite-20261022
+# 건수만 확인, 발송/행 쓰기 없음
+node --experimental-strip-types scripts/referral-announce.ts --config <config> --released-at <T> --confirm wd-buddy-invite-20261022 --dry-run
+# 자기 테스트 (별도 멱등 키, Notion 행에 표시하지 않음)
+node --experimental-strip-types scripts/referral-announce.ts --config <config> --released-at <T> --confirm wd-buddy-invite-20261022 --only me@example.com --apply
+# 소량 배치; 결과를 검수하고 같은 명령으로 다음 배치 진행
+node --experimental-strip-types scripts/referral-announce.ts --config <config> --released-at <T> --confirm wd-buddy-invite-20261022 --limit 20 --apply
 ```
 
-- `--apply`는 스위치 ON **그리고** `--confirm wd-buddy-invite-20261022`가 정확할 때만 동작합니다. 스위치가 꺼져 있으면 Notion을 읽기 전에 `refused: WATCHDIVE_REFERRAL_PROGRAM_ENABLED is not 1`(종료 2)로 끝납니다.
-- 그 밖에 `--help`, `--dry-run`(기본과 같음), `--rate <초당, 1~10, 기본 2>`, `--receipt-dir <dir>`(기본 `.referral-announce-receipts`)가 있습니다. `--released-at`이 없거나 시각이 아니면 종료 1이며 발송하지 않습니다.
-- 멱등 키 `wd-buddy-invite-20261022-announce-<leadId 또는 pageId>`. 영수증(`<receipt-dir>/…announce.jsonl`)에는 주소 없이 해시만 남고 fsync 됩니다.
-- 이미 수락된 사람은 건너뜁니다. 실패(제공자 거절)는 다음 실행에서 재시도, 결과 불명(intent만 있음)은 `heldUnresolved`로 보류되고 재발송하지 않습니다. 보류 건은 Resend 대시보드에서 확인한 뒤 판단합니다.
-- 발송은 순차·속도제한(기본 초당 2통)이며 영수증 잠금으로 동시 실행을 막습니다.
+- dry-run도 서버 마스터 스위치 ON 및 정확한 `--confirm`이 필요합니다. OFF는 404이며 Notion을 읽지 않습니다. `--released-at`은 고정 ISO 시각, `--limit`은 1~200(기본 20)입니다. `--rate`/`--receipt-dir`는 폐기되었습니다.
+- Notion `Referral announce`에 발송 전 `intent <ISO> <keyhash>`, 제공자 접수 후 `sent <ISO> <keyhash>`를 기록합니다. 어떤 표시라도 있으면 같은 받은편지함의 모든 행을 제외합니다. `sent`는 `alreadySent`, 나머지는 `heldUnresolved`입니다. 실패도 intent를 지우거나 재발송하지 않습니다.
+- `--only`는 공개 시각 조건만 무시하고 인증·수신거부·광고 규칙은 그대로 적용합니다. 별도 selftest 멱등 키를 사용하고 행에 기록하지 않으므로, 제공자 멱등 보관 기간 이후 반복하면 다시 발송될 수 있습니다. 오너 테스트 완료 후 반복하지 않습니다.
+- 응답과 CLI 출력은 건수만 포함하며 주소·링크·메일 샘플을 출력하지 않습니다. `sent`는 제공자 접수 건수이며 받은편지함 도착 증거가 아닙니다. sent 기록 실패 시 접수 건수와 held가 함께 증가할 수 있습니다.
+- 순차 발송(500ms 간격), 35초 작업 예산/45초 외부 요청 중단 신호, 최대 200건입니다. 시간 부족 건은 `deferred`이며 다음 배치에서 처리합니다. 전체 조회(최대 200페이지)가 완료되지 않으면 발송하지 않습니다.
+- **Mac mini 단일 호출자만 운영**합니다. config 옆 `.referral-announce.lock`이 중첩 실행을 막습니다. Notion PATCH는 원자적 CAS가 아니므로 다른 호스트/직접 API 호출을 병행하지 않습니다. HTTP 결과가 불명확하면 잠금을 유지합니다. 서버 실행 종료 및 Notion/Resend 영수증을 확인한 뒤에만 잠금을 수동 해제하며 intent는 지우지 않습니다.
 - 본문은 새 환영 안내 메일과 같은 렌더러(`buddyGuideBody`)입니다. 모든 Buddy 메일(환영 안내·알림·공지)은 `List-Unsubscribe`(https 원클릭 + mailto)와 `List-Unsubscribe-Post`를 달고, 수신거부 링크는 기존 `/unsubscribe/<token>`을 씁니다(POST 시 `Launch mail`에 `unsubscribed` 기록 → 출시·예약·Buddy 알림·공지 모두 중단).
 - ko 로케일 또는 가입 국가 KR: 제목 앞 `(광고) `, 하단에 `보내는 곳: DIVEROID LTD · help@diveroid.com · <전화> · <주소>`와 한/영 수신거부 문구(정보통신망법 제50조).
 
