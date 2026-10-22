@@ -74,7 +74,6 @@ import {
   markConversionMilestone,
   closeExperimentEnrollmentOnSubmit,
 } from "@/lib/conversionExperimentClient";
-import { conversionCopy } from "@/lib/conversionCopy";
 import { signupActionsVisible } from "@/lib/signupVisibility";
 import { trackClarity } from "@/lib/clarity";
 import {
@@ -87,7 +86,11 @@ import { landingHead } from "@/lib/i18n/seo";
 import { readLiteMediaHint, useLiteMedia } from "@/lib/liteMedia";
 import { spamFolderHintFor } from "@/lib/spamFolderHint";
 import { privacyPath, termsPath } from "@/lib/i18n/locale";
+import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
+import { applyPriceClaim, priceClaimFromLoaderData } from "@/lib/i18n/price-claim";
+import { loadReferralPriceClaim } from "@/lib/i18n/price-claim-loader";
 import {
+  useConversionCopy,
   useCurrentLocale,
   useFrozenLandingMessages,
   useLocalizedBetaReviewBodies,
@@ -166,11 +169,19 @@ export const Route = createFileRoute("/")({
   // The list figure is part of the server render, so it does not change a
   // second after load (see WaitlistProgress). `liteMedia` is the Save-Data
   // hint, read once here so the server render and hydration agree on it.
-  loader: async () => ({
-    waitlistCount: await loadWaitlistCount(),
-    liteMedia: readLiteMediaHint(),
-  }),
-  head: () => landingHead("en"),
+  // `priceClaim` is present only while Buddy Invite is on (price-claim.ts).
+  loader: async () => {
+    const [waitlistCount, claim] = await Promise.all([
+      loadWaitlistCount(),
+      loadReferralPriceClaim("en"),
+    ]);
+    return { waitlistCount, liteMedia: readLiteMediaHint(), ...claim };
+  },
+  head: ({ loaderData }) => {
+    const claim = priceClaimFromLoaderData(loaderData);
+    if (!claim) return landingHead("en");
+    return landingHead("en", applyPriceClaim(EN_FROZEN_LANDING_MESSAGES, claim));
+  },
   component: DesignFrozenLanding,
 });
 
@@ -438,7 +449,7 @@ function LazyVideo({
  */
 function StickyLaunchBanner() {
   const m = useFrozenLandingMessages();
-  const copy = conversionCopy[useCurrentLocale()];
+  const copy = useConversionCopy(useCurrentLocale());
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
@@ -907,7 +918,7 @@ type FormPlacement = "hero" | "offer";
 function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePhone?: boolean }) {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
-  const copy = conversionCopy[locale];
+  const copy = useConversionCopy(locale);
   const socialCompleted = useSocialSignupCompleted();
   const [pending, setPending] = useState<string | null>(null);
   const [alreadyVerified, setAlreadyVerified] = useState(false);
@@ -1511,7 +1522,7 @@ const HOLD_EARLY_SUBMIT_JS = `document.addEventListener("submit",function(e){var
 function Hero() {
   const m = useFrozenLandingMessages();
   const locale = useCurrentLocale();
-  const copy = conversionCopy[locale];
+  const copy = useConversionCopy(locale);
   const [before, highlight, after] = splitHighlightedCopy(m.hero.h1, m.hero.h1Highlight);
   return (
     <header className="wd-hero-new text-white">

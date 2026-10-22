@@ -34,6 +34,7 @@ import {
   type LaunchWave,
 } from "./audience.ts";
 import type { LaunchSchema, LaunchStore } from "./notionLaunchStore.ts";
+import { referralProgramEnabled } from "../referral/program.ts";
 import { renderLaunchMail, type RenderedLaunchMail } from "./render.ts";
 import { createUnsubscribeToken, unsubscribeUrl } from "./unsubscribeToken.ts";
 
@@ -76,7 +77,7 @@ export type LaunchDependencies = {
   store: LaunchStore;
   /** Only ever called in send mode. */
   send: (message: LaunchMessage) => Promise<void>;
-  env?: TokenEnvironment;
+  env?: TokenEnvironment & { WATCHDIVE_REFERRAL_PROGRAM_ENABLED?: string };
   now?: () => Date;
   sleep?: (ms: number) => Promise<void>;
   /** Dry run only: receives one rendered sample per language. */
@@ -328,6 +329,7 @@ export async function runLaunchMail(
     result.byLocale[locale] = (result.byLocale[locale] ?? 0) + 1;
   }
 
+  const referralProgram = referralProgramEnabled(env);
   const unsubscribeFor = (leadId: string, locale: Locale) =>
     unsubscribeUrl(publicOrigin, createUnsubscribeToken(leadId, locale, secret));
   const render = (locale: Locale, unsubscribe: string) =>
@@ -338,6 +340,9 @@ export async function runLaunchMail(
       launchAt,
       unsubscribeUrl: unsubscribe,
       ...(postalAddress ? { postalAddress } : {}),
+      // Same switch as the site. Read once per run, so every recipient of a
+      // wave gets the same payload and a re-run reuses its idempotency keys.
+      ...(referralProgram ? { referralProgram } : {}),
     });
 
   // --- dry run: render, never send, never write ----------------------------

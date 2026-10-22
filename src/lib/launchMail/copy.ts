@@ -582,3 +582,83 @@ export const LAUNCH_COPY = {
     },
   },
 } as const satisfies Record<Locale, LaunchCopy>;
+
+/**
+ * The price lines while Buddy Invite is switched on
+ * (WATCHDIVE_REFERRAL_PROGRAM_ENABLED=1 in the sender's env).
+ *
+ * Dive Team members keep the early-bird price through a private Kickstarter
+ * link after the first 100 are gone, and a paid price reservation already
+ * keeps it too, so "only for the first 100" would be false (claims review
+ * BLOCKER 1, owner decision D1(a), 2026-10-22). Same facts as the switched-on
+ * landing (src/lib/i18n/referral-price-claim-copy.ts), in each language's
+ * mail voice and US$ format. `price` replaces every wave's price line;
+ * `preheader` replaces the two preheaders that state the limit (t-1h, t-0).
+ */
+export const LAUNCH_REFERRAL_PRICE: Record<Locale, { price: string; preheader: string }> = {
+  en: {
+    price:
+      "$149 early bird: the first 100 Kickstarter backers, plus waitlist members with a price reservation or Dive Team status. The public price is $299.",
+    preheader: "$149 early bird: the first 100 backers, price reservations and Dive Team.",
+  },
+  ko: {
+    price:
+      "얼리버드 US$149: Kickstarter 선착순 후원자 100명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원. 일반가는 US$299입니다.",
+    preheader: "얼리버드 US$149: 선착순 100명, 가격 예약·다이브 팀 회원.",
+  },
+  "zh-CN": {
+    price:
+      "早鸟价 US$149 适用于前 100 位支持者，以及有价格预约或潜水小队等级的名单成员；公开价格为 US$299。",
+    preheader: "早鸟价 US$149：前 100 位支持者，以及价格预约和潜水小队成员。",
+  },
+  "zh-TW": {
+    price:
+      "早鳥價 US$149 適用於前 100 位贊助者，以及有價格預約或潛水小隊等級的名單成員；公開售價為 US$299。",
+    preheader: "早鳥價 US$149：前 100 位贊助者，以及價格預約和潛水小隊成員。",
+  },
+  ja: {
+    price:
+      "早割US$149の対象は、先着100名のバッカーと、価格予約またはダイブチームの資格を持つリスト登録者です。一般価格はUS$299です。",
+    preheader: "早割US$149は先着100名と、価格予約・ダイブチームの方が対象。",
+  },
+  es: {
+    price:
+      "El early bird de 149 US$ es para los primeros 100 mecenas y para quienes estén en la lista con una reserva de precio o el nivel Equipo de buceo. El precio público es de 299 US$.",
+    preheader: "149 US$: los primeros 100 mecenas, reservas de precio y Equipo de buceo.",
+  },
+  fr: {
+    price:
+      "Le tarif early bird de 149 $ US est réservé aux 100 premiers contributeurs, ainsi qu’aux inscrits ayant une réservation de prix ou le statut Équipe de plongée. Le prix public est de 299 $ US.",
+    preheader:
+      "149 $ US : les 100 premiers contributeurs, les réservations de prix et l’Équipe de plongée.",
+  },
+  de: {
+    price:
+      "Der Early Bird für 149 US$ gilt für die ersten 100 Unterstützer sowie für alle auf der Warteliste mit Preisreservierung oder Tauchteam-Status. Der reguläre Preis liegt bei 299 US$.",
+    preheader: "149 US$: die ersten 100 Unterstützer, Preisreservierungen und das Tauchteam.",
+  },
+  "pt-BR": {
+    price:
+      "O early bird de US$ 149 vale para os 100 primeiros apoiadores e para quem está na lista com reserva de preço ou nível Equipe de mergulho. O preço público é US$ 299.",
+    preheader: "US$ 149: os 100 primeiros apoiadores, reservas de preço e Equipe de mergulho.",
+  },
+};
+
+/** Waves whose preheader states the first-100 limit. */
+export const LAUNCH_REFERRAL_PREHEADER_WAVES: readonly LaunchWave[] = ["t-1h", "t-0"];
+
+/** A wave's copy, with the Buddy Invite price lines while that program is on. */
+export function launchWaveCopy(
+  locale: Locale,
+  wave: LaunchWave,
+  referralProgram = false,
+): WaveCopy {
+  const copy: WaveCopy = LAUNCH_COPY[locale].waves[wave];
+  if (!referralProgram) return copy;
+  const claim = LAUNCH_REFERRAL_PRICE[locale];
+  return {
+    ...copy,
+    price: claim.price,
+    ...(LAUNCH_REFERRAL_PREHEADER_WAVES.includes(wave) ? { preheader: claim.preheader } : {}),
+  };
+}

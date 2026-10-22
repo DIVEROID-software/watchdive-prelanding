@@ -1,6 +1,7 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 
 import { localeFromPathSegment } from "@/lib/i18n/locale";
+import { loadReferralPriceClaimOnly } from "@/lib/i18n/price-claim-loader";
 import { VerifyPage } from "@/routes/verify";
 
 export const Route = createFileRoute("/$locale/verify")({
@@ -10,6 +11,8 @@ export const Route = createFileRoute("/$locale/verify")({
     if (locale === "en") throw redirect({ to: "/verify" });
     return { locale };
   },
+  // Only for the SMS card's terms line; no loader data while Buddy Invite is off.
+  loader: ({ params }) => loadReferralPriceClaimOnly(localeFromPathSegment(params.locale)),
   head: ({ match, params }) => {
     const locale = localeFromPathSegment(params.locale);
     if (!locale) return {};
