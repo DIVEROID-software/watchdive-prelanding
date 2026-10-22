@@ -610,13 +610,10 @@ const INK = "#1a1238";
 const BODY_INK = INK;
 const MUTED_INK = "#3d2683";
 const LINK_INK = "#3d2683";
-// Light text on a deep blue, never dark text on a mid-tone: forced dark modes
-// (Gmail apps, Outlook, Chrome's auto-dark) recolour dark text to light and
-// light backgrounds to dark, but leave a light-on-dark pair alone, so the
-// label stays >= 4.5:1 whether or not the client inverts (sky-blue with dark
-// text became white on sky-blue, ~2.6:1). The legacy welcome keeps its own.
-export const BUTTON_BG = "#3d2683";
-export const BUTTON_INK = "#ffffff";
+// Surface Blue marks actions and tier badges; yellow is reserved for the
+// event flag and share code. Explicit dark-mode rules preserve the ink pair.
+export const BUTTON_BG = "#36A9E1";
+export const BUTTON_INK = INK;
 
 /** Env var holding the sender phone the Korean sender block must show. */
 export const SENDER_PHONE_ENV = "WATCHDIVE_SENDER_PHONE";
@@ -740,7 +737,7 @@ function linkHtml(url: string, label?: string): string {
 function buttonHtml(url: string, label: string): string {
   return (
     '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:separate;">' +
-    `<tr><td class="mail-frame" align="center" bgcolor="${BUTTON_BG}" style="background-color:${BUTTON_BG};border:3px solid ${INK};mso-padding-alt:14px 28px;">` +
+    `<tr><td class="mail-accent mail-frame" align="center" bgcolor="${BUTTON_BG}" style="background-color:${BUTTON_BG};background-image:linear-gradient(${BUTTON_BG},${BUTTON_BG});border:3px solid ${INK};mso-padding-alt:14px 28px;">` +
     `<a href="${escapeHtml(url)}" rel="noreferrer noopener" style="display:inline-block;padding:14px 28px;` +
     `font-family:${FONT_STACK};font-size:16px;font-weight:700;line-height:20px;color:${BUTTON_INK};` +
     `text-decoration:none;">${escapeHtml(label)}</a></td></tr></table>`
@@ -807,13 +804,19 @@ function buddyDocument(input: {
     `<html lang="${escapeHtml(locale)}" dir="ltr">`,
     '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">',
     '<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">',
-    `<style>@media (prefers-color-scheme:dark){
+    `<style>
+    .mail-accent,.mail-highlight{color-scheme:only light;forced-color-adjust:none;}
+    .mail-accent,.mail-accent *,.mail-highlight,.mail-highlight *{-webkit-text-fill-color:${INK}!important;}
+    @media (prefers-color-scheme:dark){
       body,[bgcolor="${PAGE_BG}"]{background-color:#07131c!important;}
       [bgcolor="${CARD_BG}"],[bgcolor="${REWARD_BG}"]{background-color:${INK}!important;}
       [style*="color:${BODY_INK}"],[style*="color:${MUTED_INK}"]{color:#eef9ff!important;}
       a[style*="color:${LINK_INK}"]{color:#eef9ff!important;}
       .mail-frame{border-color:#eef9ff!important;}
+      .mail-accent-rule{border-color:${BUTTON_BG}!important;}
       .mail-shadow{background-color:#eef9ff!important;}
+      .mail-accent{background-color:${BUTTON_BG}!important;color:${INK}!important;}
+      .mail-accent [style*="color:"]{color:${INK}!important;-webkit-text-fill-color:${INK}!important;}
       .mail-highlight{background-color:${HIGHLIGHT_BG}!important;color:${INK}!important;}
       .mail-highlight [style*="color:"]{color:${INK}!important;-webkit-text-fill-color:${INK}!important;}
     }</style>`,
@@ -868,7 +871,7 @@ function brutalPanel(content: string, locale: Locale): string {
 }
 
 function sectionHeading(label: string): string {
-  return `<h2 style="margin:0 0 18px;font-size:22px;line-height:1.3;font-weight:700;color:${INK};">${escapeHtml(label)}</h2>`;
+  return `<h2 class="mail-accent-rule" style="margin:0 0 18px;padding-bottom:10px;border-bottom:3px solid ${BUTTON_BG};font-size:22px;line-height:1.3;font-weight:700;color:${INK};">${escapeHtml(label)}</h2>`;
 }
 
 /** Inline table ladder and compact mail-only conditions; no CSS layout dependency. */
@@ -884,9 +887,9 @@ function eventRewardBlock(locale: Locale, rulesUrl: string, notice?: {
     const reached = notice?.crossed.includes(step.id);
     const state = reached ? `✓ ${event.reached}` : notice && step.next ? `→ ${event.next}` : "";
     return `<tr><td style="padding:0 0 10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed;"><tr>
-<td class="mail-badge mail-highlight mail-frame" width="70" align="center" valign="middle" bgcolor="${HIGHLIGHT_BG}" style="width:70px;padding:14px 2px;background-color:${HIGHLIGHT_BG};border:3px solid ${INK};color:${INK};">
-<span style="font-size:${step.id === "top" ? "20" : "38"}px;line-height:1.1;font-weight:700;color:${INK};">${escapeHtml(step.badge)}</span>
-${step.id === "top" ? "" : `<br><span style="font-size:10px;line-height:1.3;color:${INK};">${escapeHtml(event.friends)}</span>`}</td>
+<td class="mail-badge mail-accent mail-frame" width="70" align="center" valign="middle" bgcolor="${BUTTON_BG}" style="width:70px;padding:14px 2px;background-color:${BUTTON_BG};background-image:linear-gradient(${BUTTON_BG},${BUTTON_BG});border:3px solid ${INK};color:${INK};">
+<span style="font-size:${step.id === "top" ? "20" : "38"}px;line-height:1.1;font-weight:700;color:${INK};white-space:nowrap;">${escapeHtml(step.badge)}${step.badgeUnit ? `<span style="font-size:22px;">${escapeHtml(step.badgeUnit)}</span>` : ""}</span>
+<br><span style="font-size:10px;line-height:1.3;color:${INK};overflow-wrap:anywhere;">${escapeHtml(step.badgeCaption)}</span></td>
 <td class="mail-frame" bgcolor="${REWARD_BG}" valign="middle" style="padding:12px 10px;background-color:${REWARD_BG};border:3px solid ${INK};color:${INK};">
 <span style="font-size:12px;line-height:1.5;color:${MUTED_INK};">${escapeHtml(step.name)}</span><br>
 <strong style="font-size:17px;line-height:1.35;color:${INK};">${escapeHtml(step.benefit)}</strong>
@@ -897,16 +900,16 @@ ${state ? `<br><span style="font-size:12px;line-height:1.7;color:${MUTED_INK};fo
   const values = { ...copyValues(locale), count: REFERRAL_TIERS.find((tier) => tier.id === "leader")!.minFriends };
   const conditions = copy.mail.conditions.map((line) => fill(line, values));
   const html = brutalPanel([
-    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px;border-collapse:collapse;"><tr><td class="mail-highlight mail-frame" bgcolor="${HIGHLIGHT_BG}" style="padding:5px 10px;background-color:${HIGHLIGHT_BG};border:3px solid ${INK};color:${INK};font-size:14px;line-height:1.5;font-weight:700;"><span style="color:${INK};">${escapeHtml(event.label)}</span></td></tr></table>`,
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px;border-collapse:collapse;"><tr><td class="mail-highlight mail-frame" bgcolor="${HIGHLIGHT_BG}" style="padding:5px 10px;background-color:${HIGHLIGHT_BG};background-image:linear-gradient(${HIGHLIGHT_BG},${HIGHLIGHT_BG});border:3px solid ${INK};color:${INK};font-size:14px;line-height:1.5;font-weight:700;"><span style="color:${INK};">${escapeHtml(event.label)}</span></td></tr></table>`,
     `<h2 style="margin:0 0 10px;font-size:26px;line-height:1.2;font-weight:700;color:${INK};">${escapeHtml(event.headline)}</h2>`,
     para(`margin:0 0 20px;font-size:14px;line-height:1.6;color:${BODY_INK};`, escapeHtml(event.subline), locale),
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${rows}</table>`,
-    `<h3 class="mail-frame" style="margin:16px 0 10px;padding-top:16px;border-top:3px solid ${INK};font-size:14px;line-height:1.5;font-weight:700;color:${INK};">${escapeHtml(event.conditionsTitle)}</h3>`,
+    `<h3 class="mail-accent-rule" style="margin:16px 0 10px;padding-top:16px;border-top:3px solid ${BUTTON_BG};font-size:14px;line-height:1.5;font-weight:700;color:${INK};">${escapeHtml(event.conditionsTitle)}</h3>`,
     ...conditions.map((line) => para(`margin:0 0 10px;font-size:12px;line-height:1.65;color:${BODY_INK};`, escapeHtml(line), locale)),
     linkHtml(rulesUrl, copy.mail.welcomeRules),
   ].join("\n"), locale);
   const text = [event.label, event.headline, event.subline,
-    ...steps.map((step) => `- ${step.badge} · ${step.name}: ${step.benefit}${step.qualifier ? ` (${step.qualifier})` : ""}${notice?.crossed.includes(step.id) ? ` — ${event.reached}` : notice && step.next ? ` — ${event.next}` : ""}`),
+    ...steps.map((step) => `- ${step.badge}${step.badgeUnit} ${step.badgeCaption} → ${step.name}: ${step.benefit}${step.qualifier ? ` (${step.qualifier})` : ""}${notice?.crossed.includes(step.id) ? ` — ${event.reached}` : notice && step.next ? ` — ${event.next}` : ""}`),
     "", event.conditionsTitle, ...conditions, copy.mail.welcomeRules, rulesUrl].join("\n");
   return { html, text };
 }
@@ -917,7 +920,7 @@ function validShareCode(code?: string): string {
 
 function shareCodeHtml(code: string, label: string, locale: Locale): string {
   if (!code) return "";
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 20px;table-layout:fixed;"><tr><td class="mail-highlight mail-frame" bgcolor="${HIGHLIGHT_BG}" style="border:3px solid ${INK};padding:16px 10px;background-color:${HIGHLIGHT_BG};">` +
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 20px;table-layout:fixed;"><tr><td class="mail-highlight mail-frame" bgcolor="${HIGHLIGHT_BG}" style="border:3px solid ${INK};padding:16px 10px;background-color:${HIGHLIGHT_BG};background-image:linear-gradient(${HIGHLIGHT_BG},${HIGHLIGHT_BG});">` +
     para(`font-size:13px;line-height:1.6;color:${INK};`, escapeHtml(label), locale) +
     `<p style="margin:6px 0 0;font-family:Consolas,Menlo,monospace;font-size:26px;line-height:1.3;font-weight:700;letter-spacing:1px;color:${INK};word-break:break-all;">${escapeHtml(code)}</p></td></tr></table>`;
 }

@@ -231,3 +231,22 @@ test("OFF hydration and the success card do not add Buddy Invite RPCs", () => {
   assert.match(successSource, /if \(programOn\) getReferralProgress\(/);
   assert.match(successSource, /\[refCode, programOn\]/);
 });
+
+test("TierList badges show invitation units and captions with Surface Blue and a single yellow event flag", async () => {
+  const { referralEvent } = await import("../src/lib/referral/event.ts");
+  const { TierList } = await load<TierListModule>("TierList.tsx");
+  for (const locale of SUPPORTED_LOCALES) {
+    const html = renderToStaticMarkup(createElement(TierList, { locale, credited: null }));
+    const event = referralEvent(locale);
+    for (const step of event.steps) {
+      const row = html.split(`data-tier="${step.id}"`)[1].split("</li>")[0];
+      assert.ok(row.includes(step.badgeCaption), locale);
+      assert.ok(row.includes("bg-[#36A9E1]"), locale);
+      assert.ok(row.includes("whitespace-nowrap"), locale);
+      if (step.badgeUnit) assert.ok(row.includes(`text-lg">${step.badgeUnit}</span>`), locale);
+    }
+    assert.equal((html.match(/bg-\[#ffe55c\]/g) ?? []).length, 1, locale);
+    assert.ok(html.includes(event.subline.replace(/'/g, "&#x27;")), locale);
+    assert.ok(html.includes(referralCopy(locale).countingNote.replace(/'/g, "&#x27;")), locale);
+  }
+});

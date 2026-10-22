@@ -68,3 +68,30 @@ test("guide and notice keep exactly five short conditions then a linked rules su
     }
   }
 });
+
+test("invitation badges and colour roles match the shared model in guide and notice", async () => {
+  const { buddyMailEvent } = await import("../src/lib/referral/mail-copy.ts");
+  for (const locale of SUPPORTED_LOCALES) {
+    const event = buddyMailEvent(locale);
+    const guide = buddyGuideBody(links, locale, footer, "REEF42");
+    const notice = referralNoticeBody({ locale, credited: 3, crossed: ["buddy"], nextTier: "team", remainingToNext: 2, statusUrl: links.statusUrl, shareUrl: links.shareUrl, shareCode: "REEF42" }, footer);
+    for (const rendered of [guide, notice]) {
+      const badges = [...rendered.html.matchAll(/<td class="mail-badge[\s\S]*?<\/td>/g)].map((m) => m[0]);
+      assert.ok(badges.length > 0, locale);
+      for (const badge of badges) {
+        assert.ok(badge.includes('bgcolor="#36A9E1"'), locale);
+        assert.doesNotMatch(badge, /#ffe55c/, locale);
+      }
+      // Exactly two yellow cells: the event flag and the public share code.
+      assert.equal((rendered.html.match(/bgcolor="#ffe55c"/g) ?? []).length, 2, locale);
+      assert.ok(rendered.html.includes('class="mail-accent mail-frame" align="center" bgcolor="#36A9E1"'), locale);
+      assert.ok(rendered.html.includes('.mail-accent [style*="color:"]{color:#1a1238!important;-webkit-text-fill-color:#1a1238!important;}'), locale);
+      assert.ok(rendered.text.includes(event.subline), locale);
+      assert.ok(rendered.text.includes(`${event.steps[1].badge}${event.steps[1].badgeUnit} ${event.steps[1].badgeCaption} →`), locale);
+    }
+    for (const step of event.steps) {
+      assert.ok(guide.html.includes(step.badgeCaption), locale);
+      assert.ok(guide.text.includes(`${step.badge}${step.badgeUnit} ${step.badgeCaption} →`), locale);
+    }
+  }
+});

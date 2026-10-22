@@ -32,7 +32,8 @@ export type ReferralCopy = {
     label: string;
     headline: string;
     subline: string;
-    friends: string;
+    // Western locales put the noun in the caption; their numeric unit is empty.
+    badges: { unit: string; one: string; other: string; top: string };
     reached: string;
     next: string;
     conditionsTitle: string;
@@ -161,7 +162,7 @@ const en: ReferralCopy = {
     label: "EVENT",
     headline: "Bring your buddies. Unlock rewards you won’t want to miss.",
     subline: "Start with {count}. Rewards grow with every friend who confirms their email.",
-    friends: "confirmed friends",
+    badges: { unit: "", one: "buddy invited", other: "buddies invited", top: "Invite ranking" },
     reached: "Reached",
     next: "Up next",
     conditionsTitle: "Good to know",
@@ -420,7 +421,7 @@ const ko: ReferralCopy = {
     label: "EVENT",
     headline: "친구와 함께 시작하는, 놓칠 수 없는 버디 초대 혜택",
     subline: "친구 {count}명부터, 이메일 인증을 마친 친구 수만큼 혜택이 커져요",
-    friends: "인증한 친구",
+    badges: { unit: "명", one: "초대하면", other: "초대하면", top: "초대 랭킹" },
     reached: "달성",
     next: "다음 혜택",
     conditionsTitle: "유의사항",
@@ -679,7 +680,7 @@ const zhCN: ReferralCopy = {
     label: "EVENT",
     headline: "邀上潜伴，解锁不容错过的好礼",
     subline: "从 {count} 位好友开始，完成邮箱验证的好友越多，奖励越丰富。",
-    friends: "已验证好友",
+    badges: { unit: "位", one: "邀请好友", other: "邀请好友", top: "邀请排名" },
     reached: "已达成",
     next: "下一档",
     conditionsTitle: "活动须知",
@@ -937,7 +938,7 @@ const zhTW: ReferralCopy = {
     label: "EVENT",
     headline: "揪潛伴一起來，解鎖不容錯過的好禮",
     subline: "從 {count} 位好友開始，完成電子郵件驗證的好友越多，獎勵越豐富。",
-    friends: "已驗證好友",
+    badges: { unit: "位", one: "邀請好友", other: "邀請好友", top: "邀請排名" },
     reached: "已達成",
     next: "下一階",
     conditionsTitle: "活動須知",
@@ -1194,7 +1195,7 @@ const ja: ReferralCopy = {
     label: "EVENT",
     headline: "バディを誘って、見逃せない特典を手に入れよう",
     subline: "友達 {count} 人からスタート。メール認証を済ませた友達が増えるほど、特典も充実。",
-    friends: "認証済みの友達",
+    badges: { unit: "人", one: "招待すると", other: "招待すると", top: "招待ランキング" },
     reached: "達成",
     next: "次の特典",
     conditionsTitle: "ご確認ください",
@@ -1455,7 +1456,7 @@ const es: ReferralCopy = {
     label: "EVENT",
     headline: "Invita a tus compañeros. Descubre recompensas que no querrás perderte.",
     subline: "Empieza con {count}. Las recompensas crecen con cada amigo que confirma su correo.",
-    friends: "amigos confirmados",
+    badges: { unit: "", one: "amigo invitado", other: "amigos invitados", top: "Ranking de invitaciones" },
     reached: "Alcanzado",
     next: "Siguiente paso",
     conditionsTitle: "Ten en cuenta",
@@ -1719,7 +1720,7 @@ const fr: ReferralCopy = {
     headline: "Invitez vos binômes. Des récompenses à ne pas manquer.",
     subline:
       "Commencez avec {count}. Chaque ami qui confirme son e-mail vous rapproche de nouvelles récompenses.",
-    friends: "amis confirmés",
+    badges: { unit: "", one: "ami invité", other: "amis invités", top: "Classement des invitations" },
     reached: "Palier atteint",
     next: "Prochain palier",
     conditionsTitle: "À savoir",
@@ -1983,7 +1984,7 @@ const de: ReferralCopy = {
     headline: "Hol deine Buddys dazu. Entdecke Vorteile, die du nicht verpassen willst.",
     subline:
       "Starte mit {count}. Mit jedem Freund, der seine E-Mail bestätigt, wachsen deine Vorteile.",
-    friends: "bestätigte Freunde",
+    badges: { unit: "", one: "Buddy eingeladen", other: "Buddys eingeladen", top: "Einladungsrang" },
     reached: "Erreicht",
     next: "Nächste Stufe",
     conditionsTitle: "Gut zu wissen",
@@ -2246,7 +2247,7 @@ const ptBR: ReferralCopy = {
     label: "EVENT",
     headline: "Chame seus parceiros de mergulho. Descubra recompensas imperdíveis.",
     subline: "Comece com {count}. A cada amigo que confirma o e-mail, suas recompensas aumentam.",
-    friends: "amigos confirmados",
+    badges: { unit: "", one: "amigo convidado", other: "amigos convidados", top: "Ranking de convites" },
     reached: "Conquistado",
     next: "Próxima etapa",
     conditionsTitle: "Bom saber",

@@ -303,8 +303,8 @@ test("notice: several crossed tiers each get a line; at the top the max line rep
     KO_FOOTER,
   );
   assert.equal(content.subject, "(광고) 내 링크로 버디가 참여했어요 (지금까지 10명)");
-  assert.ok(content.text.includes("5 · 다이브 팀: 얼리버드 $149 그대로 후원해요 — 달성"));
-  assert.ok(content.text.includes("10 · 다이브 리더: 수중 라이트를 드려요 · 선착순 30명 — 달성"));
+  assert.ok(content.text.includes("5명 초대하면 → 다이브 팀: 얼리버드 $149 그대로 후원해요 — 달성"));
+  assert.ok(content.text.includes("10명 초대하면 → 다이브 리더: 수중 라이트를 드려요 · 선착순 30명 — 달성"));
   assert.ok(content.text.includes("모든 단계를 달성했어요. 랭킹 Top 3에 계속 도전해 보세요."));
   assert.equal(content.text.includes("남았어요"), false);
 });
@@ -729,22 +729,13 @@ function contrast(a: string, b: string): number {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
-function invert(hex: string): string {
-  return `#${(0xffffff ^ parseInt(hex.slice(1), 16)).toString(16).padStart(6, "0")}`;
-}
-
-test("Buddy buttons keep >= 4.5:1 as authored, fully inverted, and under partial dark modes", () => {
-  // As authored (light mode).
-  assert.ok(contrast(BUTTON_INK, BUTTON_BG) >= 4.5, `${contrast(BUTTON_INK, BUTTON_BG)}`);
-  // Full inversion (both colours flipped).
-  assert.ok(contrast(invert(BUTTON_INK), invert(BUTTON_BG)) >= 4.5);
-  // Partial modes recolour only dark text and only light backgrounds. A light
-  // label on a dark fill is neither, so neither half moves: the pair as
-  // authored is what such a client shows. (The old sky-blue fill with dark
-  // text had its label lightened against an unchanged fill: ~2.6:1.)
-  assert.ok(luminance(BUTTON_INK) > 0.9, "the label is light, never recoloured as dark text");
-  assert.ok(luminance(BUTTON_BG) < 0.2, "the fill is dark, never recoloured as a light background");
-  assert.ok(contrast("#ffffff", "#0ea5e9") < 4.5, "the failure mode this replaces");
+test("Buddy buttons use Surface Blue with dark ink and explicit dark-mode protection", () => {
+  assert.equal(BUTTON_BG, "#36A9E1");
+  assert.equal(BUTTON_INK, "#1a1238");
+  assert.ok(contrast(BUTTON_INK, BUTTON_BG) >= 4.5);
+  const html = referralNoticeBody({ locale: "en", credited: 3, crossed: ["buddy"], nextTier: "team", remainingToNext: 2, statusUrl: "https://watchdive.example/buddy#fake" }, { korean: false, unsubscribeUrl: "https://watchdive.example/unsubscribe/fake" }).html;
+  assert.ok(html.includes(`.mail-accent{background-color:${BUTTON_BG}!important;color:${BUTTON_INK}!important;}`));
+  assert.ok(html.includes(`-webkit-text-fill-color:${BUTTON_INK}!important`));
 });
 
 test("the legacy welcome keeps its own button colours untouched", async () => {

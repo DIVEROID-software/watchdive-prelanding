@@ -82,3 +82,28 @@ test("branded event and footer text keep 4.5:1 in light, dark and full inversion
     assert.ok(contrast(invert(ink), invert(bg)) >= 4.5, `inverted ${ink}/${bg}`);
   }
 });
+
+
+test("badges express invitations with localized units, singulars and ranking captions", () => {
+  const expected = {
+    en: ["", "buddy invited", "buddies invited", "Invite ranking"],
+    ko: ["명", "초대하면", "초대하면", "초대 랭킹"],
+    "zh-CN": ["位", "邀请好友", "邀请好友", "邀请排名"],
+    "zh-TW": ["位", "邀請好友", "邀請好友", "邀請排名"],
+    ja: ["人", "招待すると", "招待すると", "招待ランキング"],
+    es: ["", "amigo invitado", "amigos invitados", "Ranking de invitaciones"],
+    fr: ["", "ami invité", "amis invités", "Classement des invitations"],
+    de: ["", "Buddy eingeladen", "Buddys eingeladen", "Einladungsrang"],
+    "pt-BR": ["", "amigo convidado", "amigos convidados", "Ranking de convites"],
+  };
+  for (const locale of SUPPORTED_LOCALES) {
+    const model = referralEvent(locale);
+    const [unit, one, other, top] = expected[locale];
+    assert.equal(model.steps[0].badgeUnit, unit, locale);
+    assert.equal(model.steps[0].badgeCaption, one, locale);
+    for (const step of model.steps.slice(1, -1)) assert.equal(step.badgeCaption, other, locale);
+    assert.equal(model.steps.at(-1)!.badgeCaption, top, locale);
+    assert.equal(model.steps.at(-1)!.badgeUnit, "", locale);
+    assert.ok(model.conditions.includes(referralCopy(locale).countingNote), locale);
+  }
+});
