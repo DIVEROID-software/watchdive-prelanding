@@ -874,6 +874,7 @@ export function buddyGuideBody(
   links: WelcomeLinks,
   locale: Locale,
   footer: AdFooter,
+  shareCode?: string,
 ): { subject: string; text: string; html: string } {
   const copy = referralCopy(locale);
   const values = copyValues(locale);
@@ -881,11 +882,24 @@ export function buddyGuideBody(
   const t = (template: string) => fill(template, values);
   const rewards = referralRewardLines(locale);
   const subject = adSubject(t(mail.welcomeSubject), footer);
+  // Absent or unreadable: the guide stays byte-identical to the 3-argument call.
+  // The welcome mail is sent at verification, before a code is assigned, so
+  // this line is usually absent until a caller has a code to pass.
+  const validCode = shareCode && /^[A-Z0-9]{4,12}$/.test(shareCode) ? shareCode : "";
   const content = [
     headingHtml(t(mail.welcomeHeading), locale),
     para(STYLE_BODY_P, escapeHtml(t(mail.welcomeIntro)), locale),
     buttonHtml(links.shareUrl, t(mail.welcomeButton)),
     labelledLinkHtml(t(mail.welcomeFallback), links.shareUrl, locale),
+    ...(validCode
+      ? [
+          para(
+            STYLE_BODY_P,
+            `${escapeHtml(t(mail.welcomeCode))} <strong>${escapeHtml(validCode)}</strong>`,
+            locale,
+          ),
+        ]
+      : []),
     subheadingHtml(t(mail.welcomeTiersHeading), locale),
     ...rewards.map((line) =>
       para(STYLE_TIER_P, `<strong style="color:${INK};">${escapeHtml(line.name)}</strong><br>${escapeHtml(line.reward)}`, locale),
@@ -902,6 +916,7 @@ export function buddyGuideBody(
       "",
       t(mail.welcomeIntro),
       links.shareUrl,
+      ...(validCode ? ["", `${t(mail.welcomeCode)} ${validCode}`] : []),
       "",
       t(mail.welcomeTiersHeading),
       ...rewards.map((line) => `- ${line.name}: ${line.reward}`),

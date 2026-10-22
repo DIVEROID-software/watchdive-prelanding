@@ -79,6 +79,30 @@ class FakeStore implements ReferralStore {
     this.findCalls += 1;
     return this.rows.find((r) => r.refCode === refCode);
   }
+  async findByShareCode(shareCode: string) {
+    this.findCalls += 1;
+    return this.rows
+      .filter((r) => r.shareCode === shareCode)
+      .sort((a, b) => (a.pageId < b.pageId ? -1 : 1))[0];
+  }
+  async writeShareCode(
+    pageId: string,
+    input: { code: string; custom: boolean; locked: boolean },
+  ) {
+    const target = this.rows.find((r) => r.pageId === pageId);
+    if (!target) return;
+    if (!input.code) {
+      delete target.shareCode;
+      delete target.shareCodeCustom;
+      delete target.shareCodeLocked;
+      return;
+    }
+    target.shareCode = input.code;
+    if (input.custom) target.shareCodeCustom = true;
+    else delete target.shareCodeCustom;
+    if (input.locked) target.shareCodeLocked = true;
+    else delete target.shareCodeLocked;
+  }
   async writeSettings(pageId: string, input: ReferralSettingsInput) {
     this.writes.push({ pageId, input });
     const target = this.rows.find((r) => r.pageId === pageId);
@@ -292,6 +316,9 @@ test("status: one Notion pass, own data only, allow-listed fields", async () => 
     "noticesOff",
     "rank",
     "remainingToNext",
+    "shareCode",
+    "shareCodeCustom",
+    "shareCodeLocked",
     "shareUrl",
   ]);
   assertNoPrivateData(response, "owner001");
@@ -303,9 +330,10 @@ test("status: a scripted valid link cannot force a full Notion scan per request"
     const r = await getReferralStatusService(tokenFor("owner001"), "en", deps);
     assert.equal(r.status, "ok");
   }
-  // Every read is served by the one shared pass (the same one the board uses).
+  // The first read assigns a share code (two filtered lookups). Later reads
+  // use the code already on the cached row, so the scan count stays at one.
   assert.equal(store.listCalls, 1);
-  assert.equal(store.findCalls, 0);
+  assert.equal(store.findCalls, 2);
 });
 
 test("status: a link whose row is gone costs one small lookup, never another scan", async () => {
@@ -325,8 +353,10 @@ test("status: a row newer than the cached pass is found by refreshing once", asy
   store.rows.push(row({ refCode: "newbie01" }));
   const r = await getReferralStatusService(tokenFor("newbie01"), "en", deps);
   assert.equal(r.status, "ok");
+  // owner001's assign is two lookups, the existence check is one, and the
+  // refreshed newbie row assigns with two more.
   assert.equal(store.listCalls, 2);
-  assert.equal(store.findCalls, 1);
+  assert.equal(store.findCalls, 5);
 });
 
 test("closed is derived from referralClosesAt at the server clock", async () => {
@@ -621,7 +651,13 @@ test("server fns and routes check the switch before building Notion deps", () =>
     new URL("../src/lib/api/referral.functions.ts", import.meta.url),
     "utf8",
   );
-  for (const name of ["getReferralStatus", "updateReferralSettings", "getReferralProgress"]) {
+  for (const name of [
+    "getReferralStatus",
+    "updateReferralSettings",
+    "getReferralProgress",
+    "getMyShareCode",
+    "claimShareCode",
+  ]) {
     const start = fns.indexOf(`export const ${name} =`);
     const body = fns.slice(
       start,

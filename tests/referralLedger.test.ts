@@ -464,6 +464,9 @@ test("statusFor reports tiers, rank and early notice for the owner", () => {
     noticesOff: false,
     shareUrl: "https://x.test/r/c0000001",
     closed: false,
+    shareCode: null,
+    shareCodeCustom: false,
+    shareCodeLocked: false,
   });
   const none = statusFor(lonely, ledger, { shareUrl: "s", closed: true });
   assert.equal(none.credited, 0);

@@ -2,12 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useId, useState } from "react";
 
 import { TierList } from "@/components/referral/TierList";
-import { getReferralStatus, updateReferralSettings } from "@/lib/api/referral.functions";
+import { claimShareCode, getReferralStatus, updateReferralSettings } from "@/lib/api/referral.functions";
 import { formatNumber, homePath, privacyPath, termsPath, type Locale } from "@/lib/i18n/locale";
 import { useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 import type { ReferralStatus } from "@/lib/referral/contract";
 import { fill, referralCopy } from "@/lib/referral/copy";
-import { NICKNAME_MAX, NICKNAME_MIN, REFERRAL_TIERS } from "@/lib/referral/program";
+import { NICKNAME_MAX, NICKNAME_MIN, REFERRAL_TIERS, SHARE_CODE_MAX, SHARE_CODE_MIN } from "@/lib/referral/program";
 import { referralShareCopy } from "@/lib/referral/shareCopy";
 import { copyValues } from "@/lib/referral/values";
 
@@ -67,6 +67,7 @@ type Load =
   | { state: "error" };
 
 type ErrorKey = keyof ReturnType<typeof referralCopy>["status"]["errors"];
+type CodeErrorKey = keyof ReturnType<typeof referralCopy>["shareCode"]["errors"];
 
 type Save =
   | { state: "idle" }
@@ -77,6 +78,17 @@ type Save =
 // Mirrors the server's first two checks (trim, collapse whitespace, count code
 // points) so the common mistake is caught while typing. The server's
 // checkNickname stays authoritative for everything else.
+/** Length and alphabet only. Profanity and reserved words stay on the server. */
+function localCodeError(raw: string): CodeErrorKey | null {
+  const value = raw.normalize("NFKC").trim().toUpperCase();
+  if (!value) return null;
+  if (!/^[A-Z0-9]*$/.test(value)) return "invalid_chars";
+  const length = [...value].length;
+  if (length < SHARE_CODE_MIN) return "too_short";
+  if (length > SHARE_CODE_MAX) return "too_long";
+  return null;
+}
+
 function localNicknameError(raw: string): ErrorKey | null {
   const value = raw.trim().replace(/\s+/g, " ");
   if (!value) return null;
@@ -241,10 +253,52 @@ function StatusCard({
   const [noticesOff, setNoticesOff] = useState(status.noticesOff);
   const [save, setSave] = useState<Save>({ state: "idle" });
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [claimValue, setClaimValue] = useState("");
+  const [claim, setClaim] = useState<
+    { state: "idle" } | { state: "saving" } | { state: "saved" } | { state: "error"; reason: CodeErrorKey }
+  >({ state: "idle" });
+  const [codeOverride, setCodeOverride] = useState<{ code: string; custom: boolean } | null>(null);
+  const shownCode = codeOverride?.code ?? status.shareCode;
+  const codeCustom = codeOverride ? codeOverride.custom : status.shareCodeCustom;
+  const codeLocked = status.shareCodeLocked;
+  const codeCopy = referralCopy(locale).shareCode;
+  const codeError = claim.state === "error" ? claim.reason : localCodeError(claimValue);
 
   const localError = localNicknameError(nickname);
   const shownError = save.state === "error" ? save.reason : localError;
   const hiddenStill = status.nicknameHidden && nickname.trim() === (status.nickname ?? "").trim();
+
+  async function copyCode() {
+    if (!shownCode) return;
+    try {
+      await navigator.clipboard.writeText(shownCode);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable — the code stays on screen */
+    }
+  }
+
+  async function submitClaim(event: React.FormEvent) {
+    event.preventDefault();
+    if (!token || codeError || claim.state === "saving") return;
+    setClaim({ state: "saving" });
+    try {
+      const response = await claimShareCode({ data: { token, code: claimValue } });
+      if (response.status === "ok") {
+        setCodeOverride({ code: response.code, custom: response.custom });
+        setClaimValue("");
+        setClaim({ state: "saved" });
+      } else if (response.status === "rejected") {
+        setClaim({ state: "error", reason: response.reason });
+      } else {
+        setClaim({ state: "error", reason: "failed" });
+      }
+    } catch {
+      setClaim({ state: "error", reason: "failed" });
+    }
+  }
 
   async function share() {
     try {
@@ -350,6 +404,70 @@ function StatusCard({
           <span className="sr-only" aria-live="polite">
             {copied ? landing.copied : ""}
           </span>
+          {shownCode && (
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <p className="flex h-11 min-h-11 min-w-0 flex-1 items-center rounded-lg bg-white/10 px-3 text-body font-semibold uppercase tracking-wide">
+                <span className="truncate">
+                  {codeCopy.mine} {shownCode}
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={copyCode}
+                className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-body font-semibold text-[#F6FAFC] hover:brightness-110"
+              >
+                {codeCopied ? codeCopy.copied : codeCopy.copy}
+              </button>
+            </div>
+          )}
+          {(codeLocked || codeCustom) && (
+            <p className="mt-2 text-caption leading-relaxed text-white/70">
+              {codeLocked ? codeCopy.lockedNote : codeCopy.onceNote}
+            </p>
+          )}
+          {!codeLocked && !codeCustom && (
+            <details className="group mt-3">
+              <summary className="block cursor-pointer list-none text-body font-semibold text-white/85 [&::-webkit-details-marker]:hidden">
+                <span className="flex min-h-11 items-center">{codeCopy.claimSummary}</span>
+              </summary>
+              <form onSubmit={submitClaim} noValidate className="mt-1">
+                <label className="block">
+                  <span className="sr-only">{codeCopy.signupPlaceholder}</span>
+                  <input
+                    value={claimValue}
+                    maxLength={64}
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder={codeCopy.claimPlaceholder}
+                    aria-invalid={codeError ? true : undefined}
+                    onChange={(event) => {
+                      setClaimValue(event.target.value);
+                      if (claim.state !== "saving") setClaim({ state: "idle" });
+                    }}
+                    className="h-11 w-full rounded-lg bg-white/95 px-3 text-body uppercase tracking-wide text-[color:var(--color-deep-2)] outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-cyan-glow)]"
+                  />
+                </label>
+                <p className="mt-1.5 text-caption text-white/60">{fill(codeCopy.claimHelp, values)}</p>
+                {codeError && (
+                  <p role="alert" className="mt-1.5 text-caption text-red-200">
+                    {fill(codeCopy.errors[codeError], values)}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={claim.state === "saving" || Boolean(localCodeError(claimValue)) || !claimValue.trim()}
+                  className="mt-2 inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-body font-semibold text-[#F6FAFC] hover:brightness-110 disabled:opacity-60"
+                >
+                  {claim.state === "saving"
+                    ? codeCopy.claimSaving
+                    : claim.state === "saved"
+                      ? codeCopy.claimSaved
+                      : codeCopy.claimButton}
+                </button>
+              </form>
+            </details>
+          )}
         </div>
       </Card>
 

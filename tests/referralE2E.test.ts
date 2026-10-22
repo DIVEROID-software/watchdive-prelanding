@@ -812,21 +812,25 @@ async function runStory(on: boolean) {
     publicOut.push(status);
     assert.equal(status.status, "ok");
     assert.ok(status.status === "ok");
-    assert.deepEqual(status.referral, {
-      credited: 12,
-      highestTier: "leader",
-      nextTier: null,
-      remainingToNext: null,
-      earlyNoticeHours: 2,
-      lightEligible: true,
-      rank: 1,
-      nickname: null,
-      leaderboard: false,
-      nicknameHidden: false,
-      noticesOff: false,
-      shareUrl: `${ORIGIN}/r/${A_CODE}`,
-      closed: false,
-    });
+    assert.equal(status.referral.credited, 12);
+    assert.equal(status.referral.highestTier, "leader");
+    assert.equal(status.referral.nextTier, null);
+    assert.equal(status.referral.remainingToNext, null);
+    assert.equal(status.referral.earlyNoticeHours, 2);
+    assert.equal(status.referral.lightEligible, true);
+    assert.equal(status.referral.rank, 1);
+    assert.equal(status.referral.nickname, null);
+    assert.equal(status.referral.leaderboard, false);
+    assert.equal(status.referral.nicknameHidden, false);
+    assert.equal(status.referral.noticesOff, false);
+    assert.equal(status.referral.shareUrl, `${ORIGIN}/r/${A_CODE}`);
+    assert.equal(status.referral.closed, false);
+    assert.match(
+      status.referral.shareCode ?? "",
+      /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/,
+    );
+    assert.equal(status.referral.shareCodeCustom, false);
+    assert.equal(status.referral.shareCodeLocked, false);
     const bStatus = await getReferralStatusService(bToken, "en", deps);
     publicOut.push(bStatus);
     assert.ok(bStatus.status === "ok");

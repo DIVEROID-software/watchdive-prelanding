@@ -8,10 +8,12 @@ import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { referralProgramEnabled } from "@/lib/referral/program";
 import { createProgramStateReader } from "@/lib/referral/programState";
 import type {
+  MyShareCodeResponse,
   ReferralProgressResponse,
   ReferralServiceDeps,
   ReferralSettingsResponse,
   ReferralStatusResponse,
+  ShareCodeClaimResponse,
 } from "@/lib/referral/service.server";
 
 // Buddy Invite server functions. The service and every module that touches
@@ -155,6 +157,33 @@ export const getReferralProgress = createServerFn({ method: "POST" })
       );
     } catch (error) {
       throw await failSafely("referral-progress", error);
+    }
+  });
+
+// The verified card asks for its code here, not on the progress read, so a
+// progress response stays `{ enabled, credited }`.
+export const getMyShareCode = createServerFn({ method: "POST" })
+  .validator(z.object({ refCode: z.string().max(40) }))
+  .handler(async ({ data }): Promise<MyShareCodeResponse> => {
+    if (!referralProgramEnabled(process.env)) return { enabled: false };
+    try {
+      const { getMyShareCodeService } = await import("@/lib/referral/service.server");
+      return await getMyShareCodeService(sanitizeRef(data.refCode), await referralServiceDeps());
+    } catch {
+      // A missing column or a Notion outage leaves the card up, without a code.
+      return { enabled: true, code: null };
+    }
+  });
+
+export const claimShareCode = createServerFn({ method: "POST" })
+  .validator(z.object({ token: tokenSchema, code: z.string().max(80) }))
+  .handler(async ({ data }): Promise<ShareCodeClaimResponse> => {
+    if (!referralProgramEnabled(process.env)) return { status: "disabled" };
+    try {
+      const { claimShareCodeService } = await import("@/lib/referral/service.server");
+      return await claimShareCodeService(data.token, data.code, await referralServiceDeps());
+    } catch (error) {
+      throw await failSafely("referral-share-code", error);
     }
   });
 

@@ -264,6 +264,13 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       // invent Source values and pollute the CRM's select options.
       source: z.enum(["hero", "offer"]),
       referredBy: z.string().max(40).optional(),
+      // A typed Buddy Invite code. A long paste is cut, never rejected: an
+      // unreadable code must not block the signup. Ignored while the program
+      // is off, so that payload matches a client that never sent the field.
+      shareCode: z.preprocess(
+        (value) => (typeof value === "string" ? value.slice(0, 64) : undefined),
+        z.string().optional(),
+      ),
       // Honeypot: a hidden field real users never see. Anything here = a bot.
       honeypot: z.string().max(200).optional(),
       // The browser's measurement choice, captured now and carried signed
@@ -354,6 +361,44 @@ export const joinWaitlist = createServerFn({ method: "POST" })
         ? `fb.1.${attribution.capturedAt}.${attribution.fbclid}`
         : "");
 
+    // The link wins. A typed code is resolved only while Buddy Invite is on
+    // and this request has no link. Unknown, invalid and rate-limited codes
+    // leave Referred by empty and set a non-blocking note. The raw code is
+    // never stored.
+    const linkRef = sanitizeRef(data.referredBy) || undefined;
+    let referredBy = linkRef;
+    let shareCodeNote: "ignored" | undefined;
+    let shareLock: { pageId: string; code: string; custom: boolean } | null = null;
+    if (
+      referralProgramEnabled(process.env) &&
+      !linkRef &&
+      typeof data.shareCode === "string" &&
+      data.shareCode.trim()
+    ) {
+      try {
+        const [{ resolveShareCodeForSignup }, { signupShareLimiter }, { referralServiceDeps }] =
+          await Promise.all([
+            import("@/lib/referral/service.server"),
+            import("@/lib/referral/shareLink.server"),
+            import("@/lib/api/referral.functions"),
+          ]);
+        const resolved = await resolveShareCodeForSignup(
+          data.shareCode,
+          await referralServiceDeps(),
+          signupShareLimiter(),
+          ip || "unknown",
+        );
+        if (resolved && resolved !== "limited") {
+          referredBy = resolved.refCode;
+          shareLock = { pageId: resolved.pageId, code: resolved.code, custom: resolved.custom };
+        } else {
+          shareCodeNote = "ignored";
+        }
+      } catch {
+        shareCodeNote = "ignored";
+      }
+    }
+
     let result;
     try {
       result = await requestVerificationService(
@@ -362,7 +407,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           canonical,
           ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
           source: data.source,
-          ...(sanitizeRef(data.referredBy) ? { referredBy: sanitizeRef(data.referredBy) } : {}),
+          ...(referredBy ? { referredBy } : {}),
           attribution: {
             ...toLeadAttribution(attribution),
             // Only when the CRM has a column for it (NOTION_FBCLID_PROPERTY).
@@ -420,7 +465,31 @@ export const joinWaitlist = createServerFn({ method: "POST" })
       throw sanitizeServerError("verification-request", error);
     }
 
-    return result;
+    // Freeze the code only after a clean new pending signup that stored the
+    // owner's ref. A resend of an address that was already pending also
+    // returns "pending" and can lock even when Referred by was not rewritten;
+    // the verification service does not say whether it wrote the cell.
+    // Suspect and blocked signups do not lock. A failure here does not fail
+    // the signup.
+    if (
+      shareLock &&
+      result.status === "pending" &&
+      flags.length === 0 &&
+      !verdict.blocked
+    ) {
+      try {
+        const [{ lockShareCodeAfterCredit }, { referralServiceDeps }] = await Promise.all([
+          import("@/lib/referral/service.server"),
+          import("@/lib/api/referral.functions"),
+        ]);
+        await lockShareCodeAfterCredit(shareLock, await referralServiceDeps());
+      } catch {
+        // The person is already on the list. A later signup through the code
+        // tries the lock again.
+      }
+    }
+
+    return shareCodeNote ? { ...result, shareCodeNote } : result;
   });
 
 // The confirmation POST. The token reaches the server only here — it travelled

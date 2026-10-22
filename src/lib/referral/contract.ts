@@ -39,6 +39,15 @@ export const REFERRAL_COLUMNS = {
    * order; never overwritten once set (see notices.ts).
    */
   leaderReachedAt: "Referral leader reached at",
+  /**
+   * New rich_text: the memorable code (A–Z0–9, 4–12). Stored uppercase.
+   * Notion annotations on that cell carry the two flags a second column would
+   * otherwise need: `code` means the person claimed it (once), `italic` means
+   * a signup was attributed through it and it no longer changes. Ops reset is
+   * clearing the cell. Italic is the lock only because Notion has no second
+   * flag on rich text; toggling italic in the Notion UI changes the lock.
+   */
+  shareCode: "Referral share code",
 } as const;
 
 /** One waitlist row, reduced to what the referral program may read. */
@@ -78,6 +87,16 @@ export type ReferralRow = {
   launchMail?: string;
   reservationMail?: string;
   email: string;
+  /**
+   * Memorable share code, uppercase. Absent when the column is empty or the
+   * cell is not a 4–12 character A–Z0–9 code. See REFERRAL_COLUMNS.shareCode
+   * for what the rich-text annotations mean.
+   */
+  shareCode?: string;
+  /** True when the person claimed this code (annotation `code`). */
+  shareCodeCustom?: boolean;
+  /** True when a signup was attributed through this code (annotation `italic`). */
+  shareCodeLocked?: boolean;
 };
 
 export type ExclusionReason =
@@ -148,6 +167,12 @@ export type ReferralStatus = {
   noticesOff: boolean;
   shareUrl: string;
   closed: boolean;
+  /** The owner's memorable code, or null when they do not have one yet. */
+  shareCode: string | null;
+  /** True when the person chose this code themselves. */
+  shareCodeCustom: boolean;
+  /** True when a friend has signed up through this code, so it no longer changes. */
+  shareCodeLocked: boolean;
 };
 
 export type ReferralSettingsInput = {
@@ -166,11 +191,29 @@ export type NicknameCheck =
   | { ok: true; value: string }
   | { ok: false; reason: "too_short" | "too_long" | "contact_info" | "link" | "reserved" | "invalid_chars" };
 
+/**
+ * One share-code cell. An empty `code` clears it (and both flags). `custom`
+ * and `locked` are written as the rich-text annotations `code` and `italic`.
+ */
+export type ShareCodeWrite = {
+  code: string;
+  custom: boolean;
+  locked: boolean;
+};
+
 /** Read/write access the program needs. Implemented over the Notion API. */
 export interface ReferralStore {
   /** Every row that has a Ref code or a Referred by value (paged fully). */
   listProgramRows(): Promise<ReferralRow[]>;
   findByRefCode(refCode: string): Promise<ReferralRow | undefined>;
+  /**
+   * The row that owns this memorable code (uppercase, case-insensitive).
+   * On a collision the lowest page id wins, the same rule as ref codes.
+   * The caller's response must not include the row's email or nickname.
+   */
+  findByShareCode(shareCode: string): Promise<ReferralRow | undefined>;
+  /** Patches only the share-code column. */
+  writeShareCode(pageId: string, input: ShareCodeWrite): Promise<void>;
   writeSettings(pageId: string, input: ReferralSettingsInput): Promise<void>;
   /**
    * Claims the notice count before sending. `leaderReachedAt` is passed only on the

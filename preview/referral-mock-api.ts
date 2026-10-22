@@ -78,6 +78,18 @@ export async function getReferralProgress(_input: unknown) {
   return ON ? { enabled: true as const, credited: qaCredited() } : { enabled: false as const };
 }
 
+export async function getMyShareCode(_input: unknown) {
+  return ON ? { enabled: true as const, code: "REEF42" } : { enabled: false as const };
+}
+
+export async function claimShareCode(input: { data: { code: string } }) {
+  const code = input.data.code.normalize("NFKC").trim().toUpperCase();
+  if (!/^[A-Z0-9]{4,12}$/.test(code)) {
+    return { status: "rejected" as const, reason: "invalid_chars" as const };
+  }
+  return { status: "ok" as const, code, custom: true as const };
+}
+
 function statusFor(credited: number, extra: Partial<ReferralStatus> = {}): ReferralStatus {
   const tiers = [
     ["first", 1],
@@ -102,6 +114,9 @@ function statusFor(credited: number, extra: Partial<ReferralStatus> = {}): Refer
     noticesOff: false,
     shareUrl: SHARE,
     closed: false,
+    shareCode: "REEF42",
+    shareCodeCustom: false,
+    shareCodeLocked: false,
     ...extra,
   };
 }
