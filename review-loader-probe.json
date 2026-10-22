@@ -2,5 +2,6 @@
   "offResult": {},
   "newStateCallsWhileOff": 1,
   "unresolvedStateRequest": "still pending after 25ms",
-  "scope": "bundled actual loader with fake state transport; no network"
+  "scope": "bundled actual loader with fake state transport; no network",
+  "evidencePhase": "Historical pre-fix reproduction, retained for audit; see FINAL-REVIEW-GPT.md and final regression tests for corrected behavior"
 }

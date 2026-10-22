@@ -30,5 +30,6 @@
     "sendFailed": 0,
     "markFailed": 1
   },
-  "actualDeliveriesInFake": 2
+  "actualDeliveriesInFake": 2,
+  "evidencePhase": "Historical pre-fix reproduction, retained for audit; see FINAL-REVIEW-GPT.md and final regression tests for corrected behavior"
 }
