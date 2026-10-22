@@ -138,13 +138,14 @@ const en: ReferralCopy = {
   countingNote: "Only friends who confirm their email count.",
   card: {
     title: "Invite your dive buddies",
-    body: "Send your link. Rewards grow with every friend who confirms their email.",
+    body: "Share your link with divers you know. Rewards grow with every friend who confirms their email.",
     progress: "{count} joined · {remaining} more for {tier}",
     progressNone: "No friends yet · {remaining} more for {tier}",
     progressMax: "{count} joined · every tier reached. Go for the top {winners}.",
     statusLink: "See my invites",
     rulesLink: "Official rules",
-    invitedNote: "The person who invited you sees only how many friends joined, never who.",
+    invitedNote:
+      "You were invited by a friend. When you confirm your email, they get credit for one friend. They see only the number, never your email.",
   },
   leaderboard: {
     title: "Buddy Invite top {winners}",
@@ -192,7 +193,7 @@ const en: ReferralCopy = {
     welcomeSubject: "You’re on the WatchDive waitlist — invite your buddies",
     welcomeHeading: "You’re on the WatchDive waitlist",
     welcomeIntro:
-      "Your email is confirmed. Send your personal invite link to the divers you dive with. Rewards grow with every friend who confirms their email.",
+      "Your email is confirmed. Share your personal invite link with divers you know. Rewards grow with every friend who confirms their email.",
     welcomeTiersHeading: "Buddy Invite rewards",
     welcomeButton: "Share my invite link",
     welcomeFallback: "Or copy this link:",
@@ -251,14 +252,14 @@ const en: ReferralCopy = {
       {
         heading: "Fair play",
         paragraphs: [
-          "One entry per person. You may not sign up other people without their consent, pay or reward anyone for signing up, use referral-exchange sites, or post your link in replies or comments on WatchDive’s own ads.",
+          "One entry per person. Share your link only with people you know who would want to hear about WatchDive. You may not sign up other people without their consent, pay or reward anyone for signing up, send bulk or unsolicited messages, use referral-exchange sites, post your link where promotion is not allowed (including replies or comments on WatchDive’s own ads), or buy ads that use your link. Friends gained that way do not count. If you post your link in public, say that you receive a reward when people join.",
           "Each person and each household can receive at most one underwater light and one WatchDive prize; one person can win both. We check this at shipping by name, address and phone number.",
         ],
       },
       {
         heading: "Rewards",
         paragraphs: [
-          "1 friend: the Kickstarter launch email {hoursFirst} hour before the general list.",
+          "1 friend: the Kickstarter launch email {hoursFirst} hour before the general list. The general list is everyone on the waitlist who has not reached a Buddy Invite tier.",
           "3 friends (Buddy): the launch email {hoursBuddy} hours before the general list.",
           "5 friends (Dive Team): before the campaign goes live, we email you a private Kickstarter reward link at the {price} early-bird price. You can use it while the campaign is live, on the Kickstarter website (desktop or mobile browser, signed in), even after the early-bird spots for the first {seats} backers are gone. It does not work in the Kickstarter app, for late pledges or in the pledge manager. One pledge per Dive Team member; please do not share the link. Shipping and any taxes are charged as for other backers.",
           "10 friends (Dive Leader): one underwater light worth about {lightValue}. We have {stock}. They go to the first {stock} people to reach 10 friends, in the order they reach it. When they are gone, we will say so on this page.",
@@ -332,13 +333,14 @@ const ko: ReferralCopy = {
   countingNote: "이메일 인증을 마친 친구만 집계됩니다.",
   card: {
     title: "다이빙 버디를 초대하세요",
-    body: "내 링크를 보내 주세요. 이메일 인증을 마친 친구가 늘어날수록 혜택이 커집니다.",
+    body: "아는 다이버에게 내 링크를 공유해 주세요. 이메일 인증을 마친 친구가 늘어날수록 혜택이 커집니다.",
     progress: "{count}명 참여 · {tier}까지 {remaining}명 남았어요",
     progressNone: "아직 참여한 친구가 없어요 · {tier}까지 {remaining}명 남았어요",
     progressMax: "{count}명 참여 · 모든 단계를 달성했어요. 랭킹 Top {winners}에 도전해 보세요.",
     statusLink: "내 초대 현황 보기",
     rulesLink: "공식 규칙",
-    invitedNote: "초대한 분에게는 참여 인원수만 보이고, 누가 참여했는지는 보이지 않아요.",
+    invitedNote:
+      "친구의 초대로 오셨어요. 이메일을 인증하시면 초대한 분의 집계에 1명이 더해지며, 그분에게는 인원수만 보이고 이메일은 보이지 않습니다.",
   },
   leaderboard: {
     title: "버디 초대 랭킹 Top {winners}",
@@ -386,7 +388,7 @@ const ko: ReferralCopy = {
     welcomeSubject: "WatchDive 출시 알림 신청 완료 · 버디를 초대하세요",
     welcomeHeading: "WatchDive 출시 알림 신청이 완료되었습니다",
     welcomeIntro:
-      "이메일 인증이 완료되었습니다. 아래 내 초대 링크를 함께 다이빙하는 버디에게 보내 주세요. 이메일 인증을 마친 친구가 늘어날수록 혜택이 커집니다.",
+      "이메일 인증이 완료되었습니다. 아래 내 초대 링크를 아는 다이버에게 공유해 주세요. 이메일 인증을 마친 친구가 늘어날수록 혜택이 커집니다.",
     welcomeTiersHeading: "버디 초대 혜택",
     welcomeButton: "내 초대 링크 공유하기",
     welcomeFallback: "링크를 직접 복사하려면:",
@@ -445,14 +447,14 @@ const ko: ReferralCopy = {
       {
         heading: "공정한 참여",
         paragraphs: [
-          "1인 1회만 참여할 수 있습니다. 본인 동의 없이 다른 사람을 신청시키는 행위, 돈이나 보상을 주고 가입을 유도하는 행위, 추천 링크 교환 사이트 이용, WatchDive 광고의 댓글이나 답글에 링크를 올리는 행위는 허용되지 않습니다.",
+          "1인 1회만 참여할 수 있습니다. 내 링크는 WatchDive 소식을 반길 만한 지인에게만 공유해 주세요. 본인 동의 없이 다른 사람을 신청시키는 행위, 돈이나 보상을 주고 가입을 유도하는 행위, 대량·무단 메시지 발송, 추천 링크 교환 사이트 이용, 홍보가 금지된 곳에 게시하는 행위(WatchDive 광고의 댓글이나 답글 포함), 내 링크로 광고를 집행하는 행위는 허용되지 않으며, 이런 방식으로 늘어난 가입은 집계하지 않습니다. 공개된 곳에 링크를 올릴 때는 가입하면 내가 혜택을 받는다는 사실을 함께 밝혀 주세요.",
           "수중 라이트와 WatchDive 경품은 1인당, 1가구당 각각 1개까지 받을 수 있으며, 한 사람이 둘 다 받을 수도 있습니다. 발송 시 이름, 주소, 전화번호로 확인합니다.",
         ],
       },
       {
         heading: "혜택",
         paragraphs: [
-          "1명: Kickstarter 오픈 소식을 일반 명단보다 {hoursFirst}시간 먼저 이메일로 받습니다.",
+          "1명: Kickstarter 오픈 소식을 일반 명단보다 {hoursFirst}시간 먼저 이메일로 받습니다. 일반 명단은 버디 초대 단계가 없는 대기 명단 전체를 말합니다.",
           "3명(버디): 오픈 소식을 일반 명단보다 {hoursBuddy}시간 먼저 받습니다.",
           "5명(다이브 팀): 캠페인 공개 전에 얼리버드 가격 {price}로 후원할 수 있는 Kickstarter 전용 리워드 링크를 이메일로 보내 드립니다. 선착순 {seats}명 공개 얼리버드가 마감된 뒤에도 캠페인 진행 기간에 Kickstarter 웹사이트(PC 또는 모바일 브라우저, 로그인 상태)에서 사용할 수 있습니다. Kickstarter 앱, 레이트 플레지, 플레지 매니저에서는 쓸 수 없습니다. 다이브 팀 회원 1명당 1건만 후원할 수 있으며, 링크는 다른 사람과 공유하지 말아 주세요. 배송비와 세금은 다른 후원자와 같은 기준으로 부과됩니다.",
           "10명(다이브 리더): 약 {lightValue} 상당의 수중 라이트 1개를 받습니다. 준비된 수량은 {stock}개이며, 10명을 먼저 달성한 {stock}명에게 달성 순서대로 드립니다. 모두 소진되면 이 페이지에 알립니다.",
@@ -526,13 +528,14 @@ const zhCN: ReferralCopy = {
   countingNote: "只有确认邮箱的朋友才会计入。",
   card: {
     title: "邀请你的潜伴",
-    body: "把你的链接发给潜伴。每多一位朋友确认邮箱，奖励就更进一步。",
+    body: "把链接分享给认识的潜伴。每多一位朋友确认邮箱，奖励就更进一步。",
     progress: "已加入 {count} 位 · 再邀 {remaining} 位达成“{tier}”",
     progressNone: "还没有朋友加入 · 再邀 {remaining} 位达成“{tier}”",
     progressMax: "已加入 {count} 位 · 所有等级均已达成，冲刺前 {winners} 名吧。",
     statusLink: "查看我的邀请",
     rulesLink: "官方规则",
-    invitedNote: "邀请你的人只能看到有多少位朋友加入，看不到具体是谁。",
+    invitedNote:
+      "你是通过朋友的邀请来的。确认邮箱后，邀请你的人会计入 1 位朋友。对方只能看到人数，看不到你的邮箱。",
   },
   leaderboard: {
     title: "潜伴邀请榜 前 {winners} 名",
@@ -580,7 +583,7 @@ const zhCN: ReferralCopy = {
     welcomeSubject: "你已加入 WatchDive 候补名单 — 邀请你的潜伴",
     welcomeHeading: "你已加入 WatchDive 候补名单",
     welcomeIntro:
-      "邮箱已确认。把你的专属邀请链接发给一起潜水的潜伴吧。每多一位朋友确认邮箱，奖励就更进一步。",
+      "邮箱已确认。把你的专属邀请链接分享给认识的潜伴吧。每多一位朋友确认邮箱，奖励就更进一步。",
     welcomeTiersHeading: "潜伴邀请奖励",
     welcomeButton: "分享我的邀请链接",
     welcomeFallback: "或复制此链接：",
@@ -639,14 +642,14 @@ const zhCN: ReferralCopy = {
       {
         heading: "公平参与",
         paragraphs: [
-          "每人只能参与一次。禁止未经本人同意替他人报名、以金钱或奖励换取报名、使用互换邀请的网站，以及在 WatchDive 官方广告的评论或回复中发布邀请链接。",
+          "每人只能参与一次。请只把链接分享给愿意了解 WatchDive 的熟人。禁止未经本人同意替他人报名、以金钱或奖励换取报名、群发或未经请求的消息、使用互换邀请的网站、在不允许推广的地方发布链接（包括 WatchDive 官方广告的评论或回复），以及用你的链接投放广告。以此增加的报名不计入。在公开场合发布链接时，请说明别人通过该链接加入后你会获得奖励。",
           "潜水灯和 WatchDive 奖品，每人、每户各限 1 份；同一人可以同时获得两者。寄送时我们会核对姓名、地址和电话号码。",
         ],
       },
       {
         heading: "奖励",
         paragraphs: [
-          "1 位朋友：比普通名单早 {hoursFirst} 小时收到 Kickstarter 开启通知邮件。",
+          "1 位朋友：比普通名单早 {hoursFirst} 小时收到 Kickstarter 开启通知邮件。普通名单是候补名单里还没有达到潜伴邀请任何等级的所有人。",
           "3 位朋友（潜伴）：比普通名单早 {hoursBuddy} 小时收到开启通知邮件。",
           "5 位朋友（潜水小队）：众筹开启前，我们会通过邮件发给你以 {price} 早鸟价支持的专属 Kickstarter 回报链接。众筹进行期间，即使前 {seats} 名支持者的早鸟名额已满，你仍可在 Kickstarter 网站（电脑或手机浏览器，需登录）使用。该链接不适用于 Kickstarter App、延迟支持（Late Pledge）或 Pledge Manager。每位潜水小队成员限支持 1 次，请勿分享此链接。运费和税费与其他支持者按相同标准收取。",
           "10 位朋友（潜水队长）：获得 1 个价值约 {lightValue} 的潜水灯。共 {stock} 个，按达到 10 位朋友的先后顺序，发给最先达到的 {stock} 人。送完后，我们会在本页面说明。",
@@ -720,13 +723,14 @@ const zhTW: ReferralCopy = {
   countingNote: "只有確認信箱的朋友才會計入。",
   card: {
     title: "邀請你的潛伴",
-    body: "把你的連結傳給潛伴。每多一位朋友確認信箱，獎勵就更進一步。",
+    body: "把連結分享給認識的潛伴。每多一位朋友確認信箱，獎勵就更進一步。",
     progress: "已加入 {count} 位 · 再邀 {remaining} 位達成「{tier}」",
     progressNone: "還沒有朋友加入 · 再邀 {remaining} 位達成「{tier}」",
     progressMax: "已加入 {count} 位 · 所有等級皆已達成，衝刺前 {winners} 名吧。",
     statusLink: "查看我的邀請",
     rulesLink: "官方規則",
-    invitedNote: "邀請你的人只會看到有多少位朋友加入，看不到是誰。",
+    invitedNote:
+      "你是透過朋友的邀請來的。確認信箱後，邀請你的人會計入 1 位朋友。對方只能看到人數，看不到你的信箱。",
   },
   leaderboard: {
     title: "潛伴邀請榜 前 {winners} 名",
@@ -773,7 +777,7 @@ const zhTW: ReferralCopy = {
     welcomeSubject: "你已加入 WatchDive 等候名單 — 邀請你的潛伴",
     welcomeHeading: "你已加入 WatchDive 等候名單",
     welcomeIntro:
-      "信箱已確認。把你的專屬邀請連結傳給一起潛水的潛伴吧。每多一位朋友確認信箱，獎勵就更進一步。",
+      "信箱已確認。把你的專屬邀請連結分享給認識的潛伴吧。每多一位朋友確認信箱，獎勵就更進一步。",
     welcomeTiersHeading: "潛伴邀請獎勵",
     welcomeButton: "分享我的邀請連結",
     welcomeFallback: "或複製此連結：",
@@ -832,14 +836,14 @@ const zhTW: ReferralCopy = {
       {
         heading: "公平參加",
         paragraphs: [
-          "每人只能參加一次。禁止未經本人同意替他人登記、以金錢或獎勵換取登記、使用互換邀請的網站，以及在 WatchDive 官方廣告的留言或回覆中張貼邀請連結。",
+          "每人只能參加一次。請只把連結分享給願意了解 WatchDive 的熟人。禁止未經本人同意替他人登記、以金錢或獎勵換取登記、群發或未經請求的訊息、使用互換邀請的網站、在不允許推廣的地方張貼連結（包括 WatchDive 官方廣告的留言或回覆），以及用你的連結投放廣告。以此增加的登記不計入。在公開場合張貼連結時，請說明別人透過該連結加入後你會獲得獎勵。",
           "潛水燈和 WatchDive 獎品，每人、每戶各限 1 份；同一人可以同時獲得兩者。寄送時我們會核對姓名、地址和電話號碼。",
         ],
       },
       {
         heading: "獎勵",
         paragraphs: [
-          "1 位朋友：比一般名單早 {hoursFirst} 小時收到 Kickstarter 募資開跑通知信。",
+          "1 位朋友：比一般名單早 {hoursFirst} 小時收到 Kickstarter 募資開跑通知信。一般名單是候補名單裡還沒有達到潛伴邀請任何等級的所有人。",
           "3 位朋友（潛伴）：比一般名單早 {hoursBuddy} 小時收到開跑通知信。",
           "5 位朋友（潛水小隊）：募資開跑前，我們會寄給你以 {price} 早鳥價贊助的專屬 Kickstarter 回饋連結。募資期間，即使前 {seats} 名贊助者的早鳥名額已滿，你仍可在 Kickstarter 網站（電腦或手機瀏覽器，需登入）使用。此連結不適用於 Kickstarter App、延遲贊助（Late Pledge）或 Pledge Manager。每位潛水小隊成員限贊助 1 次，請勿分享此連結。運費與稅費依其他贊助者的相同標準收取。",
           "10 位朋友（潛水隊長）：獲得 1 支價值約 {lightValue} 的潛水燈。共 {stock} 支，依達到 10 位朋友的先後順序，送給最先達到的 {stock} 人。送完後，我們會在本頁面說明。",
@@ -913,14 +917,14 @@ const ja: ReferralCopy = {
   countingNote: "カウントされるのは、メールアドレスを確認した友だちだけです。",
   card: {
     title: "ダイビングバディを招待しよう",
-    body: "あなたのリンクを送りましょう。メールアドレスを確認した友だちが増えるほど、特典が増えていきます。",
+    body: "知っているダイバーにあなたのリンクをシェアしましょう。メールアドレスを確認した友だちが増えるほど、特典が増えていきます。",
     progress: "{count}人が参加 · 「{tier}」まであと{remaining}人",
     progressNone: "まだ参加した友だちはいません · 「{tier}」まであと{remaining}人",
     progressMax: "{count}人が参加 · すべての段階を達成しました。上位{winners}名を目指しましょう。",
     statusLink: "招待状況を見る",
     rulesLink: "公式ルール",
     invitedNote:
-      "あなたを招待した人に見えるのは参加した人数だけで、誰が参加したかは表示されません。",
+      "友だちの招待で来ました。メールアドレスを確認すると、招待した人の人数に1人加算されます。相手に見えるのは人数だけで、メールアドレスは見えません。",
   },
   leaderboard: {
     title: "バディ招待ランキング 上位{winners}名",
@@ -969,7 +973,7 @@ const ja: ReferralCopy = {
     welcomeSubject: "WatchDive のウェイトリストに登録されました — バディを招待しましょう",
     welcomeHeading: "WatchDive のウェイトリストに登録されました",
     welcomeIntro:
-      "メールアドレスの確認が完了しました。あなた専用の招待リンクを、一緒に潜るバディに送りましょう。メールアドレスを確認した友だちが増えるほど、特典が増えていきます。",
+      "メールアドレスの確認が完了しました。あなた専用の招待リンクを、知っているダイバーにシェアしましょう。メールアドレスを確認した友だちが増えるほど、特典が増えていきます。",
     welcomeTiersHeading: "バディ招待の特典",
     welcomeButton: "招待リンクをシェアする",
     welcomeFallback: "またはこのリンクをコピー：",
@@ -1029,14 +1033,14 @@ const ja: ReferralCopy = {
       {
         heading: "フェアプレー",
         paragraphs: [
-          "参加は1人1回までです。本人の同意なく他人を登録すること、お金や見返りと引き換えに登録してもらうこと、紹介リンク交換サイトの利用、WatchDive の広告のコメント欄や返信へのリンク投稿は禁止します。",
+          "参加は1人1回までです。リンクは WatchDive の話を聞いてくれそうな知人にだけシェアしてください。本人の同意なく他人を登録すること、お金や見返りと引き換えに登録してもらうこと、一斉送信や頼まれていないメッセージ、紹介リンク交換サイトの利用、宣伝が禁じられた場所への投稿（WatchDive の広告のコメント欄や返信を含みます）、自分のリンクを使った広告出稿は禁止で、その方法で増えた登録は集計しません。公開の場所にリンクを載せるときは、登録すると自分に特典があることを書いてください。",
           "水中ライトと賞品の WatchDive は、それぞれ1人・1世帯につき1つまでです。1人で両方を受け取ることはできます。発送時に、氏名・住所・電話番号で確認します。",
         ],
       },
       {
         heading: "特典",
         paragraphs: [
-          "友だち1人：Kickstarter 開始のお知らせメールを、一般リストより{hoursFirst}時間早く受け取れます。",
+          "友だち1人：Kickstarter 開始のお知らせメールを、一般リストより{hoursFirst}時間早く受け取れます。一般リストとは、バディ招待の段階に達していないウェイトリストの全員です。",
           "友だち3人（バディ）：開始のお知らせメールを、一般リストより{hoursBuddy}時間早く受け取れます。",
           "友だち5人（ダイブチーム）：キャンペーン開始前に、{price}の早割価格で支援できる専用の Kickstarter リワードリンクをメールでお送りします。先着{seats}名の早割枠が埋まったあとも、キャンペーン期間中に Kickstarter のウェブサイト（パソコンまたはスマートフォンのブラウザで、ログインした状態）で使えます。Kickstarter アプリ、レイトプレッジ、プレッジマネージャーでは使えません。ダイブチームのメンバー1人につき支援は1件までで、リンクはほかの人と共有しないでください。送料と税金は、ほかの支援者と同じ基準でかかります。",
           "友だち10人（ダイブリーダー）：約{lightValue}相当の水中ライトを1個プレゼントします。在庫は{stock}個で、友だち10人に到達した最初の{stock}名に、到達した順にお渡しします。なくなった場合は、このページでお知らせします。",
@@ -1112,13 +1116,14 @@ const es: ReferralCopy = {
   countingNote: "Solo cuentan los amigos que confirman su correo.",
   card: {
     title: "Invita a tus compañeros de buceo",
-    body: "Comparte tu enlace. Cada amigo que confirma su correo te acerca a la siguiente recompensa.",
+    body: "Comparte tu enlace con buceadores que conozcas. Cada amigo que confirma su correo te acerca a la siguiente recompensa.",
     progress: "Amigos: {count} · {remaining} más para {tier}",
     progressNone: "Aún no se ha unido nadie · {remaining} más para {tier}",
     progressMax: "Amigos: {count} · has alcanzado todos los niveles. ¡Ve a por el top {winners}!",
     statusLink: "Ver mis invitaciones",
     rulesLink: "Bases oficiales",
-    invitedNote: "Quien te invitó solo ve cuántos amigos se han unido, nunca quiénes.",
+    invitedNote:
+      "Llegaste por la invitación de un amigo. Cuando confirmes tu correo, esa persona suma un amigo. Solo ve el número, nunca tu correo.",
   },
   leaderboard: {
     title: "Top {winners} · Invita a tu compañero",
@@ -1168,7 +1173,7 @@ const es: ReferralCopy = {
     welcomeSubject: "Ya estás en la lista de espera de WatchDive — invita a tus compañeros",
     welcomeHeading: "Ya estás en la lista de espera de WatchDive",
     welcomeIntro:
-      "Tu correo está confirmado. Pasa tu enlace de invitación personal a los buceadores con los que te metes al agua. Cada amigo que confirma su correo te acerca a la siguiente recompensa.",
+      "Tu correo está confirmado. Comparte tu enlace de invitación personal con buceadores que conozcas. Cada amigo que confirma su correo te acerca a la siguiente recompensa.",
     welcomeTiersHeading: "Recompensas por invitar",
     welcomeButton: "Compartir mi enlace",
     welcomeFallback: "O copia este enlace:",
@@ -1227,14 +1232,14 @@ const es: ReferralCopy = {
       {
         heading: "Juego limpio",
         paragraphs: [
-          "Cada persona puede participar una sola vez. No está permitido apuntar a otras personas sin su consentimiento, pagar u ofrecer incentivos a cambio de registros, usar webs de intercambio de referidos ni publicar tu enlace en respuestas o comentarios de los anuncios de WatchDive.",
+          "Cada persona puede participar una sola vez. Comparte tu enlace solo con gente que conozcas y a la que le interese WatchDive. No está permitido apuntar a otras personas sin su consentimiento, pagar u ofrecer incentivos a cambio de registros, enviar mensajes masivos o no solicitados, usar webs de intercambio de referidos, publicar el enlace donde no se permita la promoción (incluidas las respuestas o comentarios de los anuncios de WatchDive) ni comprar anuncios con tu enlace. Los amigos conseguidos así no cuentan. Si publicas el enlace en un sitio público, di que recibes una recompensa cuando la gente se apunta.",
           "Cada persona y cada hogar puede recibir como máximo una linterna de buceo y un premio WatchDive; una misma persona puede ganar ambos. Lo comprobamos al hacer el envío, por nombre, dirección y teléfono.",
         ],
       },
       {
         heading: "Recompensas",
         paragraphs: [
-          "1 amigo: el correo del lanzamiento en Kickstarter {hoursFirst} hora antes que la lista general.",
+          "1 amigo: el correo del lanzamiento en Kickstarter {hoursFirst} hora antes que la lista general. La lista general es quien está en la lista de espera y no ha alcanzado ningún nivel de Invita a tu compañero.",
           "3 amigos (Compañero): el correo del lanzamiento {hoursBuddy} horas antes que la lista general.",
           "5 amigos (Equipo de buceo): antes de que abra la campaña, te enviamos por correo un enlace privado de recompensa en Kickstarter con el precio early bird de {price}. Puedes usarlo mientras la campaña esté activa, en la web de Kickstarter (en el navegador del ordenador o del móvil, con la sesión iniciada), aunque ya se hayan cubierto las plazas de los {seats} primeros patrocinadores. No funciona en la app de Kickstarter, en los apoyos tardíos (late pledges) ni en el pledge manager. Un apoyo por cada miembro del Equipo de buceo; por favor, no compartas el enlace. El envío y los impuestos se cobran igual que al resto de patrocinadores.",
           "10 amigos (Líder de buceo): una linterna de buceo valorada en unos {lightValue}. Tenemos {stock} y son para las primeras {stock} personas que lleguen a 10 amigos, por orden de llegada. Cuando se agoten, lo indicaremos en esta página.",
@@ -1309,7 +1314,7 @@ const fr: ReferralCopy = {
   countingNote: "Seuls les amis qui confirment leur e-mail comptent.",
   card: {
     title: "Invitez vos binômes de plongée",
-    body: "Envoyez votre lien. Chaque ami qui confirme son e-mail vous rapproche de la récompense suivante.",
+    body: "Partagez votre lien avec des plongeurs que vous connaissez. Chaque ami qui confirme son e-mail vous rapproche de la récompense suivante.",
     progress: "Amis inscrits : {count} · encore {remaining} pour {tier}",
     progressNone: "Aucun ami inscrit pour l’instant · encore {remaining} pour {tier}",
     progressMax:
@@ -1317,7 +1322,7 @@ const fr: ReferralCopy = {
     statusLink: "Voir mes invitations",
     rulesLink: "Règlement officiel",
     invitedNote:
-      "La personne qui vous invite ne voit que le nombre d’amis inscrits, jamais leur identité.",
+      "Vous êtes arrivé par l’invitation d’un ami. Quand vous confirmez votre adresse e-mail, cette personne compte un ami de plus. Elle ne voit que le nombre, jamais votre adresse.",
   },
   leaderboard: {
     title: "Top {winners} · Invitez votre binôme",
@@ -1367,7 +1372,7 @@ const fr: ReferralCopy = {
     welcomeSubject: "Vous êtes sur la liste d’attente WatchDive — invitez vos binômes",
     welcomeHeading: "Vous êtes sur la liste d’attente WatchDive",
     welcomeIntro:
-      "Votre adresse e-mail est confirmée. Envoyez votre lien d’invitation personnel aux plongeurs avec qui vous descendez. Chaque ami qui confirme son e-mail vous rapproche de la récompense suivante.",
+      "Votre adresse e-mail est confirmée. Partagez votre lien d’invitation personnel avec des plongeurs que vous connaissez. Chaque ami qui confirme son e-mail vous rapproche de la récompense suivante.",
     welcomeTiersHeading: "Vos récompenses",
     welcomeButton: "Partager mon lien",
     welcomeFallback: "Ou copiez ce lien :",
@@ -1426,14 +1431,14 @@ const fr: ReferralCopy = {
       {
         heading: "Fair-play",
         paragraphs: [
-          "Une seule participation par personne. Il est interdit d’inscrire d’autres personnes sans leur accord, de payer ou de récompenser des inscriptions, d’utiliser des sites d’échange de parrainages et de publier votre lien en réponse ou en commentaire des publicités de WatchDive.",
+          "Une seule participation par personne. Partagez votre lien seulement avec des personnes que vous connaissez et qui souhaiteraient avoir des nouvelles de WatchDive. Il est interdit d’inscrire d’autres personnes sans leur accord, de payer ou de récompenser des inscriptions, d’envoyer des messages en masse ou non sollicités, d’utiliser des sites d’échange de parrainages, de publier le lien là où la promotion n’est pas autorisée (y compris en réponse ou en commentaire des publicités de WatchDive) et d’acheter de la publicité avec votre lien. Les amis obtenus ainsi ne comptent pas. Si vous publiez le lien en public, dites que vous recevez une récompense lorsque des personnes s’inscrivent.",
           "Chaque personne et chaque foyer peut recevoir au maximum une lampe de plongée et un WatchDive gagné ; une même personne peut gagner les deux. Nous le vérifions à l’expédition, d’après le nom, l’adresse et le numéro de téléphone.",
         ],
       },
       {
         heading: "Récompenses",
         paragraphs: [
-          "1 ami : l’e-mail de lancement Kickstarter {hoursFirst} heure avant le reste de la liste.",
+          "1 ami : l’e-mail de lancement Kickstarter {hoursFirst} heure avant le reste de la liste. La liste générale, ce sont toutes les personnes sur la liste d’attente qui n’ont atteint aucun palier d’Invitez votre binôme.",
           "3 amis (Binôme) : l’e-mail de lancement {hoursBuddy} heures avant le reste de la liste.",
           "5 amis (Palanquée) : avant l’ouverture de la campagne, nous vous envoyons par e-mail un lien de contrepartie Kickstarter privé au tarif early bird de {price}. Vous pouvez l’utiliser pendant la campagne, sur le site Kickstarter (navigateur sur ordinateur ou mobile, en étant connecté), même quand les places des {seats} premiers contributeurs sont prises. Il ne fonctionne ni dans l’application Kickstarter, ni pour les contributions tardives (late pledges), ni dans le pledge manager. Une contribution par membre de la Palanquée ; merci de ne pas partager ce lien. Les frais de port et les taxes sont facturés comme pour les autres contributeurs.",
           "10 amis (Chef de file) : une lampe de plongée d’une valeur d’environ {lightValue}. Nous en avons {stock}, attribuées aux {stock} premières personnes qui atteignent 10 amis, dans l’ordre où elles y parviennent. Quand il n’y en aura plus, nous l’indiquerons sur cette page.",
@@ -1509,13 +1514,14 @@ const de: ReferralCopy = {
   countingNote: "Es zählen nur Freunde, die ihre E-Mail-Adresse bestätigen.",
   card: {
     title: "Lade deine Tauchbuddys ein",
-    body: "Schick deinen Link los. Jeder Freund, der seine E-Mail-Adresse bestätigt, bringt dich der nächsten Belohnung näher.",
+    body: "Teile deinen Link mit Tauchern, die du kennst. Jeder Freund, der seine E-Mail-Adresse bestätigt, bringt dich der nächsten Belohnung näher.",
     progress: "{count} dabei · noch {remaining} bis {tier}",
     progressNone: "Noch niemand dabei · noch {remaining} bis {tier}",
     progressMax: "{count} dabei · alle Stufen erreicht. Jetzt geht’s um die Top {winners}.",
     statusLink: "Meine Einladungen",
     rulesLink: "Teilnahmebedingungen",
-    invitedNote: "Wer dich eingeladen hat, sieht nur, wie viele Freunde dabei sind – nie, wer.",
+    invitedNote:
+      "Du bist über die Einladung eines Freundes hier. Wenn du deine E-Mail-Adresse bestätigst, zählt das für diese Person als ein Freund. Sie sieht nur die Zahl, nie deine E-Mail-Adresse.",
   },
   leaderboard: {
     title: "Buddy-Einladung: Top {winners}",
@@ -1565,7 +1571,7 @@ const de: ReferralCopy = {
     welcomeSubject: "Du bist auf der WatchDive-Warteliste — lade deine Buddys ein",
     welcomeHeading: "Du bist auf der WatchDive-Warteliste",
     welcomeIntro:
-      "Deine E-Mail-Adresse ist bestätigt. Schick deinen persönlichen Einladungslink an die Taucher, mit denen du ins Wasser gehst. Jeder Freund, der seine E-Mail-Adresse bestätigt, bringt dich der nächsten Belohnung näher.",
+      "Deine E-Mail-Adresse ist bestätigt. Teile deinen persönlichen Einladungslink mit Tauchern, die du kennst. Jeder Freund, der seine E-Mail-Adresse bestätigt, bringt dich der nächsten Belohnung näher.",
     welcomeTiersHeading: "Deine Belohnungen",
     welcomeButton: "Einladungslink teilen",
     welcomeFallback: "Oder kopiere diesen Link:",
@@ -1624,14 +1630,14 @@ const de: ReferralCopy = {
       {
         heading: "Fair Play",
         paragraphs: [
-          "Pro Person ist nur eine Teilnahme erlaubt. Nicht erlaubt ist, andere ohne ihre Zustimmung anzumelden, Anmeldungen zu bezahlen oder mit Gegenleistungen zu belohnen, Empfehlungs-Tauschbörsen zu nutzen oder deinen Link in Antworten oder Kommentaren unter WatchDive-Anzeigen zu posten.",
+          "Pro Person ist nur eine Teilnahme erlaubt. Teile deinen Link nur mit Leuten, die du kennst und die von WatchDive hören möchten. Nicht erlaubt ist, andere ohne ihre Zustimmung anzumelden, Anmeldungen zu bezahlen oder mit Gegenleistungen zu belohnen, Massen- oder unerwünschte Nachrichten zu schicken, Empfehlungs-Tauschbörsen zu nutzen, den Link dort zu posten, wo Werbung nicht erlaubt ist (einschließlich Antworten oder Kommentare unter WatchDive-Anzeigen), oder Anzeigen mit deinem Link zu schalten. Freunde, die so dazukommen, zählen nicht. Wenn du den Link öffentlich postest, sag dazu, dass du eine Belohnung bekommst, wenn sich Leute anmelden.",
           "Jede Person und jeder Haushalt kann höchstens eine Tauchlampe und ein WatchDive als Gewinn erhalten; eine Person kann beides gewinnen. Das prüfen wir beim Versand anhand von Name, Adresse und Telefonnummer.",
         ],
       },
       {
         heading: "Belohnungen",
         paragraphs: [
-          "1 Freund: die E-Mail zum Kickstarter-Start {hoursFirst} Stunde vor der allgemeinen Liste.",
+          "1 Freund: die E-Mail zum Kickstarter-Start {hoursFirst} Stunde vor der allgemeinen Liste. Die allgemeine Liste sind alle auf der Warteliste, die noch keine Stufe der Buddy-Einladung erreicht haben.",
           "3 Freunde (Buddy): die Start-E-Mail {hoursBuddy} Stunden vor der allgemeinen Liste.",
           "5 Freunde (Tauchteam): Vor dem Start der Kampagne schicken wir dir per E-Mail einen privaten Kickstarter-Reward-Link zum Early-Bird-Preis von {price}. Du kannst ihn während der laufenden Kampagne auf der Kickstarter-Website nutzen (im Browser am Computer oder Smartphone, angemeldet), auch wenn die Plätze für die ersten {seats} Unterstützer schon vergeben sind. In der Kickstarter-App, bei Late Pledges und im Pledge Manager funktioniert er nicht. Eine Unterstützung pro Tauchteam-Mitglied; bitte gib den Link nicht weiter. Versand und Steuern werden wie bei anderen Unterstützern berechnet.",
           "10 Freunde (Teamleiter): eine Tauchlampe im Wert von rund {lightValue}. Wir haben {stock} Stück. Sie gehen an die ersten {stock} Personen, die 10 Freunde erreichen, in der Reihenfolge, in der sie das schaffen. Sind alle vergeben, steht das auf dieser Seite.",
@@ -1705,13 +1711,14 @@ const ptBR: ReferralCopy = {
   countingNote: "Só contam os amigos que confirmam o e-mail.",
   card: {
     title: "Convide seus parceiros de mergulho",
-    body: "Mande seu link. Cada amigo que confirma o e-mail deixa você mais perto da próxima recompensa.",
+    body: "Compartilhe seu link com mergulhadores que você conhece. Cada amigo que confirma o e-mail deixa você mais perto da próxima recompensa.",
     progress: "Amigos: {count} · mais {remaining} para {tier}",
     progressNone: "Nenhum amigo ainda · mais {remaining} para {tier}",
     progressMax: "Amigos: {count} · você chegou a todos os níveis. Agora é buscar o top {winners}.",
     statusLink: "Ver meus convites",
     rulesLink: "Regulamento oficial",
-    invitedNote: "Quem convidou você vê só quantos amigos entraram, nunca quem.",
+    invitedNote:
+      "Você chegou pelo convite de um amigo. Quando confirmar seu e-mail, essa pessoa ganha o crédito de um amigo. Ela vê só o número, nunca o seu e-mail.",
   },
   leaderboard: {
     title: "Top {winners} · Convide seu parceiro",
@@ -1760,7 +1767,7 @@ const ptBR: ReferralCopy = {
     welcomeSubject: "Você está na lista de espera do WatchDive — convide seus parceiros",
     welcomeHeading: "Você está na lista de espera do WatchDive",
     welcomeIntro:
-      "Seu e-mail foi confirmado. Mande seu link de convite pessoal para quem mergulha com você. Cada amigo que confirma o e-mail deixa você mais perto da próxima recompensa.",
+      "Seu e-mail foi confirmado. Compartilhe seu link de convite pessoal com mergulhadores que você conhece. Cada amigo que confirma o e-mail deixa você mais perto da próxima recompensa.",
     welcomeTiersHeading: "Recompensas por convite",
     welcomeButton: "Compartilhar meu link",
     welcomeFallback: "Ou copie este link:",
@@ -1819,14 +1826,14 @@ const ptBR: ReferralCopy = {
       {
         heading: "Jogo limpo",
         paragraphs: [
-          "Cada pessoa pode participar uma única vez. Não é permitido cadastrar outras pessoas sem o consentimento delas, pagar ou oferecer vantagens em troca de cadastros, usar sites de troca de indicações nem publicar seu link em respostas ou comentários dos anúncios do WatchDive.",
+          "Cada pessoa pode participar uma única vez. Compartilhe seu link só com pessoas que você conhece e que queiram saber do WatchDive. Não é permitido cadastrar outras pessoas sem o consentimento delas, pagar ou oferecer vantagens em troca de cadastros, enviar mensagens em massa ou não solicitadas, usar sites de troca de indicações, publicar o link onde promoção não é permitida (incluindo respostas ou comentários dos anúncios do WatchDive) nem comprar anúncios com o seu link. Amigos conseguidos assim não contam. Se publicar o link em um lugar público, diga que você recebe uma recompensa quando alguém se cadastra.",
           "Cada pessoa e cada domicílio pode receber no máximo uma lanterna de mergulho e um WatchDive como prêmio; a mesma pessoa pode ganhar os dois. Conferimos isso no envio, por nome, endereço e telefone.",
         ],
       },
       {
         heading: "Recompensas",
         paragraphs: [
-          "1 amigo: o e-mail de lançamento no Kickstarter {hoursFirst} hora antes da lista geral.",
+          "1 amigo: o e-mail de lançamento no Kickstarter {hoursFirst} hora antes da lista geral. A lista geral é todo mundo na lista de espera que ainda não alcançou um nível de Convide seu parceiro.",
           "3 amigos (Parceiro): o e-mail de lançamento {hoursBuddy} horas antes da lista geral.",
           "5 amigos (Equipe de mergulho): antes de a campanha abrir, enviamos por e-mail um link de recompensa exclusivo no Kickstarter com o preço early bird de {price}. Você pode usá-lo durante a campanha, no site do Kickstarter (navegador no computador ou no celular, com login feito), mesmo depois que as vagas dos primeiros {seats} apoiadores acabarem. Ele não funciona no app do Kickstarter, em apoios atrasados (late pledges) nem no pledge manager. Um apoio por membro da Equipe de mergulho; por favor, não compartilhe o link. Frete e impostos são cobrados como para os demais apoiadores.",
           "10 amigos (Líder de mergulho): uma lanterna de mergulho avaliada em cerca de {lightValue}. Temos {stock} unidades, que vão para as primeiras {stock} pessoas a chegar a 10 amigos, na ordem em que chegarem. Quando acabarem, avisaremos nesta página.",
