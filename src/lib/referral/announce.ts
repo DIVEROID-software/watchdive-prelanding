@@ -217,8 +217,11 @@ export async function runAnnounce(options: AnnounceOptions, deps: AnnounceDeps):
       continue;
     }
     queuedAddresses.add(optOutAddressKey(row.email));
-    if (!selfTest && marked.has(optOutAddressKey(row.email))) {
-      if (marked.get(optOutAddressKey(row.email))!.startsWith("sent ")) result.alreadySent++;
+    // Self-test writes no marker, but a marker already on the inbox still holds
+    // it. Its idempotency key differs, so the provider would not collapse a resend.
+    const priorMarker = marked.get(optOutAddressKey(row.email));
+    if (priorMarker) {
+      if (priorMarker.startsWith("sent ")) result.alreadySent++;
       else result.heldUnresolved++;
       continue;
     }

@@ -35,7 +35,7 @@ node --experimental-strip-types --env-file=.env scripts/referral-schema.ts
 node --experimental-strip-types --env-file=.env scripts/referral-schema.ts --apply
 ```
 
-끝난 뒤 인자 없이 한 번 더 실행해 `applied` 없이 `ok: true` 인지 봅니다. 여덟 열(닉네임, 리더보드 동의, 닉네임 숨김, 알림 끄기, 마지막 알림 수, 알림 시각, 보상 검수, `Referral leader reached at`)입니다.
+끝난 뒤 인자 없이 한 번 더 실행해 `applied` 없이 `ok: true` 인지 봅니다. 아홉 열(닉네임, 리더보드 동의, 닉네임 숨김, 알림 끄기, 마지막 알림 수, 알림 시각, 보상 검수, `Referral leader reached at`, `Referral announce`)입니다.
 
 ## 3. 스위치 끈 채로 Production 배포
 
@@ -92,7 +92,7 @@ node --experimental-strip-types scripts/referral-announce.ts --config <config> -
 node --experimental-strip-types scripts/referral-announce.ts --config <config> --released-at <T> --limit 20 --apply --confirm wd-buddy-invite-20261022
 ```
 
-Notion `Referral announce`에 intent가 먼저 기록되고 접수 후 sent로 바뀝니다. 표시가 있는 주소는 다시 발송하지 않습니다. `heldUnresolved`는 결과 불명확 보류이므로 Notion/Resend에서 확인하며 표시를 지우지 않습니다. 자기 테스트는 별도 키이고 행을 표시하지 않으니 완료 후 반복하지 않습니다. Mac mini에서만 단독 실행하고, HTTP 실패로 남은 `.referral-announce.lock`은 서버 종료 및 영수증 확인 후에만 수동 해제합니다. 자세한 제한은 운영 문서의 공지 절차를 따릅니다.
+Notion `Referral announce`에 intent가 먼저 기록되고 접수 후 sent로 바뀝니다. 표시가 있는 주소는 다시 발송하지 않습니다. 자기 테스트도 그 주소를 건너뜁니다. `heldUnresolved`는 결과 불명확 보류이므로 Notion/Resend에서 확인하며 표시를 지우지 않습니다. 자기 테스트는 별도 키이고 행을 표시하지 않으니, 표시가 없는 주소는 완료 후 반복하지 않습니다. Mac mini에서만 단독 실행하고, HTTP 실패로 남은 `.referral-announce.lock`은 서버 종료 및 영수증 확인 후에만 수동 해제합니다. 자세한 제한은 운영 문서의 공지 절차를 따릅니다.
 
 ## 9. 친구 참여 알림 켜기
 

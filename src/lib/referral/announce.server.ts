@@ -31,11 +31,20 @@ export async function createAnnounceDeps(env: Env, signal: AbortSignal, apply: b
   const rows: AnnounceRow[] = [];
   let cursor: string | undefined;
   // Never use a partial scan: a later page may contain an inbox's opt-out.
+  // created_time does not move when a row is edited, so pagination cannot skip
+  // that opt-out the way an unsorted (last-edited) walk can. A missing
+  // has_more, a repeated cursor, or Notion's incomplete query cap fails closed.
   for (let pageNumber = 0; ; pageNumber++) {
     signal.throwIfAborted();
     if (pageNumber >= 200) throw new Error("scan_limit");
-    const page = await request("POST", `${path}/query`, { page_size: 100, ...(cursor ? { start_cursor: cursor } : {}) });
+    const page = await request("POST", `${path}/query`, {
+      page_size: 100,
+      sorts: [{ timestamp: "created_time", direction: "ascending" }],
+      ...(cursor ? { start_cursor: cursor } : {}),
+    });
     if (!Array.isArray(page.results)) throw new Error("invalid_page");
+    const queryStatus = page.request_status as { type?: unknown } | undefined;
+    if (queryStatus?.type === "incomplete") throw new Error("scan_incomplete");
     for (const raw of page.results as Record<string, unknown>[]) {
       const lead = toLeadRecord(raw);
       if (!lead) throw new Error("unreadable_row");
@@ -45,8 +54,15 @@ export async function createAnnounceDeps(env: Env, signal: AbortSignal, apply: b
       rows.push({ ...lead, duplicate: Boolean(lead.duplicate), refCode: lead.refCode ?? "",
         announceMarker: marker.map((part) => part.plain_text ?? part.text?.content ?? "").join("") });
     }
-    if (!page.has_more) break;
-    if (typeof page.next_cursor !== "string" || page.next_cursor === cursor) throw new Error("invalid_cursor");
+    // Notion ends a capped query with has_more false. Ten thousand rows and no
+    // explicit complete status is that cap, so the opt-out page may be missing.
+    if (page.has_more === false) {
+      if (rows.length >= 10_000 && queryStatus?.type !== "complete") throw new Error("scan_incomplete");
+      break;
+    }
+    if (page.has_more !== true || typeof page.next_cursor !== "string" || page.next_cursor.length === 0 || page.next_cursor === cursor) {
+      throw new Error("invalid_cursor");
+    }
     cursor = page.next_cursor;
   }
   return {

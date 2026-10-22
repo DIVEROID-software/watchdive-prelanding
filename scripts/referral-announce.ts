@@ -11,7 +11,7 @@ export const USAGE = `Usage: node --experimental-strip-types scripts/referral-an
   --confirm ${REFERRAL_PROGRAM_ID} (required even for dry-run)
   [--dry-run]                  default; counts only
   [--apply] [--limit <1..200>]  default 20; re-run for remaining batches
-  [--only <email>]             owner self-test, separate key, no row marker
+  [--only <email>]             owner self-test; writes no marker; an existing marker still holds
 Only the office Mac mini may run this caller. Never overlap it with a direct API call.`;
 
 export async function main(argv: string[]): Promise<number> {
