@@ -34,7 +34,7 @@ import {
   referralProgramEnabled,
   tiersCrossed,
 } from "./program.ts";
-import { statusUrl } from "./statusToken.ts";
+import { statusUrl, shareUrl } from "./statusToken.ts";
 
 /**
  * Notices need two switches: the Buddy Invite master switch
@@ -304,6 +304,8 @@ export async function runReferralNotices(deps: ReferralNoticeDeps): Promise<Refe
         nextTier: next ? next.id : null,
         remainingToNext: next ? next.minFriends - credited : null,
         statusUrl: statusUrl(deps.publicOrigin, standing.refCode, locale, deps.secret),
+        shareUrl: shareUrl(deps.publicOrigin, standing.refCode),
+        ...(row.shareCode ? { shareCode: row.shareCode } : {}),
         unsubscribeUrl,
         ...(row.signupCountry ? { signupCountry: row.signupCountry } : {}),
         idempotencyKey: noticeIdempotencyKey(standing.refCode, credited),

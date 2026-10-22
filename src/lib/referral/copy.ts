@@ -121,6 +121,9 @@ export type ReferralCopy = {
     >;
   };
   mail: {
+    eventHeading: string;
+    shareHeading: string;
+    conditions: string[];
     welcomeSubject: string;
     welcomeHeading: string;
     welcomeIntro: string;
@@ -289,6 +292,13 @@ const en: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "Event overview",
+    shareHeading: "Share link · referral code",
+    conditions: [
+      "Free entry; no purchase needed. Adults {ageOther}+ (South Korea: {ageKr}+). Staff, contractors, organizers and their households cannot receive physical rewards. Physical rewards ship only to Kickstarter delivery countries; void where prohibited.",
+      "Closes before the Kickstarter launch, no later than {longStop}; exact time announced at least {noticeDays} days ahead. Each verified person counts once, up to {cap} per Korea Standard Time day; excess does not carry over. Earlier eligible invites count. Self-invites, disposable addresses, abuse, paid or unsolicited promotion do not count. Share only with people you know; disclose your reward when posting publicly.",
+      "Counts freeze at closing, subject to review; deletion or disqualification can remove credit. Ties go to whoever reached the count first. One light and one WatchDive per person/household. WatchDive housing: {prizeValue}, Apple Watch or Galaxy Watch version of your choice; supported watch required, not included. No cash alternative. Rewards sent before {deliveryBy}. Korean recipients pay {taxRate}% withholding on prizes valued over {taxFree} before shipping. Winners must reply within 14 days; otherwise the reward passes to the next eligible person."
+],
     welcomeSubject: "You’re on the WatchDive waitlist — invite your buddies",
     welcomeHeading: "You’re on the WatchDive waitlist",
     welcomeIntro:
@@ -539,8 +549,15 @@ const ko: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "이벤트 소개",
+    shareHeading: "공유 링크 · 추천 코드",
+    conditions: [
+      "구매 없이 무료로 참여합니다. 한국 거주자는 만 {ageKr}세, 그 외는 만 {ageOther}세 이상이며 거주지 성년이어야 합니다. 임직원·계약자·운영 관계자와 동거 가족은 실물 혜택 대상에서 제외됩니다. 실물은 Kickstarter 배송 국가에만 보내며, 법으로 금지된 곳에서는 참여할 수 없습니다.",
+      "Kickstarter 공개 직전, 늦어도 {longStop}에 마감하며 정확한 시각은 최소 {noticeDays}일 전에 알립니다. 인증한 사람당 한 번, 한국 시간 하루 최대 {cap}명만 집계하며 초과분은 이월하지 않습니다. 이전의 유효한 초대도 포함합니다. 본인 초대·일회용 주소·부정 가입·유료 또는 무단 홍보는 제외합니다. 아는 지인에게만 공유하고 공개 게시 시 본인이 혜택을 받는다는 점을 밝혀 주세요.",
+      "마감 집계는 검수 후 확정되며 삭제·규칙 위반은 집계에서 빠질 수 있습니다. 동점이면 먼저 달성한 분이 앞섭니다. 사람·가구당 라이트와 WatchDive 각 하나이며, WatchDive는 {prizeValue} 상당 하우징으로 Apple Watch용·Galaxy Watch용 중 선택하며, 지원 시계가 별도로 필요합니다. 시계는 포함되지 않고 현금 대체는 없습니다. {deliveryBy} 전에 발송합니다. 한국 수령자는 과세가액 {taxFree} 초과 시 {taxRate}% 제세공과금을 배송 전에 납부합니다. 당첨 안내 후 14일 내 회신이 없으면 다음 대상에게 넘어갑니다."
+],
     welcomeSubject: "WatchDive 출시 알림 신청 완료 · 버디를 초대하세요",
-    welcomeHeading: "WatchDive 출시 알림 신청이 완료되었습니다",
+    welcomeHeading: "알림 신청이 완료되었습니다.",
     welcomeIntro:
       "이메일 인증이 완료되었습니다. 아래 내 초대 링크를 아는 다이버에게 공유해 주세요. 이메일 인증을 마친 친구가 늘어날수록 혜택이 커집니다.",
     welcomeCode: "내 추천 코드:",
@@ -788,6 +805,13 @@ const zhCN: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "活动介绍",
+    shareHeading: "分享链接 · 推荐码",
+    conditions: [
+      "免费参加，无需购买。须年满 {ageOther} 岁（韩国居民 {ageKr} 岁）并达到当地成年年龄。员工、承包商、活动运营人员及其同住家人不能领取实物奖励。实物仅寄往 Kickstarter 配送国家；法律禁止的地区不适用。",
+      "活动在 Kickstarter 上线前截止，最晚为 {longStop}，具体时间至少提前 {noticeDays} 天公布。每位已验证用户仅计一次，每个韩国标准时间自然日最多计 {cap} 人，超额不顺延。此前符合条件的邀请也计入。自邀、临时邮箱、作弊、付费或未经同意的推广不计入。仅向认识的人分享；公开发布时须说明你会获得奖励。",
+      "截止时的计数须经审核；删除数据或违规可能取消计数。同分者先达成者优先。每人及每户最多各获一盏潜水灯和一台 WatchDive。WatchDive 为价值 {prizeValue} 的外壳，可选 Apple Watch 或 Galaxy Watch 版，须另备支持的手表；不含手表，不可折现。奖励在 {deliveryBy} 之前寄出。韩国领取者如获奖品应税价值超过 {taxFree}，须在发货前缴纳该价值的 {taxRate}% 预扣税。获奖通知后 14 天内未回复，奖励顺延。"
+],
     welcomeSubject: "你已加入 WatchDive 候补名单 — 邀请你的潜伴",
     welcomeHeading: "你已加入 WatchDive 候补名单",
     welcomeIntro:
@@ -1036,6 +1060,13 @@ const zhTW: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "活動介紹",
+    shareHeading: "分享連結 · 推薦碼",
+    conditions: [
+      "免費參加，無須購買。須年滿 {ageOther} 歲（韓國居民 {ageKr} 歲）並達到當地成年年齡。員工、承包商、活動營運人員及其同住家人不能領取實體獎勵。實體僅寄往 Kickstarter 配送國家；法律禁止的地區不適用。",
+      "活動在 Kickstarter 上線前截止，最晚為 {longStop}，確切時間至少提前 {noticeDays} 天公布。每位已驗證使用者僅計一次，每個韓國標準時間日曆日最多計 {cap} 人，超額不順延。先前符合條件的邀請也計入。自邀、拋棄式信箱、作弊、付費或未經同意的宣傳不計入。僅向認識的人分享；公開發布時須說明你會獲得獎勵。",
+      "截止時的計數須經審核；刪除資料或違規可能取消計數。同分者先達成者優先。每人及每戶最多各獲一盞潛水燈和一台 WatchDive。WatchDive 為價值 {prizeValue} 的外殼，可選 Apple Watch 或 Galaxy Watch 版，須另備支援的手錶；不含手錶，不可折現。獎勵在 {deliveryBy} 之前寄出。韓國領取者如獲獎品應稅價值超過 {taxFree}，須在出貨前繳納該價值的 {taxRate}% 預扣稅。獲獎通知後 14 天內未回覆，獎勵順延。"
+],
     welcomeSubject: "你已加入 WatchDive 等候名單 — 邀請你的潛伴",
     welcomeHeading: "你已加入 WatchDive 等候名單",
     welcomeIntro:
@@ -1287,6 +1318,13 @@ const ja: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "イベントのご案内",
+    shareHeading: "共有リンク · 紹介コード",
+    conditions: [
+      "参加は無料で、購入は不要です。{ageOther}歳以上（韓国在住の方は{ageKr}歳以上）かつ居住地で成人であることが条件です。従業員・契約者・運営関係者とその同居家族は実物特典の対象外です。実物はKickstarterの配送対象国のみへ発送し、法律で禁止される地域では無効です。",
+      "Kickstarter公開直前、遅くとも{longStop}に終了し、正確な日時は{noticeDays}日前までにお知らせします。認証済みの方は1人1回、韓国標準時の1日につき最大{cap}人まで集計し、超過分は繰り越しません。以前の有効な招待も対象です。自己招待・使い捨てアドレス・不正登録・有料または無断の宣伝は対象外です。知人にのみ共有し、公開投稿では特典を受けることを明記してください。",
+      "終了時の集計は審査後に確定し、データ削除や規則違反で除外される場合があります。同数なら先に達成した方が優先です。1人・1世帯につきライトとWatchDive各1点まで。WatchDiveは{prizeValue}相当のハウジングで、Apple Watch用かGalaxy Watch用を選べます。対応する時計が別途必要で、時計は含まず、換金はできません。{deliveryBy}より前に発送します。韓国の受取人は課税価額が{taxFree}を超える場合、発送前に{taxRate}%の税を支払います。当選通知から14日以内に返信がなければ次の対象者へ移ります。"
+],
     welcomeSubject: "WatchDive のウェイトリストに登録されました — バディを招待しましょう",
     welcomeHeading: "WatchDive のウェイトリストに登録されました",
     welcomeIntro:
@@ -1542,6 +1580,13 @@ const es: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "Sobre el evento",
+    shareHeading: "Enlace para compartir · código",
+    conditions: [
+      "Participación gratuita, sin compra. Debes tener al menos {ageOther} años ({ageKr} en Corea del Sur) y ser mayor de edad donde vives. Personal, contratistas, organizadores y sus hogares no pueden recibir premios físicos. Solo se envían a países de entrega de Kickstarter; no válido donde esté prohibido.",
+      "Cierra antes del lanzamiento en Kickstarter y, como máximo, el {longStop}; avisaremos con {noticeDays} días de antelación. Cada persona verificada cuenta una vez, hasta {cap} al día según la hora estándar de Corea; el exceso no se acumula. Cuentan las invitaciones válidas anteriores. Se excluyen autoinvitaciones, correos desechables, fraude y promoción pagada o no solicitada. Comparte solo con conocidos y declara tu recompensa en publicaciones públicas.",
+      "El recuento al cierre queda sujeto a revisión; las eliminaciones de datos y las infracciones pueden restar invitaciones. En empate, gana quien llegó antes. Una linterna y un WatchDive por persona y hogar. WatchDive es una carcasa de {prizeValue}, a elegir para Apple Watch o Galaxy Watch; requiere un reloj compatible, no incluido. No canjeable por dinero. Envío antes de {deliveryBy}. En Corea, el destinatario paga antes del envío una retención del {taxRate}% si el valor imponible supera {taxFree}. Si no responde en 14 días al aviso, el premio pasa al siguiente."
+],
     welcomeSubject: "Ya estás en la lista de espera de WatchDive — invita a tus compañeros",
     welcomeHeading: "Ya estás en la lista de espera de WatchDive",
     welcomeIntro:
@@ -1797,6 +1842,13 @@ const fr: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "Présentation de l’événement",
+    shareHeading: "Lien à partager · code de parrainage",
+    conditions: [
+      "Participation gratuite, sans achat. Réservée aux adultes de {ageOther} ans et plus ({ageKr} en Corée du Sud), majeurs dans leur pays. Salariés, prestataires, organisateurs et membres de leur foyer exclus des récompenses physiques. Livraison uniquement dans les pays desservis par la campagne Kickstarter ; nul là où la loi l’interdit.",
+      "Clôture avant le lancement sur Kickstarter, au plus tard le {longStop}, annoncée au moins {noticeDays} jours avant. Chaque personne vérifiée compte une fois, dans la limite de {cap} par jour, heure normale de Corée, sans report. Les invitations antérieures admissibles comptent. Auto-parrainage, adresses jetables, fraude et promotion payante ou non sollicitée sont exclus. Partagez uniquement avec des connaissances et signalez votre récompense dans les publications publiques.",
+      "Le décompte à la clôture est soumis à vérification ; suppressions de données et infractions peuvent retirer des invitations. À égalité, le premier arrivé est prioritaire. Une lampe et un WatchDive par personne et foyer. WatchDive : boîtier de {prizeValue}, version Apple Watch ou Galaxy Watch au choix ; montre compatible nécessaire, non incluse. Aucun équivalent en espèces. Envoi avant {deliveryBy}. En Corée, retenue de {taxRate}% à payer avant envoi si la valeur imposable dépasse {taxFree}. Sans réponse sous 14 jours à l’avis, la récompense passe au suivant."
+],
     welcomeSubject: "Vous êtes sur la liste d’attente WatchDive — invitez vos binômes",
     welcomeHeading: "Vous êtes sur la liste d’attente WatchDive",
     welcomeIntro:
@@ -2052,6 +2104,13 @@ const de: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "Die Aktion im Überblick",
+    shareHeading: "Link zum Teilen · Empfehlungscode",
+    conditions: [
+      "Kostenlose Teilnahme, kein Kauf nötig. Ab {ageOther} Jahren (Südkorea: {ageKr}) und volljährig am Wohnort. Beschäftigte, Auftragnehmer, Organisatoren und ihre Haushalte erhalten keine Sachprämien. Versand nur in Kickstarter-Lieferländer; ungültig, wo gesetzlich verboten.",
+      "Endet vor dem Kickstarter-Start, spätestens am {longStop}; die genaue Zeit wird mindestens {noticeDays} Tage vorher bekannt gegeben. Jede bestätigte Person zählt einmal, höchstens {cap} pro Tag nach koreanischer Standardzeit; kein Übertrag. Frühere gültige Einladungen zählen. Selbsteinladungen, Wegwerfadressen, Missbrauch sowie bezahlte oder unerwünschte Werbung zählen nicht. Teile nur mit Bekannten und kennzeichne bei öffentlichen Beiträgen deine Prämie.",
+      "Der Stand zum Schluss wird geprüft; Datenlöschung und Regelverstöße können Einladungen entfernen. Bei Gleichstand zählt das frühere Erreichen. Je eine Lampe und ein WatchDive pro Person und Haushalt. WatchDive: Gehäuse im Wert von {prizeValue}, wahlweise für Apple Watch oder Galaxy Watch; eine unterstützte Uhr ist erforderlich und nicht enthalten. Keine Barauszahlung. Versand vor {deliveryBy}. Empfänger in Korea zahlen vor Versand {taxRate}% Quellensteuer, wenn der steuerpflichtige Wert über {taxFree} liegt. Ohne Antwort auf die Gewinnmitteilung innerhalb von 14 Tagen geht die Prämie an die nächste berechtigte Person."
+],
     welcomeSubject: "Du bist auf der WatchDive-Warteliste — lade deine Buddys ein",
     welcomeHeading: "Du bist auf der WatchDive-Warteliste",
     welcomeIntro:
@@ -2303,6 +2362,13 @@ const ptBR: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "Sobre o evento",
+    shareHeading: "Link para compartilhar · código",
+    conditions: [
+      "Participação gratuita, sem compra. É preciso ter {ageOther} anos ou mais ({ageKr} na Coreia do Sul) e ser maior de idade onde mora. Funcionários, prestadores, organizadores e seus familiares no mesmo domicílio não recebem prêmios físicos. Envio apenas aos países atendidos pela campanha Kickstarter; inválido onde for proibido.",
+      "Encerra antes do lançamento no Kickstarter, no máximo em {longStop}; avisaremos com pelo menos {noticeDays} dias de antecedência. Cada pessoa verificada conta uma vez, até {cap} por dia no horário padrão da Coreia; excedentes não acumulam. Convites válidos anteriores contam. Autoconvites, e-mails descartáveis, fraude e divulgação paga ou não solicitada não contam. Compartilhe só com conhecidos e informe sua recompensa ao publicar.",
+      "A contagem no encerramento passa por revisão; exclusões de dados e infrações podem retirar convites. Em empate, vale quem chegou primeiro. Uma lanterna e um WatchDive por pessoa e domicílio. WatchDive: caixa de {prizeValue}, versão Apple Watch ou Galaxy Watch à escolha; requer relógio compatível, não incluído. Sem alternativa em dinheiro. Envio antes de {deliveryBy}. Na Coreia, o destinatário paga retenção de {taxRate}% antes do envio se o valor tributável superar {taxFree}. Sem resposta ao aviso em 14 dias, o prêmio passa ao próximo elegível."
+],
     welcomeSubject: "Você está na lista de espera do WatchDive — convide seus parceiros",
     welcomeHeading: "Você está na lista de espera do WatchDive",
     welcomeIntro:

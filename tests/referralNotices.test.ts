@@ -233,7 +233,7 @@ test("the cron hook passes dry-run through and logs counts only", async () => {
 });
 
 test("a first friend sends one notice that announces the first tier", async () => {
-  const rows = referrerWith(1);
+  const rows = referrerWith(1, { shareCode: "REEF42" });
   const store = new FakeStore(rows);
   const mailer = new FakeNoticeMailer();
   const result = await runReferralNotices(deps(store, mailer));
@@ -241,6 +241,8 @@ test("a first friend sends one notice that announces the first tier", async () =
   const mail = mailer.sent[0]!;
   assert.equal(mail.to, rows[0]!.email);
   assert.equal(mail.credited, 1);
+  assert.equal(mail.shareUrl, `https://watchdive.example/r/${rows[0]!.refCode}`);
+  assert.equal(mail.shareCode, "REEF42");
   assert.deepEqual(mail.crossed, ["first"]);
   assert.equal(mail.nextTier, "buddy");
   assert.equal(mail.remainingToNext, 2);
