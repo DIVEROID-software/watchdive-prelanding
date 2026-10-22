@@ -18,8 +18,9 @@ import {
 import { buildReminderEmail } from "./reminderEmail.ts";
 import { DEFAULT_LOCALE, referralPath, type Locale } from "../i18n/locale.ts";
 import type { ReferralMailer, ReferralNoticeMail } from "../referral/contract.ts";
+import { referralEvent } from "../referral/event.ts";
 import { fill, referralCopy } from "../referral/copy.ts";
-import { EARLY_NOTICE_HOURS, REFERRAL_TIERS, referralProgramEnabled } from "../referral/program.ts";
+import { REFERRAL_TIERS, referralProgramEnabled } from "../referral/program.ts";
 // Core-owned (feat/referral-core): `copyValues(locale)` returns every
 // program.ts number pre-formatted for the locale ({price}, {seats}, {stock},
 // {winners}, {cap}, {noticeDays}, ...). `{hours}` is per tier and filled here.
@@ -803,7 +804,14 @@ function buddyDocument(input: {
     "<!doctype html>",
     `<html lang="${escapeHtml(locale)}" dir="ltr">`,
     '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">',
-    '<meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">',
+    '<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">',
+    `<style>@media (prefers-color-scheme:dark){
+      body,[bgcolor="${PAGE_BG}"]{background-color:#081722!important;}
+      [bgcolor="${CARD_BG}"]{background-color:#102633!important;}
+      [style*="color:${BODY_INK}"],[style*="color:${INK}"]{color:#f5fafc!important;}
+      [style*="color:${MUTED_INK}"]{color:#c3d6df!important;}
+      a[style*="color:${BUTTON_BG}"]{color:#8fe6d4!important;}
+    }</style>`,
     `<title>${escapeHtml(input.subject)}</title>`,
     // Outlook's Word engine falls back to Times for an unknown first font.
     "<!--[if mso]><style>body,table,td,p,a,h1,h2{font-family:Arial,sans-serif !important;}</style><![endif]-->",
@@ -834,33 +842,54 @@ function headingHtml(text: string, locale: Locale): string {
   );
 }
 
-function subheadingHtml(text: string, locale: Locale): string {
-  return (
-    `<h2 style="margin:24px 0 10px;font-family:${FONT_STACK};font-size:16px;line-height:1.4;` +
-    `font-weight:700;color:${INK};${wordBreakFor(locale)}">${escapeHtml(text)}</h2>`
-  );
-}
-
 const STYLE_BODY_P = `margin:0 0 20px;font-size:15px;line-height:1.6;color:${BODY_INK};`;
-const STYLE_TIER_P = `margin:0 0 12px;font-size:14px;line-height:1.55;color:${BODY_INK};`;
 
-/**
- * The five reward lines (four tiers + top prize) with every number filled from
- * program.ts. `{hours}` differs per tier, so it is filled from the tier itself
- * rather than from the shared values.
- */
+/** Compatibility projection of the shared event model for notice labels. */
 export function referralRewardLines(locale: Locale): { name: string; reward: string }[] {
   const copy = referralCopy(locale);
-  const values = copyValues(locale);
-  const lines = REFERRAL_TIERS.map((tier) => {
-    const tierValues = { ...values, hours: EARLY_NOTICE_HOURS[tier.id] };
-    return {
-      name: fill(copy.tiers[tier.id].name, tierValues),
-      reward: fill(copy.tiers[tier.id].reward, tierValues),
-    };
-  });
-  lines.push({ name: fill(copy.top.name, values), reward: fill(copy.top.reward, values) });
-  return lines;
+  return referralEvent(locale).steps.map((step) => ({
+    name: step.id === "top" ? fill(copy.top.name, copyValues(locale)) : copy.tiers[step.id].name,
+    reward: step.benefit,
+  }));
+}
+
+/** Table-only event module. Inline colours are the fallback for clients that
+ * remove stylesheets; the document also supplies a dark-scheme override. */
+function eventRewardBlock(locale: Locale, rulesUrl: string, notice?: {
+  credited: number; crossed: readonly string[];
+}): { html: string; text: string } {
+  const event = referralEvent(locale, notice?.credited ?? null);
+  const steps = notice
+    ? event.steps.filter((step) => notice.crossed.includes(step.id) || step.next)
+    : event.steps;
+  const rows = steps.map((step) => {
+    const reached = notice?.crossed.includes(step.id);
+    const state = reached ? `✓ ${event.reached}` : notice && step.next ? `→ ${event.next}` : "";
+    const bg = reached ? "#173c49" : "#112e3d";
+    return `<tr><td style="padding:0 0 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;"><tr>
+<td width="64" align="center" valign="middle" bgcolor="${bg}" style="width:64px;padding:12px 4px;background-color:${bg};border-radius:10px 0 0 10px;border-left:3px solid ${reached ? "#8fe6d4" : bg};color:#8fe6d4;">
+<span style="font-size:${step.id === "top" ? "17" : "30"}px;line-height:1.1;font-weight:800;">${escapeHtml(step.badge)}</span>
+${step.id === "top" ? "" : `<br><span style="font-size:9px;line-height:1.3;color:#c3d6df;">${escapeHtml(event.friends)}</span>`}</td>
+<td valign="middle" bgcolor="${bg}" style="padding:12px 10px;background-color:${bg};border-radius:0 10px 10px 0;color:#f5fafc;">
+<span style="font-size:11px;line-height:1.5;color:#c3d6df;">${escapeHtml(step.name)}</span><br>
+<strong style="font-size:15px;line-height:1.4;color:#f5fafc;">${escapeHtml(step.benefit)}</strong>
+${step.qualifier ? `<br><span style="font-size:11px;line-height:1.6;color:#c3d6df;">${escapeHtml(step.qualifier)}</span>` : ""}
+${state ? `<br><span style="font-size:11px;line-height:1.7;color:#8fe6d4;font-weight:700;">${escapeHtml(state)}</span>` : ""}
+</td></tr></table></td></tr>`;
+  }).join("\n");
+  const html = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:24px 0;border-collapse:separate;"><tr><td bgcolor="#0d2533" style="padding:20px 14px;background-color:#0d2533;border-radius:14px;color:#f5fafc;${wordBreakFor(locale)}overflow-wrap:break-word;">
+<p style="margin:0 0 8px;font-size:11px;letter-spacing:3px;font-weight:800;color:#8fe6d4;">${escapeHtml(event.label)}</p>
+<h2 style="margin:0 0 10px;font-size:23px;line-height:1.3;font-weight:800;color:#f5fafc;">${escapeHtml(event.headline)}</h2>
+<p style="margin:0 0 20px;font-size:13px;line-height:1.6;color:#c3d6df;">${escapeHtml(event.subline)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${rows}</table>
+<p style="margin:16px 0 8px;padding-top:16px;border-top:1px solid #36515e;font-size:12px;font-weight:700;color:#c3d6df;">${escapeHtml(event.conditionsTitle)}</p>
+${event.conditions.map((line) => `<p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#c3d6df;">${escapeHtml(line)}</p>`).join("\n")}
+<a href="${escapeHtml(rulesUrl)}" style="font-size:12px;line-height:1.6;color:#8fe6d4;text-decoration:underline;">${escapeHtml(event.rulesLabel)}</a>
+</td></tr></table>`;
+  const text = [event.label, event.headline, event.subline,
+    ...steps.map((step) => `- ${step.badge} · ${step.name}: ${step.benefit}${step.qualifier ? ` (${step.qualifier})` : ""}${notice?.crossed.includes(step.id) ? ` — ${event.reached}` : notice && step.next ? ` — ${event.next}` : ""}`),
+    "", event.conditionsTitle, ...event.conditions, event.rulesLabel, rulesUrl].join("\n");
+  return { html, text };
 }
 
 export type WelcomeLinks = { shareUrl: string; statusUrl: string; rulesUrl: string };
@@ -881,7 +910,7 @@ export function buddyGuideBody(
   const values = copyValues(locale);
   const mail = copy.mail;
   const t = (template: string) => fill(template, values);
-  const rewards = referralRewardLines(locale);
+  const event = eventRewardBlock(locale, links.rulesUrl);
   const subject = adSubject(t(mail.welcomeSubject), footer);
   // Absent or unreadable: the guide stays byte-identical to the 3-argument call.
   // The welcome mail is sent at verification, before a code is assigned, so
@@ -901,13 +930,8 @@ export function buddyGuideBody(
           ),
         ]
       : []),
-    subheadingHtml(t(mail.welcomeTiersHeading), locale),
-    ...rewards.map((line) =>
-      para(STYLE_TIER_P, `<strong style="color:${INK};">${escapeHtml(line.name)}</strong><br>${escapeHtml(line.reward)}`, locale),
-    ),
-    para(`margin:0 0 22px;font-size:13px;line-height:1.6;color:${MUTED_INK};`, escapeHtml(t(copy.countingNote)), locale),
+    event.html,
     labelledLinkHtml(t(mail.welcomeStatus), links.statusUrl, locale),
-    labelledLinkHtml(t(mail.welcomeRules), links.rulesUrl, locale),
     para(`margin:8px 0 0;font-size:14px;line-height:1.6;color:${BODY_INK};`, escapeHtml(t(mail.welcomeOutro)), locale),
   ].join("\n");
   return {
@@ -919,15 +943,10 @@ export function buddyGuideBody(
       links.shareUrl,
       ...(validCode ? ["", `${t(mail.welcomeCode)} ${validCode}`] : []),
       "",
-      t(mail.welcomeTiersHeading),
-      ...rewards.map((line) => `- ${line.name}: ${line.reward}`),
-      t(copy.countingNote),
+      event.text,
       "",
       t(mail.welcomeStatus),
       links.statusUrl,
-      "",
-      t(mail.welcomeRules),
-      links.rulesUrl,
       "",
       t(mail.welcomeOutro),
       "",
@@ -954,10 +973,6 @@ export function referralNoticeBody(
   const mail = copy.mail;
   const rewards = referralRewardLines(locale);
   const rewardByTier = new Map(REFERRAL_TIERS.map((tier, index) => [tier.id, rewards[index]!]));
-  const reached = input.crossed.map((id) => {
-    const line = rewardByTier.get(id)!;
-    return fill(mail.noticeTierReached, { ...values, tier: line.name, reward: line.reward });
-  });
   const next =
     input.nextTier && input.remainingToNext !== null
       ? fill(mail.noticeNext, {
@@ -970,12 +985,11 @@ export function referralNoticeBody(
   const body = fill(mail.noticeBody, values);
   const noticeFooter = fill(mail.noticeFooter, values);
   const subject = adSubject(fill(mail.noticeSubject, values), footer);
+  const event = eventRewardBlock(locale, new URL(referralEvent(locale).rulesPath, input.statusUrl).href, input);
   const content = [
     headingHtml(heading, locale),
     para(`${STYLE_BODY_P}margin-bottom:14px;`, escapeHtml(body), locale),
-    ...reached.map((line) =>
-      para(STYLE_TIER_P, `<strong style="color:${INK};">${escapeHtml(line)}</strong>`, locale),
-    ),
+    event.html,
     para(STYLE_BODY_P, escapeHtml(next), locale),
     buttonHtml(input.statusUrl, fill(mail.noticeButton, values)),
     para(`margin:0 0 14px;font-size:13px;line-height:1.6;`, linkHtml(input.statusUrl), locale),
@@ -987,7 +1001,7 @@ export function referralNoticeBody(
       heading,
       "",
       body,
-      ...reached,
+      event.text,
       next,
       "",
       input.statusUrl,

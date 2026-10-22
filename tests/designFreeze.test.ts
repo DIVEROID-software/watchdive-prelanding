@@ -143,8 +143,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // gains a code row, and each signup form gains a closed disclosure under
   // the email field and submit button. Both stay out of the tree while the
   // program is off, so the switch-off DOM matches the previous pin.
+  // 2026-10-22: owner-requested EVENT ladder is visible in the program-on
+  // verified card; only its conditions collapse. The off branch is unchanged.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "c44af5d7e96c212e0ead238edbccc4ce3352982c198617bb6d64525a052d64cf");
+  assert.equal(digest, "86720caf3c1aaeaa6eb40c44ebbaa8270d3d388b5ebf124083491965d3c5bbfb");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

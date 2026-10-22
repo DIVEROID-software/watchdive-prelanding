@@ -1,16 +1,7 @@
 import type { Locale } from "@/lib/i18n/locale";
-import { fill, referralCopy } from "@/lib/referral/copy";
-import { EARLY_NOTICE_HOURS, REFERRAL_TIERS, nextTier } from "@/lib/referral/program";
-import { copyValues } from "@/lib/referral/values";
+import { referralEvent } from "@/lib/referral/event";
 
-/**
- * The four Buddy Invite tiers plus the top-N prize line. Colours inherit from
- * the parent (currentColor) so it works on the dark landing card and a light page.
- *
- * `credited` is null when the visitor's count is unknown (rules/leaderboard
- * context, or the progress fetch has not answered): no tier is then marked, so
- * the list never implies progress we have not read.
- */
+/** Unknown counts never imply progress; top rank is never a held tier. */
 export function TierList({
   locale,
   credited,
@@ -20,68 +11,63 @@ export function TierList({
   credited: number | null;
   className?: string;
 }) {
-  const copy = referralCopy(locale);
-  const values = copyValues(locale);
-  const next = credited === null ? null : nextTier(credited);
-
+  const event = referralEvent(locale, credited);
   return (
-    <div className={className}>
-      <ul className="space-y-1.5">
-        {REFERRAL_TIERS.map((tier) => {
-          const reached = credited !== null && credited >= tier.minFriends;
-          const isNext = next?.id === tier.id;
-          const text = copy.tiers[tier.id];
-          return (
-            <li
-              key={tier.id}
-              data-tier={tier.id}
-              data-state={reached ? "reached" : isNext ? "next" : "locked"}
-              className={
-                "flex gap-2.5 rounded-lg border px-3 py-2 " +
-                (reached
-                  ? "border-[color:var(--color-cyan-glow)]/50 bg-[color:var(--color-cyan-glow)]/10"
-                  : isNext
-                    ? "border-current/40 bg-current/10"
-                    : "border-current/15 bg-current/[0.03]")
-              }
-            >
-              <span
-                aria-hidden="true"
-                className={
-                  "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold " +
-                  (reached
-                    ? "bg-[color:var(--color-cyan-glow)] text-[color:var(--color-deep-2)]"
-                    : "border border-current/40 opacity-70")
-                }
-              >
-                {reached ? "✓" : tier.minFriends}
-              </span>
-              <span className="min-w-0 text-xs leading-snug">
-                <span className="block font-semibold">{text.name}</span>
-                <span className="block opacity-80">
-                  {fill(text.reward, { ...values, hours: EARLY_NOTICE_HOURS[tier.id] })}
-                </span>
-              </span>
-            </li>
-          );
-        })}
-        <li
-          data-tier="top"
-          className="flex gap-2.5 rounded-lg border border-current/15 bg-current/[0.03] px-3 py-2"
-        >
-          <span
-            aria-hidden="true"
-            className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current/40 text-[11px] opacity-70"
+    <section className={`rounded-2xl bg-[#0d2533] p-4 text-[#f5fafc] ${className}`}>
+      <p className="text-[11px] font-extrabold tracking-[0.22em] text-[#8fe6d4]">{event.label}</p>
+      <h3 className="mt-2 text-xl font-bold leading-snug text-[#f5fafc]">{event.headline}</h3>
+      <p className="mt-2 text-xs leading-relaxed text-[#c3d6df]">{event.subline}</p>
+      <ol className="mt-5 space-y-2">
+        {event.steps.map((step) => (
+          <li
+            key={step.id}
+            data-tier={step.id}
+            data-state={step.reached ? "reached" : step.next ? "next" : "locked"}
+            className={`flex items-center gap-3 rounded-xl border p-3 ${step.next ? "border-[#8fe6d4] bg-[#173c49]" : "border-[#36515e] bg-[#112e3d]"}`}
           >
-            ★
-          </span>
-          <span className="min-w-0 text-xs leading-snug">
-            <span className="block font-semibold">{fill(copy.top.name, values)}</span>
-            <span className="block opacity-80">{fill(copy.top.reward, values)}</span>
-          </span>
-        </li>
-      </ul>
-      <p className="mt-2 text-[11px] opacity-70">{copy.countingNote}</p>
-    </div>
+            <div className="w-14 shrink-0 text-center">
+              <span
+                className={`block font-extrabold leading-none text-[#8fe6d4] ${step.id === "top" ? "text-lg" : "text-3xl"}`}
+              >
+                {step.badge}
+              </span>
+              {step.id !== "top" && (
+                <span className="mt-1 block text-[9px] leading-tight text-[#c3d6df]">
+                  {event.friends}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] leading-relaxed text-[#c3d6df]">{step.name}</p>
+              <p className="mt-0.5 text-sm font-bold leading-snug text-[#f5fafc]">{step.benefit}</p>
+              {step.qualifier && (
+                <p className="mt-1 text-[10px] leading-snug text-[#c3d6df]">{step.qualifier}</p>
+              )}
+              {(step.reached || step.next) && (
+                <p className="mt-1 text-[10px] font-semibold text-[#8fe6d4]">
+                  {step.reached ? `✓ ${event.reached}` : `→ ${event.next}`}
+                </p>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
+      <details className="mt-4 border-t border-[#36515e] pt-1">
+        <summary className="min-h-11 cursor-pointer py-3 text-xs font-semibold text-[#c3d6df]">
+          {event.conditionsTitle}
+        </summary>
+        <div className="space-y-2 text-xs leading-relaxed text-[#c3d6df]">
+          {event.conditions.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          <a
+            className="inline-flex min-h-11 items-center text-[#8fe6d4] underline underline-offset-4"
+            href={event.rulesPath}
+          >
+            {event.rulesLabel}
+          </a>
+        </div>
+      </details>
+    </section>
   );
 }

@@ -361,9 +361,9 @@ function assertNoPii(
   options: { refCodes?: string[] } = {},
 ) {
   // The sender's own published contact address is required in every mail
-  // footer (opt-out and Korean advertising rules); nothing else may carry "@".
+  // footer (opt-out and Korean advertising rules); email CSS may contain @media but no other address.
   const text = JSON.stringify(value).replaceAll("help@diveroid.com", "");
-  assert.equal(text.includes("@"), false, `${label}: no "@" in ${text}`);
+  assert.equal(text.replaceAll("@media", "").includes("@"), false, `${label}: no address in ${text}`);
   for (const email of s.participants)
     assert.equal(text.includes(email), false, `${label}: no ${email}`);
   for (const pageId of s.net.notion.pages.keys()) {

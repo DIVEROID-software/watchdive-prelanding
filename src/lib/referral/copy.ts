@@ -28,6 +28,18 @@ import type { Locale } from "../i18n/locale.ts";
 import type { ReferralTierId } from "./program.ts";
 
 export type ReferralCopy = {
+  event: {
+    label: string;
+    headline: string;
+    subline: string;
+    friends: string;
+    reached: string;
+    next: string;
+    conditionsTitle: string;
+    earlyQualifier: string;
+    conditions: { team: string; leader: string; top: string };
+    benefits: Record<ReferralTierId | "top", string>;
+  };
   programName: string;
   tiers: Record<ReferralTierId, { name: string; reward: string }>;
   top: { name: string; reward: string };
@@ -142,6 +154,29 @@ export type ReferralCopy = {
 };
 
 const en: ReferralCopy = {
+  event: {
+    label: "EVENT",
+    headline: "Bring your buddies. Unlock rewards you won’t want to miss.",
+    subline: "Start with {count}. Rewards grow with every friend who confirms their email.",
+    friends: "confirmed friends",
+    reached: "Reached",
+    next: "Up next",
+    conditionsTitle: "Good to know",
+    earlyQualifier: "Ahead of the general list",
+    conditions: {
+      team: "Use your private {price} Dive Team link on the Kickstarter website during the live campaign, even after the public {seats} spots fill. One pledge per member; don’t share the link.",
+      leader:
+        "Light worth about {lightValue}; {stock} units, in order the tier is reached. Shipping and taxes are paid by the recipient.",
+      top: "Top {winners} at the close each receive a WatchDive, even if the campaign is late or does not go ahead. Shipping and taxes are paid by the recipient.",
+    },
+    benefits: {
+      first: "Launch email {hoursFirst} hour earlier",
+      buddy: "Launch email {hoursBuddy} hours earlier",
+      team: "Keep the {price} early-bird price",
+      leader: "Underwater light · first {stock}",
+      top: "Receive a WatchDive",
+    },
+  },
   programName: "Buddy Invite",
   tiers: {
     first: {
@@ -227,7 +262,8 @@ const en: ReferralCopy = {
     copy: "Copy code",
     copied: "Code copied",
     claimSummary: "Choose your own code",
-    claimHelp: "{codeMin}–{codeMax} letters or numbers. You can set this once. No email, phone number, link, or a name that could pass for WatchDive staff.",
+    claimHelp:
+      "{codeMin}–{codeMax} letters or numbers. You can set this once. No email, phone number, link, or a name that could pass for WatchDive staff.",
     claimPlaceholder: "JEJUBUDDY",
     claimButton: "Save code",
     claimSaving: "Saving…",
@@ -236,7 +272,8 @@ const en: ReferralCopy = {
     onceNote: "This is the code you chose. It stays as it is.",
     signupAsk: "Have a referral code?",
     signupPlaceholder: "Referral code",
-    signupUnknown: "We couldn’t match that code, so this signup isn’t linked to a friend. You’re still on the list.",
+    signupUnknown:
+      "We couldn’t match that code, so this signup isn’t linked to a friend. You’re still on the list.",
     errors: {
       too_short: "Use at least {codeMin} characters.",
       too_long: "Use at most {codeMax} characters.",
@@ -367,6 +404,29 @@ const en: ReferralCopy = {
 };
 
 const ko: ReferralCopy = {
+  event: {
+    label: "EVENT",
+    headline: "친구와 함께 시작하는, 놓칠 수 없는 버디 초대 혜택",
+    subline: "친구 {count}명부터, 이메일 인증을 마친 친구 수만큼 혜택이 커져요",
+    friends: "인증한 친구",
+    reached: "달성",
+    next: "다음 혜택",
+    conditionsTitle: "유의사항",
+    earlyQualifier: "일반 알림 명단보다 먼저",
+    conditions: {
+      team: "다이브 팀 전용 {price} 링크는 공개 얼리버드 {seats}명 마감 후에도 캠페인 진행 중 Kickstarter 웹사이트에서 사용할 수 있어요. 회원당 한 번만 후원하며, 링크는 공유하지 마세요.",
+      leader:
+        "수중 라이트는 약 {lightValue} 상당, 등급 달성 순서대로 {stock}개를 드려요. 배송비와 세금은 받는 분이 부담해요.",
+      top: "마감 시점 상위 {winners}명에게 WatchDive를 드려요. 캠페인이 늦거나 진행되지 않아도 지급하며, 배송비와 세금은 받는 분이 부담해요.",
+    },
+    benefits: {
+      first: "오픈 소식 {hoursFirst}시간 먼저",
+      buddy: "오픈 소식 {hoursBuddy}시간 먼저",
+      team: "얼리버드 {price} 그대로",
+      leader: "수중 라이트 증정 · 선착순 {stock}명",
+      top: "WatchDive 증정",
+    },
+  },
   programName: "버디 초대",
   tiers: {
     first: {
@@ -452,7 +512,8 @@ const ko: ReferralCopy = {
     copy: "코드 복사",
     copied: "코드를 복사했어요",
     claimSummary: "나만의 코드 정하기",
-    claimHelp: "영문과 숫자 {codeMin}–{codeMax}자. 한 번만 정할 수 있어요. 이메일, 전화번호, 링크, WatchDive 직원으로 보일 수 있는 이름은 쓸 수 없습니다.",
+    claimHelp:
+      "영문과 숫자 {codeMin}–{codeMax}자. 한 번만 정할 수 있어요. 이메일, 전화번호, 링크, WatchDive 직원으로 보일 수 있는 이름은 쓸 수 없습니다.",
     claimPlaceholder: "BUSANDIVE",
     claimButton: "코드 저장",
     claimSaving: "저장 중…",
@@ -461,7 +522,8 @@ const ko: ReferralCopy = {
     onceNote: "직접 정한 코드입니다. 이 코드는 바뀌지 않습니다.",
     signupAsk: "추천 코드가 있나요?",
     signupPlaceholder: "추천 코드",
-    signupUnknown: "코드를 찾지 못해 이번 신청은 친구에게 연결되지 않았어요. 알림 신청은 그대로 완료됩니다.",
+    signupUnknown:
+      "코드를 찾지 못해 이번 신청은 친구에게 연결되지 않았어요. 알림 신청은 그대로 완료됩니다.",
     errors: {
       too_short: "{codeMin}자 이상 입력해 주세요.",
       too_long: "{codeMax}자 이하로 입력해 주세요.",
@@ -592,6 +654,29 @@ const ko: ReferralCopy = {
 };
 
 const zhCN: ReferralCopy = {
+  event: {
+    label: "EVENT",
+    headline: "邀上潜伴，解锁不容错过的好礼",
+    subline: "从 {count} 位好友开始，完成邮箱验证的好友越多，奖励越丰富。",
+    friends: "已验证好友",
+    reached: "已达成",
+    next: "下一档",
+    conditionsTitle: "活动须知",
+    earlyQualifier: "比普通名单更早收到",
+    conditions: {
+      team: "Dive Team 专属 {price} 链接可在活动进行期间通过 Kickstarter 网站使用，即使公开早鸟名额 {seats} 个已满。每位成员限支持一次，请勿分享链接。",
+      leader:
+        "潜水灯价值约 {lightValue}，共 {stock} 个，按达成等级的先后顺序发放。运费和税费由收件人承担。",
+      top: "截止时排名前 {winners} 位各获赠一台 WatchDive，即使众筹延期或未能开展也会发放。运费和税费由收件人承担。",
+    },
+    benefits: {
+      first: "提前 {hoursFirst} 小时收到上线邮件",
+      buddy: "提前 {hoursBuddy} 小时收到上线邮件",
+      team: "仍享 {price} 早鸟价",
+      leader: "赠送潜水灯 · 前 {stock} 位",
+      top: "获赠 WatchDive",
+    },
+  },
   programName: "潜伴邀请",
   tiers: {
     first: {
@@ -677,7 +762,8 @@ const zhCN: ReferralCopy = {
     copy: "复制推荐码",
     copied: "推荐码已复制",
     claimSummary: "自定义推荐码",
-    claimHelp: "使用 {codeMin}–{codeMax} 位字母或数字。只能设置一次。不能包含邮箱、电话号码、链接，或可能被误认为 WatchDive 工作人员的名称。",
+    claimHelp:
+      "使用 {codeMin}–{codeMax} 位字母或数字。只能设置一次。不能包含邮箱、电话号码、链接，或可能被误认为 WatchDive 工作人员的名称。",
     claimPlaceholder: "SANYADIVE",
     claimButton: "保存推荐码",
     claimSaving: "保存中…",
@@ -817,6 +903,29 @@ const zhCN: ReferralCopy = {
 };
 
 const zhTW: ReferralCopy = {
+  event: {
+    label: "EVENT",
+    headline: "揪潛伴一起來，解鎖不容錯過的好禮",
+    subline: "從 {count} 位好友開始，完成電子郵件驗證的好友越多，獎勵越豐富。",
+    friends: "已驗證好友",
+    reached: "已達成",
+    next: "下一階",
+    conditionsTitle: "活動須知",
+    earlyQualifier: "比一般名單更早收到",
+    conditions: {
+      team: "Dive Team 專屬 {price} 連結可在活動進行期間透過 Kickstarter 網站使用，即使公開早鳥名額 {seats} 個已滿。每位成員限贊助一次，請勿分享連結。",
+      leader:
+        "水中燈價值約 {lightValue}，共 {stock} 個，依達成等級的先後順序發放。運費及稅費由收件人負擔。",
+      top: "截止時排名前 {winners} 位各獲贈一台 WatchDive，即使募資延期或未能進行也會發放。運費及稅費由收件人負擔。",
+    },
+    benefits: {
+      first: "提前 {hoursFirst} 小時收到上線通知",
+      buddy: "提前 {hoursBuddy} 小時收到上線通知",
+      team: "仍享 {price} 早鳥價",
+      leader: "贈送潛水燈 · 前 {stock} 位",
+      top: "獲贈 WatchDive",
+    },
+  },
   programName: "潛伴邀請",
   tiers: {
     first: {
@@ -901,7 +1010,8 @@ const zhTW: ReferralCopy = {
     copy: "複製推薦碼",
     copied: "推薦碼已複製",
     claimSummary: "自訂推薦碼",
-    claimHelp: "使用 {codeMin}–{codeMax} 個字母或數字。只能設定一次。不能包含電子郵件、電話號碼、連結，或可能被誤認為 WatchDive 工作人員的名稱。",
+    claimHelp:
+      "使用 {codeMin}–{codeMax} 個字母或數字。只能設定一次。不能包含電子郵件、電話號碼、連結，或可能被誤認為 WatchDive 工作人員的名稱。",
     claimPlaceholder: "KENTING",
     claimButton: "儲存推薦碼",
     claimSaving: "儲存中…",
@@ -1041,6 +1151,29 @@ const zhTW: ReferralCopy = {
 };
 
 const ja: ReferralCopy = {
+  event: {
+    label: "EVENT",
+    headline: "バディを誘って、見逃せない特典を手に入れよう",
+    subline: "友達 {count} 人からスタート。メール認証を済ませた友達が増えるほど、特典も充実。",
+    friends: "認証済みの友達",
+    reached: "達成",
+    next: "次の特典",
+    conditionsTitle: "ご確認ください",
+    earlyQualifier: "一般リストより早くお知らせ",
+    conditions: {
+      team: "Dive Team 専用の {price} リンクは、一般向け早期割引 {seats} 枠の終了後も、キャンペーン開催中に Kickstarter のウェブサイトで使えます。メンバーにつき支援は一回のみ。リンクの共有はお控えください。",
+      leader:
+        "水中ライトは約 {lightValue} 相当。達成順に {stock} 個を進呈します。送料と税金は受取人の負担です。",
+      top: "締切時点の上位 {winners} 名に WatchDive を進呈します。キャンペーンが延期・中止になっても進呈し、送料と税金は受取人の負担です。",
+    },
+    benefits: {
+      first: "公開メールを {hoursFirst} 時間早く",
+      buddy: "公開メールを {hoursBuddy} 時間早く",
+      team: "早期割引価格 {price} のまま",
+      leader: "水中ライト進呈 · 先着 {stock} 名",
+      top: "WatchDive を進呈",
+    },
+  },
   programName: "バディ招待",
   tiers: {
     first: {
@@ -1127,7 +1260,8 @@ const ja: ReferralCopy = {
     copy: "コードをコピー",
     copied: "コードをコピーしました",
     claimSummary: "自分のコードを決める",
-    claimHelp: "英数字 {codeMin}～{codeMax} 文字。設定できるのは一度だけです。メールアドレス、電話番号、リンク、WatchDive のスタッフに見間違われる名前は使えません。",
+    claimHelp:
+      "英数字 {codeMin}～{codeMax} 文字。設定できるのは一度だけです。メールアドレス、電話番号、リンク、WatchDive のスタッフに見間違われる名前は使えません。",
     claimPlaceholder: "OKINAWA",
     claimButton: "コードを保存",
     claimSaving: "保存しています…",
@@ -1136,7 +1270,8 @@ const ja: ReferralCopy = {
     onceNote: "ご自身で決めたコードです。このコードはこのままです。",
     signupAsk: "紹介コードはお持ちですか？",
     signupPlaceholder: "紹介コード",
-    signupUnknown: "このコードは見つからなかったため、今回の登録は友だちにはつながりません。ウェイトリストへの登録自体は完了しています。",
+    signupUnknown:
+      "このコードは見つからなかったため、今回の登録は友だちにはつながりません。ウェイトリストへの登録自体は完了しています。",
     errors: {
       too_short: "{codeMin} 文字以上で入力してください。",
       too_long: "{codeMax} 文字以内で入力してください。",
@@ -1268,6 +1403,29 @@ const ja: ReferralCopy = {
 };
 
 const es: ReferralCopy = {
+  event: {
+    label: "EVENT",
+    headline: "Invita a tus compañeros. Descubre recompensas que no querrás perderte.",
+    subline: "Empieza con {count}. Las recompensas crecen con cada amigo que confirma su correo.",
+    friends: "amigos confirmados",
+    reached: "Alcanzado",
+    next: "Siguiente paso",
+    conditionsTitle: "Ten en cuenta",
+    earlyQualifier: "Antes que la lista general",
+    conditions: {
+      team: "Usa tu enlace privado Dive Team de {price} en la web de Kickstarter durante la campaña, incluso si se agotan las {seats} plazas públicas early bird. Una aportación por miembro; no compartas el enlace.",
+      leader:
+        "Linterna valorada en unos {lightValue}; {stock} unidades por orden de llegada al nivel. El destinatario paga el envío y los impuestos.",
+      top: "Los {winners} primeros al cierre reciben un WatchDive cada uno, aunque la campaña se retrase o no se realice. El destinatario paga el envío y los impuestos.",
+    },
+    benefits: {
+      first: "Aviso de lanzamiento {hoursFirst} hora antes",
+      buddy: "Aviso de lanzamiento {hoursBuddy} horas antes",
+      team: "Mantén el precio early bird de {price}",
+      leader: "Linterna submarina · primeras {stock} personas",
+      top: "Recibe un WatchDive",
+    },
+  },
   programName: "Invita a tu compañero",
   tiers: {
     first: {
@@ -1357,7 +1515,8 @@ const es: ReferralCopy = {
     copy: "Copiar código",
     copied: "Código copiado",
     claimSummary: "Elige tu propio código",
-    claimHelp: "{codeMin}–{codeMax} letras o números. Solo puedes elegirlo una vez. Sin correo, teléfono, enlace ni un nombre que pueda parecer de alguien del equipo de WatchDive.",
+    claimHelp:
+      "{codeMin}–{codeMax} letras o números. Solo puedes elegirlo una vez. Sin correo, teléfono, enlace ni un nombre que pueda parecer de alguien del equipo de WatchDive.",
     claimPlaceholder: "COZUMEL",
     claimButton: "Guardar código",
     claimSaving: "Guardando…",
@@ -1366,7 +1525,8 @@ const es: ReferralCopy = {
     onceNote: "Este es el código que elegiste. Se queda como está.",
     signupAsk: "¿Tienes un código de invitación?",
     signupPlaceholder: "Código de invitación",
-    signupUnknown: "No encontramos ese código, así que esta inscripción no queda ligada a un amigo. Sigues en la lista.",
+    signupUnknown:
+      "No encontramos ese código, así que esta inscripción no queda ligada a un amigo. Sigues en la lista.",
     errors: {
       too_short: "Usa al menos {codeMin} caracteres.",
       too_long: "Usa como máximo {codeMax} caracteres.",
@@ -1497,6 +1657,30 @@ const es: ReferralCopy = {
 };
 
 const fr: ReferralCopy = {
+  event: {
+    label: "EVENT",
+    headline: "Invitez vos binômes. Des récompenses à ne pas manquer.",
+    subline:
+      "Commencez avec {count}. Chaque ami qui confirme son e-mail vous rapproche de nouvelles récompenses.",
+    friends: "amis confirmés",
+    reached: "Palier atteint",
+    next: "Prochain palier",
+    conditionsTitle: "À savoir",
+    earlyQualifier: "Avant la liste générale",
+    conditions: {
+      team: "Utilisez votre lien privé Dive Team à {price} sur le site Kickstarter pendant la campagne, même après épuisement des {seats} places early bird publiques. Une contribution par membre ; ne partagez pas le lien.",
+      leader:
+        "Lampe d’une valeur d’environ {lightValue} : {stock} exemplaires, par ordre d’accès au palier. Frais de port et taxes à la charge du destinataire.",
+      top: "Les {winners} premiers à la clôture reçoivent chacun un WatchDive, même si la campagne est retardée ou n’a pas lieu. Frais de port et taxes à la charge du destinataire.",
+    },
+    benefits: {
+      first: "E-mail de lancement {hoursFirst} heure avant",
+      buddy: "E-mail de lancement {hoursBuddy} heures avant",
+      team: "Gardez le prix early bird de {price}",
+      leader: "Lampe de plongée · les {stock} premiers",
+      top: "Recevez un WatchDive",
+    },
+  },
   programName: "Invitez votre binôme",
   tiers: {
     first: {
@@ -1586,7 +1770,8 @@ const fr: ReferralCopy = {
     copy: "Copier le code",
     copied: "Code copié",
     claimSummary: "Choisissez votre code",
-    claimHelp: "{codeMin} à {codeMax} lettres ou chiffres. Vous ne pouvez le choisir qu’une fois. Pas d’adresse e-mail, de numéro de téléphone, de lien, ni d’un nom qui pourrait passer pour celui de l’équipe WatchDive.",
+    claimHelp:
+      "{codeMin} à {codeMax} lettres ou chiffres. Vous ne pouvez le choisir qu’une fois. Pas d’adresse e-mail, de numéro de téléphone, de lien, ni d’un nom qui pourrait passer pour celui de l’équipe WatchDive.",
     claimPlaceholder: "MARSEILLE",
     claimButton: "Enregistrer le code",
     claimSaving: "Enregistrement…",
@@ -1595,7 +1780,8 @@ const fr: ReferralCopy = {
     onceNote: "Voici le code que vous avez choisi. Il reste tel quel.",
     signupAsk: "Vous avez un code de parrainage ?",
     signupPlaceholder: "Code de parrainage",
-    signupUnknown: "Ce code est introuvable, donc cette inscription n’est pas reliée à un ami. Vous êtes tout de même sur la liste.",
+    signupUnknown:
+      "Ce code est introuvable, donc cette inscription n’est pas reliée à un ami. Vous êtes tout de même sur la liste.",
     errors: {
       too_short: "Utilisez au moins {codeMin} caractères.",
       too_long: "Utilisez au plus {codeMax} caractères.",
@@ -1726,6 +1912,30 @@ const fr: ReferralCopy = {
 };
 
 const de: ReferralCopy = {
+  event: {
+    label: "EVENT",
+    headline: "Hol deine Buddys dazu. Entdecke Vorteile, die du nicht verpassen willst.",
+    subline:
+      "Starte mit {count}. Mit jedem Freund, der seine E-Mail bestätigt, wachsen deine Vorteile.",
+    friends: "bestätigte Freunde",
+    reached: "Erreicht",
+    next: "Nächste Stufe",
+    conditionsTitle: "Gut zu wissen",
+    earlyQualifier: "Vor der allgemeinen Liste",
+    conditions: {
+      team: "Nutze deinen privaten Dive-Team-Link für {price} während der laufenden Kampagne auf der Kickstarter-Website, auch nach Vergabe der {seats} öffentlichen Early-Bird-Plätze. Ein Beitrag pro Mitglied; bitte teile den Link nicht.",
+      leader:
+        "Tauchlampe im Wert von etwa {lightValue}; {stock} Stück in der Reihenfolge, in der die Stufe erreicht wird. Versand und Steuern zahlt der Empfänger.",
+      top: "Die besten {winners} bei Ende erhalten je eine WatchDive, auch wenn die Kampagne später oder gar nicht stattfindet. Versand und Steuern zahlt der Empfänger.",
+    },
+    benefits: {
+      first: "Start-E-Mail {hoursFirst} Stunde früher",
+      buddy: "Start-E-Mail {hoursBuddy} Stunden früher",
+      team: "Behalte den Early-Bird-Preis von {price}",
+      leader: "Tauchlampe · für die ersten {stock}",
+      top: "Erhalte eine WatchDive",
+    },
+  },
   programName: "Buddy-Einladung",
   tiers: {
     first: {
@@ -1815,7 +2025,8 @@ const de: ReferralCopy = {
     copy: "Code kopieren",
     copied: "Code kopiert",
     claimSummary: "Wähl deinen eigenen Code",
-    claimHelp: "{codeMin}–{codeMax} Buchstaben oder Zahlen. Du kannst ihn nur einmal festlegen. Keine E-Mail, keine Telefonnummer, kein Link und kein Name, der nach dem WatchDive-Team aussehen könnte.",
+    claimHelp:
+      "{codeMin}–{codeMax} Buchstaben oder Zahlen. Du kannst ihn nur einmal festlegen. Keine E-Mail, keine Telefonnummer, kein Link und kein Name, der nach dem WatchDive-Team aussehen könnte.",
     claimPlaceholder: "ROTESMEER",
     claimButton: "Code speichern",
     claimSaving: "Wird gespeichert…",
@@ -1824,7 +2035,8 @@ const de: ReferralCopy = {
     onceNote: "Das ist der Code, den du gewählt hast. Er bleibt so.",
     signupAsk: "Hast du einen Empfehlungscode?",
     signupPlaceholder: "Empfehlungscode",
-    signupUnknown: "Diesen Code haben wir nicht gefunden, deshalb ist diese Anmeldung keinem Freund zugeordnet. Du stehst trotzdem auf der Liste.",
+    signupUnknown:
+      "Diesen Code haben wir nicht gefunden, deshalb ist diese Anmeldung keinem Freund zugeordnet. Du stehst trotzdem auf der Liste.",
     errors: {
       too_short: "Nimm mindestens {codeMin} Zeichen.",
       too_long: "Nimm höchstens {codeMax} Zeichen.",
@@ -1955,6 +2167,29 @@ const de: ReferralCopy = {
 };
 
 const ptBR: ReferralCopy = {
+  event: {
+    label: "EVENT",
+    headline: "Chame seus parceiros de mergulho. Descubra recompensas imperdíveis.",
+    subline: "Comece com {count}. A cada amigo que confirma o e-mail, suas recompensas aumentam.",
+    friends: "amigos confirmados",
+    reached: "Conquistado",
+    next: "Próxima etapa",
+    conditionsTitle: "Bom saber",
+    earlyQualifier: "Antes da lista geral",
+    conditions: {
+      team: "Use seu link privado Dive Team de {price} no site do Kickstarter durante a campanha, mesmo depois que as {seats} vagas públicas early bird acabarem. Um apoio por membro; não compartilhe o link.",
+      leader:
+        "Lanterna de cerca de {lightValue}; {stock} unidades, por ordem de chegada ao nível. Frete e impostos ficam por conta de quem recebe.",
+      top: "Os {winners} primeiros no encerramento recebem um WatchDive cada, mesmo se a campanha atrasar ou não acontecer. Frete e impostos ficam por conta de quem recebe.",
+    },
+    benefits: {
+      first: "Aviso de lançamento {hoursFirst} hora antes",
+      buddy: "Aviso de lançamento {hoursBuddy} horas antes",
+      team: "Mantenha o preço early bird de {price}",
+      leader: "Lanterna de mergulho · primeiros {stock}",
+      top: "Receba um WatchDive",
+    },
+  },
   programName: "Convide seu parceiro",
   tiers: {
     first: {
@@ -2041,7 +2276,8 @@ const ptBR: ReferralCopy = {
     copy: "Copiar código",
     copied: "Código copiado",
     claimSummary: "Escolha seu código",
-    claimHelp: "{codeMin}–{codeMax} letras ou números. Você só pode definir isso uma vez. Sem e-mail, telefone, link ou um nome que possa parecer de alguém da equipe do WatchDive.",
+    claimHelp:
+      "{codeMin}–{codeMax} letras ou números. Você só pode definir isso uma vez. Sem e-mail, telefone, link ou um nome que possa parecer de alguém da equipe do WatchDive.",
     claimPlaceholder: "FERNANDO",
     claimButton: "Salvar código",
     claimSaving: "Salvando…",
@@ -2050,7 +2286,8 @@ const ptBR: ReferralCopy = {
     onceNote: "Este é o código que você escolheu. Ele continua como está.",
     signupAsk: "Você tem um código de indicação?",
     signupPlaceholder: "Código de indicação",
-    signupUnknown: "Não encontramos esse código, então este cadastro não fica ligado a um amigo. Você continua na lista.",
+    signupUnknown:
+      "Não encontramos esse código, então este cadastro não fica ligado a um amigo. Você continua na lista.",
     errors: {
       too_short: "Use pelo menos {codeMin} caracteres.",
       too_long: "Use no máximo {codeMax} caracteres.",
