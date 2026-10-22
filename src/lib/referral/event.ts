@@ -14,6 +14,8 @@ export function referralEvent(locale: Locale, credited: number | null = null) {
   const steps = REFERRAL_TIERS.map((tier) => ({
     id: tier.id as ReferralTierId | "top",
     badge: String(tier.minFriends),
+    badgeUnit: copy.event.badges.unit,
+    badgeCaption: tier.minFriends === 1 ? copy.event.badges.one : copy.event.badges.other,
     name: copy.tiers[tier.id].name.split(" · ")[0],
     benefit: t(copy.event.benefits[tier.id]),
     qualifier: tier.id === "first" || tier.id === "buddy" ? copy.event.earlyQualifier : null,
@@ -23,6 +25,8 @@ export function referralEvent(locale: Locale, credited: number | null = null) {
   steps.push({
     id: "top",
     badge: `TOP ${values.winners}`,
+    badgeUnit: "",
+    badgeCaption: copy.event.badges.top,
     name: t(copy.top.name),
     benefit: t(copy.event.benefits.top),
     qualifier: null,
@@ -31,7 +35,6 @@ export function referralEvent(locale: Locale, credited: number | null = null) {
   });
   return {
     label: copy.event.label,
-    friends: copy.event.friends,
     reached: copy.event.reached,
     next: copy.event.next,
     conditionsTitle: copy.event.conditionsTitle,

@@ -30,7 +30,7 @@ const placeholders = (text: string) => [...new Set(text.match(/\{\w+\}/g) ?? [])
 const enFlat = flatten(en);
 
 // Strings that legitimately read the same as English (brand-only / URLs).
-const SAME_AS_EN_ALLOWED = new Set<string>(["event.label"]);
+const SAME_AS_EN_ALLOWED = new Set<string>(["event.label", "event.badges.unit"]);
 
 // Same banned-claim patterns as tests/i18nMessages.test.ts, plus equivalents
 // for words that file only bans inside longer phrases.
@@ -83,7 +83,7 @@ test("no locale other than English is a copy of English", () => {
 test("no empty strings, TODO markers or guarantee-style claim words", () => {
   for (const locale of SUPPORTED_LOCALES) {
     for (const [path, text] of flatten(REFERRAL_COPY[locale])) {
-      assert.ok(text.trim().length > 0, `${locale}: empty string at ${path}`);
+      assert.ok(path === "event.badges.unit" || text.trim().length > 0, `${locale}: empty string at ${path}`);
       assert.doesNotMatch(text, /TODO|FIXME|XXX/, `${locale}: leftover marker at ${path}`);
       assert.doesNotMatch(
         text.normalize("NFKC"),
