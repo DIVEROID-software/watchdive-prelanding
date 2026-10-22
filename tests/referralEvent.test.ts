@@ -65,8 +65,18 @@ function luminance(hex: string) {
     .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
   return c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722;
 }
-test("all event text colours meet 4.5:1 on every event surface", () => {
-  for (const ink of ["f5fafc", "c3d6df", "8fe6d4"])
-    for (const bg of ["0d2533", "112e3d", "173c49"])
-      assert.ok((luminance(ink) + 0.05) / (luminance(bg) + 0.05) >= 4.5, `${ink}/${bg}`);
+test("branded event and footer text keep 4.5:1 in light, dark and full inversion", () => {
+  const invert = (hex: string) => (0xffffff ^ parseInt(hex, 16)).toString(16).padStart(6, "0");
+  const contrast = (ink: string, bg: string) => {
+    const [low, high] = [luminance(ink), luminance(bg)].sort((a,b) => a-b);
+    return (high + 0.05) / (low + 0.05);
+  };
+  for (const [ink, bg] of [
+    ["201748", "ffffff"], ["3d2683", "ffffff"],
+    ["201748", "eef9ff"], ["3d2683", "eef9ff"],
+    ["ffffff", "3d2683"], ["eef9ff", "201748"], ["eef9ff", "07131c"],
+  ]) {
+    assert.ok(contrast(ink, bg) >= 4.5, `${ink}/${bg}`);
+    assert.ok(contrast(invert(ink), invert(bg)) >= 4.5, `inverted ${ink}/${bg}`);
+  }
 });

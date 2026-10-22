@@ -599,21 +599,21 @@ async function deliverWithRetries(
 // refused rather than sent non-compliant.
 
 const FONT_STACK =
-  "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial," +
+  "'Pangram Sans','Spoqa Han Sans Neo','Helvetica Neue',Arial," +
   "'Apple SD Gothic Neo','Malgun Gothic','Hiragino Sans','Hiragino Kaku Gothic ProN'," +
   "'Microsoft YaHei','PingFang SC','PingFang TC',sans-serif";
-const PAGE_BG = "#eef2f6";
+const PAGE_BG = "#eef9ff";
 const CARD_BG = "#ffffff";
-const INK = "#0f172a";
-const BODY_INK = "#334155";
-const MUTED_INK = "#5b6778";
-const LINK_INK = "#0369a1";
+const INK = "#201748";
+const BODY_INK = "#201748";
+const MUTED_INK = "#3d2683";
+const LINK_INK = "#3d2683";
 // Light text on a deep blue, never dark text on a mid-tone: forced dark modes
 // (Gmail apps, Outlook, Chrome's auto-dark) recolour dark text to light and
 // light backgrounds to dark, but leave a light-on-dark pair alone, so the
 // label stays >= 4.5:1 whether or not the client inverts (sky-blue with dark
 // text became white on sky-blue, ~2.6:1). The legacy welcome keeps its own.
-export const BUTTON_BG = "#0369a1";
+export const BUTTON_BG = "#3d2683";
 export const BUTTON_INK = "#ffffff";
 
 /** Env var holding the sender phone the Korean sender block must show. */
@@ -738,10 +738,10 @@ function linkHtml(url: string, label?: string): string {
 function buttonHtml(url: string, label: string): string {
   return (
     '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:separate;">' +
-    `<tr><td align="center" bgcolor="${BUTTON_BG}" style="background-color:${BUTTON_BG};border:1px solid ${BUTTON_BG};border-radius:12px;mso-padding-alt:14px 28px;">` +
+    `<tr><td class="mail-frame" align="center" bgcolor="${BUTTON_BG}" style="background-color:${BUTTON_BG};border:3px solid ${INK};mso-padding-alt:14px 28px;">` +
     `<a href="${escapeHtml(url)}" rel="noreferrer noopener" style="display:inline-block;padding:14px 28px;` +
-    `font-family:${FONT_STACK};font-size:16px;font-weight:600;line-height:20px;color:${BUTTON_INK};` +
-    `text-decoration:none;border-radius:12px;">${escapeHtml(label)}</a></td></tr></table>`
+    `font-family:${FONT_STACK};font-size:16px;font-weight:700;line-height:20px;color:${BUTTON_INK};` +
+    `text-decoration:none;">${escapeHtml(label)}</a></td></tr></table>`
   );
 }
 
@@ -806,11 +806,13 @@ function buddyDocument(input: {
     '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">',
     '<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">',
     `<style>@media (prefers-color-scheme:dark){
-      body,[bgcolor="${PAGE_BG}"]{background-color:#081722!important;}
-      [bgcolor="${CARD_BG}"]{background-color:#102633!important;}
-      [style*="color:${BODY_INK}"],[style*="color:${INK}"]{color:#f5fafc!important;}
-      [style*="color:${MUTED_INK}"]{color:#c3d6df!important;}
-      a[style*="color:${BUTTON_BG}"]{color:#8fe6d4!important;}
+      body,[bgcolor="${PAGE_BG}"]{background-color:#07131c!important;}
+      [bgcolor="${CARD_BG}"]{background-color:#201748!important;}
+      [style*="color:${BODY_INK}"],[style*="color:${MUTED_INK}"]{color:#eef9ff!important;}
+      a[style*="color:${LINK_INK}"]{color:#eef9ff!important;}
+      .mail-frame{border-color:#eef9ff!important;}
+      .mail-shadow{background-color:#eef9ff!important;}
+      .mail-badge{background-color:#3d2683!important;color:#ffffff!important;}
     }</style>`,
     `<title>${escapeHtml(input.subject)}</title>`,
     // Outlook's Word engine falls back to Times for an unknown first font.
@@ -822,12 +824,12 @@ function buddyDocument(input: {
       `${escapeHtml(input.preheader)}${"&#8199;&#65279;&#847; ".repeat(12)}</div>`,
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${PAGE_BG}" style="width:100%;background-color:${PAGE_BG};border-collapse:collapse;">`,
     '<tr><td align="center" style="padding:24px 12px;">',
-    '<!--[if mso]><table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->',
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;border-collapse:separate;">',
-    `<tr><td bgcolor="${CARD_BG}" style="background-color:${CARD_BG};border-radius:16px;padding:28px 22px;color:${BODY_INK};font-family:${FONT_STACK};">`,
+    '<!--[if mso]><table role="presentation" width="576" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->',
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:576px;border-collapse:separate;">',
+    `<tr><td style="color:${BODY_INK};font-family:${FONT_STACK};">`,
     input.content,
     "</td></tr>",
-    `<tr><td style="padding:20px 22px 0;font-family:${FONT_STACK};">${foot.html}</td></tr>`,
+    `<tr><td style="padding:4px 12px 0;font-family:${FONT_STACK};">${foot.html}</td></tr>`,
     "</table>",
     "<!--[if mso]></td></tr></table><![endif]-->",
     "</td></tr></table>",
@@ -837,7 +839,7 @@ function buddyDocument(input: {
 
 function headingHtml(text: string, locale: Locale): string {
   return (
-    `<h1 style="margin:0 0 12px;font-family:${FONT_STACK};font-size:22px;line-height:1.3;` +
+    `<h1 style="margin:0 0 12px;font-family:${FONT_STACK};font-size:30px;line-height:1.18;` +
     `font-weight:700;color:${INK};${wordBreakFor(locale)}overflow-wrap:break-word;">${escapeHtml(text)}</h1>`
   );
 }
@@ -853,43 +855,69 @@ export function referralRewardLines(locale: Locale): { name: string; reward: str
   }));
 }
 
-/** Table-only event module. Inline colours are the fallback for clients that
- * remove stylesheets; the document also supplies a dark-scheme override. */
+/** Hard offset made of table cells, so Word-based Outlook needs no box-shadow. */
+function brutalPanel(content: string, locale: Locale): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;table-layout:fixed;"><tr>
+<td class="mail-shadow" bgcolor="${INK}" style="background-color:${INK};padding:0 6px 6px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed;"><tr>
+<td class="mail-frame" bgcolor="${CARD_BG}" style="border:3px solid ${INK};background-color:${CARD_BG};padding:20px 16px;color:${BODY_INK};font-family:${FONT_STACK};${wordBreakFor(locale)}overflow-wrap:break-word;">${content}</td>
+</tr></table></td></tr><tr><td height="24" style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr></table>`;
+}
+
+function sectionHeading(label: string): string {
+  return `<h2 style="margin:0 0 18px;font-size:22px;line-height:1.3;font-weight:700;color:${INK};">${escapeHtml(label)}</h2>`;
+}
+
+/** Inline table ladder and compact mail-only conditions; no CSS layout dependency. */
 function eventRewardBlock(locale: Locale, rulesUrl: string, notice?: {
   credited: number; crossed: readonly string[];
 }): { html: string; text: string } {
   const event = referralEvent(locale, notice?.credited ?? null);
+  const copy = referralCopy(locale);
   const steps = notice
     ? event.steps.filter((step) => notice.crossed.includes(step.id) || step.next)
     : event.steps;
   const rows = steps.map((step) => {
     const reached = notice?.crossed.includes(step.id);
     const state = reached ? `✓ ${event.reached}` : notice && step.next ? `→ ${event.next}` : "";
-    const bg = reached ? "#173c49" : "#112e3d";
-    return `<tr><td style="padding:0 0 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;"><tr>
-<td width="64" align="center" valign="middle" bgcolor="${bg}" style="width:64px;padding:12px 4px;background-color:${bg};border-radius:10px 0 0 10px;border-left:3px solid ${reached ? "#8fe6d4" : bg};color:#8fe6d4;">
-<span style="font-size:${step.id === "top" ? "17" : "30"}px;line-height:1.1;font-weight:800;">${escapeHtml(step.badge)}</span>
-${step.id === "top" ? "" : `<br><span style="font-size:9px;line-height:1.3;color:#c3d6df;">${escapeHtml(event.friends)}</span>`}</td>
-<td valign="middle" bgcolor="${bg}" style="padding:12px 10px;background-color:${bg};border-radius:0 10px 10px 0;color:#f5fafc;">
-<span style="font-size:11px;line-height:1.5;color:#c3d6df;">${escapeHtml(step.name)}</span><br>
-<strong style="font-size:15px;line-height:1.4;color:#f5fafc;">${escapeHtml(step.benefit)}</strong>
-${step.qualifier ? `<br><span style="font-size:11px;line-height:1.6;color:#c3d6df;">${escapeHtml(step.qualifier)}</span>` : ""}
-${state ? `<br><span style="font-size:11px;line-height:1.7;color:#8fe6d4;font-weight:700;">${escapeHtml(state)}</span>` : ""}
+    return `<tr><td style="padding:0 0 10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed;"><tr>
+<td class="mail-badge mail-frame" width="70" align="center" valign="middle" bgcolor="${BUTTON_BG}" style="width:70px;padding:14px 2px;background-color:${BUTTON_BG};border:3px solid ${INK};color:#ffffff;">
+<span style="font-size:${step.id === "top" ? "20" : "38"}px;line-height:1.1;font-weight:700;color:#ffffff;">${escapeHtml(step.badge)}</span>
+${step.id === "top" ? "" : `<br><span style="font-size:10px;line-height:1.3;color:#ffffff;">${escapeHtml(event.friends)}</span>`}</td>
+<td class="mail-frame" bgcolor="${PAGE_BG}" valign="middle" style="padding:12px 10px;background-color:${PAGE_BG};border:3px solid ${INK};color:${INK};">
+<span style="font-size:12px;line-height:1.5;color:${MUTED_INK};">${escapeHtml(step.name)}</span><br>
+<strong style="font-size:17px;line-height:1.35;color:${INK};">${escapeHtml(step.benefit)}</strong>
+${step.qualifier ? `<br><span style="font-size:12px;line-height:1.6;color:${MUTED_INK};">${escapeHtml(step.qualifier)}</span>` : ""}
+${state ? `<br><span style="font-size:12px;line-height:1.7;color:${MUTED_INK};font-weight:700;">${escapeHtml(state)}</span>` : ""}
 </td></tr></table></td></tr>`;
   }).join("\n");
-  const html = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:24px 0;border-collapse:separate;"><tr><td bgcolor="#0d2533" style="padding:20px 14px;background-color:#0d2533;border-radius:14px;color:#f5fafc;${wordBreakFor(locale)}overflow-wrap:break-word;">
-<p style="margin:0 0 8px;font-size:11px;letter-spacing:3px;font-weight:800;color:#8fe6d4;">${escapeHtml(event.label)}</p>
-<h2 style="margin:0 0 10px;font-size:23px;line-height:1.3;font-weight:800;color:#f5fafc;">${escapeHtml(event.headline)}</h2>
-<p style="margin:0 0 20px;font-size:13px;line-height:1.6;color:#c3d6df;">${escapeHtml(event.subline)}</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${rows}</table>
-<p style="margin:16px 0 8px;padding-top:16px;border-top:1px solid #36515e;font-size:12px;font-weight:700;color:#c3d6df;">${escapeHtml(event.conditionsTitle)}</p>
-${event.conditions.map((line) => `<p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#c3d6df;">${escapeHtml(line)}</p>`).join("\n")}
-<a href="${escapeHtml(rulesUrl)}" style="font-size:12px;line-height:1.6;color:#8fe6d4;text-decoration:underline;">${escapeHtml(event.rulesLabel)}</a>
-</td></tr></table>`;
-  const text = [event.label, event.headline, event.subline,
+  const values = { ...copyValues(locale), count: REFERRAL_TIERS.find((tier) => tier.id === "leader")!.minFriends };
+  const conditions = copy.mail.conditions.map((line) => fill(line, values));
+  const html = brutalPanel([
+    sectionHeading(copy.mail.eventHeading),
+    `<p style="margin:0 0 12px;font-size:12px;line-height:1.5;letter-spacing:2px;font-weight:700;color:${MUTED_INK};border-left:8px solid #36a9e1;padding-left:10px;">${escapeHtml(event.label)}</p>`,
+    `<h3 style="margin:0 0 10px;font-size:26px;line-height:1.2;font-weight:700;color:${INK};">${escapeHtml(event.headline)}</h3>`,
+    para(`margin:0 0 20px;font-size:14px;line-height:1.6;color:${BODY_INK};`, escapeHtml(event.subline), locale),
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${rows}</table>`,
+    `<h3 class="mail-frame" style="margin:16px 0 10px;padding-top:16px;border-top:3px solid ${INK};font-size:14px;line-height:1.5;font-weight:700;color:${INK};">${escapeHtml(event.conditionsTitle)}</h3>`,
+    ...conditions.map((line) => para(`margin:0 0 10px;font-size:12px;line-height:1.65;color:${BODY_INK};`, escapeHtml(line), locale)),
+    linkHtml(rulesUrl, copy.mail.welcomeRules),
+  ].join("\n"), locale);
+  const text = [copy.mail.eventHeading, event.label, event.headline, event.subline,
     ...steps.map((step) => `- ${step.badge} · ${step.name}: ${step.benefit}${step.qualifier ? ` (${step.qualifier})` : ""}${notice?.crossed.includes(step.id) ? ` — ${event.reached}` : notice && step.next ? ` — ${event.next}` : ""}`),
-    "", event.conditionsTitle, ...event.conditions, event.rulesLabel, rulesUrl].join("\n");
+    "", event.conditionsTitle, ...conditions, copy.mail.welcomeRules, rulesUrl].join("\n");
   return { html, text };
+}
+
+function validShareCode(code?: string): string {
+  return code && /^[A-Z0-9]{4,12}$/.test(code) ? code : "";
+}
+
+function shareCodeHtml(code: string, label: string, locale: Locale): string {
+  if (!code) return "";
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 20px;table-layout:fixed;"><tr><td class="mail-frame" bgcolor="${PAGE_BG}" style="border:3px solid ${INK};padding:16px 10px;background-color:${PAGE_BG};">` +
+    para(`font-size:13px;line-height:1.6;color:${MUTED_INK};`, escapeHtml(label), locale) +
+    `<p style="margin:6px 0 0;font-family:Consolas,Menlo,monospace;font-size:26px;line-height:1.3;font-weight:700;letter-spacing:1px;color:${INK};word-break:break-all;">${escapeHtml(code)}</p></td></tr></table>`;
 }
 
 export type WelcomeLinks = { shareUrl: string; statusUrl: string; rulesUrl: string };
@@ -897,8 +925,8 @@ export type WelcomeLinks = { shareUrl: string; statusUrl: string; rulesUrl: stri
 /**
  * The Buddy Invite guide: the welcome mail while the program is switched on,
  * and the one-off announcement to people who verified before the release. The
- * invite link comes first (it is the one action), then what it earns, then
- * where to check progress and read the rules. Every value is escaped.
+ * three sections confirm signup, explain the event, then provide sharing and
+ * status links. The OFF welcome uses its separate, unchanged renderer.
  */
 export function buddyGuideBody(
   links: WelcomeLinks,
@@ -912,47 +940,29 @@ export function buddyGuideBody(
   const t = (template: string) => fill(template, values);
   const event = eventRewardBlock(locale, links.rulesUrl);
   const subject = adSubject(t(mail.welcomeSubject), footer);
-  // Absent or unreadable: the guide stays byte-identical to the 3-argument call.
-  // The welcome mail is sent at verification, before a code is assigned, so
-  // this line is usually absent until a caller has a code to pass.
-  const validCode = shareCode && /^[A-Z0-9]{4,12}$/.test(shareCode) ? shareCode : "";
+  const validCode = validShareCode(shareCode);
   const content = [
-    headingHtml(t(mail.welcomeHeading), locale),
-    para(STYLE_BODY_P, escapeHtml(t(mail.welcomeIntro)), locale),
-    buttonHtml(links.shareUrl, t(mail.welcomeButton)),
-    labelledLinkHtml(t(mail.welcomeFallback), links.shareUrl, locale),
-    ...(validCode
-      ? [
-          para(
-            STYLE_BODY_P,
-            `${escapeHtml(t(mail.welcomeCode))} <strong>${escapeHtml(validCode)}</strong>`,
-            locale,
-          ),
-        ]
-      : []),
+    brutalPanel(headingHtml(t(mail.welcomeHeading), locale) +
+      para(STYLE_BODY_P.replace("20px", "0"), escapeHtml(t(mail.welcomeOutro)), locale), locale),
     event.html,
-    labelledLinkHtml(t(mail.welcomeStatus), links.statusUrl, locale),
-    para(`margin:8px 0 0;font-size:14px;line-height:1.6;color:${BODY_INK};`, escapeHtml(t(mail.welcomeOutro)), locale),
+    brutalPanel([
+      sectionHeading(mail.shareHeading),
+      para(STYLE_BODY_P, escapeHtml(t(mail.welcomeIntro)), locale),
+      buttonHtml(links.shareUrl, t(mail.welcomeButton)),
+      labelledLinkHtml(t(mail.welcomeFallback), links.shareUrl, locale),
+      shareCodeHtml(validCode, t(mail.welcomeCode), locale),
+      labelledLinkHtml(t(mail.welcomeStatus), links.statusUrl, locale),
+    ].join("\n"), locale),
   ].join("\n");
   return {
     subject,
     text: [
-      t(mail.welcomeHeading),
-      "",
-      t(mail.welcomeIntro),
-      links.shareUrl,
+      t(mail.welcomeHeading), t(mail.welcomeOutro), "", event.text, "",
+      mail.shareHeading, t(mail.welcomeIntro), t(mail.welcomeButton), links.shareUrl,
       ...(validCode ? ["", `${t(mail.welcomeCode)} ${validCode}`] : []),
-      "",
-      event.text,
-      "",
-      t(mail.welcomeStatus),
-      links.statusUrl,
-      "",
-      t(mail.welcomeOutro),
-      "",
-      ...footerParts(locale, footer).text,
+      "", t(mail.welcomeStatus), links.statusUrl, "", ...footerParts(locale, footer).text,
     ].join("\n"),
-    html: buddyDocument({ locale, subject, preheader: t(mail.welcomeIntro), content, footer }),
+    html: buddyDocument({ locale, subject, preheader: t(mail.welcomeOutro), content, footer }),
   };
 }
 
@@ -963,7 +973,7 @@ export function buddyGuideBody(
 export function referralNoticeBody(
   input: Pick<
     ReferralNoticeMail,
-    "locale" | "credited" | "crossed" | "nextTier" | "remainingToNext" | "statusUrl"
+    "locale" | "credited" | "crossed" | "nextTier" | "remainingToNext" | "statusUrl" | "shareUrl" | "shareCode"
   >,
   footer: AdFooter,
 ): { subject: string; text: string; html: string } {
@@ -986,29 +996,31 @@ export function referralNoticeBody(
   const noticeFooter = fill(mail.noticeFooter, values);
   const subject = adSubject(fill(mail.noticeSubject, values), footer);
   const event = eventRewardBlock(locale, new URL(referralEvent(locale).rulesPath, input.statusUrl).href, input);
+  const code = validShareCode(input.shareCode);
   const content = [
-    headingHtml(heading, locale),
-    para(`${STYLE_BODY_P}margin-bottom:14px;`, escapeHtml(body), locale),
+    brutalPanel(headingHtml(heading, locale) +
+      para(STYLE_BODY_P.replace("20px", "0"), escapeHtml(body), locale), locale),
     event.html,
-    para(STYLE_BODY_P, escapeHtml(next), locale),
-    buttonHtml(input.statusUrl, fill(mail.noticeButton, values)),
-    para(`margin:0 0 14px;font-size:13px;line-height:1.6;`, linkHtml(input.statusUrl), locale),
-    para(`margin:8px 0 0;font-size:13px;line-height:1.6;color:${MUTED_INK};`, escapeHtml(noticeFooter), locale),
+    brutalPanel([
+      sectionHeading(mail.shareHeading),
+      para(STYLE_BODY_P, escapeHtml(next), locale),
+      ...(input.shareUrl ? [
+        buttonHtml(input.shareUrl, fill(mail.welcomeButton, values)),
+        labelledLinkHtml(fill(mail.welcomeFallback, values), input.shareUrl, locale),
+      ] : []),
+      shareCodeHtml(code, fill(mail.welcomeCode, values), locale),
+      buttonHtml(input.statusUrl, fill(mail.noticeButton, values)),
+      para(`margin:0 0 14px;font-size:13px;line-height:1.6;`, linkHtml(input.statusUrl), locale),
+      para(`margin:8px 0 0;font-size:13px;line-height:1.6;color:${MUTED_INK};`, escapeHtml(noticeFooter), locale),
+    ].join("\n"), locale),
   ].join("\n");
   return {
     subject,
     text: [
-      heading,
-      "",
-      body,
-      event.text,
-      next,
-      "",
-      input.statusUrl,
-      "",
-      noticeFooter,
-      "",
-      ...footerParts(locale, footer).text,
+      heading, "", body, event.text, next, "", mail.shareHeading,
+      ...(input.shareUrl ? [fill(mail.welcomeButton, values), input.shareUrl] : []),
+      ...(code ? [`${fill(mail.welcomeCode, values)} ${code}`] : []),
+      "", input.statusUrl, "", noticeFooter, "", ...footerParts(locale, footer).text,
     ].join("\n"),
     html: buddyDocument({ locale, subject, preheader: body, content, footer }),
   };

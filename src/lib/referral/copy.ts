@@ -121,6 +121,9 @@ export type ReferralCopy = {
     >;
   };
   mail: {
+    eventHeading: string;
+    shareHeading: string;
+    conditions: string[];
     welcomeSubject: string;
     welcomeHeading: string;
     welcomeIntro: string;
@@ -289,6 +292,15 @@ const en: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "Event overview",
+    shareHeading: "Share link · referral code",
+    conditions: [
+      "Only friends who confirm their email count. No purchase necessary.",
+      "Dive Team: the {price} private Kickstarter link works during the live campaign on the Kickstarter website; one pledge per member; please don’t share it.",
+      "Underwater light worth about {lightValue}, {stock} units, in the order people reach {count}.",
+      "Top {winners} at the close each get one WatchDive, even if the campaign is late or doesn’t go ahead.",
+      "Recipients pay shipping and taxes.",
+    ],
     welcomeSubject: "You’re on the WatchDive waitlist — invite your buddies",
     welcomeHeading: "You’re on the WatchDive waitlist",
     welcomeIntro:
@@ -298,7 +310,7 @@ const en: ReferralCopy = {
     welcomeButton: "Share my invite link",
     welcomeFallback: "Or copy this link:",
     welcomeStatus: "Check your invites and set a leaderboard nickname:",
-    welcomeRules: "Official rules:",
+    welcomeRules: "Eligibility, closing time, taxes and all other conditions are in the official rules.",
     welcomeOutro: "We will email you when WatchDive goes live on Kickstarter.",
     noticeSubject: "A buddy joined through your link ({count} so far)",
     noticeHeading: "A buddy joined through your link",
@@ -539,8 +551,17 @@ const ko: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "이벤트 소개",
+    shareHeading: "공유 링크 · 추천 코드",
+    conditions: [
+      "이메일 인증을 마친 친구만 집계됩니다. 구매 없이 참여할 수 있어요.",
+      "다이브 팀: {price} 전용 링크는 캠페인 진행 중 Kickstarter 웹사이트에서 사용할 수 있어요. 회원당 한 번만 후원하고, 링크는 공유하지 말아 주세요.",
+      "약 {lightValue} 상당 수중 라이트 {stock}개를 {count}명 달성 순서대로 드려요.",
+      "마감 시 상위 {winners}명은 캠페인이 늦어지거나 진행되지 않아도 WatchDive를 하나씩 받아요.",
+      "배송비와 세금은 수령자 부담입니다.",
+    ],
     welcomeSubject: "WatchDive 출시 알림 신청 완료 · 버디를 초대하세요",
-    welcomeHeading: "WatchDive 출시 알림 신청이 완료되었습니다",
+    welcomeHeading: "알림 신청이 완료되었습니다.",
     welcomeIntro:
       "이메일 인증이 완료되었습니다. 아래 내 초대 링크를 아는 다이버에게 공유해 주세요. 이메일 인증을 마친 친구가 늘어날수록 혜택이 커집니다.",
     welcomeCode: "내 추천 코드:",
@@ -548,7 +569,7 @@ const ko: ReferralCopy = {
     welcomeButton: "내 초대 링크 공유하기",
     welcomeFallback: "링크를 직접 복사하려면:",
     welcomeStatus: "초대 현황 확인과 랭킹 닉네임 설정:",
-    welcomeRules: "공식 규칙:",
+    welcomeRules: "참여 자격·마감·세금 등 자세한 조건은 공식 규칙에서 확인하세요.",
     welcomeOutro: "WatchDive가 Kickstarter에 공개되면 이메일로 알려드리겠습니다.",
     noticeSubject: "내 링크로 버디가 참여했어요 (지금까지 {count}명)",
     noticeHeading: "내 링크로 버디가 참여했어요",
@@ -788,6 +809,15 @@ const zhCN: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "活动介绍",
+    shareHeading: "分享链接 · 推荐码",
+    conditions: [
+      "只有确认邮箱的朋友才会计入。无需购买即可参加。",
+      "潜水小队：{price} Kickstarter 专属链接可在众筹期间于 Kickstarter 网站使用；每位成员仅限支持一次，请勿分享链接。",
+      "价值约 {lightValue} 的水下灯共 {stock} 盏，按达到 {count} 人的先后顺序发放。",
+      "截止时排名前 {winners} 的参与者各获一个 WatchDive，即使众筹延期或未开展也会发放。",
+      "运费和税费由收件人承担。",
+    ],
     welcomeSubject: "你已加入 WatchDive 候补名单 — 邀请你的潜伴",
     welcomeHeading: "你已加入 WatchDive 候补名单",
     welcomeIntro:
@@ -797,7 +827,7 @@ const zhCN: ReferralCopy = {
     welcomeButton: "分享我的邀请链接",
     welcomeFallback: "或复制此链接：",
     welcomeStatus: "查看邀请进度、设置排行榜昵称：",
-    welcomeRules: "官方规则：",
+    welcomeRules: "参与资格、截止时间、税费及其他条件请查看官方规则。",
     welcomeOutro: "WatchDive 在 Kickstarter 开启时，我们会发邮件通知你。",
     noticeSubject: "有潜伴通过你的链接加入了（目前共 {count} 位）",
     noticeHeading: "有潜伴通过你的链接加入了",
@@ -1036,6 +1066,15 @@ const zhTW: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "活動介紹",
+    shareHeading: "分享連結 · 推薦碼",
+    conditions: [
+      "只有確認信箱的朋友才會計入。無須購買即可參加。",
+      "潛水小隊：{price} Kickstarter 專屬連結可在募資期間於 Kickstarter 網站使用；每位成員僅限贊助一次，請勿分享連結。",
+      "價值約 {lightValue} 的水下燈共 {stock} 盞，按達到 {count} 人的先後順序發放。",
+      "截止時排名前 {winners} 的參加者各獲一個 WatchDive，即使募資延期或未進行也會發放。",
+      "運費和稅費由收件人負擔。",
+    ],
     welcomeSubject: "你已加入 WatchDive 等候名單 — 邀請你的潛伴",
     welcomeHeading: "你已加入 WatchDive 等候名單",
     welcomeIntro:
@@ -1045,7 +1084,7 @@ const zhTW: ReferralCopy = {
     welcomeButton: "分享我的邀請連結",
     welcomeFallback: "或複製此連結：",
     welcomeStatus: "查看邀請進度、設定排行榜暱稱：",
-    welcomeRules: "官方規則：",
+    welcomeRules: "參加資格、截止時間、稅費及其他條件請查看官方規則。",
     welcomeOutro: "WatchDive 在 Kickstarter 開賣時，我們會寄信通知你。",
     noticeSubject: "有潛伴透過你的連結加入了（目前共 {count} 位）",
     noticeHeading: "有潛伴透過你的連結加入了",
@@ -1287,6 +1326,15 @@ const ja: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "イベントのご案内",
+    shareHeading: "共有リンク · 紹介コード",
+    conditions: [
+      "メールアドレスを確認した友だちだけがカウントされます。購入は不要です。",
+      "ダイブチーム：{price}の専用リンクはキャンペーン期間中、Kickstarterサイトで利用できます。支援は会員ごとに一度限り。リンクは共有しないでください。",
+      "約{lightValue}相当の水中ライト{stock}個を、{count}人達成順にお渡しします。",
+      "締切時の上位{winners}名には、キャンペーンが遅れたり実施されなくても、WatchDiveを一つずつお渡しします。",
+      "送料と税金は受取人の負担です。",
+    ],
     welcomeSubject: "WatchDive のウェイトリストに登録されました — バディを招待しましょう",
     welcomeHeading: "WatchDive のウェイトリストに登録されました",
     welcomeIntro:
@@ -1296,7 +1344,7 @@ const ja: ReferralCopy = {
     welcomeButton: "招待リンクをシェアする",
     welcomeFallback: "またはこのリンクをコピー：",
     welcomeStatus: "招待状況の確認と、ランキング用ニックネームの設定：",
-    welcomeRules: "公式ルール：",
+    welcomeRules: "参加資格・締切・税金などの詳しい条件は公式ルールをご確認ください。",
     welcomeOutro: "WatchDive の Kickstarter キャンペーンが始まったら、メールでお知らせします。",
     noticeSubject: "あなたのリンクからバディが参加しました（これまでに{count}人）",
     noticeHeading: "あなたのリンクからバディが参加しました",
@@ -1542,6 +1590,15 @@ const es: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "Sobre el evento",
+    shareHeading: "Enlace para compartir · código",
+    conditions: [
+      "Solo cuentan los amigos que confirman su correo. No hace falta comprar.",
+      "Equipo de buceo: el enlace privado de {price} funciona en la web de Kickstarter mientras la campaña está activa; una aportación por miembro; no lo compartas.",
+      "Linterna submarina valorada en unos {lightValue}: {stock} unidades, por orden de llegada a {count}.",
+      "Los {winners} primeros al cierre reciben un WatchDive cada uno, aunque la campaña se retrase o no se lleve a cabo.",
+      "El envío y los impuestos corren a cargo de quien recibe el premio.",
+    ],
     welcomeSubject: "Ya estás en la lista de espera de WatchDive — invita a tus compañeros",
     welcomeHeading: "Ya estás en la lista de espera de WatchDive",
     welcomeIntro:
@@ -1551,7 +1608,7 @@ const es: ReferralCopy = {
     welcomeButton: "Compartir mi enlace",
     welcomeFallback: "O copia este enlace:",
     welcomeStatus: "Consulta tus invitaciones y elige un alias para la clasificación:",
-    welcomeRules: "Bases oficiales:",
+    welcomeRules: "Consulta los requisitos, la hora de cierre, los impuestos y las demás condiciones en las bases oficiales.",
     welcomeOutro: "Te escribiremos en cuanto WatchDive abra en Kickstarter.",
     noticeSubject: "Un compañero se ha unido con tu enlace ({count} en total)",
     noticeHeading: "Un compañero se ha unido con tu enlace",
@@ -1797,6 +1854,15 @@ const fr: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "Présentation de l’événement",
+    shareHeading: "Lien à partager · code de parrainage",
+    conditions: [
+      "Seuls les amis qui confirment leur e-mail comptent. Aucun achat nécessaire.",
+      "Palanquée : le lien privé à {price} fonctionne sur le site Kickstarter pendant la campagne ; une contribution par membre ; ne le partagez pas.",
+      "Lampe de plongée d’une valeur d’environ {lightValue} : {stock} exemplaires, dans l’ordre où les participants atteignent {count}.",
+      "Les {winners} premiers à la clôture reçoivent chacun un WatchDive, même si la campagne est retardée ou n’a pas lieu.",
+      "Les frais de livraison et les taxes sont à la charge des destinataires.",
+    ],
     welcomeSubject: "Vous êtes sur la liste d’attente WatchDive — invitez vos binômes",
     welcomeHeading: "Vous êtes sur la liste d’attente WatchDive",
     welcomeIntro:
@@ -1806,7 +1872,7 @@ const fr: ReferralCopy = {
     welcomeButton: "Partager mon lien",
     welcomeFallback: "Ou copiez ce lien :",
     welcomeStatus: "Suivez vos invitations et choisissez un pseudo pour le classement :",
-    welcomeRules: "Règlement officiel :",
+    welcomeRules: "Les critères de participation, l’heure de clôture, les taxes et les autres conditions figurent dans le règlement officiel.",
     welcomeOutro: "Nous vous écrirons dès l’ouverture de WatchDive sur Kickstarter.",
     noticeSubject: "Un binôme s’est inscrit via votre lien (total : {count})",
     noticeHeading: "Un binôme s’est inscrit via votre lien",
@@ -2052,6 +2118,15 @@ const de: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "Die Aktion im Überblick",
+    shareHeading: "Link zum Teilen · Empfehlungscode",
+    conditions: [
+      "Nur Freunde, die ihre E-Mail-Adresse bestätigen, zählen. Kein Kauf nötig.",
+      "Tauchteam: Der private Link für {price} gilt während der laufenden Kampagne auf der Kickstarter-Website; ein Beitrag pro Mitglied; bitte teile ihn nicht.",
+      "Unterwasserlampe im Wert von etwa {lightValue}: {stock} Stück, in der Reihenfolge, in der {count} erreicht werden.",
+      "Die Top {winners} bei Schluss erhalten je ein WatchDive, auch wenn sich die Kampagne verspätet oder nicht stattfindet.",
+      "Versand und Steuern tragen die Empfänger.",
+    ],
     welcomeSubject: "Du bist auf der WatchDive-Warteliste — lade deine Buddys ein",
     welcomeHeading: "Du bist auf der WatchDive-Warteliste",
     welcomeIntro:
@@ -2061,7 +2136,7 @@ const de: ReferralCopy = {
     welcomeButton: "Einladungslink teilen",
     welcomeFallback: "Oder kopiere diesen Link:",
     welcomeStatus: "Einladungen ansehen und Nickname für die Rangliste festlegen:",
-    welcomeRules: "Teilnahmebedingungen:",
+    welcomeRules: "Teilnahmevoraussetzungen, Schlusszeit, Steuern und alle weiteren Bedingungen stehen in den offiziellen Teilnahmebedingungen.",
     welcomeOutro: "Wir schreiben dir, sobald WatchDive auf Kickstarter startet.",
     noticeSubject: "Ein Buddy ist über deinen Link dazugekommen (insgesamt {count})",
     noticeHeading: "Ein Buddy ist über deinen Link dazugekommen",
@@ -2303,6 +2378,15 @@ const ptBR: ReferralCopy = {
     },
   },
   mail: {
+    eventHeading: "Sobre o evento",
+    shareHeading: "Link para compartilhar · código",
+    conditions: [
+      "Só contam os amigos que confirmam o e-mail. Não é preciso comprar.",
+      "Equipe de mergulho: o link privado de {price} funciona no site do Kickstarter durante a campanha; um apoio por membro; não compartilhe o link.",
+      "Lanterna subaquática no valor aproximado de {lightValue}: {stock} unidades, por ordem de chegada a {count}.",
+      "Os {winners} primeiros no encerramento recebem um WatchDive cada, mesmo se a campanha atrasar ou não acontecer.",
+      "O frete e os impostos ficam por conta de quem recebe.",
+    ],
     welcomeSubject: "Você está na lista de espera do WatchDive — convide seus parceiros",
     welcomeHeading: "Você está na lista de espera do WatchDive",
     welcomeIntro:
@@ -2312,7 +2396,7 @@ const ptBR: ReferralCopy = {
     welcomeButton: "Compartilhar meu link",
     welcomeFallback: "Ou copie este link:",
     welcomeStatus: "Veja seus convites e escolha um apelido para o ranking:",
-    welcomeRules: "Regulamento oficial:",
+    welcomeRules: "Os requisitos de participação, o horário de encerramento, os impostos e as demais condições estão no regulamento oficial.",
     welcomeOutro: "A gente avisa por e-mail assim que o WatchDive abrir no Kickstarter.",
     noticeSubject: "Um parceiro entrou pelo seu link ({count} no total)",
     noticeHeading: "Um parceiro entrou pelo seu link",

@@ -679,6 +679,7 @@ async function runStory(on: boolean) {
         nextTier: null,
         remainingToNext: null,
         statusUrl: statusUrl![0],
+        shareUrl: `${ORIGIN}/r/${A_CODE}`,
       },
       footerFor(A_LEAD, "en"),
     );
@@ -705,6 +706,7 @@ async function runStory(on: boolean) {
           nextTier: "buddy",
           remainingToNext: 2,
           statusUrl: bStatusUrl,
+          shareUrl: `${ORIGIN}/r/${bCode}`,
         },
         footerFor(bLead, "ko"),
       ),

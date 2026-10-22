@@ -242,6 +242,9 @@ export type ReferralNoticeMail = {
   nextTier: ReferralTierId | null;
   remainingToNext: number | null;
   statusUrl: string;
+  /** Public invite values, never a status token or a friend identity. */
+  shareUrl?: string;
+  shareCode?: string;
   /**
    * The referrer's https one-click opt-out (launch-mail /unsubscribe token).
    * The mailer refuses to send without it.

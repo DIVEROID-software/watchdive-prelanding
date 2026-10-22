@@ -168,8 +168,8 @@ test("switch on: confirmation schedules the guide 30 minutes out with signed sta
 // --- Switch on: the guide ----------------------------------------------------
 
 const EXPECTED_REWARD_FRAGMENTS: Record<"en" | "ko", string[]> = {
-  en: ["EVENT", "First invite", "Launch email 1 hour earlier", "Buddy", "Launch email 2 hours earlier", "Dive Team", "$149", "public 100 spots", "Dive Leader", "30 units", "Top 3", "each receive a WatchDive", "One pledge per member", "Shipping and taxes", "Kickstarter website during the live campaign"],
-  ko: ["EVENT", "첫 초대", "1시간 먼저", "버디", "2시간 먼저", "다이브 팀", "$149", "얼리버드 100명", "다이브 리더", "30개", "상위 3명", "WatchDive", "회원당 한 번", "배송비와 세금", "캠페인 진행 중 Kickstarter 웹사이트"],
+  en: ["EVENT", "First invite", "Launch email 1 hour earlier", "Buddy", "Launch email 2 hours earlier", "Dive Team", "$149", "Dive Leader", "30 units", "Top 3", "each get one WatchDive", "one pledge per member", "Recipients pay shipping and taxes", "during the live campaign on the Kickstarter website"],
+  ko: ["EVENT", "첫 초대", "1시간 먼저", "버디", "2시간 먼저", "다이브 팀", "$149", "다이브 리더", "30개", "상위 3명", "WatchDive", "회원당 한 번", "배송비와 세금", "캠페인 진행 중 Kickstarter 웹사이트"],
 };
 
 for (const locale of ["en", "ko"] as const) {
