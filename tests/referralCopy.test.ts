@@ -189,6 +189,45 @@ test("rules name the privacy policy with exactly the words the rules page links"
   }
 });
 
+test("share wording names people you know, and the rules define the general list", () => {
+  assert.match(REFERRAL_COPY.en.card.body, /^Share your link with divers you know\./);
+  assert.match(REFERRAL_COPY.ko.card.body, /^아는 다이버에게 내 링크를 공유해 주세요\./);
+  assert.match(REFERRAL_COPY.en.mail.welcomeIntro, /Share your personal invite link with divers you know/);
+  assert.match(REFERRAL_COPY.ko.mail.welcomeIntro, /아는 다이버에게 공유해 주세요/);
+  assert.match(REFERRAL_COPY.en.card.invitedNote, /they get credit for one friend/);
+  assert.match(REFERRAL_COPY.ko.card.invitedNote, /집계에 1명이 더해지며/);
+  assert.match(
+    REFERRAL_COPY.en.rules.sections[5].paragraphs[0],
+    /bulk or unsolicited messages/,
+  );
+  assert.match(REFERRAL_COPY.ko.rules.sections[5].paragraphs[0], /대량·무단 메시지/);
+  assert.match(
+    REFERRAL_COPY.en.rules.sections[6].paragraphs[0],
+    /The general list is everyone on the waitlist who has not reached a Buddy Invite tier/,
+  );
+  assert.match(
+    REFERRAL_COPY.ko.rules.sections[6].paragraphs[0],
+    /일반 명단은 버디 초대 단계가 없는 대기 명단 전체/,
+  );
+  const generalList: Record<string, string> = {
+    en: "The general list is everyone",
+    ko: "일반 명단은",
+    "zh-CN": "普通名单是",
+    "zh-TW": "一般名單是",
+    ja: "一般リストとは",
+    es: "La lista general es",
+    fr: "La liste générale",
+    de: "Die allgemeine Liste sind",
+    "pt-BR": "A lista geral é",
+  };
+  for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
+    assert.doesNotMatch(copy.card.body, /\bSend your link\b|내 링크를 보내/, locale);
+    const reward = copy.rules.sections[6].paragraphs[0];
+    assert.ok(reward.includes("{hoursFirst}"), `${locale}: early-notice line`);
+    assert.ok(reward.includes(generalList[locale]), `${locale}: general-list definition`);
+  }
+});
+
 test("rules state the dates through their program.ts placeholders, never as typed literals", () => {
   for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
     const rules = copy.rules.sections.flatMap((s) => s.paragraphs).join("\n");
