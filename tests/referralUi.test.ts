@@ -80,8 +80,8 @@ test("TierList marks nothing when the count is unknown, and fills every placehol
   }
   // Tier-specific hours: the first tier says 1, buddy says 2.
   const en = renderToStaticMarkup(createElement(TierList, { locale: "en", credited: null }));
-  assert.match(en, /launch email 1 hour before/);
-  assert.match(en, /launch email 2 hours before/);
+  assert.match(en, /Launch email 1 hour earlier/);
+  assert.match(en, /Launch email 2 hours earlier/);
 });
 
 const snapshot = (over: Partial<LeaderboardSnapshot> = {}): LeaderboardSnapshot => ({

@@ -30,7 +30,7 @@ const placeholders = (text: string) => [...new Set(text.match(/\{\w+\}/g) ?? [])
 const enFlat = flatten(en);
 
 // Strings that legitimately read the same as English (brand-only / URLs).
-const SAME_AS_EN_ALLOWED = new Set<string>([]);
+const SAME_AS_EN_ALLOWED = new Set<string>(["event.label"]);
 
 // Same banned-claim patterns as tests/i18nMessages.test.ts, plus equivalents
 // for words that file only bans inside longer phrases.
@@ -174,6 +174,11 @@ test("the Dive Leader light is never called free (the recipient pays shipping an
   const FREE = /\bfree\b|gratis|grátis|gratuit|offert|kostenlos|geschenkt|免费|免費|無料|무료/iu;
   for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
     assert.doesNotMatch(copy.tiers.leader.reward, FREE, `${locale}: tier reward`);
+    for (const [path, text] of flatten(copy.event)) {
+      assert.doesNotMatch(text, FREE, `${locale}: event ${path}`);
+      assert.doesNotMatch(text, BANNED, `${locale}: event ${path}`);
+      assert.doesNotMatch(text, /\d/, `${locale}: event values must use program placeholders at ${path}`);
+    }
     for (const p of copy.rules.sections.flatMap((s) => s.paragraphs))
       assert.doesNotMatch(p, FREE, `${locale}: rules`);
   }

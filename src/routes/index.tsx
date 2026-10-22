@@ -754,23 +754,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
 
           {programOn && (
             <>
-              {/* Collapsed: open, the five reward rows add ~600px on a phone and
-                  push the phone opt-in card below this one out of reach. The
-                  progress line above already names the next step. */}
-              <details className="group mt-3">
-                {/* No layout class on <summary> itself: the hero's
-                    `.wd-scroll header .flex { pointer-events: none }` would
-                    make it untappable. The inner span lays it out instead. */}
-                <summary className="block cursor-pointer list-none text-xs font-semibold text-white/85 [&::-webkit-details-marker]:hidden">
-                  <span className="flex min-h-11 items-center justify-between gap-2">
-                    <span>{referralCopy(locale).mail.welcomeTiersHeading}</span>
-                    <span aria-hidden="true" className="group-open:rotate-180">
-                      ▾
-                    </span>
-                  </span>
-                </summary>
-                <TierList locale={locale} credited={credited} className="mt-1" />
-              </details>
+              <TierList locale={locale} credited={credited} className="mt-4" />
               <p className="mt-1 text-xs">
                 <Link
                   to={buddyRulesPath(locale)}

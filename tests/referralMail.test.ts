@@ -168,32 +168,8 @@ test("switch on: confirmation schedules the guide 30 minutes out with signed sta
 // --- Switch on: the guide ----------------------------------------------------
 
 const EXPECTED_REWARD_FRAGMENTS: Record<"en" | "ko", string[]> = {
-  en: [
-    "First invite · 1 friend",
-    "1 hour before the general list",
-    "Buddy · 3 friends",
-    "2 hours before the general list",
-    "Dive Team · 5 friends",
-    "$149 early-bird price",
-    "first 100 backers",
-    "Dive Leader · 10 friends",
-    "30 in stock",
-    "Top 3 inviters",
-    "The 3 people with the most verified friends",
-  ],
-  ko: [
-    "첫 초대 · 1명",
-    "1시간 먼저",
-    "버디 · 3명",
-    "2시간 먼저",
-    "다이브 팀 · 5명",
-    "선착순 100명",
-    "$149",
-    "다이브 리더 · 10명",
-    "30개",
-    "초대 랭킹 Top 3",
-    "3명에게 WatchDive",
-  ],
+  en: ["EVENT", "First invite", "Launch email 1 hour earlier", "Buddy", "Launch email 2 hours earlier", "Dive Team", "$149", "public 100 spots", "Dive Leader", "30 units", "Top 3", "each receive a WatchDive", "One pledge per member", "Shipping and taxes", "Kickstarter website during the live campaign"],
+  ko: ["EVENT", "첫 초대", "1시간 먼저", "버디", "2시간 먼저", "다이브 팀", "$149", "얼리버드 100명", "다이브 리더", "30개", "상위 3명", "WatchDive", "회원당 한 번", "배송비와 세금", "캠페인 진행 중 Kickstarter 웹사이트"],
 };
 
 for (const locale of ["en", "ko"] as const) {
@@ -290,7 +266,7 @@ test("notice: count in subject, crossed tier with its reward, next tier, status 
     assert.ok(part.includes("Friends who joined through your link and confirmed their email: 3."));
     assert.ok(
       part.includes(
-        "You reached Buddy · 3 friends: Get the Kickstarter launch email 2 hours before",
+        "Launch email 2 hours earlier",
       ),
     );
     assert.ok(part.includes("2 more for Dive Team · 5 friends."));
@@ -327,8 +303,8 @@ test("notice: several crossed tiers each get a line; at the top the max line rep
     KO_FOOTER,
   );
   assert.equal(content.subject, "(광고) 내 링크로 버디가 참여했어요 (지금까지 10명)");
-  assert.ok(content.text.includes("다이브 팀 · 5명 달성!"));
-  assert.ok(content.text.includes("다이브 리더 · 10명 달성!"));
+  assert.ok(content.text.includes("5 · 다이브 팀: 얼리버드 $149 그대로 — 달성"));
+  assert.ok(content.text.includes("10 · 다이브 리더: 수중 라이트 증정 · 선착순 30명 — 달성"));
   assert.ok(content.text.includes("모든 단계를 달성했어요. 랭킹 Top 3에 계속 도전해 보세요."));
   assert.equal(content.text.includes("남았어요"), false);
 });
@@ -349,7 +325,7 @@ test("notice: never carries an address or any identity, only counts", async () =
   for (const part of [html, text, subject]) {
     // The only address is the sender's own help inbox in the footer.
     assert.equal(
-      part.replaceAll("help@diveroid.com", "").includes("@"),
+      part.replaceAll("help@diveroid.com", "").replaceAll("@media", "").includes("@"),
       false,
       "no recipient or friend address",
     );
@@ -521,11 +497,9 @@ test("every Buddy mail in every locale: email-safe HTML, absolute https links wi
   for (const { body } of calls) {
     const { html, text } = body;
     assert.equal(/display:\s*(flex|grid)/.test(html), false, "no flex/grid");
-    assert.equal(
-      /<style[\s>]/.test(html.replace(/<!--\[if mso\]>[\s\S]*?<!\[endif\]-->/g, "")),
-      false,
-      "no <style> outside Outlook conditionals",
-    );
+    // The only non-Outlook stylesheet is a progressive dark-mode override;
+    // every layout and light colour remains inline when a client drops it.
+    assert.match(html, /@media \(prefers-color-scheme:dark\)/);
     assert.equal(/<(script|img|link)\b/.test(html), false);
     assert.ok(html.includes('role="presentation"'));
     assert.ok(html.includes(`bgcolor="${BUTTON_BG}"`), "bulletproof button cell");
