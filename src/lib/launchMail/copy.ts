@@ -48,6 +48,18 @@ export type LaunchCopy = {
     unavailableHeading: string;
     unavailableBody: string;
   };
+  /**
+   * The same page while Buddy Invite is switched on: one opt-out then also
+   * stops every Buddy Invite mail, so the page says so. `{program}` is the
+   * localized program name (src/lib/referral/copy.ts `programName`).
+   */
+  programPage: {
+    title: string;
+    confirmHeading: string;
+    confirmBody: string;
+    doneHeading: string;
+    doneBody: string;
+  };
 };
 
 /**
@@ -123,6 +135,15 @@ export const LAUNCH_COPY = {
       unavailableHeading: "We couldn’t save that just now",
       unavailableBody: "Please try again in a minute, or email help@diveroid.com.",
     },
+    programPage: {
+      title: "WatchDive emails — WatchDive",
+      confirmHeading: "Stop WatchDive emails?",
+      confirmBody:
+        "This address will stop getting WatchDive emails (launch updates and {program}).",
+      doneHeading: "You’re unsubscribed",
+      doneBody:
+        "We won’t send this address any more WatchDive emails (launch updates and {program}).",
+    },
   },
   ko: {
     waves: {
@@ -166,6 +187,13 @@ export const LAUNCH_COPY = {
       invalidBody: "help@diveroid.com으로 메일을 주시면 직접 명단에서 빼드릴게요.",
       unavailableHeading: "지금은 처리하지 못했어요",
       unavailableBody: "잠시 후 다시 시도하시거나 help@diveroid.com으로 알려 주세요.",
+    },
+    programPage: {
+      title: "WatchDive 메일 — WatchDive",
+      confirmHeading: "WatchDive 메일을 그만 받으시겠어요?",
+      confirmBody: "이 주소로는 WatchDive 메일(출시 알림, {program})을 더 이상 보내지 않습니다.",
+      doneHeading: "수신 거부가 완료되었습니다",
+      doneBody: "이 주소로는 더 이상 WatchDive 메일(출시 알림, {program})을 보내지 않습니다.",
     },
   },
   "zh-CN": {
@@ -211,6 +239,13 @@ export const LAUNCH_COPY = {
       unavailableHeading: "暂时没能保存",
       unavailableBody: "请稍后再试，或发邮件至 help@diveroid.com。",
     },
+    programPage: {
+      title: "WatchDive 邮件 — WatchDive",
+      confirmHeading: "不再接收 WatchDive 邮件？",
+      confirmBody: "我们将不再向这个邮箱发送 WatchDive 邮件（上线通知和{program}）。",
+      doneHeading: "已退订",
+      doneBody: "我们不会再向这个邮箱发送 WatchDive 邮件（上线通知和{program}）。",
+    },
   },
   "zh-TW": {
     waves: {
@@ -254,6 +289,13 @@ export const LAUNCH_COPY = {
       invalidBody: "請寄信到 help@diveroid.com，我們會手動幫你取消。",
       unavailableHeading: "目前無法儲存",
       unavailableBody: "請稍後再試，或寄信到 help@diveroid.com。",
+    },
+    programPage: {
+      title: "WatchDive 郵件 — WatchDive",
+      confirmHeading: "不再收到 WatchDive 郵件？",
+      confirmBody: "我們將不再寄送 WatchDive 郵件（上線通知與{program}）到這個信箱。",
+      doneHeading: "已取消訂閱",
+      doneBody: "我們不會再寄 WatchDive 郵件（上線通知與{program}）到這個信箱。",
     },
   },
   ja: {
@@ -300,6 +342,15 @@ export const LAUNCH_COPY = {
       unavailableHeading: "ただいま処理できませんでした",
       unavailableBody:
         "しばらくしてからもう一度お試しいただくか、help@diveroid.comまでご連絡ください。",
+    },
+    programPage: {
+      title: "WatchDiveからのメール — WatchDive",
+      confirmHeading: "WatchDiveからのメールを停止しますか？",
+      confirmBody:
+        "このアドレスには、WatchDiveからのメール（ローンチのお知らせ・{program}）をお送りしなくなります。",
+      doneHeading: "配信を停止しました",
+      doneBody:
+        "このアドレスにWatchDiveからのメール（ローンチのお知らせ・{program}）をお送りすることはありません。",
     },
   },
   es: {
@@ -349,6 +400,15 @@ export const LAUNCH_COPY = {
       unavailableHeading: "No hemos podido guardarlo ahora",
       unavailableBody: "Vuelve a intentarlo en un minuto o escríbenos a help@diveroid.com.",
     },
+    programPage: {
+      title: "Correos de WatchDive — WatchDive",
+      confirmHeading: "¿Dejar de recibir los correos de WatchDive?",
+      confirmBody:
+        "No enviaremos más correos de WatchDive a esta dirección (avisos de lanzamiento e {program}).",
+      doneHeading: "Te has dado de baja",
+      doneBody:
+        "No volveremos a enviar correos de WatchDive a esta dirección (avisos de lanzamiento e {program}).",
+    },
   },
   fr: {
     waves: {
@@ -396,6 +456,15 @@ export const LAUNCH_COPY = {
       invalidBody: "Écrivez à help@diveroid.com et nous vous retirerons de la liste nous-mêmes.",
       unavailableHeading: "Impossible d’enregistrer pour le moment",
       unavailableBody: "Réessayez dans une minute ou écrivez à help@diveroid.com.",
+    },
+    programPage: {
+      title: "E-mails WatchDive — WatchDive",
+      confirmHeading: "Ne plus recevoir les e-mails WatchDive ?",
+      confirmBody:
+        "Cette adresse ne recevra plus d’e-mails WatchDive (annonces de lancement et {program}).",
+      doneHeading: "Vous êtes désabonné",
+      doneBody:
+        "Nous n’enverrons plus d’e-mails WatchDive à cette adresse (annonces de lancement et {program}).",
     },
   },
   de: {
@@ -445,6 +514,15 @@ export const LAUNCH_COPY = {
       unavailableHeading: "Das hat gerade nicht geklappt",
       unavailableBody: "Versuch es in einer Minute noch einmal oder schreib an help@diveroid.com.",
     },
+    programPage: {
+      title: "WatchDive-E-Mails — WatchDive",
+      confirmHeading: "WatchDive-E-Mails abbestellen?",
+      confirmBody:
+        "An diese Adresse schicken wir dann keine WatchDive-E-Mails mehr (Launch-Infos und {program}).",
+      doneHeading: "Du hast dich abgemeldet",
+      doneBody:
+        "An diese Adresse schicken wir keine WatchDive-E-Mails mehr (Launch-Infos und {program}).",
+    },
   },
   "pt-BR": {
     waves: {
@@ -493,5 +571,94 @@ export const LAUNCH_COPY = {
       unavailableHeading: "Não conseguimos salvar agora",
       unavailableBody: "Tente de novo em um minuto ou escreva para help@diveroid.com.",
     },
+    programPage: {
+      title: "E-mails do WatchDive — WatchDive",
+      confirmHeading: "Parar de receber os e-mails do WatchDive?",
+      confirmBody:
+        "Este endereço vai deixar de receber e-mails do WatchDive (avisos de lançamento e {program}).",
+      doneHeading: "Inscrição cancelada",
+      doneBody:
+        "Não vamos mais mandar e-mails do WatchDive para este endereço (avisos de lançamento e {program}).",
+    },
   },
 } as const satisfies Record<Locale, LaunchCopy>;
+
+/**
+ * The price lines while Buddy Invite is switched on
+ * (WATCHDIVE_REFERRAL_PROGRAM_ENABLED=1 in the sender's env).
+ *
+ * Dive Team members keep the early-bird price through a private Kickstarter
+ * link after the first 100 are gone, and a paid price reservation already
+ * keeps it too, so "only for the first 100" would be false (claims review
+ * BLOCKER 1, owner decision D1(a), 2026-10-22). Same facts as the switched-on
+ * landing (src/lib/i18n/referral-price-claim-copy.ts), in each language's
+ * mail voice and US$ format. `price` replaces every wave's price line;
+ * `preheader` replaces the two preheaders that state the limit (t-1h, t-0).
+ */
+export const LAUNCH_REFERRAL_PRICE: Record<Locale, { price: string; preheader: string }> = {
+  en: {
+    price:
+      "$149 early bird: the first 100 Kickstarter backers, plus waitlist members with a price reservation or Dive Team status. The public price is $299.",
+    preheader: "$149 early bird: the first 100 backers, price reservations and Dive Team.",
+  },
+  ko: {
+    price:
+      "얼리버드 US$149: Kickstarter 선착순 후원자 100명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원. 일반가는 US$299입니다.",
+    preheader: "얼리버드 US$149: 선착순 100명, 가격 예약·다이브 팀 회원.",
+  },
+  "zh-CN": {
+    price:
+      "早鸟价 US$149 适用于前 100 位支持者，以及有价格预约或潜水小队等级的名单成员；公开价格为 US$299。",
+    preheader: "早鸟价 US$149：前 100 位支持者，以及价格预约和潜水小队成员。",
+  },
+  "zh-TW": {
+    price:
+      "早鳥價 US$149 適用於前 100 位贊助者，以及有價格預約或潛水小隊等級的名單成員；公開售價為 US$299。",
+    preheader: "早鳥價 US$149：前 100 位贊助者，以及價格預約和潛水小隊成員。",
+  },
+  ja: {
+    price:
+      "早割US$149の対象は、先着100名のバッカーと、価格予約またはダイブチームの資格を持つリスト登録者です。一般価格はUS$299です。",
+    preheader: "早割US$149は先着100名と、価格予約・ダイブチームの方が対象。",
+  },
+  es: {
+    price:
+      "El early bird de 149 US$ es para los primeros 100 mecenas y para quienes estén en la lista con una reserva de precio o el nivel Equipo de buceo. El precio público es de 299 US$.",
+    preheader: "149 US$: los primeros 100 mecenas, reservas de precio y Equipo de buceo.",
+  },
+  fr: {
+    price:
+      "Le tarif early bird de 149 $ US est réservé aux 100 premiers contributeurs, ainsi qu’aux inscrits qui ont une réservation de prix ou font partie de la Palanquée. Le prix public est de 299 $ US.",
+    preheader:
+      "149 $ US : les 100 premiers contributeurs, les réservations de prix et la Palanquée.",
+  },
+  de: {
+    price:
+      "Der Early Bird für 149 US$ gilt für die ersten 100 Unterstützer sowie für alle auf der Warteliste mit Preisreservierung oder Tauchteam-Status. Der reguläre Preis liegt bei 299 US$.",
+    preheader: "149 US$: die ersten 100 Unterstützer, Preisreservierungen und das Tauchteam.",
+  },
+  "pt-BR": {
+    price:
+      "O early bird de US$ 149 vale para os 100 primeiros apoiadores e para quem está na lista com reserva de preço ou nível Equipe de mergulho. O preço público é US$ 299.",
+    preheader: "US$ 149: os 100 primeiros apoiadores, reservas de preço e Equipe de mergulho.",
+  },
+};
+
+/** Waves whose preheader states the first-100 limit. */
+export const LAUNCH_REFERRAL_PREHEADER_WAVES: readonly LaunchWave[] = ["t-1h", "t-0"];
+
+/** A wave's copy, with the Buddy Invite price lines while that program is on. */
+export function launchWaveCopy(
+  locale: Locale,
+  wave: LaunchWave,
+  referralProgram = false,
+): WaveCopy {
+  const copy: WaveCopy = LAUNCH_COPY[locale].waves[wave];
+  if (!referralProgram) return copy;
+  const claim = LAUNCH_REFERRAL_PRICE[locale];
+  return {
+    ...copy,
+    price: claim.price,
+    ...(LAUNCH_REFERRAL_PREHEADER_WAVES.includes(wave) ? { preheader: claim.preheader } : {}),
+  };
+}

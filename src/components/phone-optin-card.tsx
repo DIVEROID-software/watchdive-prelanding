@@ -2,8 +2,7 @@ import { useId, useState } from "react";
 import { PhoneNumberFields } from "./phone-number-fields";
 import { savePhoneOptIn } from "@/lib/api/waitlist.functions";
 import { defaultPhoneCountry, normalizePhone } from "@/lib/phoneNumbers";
-import { phoneOptInCopy } from "@/lib/phoneOptInCopy";
-import { useCurrentLocale } from "@/lib/i18n/use-current-locale";
+import { useCurrentLocale, usePhoneOptInCopy } from "@/lib/i18n/use-current-locale";
 import type { PhoneCredential } from "@/lib/verification/phoneOptIn";
 
 export function PhoneOptInCard({
@@ -16,7 +15,8 @@ export function PhoneOptInCard({
   onSaved?: () => void;
 }) {
   const locale = useCurrentLocale();
-  const copy = phoneOptInCopy[locale];
+  // The terms line names the Buddy Invite exceptions while that program is on.
+  const copy = usePhoneOptInCopy(locale);
   const id = useId();
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState<string>(defaultPhoneCountry(locale));

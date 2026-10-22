@@ -36,8 +36,25 @@ export const VERIFICATION_MAX_SENDS = 5;
  * How long after a confirmation the welcome mail carrying the invite link goes
  * out. Resend holds the message itself, so this needs no scheduler of ours and
  * the delay survives a redeploy.
+ *
+ * This is the legacy hold, still used while Buddy Invite is switched off
+ * (WATCHDIVE_REFERRAL_PROGRAM_ENABLED unset): nothing changes for anyone until
+ * the owner's final go-live.
  */
 export const WELCOME_DELAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The hold for the welcome mail once Buddy Invite is switched on, when that
+ * mail is the program guide (tiers, invite link, status page, rules).
+ *
+ * 30 minutes, not 24 hours (owner request, 2026-10-22): the guide is most
+ * useful while the person still remembers signing up and can pass the link to
+ * the buddies they dive with. It is not sent at once because the reservation
+ * invite already goes out about three minutes after verification
+ * (RESERVATION_INVITE_DELAY_MS); two mails in the same minute compete for
+ * attention and look like a burst to inbox filters.
+ */
+export const BUDDY_GUIDE_DELAY_MS = 30 * 60 * 1000;
 
 /** A poll handle outlives the link it belongs to by nothing. */
 export const POLL_HANDLE_TTL_MS = VERIFICATION_TTL_MS;
@@ -216,6 +233,12 @@ export type LeadRecord = {
   verifiedAt?: string;
   /** Set once the welcome mail has been accepted by the provider. */
   welcomeAt?: string;
+  /**
+   * Raw `Launch mail` / `Reservation mail` cells, read only for their opt-out
+   * markers (`unsubscribed …`, written by /unsubscribe). Absent when empty.
+   */
+  launchMail?: string;
+  reservationMail?: string;
   /** Raw `Verification reminder` cell. Non-empty = reminder already claimed. */
   reminder?: string;
   /** First-touch landing path, read only to pick the reminder's language. */
@@ -398,6 +421,12 @@ export type MarkVerifiedInput = {
 
 export interface LeadStore {
   findByEmail(canonical: string, email: string): Promise<LeadRecord | undefined>;
+  /**
+   * Every row of an address (same canonical email or exact email), for the
+   * opt-out check before a promotional mail. Read-only. Throws rather than
+   * return a partial list.
+   */
+  listByAddress?(canonical: string, email: string): Promise<LeadRecord[]>;
   findByLeadId(leadId: string): Promise<LeadRecord | undefined>;
   createPending(input: CreatePendingInput): Promise<LeadRecord>;
   startAttempt(pageId: string, input: StartAttemptInput): Promise<void>;

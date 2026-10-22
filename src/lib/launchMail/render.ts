@@ -14,7 +14,7 @@
 // Kept free of path-alias imports so `npm test` can load it directly.
 import type { Locale } from "../i18n/locale.ts";
 import type { LaunchWave } from "./audience.ts";
-import { LABEL_SEPARATOR, LAUNCH_COPY, LAUNCH_TIME_ZONE } from "./copy.ts";
+import { LABEL_SEPARATOR, LAUNCH_COPY, LAUNCH_TIME_ZONE, launchWaveCopy } from "./copy.ts";
 
 export type LaunchMailInput = {
   wave: LaunchWave;
@@ -24,6 +24,12 @@ export type LaunchMailInput = {
   unsubscribeUrl: string;
   /** Sender's postal address for the footer (CAN-SPAM). Omitted only in previews. */
   postalAddress?: string;
+  /**
+   * Buddy Invite is switched on for this run: the price lines name the
+   * price-reservation and Dive Team exceptions (LAUNCH_REFERRAL_PRICE).
+   * Absent or false renders exactly the mail this module always rendered.
+   */
+  referralProgram?: boolean;
 };
 
 export type RenderedLaunchMail = { subject: string; html: string; text: string };
@@ -73,7 +79,7 @@ export function formatLaunchTime(launchAt: Date, locale: Locale): { local: strin
 
 export function renderLaunchMail(input: LaunchMailInput): RenderedLaunchMail {
   const copy = LAUNCH_COPY[input.locale];
-  const wave = copy.waves[input.wave];
+  const wave = launchWaveCopy(input.locale, input.wave, input.referralProgram === true);
   const time = formatLaunchTime(input.launchAt, input.locale);
   const body = wave.body.replace("{time}", time.local);
   const cjk = input.locale === "ko" || input.locale === "ja" || input.locale.startsWith("zh");

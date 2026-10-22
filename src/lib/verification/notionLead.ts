@@ -289,6 +289,18 @@ export function readStatus(property: unknown): VerificationStatus {
   return "legacy";
 }
 
+/** Raw `Launch mail` / `Reservation mail` cells, present only when non-empty. */
+function optOutCells(
+  properties: Record<string, unknown>,
+): Pick<LeadRecord, "launchMail" | "reservationMail"> {
+  const launchMail = readText(properties["Launch mail"]);
+  const reservationMail = readText(properties["Reservation mail"]);
+  return {
+    ...(launchMail ? { launchMail } : {}),
+    ...(reservationMail ? { reservationMail } : {}),
+  };
+}
+
 export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefined {
   const pageId = typeof page.id === "string" ? page.id : "";
   if (!pageId) return undefined;
@@ -339,6 +351,8 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     ...(expiresAt ? { expiresAt } : {}),
     ...(verifiedAt ? { verifiedAt } : {}),
     ...(welcomeAt ? { welcomeAt } : {}),
+    // Opt-out markers only (launchMail/audience.ts, reservation-mail/campaign.ts).
+    ...optOutCells(properties),
     ...(reminder ? { reminder } : {}),
     ...(landingPath ? { landingPath } : {}),
     ...(measurementConsent ? { measurementConsent } : {}),
@@ -615,6 +629,35 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
           ],
         }),
       );
+    },
+
+    async listByAddress(canonical, email) {
+      // A handful of rows per address at most; more than this many pages is
+      // not a person, and a partial list could miss the opt-out, so it throws.
+      const rows: LeadRecord[] = [];
+      let cursor: string | undefined;
+      for (let page = 0; ; page++) {
+        if (page >= 3) throw new Error("Too many rows for one address");
+        const result = await withCanonicalEmailShape(() =>
+          request("POST", `databases/${databaseId}/query`, {
+            filter: {
+              or: [
+                ...canonicalEmailFilters(canonical),
+                { property: "Email", title: { equals: email } },
+              ],
+            },
+            page_size: 100,
+            ...(cursor ? { start_cursor: cursor } : {}),
+          }),
+        );
+        for (const raw of (result.results as Record<string, unknown>[] | undefined) ?? []) {
+          const row = toLeadRecord(raw);
+          if (row) rows.push(row);
+        }
+        if (!result.has_more || typeof result.next_cursor !== "string") break;
+        cursor = result.next_cursor;
+      }
+      return rows;
     },
 
     async findByLeadId(leadId) {

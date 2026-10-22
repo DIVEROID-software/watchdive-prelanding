@@ -31,8 +31,15 @@ export const earlyBirdRaceCopy: Record<Locale, string> = {
   "pt-BR": "{price}: só os 100 primeiros no Kickstarter, ao abrir.",
 };
 
-/** The sentence for a locale, capitalized when a price like "unos 140 €" opens it. */
-export function earlyBirdRace(locale: Locale, price: string): string {
-  const sentence = (earlyBirdRaceCopy[locale] ?? earlyBirdRaceCopy.en).replace("{price}", price);
+/**
+ * The sentence for a locale, capitalized when a price like "unos 140 €" opens it.
+ * `template` is the switched-on Buddy Invite claim (price-claim.ts), which
+ * names who else gets the price; without it the line is exactly as before.
+ */
+export function earlyBirdRace(locale: Locale, price: string, template?: string): string {
+  const sentence = (template ?? earlyBirdRaceCopy[locale] ?? earlyBirdRaceCopy.en).replace(
+    "{price}",
+    price,
+  );
   return sentence.charAt(0).toLocaleUpperCase(locale) + sentence.slice(1);
 }

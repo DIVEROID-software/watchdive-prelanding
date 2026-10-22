@@ -21,6 +21,13 @@ import {
   loadWaitlistCount,
 } from "@/lib/api/waitlist.functions";
 import { EarlyBirdRace } from "@/components/early-bird-race";
+import { getReferralProgress } from "@/lib/api/referral.functions";
+import { LeaderboardSection, buddyRulesPath, useReferralProgramEnabled } from "@/components/referral/LeaderboardSection";
+import { TierList } from "@/components/referral/TierList";
+import { fill, referralCopy } from "@/lib/referral/copy";
+import { nextTier } from "@/lib/referral/program";
+import { copyValues } from "@/lib/referral/values";
+import { referralShareCopy } from "@/lib/referral/shareCopy";
 import { SocialAuthEntry, SocialAuthResult, SocialSignupResultProvider, useSocialSignupCompleted } from "@/components/social-auth-entry";
 import { HeroPhoto } from "@/components/hero-photo";
 import { ProductGallery } from "@/components/product-gallery";
@@ -67,7 +74,6 @@ import {
   markConversionMilestone,
   closeExperimentEnrollmentOnSubmit,
 } from "@/lib/conversionExperimentClient";
-import { conversionCopy } from "@/lib/conversionCopy";
 import { signupActionsVisible } from "@/lib/signupVisibility";
 import { trackClarity } from "@/lib/clarity";
 import {
@@ -80,7 +86,11 @@ import { landingHead } from "@/lib/i18n/seo";
 import { readLiteMediaHint, useLiteMedia } from "@/lib/liteMedia";
 import { spamFolderHintFor } from "@/lib/spamFolderHint";
 import { privacyPath, termsPath } from "@/lib/i18n/locale";
+import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
+import { applyPriceClaim, priceClaimFromLoaderData } from "@/lib/i18n/price-claim";
+import { loadReferralPriceClaim } from "@/lib/i18n/price-claim-loader";
 import {
+  useConversionCopy,
   useCurrentLocale,
   useFrozenLandingMessages,
   useLocalizedBetaReviewBodies,
@@ -159,11 +169,19 @@ export const Route = createFileRoute("/")({
   // The list figure is part of the server render, so it does not change a
   // second after load (see WaitlistProgress). `liteMedia` is the Save-Data
   // hint, read once here so the server render and hydration agree on it.
-  loader: async () => ({
-    waitlistCount: await loadWaitlistCount(),
-    liteMedia: readLiteMediaHint(),
-  }),
-  head: () => landingHead("en"),
+  // `priceClaim` is present only while Buddy Invite is on (price-claim.ts).
+  loader: async () => {
+    const [waitlistCount, claim] = await Promise.all([
+      loadWaitlistCount(),
+      loadReferralPriceClaim("en"),
+    ]);
+    return { waitlistCount, liteMedia: readLiteMediaHint(), ...claim };
+  },
+  head: ({ loaderData }) => {
+    const claim = priceClaimFromLoaderData(loaderData);
+    if (!claim) return landingHead("en");
+    return landingHead("en", applyPriceClaim(EN_FROZEN_LANDING_MESSAGES, claim));
+  },
   component: DesignFrozenLanding,
 });
 
@@ -211,6 +229,7 @@ export function DesignFrozenLanding() {
         <ReviewTicker />
         <Credentials />
         <OfferSection />
+        <LeaderboardSection locale={locale} />
         <FAQ />
         <Footer />
       </div>
@@ -430,7 +449,7 @@ function LazyVideo({
  */
 function StickyLaunchBanner() {
   const m = useFrozenLandingMessages();
-  const copy = conversionCopy[useCurrentLocale()];
+  const copy = useConversionCopy(useCurrentLocale());
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
@@ -549,6 +568,10 @@ function getRef(): string | undefined {
 // Client-only welcome banner shown when a visitor arrives via a friend's link.
 function ReferralWelcome() {
   const m = useFrozenLandingMessages();
+  const locale = useCurrentLocale();
+  // Program on: tell the invited visitor what the inviter can see. Inside the
+  // same banner, so the form moves by one short line at most and only then.
+  const programOn = useReferralProgramEnabled();
   const [ref, setRef] = useState<string | undefined>(undefined);
   const [before, highlight, after] = splitHighlightedCopy(
     m.referral.welcome,
@@ -563,6 +586,11 @@ function ReferralWelcome() {
         {before}
         <span className="font-semibold text-white">{highlight}</span>
         {after}
+        {programOn && (
+          <span className="mt-0.5 block text-xs text-white/70">
+            {referralCopy(locale).card.invitedNote}
+          </span>
+        )}
       </span>
     </div>
   );
@@ -570,8 +598,17 @@ function ReferralWelcome() {
 
 function ReferralSuccess({ refCode }: { refCode: string }) {
   const m = useFrozenLandingMessages();
+  const locale = useCurrentLocale();
+  const card = referralCopy(locale).card;
+  // Legal review D9: with the program on, the share action is a neutral
+  // "Share" with no reward or price in the prefilled text.
+  const share = referralShareCopy(locale);
   const [copied, setCopied] = useState(false);
   const [count, setCount] = useState<number | null>(null);
+  // null until the server says the program is live. While null or off, this
+  // card renders exactly as before Buddy Invite existed.
+  const [credited, setCredited] = useState<number | null>(null);
+  const programOn = useReferralProgramEnabled();
   const joinedTemplate = count === 1 ? m.referral.joinedOne : m.referral.joinedOther;
   const [joinedBefore, , joinedAfter] = splitHighlightedCopy(joinedTemplate, "{count}");
   const shareUrl =
@@ -583,10 +620,32 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
     getReferralCount({ data: { refCode } })
       .then((r) => alive && setCount(r.count))
       .catch(() => {});
+    // Progress counts credited (verified, eligible) friends, not raw sign-ups.
+    if (programOn) getReferralProgress({ data: { refCode } })
+      .then((r) => {
+        if (!alive || !r.enabled) return;
+        setCredited(r.credited);
+      })
+      .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [refCode]);
+  }, [refCode, programOn]);
+
+  const progressText = (() => {
+    if (!programOn || credited === null) return null;
+    const values = copyValues(locale);
+    const next = nextTier(credited);
+    if (!next) return fill(card.progressMax, { ...values, count: credited });
+    // Tier names carry "· N friends"; the sentence already states the remaining count.
+    const tierName = referralCopy(locale).tiers[next.id].name.split(" · ")[0];
+    return fill(credited === 0 ? card.progressNone : card.progress, {
+      ...values,
+      count: credited,
+      remaining: next.minFriends - credited,
+      tier: tierName,
+    });
+  })();
 
   return (
     <div className="rounded-2xl bg-white/10 backdrop-blur p-5 text-white">
@@ -596,28 +655,44 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
       {shareUrl && (
         <div className="mt-4 rounded-xl border border-white/15 bg-[color:var(--color-deep-2)]/50 p-4">
           <div className="text-sm font-semibold text-[color:var(--color-cyan-glow)]">
-            {m.referral.buddyTitle}
+            {programOn ? card.title : m.referral.buddyTitle}
           </div>
-          <p className="mt-1 text-xs text-white/70">{m.referral.buddyBody}</p>
+          <p className="mt-1 text-xs text-white/70">{programOn ? card.body : m.referral.buddyBody}</p>
 
-          {count !== null && (
-            <div className="mt-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-white/85">
-                  {joinedBefore}
-                  <span className="font-semibold text-[color:var(--color-cyan-glow)]">{count}</span>
-                  {joinedAfter}
-                </span>
+          {programOn ? (
+            progressText && (
+              <p className="mt-3 text-xs font-medium text-white/85" aria-live="polite">
+                {progressText}
+              </p>
+            )
+          ) : (
+            count !== null && (
+              <div className="mt-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-white/85">
+                    {joinedBefore}
+                    <span className="font-semibold text-[color:var(--color-cyan-glow)]">{count}</span>
+                    {joinedAfter}
+                  </span>
+                </div>
               </div>
-            </div>
+            )
           )}
 
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <input
               readOnly
               value={shareUrl}
+              aria-label={programOn ? referralCopy(locale).status.shareTitle : undefined}
               onFocus={(e) => e.currentTarget.select()}
-              className="h-11 flex-1 rounded-lg bg-white/95 px-3 text-xs text-[color:var(--color-deep-2)] outline-none"
+              // Program on: `flex-1` alone collapses the field to ~25px in the
+              // phone column (flex-basis 0 along a column axis); it only grows
+              // in the row layout. Off keeps the frozen class string.
+              className={
+                programOn
+                  ? "h-11 min-h-11 w-full min-w-0 shrink-0 rounded-lg bg-white/95 px-3 text-xs text-[color:var(--color-deep-2)] outline-none sm:w-auto sm:flex-1"
+                  : "h-11 flex-1 rounded-lg bg-white/95 px-3 text-xs text-[color:var(--color-deep-2)] outline-none"
+              }
             />
             <button
               type="button"
@@ -626,7 +701,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
                   if (navigator.share) {
                     await navigator.share({
                       title: "WatchDive",
-                      text: m.referral.shareText,
+                      text: programOn ? share.text : m.referral.shareText,
                       url: shareUrl,
                     });
                     return;
@@ -640,9 +715,39 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
               }}
               className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-sm font-semibold text-[#F6FAFC] hover:brightness-110"
             >
-              {copied ? m.referral.copied : m.referral.shareButton}
+              {copied ? m.referral.copied : programOn ? share.button : m.referral.shareButton}
             </button>
           </div>
+
+          {programOn && (
+            <>
+              {/* Collapsed: open, the five reward rows add ~600px on a phone and
+                  push the phone opt-in card below this one out of reach. The
+                  progress line above already names the next step. */}
+              <details className="group mt-3">
+                {/* No layout class on <summary> itself: the hero's
+                    `.wd-scroll header .flex { pointer-events: none }` would
+                    make it untappable. The inner span lays it out instead. */}
+                <summary className="block cursor-pointer list-none text-xs font-semibold text-white/85 [&::-webkit-details-marker]:hidden">
+                  <span className="flex min-h-11 items-center justify-between gap-2">
+                    <span>{referralCopy(locale).mail.welcomeTiersHeading}</span>
+                    <span aria-hidden="true" className="group-open:rotate-180">
+                      ▾
+                    </span>
+                  </span>
+                </summary>
+                <TierList locale={locale} credited={credited} className="mt-1" />
+              </details>
+              <p className="mt-1 text-xs">
+                <Link
+                  to={buddyRulesPath(locale)}
+                  className="inline-flex min-h-11 items-center text-[color:var(--color-cyan-glow)] underline underline-offset-4"
+                >
+                  {card.rulesLink}
+                </Link>
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -812,7 +917,7 @@ type FormPlacement = "hero" | "offer";
 function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePhone?: boolean }) {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
-  const copy = conversionCopy[locale];
+  const copy = useConversionCopy(locale);
   const socialCompleted = useSocialSignupCompleted();
   const [pending, setPending] = useState<string | null>(null);
   const [alreadyVerified, setAlreadyVerified] = useState(false);
@@ -1416,7 +1521,7 @@ const HOLD_EARLY_SUBMIT_JS = `document.addEventListener("submit",function(e){var
 function Hero() {
   const m = useFrozenLandingMessages();
   const locale = useCurrentLocale();
-  const copy = conversionCopy[locale];
+  const copy = useConversionCopy(locale);
   const [before, highlight, after] = splitHighlightedCopy(m.hero.h1, m.hero.h1Highlight);
   return (
     <header className="wd-hero-new text-white">
@@ -2391,6 +2496,7 @@ function FAQ() {
 
 function Footer() {
   const locale = useCurrentLocale();
+  const referralOn = useReferralProgramEnabled();
   const m = useFrozenLandingMessages();
   const year = new Date().getFullYear();
   return (
@@ -2411,6 +2517,14 @@ function Footer() {
           >
             {m.footer.privacy}
           </Link>
+          {referralOn && (
+            <Link
+              to={buddyRulesPath(locale)}
+              className="inline-flex min-h-11 items-center px-3 underline-offset-4 hover:underline"
+            >
+              {referralCopy(locale).programName}
+            </Link>
+          )}
           <CookieSettingsLink className="inline-flex min-h-11 items-center px-3 underline-offset-4 hover:underline" />
         </nav>
         <p className="mx-auto mt-6 max-w-2xl text-xs text-[#F6FAFC]">

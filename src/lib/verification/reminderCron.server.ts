@@ -7,7 +7,13 @@ import { checkCronAuthorization } from "./cronAuth.ts";
 import { createNotionReminderStore, createNotionRequest } from "./notionLead.ts";
 import { replayPressOutbox } from "../press/pressReplay.server.ts";
 import { runVerificationReminders } from "./reminder.ts";
-import { createResendMailer } from "./resend.ts";
+import { createResendMailer, createResendReferralMailer } from "./resend.ts";
+import { requirePublicOrigin } from "./token.ts";
+import { referralNoticesEnabled, runReferralNotices } from "../referral/notices.ts";
+import { referralClosesAt } from "../referral/program.ts";
+// Core-owned (feat/referral-core).
+import { referralSecret } from "../referral/statusToken.ts";
+import { createNotionReferralStore } from "../referral/store.ts";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -51,6 +57,7 @@ export async function handleVerificationReminderCron(request: Request): Promise<
   // Counts only — the same object is safe for the log, Slack and the response.
   console.log("[watchdive] verification_reminder_run", result);
   if (!dryRun) await replayPressAttribution(databaseId);
+  await sendReferralNotices(databaseId, dryRun);
   if (maintenance) await purgeExpiredBehavior();
   return json(200, { ok: !result.aborted, policy: "wd-verification-reminder-24h-v1", ...result });
 }
@@ -92,5 +99,45 @@ export async function purgeExpiredBehavior(
     log(
       `[page-behavior] retention failed — unexpected ${error instanceof Error ? error.name : "error"}`,
     );
+  }
+}
+
+/**
+ * Buddy Invite friend-joined notices ride the same tick, after the reminder
+ * pass. Off unless both WATCHDIVE_REFERRAL_PROGRAM_ENABLED=1 and
+ * WATCHDIVE_REFERRAL_NOTICES_ENABLED=1; a dry-run tick counts and sends
+ * nothing. Bounded in sends and time, and it can never change the reminder
+ * result: anything thrown is reduced to its error name.
+ */
+export async function sendReferralNotices(
+  databaseId: string,
+  dryRun: boolean,
+  env: Record<string, string | undefined> = process.env,
+  run: typeof runReferralNotices = runReferralNotices,
+  log: (line: string) => void = (line) => console.log(line),
+): Promise<void> {
+  if (!referralNoticesEnabled(env)) return;
+  try {
+    const secret = referralSecret(env);
+    if (!secret) {
+      log("[referral-notices] skipped — status secret not set");
+      return;
+    }
+    const outcome = await run({
+      env,
+      store: createNotionReferralStore(createNotionRequest(), databaseId),
+      mailer: createResendReferralMailer(env),
+      now: () => new Date(),
+      publicOrigin: requirePublicOrigin(env),
+      secret,
+      closesAt: referralClosesAt(env),
+      dryRun,
+      maxSends: 50,
+      budgetMs: 15_000,
+      log,
+    });
+    log(`[referral-notices] run ${JSON.stringify(outcome)}`);
+  } catch (error) {
+    log(`[referral-notices] failed — unexpected ${error instanceof Error ? error.name : "error"}`);
   }
 }

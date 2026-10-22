@@ -330,7 +330,7 @@ test("synthetic tombstones are excluded from every in-app operational count and 
   assert.ok(waitlist.includes("const NOT_SUSPECT"));
   assert.ok(waitlist.includes("const COUNTABLE = { and: [NOT_SUSPECT, COUNTABLE_STATUS_FILTER] }"));
   assert.ok(waitlist.includes("filter: COUNTABLE"));
-  assert.ok(waitlist.includes("...COUNTABLE.and]"));
+  assert.ok(waitlist.includes("loadLegacyReferralCount(notionFetch, dbId, code, COUNTABLE.and)"));
   assert.ok(store.includes('{ property: "Email", title: { equals: email } }'));
   assert.ok(!SOURCE_MEASUREMENT_TOMBSTONE_SOURCE.includes("@"));
 });

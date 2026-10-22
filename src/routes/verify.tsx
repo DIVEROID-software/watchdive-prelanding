@@ -29,6 +29,7 @@ import { isVerificationTokenShape } from "@/lib/verification/tokenShape";
 import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
 import { homePath, privacyPath, referralPath, termsPath } from "@/lib/i18n/locale";
 import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
+import { loadReferralPriceClaimOnly } from "@/lib/i18n/price-claim-loader";
 
 // No third-party script starts on load. This route carries the token in its
 // fragment, so the root gates every tag off it. The Meta pixel is started here
@@ -38,6 +39,8 @@ import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-curre
 // confirmation reached Meta with no browser context at all.
 
 export const Route = createFileRoute("/verify")({
+  // Only for the SMS card's terms line; no loader data while Buddy Invite is off.
+  loader: () => loadReferralPriceClaimOnly("en"),
   head: () => ({
     meta: [
       { title: EN_FROZEN_LANDING_MESSAGES.verify.metaTitle },

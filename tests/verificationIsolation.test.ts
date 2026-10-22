@@ -292,7 +292,7 @@ test("public counts are verified-or-legacy and non-suspect", () => {
   assert.ok(fns.includes("const COUNTABLE = { and: [NOT_SUSPECT, COUNTABLE_STATUS_FILTER] }"));
   // Both public numbers go through it, so pending never inflates either.
   assert.ok(fns.includes("filter: COUNTABLE,"));
-  assert.ok(fns.includes("...COUNTABLE.and],"));
+  assert.ok(fns.includes("loadLegacyReferralCount(notionFetch, dbId, code, COUNTABLE.and)"));
 });
 
 // ---------------------------------------------------------------------------
@@ -370,9 +370,9 @@ test("the canonical-email dual-shape hotfix is untouched and still in the path",
   assert.ok(hotfix.includes("isCanonicalEmailShapeError"));
 
   const store = read("src/lib/verification/notionLead.ts");
-  // Both the lookup and the create must go through it, or a live schema flip
-  // breaks Claim again.
-  assert.equal(store.split("withCanonicalEmailShape(() =>").length - 1, 2);
+  // The lookup, the create and the address listing (Buddy guide opt-out
+  // check) must all go through it, or a live schema flip breaks Claim again.
+  assert.equal(store.split("withCanonicalEmailShape(() =>").length - 1, 3);
 });
 
 test("the Claim form still submits through joinWaitlist with its honeypot", () => {

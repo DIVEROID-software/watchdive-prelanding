@@ -30,6 +30,7 @@ import {
   WITHDRAW_HANDLE_TTL_MS,
   VERIFICATION_MAX_SENDS,
   WELCOME_DELAY_MS,
+  BUDDY_GUIDE_DELAY_MS,
   VERIFICATION_RESEND_COOLDOWN_MS,
   VERIFICATION_TTL_MS,
 } from "./contracts.ts";
@@ -43,6 +44,13 @@ import { observeSignupCountry, type SignupCountryProbe } from "../attribution.ts
 import { canonicalEmail } from "../api/abuse.ts";
 import { DEFAULT_LOCALE, isLocale, parseLocalePath, type Locale } from "../i18n/locale.ts";
 import type { TokenEnvironment } from "./token.ts";
+// Core-owned (feat/referral-core): `referralSecret(env)` → status-page signing
+// key (derived from the verification secret; throws when that is unset, which
+// the guard below treats like a missing origin); `statusUrl(origin, refCode,
+// locale, secret)` and `rulesUrl(origin, locale)` build the guide's links.
+import { referralSecret, rulesUrl, statusUrl } from "../referral/statusToken.ts";
+import { referralProgramEnabled } from "../referral/program.ts";
+import { optOutAddressKey, rowOptedOut } from "../referral/notices.ts";
 import {
   PRESS_SYNC_ACCEPTED,
   PRESS_SYNC_CONFIRMED,
@@ -506,9 +514,13 @@ export async function requestVerificationService(
 }
 
 /**
- * Hands the invite-link mail to the provider with a 24-hour hold. Resend keeps
- * the message until then, so the delay needs no scheduler of ours and survives
- * a redeploy.
+ * Hands the welcome mail to the provider with a hold. Resend keeps the message
+ * until then, so the delay needs no scheduler of ours and survives a redeploy.
+ *
+ * With Buddy Invite switched off (the default until the owner's final go-live)
+ * this is exactly the legacy welcome: invite link only, WELCOME_DELAY_MS
+ * (24 hours). Switched on, it is the program guide (rewards, status page,
+ * rules) after BUDDY_GUIDE_DELAY_MS (30 minutes).
  *
  * Keyed on the lead inside the mailer, so two racing confirmations and a later
  * click of the same link all converge on one scheduled message. A failure never
@@ -525,14 +537,36 @@ async function scheduleWelcome(
   // disqualify a conversion — an invite link is exactly what a farmer wants.
   if (record.welcomeAt || !record.refCode || conversionBlocked(record.flags)) return;
 
+  const env = (dependencies.env ?? process.env) as TokenEnvironment &
+    Record<string, string | undefined>;
   let publicOrigin: string;
+  let guideLinks: { statusUrl: string; rulesUrl: string } | undefined;
   try {
-    publicOrigin = requirePublicOrigin(dependencies.env ?? process.env);
+    publicOrigin = requirePublicOrigin(env);
+    if (referralProgramEnabled(env)) {
+      // The guide is promotional: an address that opted out of mail (status or
+      // an `unsubscribed` Launch/Reservation mail marker) on this row OR ANY
+      // other row of the same inbox gets no guide at all — the same rule the
+      // Buddy Invite notices apply (notices.ts `optedOutAddresses`).
+      if (rowOptedOut(record)) return;
+      if (await addressOptedOut(record, dependencies.store)) return;
+      // The guide links the signed status page. Without the referral signing
+      // secret there is no page to link, so the welcome waits, exactly like a
+      // missing public origin: `Welcome email` stays empty and a later
+      // confirmation of the same link tries again once the secret is set.
+      const secret = referralSecret(env);
+      if (!secret) return;
+      guideLinks = {
+        statusUrl: statusUrl(publicOrigin, record.refCode, locale, secret),
+        rulesUrl: rulesUrl(publicOrigin, locale),
+      };
+    }
   } catch {
     return;
   }
 
-  const scheduledAt = new Date(now.getTime() + WELCOME_DELAY_MS).toISOString();
+  const delay = guideLinks ? BUDDY_GUIDE_DELAY_MS : WELCOME_DELAY_MS;
+  const scheduledAt = new Date(now.getTime() + delay).toISOString();
   try {
     await dependencies.mailer.sendWelcome({
       to: record.email,
@@ -541,11 +575,29 @@ async function scheduleWelcome(
       publicOrigin,
       scheduledAt,
       locale,
+      ...(guideLinks ?? {}),
+      ...(guideLinks && record.signupCountry ? { signupCountry: record.signupCountry } : {}),
     });
     await dependencies.store.markWelcomeScheduled(record.pageId, { scheduledAt });
   } catch {
     // Best effort by design. The confirmation already succeeded.
   }
+}
+
+/**
+ * Whether any row of this inbox carries an opt-out. Rows are matched by the
+ * opt-out inbox key (Gmail dots/plus, googlemail), the key notices use, so
+ * the guide and the notices always agree on who opted out. Fails closed: a
+ * store that cannot list the rows means no guide (and `Welcome email` stays
+ * empty, so a later confirmation tries again).
+ */
+async function addressOptedOut(record: LeadRecord, store: LeadStore): Promise<boolean> {
+  if (!store.listByAddress) return true;
+  const key = optOutAddressKey(record.email);
+  const rows = await store.listByAddress(canonicalEmail(record.email), record.email);
+  return rows.some(
+    (row) => Boolean(row.email) && optOutAddressKey(row.email) === key && rowOptedOut(row),
+  );
 }
 
 function welcomeLocale(record: LeadRecord): Locale {
