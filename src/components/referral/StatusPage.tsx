@@ -102,7 +102,7 @@ function Card({ children, role }: { children: React.ReactNode; role?: "status" |
   return (
     <div
       role={role}
-      className="rounded-3xl border border-white/15 bg-white/10 p-5 text-white shadow-2xl backdrop-blur sm:p-8"
+      className="wd-buddy-card rounded-3xl border border-white/15 bg-white/10 p-5 text-white shadow-2xl backdrop-blur sm:p-8"
     >
       {children}
     </div>

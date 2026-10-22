@@ -230,3 +230,35 @@ html:root .wd-race {
   font-weight: 700;
   line-height: 1.4 !important;
 }
+
+/* Buddy Invite uses the same solid violet blocks, foam frames and hard
+   shadows as the landing. Every selector is referral-only: the OFF page and
+   the surrounding signup, phone and legal surfaces retain their exact style. */
+html:root :is(.wd-buddy-card, .rounded-2xl:has(> div > .wd-buddy-tiers)) {
+  background: #3d2683;
+  color: #eef9ff;
+  border: var(--wd-b) solid #eef9ff !important;
+  box-shadow: var(--wd-shadow) var(--wd-shadow) 0 #eef9ff !important;
+  backdrop-filter: none;
+}
+html:root :is(.wd-buddy-card, .rounded-2xl:has(> div > .wd-buddy-tiers)) button:not([class*="underline"]) {
+  border: var(--wd-b) solid #eef9ff;
+  background: #65ceee;
+  color: #201748;
+  box-shadow: 4px 4px 0 #eef9ff;
+}
+html:root .wd-buddy-tiers {
+  border-width: var(--wd-b);
+  box-shadow: var(--wd-shadow) var(--wd-shadow) 0 #201748;
+}
+html:root .wd-buddy-board {
+  color: #201748;
+  padding-top: 2rem;
+}
+html:root .wd-buddy-board ol {
+  border-color: #201748 !important;
+  box-shadow: var(--wd-shadow) var(--wd-shadow) 0 #201748 !important;
+}
+html:root .wd-buddy-board li + li {
+  border-top: var(--wd-b-thin) solid #201748;
+}

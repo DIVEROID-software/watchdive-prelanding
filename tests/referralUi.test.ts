@@ -232,7 +232,7 @@ test("OFF hydration and the success card do not add Buddy Invite RPCs", () => {
   assert.match(successSource, /\[refCode, programOn\]/);
 });
 
-test("TierList badges show invitation units and captions with Surface Blue and a single yellow event flag", async () => {
+test("TierList badges show invitation units and captions with the original brutal palette and a bonus-event flag", async () => {
   const { referralEvent } = await import("../src/lib/referral/event.ts");
   const { TierList } = await load<TierListModule>("TierList.tsx");
   for (const locale of SUPPORTED_LOCALES) {
@@ -245,7 +245,9 @@ test("TierList badges show invitation units and captions with Surface Blue and a
       assert.ok(row.includes("whitespace-nowrap"), locale);
       if (step.badgeUnit) assert.ok(row.includes(`text-lg">${step.badgeUnit}</span>`), locale);
     }
-    assert.equal((html.match(/bg-\[#ffe55c\]/g) ?? []).length, 1, locale);
+    assert.equal((html.match(/bg-\[#65ceee\]/g) ?? []).length, 2, locale);
+    assert.ok(!html.includes("#ffe55c"), locale);
+    assert.ok(html.includes(locale === "ko" ? "추가 이벤트!" : "Bonus event!"), locale);
     assert.ok(html.includes(event.subline.replace(/'/g, "&#x27;")), locale);
     assert.ok(html.includes(referralCopy(locale).countingNote.replace(/'/g, "&#x27;")), locale);
   }
