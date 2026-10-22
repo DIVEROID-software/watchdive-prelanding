@@ -4,9 +4,7 @@ import { z } from "zod";
 import { canonicalEmail, isDisposableEmail, isHeadlessUA, firstIp } from "./abuse";
 import {
   REF_CODE_PATTERN,
-  createReferralCountCache,
-  loadReferralTally,
-  withRateLimitBackoff,
+  loadLegacyReferralCount,
 } from "./referralCount";
 import {
   ATTRIBUTION_VALUE_MAX,
@@ -155,30 +153,17 @@ const NOT_SUSPECT = { property: "Suspect", checkbox: { equals: false } } as cons
 // confirmed rows plus legacy single opt-in rows, never pending or unsubscribed.
 const COUNTABLE = { and: [NOT_SUSPECT, COUNTABLE_STATUS_FILTER] } as const;
 
-// How many people signed up through a given referral code. Powers the
-// "N friends joined" progress in the success card. Public and
-// unauthenticated, so it never queries Notion per request (referralCount.ts):
-// a malformed code is 0 without any read; with Buddy Invite off, one cached
-// tally of countable rows (Suspect excluded, so a farmer can't inflate it)
-// answers every code; with it on, the ledger's credited count from the shared
-// leaderboard pass answers, so no surface shows a number the ledger disagrees
-// with.
-const referralCounts = createReferralCountCache(() => {
-  const dbId = process.env.NOTION_WAITLIST_DB_ID;
-  if (!dbId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
-  // Countable rows that name a referrer: the same filter as every public number.
-  return loadReferralTally(withRateLimitBackoff(createNotionRequest()), dbId, {
-    and: [{ property: "Referred by", rich_text: { is_not_empty: true } }, ...COUNTABLE.and],
-  });
-});
-
+// Keep the switch-off query identical to the legacy per-code lookup. The
+// program's shared ledger is only loaded while Buddy Invite is enabled.
 export const getReferralCount = createServerFn({ method: "POST" })
   .validator(z.object({ refCode: z.string().max(40) }))
   .handler(async ({ data }) => {
     const code = sanitizeRef(data.refCode);
-    if (!process.env.NOTION_WAITLIST_DB_ID || !REF_CODE_PATTERN.test(code)) return { count: 0 };
+    const dbId = process.env.NOTION_WAITLIST_DB_ID;
+    if (!dbId || !code) return { count: 0 };
     try {
       if (referralProgramEnabled(process.env)) {
+        if (!REF_CODE_PATTERN.test(code)) return { count: 0 };
         const [{ referralServiceDeps }, { getReferralProgressService }] = await Promise.all([
           import("@/lib/api/referral.functions"),
           import("@/lib/referral/service.server"),
@@ -186,7 +171,7 @@ export const getReferralCount = createServerFn({ method: "POST" })
         const progress = await getReferralProgressService(code, await referralServiceDeps());
         return { count: progress.enabled ? progress.credited : 0 };
       }
-      return { count: await referralCounts.count(code) };
+      return { count: await loadLegacyReferralCount(notionFetch, dbId, code, COUNTABLE.and) };
     } catch (error) {
       throw sanitizeServerError("referral-count", error);
     }

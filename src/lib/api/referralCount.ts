@@ -1,20 +1,6 @@
-// The landing success card's "N friends joined" count (`getReferralCount`).
-//
-// The endpoint is public and unauthenticated, and it used to run a full,
-// paginated, uncached Notion query per request, so random codes at a few
-// requests per second could exhaust the integration's rate limit (about
-// 3 requests/s, https://developers.notion.com/reference/request-limits) and
-// make signups fail. Now:
-//   - anything that is not an 8-char `[a-z0-9]` code is answered 0 without
-//     touching Notion;
-//   - with Buddy Invite off, ONE pass tallies `Referred by` over every
-//     countable row and serves every code for REFERRAL_COUNT_CACHE_MS. Random
-//     codes therefore cost nothing extra, and the number is the same raw
-//     count as before (countable rows whose `Referred by` equals the code);
-//   - with Buddy Invite on, the caller serves the ledger's credited count from
-//     the shared leaderboard pass instead (waitlist.functions.ts);
-//   - a Notion 429 is retried with backoff, and a failed refresh keeps
-//     serving the last good tally rather than failing every card.
+// Referral count helpers. The production OFF path uses the legacy filtered
+// query below; whole-database tally/cache helpers are not used on that path.
+// ON uses the shared referral ledger (waitlist.functions.ts).
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
 import type { NotionRequest } from "../verification/notionLead.ts";
@@ -149,4 +135,27 @@ export async function loadReferralTally(
     cursor = page.has_more ? (page.next_cursor ?? undefined) : undefined;
   } while (cursor);
   return tally;
+}
+
+/** Preserve the pre-program query, pagination and fresh count while OFF. */
+export async function loadLegacyReferralCount(
+  request: (path: string, body: unknown) => Promise<QueryPage>,
+  databaseId: string,
+  code: string,
+  countable: readonly unknown[],
+): Promise<number> {
+  let count = 0;
+  let cursor: string | undefined;
+  let hasMore = true;
+  while (hasMore) {
+    const page = await request(`databases/${databaseId}/query`, {
+      filter: { and: [{ property: "Referred by", rich_text: { equals: code } }, ...countable] },
+      page_size: 100,
+      ...(cursor ? { start_cursor: cursor } : {}),
+    });
+    count += page.results?.length ?? 0;
+    hasMore = Boolean(page.has_more);
+    cursor = page.next_cursor ?? undefined;
+  }
+  return count;
 }

@@ -8,6 +8,7 @@ import {
   createReferralCountCache,
   isNotionRateLimited,
   loadReferralTally,
+  loadLegacyReferralCount,
   withNotionBackoff,
   withRateLimitBackoff,
 } from "../src/lib/api/referralCount.ts";
@@ -172,32 +173,36 @@ test("the tally pages fully, keeps the countable filter and counts exact codes",
   assert.deepEqual(bodies[0].filter, filter);
 });
 
-test("getReferralCount gates the code shape, never scans per request, and follows the switch", () => {
-  const source = readFileSync(
-    new URL("../src/lib/api/waitlist.functions.ts", import.meta.url),
-    "utf8",
-  );
+test("OFF count reads only the requested code, pages its matches and never caches stale data", async () => {
+  const calls: { path: string; body: any }[] = [];
+  const countable = [{ property: "Suspect", checkbox: { equals: false } }];
+  const request = async (path: string, body: unknown) => {
+    calls.push({ path, body });
+    return calls.length === 1
+      ? { results: [1, 2], has_more: true, next_cursor: "next" }
+      : { results: [3], has_more: false };
+  };
+  assert.equal(await loadLegacyReferralCount(request, "db", "abc", countable), 3);
+  assert.equal(calls.length, 2);
+  for (const call of calls) {
+    assert.equal(call.path, "databases/db/query");
+    assert.deepEqual(call.body.filter, {
+      and: [{ property: "Referred by", rich_text: { equals: "abc" } }, ...countable],
+    });
+  }
+  assert.equal(calls[1].body.start_cursor, "next");
+  assert.equal(await loadLegacyReferralCount(request, "db", "abc", countable), 1);
+  assert.equal(calls.length, 3);
+  await assert.rejects(loadLegacyReferralCount(async () => { throw new Error("unavailable"); }, "db", "abc", countable), /unavailable/);
+});
+
+test("getReferralCount keeps the legacy OFF query and isolates the ON ledger", () => {
+  const source = readFileSync(new URL("../src/lib/api/waitlist.functions.ts", import.meta.url), "utf8");
   const start = source.indexOf("export const getReferralCount");
   const body = source.slice(start, source.indexOf("\n  });", start));
-  assert.match(body, /REF_CODE_PATTERN\.test\(code\)\) return \{ count: 0 \}/);
+  assert.match(body, /if \(!dbId \|\| !code\) return \{ count: 0 \}/);
   assert.match(body, /referralProgramEnabled\(process\.env\)/);
   assert.match(body, /getReferralProgressService\(code/);
-  assert.match(body, /referralCounts\.count\(code\)/);
-  assert.doesNotMatch(body, /notionFetch|databases\//);
-  assert.match(
-    source,
-    /loadReferralTally\(withRateLimitBackoff\(createNotionRequest\(\)\), dbId, \{/,
-  );
-  assert.match(
-    source,
-    /and: \[\{ property: "Referred by", rich_text: \{ is_not_empty: true \} \}, \.\.\.COUNTABLE\.and\],/,
-  );
-  const fns = readFileSync(
-    new URL("../src/lib/api/referral.functions.ts", import.meta.url),
-    "utf8",
-  );
-  assert.match(
-    fns,
-    /createNotionReferralStore\(\s*withRateLimitBackoff\(notion\.createNotionRequest\(\)\),\s*dbId,?\s*\)/,
-  );
+  assert.match(body, /loadLegacyReferralCount\(notionFetch, dbId, code, COUNTABLE\.and\)/);
+  assert.doesNotMatch(source, /loadReferralTally|createReferralCountCache/);
 });
