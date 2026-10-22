@@ -6,6 +6,7 @@ import { mkdtemp, mkdir, readFile, rm, stat, writeFile, chmod } from "node:fs/pr
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 const TICK = new URL("../scripts/reservation-mail-tick.sh", import.meta.url);
 
@@ -30,7 +31,7 @@ function runTick(
   paths: { bin: string; root: string; privateHome: string; log: string; home: string },
   nodeExit = "0",
 ) {
-  return spawnSync("/bin/sh", [TICK.pathname], {
+  return spawnSync("/bin/sh", [fileURLToPath(TICK)], {
     env: {
       PATH: `${paths.bin}:/usr/bin:/bin`,
       HOME: paths.home,
