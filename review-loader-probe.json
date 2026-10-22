@@ -1,0 +1,6 @@
+{
+  "offResult": {},
+  "newStateCallsWhileOff": 1,
+  "unresolvedStateRequest": "still pending after 25ms",
+  "scope": "bundled actual loader with fake state transport; no network"
+}
