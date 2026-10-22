@@ -106,12 +106,14 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function StatusPage({ locale }: { locale: Locale }) {
+export function StatusPage({ locale, token: suppliedToken }: { locale: Locale; token?: string }) {
   const copy = referralCopy(locale);
   // Navigation and retry labels come from the site's existing reviewed catalog.
   const frozen = useFrozenLandingMessages();
   const site = frozen.verify;
-  const token = useHashToken();
+  // /verify supplies the credential in memory; its full view never needs a token URL.
+  const hashToken = useHashToken();
+  const token = suppliedToken ?? hashToken;
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const [attempt, setAttempt] = useState(0);
 

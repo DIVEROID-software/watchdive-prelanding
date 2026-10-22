@@ -48,7 +48,7 @@ import type { TokenEnvironment } from "./token.ts";
 // key (derived from the verification secret; throws when that is unset, which
 // the guard below treats like a missing origin); `statusUrl(origin, refCode,
 // locale, secret)` and `rulesUrl(origin, locale)` build the guide's links.
-import { referralSecret, rulesUrl, statusUrl } from "../referral/statusToken.ts";
+import { referralSecret, rulesUrl, signStatusToken, statusUrl } from "../referral/statusToken.ts";
 import { referralProgramEnabled } from "../referral/program.ts";
 import { optOutAddressKey, rowOptedOut } from "../referral/notices.ts";
 import {
@@ -789,6 +789,9 @@ export async function confirmVerificationService(
       ok: true,
       status: "already_verified",
       refCode: record.refCode,
+      ...(referralProgramEnabled(env as Record<string, string | undefined>) && record.refCode
+        ? { statusToken: signStatusToken(record.refCode, referralSecret(env)) }
+        : {}),
       ...(record.phone && !record.suspect ? { phoneAdded: true as const } : {}),
       ...(sent ? browserLead(record, metaEventId) : {}),
       ...measurementAsk(record, parsed.measurementConsent, options.localRefusal),
@@ -829,6 +832,9 @@ export async function confirmVerificationService(
     ok: true,
     status: "verified",
     refCode: record.refCode,
+    ...(referralProgramEnabled(env as Record<string, string | undefined>) && record.refCode
+      ? { statusToken: signStatusToken(record.refCode, referralSecret(env)) }
+      : {}),
     ...(record.phone && !record.suspect ? { phoneAdded: true as const } : {}),
     ...(sent ? browserLead(record, metaEventId) : {}),
     ...measurementAsk(record, parsed.measurementConsent, options.localRefusal),

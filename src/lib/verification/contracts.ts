@@ -490,6 +490,8 @@ export type ConfirmStatus = "verified" | "expired" | "already_verified" | "inval
 export type BrowserLead = { eventId: string; source: string; hasPhone: boolean };
 
 export type ConfirmResponse = {
+  /** Buddy settings credential; ON + successful confirmation only, kept in memory. */
+  statusToken?: string;
   ok: true;
   status: ConfirmStatus;
   refCode?: string;

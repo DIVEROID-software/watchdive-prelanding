@@ -28,7 +28,7 @@ export async function pollVerification(_input: unknown) {
   return { status: "verified" as const, refCode: "prev1ew0" };
 }
 export async function confirmVerification(_input: unknown) {
-  return { status: "verified" as const, refCode: "prev1ew0" };
+  return { status: "verified" as const, refCode: "prev1ew0", ...(ON ? { statusToken: "verifycard" } : {}) };
 }
 export async function loadWaitlistCount() {
   return null;
@@ -107,6 +107,7 @@ function statusFor(credited: number, extra: Partial<ReferralStatus> = {}): Refer
 }
 
 const STATUSES: Record<string, () => ReferralStatus> = {
+  verifycard: () => statusFor(1, { noticesOff: true }),
   tier0: () => statusFor(0),
   tier1: () => statusFor(1),
   tier3: () => statusFor(3),
@@ -130,6 +131,9 @@ export async function getReferralStatus(input: { data: { token: string; locale: 
 export async function updateReferralSettings(input: {
   data: { token: string; nickname: string | null; leaderboard: boolean; noticesOff: boolean };
 }) {
+  if (input.data.token === "verifycard" && input.data.noticesOff !== true) {
+    throw new Error("local preview: verify card must preserve noticesOff");
+  }
   await new Promise((r) => setTimeout(r, 400));
   const nickname = input.data.nickname?.trim().replace(/\s+/g, " ") ?? null;
   if (nickname && /@|https?:|www\./i.test(nickname))
