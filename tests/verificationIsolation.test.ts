@@ -292,7 +292,7 @@ test("public counts are verified-or-legacy and non-suspect", () => {
   assert.ok(fns.includes("const COUNTABLE = { and: [NOT_SUSPECT, COUNTABLE_STATUS_FILTER] }"));
   // Both public numbers go through it, so pending never inflates either.
   assert.ok(fns.includes("filter: COUNTABLE,"));
-  assert.ok(fns.includes("...COUNTABLE.and],"));
+  assert.ok(fns.includes("loadLegacyReferralCount(notionFetch, dbId, code, COUNTABLE.and)"));
 });
 
 // ---------------------------------------------------------------------------
