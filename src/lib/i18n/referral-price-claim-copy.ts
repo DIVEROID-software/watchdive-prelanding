@@ -5,7 +5,7 @@
 // other seven say the same thing in each catalog's own voice and terms:
 //   - each locale keeps the price wording its page already uses (USD for en
 //     and ko, the catalog's local estimate elsewhere) and its estimate notice;
-//   - "Dive Team" is the tier name from src/lib/referral/copy.ts;
+//   - "Dive Team" is the tier name from src/lib/referral/copy.ts (fr: Palanquée);
 //   - "price reservation" is the name the terms and privacy pages use for the
 //     paid USD 3 reservation.
 //
@@ -210,11 +210,11 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     landing: {
       meta: {
         description:
-          "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau ; votre Apple Watch ou Galaxy Watch les affiche. Early bird à environ 140 € pour les {seats} premiers contributeurs Kickstarter, ainsi que pour les inscrits ayant une réservation de prix ou le statut Équipe de plongée.",
+          "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau ; votre Apple Watch ou Galaxy Watch les affiche. Early bird à environ 140 € pour les {seats} premiers contributeurs Kickstarter, ainsi que pour les inscrits qui ont une réservation de prix ou font partie de la Palanquée.",
         ogDescription:
-          "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau ; votre Apple Watch ou Galaxy Watch les affiche. Early bird à environ 140 € pour les {seats} premiers contributeurs Kickstarter, ainsi que pour les inscrits ayant une réservation de prix ou le statut Équipe de plongée.",
+          "Un capteur DIVEROID, dans le caisson, mesure la profondeur et la température de l’eau ; votre Apple Watch ou Galaxy Watch les affiche. Early bird à environ 140 € pour les {seats} premiers contributeurs Kickstarter, ainsi que pour les inscrits qui ont une réservation de prix ou font partie de la Palanquée.",
         twitterDescription:
-          "Un caisson à capteur DIVEROID pour l’Apple Watch ou la Galaxy Watch que vous portez déjà. Early bird à environ 140 € pour les {seats} premiers contributeurs Kickstarter, ainsi que pour les inscrits ayant une réservation de prix ou le statut Équipe de plongée.",
+          "Un caisson à capteur DIVEROID pour l’Apple Watch ou la Galaxy Watch que vous portez déjà. Early bird à environ 140 € pour les {seats} premiers contributeurs Kickstarter, ainsi que pour les inscrits qui ont une réservation de prix ou font partie de la Palanquée.",
       },
       cta: { label: "Me prévenir · early bird env. 140 €" },
       referral: {
@@ -226,15 +226,15 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
       value: { h2: "Early bird à environ 140 € sur Kickstarter." },
       offer: {
         kicker: "Early bird · −50 %",
-        lead: "Inscrivez-vous pour être prévenu en premier de l’ouverture de WatchDive sur Kickstarter. Le tarif public sera d’environ 280 € et l’early bird d’environ 140 €, pour les {seats} premiers contributeurs ainsi que pour les inscrits ayant une réservation de prix ou le statut Équipe de plongée. Ces montants sont indicatifs ; le montant affiché sur Kickstarter fera foi.",
+        lead: "Inscrivez-vous pour être prévenu en premier de l’ouverture de WatchDive sur Kickstarter. Le tarif public sera d’environ 280 € et l’early bird d’environ 140 €, pour les {seats} premiers contributeurs ainsi que pour les inscrits qui ont une réservation de prix ou font partie de la Palanquée. Ces montants sont indicatifs ; le montant affiché sur Kickstarter fera foi.",
       },
     },
     conversionTerms:
-      "Pour les {seats} premiers contributeurs sur Kickstarter, ainsi que pour les inscrits ayant une réservation de prix ou le statut Équipe de plongée. L’inscription ne réserve pas l’offre.",
+      "Pour les {seats} premiers contributeurs sur Kickstarter, ainsi que pour les inscrits qui ont une réservation de prix ou font partie de la Palanquée. L’inscription ne réserve pas l’offre.",
     earlyBirdRace:
-      "{price} pour les {seats} premiers sur Kickstarter, plus réservations de prix et Équipe de plongée.",
+      "{price} pour les {seats} premiers sur Kickstarter, plus les réservations de prix et la Palanquée.",
     phoneTerms:
-      "L’offre early bird est réservée aux {seats} premiers contributeurs sur Kickstarter, ainsi qu’aux inscrits ayant une réservation de prix ou le statut Équipe de plongée. Ajouter un numéro ne réserve aucune place et ne garantit pas l’offre.",
+      "L’offre early bird est réservée aux {seats} premiers contributeurs sur Kickstarter, ainsi qu’aux inscrits qui ont une réservation de prix ou font partie de la Palanquée. Ajouter un numéro ne réserve aucune place et ne garantit pas l’offre.",
   },
   de: {
     landing: {

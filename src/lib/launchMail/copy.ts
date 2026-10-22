@@ -628,9 +628,9 @@ export const LAUNCH_REFERRAL_PRICE: Record<Locale, { price: string; preheader: s
   },
   fr: {
     price:
-      "Le tarif early bird de 149 $ US est réservé aux 100 premiers contributeurs, ainsi qu’aux inscrits ayant une réservation de prix ou le statut Équipe de plongée. Le prix public est de 299 $ US.",
+      "Le tarif early bird de 149 $ US est réservé aux 100 premiers contributeurs, ainsi qu’aux inscrits qui ont une réservation de prix ou font partie de la Palanquée. Le prix public est de 299 $ US.",
     preheader:
-      "149 $ US : les 100 premiers contributeurs, les réservations de prix et l’Équipe de plongée.",
+      "149 $ US : les 100 premiers contributeurs, les réservations de prix et la Palanquée.",
   },
   de: {
     price:
