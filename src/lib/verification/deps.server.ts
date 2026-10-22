@@ -42,6 +42,14 @@ export function createServiceDependencies(
   return {
     store: createNotionLeadStore(notionRequest, databaseId),
     mailer: createResendMailer(),
+    resolveWelcomeShareCode: async (refCode) => {
+      const [{ referralServiceDeps }, { getMyShareCodeService }] = await Promise.all([
+        import("../api/referral.functions"),
+        import("../referral/service.server.ts"),
+      ]);
+      const result = await getMyShareCodeService(refCode, await referralServiceDeps());
+      return result.enabled ? result.code : null;
+    },
     // Completed press-attributed signups (pressAttribution.server.ts). Off unless configured.
     reportPress: (stage, row) => reportPressStage(stage, row, notionRequest),
     pollGate,

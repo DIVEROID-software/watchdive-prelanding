@@ -168,6 +168,8 @@ export type RequestVerificationInput = {
 export type ServiceDependencies = {
   store: LeadStore;
   mailer: VerificationMailer;
+  /** ON-only best-effort public code for the verified row’s welcome guide. */
+  resolveWelcomeShareCode?: (refCode: string) => Promise<string | null>;
   env?: TokenEnvironment;
   now?: () => Date;
   leadId?: () => string;
@@ -565,6 +567,14 @@ async function scheduleWelcome(
     return;
   }
 
+  let shareCode: string | null = null;
+  if (guideLinks && record.emailVerified && dependencies.resolveWelcomeShareCode) {
+    try {
+      shareCode = await dependencies.resolveWelcomeShareCode(record.refCode);
+    } catch {
+      // Code availability must never prevent confirmation or the welcome guide.
+    }
+  }
   const delay = guideLinks ? BUDDY_GUIDE_DELAY_MS : WELCOME_DELAY_MS;
   const scheduledAt = new Date(now.getTime() + delay).toISOString();
   try {
@@ -576,6 +586,7 @@ async function scheduleWelcome(
       scheduledAt,
       locale,
       ...(guideLinks ?? {}),
+      ...(guideLinks && shareCode ? { shareCode } : {}),
       ...(guideLinks && record.signupCountry ? { signupCountry: record.signupCountry } : {}),
     });
     await dependencies.store.markWelcomeScheduled(record.pageId, { scheduledAt });
@@ -824,7 +835,7 @@ export async function confirmVerificationService(
     dependencies,
     secret,
   );
-  await scheduleWelcome(record, dependencies, now, parsed.locale);
+  await scheduleWelcome({ ...record, emailVerified: true, status: "verified" }, dependencies, now, parsed.locale);
   // First confirmation: the signup is complete and its address verified.
   await reportPressNow(dependencies, "confirmed", record, now);
 

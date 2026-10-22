@@ -35,6 +35,7 @@ export function VerifiedBuddyCard({
   const [error, setError] = useState<ErrorKey | null>(null);
   const [save, setSave] = useState<"idle" | "saving" | "saved">("idle");
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const shareUrl =
@@ -138,6 +139,27 @@ export function VerifiedBuddyCard({
           {copied ? frozen.referral.copied : shareCopy.button}
         </button>
       </div>
+      {status?.shareCode && (
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="min-w-0 flex-1 text-body font-semibold">
+            {copy.shareCode.mine} <span className="block break-all">{status.shareCode}</span>
+          </p>
+          <button
+            type="button"
+            className="min-h-11 rounded-lg border border-white/45 px-3 py-2 text-body font-semibold"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(status.shareCode!);
+                setCodeCopied(true);
+              } catch {
+                // Keep the visible code selectable when clipboard access is denied.
+              }
+            }}
+          >
+            {codeCopied ? copy.shareCode.copied : copy.shareCode.copy}
+          </button>
+        </div>
+      )}
       <TierList locale={locale} credited={held} />
       {loadError && (
         <div role="alert">

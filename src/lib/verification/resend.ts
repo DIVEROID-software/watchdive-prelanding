@@ -103,6 +103,7 @@ export type WelcomeMail = {
    */
   statusUrl?: string;
   rulesUrl?: string;
+  shareCode?: string;
   /** Coarse signup country; `KR` applies the Korean advertising rules to the guide. */
   signupCountry?: string;
 };
@@ -1100,6 +1101,7 @@ export function createResendMailer(
     },
 
     async sendWelcome({
+      shareCode,
       to,
       refCode,
       leadId,
@@ -1143,6 +1145,7 @@ export function createResendMailer(
         { shareUrl: referralUrl(publicOrigin, refCode), statusUrl, rulesUrl },
         locale,
         footer,
+        shareCode,
       );
       await deliver(config, fetchImpl, sleep, idempotencyKey, "welcome", {
         to: [to],

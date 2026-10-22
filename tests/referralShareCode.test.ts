@@ -435,3 +435,92 @@ test("the welcome guide names a code only when one is passed", async () => {
   const hostile = buddyGuideBody(links, "en", footer, "REEF<42");
   assert.equal(hostile.html, plain.html);
 });
+
+test("auto assignment retries collisions and stops after six attempts", async () => {
+  const person = row({ refCode: "retry001" });
+  const { deps } = depsFor([person, row({ refCode: "other001", shareCode: "TAKEN2" })]);
+  let calls = 0;
+  assert.equal(await ensureShareCode(person, deps, () => ++calls < 3 ? "TAKEN2" : "REEF43"), "REEF43");
+  assert.equal(calls, 3);
+  const next = row({ refCode: "retry002" });
+  const blocked = depsFor([next, row({ refCode: "other002", shareCode: "TAKEN2" })]);
+  calls = 0;
+  assert.equal(await ensureShareCode(next, blocked.deps, () => { calls++; return "TAKEN2"; }), null);
+  assert.equal(calls, 6);
+});
+
+test("lost custom claim readback restores the prior cell and reports taken", async () => {
+  const { deps, store } = depsFor([row({ refCode: "owner001", shareCode: "BEFORE" })]);
+  const find = store.findByShareCode.bind(store);
+  let reads = 0;
+  store.findByShareCode = async code => code === "REEF42" && ++reads === 2
+    ? row({ refCode: "other001", pageId: "earlier-page", shareCode: code }) : find(code);
+  assert.deepEqual(await claimShareCodeService("owner001", "REEF42", deps), { status: "rejected", reason: "taken" });
+  assert.equal(store.rows[0].shareCode, "BEFORE");
+  assert.equal(store.rows[0].shareCodeCustom, undefined);
+});
+
+test("unverified rows cannot acquire or claim codes", async () => {
+  const person = row({ refCode: "owner001", emailVerified: false });
+  const { deps } = depsFor([person]);
+  assert.equal(await ensureShareCode(person, deps), null);
+  assert.deepEqual(await claimShareCodeService("owner001", "REEF42", deps), { status: "invalid" });
+});
+
+test("verify-card code uses localized copy and only copies the public code", () => {
+  const source = readFileSync(new URL("../src/components/referral/VerifiedBuddyCard.tsx", import.meta.url), "utf8");
+  assert.match(source, /status\?\.shareCode &&/);
+  assert.match(source, /copy\.shareCode\.mine/);
+  assert.match(source, /copy\.shareCode\.copied : copy\.shareCode\.copy/);
+  assert.match(source, /navigator\.clipboard\.writeText\(status\.shareCode!\)/);
+  assert.doesNotMatch(source, /(?:localStorage|sessionStorage|console\.)/);
+});
+
+test("credited ledger locks claims even if the annotation is missing", async () => {
+  const { deps } = depsFor([row({ refCode: "owner001", shareCode: "BEFORE" })]);
+  deps.computeLedger = () => ({ standings: new Map([["owner001", { credited: 1 }]]), excluded: {} }) as never;
+  assert.deepEqual(await claimShareCodeService("owner001", "REEF42", deps), { status: "rejected", reason: "locked" });
+});
+
+test("Notion share lookup chooses one owner over every page, not the first ten matches", async () => {
+  const { createNotionReferralStore } = await import("../src/lib/referral/store.ts");
+  const make = (id: string) => ({ id, properties: {
+    Email: { title: [{ plain_text: `${id}@example.com` }] },
+    "Ref code": { rich_text: [{ plain_text: "owner001" }] },
+    "Referral share code": { rich_text: [{ plain_text: "REEF42" }] },
+    "Email verified": { checkbox: true },
+  }});
+  const calls: unknown[] = [];
+  const store = createNotionReferralStore(async (_method, _path, body) => {
+    calls.push(body);
+    return calls.length === 1
+      ? { results: [make("z-owner")], has_more: true, next_cursor: "next" }
+      : { results: [make("a-owner")], has_more: false };
+  }, "fake-db");
+  assert.equal((await store.findByShareCode("REEF42"))?.pageId, "a-owner");
+  assert.equal(calls.length, 2);
+  assert.equal((calls[1] as { start_cursor: string }).start_cursor, "next");
+});
+
+test("a stale empty cached row cannot overwrite a previously committed custom code", async () => {
+  const cached = row({ refCode: "owner001" });
+  const { deps, store } = depsFor([{ ...cached, shareCode: "CUSTOM", shareCodeCustom: true }]);
+  assert.equal(await ensureShareCode(cached, deps, () => "REEF42"), "CUSTOM");
+  assert.equal(store.rows[0].shareCode, "CUSTOM");
+  assert.equal(cached.shareCodeCustom, true);
+});
+
+test("a delayed signup lock cannot revert a code replaced since resolution", async () => {
+  const { lockShareCodeAfterCredit } = await import("../src/lib/referral/service.server.ts");
+  const { deps, store } = depsFor([row({ refCode: "owner001", shareCode: "CUSTOM", shareCodeCustom: true })]);
+  await lockShareCodeAfterCredit({ pageId: "page-owner001", code: "BEFORE", custom: false }, deps);
+  assert.equal(store.rows[0].shareCode, "CUSTOM");
+  assert.equal(store.rows[0].shareCodeCustom, true);
+});
+
+test("public landing-code lookup consumes the same IP budget as share-link resolution", () => {
+  const source = readFileSync(new URL("../src/lib/api/referral.functions.ts", import.meta.url), "utf8");
+  const handler = source.slice(source.indexOf("export const getMyShareCode ="), source.indexOf("export const claimShareCode ="));
+  assert.match(handler, /shareLinkLimiter\(\)\.take\(ip, Date\.now\(\)\)/);
+  assert.ok(handler.indexOf("shareLinkLimiter().take") < handler.indexOf("await getMyShareCodeService("));
+});

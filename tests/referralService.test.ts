@@ -330,10 +330,10 @@ test("status: a scripted valid link cannot force a full Notion scan per request"
     const r = await getReferralStatusService(tokenFor("owner001"), "en", deps);
     assert.equal(r.status, "ok");
   }
-  // The first read assigns a share code (two filtered lookups). Later reads
+  // The first assignment checks the fresh row plus two code lookups. Later reads
   // use the code already on the cached row, so the scan count stays at one.
   assert.equal(store.listCalls, 1);
-  assert.equal(store.findCalls, 2);
+  assert.equal(store.findCalls, 3);
 });
 
 test("status: a link whose row is gone costs one small lookup, never another scan", async () => {
@@ -353,10 +353,10 @@ test("status: a row newer than the cached pass is found by refreshing once", asy
   store.rows.push(row({ refCode: "newbie01" }));
   const r = await getReferralStatusService(tokenFor("newbie01"), "en", deps);
   assert.equal(r.status, "ok");
-  // owner001's assign is two lookups, the existence check is one, and the
-  // refreshed newbie row assigns with two more.
+  // Each assignment uses a fresh-row read and two code lookups; the
+  // existence check adds one. Full scans remain bounded.
   assert.equal(store.listCalls, 2);
-  assert.equal(store.findCalls, 5);
+  assert.equal(store.findCalls, 7);
 });
 
 test("closed is derived from referralClosesAt at the server clock", async () => {

@@ -1,5 +1,6 @@
 import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 // Pure helper with no secrets or Notion client of its own; safe in any bundle.
@@ -167,6 +168,10 @@ export const getMyShareCode = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<MyShareCodeResponse> => {
     if (!referralProgramEnabled(process.env)) return { enabled: false };
     try {
+      const { shareLinkLimiter } = await import("@/lib/referral/shareLink.server");
+      const ip = (getRequestHeader("x-forwarded-for") ?? getRequestHeader("x-real-ip") ?? "")
+        .split(",")[0]?.trim() || "unknown";
+      if (!shareLinkLimiter().take(ip, Date.now())) return { enabled: true, code: null };
       const { getMyShareCodeService } = await import("@/lib/referral/service.server");
       return await getMyShareCodeService(sanitizeRef(data.refCode), await referralServiceDeps());
     } catch {

@@ -780,3 +780,34 @@ test("the legacy welcome keeps its own button colours untouched", async () => {
   assert.ok(html.includes("background:#0ea5e9;color:#04121f"));
   assert.equal(html.includes(BUTTON_BG), false);
 });
+
+test("welcome code resolver is ON-only, verified-row scoped and best effort", async () => {
+  for (const enabled of [false, true]) {
+    for (const fails of [false, true]) {
+      const setup = confirmable({ ...TEST_ENV, WATCHDIVE_REFERRAL_PROGRAM_ENABLED: enabled ? "1" : "0" });
+      const calls: string[] = [];
+      const deps = { ...setup.deps, resolveWelcomeShareCode: async (refCode: string) => {
+        calls.push(refCode);
+        assert.equal([...setup.deps.store.rows.values()][0].emailVerified, true);
+        if (fails) throw new Error("fake unavailable");
+        return "REEF42";
+      }};
+      assert.equal((await confirmVerificationService(setup.token, deps)).status, "verified");
+      assert.deepEqual(calls, enabled ? ["abc12345"] : []);
+      assert.equal(setup.mailer.welcomes[0].shareCode, enabled && !fails ? "REEF42" : undefined);
+    }
+  }
+});
+
+test("welcome sender renders the supplied public code only in the ON guide", async () => {
+  for (const locale of SUPPORTED_LOCALES) {
+    for (const enabled of [false, true]) {
+      const { calls, impl } = capture();
+      await createResendMailer(enabled ? ON_ENV : BASE_ENV, impl, async () => {}).sendWelcome(
+        welcome(locale, { ...guideLinks(locale), shareCode: "REEF42" }),
+      );
+      assert.equal(calls[0].body.text.includes("REEF42"), enabled);
+      assert.equal(calls[0].body.html.includes("REEF42"), enabled);
+    }
+  }
+});

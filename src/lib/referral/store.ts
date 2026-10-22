@@ -235,14 +235,30 @@ export function createNotionReferralStore(
     async findByShareCode(shareCode) {
       const code = shareCode.trim().toUpperCase();
       if (!/^[A-Z0-9]{4,12}$/.test(code)) return undefined;
-      const result = await request("POST", `databases/${databaseId}/query`, {
-        filter: { property: REFERRAL_COLUMNS.shareCode, rich_text: { equals: code } },
-        page_size: 10,
-      });
-      const rows = ((result.results as Record<string, unknown>[] | undefined) ?? [])
-        .map((raw) => toReferralRow(raw))
-        .filter((row): row is NonNullable<typeof row> => Boolean(row && row.shareCode === code))
-        .sort((a, b) => (a.pageId < b.pageId ? -1 : a.pageId > b.pageId ? 1 : 0));
+      // A bounded first page is not a uniqueness check: a concurrent winner
+      // can be on any page. Resolve the complete set with one stable rule.
+      const rows: ReferralRow[] = [];
+      let cursor: string | undefined;
+      const seen = new Set<string>();
+      for (let page = 0; ; page++) {
+        if (page >= MAX_PAGES) throw new Error("Share-code rows exceed the page cap");
+        const result = await request("POST", `databases/${databaseId}/query`, {
+          filter: { property: REFERRAL_COLUMNS.shareCode, rich_text: { equals: code } },
+          page_size: 100,
+          ...(cursor ? { start_cursor: cursor } : {}),
+        });
+        for (const raw of (result.results as Record<string, unknown>[] | undefined) ?? []) {
+          const row = toReferralRow(raw);
+          if (row?.shareCode === code) rows.push(row);
+        }
+        if (!result.has_more) break;
+        if (typeof result.next_cursor !== "string" || seen.has(result.next_cursor)) {
+          throw new Error("Incomplete share-code lookup");
+        }
+        cursor = result.next_cursor;
+        seen.add(cursor);
+      }
+      rows.sort((a, b) => a.pageId < b.pageId ? -1 : a.pageId > b.pageId ? 1 : 0);
       return rows[0];
     },
 

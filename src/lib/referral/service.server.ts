@@ -418,6 +418,21 @@ export async function ensureShareCode(
   if (!assignLimiterFor(deps).take(normalizeRefCode(row.refCode) || row.pageId, deps.now().getTime())) {
     return null;
   }
+  // A cached status pass may predate a successful claim on another surface.
+  // Re-read before writing so a sequential stale read cannot erase that claim.
+  try {
+    const fresh = await deps.store.findByRefCode(row.refCode);
+    if (!fresh?.emailVerified || fresh.pageId !== row.pageId) return null;
+    const assigned = canonicalShareCode(fresh.shareCode);
+    if (assigned) {
+      row.shareCode = assigned;
+      row.shareCodeCustom = fresh.shareCodeCustom;
+      row.shareCodeLocked = fresh.shareCodeLocked;
+      return assigned;
+    }
+  } catch {
+    return null;
+  }
   const previous = {
     code: row.shareCode ?? "",
     custom: row.shareCodeCustom === true,
@@ -480,6 +495,19 @@ export async function claimShareCodeService(
   }
   const decision = claimDecision(row);
   if (decision !== "ok") return { status: "rejected", reason: decision };
+
+  // The annotation is only a best-effort early lock. A fresh ledger also
+  // prevents editing after credit if that annotation was lost or never saved.
+  // Attribution retains refCode, so this conservatively includes link credits.
+  try {
+    const rows = await deps.store.listProgramRows();
+    const ledger = deps.computeLedger(rows, { closesAt: deps.closesAt() });
+    if ((ledger.standings.get(refCode)?.credited ?? 0) > 0) {
+      return { status: "rejected", reason: "locked" };
+    }
+  } catch {
+    return { status: "rejected", reason: "failed" };
+  }
 
   const check = checkShareCode(typeof raw === "string" ? raw : "");
   if (!check.ok) return { status: "rejected", reason: check.reason };
@@ -589,7 +617,11 @@ export async function lockShareCodeAfterCredit(
   const code = canonicalShareCode(owner.code);
   if (!code) return;
   try {
-    await deps.store.writeShareCode(owner.pageId, { code, custom: owner.custom, locked: true });
+    const fresh = await deps.store.findByShareCode(code);
+    if (!fresh || fresh.pageId !== owner.pageId) return;
+    await deps.store.writeShareCode(owner.pageId, {
+      code, custom: fresh.shareCodeCustom === true, locked: true,
+    });
     deps.leaderboardCache.invalidate();
   } catch {
     // The signup already succeeded. A later signup through the same code
