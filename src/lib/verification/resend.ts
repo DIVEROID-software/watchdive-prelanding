@@ -868,7 +868,7 @@ function sectionHeading(label: string): string {
   return `<h2 style="margin:0 0 18px;font-size:22px;line-height:1.3;font-weight:700;color:${INK};">${escapeHtml(label)}</h2>`;
 }
 
-/** Inline table ladder and full reviewed conditions; no CSS layout dependency. */
+/** Inline table ladder and compact mail-only conditions; no CSS layout dependency. */
 function eventRewardBlock(locale: Locale, rulesUrl: string, notice?: {
   credited: number; crossed: readonly string[];
 }): { html: string; text: string } {
@@ -891,7 +891,8 @@ ${step.qualifier ? `<br><span style="font-size:12px;line-height:1.6;color:${MUTE
 ${state ? `<br><span style="font-size:12px;line-height:1.7;color:${MUTED_INK};font-weight:700;">${escapeHtml(state)}</span>` : ""}
 </td></tr></table></td></tr>`;
   }).join("\n");
-  const conditions = [...event.conditions, ...copy.mail.conditions.map((line) => fill(line, copyValues(locale)))];
+  const values = { ...copyValues(locale), count: REFERRAL_TIERS.find((tier) => tier.id === "leader")!.minFriends };
+  const conditions = copy.mail.conditions.map((line) => fill(line, values));
   const html = brutalPanel([
     sectionHeading(copy.mail.eventHeading),
     `<p style="margin:0 0 12px;font-size:12px;line-height:1.5;letter-spacing:2px;font-weight:700;color:${MUTED_INK};border-left:8px solid #36a9e1;padding-left:10px;">${escapeHtml(event.label)}</p>`,
@@ -900,11 +901,11 @@ ${state ? `<br><span style="font-size:12px;line-height:1.7;color:${MUTED_INK};fo
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${rows}</table>`,
     `<h3 class="mail-frame" style="margin:16px 0 10px;padding-top:16px;border-top:3px solid ${INK};font-size:14px;line-height:1.5;font-weight:700;color:${INK};">${escapeHtml(event.conditionsTitle)}</h3>`,
     ...conditions.map((line) => para(`margin:0 0 10px;font-size:12px;line-height:1.65;color:${BODY_INK};`, escapeHtml(line), locale)),
-    linkHtml(rulesUrl, event.rulesLabel),
+    linkHtml(rulesUrl, copy.mail.welcomeRules),
   ].join("\n"), locale);
   const text = [copy.mail.eventHeading, event.label, event.headline, event.subline,
     ...steps.map((step) => `- ${step.badge} · ${step.name}: ${step.benefit}${step.qualifier ? ` (${step.qualifier})` : ""}${notice?.crossed.includes(step.id) ? ` — ${event.reached}` : notice && step.next ? ` — ${event.next}` : ""}`),
-    "", event.conditionsTitle, ...conditions, event.rulesLabel, rulesUrl].join("\n");
+    "", event.conditionsTitle, ...conditions, copy.mail.welcomeRules, rulesUrl].join("\n");
   return { html, text };
 }
 
