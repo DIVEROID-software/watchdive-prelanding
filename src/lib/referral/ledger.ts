@@ -323,6 +323,9 @@ export function statusFor(
     noticesOff: row.noticesOff,
     shareUrl: options.shareUrl,
     closed: options.closed,
+    shareCode: row.shareCode ?? null,
+    shareCodeCustom: row.shareCodeCustom === true,
+    shareCodeLocked: row.shareCodeLocked === true,
   };
 }
 

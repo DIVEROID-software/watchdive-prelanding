@@ -1,3 +1,4 @@
+import { VerifiedBuddyCard } from "@/components/referral/VerifiedBuddyCard";
 import { PhoneOptInCard } from "@/components/phone-optin-card";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -114,6 +115,7 @@ export function VerifyPage() {
   // The share link is offered here because most people confirm on the phone
   // they signed up on, leaving the polling tab unseen.
   const [refCode, setRefCode] = useState("");
+  const [buddyToken, setBuddyToken] = useState("");
   const [phoneAdded, setPhoneAdded] = useState(false);
   // Built from the origin actually serving this page, so no external URL is
   // written into a route that must not reference one.
@@ -214,6 +216,7 @@ export function VerifyPage() {
         },
       });
       if (result.status === "verified" || result.status === "already_verified") {
+        setBuddyToken(result.statusToken ?? "");
         setRefCode(result.refCode ?? "");
         setPhoneAdded(result.phoneAdded === true);
         setState("verified");
@@ -341,7 +344,9 @@ export function VerifyPage() {
             {/* Most people confirm on the phone they signed up on, so the tab
                 that was polling is often never seen again. The share link has
                 to be offered here or it is effectively never offered. */}
-            {refCode && (
+            {buddyToken ? (
+              <VerifiedBuddyCard locale={locale} token={buddyToken} refCode={refCode} />
+            ) : refCode && (
               <div className="mt-5 rounded-xl border border-white/15 bg-white/[0.06] p-4">
                 <div className="text-lead text-[color:var(--color-cyan-glow)]">
                   {copy.buddyTitle}

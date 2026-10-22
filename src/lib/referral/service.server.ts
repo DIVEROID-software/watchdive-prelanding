@@ -24,6 +24,13 @@ import type {
 } from "./contract.ts";
 import { normalizeRefCode } from "./eligibility.ts";
 import { LEADERBOARD_CACHE_SECONDS, LEADERBOARD_SIZE } from "./program.ts";
+import {
+  canonicalShareCode,
+  checkShareCode,
+  claimDecision,
+  generateShareCode,
+  type ShareCodeRejectReason,
+} from "./shareCode.ts";
 
 /** The core functions this service composes (signatures from the shared brief). */
 export type ReferralServiceDeps = {
@@ -121,6 +128,9 @@ function publicStatus(status: ReferralStatus): ReferralStatus {
     noticesOff: status.noticesOff,
     shareUrl: status.shareUrl,
     closed: status.closed,
+    shareCode: status.shareCode ?? null,
+    shareCodeCustom: status.shareCodeCustom === true,
+    shareCodeLocked: status.shareCodeLocked === true,
   };
 }
 
@@ -171,6 +181,19 @@ export async function getReferralStatusService(
     row = ownRow(pass.rows, refCode);
     if (!row) return INVALID;
   }
+
+  // A cached row from before this person confirmed still says unverified.
+  // One filtered read picks up the checkbox; it does not scan the database.
+  if (!row.emailVerified) {
+    const fresh = await deps.store.findByRefCode(refCode);
+    if (fresh?.emailVerified && fresh.pageId === row.pageId) {
+      row.emailVerified = true;
+      if (fresh.shareCode) row.shareCode = fresh.shareCode;
+      row.shareCodeCustom = fresh.shareCodeCustom;
+      row.shareCodeLocked = fresh.shareCodeLocked;
+    }
+  }
+  if (row.emailVerified) await ensureShareCode(row, deps);
 
   const status = deps.statusFor(row, pass.ledger, {
     shareUrl: deps.shareUrl(deps.origin, refCode),
@@ -339,6 +362,271 @@ export async function getReferralProgressService(
   if (!code) return { enabled: true, credited: 0 };
   const { credited } = await deps.leaderboardCache.get(deps);
   return { enabled: true, credited: credited.get(code) ?? 0 };
+}
+
+export type MyShareCodeResponse = { enabled: false } | { enabled: true; code: string | null };
+
+export type ShareCodeClaimResponse =
+  | { status: "ok"; code: string; custom: boolean }
+  | { status: "invalid" }
+  | { status: "disabled" }
+  | { status: "rate_limited" }
+  | { status: "rejected"; reason: ShareCodeRejectReason | "failed" };
+
+/** What a signup lookup may hand back. Never includes an email or a nickname. */
+export type ShareCodeResolution = {
+  refCode: string;
+  pageId: string;
+  code: string;
+  custom: boolean;
+  locked: boolean;
+};
+
+const ASSIGN_ATTEMPTS = 6;
+const assignLimiters = new WeakMap<ReferralServiceDeps, RateLimiter>();
+
+function assignLimiterFor(deps: ReferralServiceDeps): RateLimiter {
+  let limiter = assignLimiters.get(deps);
+  if (!limiter) {
+    // Separate from the nickname limiter: assigning a code must not eat the
+    // allowance a person uses to save their leaderboard name.
+    limiter = createRateLimiter(8, SETTINGS_WINDOW_MS);
+    assignLimiters.set(deps, limiter);
+  }
+  return limiter;
+}
+
+/**
+ * Gives a verified person an unambiguous 6-character code the first time a
+ * surface asks. Writes, then reads back: the lowest page id owns a code, so
+ * a lost race restores the previous cell and tries another code. The cached
+ * row is updated in place so the next status read inside the leaderboard TTL
+ * does not assign a second code or scan Notion again. A failure leaves the
+ * page usable with no code.
+ */
+export async function ensureShareCode(
+  row: ReferralRow,
+  deps: ReferralServiceDeps,
+  generate: () => string = generateShareCode,
+): Promise<string | null> {
+  if (!row.emailVerified) return null;
+  const current = canonicalShareCode(row.shareCode);
+  if (current) {
+    row.shareCode = current;
+    return current;
+  }
+  if (!assignLimiterFor(deps).take(normalizeRefCode(row.refCode) || row.pageId, deps.now().getTime())) {
+    return null;
+  }
+  // A cached status pass may predate a successful claim on another surface.
+  // Re-read before writing so a sequential stale read cannot erase that claim.
+  try {
+    const fresh = await deps.store.findByRefCode(row.refCode);
+    if (!fresh?.emailVerified || fresh.pageId !== row.pageId) return null;
+    const assigned = canonicalShareCode(fresh.shareCode);
+    if (assigned) {
+      row.shareCode = assigned;
+      row.shareCodeCustom = fresh.shareCodeCustom;
+      row.shareCodeLocked = fresh.shareCodeLocked;
+      return assigned;
+    }
+  } catch {
+    return null;
+  }
+  const previous = {
+    code: row.shareCode ?? "",
+    custom: row.shareCodeCustom === true,
+    locked: row.shareCodeLocked === true,
+  };
+  for (let attempt = 0; attempt < ASSIGN_ATTEMPTS; attempt += 1) {
+    let code: string;
+    try {
+      code = generate();
+    } catch {
+      return null;
+    }
+    if (!canonicalShareCode(code)) continue;
+    try {
+      const existing = await deps.store.findByShareCode(code);
+      if (existing && existing.pageId !== row.pageId) continue;
+      await deps.store.writeShareCode(row.pageId, { code, custom: false, locked: false });
+      const owner = await deps.store.findByShareCode(code);
+      if (!owner || owner.pageId !== row.pageId) {
+        await deps.store.writeShareCode(row.pageId, previous).catch(() => undefined);
+        continue;
+      }
+    } catch {
+      return null;
+    }
+    row.shareCode = code;
+    row.shareCodeCustom = false;
+    row.shareCodeLocked = false;
+    return code;
+  }
+  return null;
+}
+
+/**
+ * One custom code, from the status page. The same code is a no-op even when
+ * the row is locked. A different code is refused once the person has claimed
+ * one, or once a signup was attributed through it. An 8-character code that
+ * is already someone else's ref code is taken, so a link to that person keeps
+ * working. Losing the read-after-write race restores the previous cell and
+ * reports taken — it does not invent a different code.
+ */
+export async function claimShareCodeService(
+  token: unknown,
+  raw: unknown,
+  deps: ReferralServiceDeps,
+): Promise<ShareCodeClaimResponse> {
+  if (!deps.enabled()) return DISABLED;
+  const refCode = await refCodeFor(token, deps);
+  if (!refCode) return INVALID;
+  if (!deps.settingsLimiter.take(`claim:${refCode}`, deps.now().getTime())) {
+    return { status: "rate_limited" };
+  }
+  const row = await deps.store.findByRefCode(refCode);
+  if (!row?.emailVerified) return INVALID;
+
+  const submitted = canonicalShareCode(typeof raw === "string" ? raw : "");
+  const owned = canonicalShareCode(row.shareCode);
+  if (submitted && owned && submitted === owned) {
+    return { status: "ok", code: owned, custom: row.shareCodeCustom === true };
+  }
+  const decision = claimDecision(row);
+  if (decision !== "ok") return { status: "rejected", reason: decision };
+
+  // The annotation is only a best-effort early lock. A fresh ledger also
+  // prevents editing after credit if that annotation was lost or never saved.
+  // Attribution retains refCode, so this conservatively includes link credits.
+  try {
+    const rows = await deps.store.listProgramRows();
+    const ledger = deps.computeLedger(rows, { closesAt: deps.closesAt() });
+    if ((ledger.standings.get(refCode)?.credited ?? 0) > 0) {
+      return { status: "rejected", reason: "locked" };
+    }
+  } catch {
+    return { status: "rejected", reason: "failed" };
+  }
+
+  const check = checkShareCode(typeof raw === "string" ? raw : "");
+  if (!check.ok) return { status: "rejected", reason: check.reason };
+  const code = check.value;
+
+  try {
+    if (code.length === 8) {
+      const refOwner = await deps.store.findByRefCode(code.toLowerCase());
+      if (refOwner && refOwner.pageId !== row.pageId) return { status: "rejected", reason: "taken" };
+    }
+    const taken = await deps.store.findByShareCode(code);
+    if (taken && taken.pageId !== row.pageId) return { status: "rejected", reason: "taken" };
+    const previous = {
+      code: row.shareCode ?? "",
+      custom: row.shareCodeCustom === true,
+      locked: row.shareCodeLocked === true,
+    };
+    await deps.store.writeShareCode(row.pageId, {
+      code,
+      custom: true,
+      locked: previous.locked,
+    });
+    const owner = await deps.store.findByShareCode(code);
+    if (!owner || owner.pageId !== row.pageId) {
+      await deps.store.writeShareCode(row.pageId, previous).catch(() => undefined);
+      return { status: "rejected", reason: "taken" };
+    }
+  } catch {
+    return { status: "rejected", reason: "failed" };
+  }
+  deps.leaderboardCache.invalidate();
+  return { status: "ok", code, custom: true };
+}
+
+/**
+ * The landing card's code. Separate from progress so a progress read stays a
+ * count. Notion trouble answers `{ enabled: true, code: null }` rather than
+ * breaking the card. The code is not a nickname and not an email.
+ */
+export async function getMyShareCodeService(
+  refCode: string,
+  deps: ReferralServiceDeps,
+): Promise<MyShareCodeResponse> {
+  if (!deps.enabled()) return { enabled: false };
+  const code = normalizeRefCode(refCode);
+  if (!code) return { enabled: true, code: null };
+  try {
+    const pass = await deps.leaderboardCache.get(deps);
+    let row = ownRow(pass.rows, code);
+    if (!row || !row.emailVerified) {
+      const fresh = await deps.store.findByRefCode(code);
+      if (!fresh) return { enabled: true, code: null };
+      if (row && row.pageId === fresh.pageId) {
+        row.emailVerified = fresh.emailVerified;
+        if (fresh.shareCode) row.shareCode = fresh.shareCode;
+        row.shareCodeCustom = fresh.shareCodeCustom;
+        row.shareCodeLocked = fresh.shareCodeLocked;
+      } else {
+        row = fresh;
+      }
+    }
+    if (!row.emailVerified) return { enabled: true, code: null };
+    return { enabled: true, code: await ensureShareCode(row, deps) };
+  } catch {
+    return { enabled: true, code: null };
+  }
+}
+
+/**
+ * Signup lookup. Returns the owner's ref code so `Referred by` stays an
+ * 8-character code, plus the page id the caller needs to lock the cell.
+ * Rate-limit and Notion failure are indistinguishable from an unknown code
+ * (`null` vs `"limited"` only so the caller can skip a lock). No email, no
+ * nickname.
+ */
+export async function resolveShareCodeForSignup(
+  raw: string,
+  deps: ReferralServiceDeps,
+  limiter: RateLimiter,
+  ip: string,
+): Promise<ShareCodeResolution | "limited" | null> {
+  if (!deps.enabled()) return null;
+  if (!limiter.take(ip || "unknown", deps.now().getTime())) return "limited";
+  const code = canonicalShareCode(raw);
+  if (!code) return null;
+  try {
+    const owner = await deps.store.findByShareCode(code);
+    const refCode = owner ? normalizeRefCode(owner.refCode) : "";
+    if (!owner || !refCode) return null;
+    return {
+      refCode,
+      pageId: owner.pageId,
+      code: canonicalShareCode(owner.shareCode) ?? code,
+      custom: owner.shareCodeCustom === true,
+      locked: owner.shareCodeLocked === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Best-effort freeze after a signup stored this code's ref. Never throws. */
+export async function lockShareCodeAfterCredit(
+  owner: { pageId: string; code: string; custom: boolean },
+  deps: ReferralServiceDeps,
+): Promise<void> {
+  const code = canonicalShareCode(owner.code);
+  if (!code) return;
+  try {
+    const fresh = await deps.store.findByShareCode(code);
+    if (!fresh || fresh.pageId !== owner.pageId) return;
+    await deps.store.writeShareCode(owner.pageId, {
+      code, custom: fresh.shareCodeCustom === true, locked: true,
+    });
+    deps.leaderboardCache.invalidate();
+  } catch {
+    // The signup already succeeded. A later signup through the same code
+    // tries the lock again.
+  }
 }
 
 export type RateLimiter = { take(key: string, nowMs: number): boolean };

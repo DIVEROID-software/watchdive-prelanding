@@ -13,6 +13,8 @@ import {
   LONG_STOP_CLOSE,
   NICKNAME_MAX,
   NICKNAME_MIN,
+  SHARE_CODE_MAX,
+  SHARE_CODE_MIN,
   PRIZE_DELIVERY_BY,
   TOP_PRIZE_WINNERS,
 } from "../src/lib/referral/program.ts";
@@ -56,6 +58,8 @@ test("values come from program.ts", () => {
     noticeDays: CLOSE_NOTICE_DAYS,
     min: NICKNAME_MIN,
     max: NICKNAME_MAX,
+    codeMin: SHARE_CODE_MIN,
+    codeMax: SHARE_CODE_MAX,
     lightValue: "$70",
     prizeValue: "$299",
     ageKr: 19,

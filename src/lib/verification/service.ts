@@ -48,7 +48,7 @@ import type { TokenEnvironment } from "./token.ts";
 // key (derived from the verification secret; throws when that is unset, which
 // the guard below treats like a missing origin); `statusUrl(origin, refCode,
 // locale, secret)` and `rulesUrl(origin, locale)` build the guide's links.
-import { referralSecret, rulesUrl, statusUrl } from "../referral/statusToken.ts";
+import { referralSecret, rulesUrl, signStatusToken, statusUrl } from "../referral/statusToken.ts";
 import { referralProgramEnabled } from "../referral/program.ts";
 import { optOutAddressKey, rowOptedOut } from "../referral/notices.ts";
 import {
@@ -168,6 +168,8 @@ export type RequestVerificationInput = {
 export type ServiceDependencies = {
   store: LeadStore;
   mailer: VerificationMailer;
+  /** ON-only best-effort public code for the verified row’s welcome guide. */
+  resolveWelcomeShareCode?: (refCode: string) => Promise<string | null>;
   env?: TokenEnvironment;
   now?: () => Date;
   leadId?: () => string;
@@ -565,6 +567,14 @@ async function scheduleWelcome(
     return;
   }
 
+  let shareCode: string | null = null;
+  if (guideLinks && record.emailVerified && dependencies.resolveWelcomeShareCode) {
+    try {
+      shareCode = await dependencies.resolveWelcomeShareCode(record.refCode);
+    } catch {
+      // Code availability must never prevent confirmation or the welcome guide.
+    }
+  }
   const delay = guideLinks ? BUDDY_GUIDE_DELAY_MS : WELCOME_DELAY_MS;
   const scheduledAt = new Date(now.getTime() + delay).toISOString();
   try {
@@ -576,6 +586,7 @@ async function scheduleWelcome(
       scheduledAt,
       locale,
       ...(guideLinks ?? {}),
+      ...(guideLinks && shareCode ? { shareCode } : {}),
       ...(guideLinks && record.signupCountry ? { signupCountry: record.signupCountry } : {}),
     });
     await dependencies.store.markWelcomeScheduled(record.pageId, { scheduledAt });
@@ -789,6 +800,9 @@ export async function confirmVerificationService(
       ok: true,
       status: "already_verified",
       refCode: record.refCode,
+      ...(referralProgramEnabled(env as Record<string, string | undefined>) && record.refCode
+        ? { statusToken: signStatusToken(record.refCode, referralSecret(env)) }
+        : {}),
       ...(record.phone && !record.suspect ? { phoneAdded: true as const } : {}),
       ...(sent ? browserLead(record, metaEventId) : {}),
       ...measurementAsk(record, parsed.measurementConsent, options.localRefusal),
@@ -821,7 +835,7 @@ export async function confirmVerificationService(
     dependencies,
     secret,
   );
-  await scheduleWelcome(record, dependencies, now, parsed.locale);
+  await scheduleWelcome({ ...record, emailVerified: true, status: "verified" }, dependencies, now, parsed.locale);
   // First confirmation: the signup is complete and its address verified.
   await reportPressNow(dependencies, "confirmed", record, now);
 
@@ -829,6 +843,9 @@ export async function confirmVerificationService(
     ok: true,
     status: "verified",
     refCode: record.refCode,
+    ...(referralProgramEnabled(env as Record<string, string | undefined>) && record.refCode
+      ? { statusToken: signStatusToken(record.refCode, referralSecret(env)) }
+      : {}),
     ...(record.phone && !record.suspect ? { phoneAdded: true as const } : {}),
     ...(sent ? browserLead(record, metaEventId) : {}),
     ...measurementAsk(record, parsed.measurementConsent, options.localRefusal),

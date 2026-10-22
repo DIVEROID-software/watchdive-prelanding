@@ -92,13 +92,19 @@ function unsupported(what: string): never {
 function richOut(
   parts: unknown,
   name: string,
-): { type: "text"; text: { content: string }; plain_text: string }[] {
+): { type: "text"; text: { content: string }; plain_text: string; annotations?: unknown }[] {
   if (!Array.isArray(parts)) invalid(`${name} is expected to be rich_text.`);
   return parts.map((part) => {
     const content = (part as { text?: { content?: unknown } })?.text?.content;
     if (typeof content !== "string") invalid(`${name} rich text content is invalid.`);
     if (content.length > 2000) invalid(`${name} text content length should be ≤ 2000.`);
-    return { type: "text" as const, text: { content }, plain_text: content };
+    const annotations = (part as { annotations?: unknown }).annotations;
+    return {
+      type: "text" as const,
+      text: { content },
+      plain_text: content,
+      ...(annotations && typeof annotations === "object" ? { annotations } : {}),
+    };
   });
 }
 

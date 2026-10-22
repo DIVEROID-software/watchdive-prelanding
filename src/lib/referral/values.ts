@@ -26,6 +26,8 @@ import {
   LONG_STOP_CLOSE,
   NICKNAME_MAX,
   NICKNAME_MIN,
+  SHARE_CODE_MAX,
+  SHARE_CODE_MIN,
   TOP_PRIZE_WINNERS,
   type ReferralTierId,
 } from "./program.ts";
@@ -42,6 +44,9 @@ export type CopyValues = {
   noticeDays: number;
   min: number;
   max: number;
+  /** Share-code bounds (SHARE_CODE_MIN / SHARE_CODE_MAX). Not the nickname bounds. */
+  codeMin: number;
+  codeMax: number;
   /** Prize and eligibility facts for the rules (program.ts). */
   lightValue: string;
   prizeValue: string;
@@ -213,6 +218,8 @@ export function copyValues(locale: Locale): CopyValues {
     noticeDays: CLOSE_NOTICE_DAYS,
     min: NICKNAME_MIN,
     max: NICKNAME_MAX,
+    codeMin: SHARE_CODE_MIN,
+    codeMax: SHARE_CODE_MAX,
     lightValue: formatOfferPrice(locale, LIGHT_VALUE_USD * 100),
     prizeValue: formatOfferPrice(locale, PRIZE_VALUE_USD * 100),
     ageKr: MIN_AGE_KR,
