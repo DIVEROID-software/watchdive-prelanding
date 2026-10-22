@@ -151,15 +151,15 @@ export function createNotionReferralStore(
       if (!code) return undefined;
       const result = await request("POST", `databases/${databaseId}/query`, {
         filter: { property: REFERRAL_COLUMNS.refCode, rich_text: { equals: code } },
-        // Codes are unique by construction; on a (never expected) collision
-        // the oldest row answers, and the ledger refuses to credit a second
-        // row for the same code either way.
-        sorts: [{ timestamp: "created_time", direction: "ascending" }],
-        page_size: 1,
+        // Codes are unique by construction. On a (never expected) collision the
+        // lowest page id answers — the same row the ledger and status page pick.
+        page_size: 10,
       });
-      const first = (result.results as Record<string, unknown>[] | undefined)?.[0];
-      const row = first ? toReferralRow(first) : undefined;
-      return row && row.refCode === code ? row : undefined;
+      const rows = ((result.results as Record<string, unknown>[] | undefined) ?? [])
+        .map((raw) => toReferralRow(raw))
+        .filter((row): row is NonNullable<typeof row> => Boolean(row && row.refCode === code))
+        .sort((a, b) => (a.pageId < b.pageId ? -1 : a.pageId > b.pageId ? 1 : 0));
+      return rows[0];
     },
 
     async writeSettings(pageId, input) {
