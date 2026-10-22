@@ -168,8 +168,8 @@ test("switch on: confirmation schedules the guide 30 minutes out with signed sta
 // --- Switch on: the guide ----------------------------------------------------
 
 const EXPECTED_REWARD_FRAGMENTS: Record<"en" | "ko", string[]> = {
-  en: ["EVENT", "First invite", "Launch email 1 hour earlier", "Buddy", "Launch email 2 hours earlier", "Dive Team", "$149", "Dive Leader", "30 units", "Top 3", "each get one WatchDive", "one pledge per member", "Recipients pay shipping and taxes", "during the live campaign on the Kickstarter website"],
-  ko: ["EVENT", "첫 초대", "1시간 먼저", "버디", "2시간 먼저", "다이브 팀", "$149", "다이브 리더", "30개", "상위 3명", "WatchDive", "회원당 한 번", "배송비와 세금", "캠페인 진행 중 Kickstarter 웹사이트"],
+  en: ["Bonus event!", "First invite", "Get the launch email 1 hour early", "Buddy", "Get the launch email 2 hours early", "Dive Team", "$149", "Dive Leader", "30 units", "Top 3", "each get one WatchDive", "one pledge per member", "Recipients pay shipping and taxes", "during the live campaign on the Kickstarter website"],
+  ko: ["추가 이벤트!", "첫 초대", "1시간 먼저", "버디", "2시간 먼저", "다이브 팀", "$149", "다이브 리더", "30개", "상위 3명", "WatchDive", "회원당 한 번", "배송비와 세금", "캠페인 진행 중 Kickstarter 웹사이트"],
 };
 
 for (const locale of ["en", "ko"] as const) {
@@ -263,10 +263,10 @@ test("notice: count in subject, crossed tier with its reward, next tier, status 
   const { body, init } = calls[0]!;
   assert.equal(body.subject, "A buddy joined through your link (3 so far)");
   for (const part of [body.html, body.text]) {
-    assert.ok(part.includes("Friends who joined through your link and confirmed their email: 3."));
+    assert.ok(part.includes("So far, 3 buddies have joined through your link and confirmed their email."));
     assert.ok(
       part.includes(
-        "Launch email 2 hours earlier",
+        "Get the launch email 2 hours early",
       ),
     );
     assert.ok(part.includes("2 more for Dive Team · 5 friends."));
@@ -303,8 +303,8 @@ test("notice: several crossed tiers each get a line; at the top the max line rep
     KO_FOOTER,
   );
   assert.equal(content.subject, "(광고) 내 링크로 버디가 참여했어요 (지금까지 10명)");
-  assert.ok(content.text.includes("5 · 다이브 팀: 얼리버드 $149 그대로 — 달성"));
-  assert.ok(content.text.includes("10 · 다이브 리더: 수중 라이트 증정 · 선착순 30명 — 달성"));
+  assert.ok(content.text.includes("5 · 다이브 팀: 얼리버드 $149 그대로 후원해요 — 달성"));
+  assert.ok(content.text.includes("10 · 다이브 리더: 수중 라이트를 드려요 · 선착순 30명 — 달성"));
   assert.ok(content.text.includes("모든 단계를 달성했어요. 랭킹 Top 3에 계속 도전해 보세요."));
   assert.equal(content.text.includes("남았어요"), false);
 });

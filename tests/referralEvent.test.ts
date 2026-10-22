@@ -55,7 +55,7 @@ test("compact notices show crossed and next steps without treating top rank as e
     footer,
   );
   assert.equal((guide.html.match(/<strong /g) ?? []).length, REFERRAL_TIERS.length + 1);
-  assert.ok(guide.text.includes("EVENT"));
+  assert.ok(guide.text.includes("Bonus event!"));
 });
 
 function luminance(hex: string) {
@@ -72,9 +72,11 @@ test("branded event and footer text keep 4.5:1 in light, dark and full inversion
     return (high + 0.05) / (low + 0.05);
   };
   for (const [ink, bg] of [
-    ["201748", "ffffff"], ["3d2683", "ffffff"],
-    ["201748", "eef9ff"], ["3d2683", "eef9ff"],
-    ["ffffff", "3d2683"], ["eef9ff", "201748"], ["eef9ff", "07131c"],
+    ["1a1238", "ffffff"], ["3d2683", "ffffff"],
+    ["1a1238", "f5f3ee"], ["3d2683", "f5f3ee"],
+    ["1a1238", "ebe7f5"], ["3d2683", "ebe7f5"],
+    ["1a1238", "ffe55c"],
+    ["ffffff", "3d2683"], ["eef9ff", "1a1238"], ["eef9ff", "07131c"],
   ]) {
     assert.ok(contrast(ink, bg) >= 4.5, `${ink}/${bg}`);
     assert.ok(contrast(invert(ink), invert(bg)) >= 4.5, `inverted ${ink}/${bg}`);

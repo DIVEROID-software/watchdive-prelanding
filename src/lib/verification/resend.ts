@@ -18,8 +18,8 @@ import {
 import { buildReminderEmail } from "./reminderEmail.ts";
 import { DEFAULT_LOCALE, referralPath, type Locale } from "../i18n/locale.ts";
 import type { ReferralMailer, ReferralNoticeMail } from "../referral/contract.ts";
-import { referralEvent } from "../referral/event.ts";
-import { fill, referralCopy } from "../referral/copy.ts";
+import { buddyMailCopy, buddyMailEvent } from "../referral/mail-copy.ts";
+import { fill } from "../referral/copy.ts";
 import { REFERRAL_TIERS, referralProgramEnabled } from "../referral/program.ts";
 // Core-owned (feat/referral-core): `copyValues(locale)` returns every
 // program.ts number pre-formatted for the locale ({price}, {seats}, {stock},
@@ -602,10 +602,12 @@ const FONT_STACK =
   "'Pangram Sans','Spoqa Han Sans Neo','Helvetica Neue',Arial," +
   "'Apple SD Gothic Neo','Malgun Gothic','Hiragino Sans','Hiragino Kaku Gothic ProN'," +
   "'Microsoft YaHei','PingFang SC','PingFang TC',sans-serif";
-const PAGE_BG = "#eef9ff";
+const PAGE_BG = "#f5f3ee";
+const REWARD_BG = "#ebe7f5";
+const HIGHLIGHT_BG = "#ffe55c";
 const CARD_BG = "#ffffff";
-const INK = "#201748";
-const BODY_INK = "#201748";
+const INK = "#1a1238";
+const BODY_INK = INK;
 const MUTED_INK = "#3d2683";
 const LINK_INK = "#3d2683";
 // Light text on a deep blue, never dark text on a mid-tone: forced dark modes
@@ -726,7 +728,7 @@ function linkHtml(url: string, label?: string): string {
   const safeUrl = escapeHtml(url);
   return (
     `<a href="${safeUrl}" rel="noreferrer noopener" style="color:${LINK_INK};` +
-    `text-decoration:underline;word-break:break-all;overflow-wrap:anywhere;">` +
+    `text-decoration:underline;word-break:${label === undefined ? "break-all" : "inherit"};overflow-wrap:anywhere;">` +
     `${label === undefined ? safeUrl : escapeHtml(label)}</a>`
   );
 }
@@ -807,12 +809,13 @@ function buddyDocument(input: {
     '<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">',
     `<style>@media (prefers-color-scheme:dark){
       body,[bgcolor="${PAGE_BG}"]{background-color:#07131c!important;}
-      [bgcolor="${CARD_BG}"]{background-color:#201748!important;}
+      [bgcolor="${CARD_BG}"],[bgcolor="${REWARD_BG}"]{background-color:${INK}!important;}
       [style*="color:${BODY_INK}"],[style*="color:${MUTED_INK}"]{color:#eef9ff!important;}
       a[style*="color:${LINK_INK}"]{color:#eef9ff!important;}
       .mail-frame{border-color:#eef9ff!important;}
       .mail-shadow{background-color:#eef9ff!important;}
-      .mail-badge{background-color:#3d2683!important;color:#ffffff!important;}
+      .mail-highlight{background-color:${HIGHLIGHT_BG}!important;color:${INK}!important;}
+      .mail-highlight [style*="color:"]{color:${INK}!important;-webkit-text-fill-color:${INK}!important;}
     }</style>`,
     `<title>${escapeHtml(input.subject)}</title>`,
     // Outlook's Word engine falls back to Times for an unknown first font.
@@ -848,8 +851,8 @@ const STYLE_BODY_P = `margin:0 0 20px;font-size:15px;line-height:1.6;color:${BOD
 
 /** Compatibility projection of the shared event model for notice labels. */
 export function referralRewardLines(locale: Locale): { name: string; reward: string }[] {
-  const copy = referralCopy(locale);
-  return referralEvent(locale).steps.map((step) => ({
+  const copy = buddyMailCopy(locale);
+  return buddyMailEvent(locale).steps.map((step) => ({
     name: step.id === "top" ? fill(copy.top.name, copyValues(locale)) : copy.tiers[step.id].name,
     reward: step.benefit,
   }));
@@ -872,8 +875,8 @@ function sectionHeading(label: string): string {
 function eventRewardBlock(locale: Locale, rulesUrl: string, notice?: {
   credited: number; crossed: readonly string[];
 }): { html: string; text: string } {
-  const event = referralEvent(locale, notice?.credited ?? null);
-  const copy = referralCopy(locale);
+  const event = buddyMailEvent(locale, notice?.credited ?? null);
+  const copy = buddyMailCopy(locale);
   const steps = notice
     ? event.steps.filter((step) => notice.crossed.includes(step.id) || step.next)
     : event.steps;
@@ -881,10 +884,10 @@ function eventRewardBlock(locale: Locale, rulesUrl: string, notice?: {
     const reached = notice?.crossed.includes(step.id);
     const state = reached ? `✓ ${event.reached}` : notice && step.next ? `→ ${event.next}` : "";
     return `<tr><td style="padding:0 0 10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed;"><tr>
-<td class="mail-badge mail-frame" width="70" align="center" valign="middle" bgcolor="${BUTTON_BG}" style="width:70px;padding:14px 2px;background-color:${BUTTON_BG};border:3px solid ${INK};color:#ffffff;">
-<span style="font-size:${step.id === "top" ? "20" : "38"}px;line-height:1.1;font-weight:700;color:#ffffff;">${escapeHtml(step.badge)}</span>
-${step.id === "top" ? "" : `<br><span style="font-size:10px;line-height:1.3;color:#ffffff;">${escapeHtml(event.friends)}</span>`}</td>
-<td class="mail-frame" bgcolor="${PAGE_BG}" valign="middle" style="padding:12px 10px;background-color:${PAGE_BG};border:3px solid ${INK};color:${INK};">
+<td class="mail-badge mail-highlight mail-frame" width="70" align="center" valign="middle" bgcolor="${HIGHLIGHT_BG}" style="width:70px;padding:14px 2px;background-color:${HIGHLIGHT_BG};border:3px solid ${INK};color:${INK};">
+<span style="font-size:${step.id === "top" ? "20" : "38"}px;line-height:1.1;font-weight:700;color:${INK};">${escapeHtml(step.badge)}</span>
+${step.id === "top" ? "" : `<br><span style="font-size:10px;line-height:1.3;color:${INK};">${escapeHtml(event.friends)}</span>`}</td>
+<td class="mail-frame" bgcolor="${REWARD_BG}" valign="middle" style="padding:12px 10px;background-color:${REWARD_BG};border:3px solid ${INK};color:${INK};">
 <span style="font-size:12px;line-height:1.5;color:${MUTED_INK};">${escapeHtml(step.name)}</span><br>
 <strong style="font-size:17px;line-height:1.35;color:${INK};">${escapeHtml(step.benefit)}</strong>
 ${step.qualifier ? `<br><span style="font-size:12px;line-height:1.6;color:${MUTED_INK};">${escapeHtml(step.qualifier)}</span>` : ""}
@@ -894,16 +897,15 @@ ${state ? `<br><span style="font-size:12px;line-height:1.7;color:${MUTED_INK};fo
   const values = { ...copyValues(locale), count: REFERRAL_TIERS.find((tier) => tier.id === "leader")!.minFriends };
   const conditions = copy.mail.conditions.map((line) => fill(line, values));
   const html = brutalPanel([
-    sectionHeading(copy.mail.eventHeading),
-    `<p style="margin:0 0 12px;font-size:12px;line-height:1.5;letter-spacing:2px;font-weight:700;color:${MUTED_INK};border-left:8px solid #36a9e1;padding-left:10px;">${escapeHtml(event.label)}</p>`,
-    `<h3 style="margin:0 0 10px;font-size:26px;line-height:1.2;font-weight:700;color:${INK};">${escapeHtml(event.headline)}</h3>`,
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px;border-collapse:collapse;"><tr><td class="mail-highlight mail-frame" bgcolor="${HIGHLIGHT_BG}" style="padding:5px 10px;background-color:${HIGHLIGHT_BG};border:3px solid ${INK};color:${INK};font-size:14px;line-height:1.5;font-weight:700;"><span style="color:${INK};">${escapeHtml(event.label)}</span></td></tr></table>`,
+    `<h2 style="margin:0 0 10px;font-size:26px;line-height:1.2;font-weight:700;color:${INK};">${escapeHtml(event.headline)}</h2>`,
     para(`margin:0 0 20px;font-size:14px;line-height:1.6;color:${BODY_INK};`, escapeHtml(event.subline), locale),
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">${rows}</table>`,
     `<h3 class="mail-frame" style="margin:16px 0 10px;padding-top:16px;border-top:3px solid ${INK};font-size:14px;line-height:1.5;font-weight:700;color:${INK};">${escapeHtml(event.conditionsTitle)}</h3>`,
     ...conditions.map((line) => para(`margin:0 0 10px;font-size:12px;line-height:1.65;color:${BODY_INK};`, escapeHtml(line), locale)),
     linkHtml(rulesUrl, copy.mail.welcomeRules),
   ].join("\n"), locale);
-  const text = [copy.mail.eventHeading, event.label, event.headline, event.subline,
+  const text = [event.label, event.headline, event.subline,
     ...steps.map((step) => `- ${step.badge} · ${step.name}: ${step.benefit}${step.qualifier ? ` (${step.qualifier})` : ""}${notice?.crossed.includes(step.id) ? ` — ${event.reached}` : notice && step.next ? ` — ${event.next}` : ""}`),
     "", event.conditionsTitle, ...conditions, copy.mail.welcomeRules, rulesUrl].join("\n");
   return { html, text };
@@ -915,8 +917,8 @@ function validShareCode(code?: string): string {
 
 function shareCodeHtml(code: string, label: string, locale: Locale): string {
   if (!code) return "";
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 20px;table-layout:fixed;"><tr><td class="mail-frame" bgcolor="${PAGE_BG}" style="border:3px solid ${INK};padding:16px 10px;background-color:${PAGE_BG};">` +
-    para(`font-size:13px;line-height:1.6;color:${MUTED_INK};`, escapeHtml(label), locale) +
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 20px;table-layout:fixed;"><tr><td class="mail-highlight mail-frame" bgcolor="${HIGHLIGHT_BG}" style="border:3px solid ${INK};padding:16px 10px;background-color:${HIGHLIGHT_BG};">` +
+    para(`font-size:13px;line-height:1.6;color:${INK};`, escapeHtml(label), locale) +
     `<p style="margin:6px 0 0;font-family:Consolas,Menlo,monospace;font-size:26px;line-height:1.3;font-weight:700;letter-spacing:1px;color:${INK};word-break:break-all;">${escapeHtml(code)}</p></td></tr></table>`;
 }
 
@@ -934,7 +936,7 @@ export function buddyGuideBody(
   footer: AdFooter,
   shareCode?: string,
 ): { subject: string; text: string; html: string } {
-  const copy = referralCopy(locale);
+  const copy = buddyMailCopy(locale);
   const values = copyValues(locale);
   const mail = copy.mail;
   const t = (template: string) => fill(template, values);
@@ -978,7 +980,7 @@ export function referralNoticeBody(
   footer: AdFooter,
 ): { subject: string; text: string; html: string } {
   const { locale } = input;
-  const copy = referralCopy(locale);
+  const copy = buddyMailCopy(locale);
   const values = { ...copyValues(locale), count: input.credited };
   const mail = copy.mail;
   const rewards = referralRewardLines(locale);
@@ -995,7 +997,7 @@ export function referralNoticeBody(
   const body = fill(mail.noticeBody, values);
   const noticeFooter = fill(mail.noticeFooter, values);
   const subject = adSubject(fill(mail.noticeSubject, values), footer);
-  const event = eventRewardBlock(locale, new URL(referralEvent(locale).rulesPath, input.statusUrl).href, input);
+  const event = eventRewardBlock(locale, new URL(buddyMailEvent(locale).rulesPath, input.statusUrl).href, input);
   const code = validShareCode(input.shareCode);
   const content = [
     brutalPanel(headingHtml(heading, locale) +
@@ -1004,6 +1006,7 @@ export function referralNoticeBody(
     brutalPanel([
       sectionHeading(mail.shareHeading),
       para(STYLE_BODY_P, escapeHtml(next), locale),
+      ...(input.shareUrl || code ? [para(STYLE_BODY_P, escapeHtml(mail.welcomeIntro), locale)] : []),
       ...(input.shareUrl ? [
         buttonHtml(input.shareUrl, fill(mail.welcomeButton, values)),
         labelledLinkHtml(fill(mail.welcomeFallback, values), input.shareUrl, locale),
@@ -1017,7 +1020,7 @@ export function referralNoticeBody(
   return {
     subject,
     text: [
-      heading, "", body, event.text, next, "", mail.shareHeading,
+      heading, "", body, event.text, next, "", mail.shareHeading, ...(input.shareUrl || code ? [mail.welcomeIntro] : []),
       ...(input.shareUrl ? [fill(mail.welcomeButton, values), input.shareUrl] : []),
       ...(code ? [`${fill(mail.welcomeCode, values)} ${code}`] : []),
       "", input.statusUrl, "", noticeFooter, "", ...footerParts(locale, footer).text,
