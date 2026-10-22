@@ -632,7 +632,7 @@ test("server fns and routes check the switch before building Notion deps", () =>
     const gate = body.indexOf("referralProgramEnabled(process.env)");
     assert.ok(gate > 0 && gate < body.indexOf("referralServiceDeps()"), `${name} must gate first`);
   }
-  assert.match(fns, /export const getReferralProgramState = createServerFn/);
+  assert.match(fns, /const getReferralProgramStateRpc = createServerFn/);
   for (const file of ["../src/routes/buddy.tsx", "../src/routes/$locale.buddy.tsx"]) {
     const route = readFileSync(new URL(file, import.meta.url), "utf8");
     assert.match(route, /requireReferralProgram/);

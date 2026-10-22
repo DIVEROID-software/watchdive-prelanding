@@ -6,6 +6,7 @@ import { z } from "zod";
 import { withRateLimitBackoff } from "@/lib/api/referralCount";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { referralProgramEnabled } from "@/lib/referral/program";
+import { createProgramStateReader } from "@/lib/referral/programState";
 import type {
   ReferralProgressResponse,
   ReferralServiceDeps,
@@ -83,9 +84,14 @@ async function failSafely(scope: string, error: unknown): Promise<Error> {
  * per request so flipping it needs no rebuild; the rules page and the landing
  * card ask here before showing anything Buddy Invite.
  */
-export const getReferralProgramState = createServerFn({ method: "GET" }).handler(
+const getReferralProgramStateRpc = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ enabled: boolean }> => ({ enabled: referralProgramEnabled(process.env) }),
 );
+
+const readProgramState = createProgramStateReader(() => getReferralProgramStateRpc());
+export function getReferralProgramState(): Promise<{ enabled: boolean }> {
+  return readProgramState(typeof window === "undefined");
+}
 
 // Signed tokens are short; the bound only stops oversized junk early.
 const tokenSchema = z.string().min(1).max(400);
