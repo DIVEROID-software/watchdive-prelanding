@@ -13,6 +13,8 @@ import type { ReferralTierId } from "./program.ts";
 
 /** Notion columns added for the program (all on the waitlist database). */
 export const REFERRAL_COLUMNS = {
+  /** Durable one-off announcement intent/sent receipt. */
+  announce: "Referral announce",
   /** Existing: the person's own 8-char code. */
   refCode: "Ref code",
   /** Existing: the code of whoever invited this row. */

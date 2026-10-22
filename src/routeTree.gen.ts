@@ -32,6 +32,7 @@ import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
 import { Route as ApiAuthProvidersRouteImport } from './routes/api/auth/providers'
 import { Route as ApiAuthStartRouteImport } from './routes/api/auth/start'
 import { Route as ApiCronManualVerification20261019RouteImport } from './routes/api.cron.manual-verification-20261019'
+import { Route as ApiCronReferralAnnounceRouteImport } from './routes/api.cron.referral-announce'
 import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cron.verification-reminder'
 import { Route as ApiCronVerificationReminderV2RouteImport } from './routes/api.cron.verification-reminder-v2'
 import { Route as ApiReferralLeaderboardRouteImport } from './routes/api.referral.leaderboard'
@@ -157,6 +158,11 @@ const ApiCronManualVerification20261019Route =
     path: '/api/cron/manual-verification-20261019',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCronReferralAnnounceRoute = ApiCronReferralAnnounceRouteImport.update({
+  id: '/api/cron/referral-announce',
+  path: '/api/cron/referral-announce',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronVerificationReminderRoute =
   ApiCronVerificationReminderRouteImport.update({
     id: '/api/cron/verification-reminder',
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
+  '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
@@ -256,6 +263,7 @@ export interface FileRoutesByTo {
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
+  '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
@@ -290,6 +298,7 @@ export interface FileRoutesById {
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
+  '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
@@ -325,6 +334,7 @@ export interface FileRouteTypes {
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
+    | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
     | '/api/referral/leaderboard'
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
+    | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
     | '/api/referral/leaderboard'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
+    | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
     | '/api/referral/leaderboard'
@@ -417,6 +429,7 @@ export interface RootRouteChildren {
   ApiAuthProvidersRoute: typeof ApiAuthProvidersRoute
   ApiAuthStartRoute: typeof ApiAuthStartRoute
   ApiCronManualVerification20261019Route: typeof ApiCronManualVerification20261019Route
+  ApiCronReferralAnnounceRoute: typeof ApiCronReferralAnnounceRoute
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
   ApiCronVerificationReminderV2Route: typeof ApiCronVerificationReminderV2Route
   ApiReferralLeaderboardRoute: typeof ApiReferralLeaderboardRoute
@@ -590,6 +603,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronManualVerification20261019RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/referral-announce': {
+      id: '/api/cron/referral-announce'
+      path: '/api/cron/referral-announce'
+      fullPath: '/api/cron/referral-announce'
+      preLoaderRoute: typeof ApiCronReferralAnnounceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/verification-reminder': {
       id: '/api/cron/verification-reminder'
       path: '/api/cron/verification-reminder'
@@ -690,6 +710,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthStartRoute: ApiAuthStartRoute,
   ApiCronManualVerification20261019Route:
     ApiCronManualVerification20261019Route,
+  ApiCronReferralAnnounceRoute: ApiCronReferralAnnounceRoute,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
   ApiCronVerificationReminderV2Route: ApiCronVerificationReminderV2Route,
   ApiReferralLeaderboardRoute: ApiReferralLeaderboardRoute,

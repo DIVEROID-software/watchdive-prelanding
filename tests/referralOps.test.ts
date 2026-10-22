@@ -23,12 +23,13 @@ import {
   type AnnounceDeps,
   type AnnounceMessage,
   type AnnounceRow,
-} from "../scripts/referral-announce.ts";
+} from "../src/lib/referral/announce.ts";
 
 // ---- schema -----------------------------------------------------------------
 
 const allPresent = {
   properties: {
+    "Referral announce": { type: "rich_text" },
     "Referral nickname": { type: "rich_text" },
     "Referral leaderboard": { type: "checkbox" },
     "Referral nickname hidden": { type: "checkbox" },
@@ -44,11 +45,11 @@ const allPresent = {
   },
 };
 
-test("schema plan: everything missing adds eight properties and nothing else", () => {
+test("schema plan: everything missing adds nine properties and nothing else", () => {
   const plan = planReferralSchema({ properties: { Email: { type: "title" } } });
   assert.equal(plan.ok, true);
-  assert.equal(plan.actions.filter((a) => a.op === "add").length, 8);
-  assert.equal(Object.keys(plan.patch!.properties).length, 8);
+  assert.equal(plan.actions.filter((a) => a.op === "add").length, 9);
+  assert.equal(Object.keys(plan.patch!.properties).length, 9);
   assert.deepEqual(plan.patch!.properties["Referral leader reached at"], { date: {} });
   assert.equal("Email" in plan.patch!.properties, false);
   const select = plan.patch!.properties["Referral reward review"] as { select: { options: { name: string }[] } };
@@ -348,7 +349,7 @@ test("announce: one mail per address, and an opt-out on any of its rows covers i
     arow({ pageId: "b2", leadId: "44444443-4444-4444-8444-444444444444", email: "gone@example.com", refCode: "abcd0004", launchMail: "unsubscribed 2026-11-02T00:00:00.000Z" }),
   ];
   const { sent, dir, deps } = await setup(rows, { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" });
-  const result = await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: dir }, deps);
+  const result = await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE }, deps);
   assert.deepEqual(sent.map((m) => m.to), ["twice@example.com"]);
   assert.equal(result.skipped.duplicate_address, 1);
   assert.equal(result.skipped.unsubscribed_address, 1);
@@ -410,7 +411,8 @@ async function setup(rows: AnnounceRow[], env: Record<string, string | undefined
   const sent: AnnounceMessage[] = [];
   const dir = await mkdtemp(join(tmpdir(), "refann-"));
   const deps: AnnounceDeps = {
-    rows, env: { WATCHDIVE_SENDER_PHONE: PHONE, ...env },
+    rows, env: { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1", WATCHDIVE_SENDER_PHONE: PHONE, ...env },
+    mark: async (row, marker) => { row.announceMarker = marker; },
     links: (r) => ({ ...LINKS, share: `https://x.test/r/${r.refCode}` }),
     send: async (m) => void sent.push(m),
     sleep: async () => {},
@@ -418,29 +420,29 @@ async function setup(rows: AnnounceRow[], env: Record<string, string | undefined
   return { sent, dir, deps };
 }
 
-test("announce: dry run sends and writes nothing, sample address is masked", async () => {
+test("announce: dry run sends and writes nothing, response contains counts only", async () => {
   const { sent, dir, deps } = await setup([arow(), arow({ pageId: "p2", leadId: "22222222-2222-4222-8222-222222222222", email: "late@example.com", verifiedAt: "2026-11-05T00:00:00Z" })], {});
-  const result = await runAnnounce({ apply: false, releasedAt: RELEASE, receiptDir: dir }, deps);
+  const result = await runAnnounce({ apply: false, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE }, deps);
   assert.equal(sent.length, 0);
   assert.equal(result.eligible, 1);
   assert.equal(result.skipped.verified_after_release, 1);
-  assert.equal(result.sample?.to, "d***@example.com");
+  assert.equal("sample" in result, false);
   assert.equal(JSON.stringify(result).includes("diver@"), false);
 });
 
 test("announce: --apply is refused without the switch or the confirm flag", async () => {
-  const a = await setup([arow()], {});
-  assert.equal((await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: a.dir }, a.deps)).aborted, "switch_off");
+  const a = await setup([arow()], { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "0" });
+  assert.equal((await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE }, a.deps)).aborted, "switch_off");
   const b = await setup([arow()], { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" });
-  assert.equal((await runAnnounce({ apply: true, releasedAt: RELEASE, receiptDir: b.dir }, b.deps)).aborted, "confirm_missing");
-  assert.equal((await runAnnounce({ apply: true, confirm: "nope", releasedAt: RELEASE, receiptDir: b.dir }, b.deps)).aborted, "confirm_missing");
+  assert.equal((await runAnnounce({ apply: true, releasedAt: RELEASE }, b.deps)).aborted, "confirm_missing");
+  assert.equal((await runAnnounce({ apply: true, confirm: "nope", releasedAt: RELEASE }, b.deps)).aborted, "confirm_missing");
   assert.equal(a.sent.length + b.sent.length, 0);
 });
 
 test("announce: staged batches resume without duplicates; receipts hold no address", async () => {
   const rows = ["a", "b", "c"].map((id, i) => arow({ pageId: id, leadId: `3333333${i}-3333-4333-8333-333333333333`, email: `${id}@example.com`, refCode: `abcd123${i}` }));
   const { sent, dir, deps } = await setup(rows, { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" });
-  const opts = { apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: dir };
+  const opts = { apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE };
   const first = await runAnnounce({ ...opts, limit: 1 }, deps);
   assert.equal(first.sent, 1);
   const second = await runAnnounce(opts, deps);
@@ -450,7 +452,7 @@ test("announce: staged batches resume without duplicates; receipts hold no addre
   const third = await runAnnounce(opts, deps);
   assert.equal(third.sent, 0);
   assert.equal(third.alreadySent, 3);
-  const receipt = await readFile(join(dir, `${REFERRAL_PROGRAM_ID}-announce.jsonl`), "utf8");
+  const receipt = rows.map((row) => row.announceMarker).join("\n");
   assert.equal(receipt.includes("@"), false);
 });
 
@@ -459,20 +461,21 @@ test("announce: --only self-test ignores the release gate and uses its own key",
     [arow({ email: "me@example.com", verifiedAt: "2026-11-09T00:00:00Z" }), arow({ pageId: "p9", email: "other@example.com" })],
     { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" },
   );
-  const result = await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, only: "ME@example.com", receiptDir: dir }, deps);
+  const result = await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, only: "ME@example.com" }, deps);
   assert.equal(result.sent, 1);
   assert.equal(sent[0].to, "me@example.com");
   assert.ok(sent[0].idempotencyKey.endsWith("-selftest"));
+  assert.equal(deps.rows[0].announceMarker, undefined);
 });
 
-test("announce: a clear failure is retried; an intent with no outcome is held", async () => {
+test("announce: any provider failure retains intent and is never resent", async () => {
   const { sent, dir, deps } = await setup([arow()], { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" });
   const failing = { ...deps, send: async () => { throw new Error("boom"); } };
-  const opts = { apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: dir };
+  const opts = { apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE };
   assert.equal((await runAnnounce(opts, failing)).failed, 1);
-  // A clear failure may be retried.
-  assert.equal((await runAnnounce(opts, deps)).sent, 1);
-  assert.equal(sent.length, 1);
+  // Provider errors can hide an accepted send.
+  assert.equal((await runAnnounce(opts, deps)).heldUnresolved, 1);
+  assert.equal(sent.length, 0);
 });
 
 test("announce: a crash after intent holds the recipient instead of resending", async () => {
@@ -480,8 +483,8 @@ test("announce: a crash after intent holds the recipient instead of resending", 
   const { createHash } = await import("node:crypto");
   const { writeFile } = await import("node:fs/promises");
   const k = createHash("sha256").update(announceKey(arow())).digest("hex").slice(0, 24);
-  await writeFile(join(dir, `${REFERRAL_PROGRAM_ID}-announce.jsonl`), `${JSON.stringify({ k, state: "intent" })}\n`);
-  const result = await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: dir }, deps);
+  deps.rows[0].announceMarker = `intent 2026-10-22T00:00:00Z ${k}`;
+  const result = await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE }, deps);
   assert.equal(result.heldUnresolved, 1);
   assert.equal(sent.length, 0);
 });
@@ -497,7 +500,7 @@ test("announce: rows opted out by a marker, or sharing an opted-out inbox, are s
     arow({ pageId: "f", email: "ok@example.com" }),
   ];
   const { sent, dir, deps } = await setup(rows, { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" });
-  const result = await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: dir }, deps);
+  const result = await runAnnounce({ apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE }, deps);
   assert.deepEqual(sent.map((m) => m.to), ["ok@example.com"]);
   assert.equal(result.skipped.unsubscribed, 3);
   assert.equal(result.skipped.unsubscribed_address, 1);
@@ -509,16 +512,16 @@ test("announce: a Korean recipient without WATCHDIVE_SENDER_PHONE aborts the who
   const rows = [arow({ pageId: "en", email: "en@example.com", signupLocale: "en" }), arow()];
   const { sent, dir, deps } = await setup(rows, { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" });
   const noPhone = { ...deps, env: { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" } };
-  const opts = { apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE, receiptDir: dir };
+  const opts = { apply: true, confirm: REFERRAL_PROGRAM_ID, releasedAt: RELEASE };
   const refused = await runAnnounce(opts, noPhone);
   assert.equal(refused.aborted, "sender_phone_missing");
   assert.equal(refused.senderPhoneMissing, 1);
   assert.equal(sent.length, 0);
   await assert.rejects(stat(join(dir, `${REFERRAL_PROGRAM_ID}-announce.jsonl`)));
-  // Dry run reports it and still samples the renderable English row.
+  // Dry run reports the missing phone without sending.
   const dry = await runAnnounce({ ...opts, apply: false }, noPhone);
   assert.equal(dry.senderPhoneMissing, 1);
-  assert.equal(dry.sample?.locale, "en");
+  assert.equal(dry.planned, 2);
   // With the phone set both go out; the ko one carries the prefix.
   const ok = await runAnnounce(opts, deps);
   assert.equal(ok.sent, 2);

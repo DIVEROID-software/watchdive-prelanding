@@ -35,7 +35,7 @@ node --experimental-strip-types --env-file=.env scripts/referral-schema.ts
 node --experimental-strip-types --env-file=.env scripts/referral-schema.ts --apply
 ```
 
-끝난 뒤 인자 없이 한 번 더 실행해 `applied` 없이 `ok: true` 인지 봅니다. 여덟 열(닉네임, 리더보드 동의, 닉네임 숨김, 알림 끄기, 마지막 알림 수, 알림 시각, 보상 검수, `Referral leader reached at`)입니다.
+끝난 뒤 인자 없이 한 번 더 실행해 `applied` 없이 `ok: true` 인지 봅니다. 아홉 열(닉네임, 리더보드 동의, 닉네임 숨김, 알림 끄기, 마지막 알림 수, 알림 시각, 보상 검수, `Referral leader reached at`, `Referral announce`)입니다.
 
 ## 3. 스위치 끈 채로 Production 배포
 
@@ -78,22 +78,21 @@ Preview에서 이상하면 Production 스위치를 켜지 않습니다.
 
 ## 8. 기존 인증자 공지 (본인 → 20명 → 나머지)
 
-공개 시각은 스위치를 켠 시각의 ISO 값으로 고정합니다. 아래 `<T>` 에 그 값을 넣고, 세 명령에 같은 값을 씁니다.
+공개 시각 `<T>`는 스위치를 켠 ISO 시각으로 고정합니다. 먼저 `Referral announce` rich_text 열을 스키마 도구로 추가·확인합니다. Mac mini의 비공개 JSON 설정 `<config>`에 기존 reminder cron bearer secret을 `secret` 필드로 사용합니다(권한 600). 서명 비밀키는 Vercel에 그대로 둡니다.
 
 ```
-node --experimental-strip-types --env-file=.env scripts/referral-announce.ts --help
-node --experimental-strip-types --env-file=.env scripts/referral-announce.ts --released-at <T>
-node --experimental-strip-types --env-file=.env scripts/referral-announce.ts --released-at <T> --only <오너 이메일> --apply --confirm wd-buddy-invite-20261022
+node --experimental-strip-types scripts/referral-announce.ts --help
+node --experimental-strip-types scripts/referral-announce.ts --config <config> --released-at <T> --confirm wd-buddy-invite-20261022 --dry-run
+node --experimental-strip-types scripts/referral-announce.ts --config <config> --released-at <T> --only <오너 이메일> --apply --confirm wd-buddy-invite-20261022
 ```
 
-첫 명령은 사용법만 출력합니다. 둘째는 건수와 가려진 샘플이며 메일이 나가지 않습니다. 셋째로 오너 메일이 7번과 같은 `(광고)` 형식으로 도착한 뒤에만:
+둘째는 건수만 확인하며 발송하지 않습니다. dry-run도 서버 스위치 ON과 confirm이 필요합니다. 셋째로 오너 메일이 7번의 `(광고)` 형식으로 도착한 뒤에만 아래를 실행하고 결과 검수 후 반복합니다(기본 20명, 최대 200명).
 
 ```
-node --experimental-strip-types --env-file=.env scripts/referral-announce.ts --released-at <T> --limit 20 --apply --confirm wd-buddy-invite-20261022
-node --experimental-strip-types --env-file=.env scripts/referral-announce.ts --released-at <T> --apply --confirm wd-buddy-invite-20261022
+node --experimental-strip-types scripts/referral-announce.ts --config <config> --released-at <T> --limit 20 --apply --confirm wd-buddy-invite-20261022
 ```
 
-실패 건은 같은 명령을 다시 실행하면 재시도됩니다. `heldUnresolved` 가 있으면 그 주소는 다시 보내지 말고 Resend에서 접수 여부만 확인합니다.
+Notion `Referral announce`에 intent가 먼저 기록되고 접수 후 sent로 바뀝니다. 표시가 있는 주소는 다시 발송하지 않습니다. 자기 테스트도 그 주소를 건너뜁니다. `heldUnresolved`는 결과 불명확 보류이므로 Notion/Resend에서 확인하며 표시를 지우지 않습니다. 자기 테스트는 별도 키이고 행을 표시하지 않으니, 표시가 없는 주소는 완료 후 반복하지 않습니다. Mac mini에서만 단독 실행하고, HTTP 실패로 남은 `.referral-announce.lock`은 서버 종료 및 영수증 확인 후에만 수동 해제합니다. 자세한 제한은 운영 문서의 공지 절차를 따릅니다.
 
 ## 9. 친구 참여 알림 켜기
 

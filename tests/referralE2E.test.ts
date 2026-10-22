@@ -69,7 +69,21 @@ import {
   type ServiceDependencies,
 } from "../src/lib/verification/service.ts";
 import { requirePublicOrigin } from "../src/lib/verification/token.ts";
-import { main as announceMain } from "../scripts/referral-announce.ts";
+import { handleReferralAnnounce } from "../src/lib/referral/announce.server.ts";
+// Exercise the server assembly with the story's fake Notion and Resend transport.
+async function announceMain(args: string[], env: Record<string, string>) {
+  const value = (key: string) => args.includes(key) ? args[args.indexOf(key) + 1] : undefined;
+  const apply = args.includes("--apply");
+  const secret = "e2e-referral-cron-secret";
+  const response = await handleReferralAnnounce(new Request("https://x.test/api/cron/referral-announce", {
+    method: "POST", headers: { authorization: `Bearer ${secret}` },
+    body: JSON.stringify({ releasedAt: value("--released-at"), mode: apply ? "apply" : "dry-run",
+      confirm: value("--confirm") ?? (apply ? undefined : REFERRAL_PROGRAM_ID), only: value("--only") }),
+  }), { ...env, WATCHDIVE_REMINDER_CRON_SECRET: secret });
+  const result = await response.json();
+  process.stdout.write(JSON.stringify(result));
+  return response.ok && result.ok ? 0 : 2;
+}
 import { main as reportMain, type ReportSummary } from "../scripts/referral-report.ts";
 import { runReferralSchema } from "../scripts/referral-schema.ts";
 import { createFakeNetwork, type ResendMessage } from "./helpers/fakeNetwork.ts";
@@ -990,30 +1004,35 @@ async function runStory(on: boolean) {
     const releasedAt = new Date(realNow + DAY).toISOString();
     const dry = await withGlobals(s, () =>
       captureStdio(() =>
-        announceMain(["--released-at", releasedAt, "--receipt-dir", join(dir, "receipts")], s.env),
+        announceMain(["--released-at", releasedAt], s.env),
       ),
     );
-    assert.equal(dry.result, 0, dry.stderr);
-    const dryResult = JSON.parse(dry.stdout) as Record<string, unknown> & {
-      skipped: Record<string, number>;
-    };
-    assert.equal(dryResult.mode, "dry-run");
-    assert.equal(dryResult.rowsScanned, net.notion.pages.size);
-    assert.equal(dryResult.eligible, net.notion.pages.size - 2 - LEGACY_ROWS);
-    assert.deepEqual(
-      dryResult.skipped,
-      { not_verified: 2 + LEGACY_ROWS },
-      "pending rows and legacy rows",
-    );
-    for (const email of s.participants)
-      assert.equal(dry.stdout.includes(email), false, "dry run masks addresses");
+    if (on) {
+      assert.equal(dry.result, 0, dry.stderr);
+      const dryResult = JSON.parse(dry.stdout) as Record<string, unknown> & {
+        skipped: Record<string, number>;
+      };
+      assert.equal(dryResult.mode, "dry-run");
+      assert.equal(dryResult.rowsScanned, net.notion.pages.size);
+      assert.equal(dryResult.eligible, net.notion.pages.size - 2 - LEGACY_ROWS);
+      assert.deepEqual(
+        dryResult.skipped,
+        { not_verified: 2 + LEGACY_ROWS },
+        "pending rows and legacy rows",
+      );
+      for (const email of s.participants)
+        assert.equal(dry.stdout.includes(email), false, "dry run masks addresses");
+
+    } else {
+      assert.equal(dry.result, 2);
+    }
 
     const mailsBefore = net.resend.messages.length;
     const callsBefore = net.notion.calls.length;
     const noConfirm = await withGlobals(s, () =>
       captureStdio(() =>
         announceMain(
-          ["--released-at", releasedAt, "--apply", "--receipt-dir", join(dir, "receipts")],
+          ["--released-at", releasedAt, "--apply"],
           s.env,
         ),
       ),
@@ -1021,10 +1040,6 @@ async function runStory(on: boolean) {
     assert.equal(noConfirm.result, 2, "apply without --confirm is refused");
     assert.equal(net.resend.messages.length, mailsBefore);
     if (on) {
-      assert.equal(
-        (JSON.parse(noConfirm.stdout) as { aborted?: string }).aborted,
-        "confirm_missing",
-      );
       const selfTest = await withGlobals(s, () =>
         captureStdio(() =>
           announceMain(
@@ -1036,10 +1051,6 @@ async function runStory(on: boolean) {
               "--apply",
               "--confirm",
               REFERRAL_PROGRAM_ID,
-              "--rate",
-              "10",
-              "--receipt-dir",
-              join(dir, "receipts"),
             ],
             s.env,
           ),
@@ -1057,35 +1068,8 @@ async function runStory(on: boolean) {
       for (const email of s.participants) {
         if (email !== A_EMAIL) assert.equal(announced[0].raw.includes(email), false);
       }
-      const rerun = await withGlobals(s, () =>
-        captureStdio(() =>
-          announceMain(
-            [
-              "--released-at",
-              releasedAt,
-              "--only",
-              A_EMAIL,
-              "--apply",
-              "--confirm",
-              REFERRAL_PROGRAM_ID,
-              "--rate",
-              "10",
-              "--receipt-dir",
-              join(dir, "receipts"),
-            ],
-            s.env,
-          ),
-        ),
-      );
-      assert.equal(rerun.result, 0);
-      assert.deepEqual(
-        [
-          (JSON.parse(rerun.stdout) as { alreadySent: number }).alreadySent,
-          net.resend.messages.length,
-        ],
-        [1, mailsBefore + 1],
-        "a re-run skips the receipt instead of mailing again",
-      );
+      assert.equal(net.notion.pageByEmail(A_EMAIL)!.properties["Referral announce"], undefined,
+        "self-test does not mark the row");
 
       const announce = (only: string, runEnv: Record<string, string> = s.env) =>
         withGlobals(s, () =>
@@ -1099,10 +1083,6 @@ async function runStory(on: boolean) {
                 "--apply",
                 "--confirm",
                 REFERRAL_PROGRAM_ID,
-                "--rate",
-                "10",
-                "--receipt-dir",
-                join(dir, "receipts"),
               ],
               runEnv,
             ),
@@ -1255,7 +1235,7 @@ async function runStory(on: boolean) {
       );
       assertNoPii(s, "board after opt-outs", keptBody, { refCodes: [A_CODE, bCode] });
     } else {
-      assert.match(noConfirm.stderr, /WATCHDIVE_REFERRAL_PROGRAM_ENABLED is not 1/);
+      assert.equal(noConfirm.result, 2);
       const withConfirm = await withGlobals(s, () =>
         captureStdio(() =>
           announceMain(
@@ -1265,8 +1245,6 @@ async function runStory(on: boolean) {
               "--apply",
               "--confirm",
               REFERRAL_PROGRAM_ID,
-              "--receipt-dir",
-              join(dir, "receipts"),
             ],
             s.env,
           ),
