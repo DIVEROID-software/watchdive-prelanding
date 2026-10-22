@@ -608,7 +608,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
   // null until the server says the program is live. While null or off, this
   // card renders exactly as before Buddy Invite existed.
   const [credited, setCredited] = useState<number | null>(null);
-  const [programOn, setProgramOn] = useState(false);
+  const programOn = useReferralProgramEnabled();
   const joinedTemplate = count === 1 ? m.referral.joinedOne : m.referral.joinedOther;
   const [joinedBefore, , joinedAfter] = splitHighlightedCopy(joinedTemplate, "{count}");
   const shareUrl =
@@ -621,17 +621,16 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
       .then((r) => alive && setCount(r.count))
       .catch(() => {});
     // Progress counts credited (verified, eligible) friends, not raw sign-ups.
-    getReferralProgress({ data: { refCode } })
+    if (programOn) getReferralProgress({ data: { refCode } })
       .then((r) => {
         if (!alive || !r.enabled) return;
         setCredited(r.credited);
-        setProgramOn(true);
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [refCode]);
+  }, [refCode, programOn]);
 
   const progressText = (() => {
     if (!programOn || credited === null) return null;

@@ -31,7 +31,7 @@ async function load<T>(file: string): Promise<T> {
     format: "esm",
     platform: "node",
     jsx: "automatic",
-    external: ["react", "react/jsx-runtime", "react-dom"],
+    external: ["react", "react/jsx-runtime", "react-dom", "@tanstack/react-router"],
     alias: { "@": join(root, "src") },
     logLevel: "silent",
   });
@@ -152,7 +152,7 @@ const successSource = indexSource.slice(
 );
 
 test("referral card off state keeps today's text and count behaviour", () => {
-  assert.match(successSource, /useState\(false\)/); // programOn starts false
+  assert.match(successSource, /const programOn = useReferralProgramEnabled\(\);/);
   assert.match(successSource, /if \(!alive \|\| !r\.enabled\) return;/);
   // Old copy and the raw-count line are still the default branch.
   assert.match(successSource, /programOn \? card\.title : m\.referral\.buddyTitle/);
@@ -219,4 +219,15 @@ test("invited banner shows the inviter-visibility note only with the program on"
     indexSource.indexOf("function ReferralSuccess("),
   );
   assert.match(welcome, /\{programOn && \(\s*<span[^>]*>\s*\{referralCopy\(locale\)\.card\.invitedNote\}/);
+});
+
+
+test("OFF hydration and the success card do not add Buddy Invite RPCs", () => {
+  const lb = readFileSync(join(root, "src/components/referral/LeaderboardSection.tsx"), "utf8");
+  // The loader already resolved the switch. Re-fetching it after mount adds
+  // a network request even when every new visible element is hidden.
+  assert.doesNotMatch(lb, /getReferralProgramState|programState/);
+  assert.match(lb, /return useLandingPriceClaim\(\) !== undefined;/);
+  assert.match(successSource, /if \(programOn\) getReferralProgress\(/);
+  assert.match(successSource, /\[refCode, programOn\]/);
 });

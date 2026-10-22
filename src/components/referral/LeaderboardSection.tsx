@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { getReferralProgramState } from "@/lib/api/referral.functions";
+import { useLandingPriceClaim } from "@/lib/i18n/use-current-locale";
 import { formatNumber, getDateTimeFormatter, localizePath, type Locale } from "@/lib/i18n/locale";
 import type { LeaderboardSnapshot } from "@/lib/referral/contract";
 import { fill, referralCopy } from "@/lib/referral/copy";
@@ -103,24 +103,9 @@ function isSnapshot(value: unknown): value is LeaderboardSnapshot {
   );
 }
 
-/**
- * Whether the program is live, asked once per page load. False until the server
- * answers yes, so a disabled (or unreachable) program adds nothing to the page.
- */
-let programState: Promise<boolean> | null = null;
+/** Use the server-resolved switch; OFF hydration must not add an RPC. */
 export function useReferralProgramEnabled(): boolean {
-  const [on, setOn] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    programState ??= getReferralProgramState()
-      .then((r) => r.enabled === true)
-      .catch(() => false);
-    void programState.then((v) => alive && setOn(v));
-    return () => {
-      alive = false;
-    };
-  }, []);
-  return on;
+  return useLandingPriceClaim() !== undefined;
 }
 
 /**
