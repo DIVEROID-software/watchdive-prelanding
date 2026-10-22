@@ -37,6 +37,7 @@ const allPresent = {
     "Referral notified count": { type: "number" },
     "Referral notified at": { type: "date" },
     "Referral leader reached at": { type: "date" },
+    "Referral share code": { type: "rich_text" },
     "Referral reward review": {
       type: "select",
       select: { options: ["pending", "approved", "rejected"].map((name) => ({ id: name, name })) },
@@ -45,11 +46,11 @@ const allPresent = {
   },
 };
 
-test("schema plan: everything missing adds nine properties and nothing else", () => {
+test("schema plan: everything missing adds ten properties and nothing else", () => {
   const plan = planReferralSchema({ properties: { Email: { type: "title" } } });
   assert.equal(plan.ok, true);
-  assert.equal(plan.actions.filter((a) => a.op === "add").length, 9);
-  assert.equal(Object.keys(plan.patch!.properties).length, 9);
+  assert.equal(plan.actions.filter((a) => a.op === "add").length, 10);
+  assert.equal(Object.keys(plan.patch!.properties).length, 10);
   assert.deepEqual(plan.patch!.properties["Referral leader reached at"], { date: {} });
   assert.equal("Email" in plan.patch!.properties, false);
   const select = plan.patch!.properties["Referral reward review"] as { select: { options: { name: string }[] } };

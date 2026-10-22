@@ -3,9 +3,10 @@
 // ({placeholders}); never type a threshold, stock, price or hour count here.
 //
 // Placeholders: {count} {remaining} {tier} {hours} {price} {seats} {stock}
-// {winners} {cap} {noticeDays} {min} {max} {hoursFirst} {hoursBuddy} {nickname}
-// {time} {reward} {lightValue} {prizeValue} {ageKr} {ageOther} {longStop}
-// {deliveryBy} {taxFree} {taxRate} — {longStop} and {deliveryBy} arrive already
+// {winners} {cap} {noticeDays} {min} {max} {codeMin} {codeMax} {hoursFirst}
+// {hoursBuddy} {nickname} {time} {reward} {lightValue} {prizeValue} {ageKr}
+// {ageOther} {longStop} {deliveryBy} {taxFree} {taxRate} — {longStop} and
+// {deliveryBy} arrive already
 // written in the locale's own date form (values.ts), so each sentence around
 // them is phrased for that form.
 //
@@ -76,10 +77,42 @@ export type ReferralCopy = {
       string
     >;
   };
+  /** Memorable code. Secondary to the invite link. Bounds come from {codeMin}/{codeMax}. */
+  shareCode: {
+    mine: string;
+    copy: string;
+    copied: string;
+    claimSummary: string;
+    claimHelp: string;
+    claimPlaceholder: string;
+    claimButton: string;
+    claimSaving: string;
+    claimSaved: string;
+    lockedNote: string;
+    onceNote: string;
+    signupAsk: string;
+    signupPlaceholder: string;
+    signupUnknown: string;
+    errors: Record<
+      | "too_short"
+      | "too_long"
+      | "invalid_chars"
+      | "contact_info"
+      | "link"
+      | "reserved"
+      | "profanity"
+      | "taken"
+      | "locked"
+      | "already_claimed"
+      | "failed",
+      string
+    >;
+  };
   mail: {
     welcomeSubject: string;
     welcomeHeading: string;
     welcomeIntro: string;
+    welcomeCode: string;
     welcomeTiersHeading: string;
     welcomeButton: string;
     welcomeFallback: string;
@@ -189,11 +222,41 @@ const en: ReferralCopy = {
       failed: "Could not save. Please try again.",
     },
   },
+  shareCode: {
+    mine: "Your referral code",
+    copy: "Copy code",
+    copied: "Code copied",
+    claimSummary: "Choose your own code",
+    claimHelp: "{codeMin}–{codeMax} letters or numbers. You can set this once. No email, phone number, link, or a name that could pass for WatchDive staff.",
+    claimPlaceholder: "JEJUBUDDY",
+    claimButton: "Save code",
+    claimSaving: "Saving…",
+    claimSaved: "Code saved",
+    lockedNote: "Friends have already joined with this code, so it stays as it is.",
+    onceNote: "This is the code you chose. It stays as it is.",
+    signupAsk: "Have a referral code?",
+    signupPlaceholder: "Referral code",
+    signupUnknown: "We couldn’t match that code, so this signup isn’t linked to a friend. You’re still on the list.",
+    errors: {
+      too_short: "Use at least {codeMin} characters.",
+      too_long: "Use at most {codeMax} characters.",
+      invalid_chars: "Use only letters and numbers.",
+      contact_info: "A code cannot contain an email address or phone number.",
+      link: "A code cannot contain a link.",
+      reserved: "Please choose a different code.",
+      profanity: "Please choose a different code.",
+      taken: "That code is already in use. Please choose another.",
+      locked: "Friends have already joined with this code, so it stays as it is.",
+      already_claimed: "You already chose a code, and it stays as it is.",
+      failed: "Could not save the code. Please try again.",
+    },
+  },
   mail: {
     welcomeSubject: "You’re on the WatchDive waitlist — invite your buddies",
     welcomeHeading: "You’re on the WatchDive waitlist",
     welcomeIntro:
       "Your email is confirmed. Share your personal invite link with divers you know. Rewards grow with every friend who confirms their email.",
+    welcomeCode: "Your referral code:",
     welcomeTiersHeading: "Buddy Invite rewards",
     welcomeButton: "Share my invite link",
     welcomeFallback: "Or copy this link:",
@@ -235,7 +298,7 @@ const en: ReferralCopy = {
       {
         heading: "How to take part",
         paragraphs: [
-          "Join the WatchDive waitlist and confirm your email. You then get a personal invite link. A friend counts for you when they open your link, join the waitlist and confirm their email.",
+          "Join the WatchDive waitlist and confirm your email. You then get a personal invite link and a referral code. A friend counts for you when they join through your link or enter your code, then confirm their email.",
           "No purchase or Kickstarter pledge is needed to take part or to win. You use the early-bird price link only if you choose to back the campaign.",
         ],
       },
@@ -243,7 +306,7 @@ const en: ReferralCopy = {
         heading: "What counts",
         paragraphs: [
           "Only friends who confirm their email count, and each person counts once. A repeat sign-up by the same person does not count again, including the same mailbox written another way (for example a Gmail address with dots or a +tag, or the same name at icloud.com, me.com and mac.com). Your own address never counts for you, and inviting yourself with another address breaks the fair play rules. Addresses from known disposable email services and sign-ups flagged as abusive do not count either.",
-          "A friend counts for the invite link they used when they first joined the waitlist. Joining again through another link does not move them to another inviter or count them twice. Friends who joined through your link and confirmed their email before the program started on 22 October 2026 also count.",
+          "A friend counts for the invite link or referral code they used when they first joined the waitlist. Joining again through another link or code does not move them to another inviter or count them twice. Friends who joined through your link and confirmed their email before the program started on 22 October 2026 also count.",
           "At most {cap} friends are counted for one person per day, by the day each friend confirms (Korea Standard Time). Friends over that limit are not counted, and they do not carry over to a later day. Friends who confirm after the closing time do not count.",
           "Counts are frozen at the closing time. A counted friend who later unsubscribes from WatchDive emails still counts. A friend who asks us to delete their data, or whom we remove in review, stops counting.",
           "Once you reach a tier and we tell you, you keep it unless our review finds that the friends who got you there broke these rules. If you unsubscribe from WatchDive emails yourself, you keep the rewards you have reached, but we can no longer send you the early launch email or notices.",
@@ -384,11 +447,41 @@ const ko: ReferralCopy = {
       failed: "저장하지 못했어요. 다시 시도해 주세요.",
     },
   },
+  shareCode: {
+    mine: "내 추천 코드",
+    copy: "코드 복사",
+    copied: "코드를 복사했어요",
+    claimSummary: "나만의 코드 정하기",
+    claimHelp: "영문과 숫자 {codeMin}–{codeMax}자. 한 번만 정할 수 있어요. 이메일, 전화번호, 링크, WatchDive 직원으로 보일 수 있는 이름은 쓸 수 없습니다.",
+    claimPlaceholder: "BUSANDIVE",
+    claimButton: "코드 저장",
+    claimSaving: "저장 중…",
+    claimSaved: "코드를 저장했어요",
+    lockedNote: "이 코드로 이미 친구가 신청해서 코드는 그대로 유지됩니다.",
+    onceNote: "직접 정한 코드입니다. 이 코드는 바뀌지 않습니다.",
+    signupAsk: "추천 코드가 있나요?",
+    signupPlaceholder: "추천 코드",
+    signupUnknown: "코드를 찾지 못해 이번 신청은 친구에게 연결되지 않았어요. 알림 신청은 그대로 완료됩니다.",
+    errors: {
+      too_short: "{codeMin}자 이상 입력해 주세요.",
+      too_long: "{codeMax}자 이하로 입력해 주세요.",
+      invalid_chars: "영문과 숫자만 사용할 수 있어요.",
+      contact_info: "코드에 이메일 주소나 전화번호를 넣을 수 없어요.",
+      link: "코드에 링크를 넣을 수 없어요.",
+      reserved: "다른 코드를 골라 주세요.",
+      profanity: "다른 코드를 골라 주세요.",
+      taken: "이미 쓰이고 있는 코드예요. 다른 코드를 골라 주세요.",
+      locked: "이 코드로 이미 친구가 신청해서 코드는 그대로 유지됩니다.",
+      already_claimed: "이미 코드를 정했고, 그 코드는 바뀌지 않습니다.",
+      failed: "코드를 저장하지 못했어요. 다시 시도해 주세요.",
+    },
+  },
   mail: {
     welcomeSubject: "WatchDive 출시 알림 신청 완료 · 버디를 초대하세요",
     welcomeHeading: "WatchDive 출시 알림 신청이 완료되었습니다",
     welcomeIntro:
       "이메일 인증이 완료되었습니다. 아래 내 초대 링크를 아는 다이버에게 공유해 주세요. 이메일 인증을 마친 친구가 늘어날수록 혜택이 커집니다.",
+    welcomeCode: "내 추천 코드:",
     welcomeTiersHeading: "버디 초대 혜택",
     welcomeButton: "내 초대 링크 공유하기",
     welcomeFallback: "링크를 직접 복사하려면:",
@@ -430,7 +523,7 @@ const ko: ReferralCopy = {
       {
         heading: "참여 방법",
         paragraphs: [
-          "WatchDive 출시 알림을 신청하고 이메일을 인증하면 내 초대 링크가 생깁니다. 친구가 내 링크로 들어와 알림을 신청하고 이메일 인증까지 마치면 1명으로 집계됩니다.",
+          "WatchDive 출시 알림을 신청하고 이메일을 인증하면 내 초대 링크와 추천 코드가 생깁니다. 친구가 내 링크로 들어오거나 내 추천 코드를 입력해 알림을 신청하고 이메일 인증까지 마치면 1명으로 집계됩니다.",
           "참여와 당첨에 구매나 Kickstarter 후원 조건은 없습니다. 얼리버드 가격 링크는 캠페인을 후원하기로 했을 때만 사용합니다.",
         ],
       },
@@ -438,7 +531,7 @@ const ko: ReferralCopy = {
         heading: "집계 기준",
         paragraphs: [
           "이메일 인증을 마친 친구만 집계하며, 한 사람은 한 번만 집계합니다. 같은 사람이 다시 가입해도 다시 집계하지 않으며, 같은 메일함을 다른 형태로 쓴 주소(예: 점(.)이나 +태그를 넣은 Gmail 주소, 같은 이름의 icloud.com·me.com·mac.com 주소)도 같은 사람으로 봅니다. 본인 주소는 집계하지 않으며, 본인의 다른 주소로 자신을 초대하는 것은 공정한 참여 규칙 위반입니다. 알려진 일회용 이메일 서비스의 주소와 부정 가입으로 표시된 가입도 집계하지 않습니다.",
-          "친구는 처음 알림을 신청할 때 사용한 초대 링크의 주인에게 집계됩니다. 나중에 다른 링크로 다시 신청해도 초대한 사람이 바뀌거나 두 번 집계되지 않습니다. 프로그램 시작일(2026년 10월 22일) 전에 내 링크로 신청해 이메일 인증을 마친 친구도 집계합니다.",
+          "친구는 처음 알림을 신청할 때 사용한 초대 링크 또는 추천 코드의 주인에게 집계됩니다. 나중에 다른 링크나 코드로 다시 신청해도 초대한 사람이 바뀌거나 두 번 집계되지 않습니다. 프로그램 시작일(2026년 10월 22일) 전에 내 링크로 신청해 이메일 인증을 마친 친구도 집계합니다.",
           "한 사람당 하루 최대 {cap}명까지 집계하며, 날짜는 친구가 인증한 날(한국 시간 기준)로 셉니다. 이 한도를 넘은 친구는 집계하지 않으며, 다음 날로 넘어가지도 않습니다. 마감 시각 이후에 인증한 친구도 집계하지 않습니다.",
           "집계는 마감 시각 기준으로 확정됩니다. 집계된 친구가 나중에 WatchDive 메일 수신을 거부해도 계속 집계되지만, 정보 삭제를 요청했거나 검수에서 제외된 친구는 집계에서 빠집니다.",
           "단계를 달성했다는 안내를 받은 뒤에는, 검수에서 그 단계를 채운 가입이 규칙 위반으로 확인되지 않는 한 그 단계가 유지됩니다. 본인이 WatchDive 메일 수신을 거부해도 이미 달성한 혜택은 유지되지만, 오픈 소식 선공개 메일과 알림은 보내드릴 수 없습니다.",
@@ -579,11 +672,41 @@ const zhCN: ReferralCopy = {
       failed: "保存失败，请重试。",
     },
   },
+  shareCode: {
+    mine: "你的推荐码",
+    copy: "复制推荐码",
+    copied: "推荐码已复制",
+    claimSummary: "自定义推荐码",
+    claimHelp: "使用 {codeMin}–{codeMax} 位字母或数字。只能设置一次。不能包含邮箱、电话号码、链接，或可能被误认为 WatchDive 工作人员的名称。",
+    claimPlaceholder: "SANYADIVE",
+    claimButton: "保存推荐码",
+    claimSaving: "保存中…",
+    claimSaved: "推荐码已保存",
+    lockedNote: "已有朋友用这个推荐码加入，所以它保持不变。",
+    onceNote: "这是你选定的推荐码，会一直保持不变。",
+    signupAsk: "有推荐码吗？",
+    signupPlaceholder: "推荐码",
+    signupUnknown: "没有找到这个推荐码，所以这次报名没有记到朋友名下。你的报名仍然有效。",
+    errors: {
+      too_short: "请至少输入 {codeMin} 个字符。",
+      too_long: "最多 {codeMax} 个字符。",
+      invalid_chars: "只能使用字母和数字。",
+      contact_info: "推荐码不能包含邮箱地址或电话号码。",
+      link: "推荐码不能包含链接。",
+      reserved: "请换一个推荐码。",
+      profanity: "请换一个推荐码。",
+      taken: "这个推荐码已经有人使用，请另选一个。",
+      locked: "已有朋友用这个推荐码加入，所以它保持不变。",
+      already_claimed: "你已经选定了推荐码，它会保持不变。",
+      failed: "推荐码没有保存成功，请重试。",
+    },
+  },
   mail: {
     welcomeSubject: "你已加入 WatchDive 候补名单 — 邀请你的潜伴",
     welcomeHeading: "你已加入 WatchDive 候补名单",
     welcomeIntro:
       "邮箱已确认。把你的专属邀请链接分享给认识的潜伴吧。每多一位朋友确认邮箱，奖励就更进一步。",
+    welcomeCode: "你的推荐码：",
     welcomeTiersHeading: "潜伴邀请奖励",
     welcomeButton: "分享我的邀请链接",
     welcomeFallback: "或复制此链接：",
@@ -625,7 +748,7 @@ const zhCN: ReferralCopy = {
       {
         heading: "参与方式",
         paragraphs: [
-          "加入 WatchDive 候补名单并确认邮箱后，你会获得专属邀请链接。朋友打开你的链接、加入候补名单并确认邮箱后，即计为你邀请的 1 位朋友。",
+          "加入 WatchDive 候补名单并确认邮箱后，你会获得专属邀请链接和推荐码。朋友通过你的链接加入，或输入你的推荐码后加入候补名单并确认邮箱，即计为你邀请的 1 位朋友。",
           "参与和获奖均无需购买，也无需在 Kickstarter 上支持。早鸟价链接仅在你自己决定支持众筹时使用。",
         ],
       },
@@ -633,7 +756,7 @@ const zhCN: ReferralCopy = {
         heading: "计入规则",
         paragraphs: [
           "只有确认邮箱的朋友才会计入，且每人只计入一次。同一人重复报名不会再次计入，同一邮箱的其他写法也视为同一人（例如加了点号或 +标签的 Gmail 地址，或 icloud.com、me.com、mac.com 下的同名地址）。你自己的邮箱不会计入，用自己的其他邮箱邀请自己也违反公平参与规则。来自已知一次性邮箱服务的地址，以及被标记为滥用的报名，同样不计入。",
-          "朋友计入其首次加入候补名单时所用邀请链接的主人名下。之后通过其他链接再次报名，既不会改记到别人名下，也不会重复计入。在活动开始日（2026 年 10 月 22 日）之前通过你的链接加入并确认邮箱的朋友，同样计入。",
+          "朋友计入其首次加入候补名单时所用邀请链接或推荐码的主人名下。之后通过其他链接或推荐码再次报名，既不会改记到别人名下，也不会重复计入。在活动开始日（2026 年 10 月 22 日）之前通过你的链接加入并确认邮箱的朋友，同样计入。",
           "每人每天最多计入 {cap} 位朋友，按朋友确认邮箱的日期计算（以韩国标准时间为准）。超出上限的朋友不计入，也不会顺延到之后的日期。截止时间之后才确认邮箱的朋友不计入。",
           "计入数以截止时间为准锁定。已计入的朋友之后即使退订 WatchDive 邮件，仍继续计入；但要求删除个人数据、或在审核中被剔除的朋友不再计入。",
           "你达成某个等级并收到我们的通知后，该等级将一直保留，除非审核发现帮你达成该等级的朋友违反了本规则。你自己退订 WatchDive 邮件后，已达成的奖励仍会保留，但我们将无法再给你发送提前的开启通知邮件和邀请通知。",
@@ -773,11 +896,41 @@ const zhTW: ReferralCopy = {
       failed: "儲存失敗，請再試一次。",
     },
   },
+  shareCode: {
+    mine: "你的推薦碼",
+    copy: "複製推薦碼",
+    copied: "推薦碼已複製",
+    claimSummary: "自訂推薦碼",
+    claimHelp: "使用 {codeMin}–{codeMax} 個字母或數字。只能設定一次。不能包含電子郵件、電話號碼、連結，或可能被誤認為 WatchDive 工作人員的名稱。",
+    claimPlaceholder: "KENTING",
+    claimButton: "儲存推薦碼",
+    claimSaving: "儲存中…",
+    claimSaved: "推薦碼已儲存",
+    lockedNote: "已有朋友用這個推薦碼加入，所以它維持不變。",
+    onceNote: "這是你選定的推薦碼，會一直維持不變。",
+    signupAsk: "有推薦碼嗎？",
+    signupPlaceholder: "推薦碼",
+    signupUnknown: "找不到這個推薦碼，所以這次登記沒有記到朋友名下。你的登記仍然有效。",
+    errors: {
+      too_short: "請至少輸入 {codeMin} 個字元。",
+      too_long: "最多 {codeMax} 個字元。",
+      invalid_chars: "只能使用字母和數字。",
+      contact_info: "推薦碼不能包含電子郵件地址或電話號碼。",
+      link: "推薦碼不能包含連結。",
+      reserved: "請換一個推薦碼。",
+      profanity: "請換一個推薦碼。",
+      taken: "這個推薦碼已經有人使用，請另選一個。",
+      locked: "已有朋友用這個推薦碼加入，所以它維持不變。",
+      already_claimed: "你已經選定了推薦碼，它會維持不變。",
+      failed: "推薦碼沒有儲存成功，請再試一次。",
+    },
+  },
   mail: {
     welcomeSubject: "你已加入 WatchDive 等候名單 — 邀請你的潛伴",
     welcomeHeading: "你已加入 WatchDive 等候名單",
     welcomeIntro:
       "信箱已確認。把你的專屬邀請連結分享給認識的潛伴吧。每多一位朋友確認信箱，獎勵就更進一步。",
+    welcomeCode: "你的推薦碼：",
     welcomeTiersHeading: "潛伴邀請獎勵",
     welcomeButton: "分享我的邀請連結",
     welcomeFallback: "或複製此連結：",
@@ -819,7 +972,7 @@ const zhTW: ReferralCopy = {
       {
         heading: "參加方式",
         paragraphs: [
-          "加入 WatchDive 等候名單並確認信箱後，你會取得專屬邀請連結。朋友開啟你的連結、加入等候名單並確認信箱後，即計為你邀請的 1 位朋友。",
+          "加入 WatchDive 等候名單並確認信箱後，你會取得專屬邀請連結和推薦碼。朋友透過你的連結加入，或輸入你的推薦碼後加入等候名單並確認信箱，即計為你邀請的 1 位朋友。",
           "參加和得獎都不需要購買，也不需要在 Kickstarter 上贊助。早鳥價連結只在你自己決定贊助募資時使用。",
         ],
       },
@@ -827,7 +980,7 @@ const zhTW: ReferralCopy = {
         heading: "計入規則",
         paragraphs: [
           "只有確認信箱的朋友才會計入，且每人只計入一次。同一人重複登記不會再次計入，同一信箱的其他寫法也視為同一人（例如加了句點或 +標籤的 Gmail 地址，或 icloud.com、me.com、mac.com 下的同名地址）。你自己的信箱不會計入，用自己的其他信箱邀請自己也違反公平參加規則。來自已知拋棄式信箱服務的地址，以及被標記為濫用的登記，同樣不計入。",
-          "朋友會計入其首次加入等候名單時所用邀請連結的主人名下。之後透過其他連結再次登記，既不會改記到別人名下，也不會重複計入。在活動開始日（2026 年 10 月 22 日）之前透過你的連結加入並確認信箱的朋友，同樣計入。",
+          "朋友會計入其首次加入等候名單時所用邀請連結或推薦碼的主人名下。之後透過其他連結或推薦碼再次登記，既不會改記到別人名下，也不會重複計入。在活動開始日（2026 年 10 月 22 日）之前透過你的連結加入並確認信箱的朋友，同樣計入。",
           "每人每天最多計入 {cap} 位朋友，依朋友確認信箱的日期計算（以韓國標準時間為準）。超出上限的朋友不計入，也不會順延到之後的日期。截止時間之後才確認信箱的朋友不計入。",
           "計入數以截止時間為準鎖定。已計入的朋友之後即使取消訂閱 WatchDive 信件，仍繼續計入；但要求刪除個人資料、或在審核中被剔除的朋友不再計入。",
           "你達成某個等級並收到我們的通知後，該等級會一直保留，除非審核發現幫你達成該等級的朋友違反本規則。你自己取消訂閱 WatchDive 信件後，已達成的獎勵仍會保留，但我們將無法再寄給你提前的開跑通知信和邀請通知。",
@@ -969,11 +1122,41 @@ const ja: ReferralCopy = {
       failed: "保存できませんでした。もう一度お試しください。",
     },
   },
+  shareCode: {
+    mine: "あなたの紹介コード",
+    copy: "コードをコピー",
+    copied: "コードをコピーしました",
+    claimSummary: "自分のコードを決める",
+    claimHelp: "英数字 {codeMin}～{codeMax} 文字。設定できるのは一度だけです。メールアドレス、電話番号、リンク、WatchDive のスタッフに見間違われる名前は使えません。",
+    claimPlaceholder: "OKINAWA",
+    claimButton: "コードを保存",
+    claimSaving: "保存しています…",
+    claimSaved: "コードを保存しました",
+    lockedNote: "このコードですでに友だちが登録しているため、コードはこのままです。",
+    onceNote: "ご自身で決めたコードです。このコードはこのままです。",
+    signupAsk: "紹介コードはお持ちですか？",
+    signupPlaceholder: "紹介コード",
+    signupUnknown: "このコードは見つからなかったため、今回の登録は友だちにはつながりません。ウェイトリストへの登録自体は完了しています。",
+    errors: {
+      too_short: "{codeMin} 文字以上で入力してください。",
+      too_long: "{codeMax} 文字以内で入力してください。",
+      invalid_chars: "使えるのは英数字だけです。",
+      contact_info: "コードにメールアドレスや電話番号は入れられません。",
+      link: "コードにリンクは入れられません。",
+      reserved: "別のコードを選んでください。",
+      profanity: "別のコードを選んでください。",
+      taken: "このコードはすでに使われています。別のコードを選んでください。",
+      locked: "このコードですでに友だちが登録しているため、コードはこのままです。",
+      already_claimed: "コードはすでに決まっていて、このまま変更できません。",
+      failed: "コードを保存できませんでした。もう一度お試しください。",
+    },
+  },
   mail: {
     welcomeSubject: "WatchDive のウェイトリストに登録されました — バディを招待しましょう",
     welcomeHeading: "WatchDive のウェイトリストに登録されました",
     welcomeIntro:
       "メールアドレスの確認が完了しました。あなた専用の招待リンクを、知っているダイバーにシェアしましょう。メールアドレスを確認した友だちが増えるほど、特典が増えていきます。",
+    welcomeCode: "あなたの紹介コード：",
     welcomeTiersHeading: "バディ招待の特典",
     welcomeButton: "招待リンクをシェアする",
     welcomeFallback: "またはこのリンクをコピー：",
@@ -1016,7 +1199,7 @@ const ja: ReferralCopy = {
       {
         heading: "参加方法",
         paragraphs: [
-          "WatchDive のウェイトリストに登録してメールアドレスを確認すると、あなた専用の招待リンクが届きます。友だちがそのリンクを開いてウェイトリストに登録し、メールアドレスを確認すると、あなたの招待1人としてカウントされます。",
+          "WatchDive のウェイトリストに登録してメールアドレスを確認すると、あなた専用の招待リンクと紹介コードが届きます。友だちがそのリンクから登録するか、紹介コードを入力して登録し、メールアドレスを確認すると、あなたの招待1人としてカウントされます。",
           "参加や当選に、購入や Kickstarter での支援は必要ありません。早割価格のリンクは、キャンペーンを支援すると決めた場合にのみお使いいただくものです。",
         ],
       },
@@ -1024,7 +1207,7 @@ const ja: ReferralCopy = {
         heading: "カウント対象",
         paragraphs: [
           "カウントされるのは、メールアドレスを確認した友だちだけで、1人につき1回だけカウントされます。同一人物が再度登録してもカウントは増えず、同じメールボックスを別の書き方にしたアドレス（例：ドットや +タグを付けた Gmail アドレス、icloud.com・me.com・mac.com の同じ名前のアドレス）も同一人物として扱います。ご自身のアドレスはカウントされず、ご自身の別のアドレスで自分を招待することはフェアプレーのルール違反です。既知の使い捨てメールサービスのアドレスと、不正と判断された登録もカウントされません。",
-          "友だちは、最初にウェイトリストに登録したときに使った招待リンクの持ち主にカウントされます。あとから別のリンクで登録し直しても、カウント先が変わったり、二重にカウントされたりすることはありません。プログラム開始日（2026年10月22日）より前にあなたのリンクから登録し、メールアドレスを確認した友だちもカウントされます。",
+          "友だちは、最初にウェイトリストに登録したときに使った招待リンクまたは紹介コードの持ち主にカウントされます。あとから別のリンクやコードで登録し直しても、カウント先が変わったり、二重にカウントされたりすることはありません。プログラム開始日（2026年10月22日）より前にあなたのリンクから登録し、メールアドレスを確認した友だちもカウントされます。",
           "カウントは1人につき1日最大{cap}人までで、日付は友だちがメールアドレスを確認した日（韓国標準時）で数えます。上限を超えた友だちはカウントされず、翌日以降に繰り越されることもありません。終了日時より後にメールアドレスを確認した友だちもカウントされません。",
           "カウントは終了日時の時点で確定します。カウントされた友だちが後で WatchDive のメール配信を停止しても、引き続きカウントされます。ただし、データの削除を依頼した友だちや、審査で除外された友だちはカウントされなくなります。",
           "段階を達成し、そのお知らせを受け取ったあとは、その段階に到達させた友だちのルール違反が審査で判明しないかぎり、その段階はそのまま有効です。ご自身が WatchDive のメール配信を停止しても、達成済みの特典は有効ですが、開始のお知らせメールの先行配信や招待のお知らせはお送りできなくなります。",
@@ -1169,11 +1352,41 @@ const es: ReferralCopy = {
       failed: "No se ha podido guardar. Inténtalo de nuevo.",
     },
   },
+  shareCode: {
+    mine: "Tu código de invitación",
+    copy: "Copiar código",
+    copied: "Código copiado",
+    claimSummary: "Elige tu propio código",
+    claimHelp: "{codeMin}–{codeMax} letras o números. Solo puedes elegirlo una vez. Sin correo, teléfono, enlace ni un nombre que pueda parecer de alguien del equipo de WatchDive.",
+    claimPlaceholder: "COZUMEL",
+    claimButton: "Guardar código",
+    claimSaving: "Guardando…",
+    claimSaved: "Código guardado",
+    lockedNote: "Ya hay amigos que se unieron con este código, así que se queda como está.",
+    onceNote: "Este es el código que elegiste. Se queda como está.",
+    signupAsk: "¿Tienes un código de invitación?",
+    signupPlaceholder: "Código de invitación",
+    signupUnknown: "No encontramos ese código, así que esta inscripción no queda ligada a un amigo. Sigues en la lista.",
+    errors: {
+      too_short: "Usa al menos {codeMin} caracteres.",
+      too_long: "Usa como máximo {codeMax} caracteres.",
+      invalid_chars: "Usa solo letras y números.",
+      contact_info: "Un código no puede incluir un correo ni un teléfono.",
+      link: "Un código no puede incluir un enlace.",
+      reserved: "Elige otro código.",
+      profanity: "Elige otro código.",
+      taken: "Ese código ya está en uso. Elige otro.",
+      locked: "Ya hay amigos que se unieron con este código, así que se queda como está.",
+      already_claimed: "Ya elegiste un código y se queda como está.",
+      failed: "No se pudo guardar el código. Inténtalo de nuevo.",
+    },
+  },
   mail: {
     welcomeSubject: "Ya estás en la lista de espera de WatchDive — invita a tus compañeros",
     welcomeHeading: "Ya estás en la lista de espera de WatchDive",
     welcomeIntro:
       "Tu correo está confirmado. Comparte tu enlace de invitación personal con buceadores que conozcas. Cada amigo que confirma su correo te acerca a la siguiente recompensa.",
+    welcomeCode: "Tu código de invitación:",
     welcomeTiersHeading: "Recompensas por invitar",
     welcomeButton: "Compartir mi enlace",
     welcomeFallback: "O copia este enlace:",
@@ -1215,7 +1428,7 @@ const es: ReferralCopy = {
       {
         heading: "Cómo participar",
         paragraphs: [
-          "Únete a la lista de espera de WatchDive y confirma tu correo: recibirás un enlace de invitación personal. Un amigo cuenta para ti cuando abre tu enlace, se une a la lista de espera y confirma su correo.",
+          "Únete a la lista de espera de WatchDive y confirma tu correo: recibirás un enlace de invitación personal y un código. Un amigo cuenta para ti cuando se une con tu enlace o escribe tu código, y luego confirma su correo.",
           "No hace falta comprar nada ni apoyar la campaña en Kickstarter para participar ni para ganar. El enlace con el precio early bird solo se usa si decides apoyar la campaña.",
         ],
       },
@@ -1223,7 +1436,7 @@ const es: ReferralCopy = {
         heading: "Qué cuenta",
         paragraphs: [
           "Solo cuentan los amigos que confirman su correo, y cada persona cuenta una sola vez. Si la misma persona vuelve a registrarse, no cuenta de nuevo, aunque use el mismo buzón escrito de otra forma (por ejemplo, una dirección de Gmail con puntos o con una +etiqueta, o el mismo nombre en icloud.com, me.com y mac.com). Tu propia dirección nunca cuenta para ti, e invitarte a ti mismo con otra dirección incumple las reglas de juego limpio. Tampoco cuentan las direcciones de servicios conocidos de correo desechable ni los registros marcados como abusivos.",
-          "Cada amigo cuenta para el enlace de invitación con el que se unió por primera vez a la lista de espera. Si vuelve a registrarse con otro enlace, no pasa a contar para otra persona ni cuenta dos veces. También cuentan los amigos que se unieron con tu enlace y confirmaron su correo antes del inicio del programa, el 22 de octubre de 2026.",
+          "Cada amigo cuenta para el enlace de invitación o el código que usó la primera vez que se unió a la lista de espera. Si vuelve a registrarse con otro enlace o código, no pasa a contar para otra persona ni cuenta dos veces. También cuentan los amigos que se unieron con tu enlace y confirmaron su correo antes del inicio del programa, el 22 de octubre de 2026.",
           "Se cuentan como máximo {cap} amigos por persona y día, según el día en que cada amigo confirma su correo (hora estándar de Corea). Los amigos que superen ese límite no se cuentan, tampoco en días posteriores. Los amigos que confirmen después de la hora de cierre no cuentan.",
           "Los recuentos quedan fijados a la hora de cierre. Un amigo ya contado que más adelante se da de baja de los correos de WatchDive sigue contando; deja de contar si nos pide borrar sus datos o si lo retiramos en la revisión.",
           "Cuando alcanzas un nivel y te lo comunicamos, lo conservas, salvo que la revisión demuestre que los amigos con los que lo alcanzaste incumplían estas bases. Si te das de baja de los correos de WatchDive, conservas las recompensas ya alcanzadas, pero ya no podremos enviarte el correo anticipado del lanzamiento ni los avisos.",
@@ -1368,11 +1581,41 @@ const fr: ReferralCopy = {
       failed: "Enregistrement impossible. Veuillez réessayer.",
     },
   },
+  shareCode: {
+    mine: "Votre code de parrainage",
+    copy: "Copier le code",
+    copied: "Code copié",
+    claimSummary: "Choisissez votre code",
+    claimHelp: "{codeMin} à {codeMax} lettres ou chiffres. Vous ne pouvez le choisir qu’une fois. Pas d’adresse e-mail, de numéro de téléphone, de lien, ni d’un nom qui pourrait passer pour celui de l’équipe WatchDive.",
+    claimPlaceholder: "MARSEILLE",
+    claimButton: "Enregistrer le code",
+    claimSaving: "Enregistrement…",
+    claimSaved: "Code enregistré",
+    lockedNote: "Des amis ont déjà rejoint avec ce code, il reste donc tel quel.",
+    onceNote: "Voici le code que vous avez choisi. Il reste tel quel.",
+    signupAsk: "Vous avez un code de parrainage ?",
+    signupPlaceholder: "Code de parrainage",
+    signupUnknown: "Ce code est introuvable, donc cette inscription n’est pas reliée à un ami. Vous êtes tout de même sur la liste.",
+    errors: {
+      too_short: "Utilisez au moins {codeMin} caractères.",
+      too_long: "Utilisez au plus {codeMax} caractères.",
+      invalid_chars: "Utilisez seulement des lettres et des chiffres.",
+      contact_info: "Un code ne peut pas contenir une adresse e-mail ou un numéro de téléphone.",
+      link: "Un code ne peut pas contenir un lien.",
+      reserved: "Choisissez un autre code.",
+      profanity: "Choisissez un autre code.",
+      taken: "Ce code est déjà utilisé. Choisissez-en un autre.",
+      locked: "Des amis ont déjà rejoint avec ce code, il reste donc tel quel.",
+      already_claimed: "Vous avez déjà choisi un code, et il reste tel quel.",
+      failed: "Le code n’a pas pu être enregistré. Veuillez réessayer.",
+    },
+  },
   mail: {
     welcomeSubject: "Vous êtes sur la liste d’attente WatchDive — invitez vos binômes",
     welcomeHeading: "Vous êtes sur la liste d’attente WatchDive",
     welcomeIntro:
       "Votre adresse e-mail est confirmée. Partagez votre lien d’invitation personnel avec des plongeurs que vous connaissez. Chaque ami qui confirme son e-mail vous rapproche de la récompense suivante.",
+    welcomeCode: "Votre code de parrainage :",
     welcomeTiersHeading: "Vos récompenses",
     welcomeButton: "Partager mon lien",
     welcomeFallback: "Ou copiez ce lien :",
@@ -1414,7 +1657,7 @@ const fr: ReferralCopy = {
       {
         heading: "Comment participer",
         paragraphs: [
-          "Inscrivez-vous sur la liste d’attente WatchDive et confirmez votre adresse e-mail : vous recevez alors un lien d’invitation personnel. Un ami compte pour vous lorsqu’il ouvre votre lien, s’inscrit sur la liste d’attente et confirme son adresse e-mail.",
+          "Inscrivez-vous sur la liste d’attente WatchDive et confirmez votre adresse e-mail : vous recevez alors un lien d’invitation personnel et un code de parrainage. Un ami compte pour vous lorsqu’il s’inscrit avec votre lien ou saisit votre code, puis confirme son adresse e-mail.",
           "Aucun achat ni aucune contribution Kickstarter n’est nécessaire pour participer ou gagner. Le lien au tarif early bird ne sert que si vous décidez de soutenir la campagne.",
         ],
       },
@@ -1422,7 +1665,7 @@ const fr: ReferralCopy = {
         heading: "Ce qui compte",
         paragraphs: [
           "Seuls les amis qui confirment leur adresse e-mail comptent, et chaque personne ne compte qu’une fois. Une nouvelle inscription de la même personne ne compte pas, même si elle utilise la même boîte de réception sous une autre forme (par exemple une adresse Gmail avec des points ou un +libellé, ou le même nom chez icloud.com, me.com et mac.com). Votre propre adresse ne compte jamais pour vous, et vous inviter vous-même avec une autre adresse enfreint les règles de fair-play. Les adresses de services d’e-mail jetable connus et les inscriptions signalées comme abusives ne comptent pas non plus.",
-          "Un ami compte pour le lien d’invitation qu’il a utilisé lors de sa première inscription sur la liste d’attente. S’il se réinscrit via un autre lien, il ne change pas de parrain et ne compte pas deux fois. Les amis inscrits via votre lien qui ont confirmé leur adresse avant le début du programme, le 22 octobre 2026, comptent aussi.",
+          "Un ami compte pour le lien d’invitation ou le code de parrainage qu’il a utilisé lors de sa première inscription sur la liste d’attente. S’il se réinscrit via un autre lien ou un autre code, il ne change pas de parrain et ne compte pas deux fois. Les amis inscrits via votre lien qui ont confirmé leur adresse avant le début du programme, le 22 octobre 2026, comptent aussi.",
           "Au maximum {cap} amis sont comptés par personne et par jour, selon le jour où chaque ami confirme son adresse (heure normale de Corée). Les amis au-delà de cette limite ne sont pas comptés, ni ce jour-là ni plus tard. Les amis qui confirment après l’heure de clôture ne comptent pas.",
           "Les compteurs sont figés à l’heure de clôture. Un ami déjà compté qui se désinscrit ensuite des e-mails WatchDive reste compté ; il cesse de compter s’il nous demande de supprimer ses données ou si nous le retirons lors de la vérification.",
           "Une fois qu’un palier est atteint et que nous vous l’avons annoncé, vous le conservez, sauf si notre vérification établit que les amis qui vous l’ont fait atteindre enfreignaient ce règlement. Si vous vous désinscrivez des e-mails WatchDive, vous conservez les récompenses déjà obtenues, mais nous ne pourrons plus vous envoyer l’e-mail de lancement en avance ni les notifications.",
@@ -1567,11 +1810,41 @@ const de: ReferralCopy = {
       failed: "Speichern hat nicht geklappt. Bitte versuch es noch einmal.",
     },
   },
+  shareCode: {
+    mine: "Dein Empfehlungscode",
+    copy: "Code kopieren",
+    copied: "Code kopiert",
+    claimSummary: "Wähl deinen eigenen Code",
+    claimHelp: "{codeMin}–{codeMax} Buchstaben oder Zahlen. Du kannst ihn nur einmal festlegen. Keine E-Mail, keine Telefonnummer, kein Link und kein Name, der nach dem WatchDive-Team aussehen könnte.",
+    claimPlaceholder: "ROTESMEER",
+    claimButton: "Code speichern",
+    claimSaving: "Wird gespeichert…",
+    claimSaved: "Code gespeichert",
+    lockedNote: "Mit diesem Code sind schon Freunde beigetreten, deshalb bleibt er so.",
+    onceNote: "Das ist der Code, den du gewählt hast. Er bleibt so.",
+    signupAsk: "Hast du einen Empfehlungscode?",
+    signupPlaceholder: "Empfehlungscode",
+    signupUnknown: "Diesen Code haben wir nicht gefunden, deshalb ist diese Anmeldung keinem Freund zugeordnet. Du stehst trotzdem auf der Liste.",
+    errors: {
+      too_short: "Nimm mindestens {codeMin} Zeichen.",
+      too_long: "Nimm höchstens {codeMax} Zeichen.",
+      invalid_chars: "Nur Buchstaben und Zahlen.",
+      contact_info: "Ein Code darf keine E-Mail-Adresse und keine Telefonnummer enthalten.",
+      link: "Ein Code darf keinen Link enthalten.",
+      reserved: "Bitte wähl einen anderen Code.",
+      profanity: "Bitte wähl einen anderen Code.",
+      taken: "Dieser Code ist schon vergeben. Bitte wähl einen anderen.",
+      locked: "Mit diesem Code sind schon Freunde beigetreten, deshalb bleibt er so.",
+      already_claimed: "Du hast schon einen Code gewählt, und der bleibt so.",
+      failed: "Der Code konnte nicht gespeichert werden. Bitte versuch es noch einmal.",
+    },
+  },
   mail: {
     welcomeSubject: "Du bist auf der WatchDive-Warteliste — lade deine Buddys ein",
     welcomeHeading: "Du bist auf der WatchDive-Warteliste",
     welcomeIntro:
       "Deine E-Mail-Adresse ist bestätigt. Teile deinen persönlichen Einladungslink mit Tauchern, die du kennst. Jeder Freund, der seine E-Mail-Adresse bestätigt, bringt dich der nächsten Belohnung näher.",
+    welcomeCode: "Dein Empfehlungscode:",
     welcomeTiersHeading: "Deine Belohnungen",
     welcomeButton: "Einladungslink teilen",
     welcomeFallback: "Oder kopiere diesen Link:",
@@ -1613,7 +1886,7 @@ const de: ReferralCopy = {
       {
         heading: "So nimmst du teil",
         paragraphs: [
-          "Trag dich auf die WatchDive-Warteliste ein und bestätige deine E-Mail-Adresse. Danach bekommst du deinen persönlichen Einladungslink. Ein Freund zählt für dich, wenn er deinen Link öffnet, sich auf die Warteliste einträgt und seine E-Mail-Adresse bestätigt.",
+          "Trag dich auf die WatchDive-Warteliste ein und bestätige deine E-Mail-Adresse. Danach bekommst du deinen persönlichen Einladungslink und einen Empfehlungscode. Ein Freund zählt für dich, wenn er sich über deinen Link oder mit deinem Code einträgt und seine E-Mail-Adresse bestätigt.",
           "Für die Teilnahme und einen Gewinn ist weder ein Kauf noch eine Unterstützung auf Kickstarter nötig. Den Link zum Early-Bird-Preis nutzt du nur, wenn du dich entscheidest, die Kampagne zu unterstützen.",
         ],
       },
@@ -1621,7 +1894,7 @@ const de: ReferralCopy = {
         heading: "Was zählt",
         paragraphs: [
           "Es zählen nur Freunde, die ihre E-Mail-Adresse bestätigen, und jede Person zählt nur einmal. Meldet sich dieselbe Person erneut an, zählt sie nicht noch einmal – auch nicht mit demselben Postfach in anderer Schreibweise (zum Beispiel eine Gmail-Adresse mit Punkten oder einem +Zusatz oder derselbe Name bei icloud.com, me.com und mac.com). Deine eigene Adresse zählt nie für dich, und wer sich mit einer anderen eigenen Adresse selbst einlädt, verstößt gegen die Fair-Play-Regeln. Adressen bekannter Wegwerf-E-Mail-Dienste und als missbräuchlich markierte Anmeldungen zählen ebenfalls nicht.",
-          "Ein Freund zählt für den Einladungslink, über den er sich zum ersten Mal auf die Warteliste eingetragen hat. Trägt er sich über einen anderen Link erneut ein, zählt er weder für jemand anderen noch doppelt. Auch Freunde, die sich vor dem Programmstart am 22. Oktober 2026 über deinen Link eingetragen und ihre E-Mail-Adresse bestätigt haben, zählen.",
+          "Ein Freund zählt für den Einladungslink oder den Empfehlungscode, über den er sich zum ersten Mal auf die Warteliste eingetragen hat. Trägt er sich über einen anderen Link oder Code erneut ein, zählt er weder für jemand anderen noch doppelt. Auch Freunde, die sich vor dem Programmstart am 22. Oktober 2026 über deinen Link eingetragen und ihre E-Mail-Adresse bestätigt haben, zählen.",
           "Pro Person werden höchstens {cap} Freunde pro Tag gezählt; maßgeblich ist der Tag, an dem der Freund bestätigt (koreanische Standardzeit). Freunde über diesem Limit werden nicht gezählt, auch nicht an einem späteren Tag. Freunde, die erst nach dem Endzeitpunkt bestätigen, zählen nicht.",
           "Die Zahlen werden zum Endzeitpunkt eingefroren. Ein bereits gezählter Freund, der sich später von den WatchDive-E-Mails abmeldet, zählt weiter. Wer uns bittet, seine Daten zu löschen, oder bei der Prüfung entfernt wird, zählt nicht mehr.",
           "Hast du eine Stufe erreicht und wir haben es dir mitgeteilt, behältst du sie – es sei denn, unsere Prüfung ergibt, dass die Freunde, mit denen du sie erreicht hast, gegen diese Bedingungen verstoßen haben. Meldest du dich selbst von den WatchDive-E-Mails ab, behältst du deine erreichten Belohnungen, wir können dir dann aber weder die frühe Start-E-Mail noch Benachrichtigungen schicken.",
@@ -1763,11 +2036,41 @@ const ptBR: ReferralCopy = {
       failed: "Não foi possível salvar. Tente de novo.",
     },
   },
+  shareCode: {
+    mine: "Seu código de indicação",
+    copy: "Copiar código",
+    copied: "Código copiado",
+    claimSummary: "Escolha seu código",
+    claimHelp: "{codeMin}–{codeMax} letras ou números. Você só pode definir isso uma vez. Sem e-mail, telefone, link ou um nome que possa parecer de alguém da equipe do WatchDive.",
+    claimPlaceholder: "FERNANDO",
+    claimButton: "Salvar código",
+    claimSaving: "Salvando…",
+    claimSaved: "Código salvo",
+    lockedNote: "Amigos já entraram com este código, então ele continua como está.",
+    onceNote: "Este é o código que você escolheu. Ele continua como está.",
+    signupAsk: "Você tem um código de indicação?",
+    signupPlaceholder: "Código de indicação",
+    signupUnknown: "Não encontramos esse código, então este cadastro não fica ligado a um amigo. Você continua na lista.",
+    errors: {
+      too_short: "Use pelo menos {codeMin} caracteres.",
+      too_long: "Use no máximo {codeMax} caracteres.",
+      invalid_chars: "Use só letras e números.",
+      contact_info: "Um código não pode ter um e-mail nem um telefone.",
+      link: "Um código não pode ter um link.",
+      reserved: "Escolha outro código.",
+      profanity: "Escolha outro código.",
+      taken: "Esse código já está em uso. Escolha outro.",
+      locked: "Amigos já entraram com este código, então ele continua como está.",
+      already_claimed: "Você já escolheu um código, e ele continua como está.",
+      failed: "Não foi possível salvar o código. Tente de novo.",
+    },
+  },
   mail: {
     welcomeSubject: "Você está na lista de espera do WatchDive — convide seus parceiros",
     welcomeHeading: "Você está na lista de espera do WatchDive",
     welcomeIntro:
       "Seu e-mail foi confirmado. Compartilhe seu link de convite pessoal com mergulhadores que você conhece. Cada amigo que confirma o e-mail deixa você mais perto da próxima recompensa.",
+    welcomeCode: "Seu código de indicação:",
     welcomeTiersHeading: "Recompensas por convite",
     welcomeButton: "Compartilhar meu link",
     welcomeFallback: "Ou copie este link:",
@@ -1809,7 +2112,7 @@ const ptBR: ReferralCopy = {
       {
         heading: "Como participar",
         paragraphs: [
-          "Entre na lista de espera do WatchDive e confirme seu e-mail para receber um link de convite pessoal. Um amigo conta para você quando abre seu link, entra na lista de espera e confirma o e-mail.",
+          "Entre na lista de espera do WatchDive e confirme seu e-mail para receber um link de convite pessoal e um código de indicação. Um amigo conta para você quando entra pelo seu link ou informa seu código, e depois confirma o e-mail.",
           "Não é preciso comprar nada nem apoiar a campanha no Kickstarter para participar ou ganhar. O link com o preço early bird só é usado se você decidir apoiar a campanha.",
         ],
       },
@@ -1817,7 +2120,7 @@ const ptBR: ReferralCopy = {
         heading: "O que conta",
         paragraphs: [
           "Só contam os amigos que confirmam o e-mail, e cada pessoa conta uma única vez. Se a mesma pessoa se cadastrar de novo, ela não conta outra vez, mesmo usando a mesma caixa de entrada escrita de outro jeito (por exemplo, um endereço do Gmail com pontos ou com uma +etiqueta, ou o mesmo nome em icloud.com, me.com e mac.com). Seu próprio endereço nunca conta para você, e convidar a si mesmo com outro endereço descumpre as regras de jogo limpo. Também não contam endereços de serviços conhecidos de e-mail descartável nem cadastros marcados como abusivos.",
-          "Cada amigo conta para o link de convite que usou na primeira vez que entrou na lista de espera. Se ele se cadastrar de novo por outro link, não passa a contar para outra pessoa nem conta duas vezes. Amigos que entraram pelo seu link e confirmaram o e-mail antes do início do programa, em 22 de outubro de 2026, também contam.",
+          "Cada amigo conta para o link de convite ou o código de indicação que usou na primeira vez que entrou na lista de espera. Se ele se cadastrar de novo por outro link ou código, não passa a contar para outra pessoa nem conta duas vezes. Amigos que entraram pelo seu link e confirmaram o e-mail antes do início do programa, em 22 de outubro de 2026, também contam.",
           "São contados no máximo {cap} amigos por pessoa por dia, pelo dia em que cada amigo confirma o e-mail (horário padrão da Coreia). Amigos acima desse limite não são contados, nem em dias seguintes. Amigos que confirmarem depois do horário de encerramento não contam.",
           "As contagens ficam congeladas no horário de encerramento. Um amigo já contado que depois cancelar a inscrição nos e-mails do WatchDive continua contando; ele deixa de contar se pedir que apaguemos os dados dele ou se for removido na análise.",
           "Depois que você alcança um nível e nós avisamos, ele continua seu, a menos que a análise mostre que os amigos que levaram você até lá descumpriram este regulamento. Se você cancelar a inscrição nos e-mails do WatchDive, mantém as recompensas já alcançadas, mas não poderemos mais enviar o e-mail de lançamento antecipado nem os avisos.",

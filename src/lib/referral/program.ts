@@ -119,6 +119,14 @@ export const LEADERBOARD_CACHE_SECONDS = 300;
 export const NICKNAME_MIN = 2;
 export const NICKNAME_MAX = 16;
 
+/**
+ * Share-code bounds (A–Z0–9, after NFKC and uppercasing). A code is the
+ * spoken form of an invite. The link stays primary. Auto codes are shorter
+ * than a ref code so the two namespaces do not collide by length.
+ */
+export const SHARE_CODE_MIN = 4;
+export const SHARE_CODE_MAX = 12;
+
 export function tiersHeld(friends: number): ReferralTier[] {
   return REFERRAL_TIERS.filter((t) => friends >= t.minFriends);
 }

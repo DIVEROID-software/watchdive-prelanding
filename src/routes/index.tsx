@@ -21,7 +21,7 @@ import {
   loadWaitlistCount,
 } from "@/lib/api/waitlist.functions";
 import { EarlyBirdRace } from "@/components/early-bird-race";
-import { getReferralProgress } from "@/lib/api/referral.functions";
+import { getMyShareCode, getReferralProgress } from "@/lib/api/referral.functions";
 import { LeaderboardSection, buddyRulesPath, useReferralProgramEnabled } from "@/components/referral/LeaderboardSection";
 import { TierList } from "@/components/referral/TierList";
 import { fill, referralCopy } from "@/lib/referral/copy";
@@ -604,6 +604,8 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
   // "Share" with no reward or price in the prefilled text.
   const share = referralShareCopy(locale);
   const [copied, setCopied] = useState(false);
+  const [myCode, setMyCode] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [count, setCount] = useState<number | null>(null);
   // null until the server says the program is live. While null or off, this
   // card renders exactly as before Buddy Invite existed.
@@ -625,6 +627,12 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
       .then((r) => {
         if (!alive || !r.enabled) return;
         setCredited(r.credited);
+      })
+      .catch(() => {});
+    if (programOn) getMyShareCode({ data: { refCode } })
+      .then((r) => {
+        if (!alive || !r.enabled) return;
+        setMyCode(r.code);
       })
       .catch(() => {});
     return () => {
@@ -719,6 +727,31 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
             </button>
           </div>
 
+          {programOn && myCode && (
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+              <p className="flex h-11 min-h-11 min-w-0 flex-1 items-center truncate text-sm font-semibold uppercase tracking-wide">
+                {referralCopy(locale).shareCode.mine} {myCode}
+              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(myCode);
+                    setCodeCopied(true);
+                    setTimeout(() => setCodeCopied(false), 2000);
+                  } catch {
+                    /* clipboard unavailable — the code stays on screen */
+                  }
+                }}
+                className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-sm font-semibold text-[#F6FAFC] hover:brightness-110"
+              >
+                {codeCopied
+                  ? referralCopy(locale).shareCode.copied
+                  : referralCopy(locale).shareCode.copy}
+              </button>
+            </div>
+          )}
+
           {programOn && (
             <>
               {/* Collapsed: open, the five reward rows add ~600px on a phone and
@@ -803,8 +836,11 @@ function CheckInboxCard({
   onAllowMeasurement,
   onDeclineMeasurement,
   phoneOptIn,
+  shareNote,
 }: {
   phoneOptIn?: React.ReactNode;
+  /** Set when a typed code could not be matched. Signup already succeeded. */
+  shareNote?: string;
   message: string;
   email: string;
   onResend: () => void;
@@ -903,6 +939,7 @@ function CheckInboxCard({
         </button>
       </div>
       <p className="mt-2 text-xs leading-relaxed text-white/65">{message}</p>
+      {shareNote && <p className="mt-1 text-xs leading-relaxed text-white/60">{shareNote}</p>}
       {onAllowMeasurement && (
         <MeasurementAsk onAllow={onAllowMeasurement} onDecline={onDeclineMeasurement} />
       )}
@@ -932,6 +969,17 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const [phoneAdded, setPhoneAdded] = useState(false);
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
+  // A link ref (?ref / wd_ref) wins over a typed code. Hidden until that read,
+  // so the disclosure never flashes for someone who already has a link.
+  const programOn = useReferralProgramEnabled();
+  const [linkRef, setLinkRef] = useState<string | undefined>(undefined);
+  const [refReady, setRefReady] = useState(false);
+  const [typedCode, setTypedCode] = useState("");
+  const [shareNote, setShareNote] = useState("");
+  useEffect(() => {
+    setLinkRef(getRef());
+    setRefReady(true);
+  }, []);
   const formStartSent = useRef(false); // FormStart once per form instance
   // Decided once, when the inbox card appears: asking is for browsers that
   // have not answered yet in a country where measurement is opt-in.
@@ -1149,6 +1197,11 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         phone: phone.trim() && smsConsent ? normalizePhone(phone, phoneCountry) || undefined : undefined,
         source: id,
         referredBy: getRef(),
+        // Omitted while the program is off, and omitted when a link ref is
+        // already stored, so the signup body matches the pre-code payload.
+        ...(programOn && refReady && !getRef() && typedCode.trim()
+          ? { shareCode: typedCode.trim() }
+          : {}),
         // First touch, not this click: the URL here is whatever the visitor
         // last navigated to, which for a scrolled page is nothing at all.
         attribution: getAttribution(),
@@ -1270,6 +1323,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     return (
       <CheckInboxCard
         message={pending}
+        shareNote={shareNote || undefined}
         phoneOptIn={<PhoneOptInCard key={handle} credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} />}
         email={email}
         resending={loading}
@@ -1322,6 +1376,11 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           // must not be able to widen it.
           const submitEventId = newMetaEventId();
           const res = await submit(submitEventId);
+          setShareNote(
+            res && "shareCodeNote" in res && res.shareCodeNote === "ignored"
+              ? referralCopy(locale).shareCode.signupUnknown
+              : "",
+          );
           setAskMeasurement(
             res.status === "pending" &&
               !hp.trim() &&
@@ -1431,6 +1490,30 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           )}
         </button>
       </div>
+
+      {programOn && refReady && !linkRef && (
+        <details className="text-sm text-white/80">
+          <summary className="block cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+            <span className="inline-flex min-h-11 items-center underline decoration-white/40 underline-offset-4">
+              {referralCopy(locale).shareCode.signupAsk}
+            </span>
+          </summary>
+          <label className="mt-1 block">
+            <span className="sr-only">{referralCopy(locale).shareCode.signupPlaceholder}</span>
+            <input
+              id={`${id}-share-code`}
+              value={typedCode}
+              maxLength={64}
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={referralCopy(locale).shareCode.signupPlaceholder}
+              onChange={(event) => setTypedCode(event.target.value)}
+              className="h-11 w-full rounded-lg bg-white/95 px-3 text-sm uppercase tracking-wide text-[color:var(--color-deep-2)] outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)]"
+            />
+          </label>
+        </details>
+      )}
 
       <div id={`${id}-experiment-note`} className="wd-experiment-copy wd-experiment-note">
         <p className="font-semibold">{copy.reassurance}</p>

@@ -139,8 +139,12 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // into a <details>, the rules link gets a 44px target, and the invited
   // banner gains one muted line. Switch-off DOM is pixel-identical to main
   // (full-page diff 0 at 390/1280px in ko/en/de/ja).
+  // 2026-10-22: memorable share codes, program-on only. The verified card
+  // gains a code row, and each signup form gains a closed disclosure under
+  // the email field and submit button. Both stay out of the tree while the
+  // program is off, so the switch-off DOM matches the previous pin.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "c76ad0464ccb95cfae150c4b9912a437e568ec1ebab0394d8876c411d03344e4");
+  assert.equal(digest, "c44af5d7e96c212e0ead238edbccc4ce3352982c198617bb6d64525a052d64cf");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

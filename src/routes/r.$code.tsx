@@ -7,7 +7,13 @@
 //
 // The redirect is server-side so the landing page still sees the attribution in
 // the query string it already reads, with no client-side flash and no JS.
+//
+// While Buddy Invite is off, this is the 8-character redirect and nothing else.
+// While it is on, a memorable share code resolves to its owner's ref code.
+// The Notion modules load only in that branch.
 import { createFileRoute } from "@tanstack/react-router";
+
+import { referralProgramEnabled } from "@/lib/referral/program";
 
 function sanitizeRef(value: string | undefined): string | undefined {
   const code = (value ?? "")
@@ -18,23 +24,35 @@ function sanitizeRef(value: string | undefined): string | undefined {
   return /^[a-z0-9]{8}$/.test(code) ? code : undefined;
 }
 
+function redirect(location: string): Response {
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: location,
+      "Cache-Control": "no-store",
+      "Referrer-Policy": "no-referrer",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
+}
+
 export const Route = createFileRoute("/r/$code")({
   server: {
     handlers: {
-      GET: ({ params }) => {
-        const code = sanitizeRef(params.code);
-        // An unreadable code still lands the visitor on the page; only the
-        // attribution is dropped. `Location` is built from a fixed path and a
-        // validated 8-character code, so it can never leave this origin.
-        return new Response(null, {
-          status: 302,
-          headers: {
-            Location: code ? `/?ref=${code}` : "/",
-            "Cache-Control": "no-store",
-            "Referrer-Policy": "no-referrer",
-            "X-Robots-Tag": "noindex, nofollow",
-          },
+      GET: async ({ params, request }) => {
+        // Off: no Notion, same Location rule as before share codes existed.
+        if (!referralProgramEnabled(process.env)) {
+          const code = sanitizeRef(params.code);
+          return redirect(code ? `/?ref=${code}` : "/");
+        }
+        const { resolveShareLinkLocation } = await import("@/lib/referral/shareLink.server");
+        const location = await resolveShareLinkLocation({
+          request,
+          home: "/",
+          raw: params.code,
+          enabled: true,
         });
+        return redirect(location);
       },
     },
   },

@@ -14,7 +14,12 @@
 import { canonicalEmail } from "../api/abuse.ts";
 import { CANONICAL_EMAIL_PROPERTY } from "../api/notionCanonicalEmail.ts";
 import { toLeadRecord, type NotionRequest } from "../verification/notionLead.ts";
-import { REFERRAL_COLUMNS, type ReferralRow, type ReferralStore } from "./contract.ts";
+import {
+  REFERRAL_COLUMNS,
+  type ReferralRow,
+  type ReferralStore,
+  type ShareCodeWrite,
+} from "./contract.ts";
 import { normalizeRefCode } from "./eligibility.ts";
 
 /** 100 rows a page; a runaway cursor stops here rather than looping forever. */
@@ -36,9 +41,62 @@ export function resetReferralSchemaCache(): void {
 
 type Properties = Record<string, unknown>;
 
+type RichPart = {
+  plain_text?: string;
+  annotations?: { code?: boolean; italic?: boolean };
+};
+
 function readText(property: unknown): string {
-  const rich = (property as { rich_text?: { plain_text?: string }[] } | undefined)?.rich_text;
+  const rich = (property as { rich_text?: RichPart[] } | undefined)?.rich_text;
   return (rich ?? []).map((part) => part.plain_text ?? "").join("");
+}
+
+/**
+ * Share-code cell. `code` (the Notion "code" style) means the person claimed
+ * it. `italic` means a signup was attributed through it. Both flags are
+ * absent on an auto-assigned code. An italic toggle in the Notion UI is a
+ * lock change; ops reset is clearing the cell.
+ */
+function readShareCode(property: unknown): { text: string; custom: boolean; locked: boolean } {
+  const rich = (property as { rich_text?: RichPart[] } | undefined)?.rich_text ?? [];
+  const text = rich
+    .map((part) => part.plain_text ?? "")
+    .join("")
+    .trim()
+    .toUpperCase();
+  return {
+    text,
+    custom: rich.some((part) => part.annotations?.code === true),
+    locked: rich.some((part) => part.annotations?.italic === true),
+  };
+}
+
+function shareCodeRichText(input: ShareCodeWrite): { rich_text: unknown[] } {
+  const code = input.code.trim().toUpperCase();
+  if (!/^[A-Z0-9]{4,12}$/.test(code)) return { rich_text: [] };
+  // Auto codes omit annotations so both flags stay false. A claim or a lock
+  // writes the standard Notion annotation keys explicitly.
+  const marked = input.custom || input.locked;
+  return {
+    rich_text: [
+      {
+        type: "text",
+        text: { content: code },
+        ...(marked
+          ? {
+              annotations: {
+                bold: false,
+                italic: input.locked,
+                strikethrough: false,
+                underline: false,
+                code: input.custom,
+                color: "default",
+              },
+            }
+          : {}),
+      },
+    ],
+  };
 }
 
 function readCheckbox(property: unknown): boolean {
@@ -106,6 +164,18 @@ export function toReferralRow(page: Record<string, unknown>): ReferralRow | unde
     ...(lead.launchMail ? { launchMail: lead.launchMail } : {}),
     ...(lead.reservationMail ? { reservationMail: lead.reservationMail } : {}),
     email: lead.email,
+    // Only when the cell is a real code. A missing column and an empty cell
+    // both leave the keys off, so older rows compare equal to today's parser.
+    ...(() => {
+      if (!(REFERRAL_COLUMNS.shareCode in properties)) return {};
+      const share = readShareCode(properties[REFERRAL_COLUMNS.shareCode]);
+      if (!/^[A-Z0-9]{4,12}$/.test(share.text)) return {};
+      return {
+        shareCode: share.text,
+        ...(share.custom ? { shareCodeCustom: true } : {}),
+        ...(share.locked ? { shareCodeLocked: true } : {}),
+      };
+    })(),
   };
 }
 
@@ -160,6 +230,28 @@ export function createNotionReferralStore(
         .filter((row): row is NonNullable<typeof row> => Boolean(row && row.refCode === code))
         .sort((a, b) => (a.pageId < b.pageId ? -1 : a.pageId > b.pageId ? 1 : 0));
       return rows[0];
+    },
+
+    async findByShareCode(shareCode) {
+      const code = shareCode.trim().toUpperCase();
+      if (!/^[A-Z0-9]{4,12}$/.test(code)) return undefined;
+      const result = await request("POST", `databases/${databaseId}/query`, {
+        filter: { property: REFERRAL_COLUMNS.shareCode, rich_text: { equals: code } },
+        page_size: 10,
+      });
+      const rows = ((result.results as Record<string, unknown>[] | undefined) ?? [])
+        .map((raw) => toReferralRow(raw))
+        .filter((row): row is NonNullable<typeof row> => Boolean(row && row.shareCode === code))
+        .sort((a, b) => (a.pageId < b.pageId ? -1 : a.pageId > b.pageId ? 1 : 0));
+      return rows[0];
+    },
+
+    async writeShareCode(pageId, input) {
+      await request("PATCH", `pages/${pageId}`, {
+        properties: {
+          [REFERRAL_COLUMNS.shareCode]: shareCodeRichText(input),
+        },
+      });
     },
 
     async writeSettings(pageId, input) {
