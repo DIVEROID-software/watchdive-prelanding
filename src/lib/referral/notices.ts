@@ -4,17 +4,11 @@
 // never who joined: the mail carries counts and tier names only. Everything
 // external is injected, so the whole pass runs in tests against fakes.
 //
-// Delivery is at-least-once with a collapse at the provider. The order is
-// send → markNotified. If the Notion write fails after Resend accepted the
-// mail, the next tick sees the same unannounced count, builds the same
-// idempotency key (`…-notice-<refCode>-<credited>`) and Resend returns the
-// first message instead of sending a second. A count that rose in between is a
-// genuinely new notice under a new key.
-//
-// The first notice that announces Dive Leader also stamps the write-once
-// `Referral leader reached at` (the exact light-order key, ledger.ts
-// `leaderInstant`) in the same PATCH as the count, and only after the
-// provider accepted the mail: a failed send records nothing.
+// Delivery claims the count in Notion BEFORE calling the provider. An unknown
+// outcome keeps that claim: a missed notice is preferred to a duplicate after
+// the provider dedupe window. Only a definitive rejection may restore it.
+// This assumes the single office Mac mini cron caller, with no overlapping
+// runs; Notion PATCH is not CAS and this is not a distributed lock.
 //
 // Before anything is read or sent, the pass checks that the program columns
 // exist (store `missingColumns`, one schema GET cached per process). Without
@@ -29,7 +23,7 @@ import { parseLaunchMarker } from "../launchMail/audience.ts";
 import { reservationCanonicalEmail } from "../reservation/emailIdentity.ts";
 import { parseReservationMarker } from "../reservation-mail/campaign.ts";
 import { conversionBlocked } from "../verification/contracts.ts";
-import { buddyUnsubscribeUrl } from "../verification/resend.ts";
+import { buddyUnsubscribeUrl, classifyDeliveryFailure } from "../verification/resend.ts";
 import type { ReferralMailer, ReferralRow, ReferralStore } from "./contract.ts";
 import { normalizeRefCode } from "./eligibility.ts";
 import { computeLedger } from "./ledger.ts";
@@ -144,7 +138,7 @@ export type ReferralNoticeResult = {
   /** Left for a later tick by the per-tick cap or the time budget. */
   deferred: number;
   sendFailed: number;
-  /** Sent, but the Notion bookkeeping failed; the next tick collapses at Resend. */
+  /** Claim or definitive-rejection rollback failed. A failed claim never sends. */
   markFailed: number;
 };
 
@@ -286,11 +280,21 @@ export async function runReferralNotices(deps: ReferralNoticeDeps): Promise<Refe
     const next = nextTier(credited);
     const crossed = tiersCrossed(announced, credited).map((tier) => tier.id);
     // Write-once: stamped only by the notice that first announces Dive
-    // Leader to a row with an empty cell; an existing stamp is never touched.
+    // Leader to a row with an empty cell; a definitive rejection rolls it back.
     const leaderReachedAt =
       crossed.includes("leader") && !row.leaderReachedAt
         ? (standing.reachedAt.leader ?? now.toISOString())
         : undefined;
+    try {
+      await deps.store.markNotified(row.pageId, {
+        count: credited,
+        at: now.toISOString(),
+        ...(leaderReachedAt ? { leaderReachedAt } : {}),
+      });
+    } catch {
+      result.markFailed++;
+      continue;
+    }
     try {
       await deps.mailer.sendReferralNotice({
         to: row.email,
@@ -304,22 +308,26 @@ export async function runReferralNotices(deps: ReferralNoticeDeps): Promise<Refe
         ...(row.signupCountry ? { signupCountry: row.signupCountry } : {}),
         idempotencyKey: noticeIdempotencyKey(standing.refCode, credited),
       });
-    } catch {
-      // The mailer already logged a fixed operation/status/reason line. The
-      // count stays unannounced, so the next tick tries again.
+    } catch (error) {
       result.sendFailed++;
+      const { status } = classifyDeliveryFailure(error);
+      // Transport failures, 5xx, malformed success and idempotency conflicts
+      // can hide an accepted delivery. Never reopen those claims.
+      if (status !== null && status >= 400 && status < 500 && status !== 408 && status !== 409) {
+        try {
+          await deps.store.markNotified(row.pageId, {
+            count: announced,
+            at: row.notifiedAt ?? new Date(0).toISOString(),
+            ...(leaderReachedAt ? { clearLeaderReachedAt: true } : {}),
+          });
+        } catch {
+          result.markFailed++;
+        }
+      }
       continue;
     }
     result.sent++;
-    try {
-      await deps.store.markNotified(row.pageId, {
-        count: credited,
-        at: now.toISOString(),
-        ...(leaderReachedAt ? { leaderReachedAt } : {}),
-      });
-    } catch {
-      result.markFailed++;
-    }
+
   }
 
   return result;

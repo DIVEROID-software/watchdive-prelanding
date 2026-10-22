@@ -192,7 +192,9 @@ export function createNotionReferralStore(
           [REFERRAL_COLUMNS.notifiedAt]: { date: { start: input.at } },
           // Write-once by the caller's contract: only named when the row's
           // cell was empty in the pass that sent the first Dive Leader notice.
-          ...(input.leaderReachedAt
+          ...(input.clearLeaderReachedAt
+            ? { [REFERRAL_COLUMNS.leaderReachedAt]: { date: null } }
+            : input.leaderReachedAt
             ? { [REFERRAL_COLUMNS.leaderReachedAt]: { date: { start: input.leaderReachedAt } } }
             : {}),
         },

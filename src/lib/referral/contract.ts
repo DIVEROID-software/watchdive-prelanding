@@ -171,13 +171,14 @@ export interface ReferralStore {
   findByRefCode(refCode: string): Promise<ReferralRow | undefined>;
   writeSettings(pageId: string, input: ReferralSettingsInput): Promise<void>;
   /**
-   * Records the announced count. `leaderReachedAt` is passed only on the
+   * Claims the notice count before sending. `leaderReachedAt` is passed only on the
    * notice that first announced Dive Leader to a row whose write-once column
-   * is still empty, and is written in the same PATCH.
+   * is still empty, and is written in the same PATCH. A definitive send rejection
+   * may restore the previous count and clear its newly claimed leader stamp.
    */
   markNotified(
     pageId: string,
-    input: { count: number; at: string; leaderReachedAt?: string },
+    input: { count: number; at: string; leaderReachedAt?: string; clearLeaderReachedAt?: boolean },
   ): Promise<void>;
   /**
    * Program columns (REFERRAL_COLUMNS) missing from the database schema, by

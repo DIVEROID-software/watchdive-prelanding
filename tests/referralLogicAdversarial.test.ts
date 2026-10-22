@@ -969,7 +969,8 @@ test("notices over 40 random ticks: once per (code,count), never to opted-out, i
           result.skippedNoOptOut +
           result.skippedInterval +
           result.deferred +
-          result.sendFailed,
+          result.sendFailed +
+          result.markFailed,
         `seed ${seed} tick ${tick}: pending accounting`,
       );
       assert.ok(result.sent <= 3);

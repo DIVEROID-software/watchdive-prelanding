@@ -101,3 +101,10 @@ node --experimental-strip-types --env-file=.env scripts/referral-report.ts --wit
 - 마감 시각 설정과 7일 전 공지.
 - 스키마 적용, 스위치 전환, 공지 발송 시작(모두 오너 확인 후 수동).
 - 친구 참여 알림은 서버 틱이 자동이지만 스위치/알림 변수가 켜져 있을 때만 동작합니다.
+
+
+### Notice delivery claims (final review, 2026-10-22)
+
+The notice pass now writes the notified count/time (and first leader instant) **before** calling the mail provider. A failed or unknown claim write sends nothing. A successful claim followed by a crash, timeout, unknown provider outcome or failed rollback stays claimed: a missed notice is preferred to a duplicate after provider idempotency retention expires. Only definitive HTTP 4xx rejection (excluding 408/409) attempts to restore the previous count/time and remove a newly claimed leader stamp. The count is therefore a delivery claim, not proof of inbox delivery; unknown outcomes may retain tiers without a delivered notice.
+
+Run notices only from the existing single office Mac mini five-minute cron caller and do not overlap it with manual/API invocations. Notion PATCH is not compare-and-swap; this claim is not a distributed lock and does not certify at-most-once across concurrent callers. Do not clear a retained claim or replay an unknown outcome without provider reconciliation. OFF still performs no referral schema/row read or write.

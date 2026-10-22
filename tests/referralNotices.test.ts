@@ -13,6 +13,7 @@ import {
   type ReferralNoticeDeps,
 } from "../src/lib/referral/notices.ts";
 import { NOTICE_MIN_INTERVAL_MS } from "../src/lib/referral/program.ts";
+import { ResendDeliveryError } from "../src/lib/verification/resend.ts";
 import { sendReferralNotices } from "../src/lib/verification/reminderCron.server.ts";
 
 const NOW = new Date("2026-10-23T12:00:00.000Z");
@@ -84,7 +85,7 @@ class FakeStore {
   }
   async markNotified(
     pageId: string,
-    input: { count: number; at: string; leaderReachedAt?: string },
+    input: { count: number; at: string; leaderReachedAt?: string; clearLeaderReachedAt?: boolean },
   ) {
     if (this.failMark) throw new Error("notion down");
     this.marks.push({ pageId, ...input });
@@ -92,6 +93,7 @@ class FakeStore {
     target.notifiedCount = input.count;
     target.notifiedAt = input.at;
     if (input.leaderReachedAt) target.leaderReachedAt = input.leaderReachedAt;
+    if (input.clearLeaderReachedAt) delete target.leaderReachedAt;
   }
 }
 
@@ -101,7 +103,7 @@ class FakeNoticeMailer {
   delivered = new Set<string>();
   fail = false;
   async sendReferralNotice(input: ReferralNoticeMail) {
-    if (this.fail) throw new Error("Resend delivery failed (503)");
+    if (this.fail) throw new ResendDeliveryError("rejected", 422);
     this.sent.push(input);
     this.delivered.add(input.idempotencyKey);
   }
@@ -340,12 +342,12 @@ test("dry run counts what would go out and sends and writes nothing", async () =
   assert.equal(store.marks.length, 0);
 });
 
-test("a failed bookkeeping write after a send retries under the same key, which the provider collapses", async () => {
+test("a failed claim never sends, then a successful claim prevents later replay", async () => {
   const store = new FakeStore(referrerWith(3));
   store.failMark = true;
   const mailer = new FakeNoticeMailer();
   const first = await runReferralNotices(deps(store, mailer));
-  assert.equal(first.sent, 1);
+  assert.equal(first.sent, 0);
   assert.equal(first.markFailed, 1);
 
   store.failMark = false;
@@ -353,8 +355,7 @@ test("a failed bookkeeping write after a send retries under the same key, which 
     deps(store, mailer, { now: () => new Date(NOW.getTime() + 300_000) }),
   );
   assert.equal(second.sent, 1);
-  assert.equal(mailer.sent.length, 2);
-  assert.equal(mailer.sent[0]!.idempotencyKey, mailer.sent[1]!.idempotencyKey);
+  assert.equal(mailer.sent.length, 1);
   assert.equal(mailer.delivered.size, 1, "one distinct message at the provider");
   assert.equal(store.marks.length, 1);
 
@@ -364,13 +365,14 @@ test("a failed bookkeeping write after a send retries under the same key, which 
   assert.equal(third.pending, 0);
 });
 
-test("a failed send leaves the count unannounced for the next tick", async () => {
+test("a definitive rejection restores the count for a later tick", async () => {
   const store = new FakeStore(referrerWith(1));
   const mailer = new FakeNoticeMailer();
   mailer.fail = true;
   const result = await runReferralNotices(deps(store, mailer));
   assert.equal(result.sendFailed, 1);
-  assert.equal(store.marks.length, 0);
+  assert.equal(store.marks.length, 2);
+  assert.equal(store.rows[0]!.notifiedCount, 0);
   mailer.fail = false;
   assert.equal((await runReferralNotices(deps(store, mailer))).sent, 1);
 });
@@ -567,14 +569,14 @@ test("the leader stamp is write-once: later notices and an existing stamp are ne
   assert.equal("leaderReachedAt" in laterStore.marks[0]!, false);
 });
 
-test("a failed send writes no leader stamp; a lost count write restamps the same instant next tick", async () => {
+test("a rejected send restores its leader stamp; a failed claim sends nothing", async () => {
   const rows = referrerWith(10, { notifiedCount: 9, notifiedAt: "2026-10-22T00:00:00.000Z" });
   const store = new FakeStore(rows);
   const mailer = new FakeNoticeMailer();
   mailer.fail = true;
   const failed = await runReferralNotices(deps(store, mailer));
   assert.equal(failed.sendFailed, 1);
-  assert.equal(store.marks.length, 0);
+  assert.equal(store.marks.length, 2);
   assert.equal(rows[0]!.leaderReachedAt, undefined);
 
   mailer.fail = false;
@@ -624,4 +626,34 @@ test("the cron hook routes the schema-missing line through its own logger", asyn
   );
   assert.equal(typeof seenLog, "function");
   assert.equal(lines[0], "[referral-notices] referral_notices_schema_missing {}");
+});
+
+test("an accepted but timed-out send retains its claim beyond provider dedupe expiry", async () => {
+  const store = new FakeStore(referrerWith(1));
+  let sends = 0;
+  const mailer = { async sendReferralNotice() {
+    sends++;
+    assert.equal(store.rows[0]!.notifiedCount, 1, "claim must be durable before send");
+    throw new ResendDeliveryError("transport unknown", 0);
+  } };
+  const input = { ...deps(store, new FakeNoticeMailer()), mailer };
+  assert.equal((await runReferralNotices(input)).sendFailed, 1);
+  assert.equal(store.rows[0]!.notifiedCount, 1);
+  const later = await runReferralNotices({ ...input, now: () => new Date(NOW.getTime() + 25 * 3600000) });
+  assert.equal(later.pending, 0);
+  assert.equal(sends, 1);
+});
+
+test("a rejected send whose rollback fails keeps its claim instead of risking another mail", async () => {
+  const store = new FakeStore(referrerWith(1));
+  const mailer = { async sendReferralNotice() {
+    store.failMark = true;
+    throw new ResendDeliveryError("rejected", 422);
+  } };
+  const result = await runReferralNotices({ ...deps(store, new FakeNoticeMailer()), mailer });
+  assert.equal(result.sendFailed, 1);
+  assert.equal(result.markFailed, 1);
+  assert.equal(store.rows[0]!.notifiedCount, 1);
+  store.failMark = false;
+  assert.equal((await runReferralNotices(deps(store, new FakeNoticeMailer()))).pending, 0);
 });

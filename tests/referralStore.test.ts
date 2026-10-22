@@ -271,3 +271,13 @@ test("a failed schema read propagates and caches nothing", async () => {
   assert.equal(reads, 2);
   resetReferralSchemaCache();
 });
+
+test("definitive rejection rollback can clear only the newly claimed leader date", async () => {
+  const { request, calls } = fake([{}]);
+  await createNotionReferralStore(request, "db1").markNotified("p1", {
+    count: 9, at: "2026-10-22T00:00:00.000Z", clearLeaderReachedAt: true,
+  });
+  const properties = (calls[0].body as { properties: Record<string, unknown> }).properties;
+  assert.deepEqual(properties[REFERRAL_COLUMNS.leaderReachedAt], { date: null });
+  assert.deepEqual(properties[REFERRAL_COLUMNS.notifiedCount], { number: 9 });
+});
