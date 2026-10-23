@@ -14,7 +14,13 @@ for (const locale of ["ko", "en"] as const) {
     { RESEND_API_KEY: "re_qa_only", WATCHDIVE_EMAIL_FROM: "hello@watchdive.example" },
     (async (_url, init) => {
       const payload = JSON.parse(String(init?.body));
-      await writeFile(new URL(`${locale}.html`, output), payload.html);
+      // Let a reviewer open the HTML directly from disk, including its logo.
+      // Only the image source is localized; confirmation links stay dummy URLs.
+      const html = payload.html.replace(
+        'src="https://watchdive.example/brand/',
+        'src="../public/brand/',
+      );
+      await writeFile(new URL(`${locale}.html`, output), html);
       return new Response('{"id":"qa_only"}', { status: 200 });
     }) as typeof fetch,
     async () => {},
