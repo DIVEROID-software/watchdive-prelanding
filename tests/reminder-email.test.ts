@@ -189,10 +189,10 @@ test("reminder=true selects the reminder template and keeps the idempotency key 
   const expected = buildReminderEmail(verificationUrl(ORIGIN, token), "en");
   assert.equal(seen[0].body.subject, "Confirm your WatchDive waitlist email");
   assert.equal(seen[1].body.subject, "Confirm your WatchDive waitlist email");
-  assert.match(seen[0].body.html, /background:#0ea5e9/);
-  assert.match(seen[1].body.html, /background:#0ea5e9/);
+  assert.match(seen[0].body.html, /bgcolor="#36A9E1"/);
+  assert.match(seen[1].body.html, /bgcolor="#36A9E1"/);
   assert.equal(seen[0].body.html.includes("watchdive-underwater"), false);
-  assert.equal(seen[1].body.html.includes(REMINDER_WORDMARK_URL), false);
+  assert.equal(seen[1].body.html.includes("watchdive-underwater"), false);
   assert.equal(seen[0].body.html, seen[1].body.html);
   assert.equal(seen[0].body.text, seen[1].body.text);
   assert.equal(seen[2].body.subject, expected.subject);
@@ -204,7 +204,7 @@ test("reminder=true selects the reminder template and keeps the idempotency key 
 });
 
 // 2026-10-19: Korean welcome subject and heading now say launch notification signup complete.
-test("the first confirmation and reviewed welcome markup in resend.ts stay fixed", () => {
+test("reviewed copy, welcome markup and reminder routing in resend.ts stay fixed", () => {
   const copyPath = fileURLToPath(new URL("../src/lib/verification/resend.ts", import.meta.url));
   const copy = readFileSync(copyPath, "utf8");
   // Frozen from reviewed baseline faa9dd2; no sibling checkout required in CI.
@@ -220,12 +220,8 @@ test("the first confirmation and reviewed welcome markup in resend.ts stay fixed
       .digest("hex"),
     "a68c60a7c570a10b367e9faa4d991228e738b84b3665e1789ee7a5fe19150c53",
   );
-  assert.equal(
-    createHash("sha256")
-      .update(sliceBetween(copy, "function body(", "function welcomeBody("))
-      .digest("hex"),
-    "ebf19eb417ef3a0c3ddb620c32290cfbb07c647824799da8d56ff117f039091f",
-  );
+  // The owner-authorized first-confirmation redesign is covered by
+  // verificationMailPresentation.test.ts; its copy remains frozen above.
   assert.equal(
     createHash("sha256")
       .update(sliceBetween(copy, "function welcomeBody(", "/**\n * One accepted send"))

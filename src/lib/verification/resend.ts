@@ -440,28 +440,67 @@ export function verificationEmailUiCopy(locale: Locale): {
 function body(url: string, locale: Locale): { subject: string; text: string; html: string } {
   const safeUrl = escapeHtml(url);
   const copy = EMAIL_COPY[locale].verification;
+  // Own, approved asset: no dependency on the brand hub or a third-party CDN.
+  const wordmark = escapeHtml(new URL("/brand/reservation/diveroid-wordmark-color-transparent.png", url).href);
+  const font = "Arial,'Helvetica Neue','Apple SD Gothic Neo','Malgun Gothic','Hiragino Sans','Microsoft YaHei','PingFang SC','PingFang TC',sans-serif";
+  const wrap = locale === "ko" ? "word-break:keep-all;overflow-wrap:break-word;" : "overflow-wrap:break-word;";
+  // Kept separate from buddyDocument: this is transactional and must never
+  // inherit the Buddy Invite advertising footer, rewards or unsubscribe links.
   return {
     text: [copy.heading, "", copy.intro, url, "", phoneOptInCopy[locale].emailHint, "", copy.expires, copy.ignore].join("\n"),
     html: [
-      `<div lang="${locale}" style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px">`,
-      `<h1 style="font-size:20px;margin:0 0 12px">${copy.heading}</h1>`,
-      '<p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 24px">',
-      copy.intro,
-      "</p>",
-      `<p style="margin:0 0 24px"><a href="${safeUrl}" rel="noreferrer noopener" `,
-      'style="display:inline-block;background:#0ea5e9;color:#04121f;font-weight:600;',
-      'font-size:16px;padding:14px 28px;border-radius:12px;text-decoration:none">',
-      `${copy.button}</a></p>`,
-      `<p style="font-size:14px;line-height:1.6;color:#334155;padding:16px;background:#f0f9ff;border-radius:12px">${escapeHtml(phoneOptInCopy[locale].emailHint)}</p>`,
-      '<p style="font-size:13px;line-height:1.6;color:#64748b;margin:0 0 8px">',
-      `${copy.fallback}<br>`,
-      `<span style="word-break:break-all">${safeUrl}</span>`,
-      "</p>",
-      '<p style="font-size:13px;line-height:1.6;color:#64748b;margin:0">',
-      `${copy.expires} `,
-      copy.ignore,
-      "</p>",
-      "</div>",
+      "<!doctype html>",
+      `<html lang="${locale}" dir="ltr"><head><meta charset="utf-8">`,
+      '<meta name="viewport" content="width=device-width,initial-scale=1">',
+      '<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">',
+      `<title>${escapeHtml(copy.subject)}</title>`,
+      `<style>
+      .verify-blue,.verify-yellow,.verify-brand{color-scheme:only light;forced-color-adjust:none;}
+      .verify-blue *,.verify-yellow *{-webkit-text-fill-color:#1a1238!important;}
+      @media (prefers-color-scheme:dark){
+        .verify-page{background-color:#07131c!important;}
+        .verify-card{background-color:#1a1238!important;}
+        .verify-copy{color:#eef9ff!important;}
+        .verify-frame{border-color:#eef9ff!important;}
+        .verify-shadow{background-color:#eef9ff!important;}
+        .verify-blue{background-color:#36A9E1!important;}
+        .verify-yellow{background-color:#ffe55c!important;}
+        .verify-brand{background-color:#ffffff!important;}
+        .verify-info{background-color:#201748!important;border-left-color:#36A9E1!important;}
+      }</style>`,
+      '<!--[if mso]><style>body,table,td,p,a,h1{font-family:Arial,sans-serif!important;}</style><![endif]-->',
+      `</head><body class="verify-page" style="margin:0;padding:0;width:100%;background-color:#f5f3ee;font-family:${font};-webkit-text-size-adjust:100%;">`,
+      `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">${escapeHtml(copy.intro)}</div>`,
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5f3ee" class="verify-page" style="width:100%;background-color:#f5f3ee;border-collapse:collapse;">',
+      '<tr><td align="center" style="padding:24px 12px;">',
+      '<!--[if mso]><table role="presentation" width="576" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->',
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:576px;table-layout:fixed;border-collapse:separate;">',
+      // Table-cell shadows survive Outlook's Word renderer without box-shadow.
+      '<tr><td class="verify-shadow" bgcolor="#111111" style="padding:0 6px 6px 0;background-color:#111111;">',
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="verify-frame" style="width:100%;table-layout:fixed;border:3px solid #111111;border-collapse:separate;">',
+      '<tr><td class="verify-brand verify-frame" bgcolor="#ffffff" style="padding:20px 22px;background-color:#ffffff;border-bottom:3px solid #111111;">',
+      `<img src="${wordmark}" width="150" height="22" alt="DIVEROID" style="display:block;width:150px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;">`,
+      '</td></tr><tr><td class="verify-blue verify-frame" bgcolor="#36A9E1" style="padding:26px 22px;background-color:#36A9E1;background-image:linear-gradient(#36A9E1,#36A9E1);border-bottom:3px solid #111111;">',
+      `<p style="margin:0 0 12px;font-size:13px;line-height:18px;font-weight:700;letter-spacing:1px;color:#1a1238;">WatchDive</p>`,
+      `<h1 style="margin:0;font-family:${font};font-size:30px;line-height:1.25;font-weight:700;letter-spacing:-0.5px;color:#1a1238;${wrap}">${escapeHtml(copy.heading)}</h1>`,
+      `</td></tr><tr><td class="verify-card" bgcolor="#ffffff" style="padding:24px 22px;background-color:#ffffff;font-family:${font};${wrap}">`,
+      `<p class="verify-copy" style="margin:0 0 24px;font-size:16px;line-height:1.65;color:#1a1238;">${escapeHtml(copy.intro)}</p>`,
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;border-collapse:separate;">',
+      '<tr><td class="verify-shadow" bgcolor="#111111" style="padding:0 4px 4px 0;background-color:#111111;">',
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;border-collapse:separate;"><tr>',
+      '<td class="verify-yellow verify-frame" align="center" bgcolor="#ffe55c" style="background-color:#ffe55c;background-image:linear-gradient(#ffe55c,#ffe55c);border:3px solid #111111;mso-padding-alt:18px 12px;">',
+      `<a href="${safeUrl}" rel="noreferrer noopener" style="display:block;padding:18px 12px;font-family:${font};font-size:18px;line-height:24px;font-weight:700;color:#1a1238;text-decoration:none;mso-padding-alt:0;">${escapeHtml(copy.button)}</a>`,
+      '</td></tr></table></td></tr><tr><td height="24" style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr></table>',
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;border-collapse:collapse;"><tr>',
+      '<td class="verify-info verify-frame" bgcolor="#EEF9FF" style="padding:16px;background-color:#EEF9FF;border:2px solid #111111;border-left:6px solid #36A9E1;">',
+      `<p class="verify-copy" style="margin:0;font-size:14px;line-height:1.65;color:#1a1238;">${escapeHtml(phoneOptInCopy[locale].emailHint)}</p>`,
+      '</td></tr></table>',
+      `<p class="verify-copy" style="margin:24px 0 8px;font-size:12px;line-height:1.65;color:#534e63;">${escapeHtml(copy.fallback)}</p>`,
+      `<p style="margin:0;font-size:12px;line-height:1.6;word-break:break-all;overflow-wrap:anywhere;"><a class="verify-copy" href="${safeUrl}" rel="noreferrer noopener" style="color:#3d2683;text-decoration:underline;word-break:break-all;overflow-wrap:anywhere;">${safeUrl}</a></p>`,
+      '</td></tr></table></td></tr>',
+      `<tr><td style="padding:16px 6px 0 0;font-family:${font};${wrap}"><p class="verify-copy" style="margin:0 0 6px;font-size:12px;line-height:1.65;color:#534e63;">${escapeHtml(copy.expires)}</p>`,
+      `<p class="verify-copy" style="margin:0;font-size:12px;line-height:1.65;color:#534e63;">${escapeHtml(copy.ignore)}</p></td></tr>`,
+      '</table><!--[if mso]></td></tr></table><![endif]--></td></tr></table></body></html>',
     ].join(""),
     subject: copy.subject,
   };
