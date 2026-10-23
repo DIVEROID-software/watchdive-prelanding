@@ -145,8 +145,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // program is off, so the switch-off DOM matches the previous pin.
   // 2026-10-22: owner-requested EVENT ladder is visible in the program-on
   // verified card; only its conditions collapse. The off branch is unchanged.
+  // 2026-10-23: owner-requested post-signup reservation offer, inbox focus
+  // target, and post-verification offer. Existing landing sections stay frozen.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "86720caf3c1aaeaa6eb40c44ebbaa8270d3d388b5ebf124083491965d3c5bbfb");
+  assert.equal(digest, "0b85281af46d3171a7f5e7bf9e1068f9646c9172e9908872b26ee1d887a77104");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

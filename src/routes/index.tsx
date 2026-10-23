@@ -1,3 +1,4 @@
+import { SignupReservationOffer } from "@/components/reservation/SignupReservationOffer";
 import { socialAuthResultCopy } from "@/lib/socialAuthResultCopy";
 import { alreadyVerifiedCopy } from "@/lib/i18n/already-verified";
 import { PhoneOptInCard } from "@/components/phone-optin-card";
@@ -468,7 +469,8 @@ function StickyLaunchBanner() {
         }
         return signupActionsVisible(form);
       });
-      const hide = actionable || editing || keyboardOpen;
+      const postSubmit = !!document.querySelector(".wd-onsite-offer, .wd-inbox-card");
+      const hide = actionable || editing || keyboardOpen || postSubmit;
       setHidden(hide);
       document.documentElement.dataset.wdForm = hide ? "active" : "";
     };
@@ -821,7 +823,11 @@ function CheckInboxCard({
   onDeclineMeasurement,
   phoneOptIn,
   shareNote,
+  regionId,
+  autoFocus = true,
 }: {
+  regionId?: string;
+  autoFocus?: boolean;
   phoneOptIn?: React.ReactNode;
   /** Set when a typed code could not be matched. Signup already succeeded. */
   shareNote?: string;
@@ -851,6 +857,7 @@ function CheckInboxCard({
   }, [resending]);
 
   useEffect(() => {
+    if (!autoFocus) return;
     cardRef.current?.focus({ preventScroll: true });
     cardRef.current?.scrollIntoView({ block: "nearest" });
   }, []);
@@ -863,6 +870,7 @@ function CheckInboxCard({
   return (
     <div
       ref={cardRef}
+      id={regionId}
       tabIndex={-1}
       role="region"
       aria-label={m.inbox.title}
@@ -1164,7 +1172,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   }
 
   if (verified) {
-    return <><ReferralSuccess refCode={refCode} /><PhoneOptInCard credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} /></>;
+    return <><SignupReservationOffer locale={locale} verified credential={{ kind: "attempt", value: handle }} /><ReferralSuccess refCode={refCode} /><PhoneOptInCard credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} /></>;
   }
 
   // The server treats a repeat submit of the same address as a resend, under
@@ -1304,8 +1312,11 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   }
 
   if (pending) {
-    return (
+    return (<>
+      <SignupReservationOffer locale={locale} inboxId={`${id}-verify-inbox`} autoFocus />
       <CheckInboxCard
+        regionId={`${id}-verify-inbox`}
+        autoFocus={false}
         message={pending}
         shareNote={shareNote || undefined}
         phoneOptIn={<PhoneOptInCard key={handle} credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} />}
@@ -1336,7 +1347,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           requestAnimationFrame(() => document.getElementById(`${id}-email`)?.focus());
         }}
       />
-    );
+    </>);
   }
 
   return (

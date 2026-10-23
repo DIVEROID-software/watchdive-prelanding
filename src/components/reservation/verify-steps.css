@@ -1,0 +1,10 @@
+/* Scoped to the confirmed-email steps; the landing design stays unchanged. */
+.wd-verify-step{min-width:0;margin-top:28px;border:3px solid #36a9e1;box-shadow:6px 6px 0 #36a9e1;background:#201748;color:#eef9ff}
+.wd-verify-step-heading{display:flex;align-items:center;gap:14px;padding:18px;border-bottom:3px solid #36a9e1;background:#3d2683}
+.wd-verify-step-number{display:flex;align-items:center;justify-content:center;flex:0 0 54px;min-height:54px;background:#36a9e1;border:2px solid #eef9ff;color:#201748;font-size:28px;font-weight:700;line-height:1}
+.wd-verify-step[data-verify-step="2"] .wd-verify-step-number{background:#ffe55c}
+html:root .wd-verify-step-heading h2{margin:0;font-size:23px!important;line-height:1.25!important;letter-spacing:-.02em!important;overflow-wrap:anywhere;color:#eef9ff}
+.wd-verify-step-content{padding:18px;min-width:0}
+.wd-verify-step-content>.wd-phone-card,.wd-verify-step-content>.wd-buddy-card{margin-top:0}
+.wd-verify-step-content>.wd-onsite-offer{margin-bottom:6px}
+@media(max-width:639px){.wd-verify-step-heading{padding:14px;gap:10px}.wd-verify-step-number{flex-basis:46px;min-height:46px;font-size:25px}html:root .wd-verify-step-heading h2{font-size:20px!important}.wd-verify-step-content{padding:12px}.wd-verify-step-content .wd-onsite-content{padding:20px 16px}}
