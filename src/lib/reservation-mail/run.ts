@@ -918,7 +918,7 @@ export function formatReservationSummary(result: ReservationRunResult): string {
     `Invite signer: ${result.helperLoaded ? "issueReservationInvite, compiled in" : "missing"}.`,
   );
   lines.push(
-    `Reservation token secret: ${result.tokenSecretReady ? "present" : "missing"}. Invite link: fragment only, query is lang.`,
+    `Reservation token secret: ${result.tokenSecretReady ? "present" : "missing"}. Invite link: direct Checkout bridge; query bearer requires access-log redaction.`,
   );
   if (result.mode === "send") {
     lines.push(

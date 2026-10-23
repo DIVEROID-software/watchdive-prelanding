@@ -67,6 +67,8 @@ const MIRROR_ENV = {
 
 type Session = {
   id: string;
+  consent_collection?: { terms_of_service: string };
+  consent?: { terms_of_service: string };
   url: string | null;
   status: "open" | "complete" | "expired";
   payment_status: "paid" | "unpaid" | "no_payment_required";
@@ -183,6 +185,7 @@ class MemoryStripe {
       const session: Session = {
         id,
         url: `https://checkout.stripe.com/c/pay/${id}`,
+        consent_collection: { terms_of_service: params.get("consent_collection[terms_of_service]") ?? "none" },
         status: "open",
         payment_status: "unpaid",
         amount_total: Number(params.get("line_items[0][price_data][unit_amount]")),
@@ -292,6 +295,7 @@ class MemoryStripe {
       payment_intent: pi,
       ...(this.omitChargeCreated ? {} : { created: CHARGE_AT }),
     };
+    session.consent = { terms_of_service: "accepted" };
     session.status = "complete";
     session.payment_status = "paid";
     session.payment_intent = pi;
@@ -1040,4 +1044,31 @@ test("migration dry-run is the default, and apply writes properties only when th
   assert.equal(conflict.exitCode, 2);
   assert.equal(conflict.report.error, "schema_conflict");
   assert.equal(blocked.calls.some((call) => call.method === "PATCH"), false);
+});
+
+test("Stripe's bound signup page is mirrored even when an exact Gmail alias would select another row", async () => {
+  const boundId = "11111111-2222-4333-8444-555555555555";
+  const patched: string[] = [];
+  const page = (id: string, email: string) => ({ id, properties: { Email: { title: [{ plain_text: email }] } } });
+  const request: NotionRequest = async (method, path) => {
+    if (path.endsWith('/query')) return { results: [page('other-page', 'diver@gmail.com')], has_more: false };
+    if (method === 'GET' && path === `pages/${boundId}`) return page(boundId, 'di.ver+signup@gmail.com');
+    if (method === 'PATCH') { patched.push(path); return {}; }
+    throw new Error('Unexpected fake Notion request');
+  };
+  const mirror = createReservationNotionMirror({ request, databaseId: DATABASE_ID });
+  assert.deepEqual(await mirror.apply(paidInput({ rawEmail: 'diver@gmail.com', email: 'diver@gmail.com', pageId: boundId })), { updated: 2 });
+  assert.ok(patched.includes(`pages/${boundId}`));
+});
+
+test("a bound page whose email changed is never marked paid", async () => {
+  const patched: string[] = [];
+  const request: NotionRequest = async (method, path) => {
+    if (path.endsWith('/query')) return { results: [], has_more: false };
+    if (method === 'GET') return { id: 'bound-page', properties: { Email: { title: [{ plain_text: 'someone-else@example.com' }] } } };
+    patched.push(path); return {};
+  };
+  const mirror = createReservationNotionMirror({ request, databaseId: DATABASE_ID });
+  await assert.rejects(() => mirror.apply(paidInput({ pageId: 'bound-page' })), (error: unknown) => error instanceof NotionMirrorError && error.reason === 'contract');
+  assert.equal(patched.length, 0);
 });

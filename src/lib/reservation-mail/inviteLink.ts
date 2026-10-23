@@ -1,7 +1,8 @@
-// Reservation page link. The signed invite is the URL fragment, never a query
-// parameter, so access logs do not store it. The only query parameter is lang.
+// Direct hosted Checkout email link. The signed invite is a bearer in the query;
+// access-log infrastructure must redact `invite`. The direct route applies
+// no-store/no-referrer and stores the invite/language for the existing return page.
 // Korean mail uses lang=ko. Every other supported site locale uses its own
-// lang value on /reservation. A missing lang is English on the page.
+// lang value on /api/reservation/direct. Old /reservation#invite links still work.
 //
 // Signing is issueReservationInvite from src/lib/reservation/invite.ts.
 // The caller passes the verified row email, emailVerified true, and an expiry
@@ -22,8 +23,8 @@ import { RESERVATION_CAMPAIGN_ID } from "./campaign.ts";
 /** Page language query. Not a token. */
 export const RESERVATION_LANG_QUERY = "lang";
 
-/** Fragment name. The browser does not send this to the server. */
-export const RESERVATION_INVITE_FRAGMENT = "invite";
+/** Signed bearer query name. Do not include an email or any other query field. */
+export const RESERVATION_INVITE_QUERY = "invite";
 
 /**
  * Technical lifetime of a mailed link, from the frozen first intent.
@@ -61,9 +62,9 @@ export function buildReservationInviteUrl(
 ): string {
   if (!isTokenShape(token)) throw new Error("Invalid invite token");
   const origin = requirePublicOrigin({ WATCHDIVE_PUBLIC_ORIGIN: publicOrigin });
-  const url = new URL("/reservation", origin);
+  const url = new URL("/api/reservation/direct", origin);
   url.searchParams.set(RESERVATION_LANG_QUERY, reservationMailLang(locale));
-  url.hash = `${RESERVATION_INVITE_FRAGMENT}=${token}`;
+  url.searchParams.set(RESERVATION_INVITE_QUERY, token);
   return assertInviteUrl(url.toString(), publicOrigin, locale);
 }
 
@@ -78,9 +79,8 @@ function isTokenShape(token: string): boolean {
 }
 
 /**
- * Accept only /reservation on our origin, with exactly one query parameter
- * (`lang` = the signup locale) and the invite in the fragment. A token in the query,
- * an email, or an extra parameter is refused.
+ * Accept only the direct route on our origin, with exactly lang and invite.
+ * A fragment, email, internal redirect marker, or extra parameter is refused.
  */
 export function assertInviteUrl(raw: string, publicOrigin: string, locale: Locale): string {
   const origin = requirePublicOrigin({ WATCHDIVE_PUBLIC_ORIGIN: publicOrigin });
@@ -93,22 +93,20 @@ export function assertInviteUrl(raw: string, publicOrigin: string, locale: Local
   if (url.origin !== origin || url.username || url.password) {
     throw new Error("Invalid invite url");
   }
-  if (url.pathname !== "/reservation") throw new Error("Invalid invite url");
+  if (url.pathname !== "/api/reservation/direct" || url.hash) throw new Error("Invalid invite url");
   const keys = [...url.searchParams.keys()];
-  if (keys.length !== 1 || keys[0] !== RESERVATION_LANG_QUERY) {
+  if (
+    keys.length !== 2 ||
+    url.searchParams.getAll(RESERVATION_LANG_QUERY).length !== 1 ||
+    url.searchParams.getAll(RESERVATION_INVITE_QUERY).length !== 1
+  ) {
     throw new Error("Invalid invite url");
   }
   if (url.searchParams.get(RESERVATION_LANG_QUERY) !== reservationMailLang(locale)) {
     throw new Error("Invalid invite url");
   }
-  const prefix = `#${RESERVATION_INVITE_FRAGMENT}=`;
-  if (!url.hash.startsWith(prefix)) throw new Error("Invalid invite url");
-  const token = decodeURIComponent(url.hash.slice(prefix.length));
-  if (!isTokenShape(token)) throw new Error("Invalid invite url");
-  if (url.search.includes(token) || raw.includes("@")) throw new Error("Invalid invite url");
-  if (url.searchParams.has("inviteToken") || url.searchParams.has("invite")) {
-    throw new Error("Invalid invite url");
-  }
+  const token = url.searchParams.get(RESERVATION_INVITE_QUERY);
+  if (!token || !isTokenShape(token) || raw.includes("@")) throw new Error("Invalid invite url");
   return url.toString();
 }
 

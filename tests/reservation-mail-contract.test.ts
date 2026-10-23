@@ -33,7 +33,7 @@ test("the frozen reservation contract matches the real handler and mail link", (
   assert.match(handlers, /source: snapshot.source/);
   assert.match(invite, /export function issueReservationInvite/);
   assert.equal(invite.includes("export function createReservationInviteToken"), false);
-  assert.match(mail, /RESERVATION_INVITE_FRAGMENT = "invite"/);
+  assert.match(mail, /RESERVATION_INVITE_QUERY = "invite"/);
   assert.match(mail, /issueReservationInvite/);
   assert.equal(mail.includes('RESERVATION_INVITE_QUERY = "token"'), false);
 });

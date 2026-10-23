@@ -6,6 +6,7 @@ import {
   FEE_POLICY,
   LATER_PRODUCT_PRICE_CENTS,
   META_ACCEPTED_TERMS,
+  META_CHECKOUT_CONSENT,
   META_CURRENCY,
   META_EMAIL_SHA256,
   META_FEE_CENTS,
@@ -111,10 +112,7 @@ export function isOurProduct(session: StripeCheckoutSession): boolean {
 const EMAIL_SHA256 = /^[a-f0-9]{64}$/;
 
 /** The session metadata and client reference are the canonical inbox, not a lead id. */
-export function sessionOwnedByInbox(
-  session: StripeCheckoutSession,
-  emailSha256: string,
-): boolean {
+export function sessionOwnedByInbox(session: StripeCheckoutSession, emailSha256: string): boolean {
   return (
     isOurProduct(session) &&
     emailSha256.length === 64 &&
@@ -315,6 +313,15 @@ export async function inspectSession(
 
   const items = await stripe.listLineItems(session.id);
   if (!lineItemsMatch(items)) return { kind: "invalid", session };
+
+  if (
+    session.metadata[META_CHECKOUT_CONSENT] === "required" &&
+    (session.consentCollectionTermsOfService !== "required" ||
+      (session.status === "complete" &&
+        session.paymentStatus === "paid" &&
+        session.consentTermsOfService !== "accepted"))
+  )
+    return { kind: "invalid", session };
 
   if (session.status === "open") {
     if (session.expiresAt * 1000 <= nowMs) return { kind: "terminal_unpaid", session };

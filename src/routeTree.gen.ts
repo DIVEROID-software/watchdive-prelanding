@@ -37,6 +37,7 @@ import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cr
 import { Route as ApiCronVerificationReminderV2RouteImport } from './routes/api.cron.verification-reminder-v2'
 import { Route as ApiReferralLeaderboardRouteImport } from './routes/api.referral.leaderboard'
 import { Route as ApiReservationCheckoutRouteImport } from './routes/api/reservation/checkout'
+import { Route as ApiReservationDirectRouteImport } from './routes/api.reservation.direct'
 import { Route as ApiReservationStatusRouteImport } from './routes/api/reservation/status'
 import { Route as ApiReservationWebhookRouteImport } from './routes/api/reservation/webhook'
 import { Route as ApiAuthAppleCallbackRouteImport } from './routes/api/auth/apple/callback'
@@ -185,6 +186,11 @@ const ApiReservationCheckoutRoute = ApiReservationCheckoutRouteImport.update({
   path: '/api/reservation/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiReservationDirectRoute = ApiReservationDirectRouteImport.update({
+  id: '/api/reservation/direct',
+  path: '/api/reservation/direct',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReservationStatusRoute = ApiReservationStatusRouteImport.update({
   id: '/api/reservation/status',
   path: '/api/reservation/status',
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/direct': typeof ApiReservationDirectRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
   '/api/auth/apple/callback': typeof ApiAuthAppleCallbackRoute
@@ -268,6 +275,7 @@ export interface FileRoutesByTo {
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/direct': typeof ApiReservationDirectRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
   '/api/auth/apple/callback': typeof ApiAuthAppleCallbackRoute
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/direct': typeof ApiReservationDirectRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
   '/api/auth/apple/callback': typeof ApiAuthAppleCallbackRoute
@@ -339,6 +348,7 @@ export interface FileRouteTypes {
     | '/api/cron/verification-reminder-v2'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
+    | '/api/reservation/direct'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
     | '/api/auth/apple/callback'
@@ -372,6 +382,7 @@ export interface FileRouteTypes {
     | '/api/cron/verification-reminder-v2'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
+    | '/api/reservation/direct'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
     | '/api/auth/apple/callback'
@@ -406,6 +417,7 @@ export interface FileRouteTypes {
     | '/api/cron/verification-reminder-v2'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
+    | '/api/reservation/direct'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
     | '/api/auth/apple/callback'
@@ -434,6 +446,7 @@ export interface RootRouteChildren {
   ApiCronVerificationReminderV2Route: typeof ApiCronVerificationReminderV2Route
   ApiReferralLeaderboardRoute: typeof ApiReferralLeaderboardRoute
   ApiReservationCheckoutRoute: typeof ApiReservationCheckoutRoute
+  ApiReservationDirectRoute: typeof ApiReservationDirectRoute
   ApiReservationStatusRoute: typeof ApiReservationStatusRoute
   ApiReservationWebhookRoute: typeof ApiReservationWebhookRoute
   ApiAuthAppleCallbackRoute: typeof ApiAuthAppleCallbackRoute
@@ -638,6 +651,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReservationCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/reservation/direct': {
+      id: '/api/reservation/direct'
+      path: '/api/reservation/direct'
+      fullPath: '/api/reservation/direct'
+      preLoaderRoute: typeof ApiReservationDirectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/reservation/status': {
       id: '/api/reservation/status'
       path: '/api/reservation/status'
@@ -715,6 +735,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronVerificationReminderV2Route: ApiCronVerificationReminderV2Route,
   ApiReferralLeaderboardRoute: ApiReferralLeaderboardRoute,
   ApiReservationCheckoutRoute: ApiReservationCheckoutRoute,
+  ApiReservationDirectRoute: ApiReservationDirectRoute,
   ApiReservationStatusRoute: ApiReservationStatusRoute,
   ApiReservationWebhookRoute: ApiReservationWebhookRoute,
   ApiAuthAppleCallbackRoute: ApiAuthAppleCallbackRoute,
