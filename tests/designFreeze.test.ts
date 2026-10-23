@@ -150,8 +150,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // 2026-10-23 owner override: remove hero description and the shared
   // reassurance/confirmation/terms block, retaining the separate email hint.
   // aria-describedby now points only at that retained hint.
+  // 2026-10-23: owner authorizes payment before verification; the existing
+  // SignupReservationOffer receives its signed pending credential (prop only).
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "8e305a20335f8540a70ffb9b17afbadf35b8922644020ac0e386867a9f0f6bf1");
+  assert.equal(digest, "4b6ec501e267ae71f06e838be4e1aa928e4b825911c18f53c3d3bac5cb5d7007");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

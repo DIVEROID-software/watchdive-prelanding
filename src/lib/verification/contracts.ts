@@ -465,6 +465,8 @@ export type PendingResponse = {
   message: string;
   /** Opaque signed handle: attempt id and issue time, never an address. */
   handle: string;
+  /** Short-lived payment authority; never email verification authority. */
+  pendingReservationToken?: string;
 };
 
 /**

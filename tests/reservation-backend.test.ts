@@ -205,7 +205,7 @@ class MemoryStripe {
       amountTotal: amount,
       currency,
       mode: "payment",
-      metadata: contractMetadata({ emailSha256 }),
+      metadata: { ...contractMetadata({ emailSha256 }), checkout_terms_consent: "required" },
       clientReferenceId: emailSha256,
       customerId: customer.id,
       paymentIntentId: pi,
@@ -411,6 +411,8 @@ class MemoryStripe {
     return {
       id: session.id,
       object: "checkout.session",
+      consent_collection: { terms_of_service: "required" },
+      consent: session.paymentStatus === "paid" ? { terms_of_service: "accepted" } : null,
       url: session.url,
       status: session.status,
       payment_status: session.paymentStatus,

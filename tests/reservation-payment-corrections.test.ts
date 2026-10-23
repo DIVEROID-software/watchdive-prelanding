@@ -36,6 +36,8 @@ const ENV = {
 
 type Session = {
   id: string;
+  consent_collection?: { terms_of_service: string };
+  consent?: { terms_of_service: string };
   url: string | null;
   status: "open" | "complete" | "expired";
   payment_status: "paid" | "unpaid" | "no_payment_required";
@@ -173,6 +175,7 @@ class MemoryStripe {
       const session: Session = {
         id,
         url: this.evilUrl ? "https://checkout.stripe.com.evil.example/c/pay/x" : `https://checkout.stripe.com/c/pay/${id}`,
+        consent_collection: { terms_of_service: params.get("consent_collection[terms_of_service]") ?? "none" },
         status: "open",
         payment_status: "unpaid",
         amount_total: Number(params.get("line_items[0][price_data][unit_amount]")),
@@ -280,6 +283,7 @@ class MemoryStripe {
       disputed: false,
       payment_intent: pi,
     };
+    session.consent = { terms_of_service: "accepted" };
     session.status = "complete";
     session.payment_status = "paid";
     session.payment_intent = pi;

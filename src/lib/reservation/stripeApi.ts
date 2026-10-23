@@ -1,10 +1,7 @@
 // Minimal Stripe REST client. No Stripe SDK: package.json is unchanged.
 // Amounts used for a paid decision are always values this client retrieved,
 // never a webhook JSON body and never a browser query string.
-import {
-  STRIPE_API_BASE,
-  STRIPE_API_VERSION,
-} from "./constants.ts";
+import { STRIPE_API_BASE, STRIPE_API_VERSION } from "./constants.ts";
 
 export class StripeApiError extends Error {
   readonly status: number;
@@ -53,6 +50,8 @@ export type StripeCheckoutSession = {
   created: number;
   livemode: boolean;
   successUrl: string | null;
+  consentTermsOfService?: string | null;
+  consentCollectionTermsOfService?: string | null;
 };
 
 export type StripeLineItem = {
@@ -205,6 +204,16 @@ function parseSession(value: unknown): StripeCheckoutSession {
     unexpected("checkout.session.amount_total");
   }
   return {
+    consentTermsOfService:
+      typeof (record.consent as { terms_of_service?: unknown } | null)?.terms_of_service ===
+      "string"
+        ? (record.consent as { terms_of_service: string }).terms_of_service
+        : null,
+    consentCollectionTermsOfService:
+      typeof (record.consent_collection as { terms_of_service?: unknown } | null)
+        ?.terms_of_service === "string"
+        ? (record.consent_collection as { terms_of_service: string }).terms_of_service
+        : null,
     id: requiredString(record, "id", "checkout.session.id"),
     url: typeof record.url === "string" ? record.url : null,
     status,
@@ -227,8 +236,7 @@ function parseSession(value: unknown): StripeCheckoutSession {
 function parseLineItem(value: unknown): StripeLineItem {
   const record = asRecord(value, "line_item");
   const price = record.price;
-  const priceRecord =
-    price && typeof price === "object" ? (price as Record<string, unknown>) : {};
+  const priceRecord = price && typeof price === "object" ? (price as Record<string, unknown>) : {};
   const unit = priceRecord.unit_amount;
   return {
     quantity: requiredInt(record, "quantity", "line_item.quantity"),
@@ -400,9 +408,7 @@ export function createStripeClient(options: {
       return parseSession(await call("POST", "/v1/checkout/sessions", params, idempotencyKey));
     },
     async retrieveCheckoutSession(id) {
-      return parseSession(
-        await call("GET", `/v1/checkout/sessions/${encodeURIComponent(id)}`, {}),
-      );
+      return parseSession(await call("GET", `/v1/checkout/sessions/${encodeURIComponent(id)}`, {}));
     },
     listCheckoutSessions(filter) {
       const params: Record<string, string> = {};

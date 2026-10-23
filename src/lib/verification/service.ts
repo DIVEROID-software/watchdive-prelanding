@@ -7,6 +7,7 @@
 //   grant*Measurement   — they allowed advertising measurement after the submit
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
+import { pendingReservationForRow } from "../reservation/pending.ts";
 import type {
   BrowserLead,
   ConfirmResponse,
@@ -397,7 +398,7 @@ export async function requestVerificationService(
     existing &&
     (!attemptCooled(existing, now.getTime()) || existing.sends >= VERIFICATION_MAX_SENDS)
   ) {
-    return floor(pendingResponse(decoyHandle()));
+    return floor({ ...pendingResponse(decoyHandle()), ...(!suppressed ? pendingReservationForRow(existing, env, now.getTime()) : {}) });
   }
 
   const leadId = mintLeadId();
@@ -501,7 +502,7 @@ export async function requestVerificationService(
     } catch {
       // Alerting is best effort and never changes what the visitor sees.
     }
-    return floor(pendingResponse(handle));
+    return floor({ ...pendingResponse(handle), ...pendingReservationForRow(record, env, now.getTime(), leadId) });
   }
 
   try {
@@ -512,7 +513,7 @@ export async function requestVerificationService(
     // would invite a resend of a message they already have. The cooldown still
     // holds without this write, because it falls back to the attempt's start.
   }
-  return floor(pendingResponse(handle));
+  return floor({ ...pendingResponse(handle), ...pendingReservationForRow(record, env, now.getTime(), leadId) });
 }
 
 /**

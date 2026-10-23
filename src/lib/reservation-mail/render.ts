@@ -8,6 +8,7 @@ import type { Locale } from "../i18n/locale.ts";
 import { RESERVATION_PRESENTATION } from "../../components/reservation/presentation.ts";
 import { LABEL_SEPARATOR } from "../launchMail/copy.ts";
 import { RESERVATION_COPY, RESERVATION_TAGLINE, copyParagraphs } from "./copy.ts";
+import { assertInviteUrl } from "./inviteLink.ts";
 import {
   RESERVATION_COMPANY_NUMBER,
   RESERVATION_LEGAL_NAME,
@@ -102,22 +103,7 @@ function requireHttps(value: string): string {
 function requireInviteUrl(value: string, locale: Locale): string {
   const href = requireHttps(value);
   const url = new URL(href);
-  if (url.pathname !== "/reservation") throw new Error("Reservation mail link");
-  const keys = [...url.searchParams.keys()];
-  if (keys.length !== 1 || keys[0] !== "lang") throw new Error("Reservation mail link");
-  const lang = url.searchParams.get("lang");
-  if (lang !== locale) throw new Error("Reservation mail link");
-  if (!url.hash.startsWith("#invite=")) throw new Error("Reservation mail link");
-  if (
-    url.searchParams.has("inviteToken") ||
-    url.searchParams.has("invite") ||
-    url.searchParams.has("token")
-  ) {
-    throw new Error("Reservation mail link");
-  }
-  const token = decodeURIComponent(url.hash.slice("#invite=".length));
-  if (!token || url.search.includes(token)) throw new Error("Reservation mail link");
-  return href;
+  return assertInviteUrl(href, url.origin, locale);
 }
 
 export function assertReservationMailSafe(

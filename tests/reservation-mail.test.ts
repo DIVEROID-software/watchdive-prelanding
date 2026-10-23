@@ -252,14 +252,15 @@ test("rendered mail keeps the disclosure and rejects a country claim", () => {
   assert.equal(mail.text.split("예약금 US$3을 결제하면").length, 2);
   assert.equal(mail.subject, "WatchDive 출시가 $149 보장 — 예약금 $3");
   const linkedMatch = mail.text.match(
-    /https:\/\/watchdive\.diveroid\.com\/reservation\?lang=ko#invite=\S+/,
+    /https:\/\/watchdive\.diveroid\.com\/api\/reservation\/direct\?lang=ko&invite=\S+/,
   );
   assert.ok(linkedMatch);
   const linked = new URL(linkedMatch[0]);
-  assert.deepEqual([...linked.searchParams.keys()], ["lang"]);
+  assert.deepEqual([...linked.searchParams.keys()], ["lang", "invite"]);
   assert.equal(linked.searchParams.get("lang"), "ko");
-  assert.equal(linked.hash.startsWith("#invite="), true);
-  assert.equal(linked.search.includes(SECRET_TOKEN), false);
+  assert.equal(linked.hash, "");
+  assert.equal(linked.searchParams.get("invite"), SECRET_TOKEN);
+  assert.equal(linked.pathname, "/api/reservation/direct");
   assert.equal(mail.html.includes("inviteToken="), false);
   assert.equal(mail.html.includes(SECRET_TOKEN), true);
   assert.equal(mail.html.includes(SECRET_EMAIL), false);
@@ -469,18 +470,18 @@ test("send records a receipt and a second run does not send again", async () => 
   assert.equal(resend.calls.length, 1);
   assert.equal(resend.calls[0]?.idempotencyKey, reservationIdempotencyKey(person.leadId));
   assert.match(resend.calls[0]?.html ?? "", /\$3/);
-  assert.match(resend.calls[0]?.text ?? "", /\/reservation\?lang=ko#invite=/);
+  assert.match(resend.calls[0]?.text ?? "", /\/api\/reservation\/direct\?lang=ko&invite=/);
   assert.equal((resend.calls[0]?.text ?? "").includes("/ko/reservation"), false);
   assert.equal((resend.calls[0]?.text ?? "").includes("inviteToken="), false);
   assert.equal((resend.calls[0]?.text ?? "").includes("?token="), false);
   assert.equal((resend.calls[0]?.html ?? "").includes("email="), false);
   const mailedMatch = (resend.calls[0]?.text ?? "").match(
-    /https:\/\/watchdive\.diveroid\.com\/reservation\?lang=ko#invite=\S+/,
+    /https:\/\/watchdive\.diveroid\.com\/api\/reservation\/direct\?lang=ko&invite=\S+/,
   );
   assert.ok(mailedMatch);
   const mailed = new URL(mailedMatch[0]);
-  assert.deepEqual([...mailed.searchParams.keys()], ["lang"]);
-  assert.equal(mailed.search.includes(SECRET_TOKEN), false);
+  assert.deepEqual([...mailed.searchParams.keys()], ["lang", "invite"]);
+  assert.equal(mailed.searchParams.get("invite"), SECRET_TOKEN);
   assert.match(store.writes[0]?.value ?? "", new RegExp(`^${RESERVATION_CAMPAIGN_ID} sent `));
   const ledger = await readFile(join(dir, `${RESERVATION_CAMPAIGN_ID}.jsonl`), "utf8");
   assert.equal(ledger.includes(SECRET_EMAIL), false);
@@ -776,22 +777,22 @@ test("a fresh recipient is deliverable, and the mailed lang is the signup locale
   assert.equal(reservationMailLang("zh-CN"), "zh-CN");
   for (const locale of SUPPORTED_LOCALES) {
     const linked = new URL(buildReservationInviteUrl(TEST_ORIGIN, locale, UNSIGNED_PREVIEW_TOKEN));
-    assert.equal(linked.pathname, "/reservation", locale);
-    assert.deepEqual([...linked.searchParams.keys()], ["lang"], locale);
+    assert.equal(linked.pathname, "/api/reservation/direct", locale);
+    assert.deepEqual([...linked.searchParams.keys()], ["lang", "invite"], locale);
     assert.equal(linked.searchParams.get("lang"), locale, locale);
-    assert.equal(linked.hash, `#invite=${UNSIGNED_PREVIEW_TOKEN}`, locale);
-    assert.equal(linked.search.includes(UNSIGNED_PREVIEW_TOKEN), false, locale);
+    assert.equal(linked.hash, "", locale);
+    assert.equal(linked.searchParams.get("invite"), UNSIGNED_PREVIEW_TOKEN, locale);
   }
   const ja = new URL(buildReservationInviteUrl(TEST_ORIGIN, "ja", SECRET_TOKEN));
-  assert.equal(ja.pathname, "/reservation");
-  assert.deepEqual([...ja.searchParams.keys()], ["lang"]);
+  assert.equal(ja.pathname, "/api/reservation/direct");
+  assert.deepEqual([...ja.searchParams.keys()], ["lang", "invite"]);
   assert.equal(ja.searchParams.get("lang"), "ja");
-  assert.equal(ja.hash.startsWith("#invite="), true);
-  assert.equal(ja.search.includes(SECRET_TOKEN), false);
+  assert.equal(ja.hash, "");
+  assert.equal(ja.searchParams.get("invite"), SECRET_TOKEN);
   assert.throws(() => buildReservationInviteUrl(TEST_ORIGIN, "en", "short"));
 });
 
-test("the same first intent mints one fragment link, and a moved clock does not", () => {
+test("the same first intent mints one direct link, and a moved clock does not", () => {
   const input = {
     leadId: PREVIEW_LEAD_ID,
     email: "Preview.User+tag@gmail.com",
@@ -814,14 +815,14 @@ test("the same first intent mints one fragment link, and a moved clock does not"
   assert.equal(first === shifted, false);
   const url = new URL(first);
   assert.equal(url.origin, TEST_ORIGIN);
-  assert.equal(url.pathname, "/reservation");
-  assert.deepEqual([...url.searchParams.keys()], ["lang"]);
+  assert.equal(url.pathname, "/api/reservation/direct");
+  assert.deepEqual([...url.searchParams.keys()], ["lang", "invite"]);
   assert.equal(url.searchParams.get("lang"), "ko");
-  assert.equal(url.hash.startsWith("#invite="), true);
-  const token = decodeURIComponent(url.hash.slice("#invite=".length));
+  assert.equal(url.hash, "");
+  const token = url.searchParams.get("invite") ?? "";
   assert.equal(/^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token), true);
   assert.equal(token.includes("@"), false);
-  assert.equal(url.search.includes(token), false);
+  assert.equal(url.searchParams.has("email"), false);
   assert.equal(first.includes("inviteToken="), false);
   assert.equal(first.includes("email="), false);
   assert.equal(first.includes("Preview.User"), false);
@@ -857,7 +858,7 @@ test("a send keeps the invite expiry tied to the frozen first intent", async () 
   assert.equal(result.aborted, undefined);
   const html = resend.calls[0]?.html ?? "";
   const found = html.match(
-    /https:\/\/watchdive\.diveroid\.com\/reservation\?lang=en#invite=([^"<\s]+)/,
+    /https:\/\/watchdive\.diveroid\.com\/api\/reservation\/direct\?lang=en(?:&|&amp;)invite=([^"<&\s]+)/,
   );
   assert.equal(Boolean(found), true);
   const token = decodeURIComponent(found?.[1] ?? "");
@@ -865,8 +866,13 @@ test("a send keeps the invite expiry tied to the frozen first intent", async () 
   assert.equal(html.includes("?token="), false);
   assert.equal(html.includes("email="), false);
   assert.equal(html.includes(RESERVATION_TOKEN_SECRET), false);
-  const linked = new URL(found?.[0] ?? "https://watchdive.diveroid.com/reservation");
-  assert.equal(linked.search.includes(token), false);
+  const linked = new URL(
+    (found?.[0] ?? "https://watchdive.diveroid.com/api/reservation/direct").replaceAll(
+      "&amp;",
+      "&",
+    ),
+  );
+  assert.equal(linked.searchParams.get("invite"), token);
   const ledger = await readFile(join(dir, `${RESERVATION_CAMPAIGN_ID}.jsonl`), "utf8");
   assert.equal(ledger.includes("@"), false);
   assert.equal(ledger.includes("v1."), false);
@@ -892,7 +898,7 @@ test("a send keeps the invite expiry tied to the frozen first intent", async () 
     firstIntentAtMs: Date.parse(accepted[0]?.firstIntentAt ?? ""),
     nowMs: NOW.getTime() + 60 * 60 * 1000,
   });
-  const againToken = decodeURIComponent(new URL(again).hash.slice("#invite=".length));
+  const againToken = new URL(again).searchParams.get("invite");
   assert.equal(againToken === token, true);
   assert.equal(again.includes("inviteToken="), false);
   const summary = formatReservationSummary(result);
@@ -994,7 +1000,8 @@ test("CLI defaults to dry run and refuses an unconfirmed send", async () => {
   assert.match(lines.join("\n"), new RegExp(RESERVATION_CAMPAIGN_ID));
   assert.match(lines.join("\n"), /WATCHDIVE_RESERVATION_TOKEN_SECRET/);
   assert.match(lines.join("\n"), /issueReservationInvite/);
-  assert.match(lines.join("\n"), /fragment/);
+  assert.match(lines.join("\n"), /signed invite query parameter/);
+  assert.match(lines.join("\n"), /redact invite query values from access logs/);
   assert.equal(lines.join("\n").includes("inviteToken"), false);
   const missing = await main(
     ["--send", "--confirm-campaign", RESERVATION_CAMPAIGN_ID],
@@ -1102,7 +1109,7 @@ const LOWEST_WORD: Record<(typeof SUPPORTED_LOCALES)[number], string> = {
 };
 
 function claimsEmail(html: string): string | undefined {
-  const linked = html.match(/#invite=([^"'&\s]+)/);
+  const linked = html.match(/(?:&|&amp;)invite=([^"'&\s]+)/);
   if (!linked?.[1]) return undefined;
   const token = decodeURIComponent(linked[1]);
   return verifyReservationInvite(token, RESERVATION_TOKEN_SECRET, NOW.getTime())?.email;
