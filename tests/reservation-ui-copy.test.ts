@@ -147,7 +147,10 @@ test("signup and global styles are not used to force this reservation", () => {
   const index = read("src/routes/index.tsx");
   const styles = read("src/styles.css");
   const messages = read("src/lib/i18n/frozen-landing-messages.ts");
-  assert.doesNotMatch(index, /components\/reservation|routes\/reservation/);
+  // The owner-approved post-submit offer is voluntary; the payment page and
+  // checkout calls still cannot mount or run inside the signup form.
+  assert.match(index, /components\/reservation\/SignupReservationOffer/);
+  assert.doesNotMatch(index, /ReservationPage|requestReservationCheckout|window\.location\.(?:assign|replace)\(["']\/reservation/);
   assert.doesNotMatch(styles, /wd-rsv/);
   assert.doesNotMatch(messages, /reservation fee|예약금/);
   for (const path of reservationSources) {

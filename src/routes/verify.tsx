@@ -1,3 +1,5 @@
+import { SignupReservationOffer } from "@/components/reservation/SignupReservationOffer";
+import { VerifyStep } from "@/components/reservation/verify-steps";
 import { VerifiedBuddyCard } from "@/components/referral/VerifiedBuddyCard";
 import { PhoneOptInCard } from "@/components/phone-optin-card";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -29,7 +31,7 @@ import type { BrowserLead } from "@/lib/verification/contracts";
 import { isVerificationTokenShape } from "@/lib/verification/tokenShape";
 import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
 import { homePath, privacyPath, referralPath, termsPath } from "@/lib/i18n/locale";
-import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
+import { useCurrentLocale, useFrozenLandingMessages, useLandingPriceClaim } from "@/lib/i18n/use-current-locale";
 import { loadReferralPriceClaimOnly } from "@/lib/i18n/price-claim-loader";
 
 // No third-party script starts on load. This route carries the token in its
@@ -111,6 +113,7 @@ function Card({
 export function VerifyPage() {
   const locale = useCurrentLocale();
   const copy = useFrozenLandingMessages().verify;
+  const referralEnabled = Boolean(useLandingPriceClaim());
   const [state, setState] = useState<ViewState>("reading");
   // The share link is offered here because most people confirm on the phone
   // they signed up on, leaving the polling tab unseen.
@@ -339,11 +342,19 @@ export function VerifyPage() {
             <h1 className="text-heading">{copy.verifiedTitle}</h1>
             <p className="mt-3 text-body leading-relaxed text-white/75">{copy.verifiedBody}</p>
 
-            {token.current && <PhoneOptInCard credential={{ kind: "confirmation", value: token.current }} complete={phoneAdded} onSaved={() => setPhoneAdded(true)} />}
+            {token.current && <>
+              <VerifyStep locale={locale} number={1}>
+                <PhoneOptInCard credential={{ kind: "confirmation", value: token.current }} complete={phoneAdded} onSaved={() => setPhoneAdded(true)} />
+              </VerifyStep>
+              <VerifyStep locale={locale} number={2}>
+                <SignupReservationOffer locale={locale} verified credential={{ kind: "confirmation", value: token.current }} />
+              </VerifyStep>
+            </>}
 
             {/* Most people confirm on the phone they signed up on, so the tab
                 that was polling is often never seen again. The share link has
                 to be offered here or it is effectively never offered. */}
+            {referralEnabled && (buddyToken || refCode) && <VerifyStep locale={locale} number={3}>
             {buddyToken ? (
               <VerifiedBuddyCard locale={locale} token={buddyToken} refCode={refCode} />
             ) : refCode && (
@@ -360,6 +371,8 @@ export function VerifyPage() {
                 />
               </div>
             )}
+
+            </VerifyStep>}
 
             {askMeasurement && (
               <MeasurementAsk

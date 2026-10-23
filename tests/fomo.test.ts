@@ -201,50 +201,50 @@ test("every declared reviewer photo exists, and every stored photo is declared",
 
 // --- first-100 line above the hero field -----------------------------------
 
-import { earlyBirdRace, earlyBirdRaceCopy } from "../src/lib/earlyBirdRace.ts";
+import {
+  earlyBirdRace,
+  earlyBirdRaceCopy,
+  earlyBirdRaceHighlight,
+} from "../src/lib/earlyBirdRace.ts";
 import { SUPPORTED_LOCALES } from "../src/lib/i18n/locale.ts";
 import { FROZEN_LANDING_MESSAGES } from "../src/lib/i18n/frozen-landing-messages.ts";
 
-// The limit has to travel inside the sentence: the price, the 100, Kickstarter
-// and "at launch". It stands alone on the form-first first screen.
-const AT_LAUNCH: Record<string, RegExp> = {
-  en: /at launch/,
-  ko: /오픈/,
-  "zh-CN": /开启后/,
-  "zh-TW": /開賣後/,
-  ja: /開始時/,
-  es: /al abrir/,
-  fr: /à l’ouverture/,
-  de: /zum Start/,
-  "pt-BR": /ao abrir/,
-};
-
-test("every locale names the price, the 100, Kickstarter and launch in one sentence", () => {
+// Owner override, 2026-10-23: first 100 followed by the USD 200 tier;
+// the hero retains the existing local early-bird estimate in every locale.
+test("every locale states the price, first 100, Kickstarter and next USD 200 tier", () => {
   for (const locale of SUPPORTED_LOCALES) {
-    const copy = earlyBirdRaceCopy[locale];
-    assert.ok(copy, `missing copy for ${locale}`);
-    assert.match(copy, /\{price\}/, locale);
+    const price = FROZEN_LANDING_MESSAGES[locale].hero.nowPrice;
+    const copy = earlyBirdRace(locale, price);
+    assert.match(earlyBirdRaceCopy[locale], /\{price\}/, locale);
+    assert.match(earlyBirdRaceCopy[locale], /\{seats\}/, locale);
     assert.match(copy, /100/, locale);
     assert.match(copy, /Kickstarter/, locale);
-    assert.match(copy, AT_LAUNCH[locale], locale);
+    assert.match(copy, /200/, locale);
+    const marker = earlyBirdRaceHighlight[locale];
+    assert.equal(copy.split(marker).length, 2, `${locale}: exactly one highlight target`);
+    assert.ok(copy.indexOf(marker) < copy.indexOf("200"), locale);
+    assert.ok(copy.toLocaleLowerCase(locale).includes(price.toLocaleLowerCase(locale)), locale);
+    assert.doesNotMatch(copy, /\{[^}]+\}/, locale);
+    // Explicit USD next-tier wording is owner-approved; no invented FX rate.
+    if (locale !== "en" && locale !== "ko") {
+      assert.doesNotMatch(copy, /(?<![A-Z])\$\s?\d/, locale);
+    }
   }
 });
 
-test("the line uses the hero's localized price and never leaks dollars into other locales", () => {
-  assert.equal(earlyBirdRace("en", "$149"), "$149 for the first 100 Kickstarter backers at launch.");
+test("the line keeps the exact owner-approved ko/en copy and localized price wording", () => {
+  assert.equal(
+    earlyBirdRace("en", "$149"),
+    "$149 early bird: first 100 Kickstarter backers. After that the price goes up to $200.",
+  );
+  assert.equal(
+    earlyBirdRace("ko", "$149"),
+    "$149 얼리버드: Kickstarter 선착순 100명. 이후 가격은 $200로 올라요.",
+  );
   assert.equal(
     earlyBirdRace("es", "unos 140 €"),
-    "Unos 140 € solo para los 100 primeros en Kickstarter, al abrir.",
+    "Unos 140 € de lanzamiento: los 100 primeros patrocinadores en Kickstarter. Después, el precio sube a 200 USD.",
   );
-  for (const locale of SUPPORTED_LOCALES) {
-    if (locale === "en" || locale === "ko") continue;
-    const price = (FROZEN_LANDING_MESSAGES as Record<string, { hero: { nowPrice: string } }>)[locale]
-      ?.hero.nowPrice;
-    if (!price) continue;
-    const line = earlyBirdRace(locale, price);
-    assert.ok(line.includes(price.slice(1)), `${locale}: ${line}`);
-    assert.doesNotMatch(line, /(?<![A-Z])\$\s?\d/, `${locale}: ${line}`);
-  }
 });
 
 test("the line states no waitlist figure, countdown, deadline or remaining places", () => {

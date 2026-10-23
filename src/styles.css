@@ -860,6 +860,32 @@ html[data-wd-cookie="open"] .wd-scroll :is(a, button, input, select, textarea) {
 /* First-100 line above the hero email field. Same size and leading as the
    form-first benefit line it replaces, so the field does not move down. */
 .wd-race { font-size: 1rem; line-height: 1.4; font-weight: 600; color: #fff; }
+/* Owner-requested marker: only the background pulses, never the text or box. */
+.wd-race-marker {
+  display: inline-block;
+  position: relative;
+  isolation: isolate;
+  color: #1a1238;
+  /* A light backing keeps dark text readable even at the pulse's low point. */
+  background: #fff;
+  padding-inline: .15em;
+}
+.wd-race-marker::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: #ffe55c;
+  animation: wd-race-marker-pulse 1.2s ease-in-out infinite;
+}
+@keyframes wd-race-marker-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wd-race-marker::before { animation: none; }
+}
+
 .wd-hero-proof { grid-area: proof; display: grid; gap: 2rem; border-top: 1px solid #ffffff25; padding-top: 1.5rem; margin-top: .5rem; }
 /* The photo box takes its shape from CSS, so nothing moves when it arrives.
    Until then a blurred 24px preview (inlined here, ~200 bytes) over the

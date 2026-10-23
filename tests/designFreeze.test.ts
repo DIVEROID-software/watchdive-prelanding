@@ -145,8 +145,13 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // program is off, so the switch-off DOM matches the previous pin.
   // 2026-10-22: owner-requested EVENT ladder is visible in the program-on
   // verified card; only its conditions collapse. The off branch is unchanged.
+  // 2026-10-23: owner-requested post-signup reservation offer, inbox focus
+  // target, and post-verification offer. Existing landing sections stay frozen.
+  // 2026-10-23 owner override: remove hero description and the shared
+  // reassurance/confirmation/terms block, retaining the separate email hint.
+  // aria-describedby now points only at that retained hint.
   const digest = sha256(jsxStructure(source));
-  assert.equal(digest, "86720caf3c1aaeaa6eb40c44ebbaa8270d3d388b5ebf124083491965d3c5bbfb");
+  assert.equal(digest, "8e305a20335f8540a70ffb9b17afbadf35b8922644020ac0e386867a9f0f6bf1");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -208,9 +213,11 @@ test("production stylesheet stays at the approved locale-typography baseline", (
   // 2026-10-21: owner-requested FOMO motion on the launch-alert CTAs (sweep,
   // halo, brighten; notify-bar arrow nudge). Off under reduced motion and while
   // hovered, focused or submitting; checked at 390px with no horizontal scroll.
+  // 2026-10-23 owner override: first-100 marker pulses its background only,
+  // with a static reduced-motion state. No surrounding styles are changed.
   assert.equal(
     sha256(read("src/styles.css")),
-    "cb30a660d3fc4d03b653b2e41f3610eeceb4b8f4511944cccd3d2127bcf3447e",
+    "5bf32c958d5d9f16d1295c0702f6ad1ddc4156c219d9f24168ca204611469f42",
   );
 });
 

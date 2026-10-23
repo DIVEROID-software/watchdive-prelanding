@@ -88,6 +88,7 @@ async function renderVerify(on = false) {
     jsx: "automatic",
     external: ["react", "react/jsx-runtime", "react-dom"],
     define: { "import.meta.env": "{}" },
+    loader: { ".css": "empty" },
     alias: { "@": join(root, "src") },
     plugins: [
       {
@@ -108,6 +109,7 @@ async function renderVerify(on = false) {
             path: "api",
             namespace: "mock",
           }));
+          b.onResolve({ filter: /SignupReservationOffer$/ }, () => ({ path: "reservation", namespace: "mock" }));
           b.onResolve({ filter: /VerifiedBuddyCard$/ }, () => ({
             path: "card",
             namespace: "mock",
@@ -126,13 +128,14 @@ async function renderVerify(on = false) {
           }));
           b.onLoad({ filter: /.*/, namespace: "mock" }, ({ path }) => {
             const contents: Record<string, string> = {
-              "react-hooks": `export * from "react"; let strings=0; export const useState=(v)=>[v==="reading"?"verified":v===""?(++strings===1?"abcd1234":${JSON.stringify(on ? "private-status-credential" : "")}):v,()=>{}]; export const useEffect=()=>{};`,
+              "react-hooks": `export * from "react"; let strings=0; export const useState=(v)=>[v==="reading"?"verified":v===""?(++strings===1?"abcd1234":${JSON.stringify(on ? "private-status-credential" : "")}):v,()=>{}]; export const useEffect=()=>{}; export const useRef=(v)=>({current:v===undefined?"private-confirmation-token":v});`,
               router:
                 'import {createElement} from "react"; export const createFileRoute=()=>x=>x; export const Link=({to,children,...p})=>createElement("a",{...p,href:to},children);',
-              locale: `import {EN_FROZEN_LANDING_MESSAGES as m} from "${join(root, "src/lib/i18n/frozen-landing-en.ts")}"; export const useCurrentLocale=()=>"en"; export const useFrozenLandingMessages=()=>m;`,
+              locale: `import {EN_FROZEN_LANDING_MESSAGES as m} from "${join(root, "src/lib/i18n/frozen-landing-en.ts")}"; export const useCurrentLocale=()=>"en"; export const useFrozenLandingMessages=()=>m; export const useLandingPriceClaim=()=>${on ? "({})" : "undefined"};`,
               api: "export const withdrawAttemptMeasurement=()=>{}; export const confirmVerification=()=>{}; export const grantConfirmationMeasurement=()=>{}; export const withdrawConfirmationMeasurement=()=>{};",
               card: 'import {createElement} from "react"; export const VerifiedBuddyCard=()=>createElement("section",null,"Buddy Invite enabled");',
-              phone: "export const PhoneOptInCard=()=>null;",
+              phone: 'import {createElement} from "react"; export const PhoneOptInCard=()=>createElement("div",null,"Existing SMS consent card");',
+              reservation: 'import {createElement} from "react"; export const SignupReservationOffer=()=>createElement("div",null,"Existing reservation offer");',
               measurement:
                 "export const markWithdrawalRecorded=()=>{}; export const MeasurementAsk=()=>null; export const clearWithdrawalRecorded=()=>{}; export const measurementAskEligible=()=>false; export const withdrawalNeedsRetry=()=>false;",
               price: "export const loadReferralPriceClaimOnly=()=>{};",
@@ -148,14 +151,19 @@ async function renderVerify(on = false) {
   return renderToStaticMarkup(createElement(module.VerifyPage));
 }
 
-test("OFF successful verify markup is byte-identical to the original page", async () => {
-  // Frozen from origin/main before this change; portable to shallow CI checkouts.
-  const expected = readFileSync(join(root, "tests/fixtures/verifiedBuddyOff.html"), "utf8");
-  assert.equal(await renderVerify(false), expected);
+test("OFF confirmation keeps the intro and shows only SMS and reservation steps", async () => {
+  const original = readFileSync(join(root, "tests/fixtures/verifiedBuddyOff.html"), "utf8");
+  const html = await renderVerify(false);
+  assert.ok(html.includes(original.match(/<h1[\s\S]*?<\/h1>/)![0]));
+  assert.deepEqual([...html.matchAll(/data-verify-step="(\d)"/g)].map(m => m[1]), ["1", "2"]);
+  assert.match(html, /Existing SMS consent card/);
+  assert.match(html, /Existing reservation offer/);
+  assert.doesNotMatch(html, /Buddy Invite enabled|private-confirmation-token|private-status-credential/);
 });
 
-test("ON confirmation mounts Buddy card without serializing its credential", async () => {
+test("ON confirmation shows all three ordered steps without serializing credentials", async () => {
   const html = await renderVerify(true);
+  assert.deepEqual([...html.matchAll(/data-verify-step="(\d)"/g)].map(m => m[1]), ["1", "2", "3"]);
   assert.match(html, /Buddy Invite enabled/);
-  assert.ok(!html.includes("private-status-credential"));
+  assert.doesNotMatch(html, /private-status-credential|private-confirmation-token/);
 });

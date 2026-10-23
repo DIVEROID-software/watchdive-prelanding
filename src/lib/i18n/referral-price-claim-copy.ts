@@ -10,11 +10,13 @@
 //     paid USD 3 reservation.
 //
 // Two kinds of surface:
-//   - sentences (search snippets, the offer lead, the form terms, the hero
-//     line, the SMS card terms) state the limit with both exceptions;
+//   - sentences (search snippets, the offer lead, the form terms, the
+//     SMS card terms) state the limit with both exceptions;
 //   - short labels (button, chip note, kicker, section and strip titles) drop
 //     the number and keep "early bird" beside the price. Each sits on a page
 //     whose offer lead and form terms carry the full sentence.
+// Owner override, 2026-10-23: the hero race line now shares the OFF template
+// and states the next USD 200 tier; other claim surfaces remain unchanged.
 // No line claims a live count, a deadline or that the price is "only" for 100.
 // The share text names no price at all, as the review proposes: a friend
 // receives it with none of the page's conditions around it.
@@ -23,6 +25,7 @@
 // rules; `{price}` stays for the caller, which uses the hero's own price.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
+import { earlyBirdRaceCopy } from "../earlyBirdRace.ts";
 import { EARLY_BIRD_SEATS } from "../referral/program.ts";
 import type { Locale } from "./locale.ts";
 import type { PriceClaim } from "./price-claim.ts";
@@ -53,8 +56,7 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     },
     conversionTerms:
       "For the first {seats} Kickstarter backers, plus waitlist members with a price reservation or Dive Team status. Signing up does not reserve the offer.",
-    earlyBirdRace:
-      "{price} for the first {seats} Kickstarter backers, plus price-reservation holders and Dive Team members.",
+    earlyBirdRace: earlyBirdRaceCopy["en"],
     phoneTerms:
       "The early-bird offer goes to the first {seats} backers on Kickstarter, plus waitlist members with a price reservation or Dive Team status. Adding a number does not reserve a spot or guarantee the offer.",
   },
@@ -83,8 +85,7 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     },
     conversionTerms:
       "Kickstarter 선착순 후원자 {seats}명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원 대상. 알림 신청으로 혜택이 예약되지는 않습니다.",
-    earlyBirdRace:
-      "{price} 얼리버드: Kickstarter 선착순 {seats}명, 그리고 가격 예약·다이브 팀 회원.",
+    earlyBirdRace: earlyBirdRaceCopy["ko"],
     phoneTerms:
       "얼리버드 혜택은 Kickstarter에서 먼저 후원한 {seats}명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원에게 적용돼요. 번호 등록으로 순서가 예약되거나 혜택이 보장되지는 않아요.",
   },
@@ -113,7 +114,7 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     },
     conversionTerms:
       "限 Kickstarter 前 {seats} 位支持者，以及有价格预约或潜水小队等级的名单成员。报名不代表预留优惠。",
-    earlyBirdRace: "{price} 早鸟价：Kickstarter 前 {seats} 名，以及价格预约和潜水小队成员。",
+    earlyBirdRace: earlyBirdRaceCopy["zh-CN"],
     phoneTerms:
       "早鸟优惠属于 Kickstarter 上最先支持的{seats}人，以及有价格预约或潜水小队等级的名单成员。留下号码不会预留名额或保证获得优惠。",
   },
@@ -142,7 +143,7 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     },
     conversionTerms:
       "限 Kickstarter 前 {seats} 位支持者，以及有價格預約或潛水小隊等級的名單成員。報名不代表保留優惠。",
-    earlyBirdRace: "{price} 早鳥價：Kickstarter 前 {seats} 名，以及價格預約和潛水小隊成員。",
+    earlyBirdRace: earlyBirdRaceCopy["zh-TW"],
     phoneTerms:
       "早鳥優惠適用於 Kickstarter 最先贊助的{seats}人，以及有價格預約或潛水小隊等級的名單成員。留下號碼不會保留名額或保證優惠。",
   },
@@ -171,8 +172,7 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     },
     conversionTerms:
       "Kickstarterの先着{seats}名の支援者と、価格予約またはダイブチームの資格を持つリスト登録者が対象。登録だけでは特典は確保されません。",
-    earlyBirdRace:
-      "{price}の早期価格は、Kickstarterの先着{seats}名と、価格予約・ダイブチームの方が対象。",
+    earlyBirdRace: earlyBirdRaceCopy["ja"],
     phoneTerms:
       "早期特典は Kickstarter で最初に支援した{seats}名と、価格予約またはダイブチームの資格を持つリスト登録者が対象です。番号の登録で枠の予約や特典の保証はされません。",
   },
@@ -201,8 +201,7 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     },
     conversionTerms:
       "Para los primeros {seats} patrocinadores en Kickstarter y para quienes estén en la lista con una reserva de precio o el nivel Equipo de buceo. Registrarte no reserva la oferta.",
-    earlyBirdRace:
-      "{price} para los {seats} primeros en Kickstarter, más reservas de precio y Equipo de buceo.",
+    earlyBirdRace: earlyBirdRaceCopy["es"],
     phoneTerms:
       "La oferta early bird es para los primeros {seats} patrocinadores en Kickstarter y para quienes estén en la lista con una reserva de precio o el nivel Equipo de buceo. Dejar tu número no reserva una plaza ni garantiza la oferta.",
   },
@@ -231,8 +230,7 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     },
     conversionTerms:
       "Pour les {seats} premiers contributeurs sur Kickstarter, ainsi que pour les inscrits qui ont une réservation de prix ou font partie de la Palanquée. L’inscription ne réserve pas l’offre.",
-    earlyBirdRace:
-      "{price} pour les {seats} premiers sur Kickstarter, plus les réservations de prix et la Palanquée.",
+    earlyBirdRace: earlyBirdRaceCopy["fr"],
     phoneTerms:
       "L’offre early bird est réservée aux {seats} premiers contributeurs sur Kickstarter, ainsi qu’aux inscrits qui ont une réservation de prix ou font partie de la Palanquée. Ajouter un numéro ne réserve aucune place et ne garantit pas l’offre.",
   },
@@ -261,8 +259,7 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     },
     conversionTerms:
       "Für die ersten {seats} Unterstützer auf Kickstarter sowie für alle auf der Warteliste mit Preisreservierung oder Tauchteam-Status. Die Anmeldung reserviert das Angebot nicht.",
-    earlyBirdRace:
-      "{price} für die ersten {seats} auf Kickstarter, dazu Preisreservierung und Tauchteam.",
+    earlyBirdRace: earlyBirdRaceCopy["de"],
     phoneTerms:
       "Das Early-Bird-Angebot gilt für die ersten {seats} Unterstützer auf Kickstarter sowie für alle auf der Warteliste mit Preisreservierung oder Tauchteam-Status. Eine Telefonnummer reserviert keinen Platz und garantiert das Angebot nicht.",
   },
@@ -291,8 +288,7 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     },
     conversionTerms:
       "Para os primeiros {seats} apoiadores no Kickstarter e para quem está na lista com reserva de preço ou nível Equipe de mergulho. O cadastro não reserva a oferta.",
-    earlyBirdRace:
-      "{price} para os {seats} primeiros no Kickstarter, mais reservas de preço e Equipe de mergulho.",
+    earlyBirdRace: earlyBirdRaceCopy["pt-BR"],
     phoneTerms:
       "A oferta early bird é para os primeiros {seats} apoiadores no Kickstarter e para quem está na lista com reserva de preço ou nível Equipe de mergulho. Informar o número não reserva uma vaga nem garante a oferta.",
   },

@@ -8,6 +8,10 @@
 // names the exceptions wherever it states the limit, and its short labels
 // drop the number instead.
 //
+// Owner override, 2026-10-23: only the hero race line now uses the same
+// first-100/next-USD-200 copy in both switch states (earlyBirdRace.ts).
+// The other surfaces and their exception disclosures remain unchanged.
+//
 // The replacement strings travel as route loader data, resolved on the server
 // for the request (see price-claim-loader.ts). That keeps three things true:
 //   - switch off: no loader key, no new string, the same catalog objects, so

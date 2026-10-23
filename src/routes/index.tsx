@@ -1,3 +1,4 @@
+import { SignupReservationOffer } from "@/components/reservation/SignupReservationOffer";
 import { socialAuthResultCopy } from "@/lib/socialAuthResultCopy";
 import { alreadyVerifiedCopy } from "@/lib/i18n/already-verified";
 import { PhoneOptInCard } from "@/components/phone-optin-card";
@@ -468,7 +469,8 @@ function StickyLaunchBanner() {
         }
         return signupActionsVisible(form);
       });
-      const hide = actionable || editing || keyboardOpen;
+      const postSubmit = !!document.querySelector(".wd-onsite-offer, .wd-inbox-card");
+      const hide = actionable || editing || keyboardOpen || postSubmit;
       setHidden(hide);
       document.documentElement.dataset.wdForm = hide ? "active" : "";
     };
@@ -821,7 +823,11 @@ function CheckInboxCard({
   onDeclineMeasurement,
   phoneOptIn,
   shareNote,
+  regionId,
+  autoFocus = true,
 }: {
+  regionId?: string;
+  autoFocus?: boolean;
   phoneOptIn?: React.ReactNode;
   /** Set when a typed code could not be matched. Signup already succeeded. */
   shareNote?: string;
@@ -851,6 +857,7 @@ function CheckInboxCard({
   }, [resending]);
 
   useEffect(() => {
+    if (!autoFocus) return;
     cardRef.current?.focus({ preventScroll: true });
     cardRef.current?.scrollIntoView({ block: "nearest" });
   }, []);
@@ -863,6 +870,7 @@ function CheckInboxCard({
   return (
     <div
       ref={cardRef}
+      id={regionId}
       tabIndex={-1}
       role="region"
       aria-label={m.inbox.title}
@@ -1164,7 +1172,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   }
 
   if (verified) {
-    return <><ReferralSuccess refCode={refCode} /><PhoneOptInCard credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} /></>;
+    return <><SignupReservationOffer locale={locale} verified credential={{ kind: "attempt", value: handle }} /><ReferralSuccess refCode={refCode} /><PhoneOptInCard credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} /></>;
   }
 
   // The server treats a repeat submit of the same address as a resend, under
@@ -1304,8 +1312,11 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   }
 
   if (pending) {
-    return (
+    return (<>
+      <SignupReservationOffer locale={locale} inboxId={`${id}-verify-inbox`} autoFocus />
       <CheckInboxCard
+        regionId={`${id}-verify-inbox`}
+        autoFocus={false}
         message={pending}
         shareNote={shareNote || undefined}
         phoneOptIn={<PhoneOptInCard key={handle} credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} />}
@@ -1336,7 +1347,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           requestAnimationFrame(() => document.getElementById(`${id}-email`)?.focus());
         }}
       />
-    );
+    </>);
   }
 
   return (
@@ -1438,7 +1449,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           autoCapitalize="none"
           spellCheck={false}
           aria-label={m.form.step1}
-          aria-describedby={`${id}-confirm-note ${id}-experiment-note`}
+          aria-describedby={`${id}-confirm-note`}
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -1498,12 +1509,6 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           </label>
         </details>
       )}
-
-      <div id={`${id}-experiment-note`} className="wd-experiment-copy wd-experiment-note">
-        <p className="font-semibold">{copy.reassurance}</p>
-        <p>{copy.confirmation}</p>
-        <p className="wd-experiment-terms">{copy.terms}</p>
-      </div>
 
       {/* Never pre-ticked, and separate from the email signup: WD-SMS-CONSENT-V1. */}
       {includePhone && phone.trim() && (
@@ -1581,8 +1586,8 @@ const HOLD_EARLY_SUBMIT_JS = `document.addEventListener("submit",function(e){var
 
 /**
  * The first screen answers what this is before anything loads: the headline
- * names the outcome (your smartwatch becomes a dive computer), the sub-line
- * says how, the photo shows it on a wrist in water, then the price and the
+ * names the outcome (your smartwatch becomes a dive computer), the
+ * photo shows it on a wrist in water, then the price and the
  * form. Text and form are server-rendered; the photo has an instant preview.
  */
 function Hero() {
@@ -1601,7 +1606,6 @@ function Hero() {
             <span className="text-[#65ceee]">{highlight}</span>
             {after}
           </h1>
-          <p className="wd-hero-sub text-body text-[#F6FAFC]">{m.hero.sub}</p>
           <a href="#compatibility" className="wd-experiment-copy wd-experiment-compatibility">
             {copy.compatibility} <span aria-hidden>↗</span>
           </a>

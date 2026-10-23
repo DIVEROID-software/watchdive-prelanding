@@ -1,45 +1,40 @@
-// One sentence directly above the hero email field: the early-bird price, and
-// that only the first 100 Kickstarter backers at launch get it. Each part is a
-// claim the catalog already makes (hero price, `offNote`, `conversionCopy.terms`);
-// this states them together, with the limit inside the same sentence.
-//
-// Why there: page-behaviour rows from 2026-10-08 to 10-10 (183 consented
-// sessions, 81% phones) put the median phone scroll at 7% and a third of
-// visits never scroll, while the "first 100 backers" section further down was
-// reached by 27%. The reason to act has to sit in the first screen, next to
-// the field, and must not push the field down: in form-first it takes the
-// place of the benefit line and stays within its line count.
-//
-// Deliberately not here: the waitlist total. It is mostly a founder-stated
-// off-platform figure, and waitlist position does not allocate the 100
-// pledges, so "N already waiting" beside "first 100" would imply a queue that
-// does not exist. The progress bar shows the total with its own explanation.
-//
-// Kept free of path-alias imports so `npm test` can load it directly.
+// Owner-approved hero copy, 2026-10-23: the first 100 Kickstarter backers
+// get the early-bird price, followed by USD 200. The hero keeps its existing
+// localized early-bird estimate; the next tier explicitly names USD so we do
+// not invent exchange rates. Buddy Invite ON and OFF share these templates.
+// No waitlist count, deadline, or remaining-place estimate is implied.
 import type { Locale } from "./i18n/locale.ts";
+import { EARLY_BIRD_SEATS } from "./referral/program.ts";
 
-/** `{price}` is the hero's localized early-bird price (`hero.nowPrice`). */
+/** `{price}` comes from hero.nowPrice; `{seats}` comes from program.ts. */
 export const earlyBirdRaceCopy: Record<Locale, string> = {
-  en: "{price} for the first 100 Kickstarter backers at launch.",
-  ko: "{price} 얼리버드는 Kickstarter 오픈 선착순 100명뿐.",
-  "zh-CN": "{price} 早鸟价：Kickstarter 开启后仅限前 100 名。",
-  "zh-TW": "{price} 早鳥價：Kickstarter 開賣後僅限前 100 名。",
-  ja: "{price}の早期価格は、Kickstarter開始時の先着100名だけ。",
-  es: "{price} solo para los 100 primeros en Kickstarter, al abrir.",
-  fr: "{price} pour les 100 premiers sur Kickstarter, à l’ouverture.",
-  de: "{price} nur für die ersten 100 auf Kickstarter, zum Start.",
-  "pt-BR": "{price}: só os 100 primeiros no Kickstarter, ao abrir.",
+  en: "{price} early bird: first {seats} Kickstarter backers. After that the price goes up to $200.",
+  ko: "{price} 얼리버드: Kickstarter 선착순 {seats}명. 이후 가격은 $200로 올라요.",
+  "zh-CN": "{price}早鸟价：限 Kickstarter 前 {seats} 名支持者。之后价格将涨至 200 美元。",
+  "zh-TW": "{price}早鳥價：限 Kickstarter 前 {seats} 名支持者。之後價格將漲至 200 美元。",
+  ja: "{price}の早期価格：Kickstarterの先着{seats}名の支援者が対象。その後は200米ドルに上がります。",
+  es: "{price} de lanzamiento: los {seats} primeros patrocinadores en Kickstarter. Después, el precio sube a 200 USD.",
+  fr: "{price} en offre de lancement : les {seats} premiers contributeurs sur Kickstarter. Ensuite, le prix passe à 200 USD.",
+  de: "{price} zum Early-Bird-Preis: die ersten {seats} Unterstützer auf Kickstarter. Danach steigt der Preis auf 200 USD.",
+  "pt-BR": "{price} na oferta de lançamento: os {seats} primeiros apoiadores no Kickstarter. Depois, o preço sobe para US$ 200.",
 };
 
-/**
- * The sentence for a locale, capitalized when a price like "unos 140 €" opens it.
- * `template` is the switched-on Buddy Invite claim (price-claim.ts), which
- * names who else gets the price; without it the line is exactly as before.
- */
+/** Only this phrase gets a marker; its text never fades with the background. */
+export const earlyBirdRaceHighlight: Record<Locale, string> = {
+  en: `first ${EARLY_BIRD_SEATS}`,
+  ko: `선착순 ${EARLY_BIRD_SEATS}명`,
+  "zh-CN": `前 ${EARLY_BIRD_SEATS} 名`,
+  "zh-TW": `前 ${EARLY_BIRD_SEATS} 名`,
+  ja: `先着${EARLY_BIRD_SEATS}名`,
+  es: `los ${EARLY_BIRD_SEATS} primeros`,
+  fr: `les ${EARLY_BIRD_SEATS} premiers`,
+  de: `die ersten ${EARLY_BIRD_SEATS}`,
+  "pt-BR": `os ${EARLY_BIRD_SEATS} primeiros`,
+};
+
 export function earlyBirdRace(locale: Locale, price: string, template?: string): string {
-  const sentence = (template ?? earlyBirdRaceCopy[locale] ?? earlyBirdRaceCopy.en).replace(
-    "{price}",
-    price,
-  );
+  const sentence = (template ?? earlyBirdRaceCopy[locale] ?? earlyBirdRaceCopy.en)
+    .replace("{price}", price)
+    .replaceAll("{seats}", String(EARLY_BIRD_SEATS));
   return sentence.charAt(0).toLocaleUpperCase(locale) + sentence.slice(1);
 }
