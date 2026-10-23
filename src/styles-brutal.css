@@ -262,3 +262,12 @@ html:root .wd-buddy-board ol {
 html:root .wd-buddy-board li + li {
   border-top: var(--wd-b-thin) solid #201748;
 }
+
+/* Owner 2026-10-23: product photo first on mobile, with the existing frame
+   and aspect ratio. The desktop two-column grid is unchanged. */
+@media (max-width: 1023px) {
+  html:root .wd-hero-layout,
+  html:root[data-wd-landing="form_first"] .wd-hero-layout {
+    grid-template-areas: "media" "heading" "signup" "proof";
+  }
+}

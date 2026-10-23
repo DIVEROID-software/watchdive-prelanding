@@ -78,7 +78,7 @@ test('all nine languages expose the offer and separate-fee/refund/authentication
  assert.deepEqual(Object.keys(ONSITE_OFFER_COPY).sort(),[...SUPPORTED_LOCALES].sort());
  for(const copy of Object.values(ONSITE_OFFER_COPY)) {
   for(const value of Object.values(copy))assert.ok(value.trim().length>0);
-  assert.match(copy.body,/149/);assert.match(copy.nextPrice,/100/);assert.match(copy.nextPrice,/179/);
+  assert.match(copy.body,/149/);assert.match(copy.nextPrice,/100/);assert.match(copy.nextPrice,/200/);
   assert.match(copy.separate,/149/);assert.match(copy.separate,/3/);
   assert.notEqual(copy.pending,copy.verified); assert.notEqual(copy.cta,copy.verifyCta);
  }

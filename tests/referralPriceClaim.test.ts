@@ -1,12 +1,13 @@
 // The "$149 for the first 100" claim while Buddy Invite is on, and proof that
-// nothing changes while it is off (claims review BLOCKER 1, owner D1(a)).
+// other surfaces stay frozen (claims review BLOCKER 1, owner D1(a)).
+// Owner 2026-10-23 overrides only the hero race line in both switches.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { conversionCopy } from "../src/lib/conversionCopy.ts";
-import { earlyBirdRace, earlyBirdRaceCopy } from "../src/lib/earlyBirdRace.ts";
+import { earlyBirdRace } from "../src/lib/earlyBirdRace.ts";
 import { EN_FROZEN_LANDING_MESSAGES } from "../src/lib/i18n/frozen-landing-en.ts";
 import { FROZEN_LANDING_MESSAGES } from "../src/lib/i18n/frozen-landing-messages.ts";
 import { SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
@@ -70,9 +71,9 @@ test("off: every claim surface is the catalog's own object, untouched", () => {
   assert.equal(applyPriceClaim(EN_FROZEN_LANDING_MESSAGES, undefined), EN_FROZEN_LANDING_MESSAGES);
 });
 
-test("off: rendered copy hashes equal the pre-change baseline (fd2e434)", () => {
+test("off: rendered copy stays frozen except the owner-approved 2026-10-23 hero line", () => {
   // Computed on a checkout of fd2e434, before this change, with the same
-  // inputs. Any drift in what an off-switch visitor or inbox sees fails here.
+  // inputs. Only the hero race hash is repinned for owner approval 2026-10-23.
   const race = SUPPORTED_LOCALES.map((l) =>
     earlyBirdRace(l, FROZEN_LANDING_MESSAGES[l].hero.nowPrice),
   );
@@ -99,7 +100,7 @@ test("off: rendered copy hashes equal the pre-change baseline (fd2e434)", () => 
     sha256(conversionCopy),
     "ef82f6279363e7d9d6c82449d6ed87c9f7f28991f4b21862e9cbb04ea89423f1",
   );
-  assert.equal(sha256(race), "57e075698ed0eb8804ac4789274e782d7b9aaae06634068e74bae0704eb77dac");
+  assert.equal(sha256(race), "b0f177d6d023f483e8bde41d6f4b406fa220db057f4d2b42add09f8cea451a7c");
   assert.equal(
     sha256(phoneOptInCopy),
     "5da27009d4661df3099eaaab47e64fa7c039f1c864613b44cbf16ba462d83d0d",
@@ -209,19 +210,17 @@ function diveTeam(locale: Locale): string {
 
 function disclosed(locale: Locale): Record<string, string> {
   const claim = referralPriceClaim(locale);
-  const price = FROZEN_LANDING_MESSAGES[locale].hero.nowPrice;
   return {
     "meta.description": claim.landing.meta.description,
     "meta.ogDescription": claim.landing.meta.ogDescription,
     "meta.twitterDescription": claim.landing.meta.twitterDescription,
     "offer.lead": claim.landing.offer.lead,
     conversionTerms: claim.conversionTerms,
-    earlyBirdRace: earlyBirdRace(locale, price, claim.earlyBirdRace),
     phoneTerms: claim.phoneTerms,
   };
 }
 
-test("on: every sentence that states the 100 also names both exceptions", () => {
+test("on: every unchanged claim surface stating the 100 still names both exceptions", () => {
   for (const locale of SUPPORTED_LOCALES) {
     const team = diveTeam(locale);
     for (const [path, copy] of Object.entries(disclosed(locale))) {
@@ -336,7 +335,7 @@ test("on: the share text a friend receives states no price and no limit", () => 
   }
 });
 
-test("on: the hero line keeps the hero's own price, capitalized, with no USD leak", () => {
+test("both switches: owner-approved hero line keeps localized price and adds USD 200", () => {
   for (const locale of SUPPORTED_LOCALES) {
     const template = referralPriceClaim(locale).earlyBirdRace;
     assert.ok(template.includes("{price}"), locale);
@@ -345,12 +344,14 @@ test("on: the hero line keeps the hero's own price, capitalized, with no USD lea
     assert.ok(line.toLowerCase().includes(price.toLowerCase()), `${locale}: ${line}`);
     assert.equal(line.charAt(0), line.charAt(0).toLocaleUpperCase(locale), `${locale}: ${line}`);
     if (locale !== "en" && locale !== "ko") assert.doesNotMatch(line, /(?<![A-Z])\$\s?\d/);
-    // Same budget as the off line plus the two exceptions, not a paragraph.
-    assert.ok([...line].length <= [...earlyBirdRaceCopy[locale]].length + 70, `${locale}: ${line}`);
+    assert.equal(line, earlyBirdRace(locale, price), `${locale}: ON/OFF must match`);
+    assert.match(line, /200/, locale);
+    assert.doesNotMatch(line, RESERVATION[locale], locale);
+    assert.ok(!line.includes(diveTeam(locale)), locale);
   }
   assert.equal(
     earlyBirdRace("es", "unos 140 €", referralPriceClaim("es").earlyBirdRace),
-    "Unos 140 € para los 100 primeros en Kickstarter, más reservas de precio y Equipo de buceo.",
+    "Unos 140 € de lanzamiento: los 100 primeros patrocinadores en Kickstarter. Después, el precio sube a 200 USD.",
   );
 });
 
