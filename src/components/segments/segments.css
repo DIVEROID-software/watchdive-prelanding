@@ -286,3 +286,60 @@ html:root .wd-segment-form .wd-inbox-card{border:3px solid #eef9ff!important;box
 .wd-segment-free-logbook>img{width:100%;height:auto;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow);background:#000}
 .wd-segment-free-logbook>figcaption{font-size:12px;line-height:1.5;color:var(--seg-muted);margin-top:16px;text-align:center}
 @media(max-width:959px){.wd-segment-log .wd-segment-free-logbook{width:min(100%,280px)}}
+
+/* Dive-computer use is included; price comparisons keep the plan explicit. */
+.wd-segment-page .wd-segment-hero-usp{display:flex;align-items:center;gap:9px;background:#65ceee;color:#201748;border:2px solid var(--seg-frame);box-shadow:3px 3px 0 var(--seg-frame);padding:9px 12px;margin:0 0 22px;font-size:14px;font-weight:750;line-height:1.45;max-width:450px}
+.wd-segment-hero-usp svg{width:21px;height:21px;flex:0 0 21px}
+.wd-segment-signup-heading>p.wd-segment-subscription-note{color:#65ceee;font-size:14px;line-height:1.5;font-weight:750;margin-top:18px;border-left:3px solid #65ceee;padding-left:11px}
+.wd-subscription-comparison{padding-block:0 76px}
+.wd-subscription-comparison h2{max-width:780px}
+.wd-segment-page .wd-subscription-lead{margin-top:18px;color:var(--seg-muted);max-width:700px}
+.wd-subscription-panels{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:64px;margin-top:32px}
+.wd-subscription-vs{position:absolute;z-index:1;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-7deg);display:grid;place-items:center;width:64px;height:64px;background:#f5ff3d;color:#201748;border:3px solid #201748;box-shadow:4px 4px 0 #201748;font-size:25px;font-weight:800;line-height:1;letter-spacing:-.04em}
+.wd-subscription-card{min-width:0;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow);background:var(--seg-card);padding:30px}
+@supports(grid-template-rows:subgrid){
+ .wd-subscription-panels{row-gap:0}
+ .wd-subscription-card{display:grid;grid-template-rows:subgrid;grid-row:span 5;row-gap:0}
+}
+.wd-subscription-card h3{font-size:24px;line-height:1.2;letter-spacing:-.025em;min-height:66px}
+.wd-subscription-card h3>span{display:block;font-size:15px;line-height:1.5;font-weight:500;letter-spacing:0;margin-top:7px}
+.wd-subscription-watch{background:#65ceee;color:#201748;border-color:#201748;box-shadow:6px 6px 0 #201748}
+.wd-segment-page .wd-subscription-term{font-size:14px;margin-top:25px;line-height:1.4}
+.wd-segment-page .wd-subscription-amount{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;line-height:1.1;margin-top:8px}
+.wd-subscription-amount strong{font-size:clamp(30px,4.8vw,56px);font-weight:750;letter-spacing:-.05em}
+.wd-subscription-amount>span{font-size:12px;font-weight:700}
+.wd-segment-page .wd-subscription-calculation,.wd-segment-page .wd-subscription-included{font-size:15px;line-height:1.5;margin-top:24px}
+.wd-subscription-included{font-weight:750}
+.wd-segment-page .wd-subscription-offer{font-size:12px;line-height:1.5;margin-top:12px}
+.wd-segment-page .wd-subscription-caveat{font-size:12px;color:var(--seg-muted);line-height:1.5;margin-top:24px}
+.wd-subscription-basis{margin-top:14px;border-block:1px solid var(--seg-line);color:var(--seg-muted);font-size:12px}
+.wd-subscription-basis summary{display:flex;align-items:center;justify-content:space-between;min-height:44px;cursor:pointer;list-style:none;gap:20px}
+.wd-subscription-basis summary::-webkit-details-marker{display:none}
+.wd-subscription-basis summary>span{font-size:20px}
+.wd-subscription-basis[open] summary>span{transform:rotate(45deg)}
+.wd-segment-page .wd-subscription-basis p{font-size:12px;line-height:1.7;margin-block:0 8px;max-width:900px}
+.wd-subscription-basis>a{display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-underline-offset:3px;font-weight:700}
+@media(max-width:959px){
+ .wd-segment-hero-copy>h1{margin-bottom:16px}
+ .wd-segment-hero-copy>.wd-segment-hero-usp{order:3;align-self:flex-start;margin:0 24px 24px;max-width:calc(100% - 48px)}
+ .wd-subscription-comparison{padding-bottom:48px}
+ .wd-segment-page .wd-subscription-lead{font-size:15px;margin-top:16px}
+ .wd-subscription-panels{column-gap:26px;margin-top:24px}
+ .wd-subscription-vs{width:38px;height:38px;font-size:16px;border-width:2px;box-shadow:2px 2px 0 #201748}
+ .wd-subscription-card{padding:18px 14px;box-shadow:4px 4px 0 var(--seg-shadow)}
+ .wd-subscription-watch{box-shadow:4px 4px 0 #201748}
+ .wd-subscription-card h3{font-size:18px;min-height:112px;overflow-wrap:anywhere}
+ .wd-subscription-card h3>span{font-size:12px}
+ .wd-segment-page .wd-subscription-term{font-size:12px;min-height:34px;margin-top:14px}
+ .wd-segment-page .wd-subscription-amount{flex-direction:column;align-items:flex-start;gap:6px}
+ .wd-subscription-amount>span{font-size:10px}
+ .wd-segment-page .wd-subscription-calculation,.wd-segment-page .wd-subscription-included{font-size:12px;margin-top:18px}
+ .wd-segment-page .wd-subscription-offer{font-size:11px}
+}
+@media(max-width:359px){
+ .wd-segment-hero-copy>.wd-segment-hero-usp{margin-inline:16px;max-width:calc(100% - 32px);font-size:13px}
+ .wd-subscription-card{padding-inline:10px}
+ .wd-subscription-card h3{font-size:16px;min-height:136px}
+ .wd-segment-page .wd-subscription-term{min-height:51px}
+ .wd-subscription-amount strong{font-size:28px}
+}

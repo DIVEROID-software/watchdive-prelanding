@@ -1,0 +1,37 @@
+{
+  "checked_at": "2026-10-25",
+  "scope": "Local segmented landing preview; no deployment",
+  "currency": "USD",
+  "market": "United States",
+  "sources": [
+    "https://apps.apple.com/us/app/oceanic-scuba-diving-computer/id1610517133?platform=watch",
+    "https://www.oceanicworldwide.com/oceanicplus-subscription/"
+  ],
+  "oceanic_plus": {
+    "scuba_included": {
+      "unit_price": 79.99,
+      "unit": "year",
+      "periods": 2,
+      "total": 159.98
+    },
+    "basis": "Continuous two-year access at the checked rates, not seasonal use or promotional pricing. Two annual payments or 24 monthly payments. Prices may vary by region or change. Subscription is to Oceanic+, not Apple Watch hardware."
+  },
+  "watchdive": {
+    "price": 149,
+    "offer": "Kickstarter first 100 backers",
+    "includes": "Housing and dive-computer features",
+    "subscription_claim": "No additional subscription is required for dive-computer features.",
+    "claim_source": "User product instruction in this task; not a claim that all current/future app features are free."
+  },
+  "exclusions": [
+    "Watch hardware on both sides",
+    "Applicable shipping and taxes"
+  ],
+  "constraints": [
+    "Competitor is explicitly labeled Oceanic+ annual scuba subscription.",
+    "No feature, certification, safety or compatibility equivalence claim.",
+    "No lifetime or all-app-features-free claim.",
+    "Fixed scuba annual plan on both landing segments per latest user instruction."
+  ],
+  "displayed_comparison": "Oceanic+ individual scuba annual plan, two annual payments, versus WatchDive first-100 purchase; same on both landing segments. No plan selector."
+}

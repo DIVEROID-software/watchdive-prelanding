@@ -8,6 +8,8 @@ import { localizePath, privacyPath, termsPath } from '@/lib/i18n/locale';
 import { getAttribution } from '@/lib/attribution';
 import { segmentCopy, type DiveSegment } from '@/lib/segments/copy';
 import { SegmentHeroMedia } from './SegmentHeroMedia';
+import { SegmentCostComparison } from './SegmentCostComparison';
+import { subscriptionCopy } from '@/lib/segments/subscription-copy';
 import wordmarkWhite from '@/assets/brand/diveroid-wordmark-white.png';
 import fit800 from '@/assets/live/responsive/watchdive-step1-800.webp';
 import sync640 from '@/assets/live/refresh/sync-app-640.webp';
@@ -25,6 +27,8 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const c = segmentCopy(locale, segment);
+  const subscription = subscriptionCopy(locale);
+  const benefits = [{ title: subscription.benefitTitle, body: subscription.benefitBody }, ...c.benefits.slice(0, 2)];
   const [priceNoteBefore, priceNoteAfter] = c.priceNote.split(c.priceNoteHighlight);
   const [sticky, setSticky] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
@@ -63,6 +67,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   }, [segment]);
   const faq = [
     { q: m.faq.q6, a: m.faq.a6 },
+    { q: subscription.faqQuestion, a: subscription.faqAnswer },
     { q: m.faq.q2, a: c.depthAnswer },
     { q: isFree ? m.faq.q4 : m.faq.q3, a: isFree ? m.faq.a4 : m.faq.a3 },
     { q: m.faq.q5, a: m.faq.a5 },
@@ -77,6 +82,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         <p>{position === 'middle' ? c.signupBody : c.finalBody}</p>
         <div className="wd-segment-price"><strong>$149</strong><s>$299</s><span className="wd-segment-discount"><b>50%</b>{' '}<span>{c.discountLabel}</span></span></div>
         <p className="wd-segment-price-note">{priceNoteBefore}<strong className="wd-segment-first100">{c.priceNoteHighlight}</strong>{priceNoteAfter}</p>
+        <p className="wd-segment-subscription-note">{subscription.uspShort}</p>
         <p className="wd-segment-small">{c.includeNote}</p>
       </div>
       <div className="wd-segment-form">
@@ -102,6 +108,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
             </nav>
             <p className="wd-segment-eyebrow">WATCHDIVE / {c.modes[segment]}</p>
             <h1 id="segment-title">{c.title.split('\n').map((line, i) => <span key={line} className={i ? 'wd-segment-title-accent' : ''}>{line}</span>)}</h1>
+            <p className="wd-segment-hero-usp"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" stroke="currentColor" strokeWidth="2.5" /></svg><span>{subscription.usp}</span></p>
             <p className="wd-segment-intro">{c.intro}</p>
             <div className="wd-segment-hero-offer"><strong>$149</strong><span>{c.priceNote}</span></div>
             <a className="wd-segment-explore" href="#segment-benefits">{c.discover}<span aria-hidden="true">↓</span></a>
@@ -112,7 +119,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         <section id="segment-benefits" className="wd-segment-benefits wd-segment-shell" aria-labelledby="benefits-title">
           <p className="wd-segment-eyebrow">01 / WATCHDIVE</p>
           <h2 id="benefits-title">{c.benefitTitle}</h2>
-          <div className="wd-segment-benefit-list">{c.benefits.map((benefit, i) => <article key={benefit.title}>
+          <div className="wd-segment-benefit-list">{benefits.map((benefit, i) => <article key={benefit.title}>
             <span className="wd-segment-number" aria-hidden="true">0{i + 1}</span><div><h3>{benefit.title}</h3><p>{benefit.body}</p></div>
           </article>)}</div>
         </section>
@@ -124,6 +131,8 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
             <a className="wd-segment-text-link" href="#segment-compatibility" onClick={() => { const detail = document.getElementById('segment-compatibility'); if (detail instanceof HTMLDetailsElement) detail.open = true; }}>{c.compatibility}<span aria-hidden="true">↗</span></a>
           </div>
         </section>
+
+        <SegmentCostComparison locale={locale} />
 
         <div className="wd-segment-shell">{signup('middle')}</div>
 
