@@ -15,6 +15,7 @@ import sync1000 from '@/assets/live/refresh/sync-app-1000.webp';
 import cameraPoster from '@/assets/live/connected-app-poster.jpg';
 import cameraVideo from '@/assets/live/connected-app.mp4';
 import logbook from '@/assets/live/app3/app3-1.jpg';
+import freedivingLogbook from '@/assets/live/segment-heroes/freediving-logbook.jpg';
 import './segments.css';
 
 /** The same live form/service, presented after the explanation rather than in the hero.
@@ -24,6 +25,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const c = segmentCopy(locale, segment);
+  const [priceNoteBefore, priceNoteAfter] = c.priceNote.split(c.priceNoteHighlight);
   const [sticky, setSticky] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
   const [campaignQuery, setCampaignQuery] = useState('');
@@ -73,8 +75,8 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         <p className="wd-segment-eyebrow">KICKSTARTER · WATCHDIVE</p>
         <h2 id={`signup-title-${position}`}>{position === 'middle' ? c.signupTitle : c.finalTitle}</h2>
         <p>{position === 'middle' ? c.signupBody : c.finalBody}</p>
-        <div className="wd-segment-price"><strong>$149</strong><s>$299</s></div>
-        <p className="wd-segment-price-note">{c.priceNote}</p>
+        <div className="wd-segment-price"><strong>$149</strong><s>$299</s><span className="wd-segment-discount"><b>50%</b>{' '}<span>{c.discountLabel}</span></span></div>
+        <p className="wd-segment-price-note">{priceNoteBefore}<strong className="wd-segment-first100">{c.priceNoteHighlight}</strong>{priceNoteAfter}</p>
         <p className="wd-segment-small">{c.includeNote}</p>
       </div>
       <div className="wd-segment-form">
@@ -126,8 +128,11 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         <div className="wd-segment-shell">{signup('middle')}</div>
 
         <section id="segment-logbook" className="wd-segment-log wd-segment-shell" aria-labelledby="log-title">
-          <div className="wd-segment-log-copy"><p className="wd-segment-eyebrow">03 / DIVEROID APP</p><h2 id="log-title">{c.logTitle}</h2><p>{c.logBody}</p></div>
-          <div className="wd-segment-log-images"><img className="wd-segment-sync" src={sync1000} srcSet={`${sync640} 640w, ${sync1000} 1000w`} sizes="(min-width:960px) 45vw, 85vw" width="1000" height="667" alt={m.how.step3Alt} loading="lazy" decoding="async" /><img className="wd-segment-app" src={logbook} width="564" height="1160" alt={m.app.h2} loading="lazy" decoding="async" /></div>
+          <div className="wd-segment-log-copy"><p className="wd-segment-eyebrow">03 / {isFree ? 'WATCHDIVE' : 'DIVEROID APP'}</p><h2 id="log-title">{c.logTitle}</h2><p>{c.logBody}</p></div>
+          {isFree ? <figure className="wd-segment-free-logbook">
+            <img src={freedivingLogbook} width="980" height="1620" alt={c.logImageAlt} loading="lazy" decoding="async" />
+            <figcaption>{c.logImageAlt}</figcaption>
+          </figure> : <div className="wd-segment-log-images"><img className="wd-segment-sync" src={sync1000} srcSet={`${sync640} 640w, ${sync1000} 1000w`} sizes="(min-width:960px) 45vw, 85vw" width="1000" height="667" alt={m.how.step3Alt} loading="lazy" decoding="async" /><img className="wd-segment-app" src={logbook} width="390" height="844" alt={c.logImageAlt} loading="lazy" decoding="async" /></div>}
         </section>
 
         <section id="segment-camera" className="wd-segment-camera wd-segment-shell" aria-labelledby="camera-title">

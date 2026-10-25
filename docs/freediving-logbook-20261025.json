@@ -1,0 +1,19 @@
+{
+  "asset": "src/assets/live/segment-heroes/freediving-logbook.jpg",
+  "size": [
+    980,
+    1620
+  ],
+  "sha256": "1e0c6b688a09b2ebfe6243d32b4793b115a6dc5fa6c5c882b6d43995a15d73b4",
+  "source": "/Users/diveroid/Library/CloudStorage/Dropbox-DIVEROID/DIVEROID/04_Growth & Ops/02_Marketing_Brand/04_WatchDive/02_Content/04_Photo_Video_GIF/01_Human_made/002_Videos/02_ShortClip_Video/02_Vertical/04_WatchDive_Shorts_04_Free Diving_250124.mp4",
+  "sourceSHA256": "612d1aec1eae825c0b50a2c65fb9edf3edc48e2980c3c54a727515d2bf15422c",
+  "frameSeconds": 15.7,
+  "crop": {
+    "x": 40,
+    "y": 70,
+    "width": 980,
+    "height": 1620
+  },
+  "description": "Actual brand video still showing the WatchDive watch Free Diving logbook. English device UI. Not a phone app screenshot; no generated UI. Existing source dates and sample numbers preserved.",
+  "inspection": "Actual Grok4.7 worker and root visual review; selected only for freediving route."
+}

@@ -16,10 +16,13 @@ export type SegmentCopy = {
   signupCta: string;
   signupNote: string;
   priceNote: string;
+  priceNoteHighlight: string;
+  discountLabel: string;
   includeNote: string;
   compatibility: string;
   logTitle: string;
   logBody: string;
+  logImageAlt: string;
   cameraTitle: string;
   cameraBody: string;
   finalTitle: string;
@@ -47,10 +50,12 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "Notify me at launch",
       "signupNote": "Confirm your email to complete signup.",
       "priceNote": "Early bird · first 100 Kickstarter backers",
+      "priceNoteHighlight": "first 100",
+      "discountLabel": "OFF",
       "includeNote": "Housing + app. Smartwatch sold separately.",
       "compatibility": "Check compatible watches",
-      "logTitle": "Back on the surface. Into your logbook.",
-      "logBody": "Sync your dive profile to the DIVEROID app after the dive. Review your dives in one place.",
+      "logTitle": "Your freedives, in your logbook.",
+      "logBody": "Review your freediving records on WatchDive. After the dive, sync your dive profile to the DIVEROID app.",
       "cameraTitle": "Your footage, alongside your dive.",
       "cameraBody": "Bring footage from GoPro, Insta360, Canon and more together with your dive log in the DIVEROID app.",
       "finalTitle": "Be there when WatchDive launches.",
@@ -76,7 +81,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "Add the WatchDive housing for diving. Your watch stays with you on land."
         }
       ],
-      "depthAnswer": "Recommended operating depth is 40 m. The housing completed a water-resistance test at 60 m; this is not independent certification or a guarantee in every environment. Dive within your training and the conditions."
+      "depthAnswer": "Recommended operating depth is 40 m. The housing completed a water-resistance test at 60 m; this is not independent certification or a guarantee in every environment. Dive within your training and the conditions.",
+      "logImageAlt": "WatchDive freediving logbook"
     },
     "scuba": {
       "modes": {
@@ -91,6 +97,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "Notify me at launch",
       "signupNote": "Confirm your email to complete signup.",
       "priceNote": "Early bird · first 100 Kickstarter backers",
+      "priceNoteHighlight": "first 100",
+      "discountLabel": "OFF",
       "includeNote": "Housing + app. Smartwatch sold separately.",
       "compatibility": "Check compatible watches",
       "logTitle": "Back on the surface. Into your logbook.",
@@ -120,7 +128,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "Sync your dive profile to the DIVEROID app when you’re back at the surface."
         }
       ],
-      "depthAnswer": "Recommended operating depth is 40 m. The housing completed a water-resistance test at 60 m; this is not independent certification or a guarantee in every environment. Dive within your training and the conditions."
+      "depthAnswer": "Recommended operating depth is 40 m. The housing completed a water-resistance test at 60 m; this is not independent certification or a guarantee in every environment. Dive within your training and the conditions.",
+      "logImageAlt": "DIVEROID app scuba logbook"
     }
   },
   "ko": {
@@ -137,10 +146,12 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "출시 알림 받기",
       "signupNote": "이메일 인증으로 신청을 완료하세요.",
       "priceNote": "얼리버드 · Kickstarter 후원자 선착순 100명",
+      "priceNoteHighlight": "선착순 100명",
+      "discountLabel": "할인",
       "includeNote": "하우징 + 앱 구성. 스마트워치는 별도입니다.",
       "compatibility": "지원 워치 확인하기",
-      "logTitle": "물 밖에서는 다이빙 기록으로.",
-      "logBody": "다이빙 후 DIVEROID 앱에 다이브 프로필을 동기화하세요. 지난 다이빙을 한곳에서 돌아볼 수 있습니다.",
+      "logTitle": "프리다이빙 기록을 한눈에.",
+      "logBody": "WatchDive에서 프리다이빙 기록을 확인하세요. 다이빙 후에는 DIVEROID 앱에 다이브 프로필을 동기화할 수 있습니다.",
       "cameraTitle": "다이빙 기록과 영상을 함께.",
       "cameraBody": "GoPro, Insta360, Canon 등으로 촬영한 영상과 다이빙 기록을 DIVEROID 앱에서 함께 확인하세요.",
       "finalTitle": "WatchDive의 시작을 함께하세요.",
@@ -166,7 +177,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "다이빙할 때는 WatchDive 하우징을 더하고, 일상에서는 스마트워치로 쓰세요."
         }
       ],
-      "depthAnswer": "권장 사용 수심은 40 m입니다. 하우징은 60 m 방수 테스트를 완료했으며, 이는 독립 인증이나 모든 환경에서의 성능 보장이 아닙니다. 교육 범위와 당일 조건에 맞게 다이빙하세요."
+      "depthAnswer": "권장 사용 수심은 40 m입니다. 하우징은 60 m 방수 테스트를 완료했으며, 이는 독립 인증이나 모든 환경에서의 성능 보장이 아닙니다. 교육 범위와 당일 조건에 맞게 다이빙하세요.",
+      "logImageAlt": "WatchDive 프리다이빙 로그북"
     },
     "scuba": {
       "modes": {
@@ -181,6 +193,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "출시 알림 받기",
       "signupNote": "이메일 인증으로 신청을 완료하세요.",
       "priceNote": "얼리버드 · Kickstarter 후원자 선착순 100명",
+      "priceNoteHighlight": "선착순 100명",
+      "discountLabel": "할인",
       "includeNote": "하우징 + 앱 구성. 스마트워치는 별도입니다.",
       "compatibility": "지원 워치 확인하기",
       "logTitle": "물 밖에서는 다이빙 기록으로.",
@@ -210,7 +224,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "수면으로 돌아오면 DIVEROID 앱에 다이브 프로필을 동기화하세요."
         }
       ],
-      "depthAnswer": "권장 사용 수심은 40 m입니다. 하우징은 60 m 방수 테스트를 완료했으며, 이는 독립 인증이나 모든 환경에서의 성능 보장이 아닙니다. 교육 범위와 당일 조건에 맞게 다이빙하세요."
+      "depthAnswer": "권장 사용 수심은 40 m입니다. 하우징은 60 m 방수 테스트를 완료했으며, 이는 독립 인증이나 모든 환경에서의 성능 보장이 아닙니다. 교육 범위와 당일 조건에 맞게 다이빙하세요.",
+      "logImageAlt": "DIVEROID 앱의 스쿠버다이빙 로그북"
     }
   },
   "zh-CN": {
@@ -227,10 +242,12 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "上线时通知我",
       "signupNote": "验证邮箱即可完成登记。",
       "priceNote": "早鸟价 · Kickstarter 前 100 位支持者",
+      "priceNoteHighlight": "前 100 位支持者",
+      "discountLabel": "优惠",
       "includeNote": "包含外壳和应用。智能手表需另购。",
       "compatibility": "查看兼容手表",
-      "logTitle": "回到水面，回看潜水记录。",
-      "logBody": "潜水结束后，将潜水曲线同步至 DIVEROID 应用，在一处回顾每次潜水。",
+      "logTitle": "自由潜水记录，一目了然。",
+      "logBody": "在 WatchDive 上查看自由潜水记录。潜水后，将潜水曲线同步至 DIVEROID 应用。",
       "cameraTitle": "潜水记录与影像，一起回看。",
       "cameraBody": "在 DIVEROID 应用中，将 GoPro、Insta360、Canon 等设备拍摄的影像与潜水日志放在一起。",
       "finalTitle": "不错过 WatchDive 上线。",
@@ -256,7 +273,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "潜水时装上 WatchDive 外壳，回到岸上继续日常佩戴。"
         }
       ],
-      "depthAnswer": "建议使用深度为 40 m。外壳已完成 60 m 防水测试；这不等同于独立认证，也不保证在所有环境下的性能。请在所受训练和实际条件允许的范围内潜水。"
+      "depthAnswer": "建议使用深度为 40 m。外壳已完成 60 m 防水测试；这不等同于独立认证，也不保证在所有环境下的性能。请在所受训练和实际条件允许的范围内潜水。",
+      "logImageAlt": "WatchDive 自由潜水日志"
     },
     "scuba": {
       "modes": {
@@ -271,6 +289,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "上线时通知我",
       "signupNote": "验证邮箱即可完成登记。",
       "priceNote": "早鸟价 · Kickstarter 前 100 位支持者",
+      "priceNoteHighlight": "前 100 位支持者",
+      "discountLabel": "优惠",
       "includeNote": "包含外壳和应用。智能手表需另购。",
       "compatibility": "查看兼容手表",
       "logTitle": "回到水面，回看潜水记录。",
@@ -300,7 +320,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "回到水面后，将潜水曲线同步至 DIVEROID 应用。"
         }
       ],
-      "depthAnswer": "建议使用深度为 40 m。外壳已完成 60 m 防水测试；这不等同于独立认证，也不保证在所有环境下的性能。请在所受训练和实际条件允许的范围内潜水。"
+      "depthAnswer": "建议使用深度为 40 m。外壳已完成 60 m 防水测试；这不等同于独立认证，也不保证在所有环境下的性能。请在所受训练和实际条件允许的范围内潜水。",
+      "logImageAlt": "DIVEROID 应用中的水肺潜水日志"
     }
   },
   "zh-TW": {
@@ -317,10 +338,12 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "上線時通知我",
       "signupNote": "驗證電子郵件即可完成登記。",
       "priceNote": "早鳥價 · Kickstarter 前 100 位贊助者",
+      "priceNoteHighlight": "前 100 位贊助者",
+      "discountLabel": "優惠",
       "includeNote": "包含防水殼與 App。智慧手錶需另購。",
       "compatibility": "查看相容手錶",
-      "logTitle": "回到水面，回顧潛水紀錄。",
-      "logBody": "潛水後將潛水剖面同步至 DIVEROID App，在同一處回顧每次潛水。",
+      "logTitle": "自由潛水紀錄，一目了然。",
+      "logBody": "在 WatchDive 上查看自由潛水紀錄。潛水後，將潛水曲線同步至 DIVEROID App。",
       "cameraTitle": "潛水紀錄與影像，一起回顧。",
       "cameraBody": "在 DIVEROID App 中，將 GoPro、Insta360、Canon 等設備拍攝的影像與潛水日誌放在一起。",
       "finalTitle": "不錯過 WatchDive 上線。",
@@ -346,7 +369,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "潛水時裝上 WatchDive 防水殼，上岸後繼續日常佩戴。"
         }
       ],
-      "depthAnswer": "建議使用深度為 40 m。防水殼已完成 60 m 防水測試；這不等同於獨立認證，也不保證在所有環境下的性能。請依受訓範圍與實際條件潛水。"
+      "depthAnswer": "建議使用深度為 40 m。防水殼已完成 60 m 防水測試；這不等同於獨立認證，也不保證在所有環境下的性能。請依受訓範圍與實際條件潛水。",
+      "logImageAlt": "WatchDive 自由潛水日誌"
     },
     "scuba": {
       "modes": {
@@ -361,6 +385,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "上線時通知我",
       "signupNote": "驗證電子郵件即可完成登記。",
       "priceNote": "早鳥價 · Kickstarter 前 100 位贊助者",
+      "priceNoteHighlight": "前 100 位贊助者",
+      "discountLabel": "優惠",
       "includeNote": "包含防水殼與 App。智慧手錶需另購。",
       "compatibility": "查看相容手錶",
       "logTitle": "回到水面，回顧潛水紀錄。",
@@ -390,7 +416,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "回到水面後，將潛水剖面同步至 DIVEROID App。"
         }
       ],
-      "depthAnswer": "建議使用深度為 40 m。防水殼已完成 60 m 防水測試；這不等同於獨立認證，也不保證在所有環境下的性能。請依受訓範圍與實際條件潛水。"
+      "depthAnswer": "建議使用深度為 40 m。防水殼已完成 60 m 防水測試；這不等同於獨立認證，也不保證在所有環境下的性能。請依受訓範圍與實際條件潛水。",
+      "logImageAlt": "DIVEROID App 中的水肺潛水日誌"
     }
   },
   "ja": {
@@ -407,10 +434,12 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "公開通知を受け取る",
       "signupNote": "メールを認証すると登録完了です。",
       "priceNote": "早期割引 · Kickstarter支援者先着100名",
+      "priceNoteHighlight": "先着100名",
+      "discountLabel": "OFF",
       "includeNote": "ハウジング＋アプリ。スマートウォッチは別売りです。",
       "compatibility": "対応ウォッチを確認",
-      "logTitle": "水面に戻ったら、ダイビング記録に。",
-      "logBody": "ダイビング後にプロファイルをDIVEROIDアプリへ同期。これまでのダイビングをまとめて振り返れます。",
+      "logTitle": "フリーダイビングの記録を、一目で。",
+      "logBody": "WatchDiveでフリーダイビングの記録を確認。ダイビング後は、ダイブプロフィールをDIVEROIDアプリに同期できます。",
       "cameraTitle": "映像も、ダイビング記録と一緒に。",
       "cameraBody": "GoPro、Insta360、Canonなどで撮影した映像とダイブログを、DIVEROIDアプリでまとめて確認できます。",
       "finalTitle": "WatchDiveの公開をお見逃しなく。",
@@ -436,7 +465,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "潜るときはWatchDiveのハウジングを装着。陸上ではいつものスマートウォッチとして。"
         }
       ],
-      "depthAnswer": "推奨使用深度は40 mです。ハウジングは60 mの耐水試験を完了していますが、第三者認証やあらゆる環境での性能を保証するものではありません。訓練の範囲と当日の状況に合わせて潜ってください。"
+      "depthAnswer": "推奨使用深度は40 mです。ハウジングは60 mの耐水試験を完了していますが、第三者認証やあらゆる環境での性能を保証するものではありません。訓練の範囲と当日の状況に合わせて潜ってください。",
+      "logImageAlt": "WatchDiveのフリーダイビングログブック"
     },
     "scuba": {
       "modes": {
@@ -451,6 +481,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "公開通知を受け取る",
       "signupNote": "メールを認証すると登録完了です。",
       "priceNote": "早期割引 · Kickstarter支援者先着100名",
+      "priceNoteHighlight": "先着100名",
+      "discountLabel": "OFF",
       "includeNote": "ハウジング＋アプリ。スマートウォッチは別売りです。",
       "compatibility": "対応ウォッチを確認",
       "logTitle": "水面に戻ったら、ダイビング記録に。",
@@ -480,7 +512,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "水面に戻ったら、プロファイルをDIVEROIDアプリへ同期できます。"
         }
       ],
-      "depthAnswer": "推奨使用深度は40 mです。ハウジングは60 mの耐水試験を完了していますが、第三者認証やあらゆる環境での性能を保証するものではありません。訓練の範囲と当日の状況に合わせて潜ってください。"
+      "depthAnswer": "推奨使用深度は40 mです。ハウジングは60 mの耐水試験を完了していますが、第三者認証やあらゆる環境での性能を保証するものではありません。訓練の範囲と当日の状況に合わせて潜ってください。",
+      "logImageAlt": "DIVEROIDアプリのスキューバダイビングログブック"
     }
   },
   "es": {
@@ -497,10 +530,12 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "Avísame del lanzamiento",
       "signupNote": "Confirma tu correo para completar el registro.",
       "priceNote": "Precio de lanzamiento · primeros 100 mecenas en Kickstarter",
+      "priceNoteHighlight": "primeros 100",
+      "discountLabel": "de descuento",
       "includeNote": "Carcasa + app. Smartwatch no incluido.",
       "compatibility": "Consulta los relojes compatibles",
-      "logTitle": "Vuelve a la superficie. Revisa tu inmersión.",
-      "logBody": "Después de bucear, sincroniza el perfil de inmersión con la app DIVEROID. Consulta tus inmersiones en un solo lugar.",
+      "logTitle": "Tus inmersiones de apnea, en tu diario.",
+      "logBody": "Consulta tus registros de apnea en WatchDive. Después de bucear, sincroniza tu perfil de inmersión con la app DIVEROID.",
       "cameraTitle": "Tus imágenes y tu inmersión, juntas.",
       "cameraBody": "Reúne tus grabaciones de GoPro, Insta360, Canon y otras cámaras con tu diario de buceo en la app DIVEROID.",
       "finalTitle": "No te pierdas el lanzamiento de WatchDive.",
@@ -526,7 +561,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "Añade la carcasa WatchDive para bucear. En tierra, sigue usando tu smartwatch."
         }
       ],
-      "depthAnswer": "La profundidad de uso recomendada es de 40 m. La carcasa completó una prueba de resistencia al agua a 60 m; no es una certificación independiente ni una garantía para todos los entornos. Bucea dentro de los límites de tu formación y de las condiciones del día."
+      "depthAnswer": "La profundidad de uso recomendada es de 40 m. La carcasa completó una prueba de resistencia al agua a 60 m; no es una certificación independiente ni una garantía para todos los entornos. Bucea dentro de los límites de tu formación y de las condiciones del día.",
+      "logImageAlt": "Diario de apnea de WatchDive"
     },
     "scuba": {
       "modes": {
@@ -541,6 +577,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "Avísame del lanzamiento",
       "signupNote": "Confirma tu correo para completar el registro.",
       "priceNote": "Precio de lanzamiento · primeros 100 mecenas en Kickstarter",
+      "priceNoteHighlight": "primeros 100",
+      "discountLabel": "de descuento",
       "includeNote": "Carcasa + app. Smartwatch no incluido.",
       "compatibility": "Consulta los relojes compatibles",
       "logTitle": "Vuelve a la superficie. Revisa tu inmersión.",
@@ -570,7 +608,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "Al volver a la superficie, sincroniza el perfil de inmersión con la app DIVEROID."
         }
       ],
-      "depthAnswer": "La profundidad de uso recomendada es de 40 m. La carcasa completó una prueba de resistencia al agua a 60 m; no es una certificación independiente ni una garantía para todos los entornos. Bucea dentro de los límites de tu formación y de las condiciones del día."
+      "depthAnswer": "La profundidad de uso recomendada es de 40 m. La carcasa completó una prueba de resistencia al agua a 60 m; no es una certificación independiente ni una garantía para todos los entornos. Bucea dentro de los límites de tu formación y de las condiciones del día.",
+      "logImageAlt": "Diario de buceo con botella de la app DIVEROID"
     }
   },
   "fr": {
@@ -587,10 +626,12 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "M’avertir du lancement",
       "signupNote": "Confirmez votre adresse e-mail pour terminer l’inscription.",
       "priceNote": "Offre de lancement · 100 premiers contributeurs Kickstarter",
+      "priceNoteHighlight": "100 premiers",
+      "discountLabel": "de réduction",
       "includeNote": "Caisson + application. Montre connectée non incluse.",
       "compatibility": "Vérifier les montres compatibles",
-      "logTitle": "De retour en surface, retrouvez votre plongée.",
-      "logBody": "Après la plongée, synchronisez votre profil avec l’application DIVEROID. Retrouvez vos plongées au même endroit.",
+      "logTitle": "Vos apnées, dans votre carnet.",
+      "logBody": "Consultez vos apnées sur WatchDive. Après la plongée, synchronisez votre profil avec l’application DIVEROID.",
       "cameraTitle": "Vos images et votre plongée, réunies.",
       "cameraBody": "Retrouvez vos images GoPro, Insta360, Canon et autres avec votre carnet de plongée dans l’application DIVEROID.",
       "finalTitle": "Ne manquez pas le lancement de WatchDive.",
@@ -616,7 +657,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "Ajoutez le caisson WatchDive pour plonger. À terre, retrouvez votre montre connectée."
         }
       ],
-      "depthAnswer": "La profondeur d’utilisation recommandée est de 40 m. Le caisson a fait l’objet d’un test d’étanchéité à 60 m ; il ne s’agit ni d’une certification indépendante ni d’une garantie dans tous les environnements. Plongez dans les limites de votre formation et des conditions du jour."
+      "depthAnswer": "La profondeur d’utilisation recommandée est de 40 m. Le caisson a fait l’objet d’un test d’étanchéité à 60 m ; il ne s’agit ni d’une certification indépendante ni d’une garantie dans tous les environnements. Plongez dans les limites de votre formation et des conditions du jour.",
+      "logImageAlt": "Carnet d’apnée WatchDive"
     },
     "scuba": {
       "modes": {
@@ -631,6 +673,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "M’avertir du lancement",
       "signupNote": "Confirmez votre adresse e-mail pour terminer l’inscription.",
       "priceNote": "Offre de lancement · 100 premiers contributeurs Kickstarter",
+      "priceNoteHighlight": "100 premiers",
+      "discountLabel": "de réduction",
       "includeNote": "Caisson + application. Montre connectée non incluse.",
       "compatibility": "Vérifier les montres compatibles",
       "logTitle": "De retour en surface, retrouvez votre plongée.",
@@ -660,7 +704,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "De retour en surface, synchronisez votre profil avec l’application DIVEROID."
         }
       ],
-      "depthAnswer": "La profondeur d’utilisation recommandée est de 40 m. Le caisson a fait l’objet d’un test d’étanchéité à 60 m ; il ne s’agit ni d’une certification indépendante ni d’une garantie dans tous les environnements. Plongez dans les limites de votre formation et des conditions du jour."
+      "depthAnswer": "La profondeur d’utilisation recommandée est de 40 m. Le caisson a fait l’objet d’un test d’étanchéité à 60 m ; il ne s’agit ni d’une certification indépendante ni d’une garantie dans tous les environnements. Plongez dans les limites de votre formation et des conditions du jour.",
+      "logImageAlt": "Carnet de plongée bouteille dans l’application DIVEROID"
     }
   },
   "de": {
@@ -677,10 +722,12 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "Zum Start benachrichtigen",
       "signupNote": "Bestätige deine E-Mail-Adresse, um die Anmeldung abzuschließen.",
       "priceNote": "Frühbucherpreis · erste 100 Unterstützer auf Kickstarter",
+      "priceNoteHighlight": "erste 100",
+      "discountLabel": "Rabatt",
       "includeNote": "Gehäuse + App. Smartwatch separat erhältlich.",
       "compatibility": "Kompatible Uhren prüfen",
-      "logTitle": "Wieder aufgetaucht. Im Logbuch gespeichert.",
-      "logBody": "Synchronisiere dein Tauchprofil nach dem Tauchgang mit der DIVEROID App. So findest du deine Tauchgänge an einem Ort.",
+      "logTitle": "Deine Apnoetauchgänge im Logbuch.",
+      "logBody": "Sieh dir deine Apnoetauchgänge auf WatchDive an. Synchronisiere dein Tauchprofil nach dem Tauchgang mit der DIVEROID App.",
       "cameraTitle": "Deine Aufnahmen. Dein Tauchgang.",
       "cameraBody": "Führe Aufnahmen von GoPro, Insta360, Canon und weiteren Kameras mit deinem Tauchlogbuch in der DIVEROID App zusammen.",
       "finalTitle": "Sei beim Start von WatchDive dabei.",
@@ -706,7 +753,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "Zum Tauchen kommt das WatchDive-Gehäuse dazu. An Land nutzt du deine Smartwatch wie gewohnt."
         }
       ],
-      "depthAnswer": "Die empfohlene Einsatztiefe beträgt 40 m. Das Gehäuse hat einen Wasserdichtigkeitstest bei 60 m absolviert. Das ist keine unabhängige Zertifizierung und keine Garantie für jede Umgebung. Beachte die Grenzen deiner Ausbildung und die aktuellen Bedingungen."
+      "depthAnswer": "Die empfohlene Einsatztiefe beträgt 40 m. Das Gehäuse hat einen Wasserdichtigkeitstest bei 60 m absolviert. Das ist keine unabhängige Zertifizierung und keine Garantie für jede Umgebung. Beachte die Grenzen deiner Ausbildung und die aktuellen Bedingungen.",
+      "logImageAlt": "WatchDive Apnoe-Logbuch"
     },
     "scuba": {
       "modes": {
@@ -721,6 +769,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "Zum Start benachrichtigen",
       "signupNote": "Bestätige deine E-Mail-Adresse, um die Anmeldung abzuschließen.",
       "priceNote": "Frühbucherpreis · erste 100 Unterstützer auf Kickstarter",
+      "priceNoteHighlight": "erste 100",
+      "discountLabel": "Rabatt",
       "includeNote": "Gehäuse + App. Smartwatch separat erhältlich.",
       "compatibility": "Kompatible Uhren prüfen",
       "logTitle": "Wieder aufgetaucht. Im Logbuch gespeichert.",
@@ -750,7 +800,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "Synchronisiere dein Tauchprofil nach dem Auftauchen mit der DIVEROID App."
         }
       ],
-      "depthAnswer": "Die empfohlene Einsatztiefe beträgt 40 m. Das Gehäuse hat einen Wasserdichtigkeitstest bei 60 m absolviert. Das ist keine unabhängige Zertifizierung und keine Garantie für jede Umgebung. Beachte die Grenzen deiner Ausbildung und die aktuellen Bedingungen."
+      "depthAnswer": "Die empfohlene Einsatztiefe beträgt 40 m. Das Gehäuse hat einen Wasserdichtigkeitstest bei 60 m absolviert. Das ist keine unabhängige Zertifizierung und keine Garantie für jede Umgebung. Beachte die Grenzen deiner Ausbildung und die aktuellen Bedingungen.",
+      "logImageAlt": "Gerätetauch-Logbuch in der DIVEROID App"
     }
   },
   "pt-BR": {
@@ -767,10 +818,12 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "Avise-me no lançamento",
       "signupNote": "Confirme seu e-mail para concluir o cadastro.",
       "priceNote": "Preço de lançamento · primeiros 100 apoiadores no Kickstarter",
+      "priceNoteHighlight": "primeiros 100",
+      "discountLabel": "de desconto",
       "includeNote": "Caixa + app. Smartwatch vendido separadamente.",
       "compatibility": "Confira os relógios compatíveis",
-      "logTitle": "De volta à superfície, reveja o mergulho.",
-      "logBody": "Após o mergulho, sincronize seu perfil com o app DIVEROID. Reúna seus mergulhos em um só lugar.",
+      "logTitle": "Seu mergulho livre, no seu diário.",
+      "logBody": "Veja seus registros de mergulho livre no WatchDive. Após o mergulho, sincronize seu perfil com o app DIVEROID.",
       "cameraTitle": "Suas imagens junto do seu mergulho.",
       "cameraBody": "Reúna imagens da GoPro, Insta360, Canon e outras câmeras com seu diário de mergulho no app DIVEROID.",
       "finalTitle": "Acompanhe o lançamento do WatchDive.",
@@ -796,7 +849,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "Para mergulhar, adicione a caixa WatchDive. Em terra, use seu smartwatch como de costume."
         }
       ],
-      "depthAnswer": "A profundidade de uso recomendada é de 40 m. A caixa concluiu um teste de resistência à água a 60 m; isso não é uma certificação independente nem uma garantia para todos os ambientes. Mergulhe dentro dos limites do seu treinamento e das condições do dia."
+      "depthAnswer": "A profundidade de uso recomendada é de 40 m. A caixa concluiu um teste de resistência à água a 60 m; isso não é uma certificação independente nem uma garantia para todos os ambientes. Mergulhe dentro dos limites do seu treinamento e das condições do dia.",
+      "logImageAlt": "Diário de mergulho livre do WatchDive"
     },
     "scuba": {
       "modes": {
@@ -811,6 +865,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "signupCta": "Avise-me no lançamento",
       "signupNote": "Confirme seu e-mail para concluir o cadastro.",
       "priceNote": "Preço de lançamento · primeiros 100 apoiadores no Kickstarter",
+      "priceNoteHighlight": "primeiros 100",
+      "discountLabel": "de desconto",
       "includeNote": "Caixa + app. Smartwatch vendido separadamente.",
       "compatibility": "Confira os relógios compatíveis",
       "logTitle": "De volta à superfície, reveja o mergulho.",
@@ -840,7 +896,8 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
           "body": "Ao voltar à superfície, sincronize seu perfil de mergulho com o app DIVEROID."
         }
       ],
-      "depthAnswer": "A profundidade de uso recomendada é de 40 m. A caixa concluiu um teste de resistência à água a 60 m; isso não é uma certificação independente nem uma garantia para todos os ambientes. Mergulhe dentro dos limites do seu treinamento e das condições do dia."
+      "depthAnswer": "A profundidade de uso recomendada é de 40 m. A caixa concluiu um teste de resistência à água a 60 m; isso não é uma certificação independente nem uma garantia para todos os ambientes. Mergulhe dentro dos limites do seu treinamento e das condições do dia.",
+      "logImageAlt": "Diário de mergulho autônomo no app DIVEROID"
     }
   }
 };

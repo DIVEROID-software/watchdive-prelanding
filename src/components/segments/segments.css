@@ -260,3 +260,29 @@ html:root .wd-segment-form .wd-inbox-card{border:3px solid #eef9ff!important;box
  .wd-segment-signup{padding:25px 18px}
 }
 @media(prefers-reduced-motion:reduce){.wd-segment-signup-middle::before{animation:none!important;opacity:1}}
+
+/* Offer stickers: localised, with no layout shift or flashing form controls. */
+.wd-segment-price{flex-wrap:wrap;column-gap:14px;row-gap:16px;align-items:center}
+.wd-segment-discount{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;flex:0 0 auto;min-width:76px;max-width:108px;padding:7px 10px;background:#f5ff3d;color:#201748;border:2px solid #201748;box-shadow:4px 4px 0 #65ceee;transform:rotate(-4deg);text-align:center;line-height:1.1;pointer-events:none;animation:wd-segment-discount-pulse 2.4s ease-in-out infinite}
+.wd-segment-discount b{font-size:26px;font-weight:800;letter-spacing:-.05em}
+.wd-segment-discount>span{font-size:11px;font-weight:750;line-height:1.15;margin-top:2px}
+@keyframes wd-segment-discount-pulse{0%,100%{opacity:1}50%{opacity:.48}}
+.wd-segment-signup:focus-within .wd-segment-discount{animation:none;opacity:1}
+.wd-segment-signup-heading>p.wd-segment-price-note{line-height:1.8;margin-top:18px}
+.wd-segment-first100{display:inline-block;color:#65ceee;font-size:clamp(20px,2vw,24px);font-weight:800;line-height:1.5;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:5px}
+@media(max-width:359px){
+ .wd-segment-price{column-gap:10px}
+ .wd-segment-price>strong{font-size:40px}
+ .wd-segment-price>s{font-size:19px}
+ .wd-segment-discount{min-width:68px;max-width:90px;padding:6px 8px}
+ .wd-segment-discount b{font-size:23px}
+ .wd-segment-discount>span{font-size:10px}
+ .wd-segment-first100{font-size:20px}
+}
+@media(prefers-reduced-motion:reduce){.wd-segment-discount{animation:none!important;opacity:1}}
+
+/* Authentic watch logbook on freediving; the scuba phone screenshot stays on scuba. */
+.wd-segment-log .wd-segment-free-logbook{margin:0 auto;width:min(100%,340px)}
+.wd-segment-free-logbook>img{width:100%;height:auto;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow);background:#000}
+.wd-segment-free-logbook>figcaption{font-size:12px;line-height:1.5;color:var(--seg-muted);margin-top:16px;text-align:center}
+@media(max-width:959px){.wd-segment-log .wd-segment-free-logbook{width:min(100%,280px)}}
