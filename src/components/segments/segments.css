@@ -28,16 +28,18 @@
 .wd-segment-page .wd-segment-intro{font-size:19px;max-width:450px;line-height:1.55;color:var(--seg-muted)}
 .wd-segment-explore{display:inline-flex;align-items:center;gap:35px;min-height:48px;margin-top:28px;font-size:15px;font-weight:700;border-bottom:1px solid var(--seg-ink)}
 .wd-segment-explore span{font-size:22px}
-.wd-segment-hero-media{position:relative;min-height:650px;overflow:hidden;background:#fff}
-.wd-segment-hero-media>img{width:100%;height:100%;position:absolute;inset:0;object-fit:cover;object-position:center}
-.wd-segment-freediving .wd-segment-hero-media>img{object-fit:contain;padding:30px}
-.wd-segment-scuba .wd-segment-hero-media>img{object-position:45% 50%}
-.wd-segment-hero-media figcaption{position:absolute;left:28px;top:24px;color:#10212e;font-size:12px;font-weight:500;max-width:65%}
-.wd-segment-scuba .wd-segment-hero-media figcaption{color:#f6fafc;text-shadow:0 1px 8px #201748}
-.wd-segment-media-price{position:absolute;right:24px;bottom:24px;width:200px;padding:19px 22px;background:#201748;color:#f6fafc;border-left:3px solid #65ceee}
-.wd-segment-media-price>span{font-size:10px;letter-spacing:.12em}
-.wd-segment-media-price>strong{display:block;font-size:40px;letter-spacing:-.05em;line-height:1.2;margin:5px 0}
-.wd-segment-media-price>small{display:block;font-size:11px;line-height:1.4;max-width:155px}
+.wd-segment-hero-offer{display:flex;align-items:center;gap:15px;margin-top:24px;max-width:400px}
+.wd-segment-hero-offer>strong{font-size:34px;line-height:1;letter-spacing:-.04em}
+.wd-segment-hero-offer>span{font-size:11px;line-height:1.4;max-width:200px;color:var(--seg-muted)}
+.wd-segment-hero-media{position:relative;width:100%;min-width:0;min-height:0;aspect-ratio:4/3;align-self:center;overflow:hidden;background:#096f9a}
+.wd-segment-hero-media>img,.wd-segment-hero-media>video{width:100%;height:100%;max-width:none;position:absolute;inset:0;object-fit:cover;object-position:50% 50%;padding:0}
+.wd-segment-hero-media>video{opacity:0;transition:opacity .25s ease}
+.wd-segment-hero-media>video.has-frame{opacity:1}
+.wd-segment-hero-media::after{content:"";position:absolute;inset:60% 0 0;background:linear-gradient(transparent,rgba(7,24,43,.65));pointer-events:none}
+.wd-segment-hero-media figcaption{position:absolute;z-index:1;left:26px;bottom:25px;top:auto;color:#fff;font-size:12px;font-weight:500;max-width:calc(100% - 110px);text-shadow:0 1px 4px #10212e;line-height:1.5}
+.wd-segment-page .wd-segment-motion-toggle{position:absolute;z-index:2;right:20px;bottom:17px;display:grid;place-items:center;width:44px;height:44px;padding:10px;border:1px solid #ffffff8f;border-radius:50%;color:#fff;background:#10212e75;cursor:pointer;backdrop-filter:blur(8px)}
+.wd-segment-motion-toggle svg{width:20px;height:20px}
+.wd-segment-motion-toggle:hover{background:#201748}
 .wd-segment-benefits{padding-block:76px 64px}
 .wd-segment-benefit-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px;margin-top:42px}
 .wd-segment-benefit-list article{border-top:1px solid var(--seg-line);padding-top:24px}
@@ -141,14 +143,8 @@ html:root .wd-segment-form .wd-onsite-offer h2{font-size:28px!important}
  .wd-segment-page h1{font-size:clamp(37px,7vw,60px);line-height:1.04;margin-bottom:18px;letter-spacing:-.047em}
  .wd-segment-page .wd-segment-intro{font-size:16px;line-height:1.55;max-width:520px}
  .wd-segment-explore{margin-top:16px;min-height:44px;font-size:13px;gap:30px}
- .wd-segment-hero-media{min-height:0;aspect-ratio:1.35}
- .wd-segment-freediving .wd-segment-hero-media>img{padding:5px;object-fit:cover;object-position:50% 47%}
- .wd-segment-scuba .wd-segment-hero-media>img{object-fit:cover;object-position:50% 48%}
- .wd-segment-hero-media figcaption{left:20px;top:16px;font-size:10px;max-width:52%}
- .wd-segment-media-price{width:140px;right:16px;bottom:16px;padding:13px 15px}
- .wd-segment-media-price>span{font-size:8px}
- .wd-segment-media-price>strong{font-size:29px;margin:4px 0}
- .wd-segment-media-price>small{font-size:9px}
+ .wd-segment-hero-media{min-height:0;aspect-ratio:4/3}
+ .wd-segment-hero-media figcaption{left:20px;bottom:22px;font-size:11px;max-width:calc(100% - 95px)}
  .wd-segment-benefits{padding-block:52px 24px}
  .wd-segment-benefit-list{grid-template-columns:1fr;gap:0;margin-top:26px}
  .wd-segment-benefit-list article{display:flex;gap:24px;padding:21px 0}
@@ -189,3 +185,17 @@ html:root .wd-segment-form .wd-onsite-offer h2{font-size:28px!important}
  .wd-segment-signup{padding:25px 18px}
 }
 @media(prefers-reduced-motion:reduce){.wd-segment-page *, .wd-segment-page *:before,.wd-segment-page *:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+@media(prefers-reduced-motion:reduce){.wd-segment-hero-media>video{transition:none}}
+
+/* On a phone the product appears before the supporting paragraph. */
+@media(max-width:959px){
+ .wd-segment-hero-copy{display:contents}
+ .wd-segment-hero-copy>.wd-segment-modes{order:1;align-self:flex-start;margin:20px 24px 24px}
+ .wd-segment-hero-copy>.wd-segment-eyebrow{order:2;margin:0 24px 13px}
+ .wd-segment-hero-copy>h1{order:3;margin:0 24px 24px}
+ .wd-segment-hero-media{order:4}
+ .wd-segment-hero-copy>.wd-segment-intro{order:5;margin:24px 24px 0}
+ .wd-segment-hero-copy>.wd-segment-hero-offer{order:6;margin:20px 24px 0}
+ .wd-segment-hero-copy>.wd-segment-explore{order:7;align-self:flex-start;margin:18px 24px 0}
+}

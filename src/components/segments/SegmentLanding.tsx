@@ -7,14 +7,8 @@ import { useCurrentLocale, useFrozenLandingMessages } from '@/lib/i18n/use-curre
 import { localizePath, privacyPath, termsPath } from '@/lib/i18n/locale';
 import { getAttribution } from '@/lib/attribution';
 import { segmentCopy, type DiveSegment } from '@/lib/segments/copy';
-import { useLiteMedia } from '@/lib/liteMedia';
+import { SegmentHeroMedia } from './SegmentHeroMedia';
 import wordmarkWhite from '@/assets/brand/diveroid-wordmark-white.png';
-import free640 from '@/assets/live/refresh/studio-white-640.webp';
-import free1000 from '@/assets/live/refresh/studio-white-1000.webp';
-import free1600 from '@/assets/live/refresh/studio-white-1600.webp';
-import scuba640 from '@/assets/live/super-resolution-20261018/from-master/underwater-wrist-4x5-640.webp';
-import scuba1000 from '@/assets/live/super-resolution-20261018/from-master/underwater-wrist-4x5-1000.webp';
-import scuba1600 from '@/assets/live/super-resolution-20261018/from-master/underwater-wrist-4x5-1600.webp';
 import fit800 from '@/assets/live/responsive/watchdive-step1-800.webp';
 import sync640 from '@/assets/live/refresh/sync-app-640.webp';
 import sync1000 from '@/assets/live/refresh/sync-app-1000.webp';
@@ -30,7 +24,6 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const c = segmentCopy(locale, segment);
-  const lite = useLiteMedia();
   const [sticky, setSticky] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
   const [campaignQuery, setCampaignQuery] = useState('');
@@ -66,8 +59,6 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
       window.visualViewport?.removeEventListener('resize', update);
     };
   }, [segment]);
-  const photo = isFree ? free1000 : scuba1000;
-  const photoSet = isFree ? `${free640} 640w, ${free1000} 1000w, ${free1600} 1600w` : `${scuba640} 640w, ${scuba1000} 1000w, ${scuba1600} 1600w`;
   const faq = [
     { q: m.faq.q6, a: m.faq.a6 },
     { q: m.faq.q2, a: c.depthAnswer },
@@ -110,13 +101,10 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
             <p className="wd-segment-eyebrow">WATCHDIVE / {c.modes[segment]}</p>
             <h1 id="segment-title">{c.title.split('\n').map((line, i) => <span key={line} className={i ? 'wd-segment-title-accent' : ''}>{line}</span>)}</h1>
             <p className="wd-segment-intro">{c.intro}</p>
+            <div className="wd-segment-hero-offer"><strong>$149</strong><span>{c.priceNote}</span></div>
             <a className="wd-segment-explore" href="#segment-benefits">{c.discover}<span aria-hidden="true">↓</span></a>
           </div>
-          <figure className="wd-segment-hero-media">
-            <img src={photo} srcSet={lite ? undefined : photoSet} sizes="(min-width: 960px) 50vw, 100vw" width={isFree ? 1000 : 1000} height={isFree ? 750 : 1250} alt={c.heroCaption} fetchPriority="high" loading="eager" />
-            <figcaption>{c.heroCaption}</figcaption>
-            <div className="wd-segment-media-price" aria-label={c.priceNote}><span>KICKSTARTER</span><strong>$149</strong><small>{c.priceNote}</small></div>
-          </figure>
+          <SegmentHeroMedia key={segment} segment={segment} caption={c.heroCaption} />
         </section>
 
         <section id="segment-benefits" className="wd-segment-benefits wd-segment-shell" aria-labelledby="benefits-title">

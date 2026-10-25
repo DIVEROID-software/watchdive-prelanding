@@ -1,0 +1,92 @@
+{
+  "source": "DIVEROID /04_Growth & Ops/02_Marketing_Brand/04_WatchDive/02_Content/04_Photo_Video_GIF/01_Human_made/002_Videos/01_Main_Video/01_WatchDive_Main_F_241227_nosub.mp4",
+  "source_sha256": "59143217bdc1b257a8507e58f8cda2ad4c3f7b50c3c5efa3e9279ca2a604b291",
+  "selection": {
+    "freediving": [
+      [
+        102.269,
+        1.134
+      ],
+      [
+        106,
+        2.35
+      ]
+    ],
+    "scuba": [
+      [
+        112.4,
+        2.05
+      ],
+      [
+        25.4,
+        3.1
+      ]
+    ]
+  },
+  "posters": {
+    "freediving": 102.836,
+    "scuba": 113.6
+  },
+  "edit": "Text-free pool footage excerpts, original speed and color; silent H.264 24fps, CRF24, faststart. No generative edits or compositing. Responsive cover crops in CSS. Archive provenance does not independently certify every historical edit.",
+  "assets": [
+    {
+      "file": "src/assets/live/segment-heroes/freediving-1280.webp",
+      "bytes": 22542
+    },
+    {
+      "file": "src/assets/live/segment-heroes/freediving-640.webp",
+      "bytes": 7776
+    },
+    {
+      "file": "src/assets/live/segment-heroes/freediving-underwater.mp4",
+      "bytes": 1083426,
+      "duration": "3.458333",
+      "streams": [
+        {
+          "type": "video",
+          "codec": "h264",
+          "width": 1280,
+          "height": 960,
+          "fps": "24/1"
+        }
+      ]
+    },
+    {
+      "file": "src/assets/live/segment-heroes/scuba-1280.webp",
+      "bytes": 28948
+    },
+    {
+      "file": "src/assets/live/segment-heroes/scuba-640.webp",
+      "bytes": 11968
+    },
+    {
+      "file": "src/assets/live/segment-heroes/scuba-underwater.mp4",
+      "bytes": 903623,
+      "duration": "5.125000",
+      "streams": [
+        {
+          "type": "video",
+          "codec": "h264",
+          "width": 1280,
+          "height": 720,
+          "fps": "24/1"
+        }
+      ]
+    }
+  ],
+  "fallback": "Responsive WebP. No automatic video load on reduced motion, Save-Data or effective2g/3g. Optional user playback; pause control; offscreen/hidden-tab pause.",
+  "freedivingCrops": [
+    {
+      "width": 2880,
+      "height": 2160,
+      "x": 960,
+      "y": 0
+    },
+    {
+      "width": 2880,
+      "height": 2160,
+      "x": 480,
+      "y": 0
+    }
+  ]
+}

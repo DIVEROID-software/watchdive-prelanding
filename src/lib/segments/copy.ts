@@ -60,7 +60,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "Explore the other dive mode",
       "title": "Your smartwatch.\nYour freedive computer.",
       "intro": "Add the WatchDive sensor housing to a compatible Apple Watch or Galaxy Watch. See depth, dive time and water temperature on your wrist.",
-      "heroCaption": "WatchDive sensor housing · product render",
+      "heroCaption": "Freediving with WatchDive",
       "benefitTitle": "The essentials for your freedive.",
       "benefits": [
         {
@@ -104,7 +104,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "Explore the other dive mode",
       "title": "Your smartwatch.\nYour dive computer.",
       "intro": "Add the WatchDive sensor housing to a compatible Apple Watch or Galaxy Watch. See your dive information on the watch you already know.",
-      "heroCaption": "WatchDive housing in use at the pool",
+      "heroCaption": "WatchDive in action underwater",
       "benefitTitle": "Your dive information, on your wrist.",
       "benefits": [
         {
@@ -150,7 +150,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "다른 다이빙 모드도 살펴보세요",
       "title": "매일 쓰는 스마트워치,\n이제 프리다이빙 컴퓨터로.",
       "intro": "지원되는 Apple Watch나 Galaxy Watch에 WatchDive 센서 하우징을 더하세요. 손목에서 수심, 다이빙 시간, 수온을 확인할 수 있습니다.",
-      "heroCaption": "WatchDive 센서 하우징 · 제품 렌더링",
+      "heroCaption": "WatchDive와 함께하는 프리다이빙",
       "benefitTitle": "프리다이빙에 필요한 정보를 한눈에.",
       "benefits": [
         {
@@ -194,7 +194,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "다른 다이빙 모드도 살펴보세요",
       "title": "매일 쓰는 스마트워치,\n이제 다이브 컴퓨터로.",
       "intro": "지원되는 Apple Watch나 Galaxy Watch에 WatchDive 센서 하우징을 더하세요. 익숙한 워치에서 다이빙 정보를 확인할 수 있습니다.",
-      "heroCaption": "수영장에서 사용 중인 WatchDive 하우징",
+      "heroCaption": "수중에서 직접 사용하는 WatchDive",
       "benefitTitle": "다이빙에 필요한 정보를 손목에서.",
       "benefits": [
         {
@@ -240,7 +240,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "了解另一种潜水模式",
       "title": "你的智能手表，\n也是自由潜水电脑。",
       "intro": "为兼容的 Apple Watch 或 Galaxy Watch 装上 WatchDive 传感器外壳，在腕上查看水深、潜水时间和水温。",
-      "heroCaption": "WatchDive 传感器外壳 · 产品渲染图",
+      "heroCaption": "与 WatchDive 一起自由潜水",
       "benefitTitle": "自由潜水信息，一眼掌握。",
       "benefits": [
         {
@@ -284,7 +284,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "了解另一种潜水模式",
       "title": "你的智能手表，\n也是潜水电脑。",
       "intro": "为兼容的 Apple Watch 或 Galaxy Watch 装上 WatchDive 传感器外壳，在熟悉的手表上查看潜水信息。",
-      "heroCaption": "泳池中使用的 WatchDive 外壳",
+      "heroCaption": "水下使用 WatchDive",
       "benefitTitle": "潜水信息，就在腕上。",
       "benefits": [
         {
@@ -330,7 +330,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "探索另一種潛水模式",
       "title": "你的智慧手錶，\n也是自由潛水電腦。",
       "intro": "為相容的 Apple Watch 或 Galaxy Watch 裝上 WatchDive 感測器防水殼，在手腕上查看深度、潛水時間與水溫。",
-      "heroCaption": "WatchDive 感測器防水殼 · 產品渲染圖",
+      "heroCaption": "與 WatchDive 一起自由潛水",
       "benefitTitle": "自由潛水資訊，一眼掌握。",
       "benefits": [
         {
@@ -374,7 +374,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "探索另一種潛水模式",
       "title": "你的智慧手錶，\n也是潛水電腦。",
       "intro": "為相容的 Apple Watch 或 Galaxy Watch 裝上 WatchDive 感測器防水殼，在熟悉的手錶上查看潛水資訊。",
-      "heroCaption": "在泳池中使用的 WatchDive 防水殼",
+      "heroCaption": "水下使用 WatchDive",
       "benefitTitle": "潛水資訊，就在手腕上。",
       "benefits": [
         {
@@ -420,7 +420,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "もう一つのダイビングモードを見る",
       "title": "いつものスマートウォッチを、\nフリーダイビングコンピュータに。",
       "intro": "対応するApple WatchまたはGalaxy Watchに、WatchDiveセンサーハウジングを装着。深度、潜水時間、水温を手首で確認できます。",
-      "heroCaption": "WatchDiveセンサーハウジング · 製品レンダリング",
+      "heroCaption": "WatchDive とフリーダイビング",
       "benefitTitle": "フリーダイビングの情報を、ひと目で。",
       "benefits": [
         {
@@ -464,7 +464,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "もう一つのダイビングモードを見る",
       "title": "いつものスマートウォッチを、\nダイブコンピュータに。",
       "intro": "対応するApple WatchまたはGalaxy Watchに、WatchDiveセンサーハウジングを装着。使い慣れたウォッチで潜水情報を確認できます。",
-      "heroCaption": "プールで使用中のWatchDiveハウジング",
+      "heroCaption": "水中で使う WatchDive",
       "benefitTitle": "潜水情報を、手首で確認。",
       "benefits": [
         {
@@ -510,7 +510,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "Descubre el otro modo de buceo",
       "title": "Tu smartwatch.\nTu ordenador de apnea.",
       "intro": "Añade la carcasa con sensores WatchDive a un Apple Watch o Galaxy Watch compatible. Consulta profundidad, tiempo de inmersión y temperatura del agua en tu muñeca.",
-      "heroCaption": "Carcasa con sensores WatchDive · render del producto",
+      "heroCaption": "Apnea con WatchDive",
       "benefitTitle": "Lo esencial para tu apnea.",
       "benefits": [
         {
@@ -554,7 +554,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "Descubre el otro modo de buceo",
       "title": "Tu smartwatch.\nTu ordenador de buceo.",
       "intro": "Añade la carcasa con sensores WatchDive a un Apple Watch o Galaxy Watch compatible. Consulta los datos de inmersión en el reloj que ya conoces.",
-      "heroCaption": "Carcasa WatchDive en uso en la piscina",
+      "heroCaption": "WatchDive en acción bajo el agua",
       "benefitTitle": "Tu inmersión, en tu muñeca.",
       "benefits": [
         {
@@ -600,7 +600,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "Découvrir l’autre mode de plongée",
       "title": "Votre montre connectée.\nVotre ordinateur d’apnée.",
       "intro": "Ajoutez le caisson à capteurs WatchDive à une Apple Watch ou Galaxy Watch compatible. Consultez profondeur, durée et température de l’eau au poignet.",
-      "heroCaption": "Caisson à capteurs WatchDive · rendu du produit",
+      "heroCaption": "En apnée avec WatchDive",
       "benefitTitle": "L’essentiel pour votre apnée.",
       "benefits": [
         {
@@ -644,7 +644,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "Découvrir l’autre mode de plongée",
       "title": "Votre montre connectée.\nVotre ordinateur de plongée.",
       "intro": "Ajoutez le caisson à capteurs WatchDive à une Apple Watch ou Galaxy Watch compatible. Consultez vos données de plongée sur votre montre habituelle.",
-      "heroCaption": "Caisson WatchDive utilisé en piscine",
+      "heroCaption": "WatchDive en action sous l’eau",
       "benefitTitle": "Vos données de plongée, au poignet.",
       "benefits": [
         {
@@ -690,7 +690,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "Entdecke den anderen Tauchmodus",
       "title": "Deine Smartwatch.\nDein Apnoecomputer.",
       "intro": "Ergänze eine kompatible Apple Watch oder Galaxy Watch um das WatchDive-Sensorgehäuse. Lies Tiefe, Tauchzeit und Wassertemperatur am Handgelenk ab.",
-      "heroCaption": "WatchDive-Sensorgehäuse · Produktrendering",
+      "heroCaption": "Freitauchen mit WatchDive",
       "benefitTitle": "Das Wesentliche für deinen Apnoetauchgang.",
       "benefits": [
         {
@@ -734,7 +734,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "Entdecke den anderen Tauchmodus",
       "title": "Deine Smartwatch.\nDein Tauchcomputer.",
       "intro": "Ergänze eine kompatible Apple Watch oder Galaxy Watch um das WatchDive-Sensorgehäuse. Sieh deine Tauchdaten auf der Uhr, die du schon kennst.",
-      "heroCaption": "WatchDive-Gehäuse im Pool im Einsatz",
+      "heroCaption": "WatchDive unter Wasser im Einsatz",
       "benefitTitle": "Deine Tauchdaten am Handgelenk.",
       "benefits": [
         {
@@ -780,7 +780,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "Conheça o outro modo de mergulho",
       "title": "Seu smartwatch.\nSeu computador de apneia.",
       "intro": "Adicione a caixa com sensores WatchDive a um Apple Watch ou Galaxy Watch compatível. Veja profundidade, tempo de mergulho e temperatura da água no pulso.",
-      "heroCaption": "Caixa com sensores WatchDive · renderização do produto",
+      "heroCaption": "Mergulho livre com WatchDive",
       "benefitTitle": "O essencial para sua apneia.",
       "benefits": [
         {
@@ -824,7 +824,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "switchPrompt": "Conheça o outro modo de mergulho",
       "title": "Seu smartwatch.\nSeu computador de mergulho.",
       "intro": "Adicione a caixa com sensores WatchDive a um Apple Watch ou Galaxy Watch compatível. Veja os dados do mergulho no relógio que você já conhece.",
-      "heroCaption": "Caixa WatchDive em uso na piscina",
+      "heroCaption": "WatchDive em ação debaixo d’água",
       "benefitTitle": "Os dados do mergulho no seu pulso.",
       "benefits": [
         {
