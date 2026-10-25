@@ -8,7 +8,7 @@ import freePoster from '@/assets/live/segment-heroes/freediving-1280.webp';
 import freeLoop from '@/assets/live/segment-heroes/freediving-underwater.mp4';
 import scubaSmall from '@/assets/live/segment-heroes/scuba-640.webp';
 import scubaPoster from '@/assets/live/segment-heroes/scuba-1280.webp';
-import scubaLoop from '@/assets/live/segment-heroes/scuba-underwater.mp4';
+import scubaLoop from '@/assets/live/segment-heroes/scuba-underwater-steady.mp4';
 
 const pauseLabels: Record<Locale, string> = {
   en: 'Pause video', ko: '영상 일시 정지', 'zh-CN': '暂停视频', 'zh-TW': '暫停影片',
@@ -85,7 +85,7 @@ export function SegmentHeroMedia({ segment, caption }: { segment: DiveSegment; c
   }
 
   return <figure ref={figure} className="wd-segment-hero-media">
-    <img src={lite ? small : poster} srcSet={lite ? undefined : `${small} 640w, ${poster} 1280w`} sizes="(min-width: 960px) 50vw, 100vw" width="1280" height={isFree ? 960 : 720} alt={caption} fetchPriority="high" loading="eager" />
+    <img src={lite ? small : poster} srcSet={lite ? undefined : `${small} 640w, ${poster} 1280w`} sizes="(min-width: 960px) 50vw, 100vw" width="1280" height="960" alt={caption} fetchPriority="high" loading="eager" />
     {allowed && <video ref={attachVideo} className={hasFrame ? 'has-frame' : ''} muted loop playsInline autoPlay={inView && tabVisible && !paused} preload="none" poster={poster} src={isFree ? freeLoop : scubaLoop} aria-hidden="true" tabIndex={-1}
       onCanPlay={() => {
         const element = video.current;

@@ -14,20 +14,20 @@
     ],
     "scuba": [
       [
-        112.4,
-        2.05
+        113.0,
+        1.4347666666666667
       ],
       [
         25.4,
-        3.1
+        3.1031
       ]
     ]
   },
   "posters": {
     "freediving": 102.836,
-    "scuba": 113.6
+    "scuba": 113.0
   },
-  "edit": "Text-free pool footage excerpts, original speed and color; silent H.264 24fps, CRF24, faststart. No generative edits or compositing. Responsive cover crops in CSS. Archive provenance does not independently certify every historical edit.",
+  "edit": "Text-free pool footage excerpts at original speed/color, silent H.264 faststart. Freediving24fps; scuba retains native30000/1001fps, CRF23. Fixed source crops and scaling only; no generated frames, mesh warping or compositing. Archive provenance does not independently certify every historical edit.",
   "assets": [
     {
       "file": "src/assets/live/segment-heroes/freediving-1280.webp",
@@ -53,23 +53,23 @@
     },
     {
       "file": "src/assets/live/segment-heroes/scuba-1280.webp",
-      "bytes": 28948
+      "bytes": 31384
     },
     {
       "file": "src/assets/live/segment-heroes/scuba-640.webp",
-      "bytes": 11968
+      "bytes": 13748
     },
     {
-      "file": "src/assets/live/segment-heroes/scuba-underwater.mp4",
-      "bytes": 903623,
-      "duration": "5.125000",
+      "file": "src/assets/live/segment-heroes/scuba-underwater-steady.mp4",
+      "bytes": 2197730,
+      "duration": "4.537866666666667",
       "streams": [
         {
           "type": "video",
           "codec": "h264",
           "width": 1280,
-          "height": 720,
-          "fps": "24/1"
+          "height": 960,
+          "fps": "30000/1001"
         }
       ]
     }
@@ -88,5 +88,31 @@
       "x": 480,
       "y": 0
     }
-  ]
+  ],
+  "scubaCrops": [
+    {
+      "width": 2880,
+      "height": 2160,
+      "x": 480,
+      "y": 0
+    },
+    {
+      "width": 2016,
+      "height": 1512,
+      "x": 912,
+      "y": 0
+    }
+  ],
+  "scubaMotionRevision": {
+    "reason": "Remove blurry opening 0.6s, retain native cadence and crop moving pool-floor edge out of lower frame. Natural underwater subject/light movement remains.",
+    "frames": [
+      43,
+      93
+    ],
+    "output": "1280x960",
+    "priorCommit": "fad7caee782185d8d60f208d9e30185f4d47852d",
+    "sha256": "82e9e6429aff807e03647e3e317ca9455924c831956b2e8e4e52aabe85ef7107",
+    "poster": "Extracted from first encoded frame to avoid poster-to-playback position jump",
+    "review": "Final diver crop matches the center 4:3 window of the independently measured Grok candidate; root retained the cleaner 113.0s opening and native 4:3 asset."
+  }
 }
