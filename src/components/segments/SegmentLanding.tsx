@@ -17,7 +17,10 @@ import sync1000 from '@/assets/live/refresh/sync-app-1000.webp';
 import cameraPoster from '@/assets/live/connected-app-poster.jpg';
 import cameraVideo from '@/assets/live/connected-app.mp4';
 import logbook from '@/assets/live/app3/app3-1.jpg';
-import freedivingLogbook from '@/assets/live/segment-heroes/freediving-logbook.jpg';
+import freeLogbook720 from '@/assets/live/segment-heroes/freediving-app-logbook-720.webp';
+import freeLogbook1448 from '@/assets/live/segment-heroes/freediving-app-logbook-1448.webp';
+import freeSurface800 from '@/assets/live/segment-heroes/freediving-surface-800.webp';
+import freeSurface1600 from '@/assets/live/segment-heroes/freediving-surface-1600.webp';
 import './segments.css';
 
 /** The same live form/service, presented after the explanation rather than in the hero.
@@ -113,7 +116,10 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
             <div className="wd-segment-hero-offer"><strong>$149</strong><span>{c.priceNote}</span></div>
             <a className="wd-segment-explore" href="#segment-benefits">{c.discover}<span aria-hidden="true">↓</span></a>
           </div>
-          <SegmentHeroMedia key={segment} segment={segment} caption={c.heroCaption} />
+          {isFree ? <figure className="wd-segment-hero-media wd-segment-hero-photo">
+            <img src={freeSurface1600} srcSet={`${freeSurface800} 800w, ${freeSurface1600} 1600w`} sizes="(min-width:960px) 50vw, 100vw" width="1600" height="1067" alt={c.heroCaption} fetchPriority="high" loading="eager" />
+            <figcaption>{c.heroCaption}</figcaption>
+          </figure> : <SegmentHeroMedia key={segment} segment={segment} caption={c.heroCaption} />}
         </section>
 
         <section id="segment-benefits" className="wd-segment-benefits wd-segment-shell" aria-labelledby="benefits-title">
@@ -137,10 +143,9 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         <div className="wd-segment-shell">{signup('middle')}</div>
 
         <section id="segment-logbook" className="wd-segment-log wd-segment-shell" aria-labelledby="log-title">
-          <div className="wd-segment-log-copy"><p className="wd-segment-eyebrow">03 / {isFree ? 'WATCHDIVE' : 'DIVEROID APP'}</p><h2 id="log-title">{c.logTitle}</h2><p>{c.logBody}</p></div>
+          <div className="wd-segment-log-copy"><p className="wd-segment-eyebrow">03 / DIVEROID APP</p><h2 id="log-title">{c.logTitle}</h2><p>{c.logBody}</p></div>
           {isFree ? <figure className="wd-segment-free-logbook">
-            <img src={freedivingLogbook} width="980" height="1620" alt={c.logImageAlt} loading="lazy" decoding="async" />
-            <figcaption>{c.logImageAlt}</figcaption>
+            <img src={freeLogbook1448} srcSet={`${freeLogbook720} 720w, ${freeLogbook1448} 1448w`} sizes="(min-width:960px) 55vw, 100vw" width="1448" height="965" alt={c.logImageAlt} loading="lazy" decoding="async" />
           </figure> : <div className="wd-segment-log-images"><img className="wd-segment-sync" src={sync1000} srcSet={`${sync640} 640w, ${sync1000} 1000w`} sizes="(min-width:960px) 45vw, 85vw" width="1000" height="667" alt={m.how.step3Alt} loading="lazy" decoding="async" /><img className="wd-segment-app" src={logbook} width="390" height="844" alt={c.logImageAlt} loading="lazy" decoding="async" /></div>}
         </section>
 
