@@ -109,7 +109,7 @@
 .wd-segment-sticky>div span{font-size:11px;color:#485e6c}
 .wd-segment-sticky>a{display:flex;gap:26px;align-items:center;justify-content:center;padding:13px 20px;min-height:46px;font-size:13px;font-weight:700;background:#201748;color:#f6fafc}
 .wd-segment-page section[id]{scroll-margin-top:24px}
-/* These audience pages use the shared form without the legacy page's heavy frames. */
+/* Shared form layout and type scale for the audience pages. */
 html:root .wd-segment-page h1{font-size:clamp(40px,4.5vw,70px)!important;line-height:1.04!important;letter-spacing:-.045em!important}
 html:root .wd-segment-page h2{font-size:clamp(29px,3.5vw,46px)!important;line-height:1.12!important}
 html:root .wd-segment-page .wd-segment-signup h2{font-size:clamp(28px,3.2vw,40px)!important}
@@ -199,3 +199,64 @@ html:root .wd-segment-form .wd-onsite-offer h2{font-size:28px!important}
  .wd-segment-hero-copy>.wd-segment-hero-offer{order:6;margin:20px 24px 0}
  .wd-segment-hero-copy>.wd-segment-explore{order:7;align-self:flex-start;margin:18px 24px 0}
 }
+
+/* DIVEROID brutalism: hard frames, flat brand blocks and offset shadows. */
+.wd-segment-page{--seg-frame:#201748;--seg-card:#fff;--seg-shadow:#65ceee;--seg-marker:#f5ff3d}
+.wd-segment-scuba{--seg-frame:#eef9ff;--seg-card:#2c205c;--seg-shadow:#65ceee}
+.wd-segment-page h3{font-weight:700}
+.wd-segment-header{border-bottom:3px solid #65ceee}
+.wd-segment-header select{border:2px solid #eef9ff;box-shadow:3px 3px 0 #65ceee}
+.wd-segment-modes{gap:10px;border:0}
+.wd-segment-modes a{border:2px solid var(--seg-frame);padding:9px 14px;margin:0;font-weight:700;color:var(--seg-ink);background:var(--seg-card)}
+.wd-segment-modes a[aria-current=page]{background:#65ceee;color:#201748;border-color:var(--seg-frame);box-shadow:4px 4px 0 var(--seg-frame)}
+.wd-segment-page .wd-segment-eyebrow{display:table;max-width:100%;width:fit-content;border:2px solid currentColor;padding:4px 8px;letter-spacing:.08em}
+.wd-segment-hero{padding-block:24px 48px;border-bottom:3px solid var(--seg-frame)}
+.wd-segment-hero-media{width:calc(100% - 32px);margin-right:32px;border:3px solid var(--seg-frame);box-shadow:8px 8px 0 var(--seg-shadow)}
+.wd-segment-page .wd-segment-motion-toggle{border:2px solid #fff;background:#201748;box-shadow:3px 3px 0 #65ceee;backdrop-filter:none}
+.wd-segment-hero-offer{padding:13px 16px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:5px 5px 0 var(--seg-shadow)}
+.wd-segment-explore,.wd-segment-text-link{padding:10px 14px;border:2px solid var(--seg-frame);background:var(--seg-card);box-shadow:4px 4px 0 var(--seg-shadow);font-weight:700}
+.wd-segment-benefit-list{gap:20px}
+.wd-segment-benefit-list article{padding:24px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:5px 5px 0 var(--seg-shadow)}
+.wd-segment-number{display:grid;place-items:center;width:34px;height:34px;background:#65ceee;border:2px solid var(--seg-frame);color:#201748;font-weight:700}
+.wd-segment-how-image,.wd-segment-video{border:3px solid var(--seg-frame);box-shadow:7px 7px 0 var(--seg-shadow)}
+.wd-segment-how li{border-top:2px solid var(--seg-frame)}
+.wd-segment-how li>span{flex-shrink:0;border:2px solid var(--seg-frame);width:29px;height:29px;background:#65ceee;color:#201748;font-weight:700}
+.wd-segment-log-images .wd-segment-sync{border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow)}
+.wd-segment-log-images .wd-segment-app{border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow)}
+.wd-segment-faq details{border:2px solid var(--seg-frame);background:var(--seg-card);margin-bottom:12px;padding-inline:18px;box-shadow:4px 4px 0 var(--seg-shadow)}
+.wd-segment-faq details:last-child{border-bottom:2px solid var(--seg-frame)}
+.wd-segment-faq summary{font-weight:700}
+.wd-segment-switch{border-bottom:3px solid var(--seg-frame)}
+.wd-segment-signup{position:relative;isolation:isolate;border:3px solid #eef9ff;box-shadow:7px 7px 0 #65ceee}
+.wd-segment-signup-middle{border-color:var(--seg-marker);box-shadow:7px 7px 0 #65ceee}
+/* Only the decorative frame pulses; the text and controls stay still. */
+.wd-segment-signup-middle::before{content:"";position:absolute;inset:-5px;border:5px solid var(--seg-marker);box-shadow:4px 4px 0 var(--seg-marker);pointer-events:none;animation:wd-segment-marker-pulse 2.4s ease-in-out infinite;opacity:1}
+@keyframes wd-segment-marker-pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.wd-segment-signup-middle:focus-within::before,.wd-segment-signup-middle:has(.wd-onsite-offer)::before{animation:none;opacity:1}
+.wd-segment-signup-middle .wd-segment-eyebrow{background:var(--seg-marker);border-color:var(--seg-marker);color:#201748}
+html:root .wd-segment-form input[type=email],html:root .wd-segment-form input[type=tel]{border:3px solid #201748!important;box-shadow:4px 4px 0 #eef9ff!important}
+html:root .wd-segment-form .wd-submit{border:3px solid #eef9ff!important;box-shadow:4px 4px 0 #eef9ff!important}
+html:root .wd-segment-form .wd-submit:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #eef9ff!important}
+html:root .wd-segment-form .wd-inbox-card{border:3px solid #eef9ff!important;box-shadow:5px 5px 0 #65ceee!important}
+.wd-segment-sticky{border-top:3px solid #201748;box-shadow:none}
+.wd-segment-sticky>a{border:2px solid #201748;box-shadow:4px 4px 0 #65ceee}
+@media(max-width:959px){
+ .wd-segment-hero{padding-top:0;padding-bottom:34px}
+ .wd-segment-hero-media{width:calc(100% - 48px);margin:0 24px;box-shadow:6px 6px 0 var(--seg-shadow)}
+ .wd-segment-hero-copy>.wd-segment-modes{gap:10px;margin-bottom:27px}
+ .wd-segment-modes a{padding:8px 10px}
+ .wd-segment-hero-copy>.wd-segment-eyebrow{margin-bottom:17px}
+ .wd-segment-benefit-list{gap:16px}
+ .wd-segment-benefit-list article{padding:20px;gap:16px}
+ .wd-segment-number{flex:0 0 32px;height:32px}
+ .wd-segment-signup{padding:30px 24px}
+ .wd-segment-faq details{padding-inline:14px}
+ .wd-segment-how-image,.wd-segment-video{box-shadow:5px 5px 0 var(--seg-shadow)}
+}
+@media(max-width:359px){
+ .wd-segment-hero-media{width:calc(100% - 32px);margin-inline:16px}
+ .wd-segment-hero-copy>.wd-segment-modes{margin-inline:16px;gap:8px}
+ .wd-segment-modes a{font-size:12px;padding-inline:8px}
+ .wd-segment-signup{padding:25px 18px}
+}
+@media(prefers-reduced-motion:reduce){.wd-segment-signup-middle::before{animation:none!important;opacity:1}}
