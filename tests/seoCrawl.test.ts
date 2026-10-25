@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { applySearchIndexingPolicy, publicCrawlResponse, robotsTxt, sitemapXml } from "../src/lib/i18n/crawl.ts";
 import { EN_FROZEN_LANDING_MESSAGES } from "../src/lib/i18n/frozen-landing-en.ts";
 import { FROZEN_LANDING_MESSAGES } from "../src/lib/i18n/frozen-landing-messages.ts";
-import { SUPPORTED_LOCALES, homePath, privacyPath, termsPath, type Locale } from "../src/lib/i18n/locale.ts";
+import { SUPPORTED_LOCALES, homePath, privacyPath, termsPath, localizePath, type Locale } from "../src/lib/i18n/locale.ts";
 import { WATCHDIVE_PUBLIC_ORIGIN } from "../src/lib/i18n/publicOrigin.ts";
 import {
   jsonLdScript,
@@ -44,13 +44,13 @@ test("robots.txt allows public pages, blocks only API fetches, and publishes the
   assert.doesNotMatch(body, /Disallow: \/(?:privacy|ko|verify|reservation)/);
 });
 
-test("the sitemap lists the 27 canonical public URLs and repeats the HTML hreflang cluster", () => {
+test("the sitemap lists the 45 canonical public URLs and repeats the HTML hreflang cluster", () => {
   const xml = sitemapXml();
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-  assert.equal(locs.length, SUPPORTED_LOCALES.length * 3);
+  assert.equal(locs.length, SUPPORTED_LOCALES.length * 5);
   assert.equal(new Set(locs).size, locs.length);
 
-  const expected = [homePath, privacyPath, termsPath].flatMap((pathFor) =>
+  const expected = [homePath, privacyPath, termsPath, (locale: Locale) => localizePath('/freediving', locale), (locale: Locale) => localizePath('/scuba', locale)].flatMap((pathFor) =>
     SUPPORTED_LOCALES.map((locale) => new URL(pathFor(locale), ORIGIN).toString()),
   );
   assert.deepEqual(locs, expected);

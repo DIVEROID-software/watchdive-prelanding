@@ -57,6 +57,11 @@ function clickId(target: Element): string | null {
   if (target.closest("input, textarea")) return null;
   if (target.closest('select[aria-label="Language"]')) return "language";
   const href = target.closest("a")?.getAttribute("href") ?? "";
+  if (href.includes("#signup-middle")) return "middle-cta";
+  if (href.includes("#signup-bottom")) return "bottom-cta";
+  const placement = target.closest("[data-wd-placement]")?.getAttribute("data-wd-placement");
+  if (target.closest("button[type=submit]") && (placement === "middle" || placement === "bottom"))
+    return `${placement}-submit`;
   if (href.includes("#offer-form")) {
     return target.closest("a")?.className.includes("fixed") ? "sticky-cta" : "header-cta";
   }
@@ -115,6 +120,25 @@ export function startPageBehavior(): void {
     }
   });
   regions.forEach((region) => observer.observe(region));
+  const mutations = new MutationObserver((records) => {
+    for (const record of records)
+      for (const node of record.addedNodes) {
+        if (!(node instanceof Element)) continue;
+        if (node.matches("header, section, footer")) observer.observe(node);
+        node
+          .querySelectorAll("header, section, footer")
+          .forEach((region) => observer.observe(region));
+      }
+    for (const [element, state] of dwell)
+      if (!element.isConnected) {
+        if (state.since !== null) {
+          state.ms += Date.now() - state.since;
+          state.since = null;
+        }
+        observer.unobserve(element);
+      }
+  });
+  mutations.observe(document.body, { childList: true, subtree: true });
 
   const onScroll = () => {
     if (!active || !measurementAllowed()) return;
@@ -224,6 +248,7 @@ export function startPageBehavior(): void {
       if (milestoneTimer) clearTimeout(milestoneTimer);
       milestoneTimer = undefined;
       observer.disconnect();
+      mutations.disconnect();
       dwell.clear();
       clicks.length = 0;
       document.removeEventListener("scroll", onScroll);

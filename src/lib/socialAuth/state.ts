@@ -3,6 +3,8 @@
 
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
+import { isLandingSegment, type LandingSegment } from "../segments/navigation.ts";
+
 import type { SignupCountryProbe } from "../attribution.ts";
 import type { ExperimentContext } from "../conversionExperimentContract.ts";
 import type { LeadAttribution } from "../verification/contracts.ts";
@@ -25,6 +27,8 @@ export type SocialState = {
   nonce: string;
   verifier: string;
   source: "hero" | "offer";
+  /** Optional signed audience return; absent keeps the legacy homepage flow. */
+  segment?: LandingSegment;
   locale: Locale;
   origin: string;
   attribution: LeadAttribution;
@@ -98,6 +102,7 @@ export function readSocialState(
   if (row.provider !== "google" && row.provider !== "apple") return undefined;
   if (row.source !== "hero" && row.source !== "offer") return undefined;
   if (!isLocale(row.locale)) return undefined;
+  if (row.segment !== undefined && !isLandingSegment(row.segment)) return undefined;
   if (typeof row.state !== "string" || typeof row.nonce !== "string") return undefined;
   if (typeof row.verifier !== "string" || typeof row.jti !== "string") return undefined;
   if (typeof row.origin !== "string" || !isAllowedSocialOrigin(row.origin, env)) return undefined;

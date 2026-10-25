@@ -2,9 +2,10 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { hasSocialAcknowledgement, socialAckCookie } from "@/lib/socialAuthAcknowledgement";
 
 import { SocialSignupButtons, type SocialProvider } from "@/components/SocialSignupButtons";
+import { segmentFromPathname } from "@/lib/segments/navigation";
 import { getAttribution } from "@/lib/attribution";
 import { getPressRef } from "@/lib/pressRef";
-import { getConversionExperiment } from "@/lib/conversionExperimentClient";
+import { getConversionExperiment, closeExperimentEnrollmentOnSubmit, markConversionMilestone } from "@/lib/conversionExperimentClient";
 import type { Locale } from "@/lib/i18n/locale";
 import { getMetaCookies, hasMetaMeasurementConsent } from "@/lib/metaPixel";
 import { socialAuthResultCopy, type SocialAuthResultKind } from "@/lib/socialAuthResultCopy";
@@ -27,6 +28,7 @@ export function SocialAuthEntry({
   });
   const [loading, setLoading] = useState<SocialProvider | null>(null);
   const [guidance, setGuidance] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,9 +47,13 @@ export function SocialAuthEntry({
   }, []);
 
   async function onProvider(provider: SocialProvider) {
+    closeExperimentEnrollmentOnSubmit();
+    markConversionMilestone("submitAttempted", source);
+    setFailed(false);
     setLoading(provider);
     try {
       const attribution = getAttribution();
+      const segment = segmentFromPathname(window.location.pathname);
       const cookies = hasMetaMeasurementConsent() ? getMetaCookies() : {};
       const response = await fetch("/api/auth/start", {
         method: "POST",
@@ -56,6 +62,7 @@ export function SocialAuthEntry({
           provider,
           source,
           locale,
+          ...(segment ? { segment } : {}),
           attribution,
           measurementConsent: hasMetaMeasurementConsent(),
           experiment: getConversionExperiment(),
@@ -66,15 +73,17 @@ export function SocialAuthEntry({
       });
       const body = (await response.json().catch(() => null)) as { url?: unknown; error?: unknown } | null;
       if (response.status === 409 || body?.error === "in_app_browser") {
-        setGuidance(true);
+        if (segment) setEnabled((current) => ({ ...current, google: false }));
+        else setGuidance(true);
         return;
       }
       if (response.ok && typeof body?.url === "string" && body.url.startsWith("https://")) {
         window.location.assign(body.url);
         return;
       }
+      setFailed(true);
     } catch {
-      // The email form below is unchanged.
+      setFailed(true);
     } finally {
       setLoading(null);
     }
@@ -94,6 +103,7 @@ export function SocialAuthEntry({
           {socialSignupCopyFor(locale).embedded.body}
         </p>
       ) : null}
+      {failed && <p role="status" className="text-xs leading-relaxed text-white/80">{socialAuthResultCopy(locale).error}</p>}
     </div>
   );
 }

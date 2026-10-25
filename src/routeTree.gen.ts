@@ -13,14 +13,18 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as BuddyRouteImport } from './routes/buddy'
 import { Route as BuddyRulesRouteImport } from './routes/buddy-rules'
+import { Route as FreedivingRouteImport } from './routes/freediving'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReservationRouteImport } from './routes/reservation'
+import { Route as ScubaRouteImport } from './routes/scuba'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as LocaleIndexRouteImport } from './routes/$locale.index'
 import { Route as LocaleBuddyRouteImport } from './routes/$locale.buddy'
 import { Route as LocaleBuddyRulesRouteImport } from './routes/$locale.buddy-rules'
+import { Route as LocaleFreedivingRouteImport } from './routes/$locale.freediving'
 import { Route as LocalePrivacyRouteImport } from './routes/$locale.privacy'
+import { Route as LocaleScubaRouteImport } from './routes/$locale.scuba'
 import { Route as LocaleTermsRouteImport } from './routes/$locale.terms'
 import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
 import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
@@ -62,6 +66,11 @@ const BuddyRulesRoute = BuddyRulesRouteImport.update({
   path: '/buddy-rules',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FreedivingRoute = FreedivingRouteImport.update({
+  id: '/freediving',
+  path: '/freediving',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -70,6 +79,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const ReservationRoute = ReservationRouteImport.update({
   id: '/reservation',
   path: '/reservation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScubaRoute = ScubaRouteImport.update({
+  id: '/scuba',
+  path: '/scuba',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -97,9 +111,19 @@ const LocaleBuddyRulesRoute = LocaleBuddyRulesRouteImport.update({
   path: '/buddy-rules',
   getParentRoute: () => LocaleRoute,
 } as any)
+const LocaleFreedivingRoute = LocaleFreedivingRouteImport.update({
+  id: '/freediving',
+  path: '/freediving',
+  getParentRoute: () => LocaleRoute,
+} as any)
 const LocalePrivacyRoute = LocalePrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => LocaleRoute,
+} as any)
+const LocaleScubaRoute = LocaleScubaRouteImport.update({
+  id: '/scuba',
+  path: '/scuba',
   getParentRoute: () => LocaleRoute,
 } as any)
 const LocaleTermsRoute = LocaleTermsRouteImport.update({
@@ -211,13 +235,17 @@ export interface FileRoutesByFullPath {
   '/$locale': typeof LocaleRouteWithChildren
   '/buddy': typeof BuddyRoute
   '/buddy-rules': typeof BuddyRulesRoute
+  '/freediving': typeof FreedivingRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
+  '/scuba': typeof ScubaRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/buddy': typeof LocaleBuddyRoute
   '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
+  '/$locale/freediving': typeof LocaleFreedivingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
+  '/$locale/scuba': typeof LocaleScubaRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
@@ -244,13 +272,17 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/buddy': typeof BuddyRoute
   '/buddy-rules': typeof BuddyRulesRoute
+  '/freediving': typeof FreedivingRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
+  '/scuba': typeof ScubaRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/buddy': typeof LocaleBuddyRoute
   '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
+  '/$locale/freediving': typeof LocaleFreedivingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
+  '/$locale/scuba': typeof LocaleScubaRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
@@ -279,13 +311,17 @@ export interface FileRoutesById {
   '/$locale': typeof LocaleRouteWithChildren
   '/buddy': typeof BuddyRoute
   '/buddy-rules': typeof BuddyRulesRoute
+  '/freediving': typeof FreedivingRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
+  '/scuba': typeof ScubaRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/buddy': typeof LocaleBuddyRoute
   '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
+  '/$locale/freediving': typeof LocaleFreedivingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
+  '/$locale/scuba': typeof LocaleScubaRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
@@ -315,13 +351,17 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/buddy'
     | '/buddy-rules'
+    | '/freediving'
     | '/privacy'
     | '/reservation'
+    | '/scuba'
     | '/terms'
     | '/verify'
     | '/$locale/buddy'
     | '/$locale/buddy-rules'
+    | '/$locale/freediving'
     | '/$locale/privacy'
+    | '/$locale/scuba'
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
@@ -348,13 +388,17 @@ export interface FileRouteTypes {
     | '/'
     | '/buddy'
     | '/buddy-rules'
+    | '/freediving'
     | '/privacy'
     | '/reservation'
+    | '/scuba'
     | '/terms'
     | '/verify'
     | '/$locale/buddy'
     | '/$locale/buddy-rules'
+    | '/$locale/freediving'
     | '/$locale/privacy'
+    | '/$locale/scuba'
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
@@ -382,13 +426,17 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/buddy'
     | '/buddy-rules'
+    | '/freediving'
     | '/privacy'
     | '/reservation'
+    | '/scuba'
     | '/terms'
     | '/verify'
     | '/$locale/buddy'
     | '/$locale/buddy-rules'
+    | '/$locale/freediving'
     | '/$locale/privacy'
+    | '/$locale/scuba'
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
@@ -417,8 +465,10 @@ export interface RootRouteChildren {
   LocaleRoute: typeof LocaleRouteWithChildren
   BuddyRoute: typeof BuddyRoute
   BuddyRulesRoute: typeof BuddyRulesRoute
+  FreedivingRoute: typeof FreedivingRoute
   PrivacyRoute: typeof PrivacyRoute
   ReservationRoute: typeof ReservationRoute
+  ScubaRoute: typeof ScubaRoute
   TermsRoute: typeof TermsRoute
   VerifyRoute: typeof VerifyRoute
   AdminBehaviorRoute: typeof AdminBehaviorRoute
@@ -470,6 +520,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuddyRulesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/freediving': {
+      id: '/freediving'
+      path: '/freediving'
+      fullPath: '/freediving'
+      preLoaderRoute: typeof FreedivingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -482,6 +539,13 @@ declare module '@tanstack/react-router' {
       path: '/reservation'
       fullPath: '/reservation'
       preLoaderRoute: typeof ReservationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scuba': {
+      id: '/scuba'
+      path: '/scuba'
+      fullPath: '/scuba'
+      preLoaderRoute: typeof ScubaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -519,11 +583,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleBuddyRulesRouteImport
       parentRoute: typeof LocaleRoute
     }
+    '/$locale/freediving': {
+      id: '/$locale/freediving'
+      path: '/freediving'
+      fullPath: '/$locale/freediving'
+      preLoaderRoute: typeof LocaleFreedivingRouteImport
+      parentRoute: typeof LocaleRoute
+    }
     '/$locale/privacy': {
       id: '/$locale/privacy'
       path: '/privacy'
       fullPath: '/$locale/privacy'
       preLoaderRoute: typeof LocalePrivacyRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/scuba': {
+      id: '/$locale/scuba'
+      path: '/scuba'
+      fullPath: '/$locale/scuba'
+      preLoaderRoute: typeof LocaleScubaRouteImport
       parentRoute: typeof LocaleRoute
     }
     '/$locale/terms': {
@@ -672,7 +750,9 @@ declare module '@tanstack/react-router' {
 interface LocaleRouteChildren {
   LocaleBuddyRoute: typeof LocaleBuddyRoute
   LocaleBuddyRulesRoute: typeof LocaleBuddyRulesRoute
+  LocaleFreedivingRoute: typeof LocaleFreedivingRoute
   LocalePrivacyRoute: typeof LocalePrivacyRoute
+  LocaleScubaRoute: typeof LocaleScubaRoute
   LocaleTermsRoute: typeof LocaleTermsRoute
   LocaleVerifyRoute: typeof LocaleVerifyRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
@@ -682,7 +762,9 @@ interface LocaleRouteChildren {
 const LocaleRouteChildren: LocaleRouteChildren = {
   LocaleBuddyRoute: LocaleBuddyRoute,
   LocaleBuddyRulesRoute: LocaleBuddyRulesRoute,
+  LocaleFreedivingRoute: LocaleFreedivingRoute,
   LocalePrivacyRoute: LocalePrivacyRoute,
+  LocaleScubaRoute: LocaleScubaRoute,
   LocaleTermsRoute: LocaleTermsRoute,
   LocaleVerifyRoute: LocaleVerifyRoute,
   LocaleIndexRoute: LocaleIndexRoute,
@@ -697,8 +779,10 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleRoute: LocaleRouteWithChildren,
   BuddyRoute: BuddyRoute,
   BuddyRulesRoute: BuddyRulesRoute,
+  FreedivingRoute: FreedivingRoute,
   PrivacyRoute: PrivacyRoute,
   ReservationRoute: ReservationRoute,
+  ScubaRoute: ScubaRoute,
   TermsRoute: TermsRoute,
   VerifyRoute: VerifyRoute,
   AdminBehaviorRoute: AdminBehaviorRoute,

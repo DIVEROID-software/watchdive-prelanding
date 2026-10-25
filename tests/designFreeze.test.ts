@@ -150,7 +150,18 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // 2026-10-23 owner override: remove hero description and the shared
   // reassurance/confirmation/terms block, retaining the separate email hint.
   // aria-describedby now points only at that retained hint.
-  const digest = sha256(jsxStructure(source));
+  // 2026-10-25: audience pages reuse EmailForm with an opt-in presentation.
+  // Resolve only that new option to its absent (legacy) value before comparing
+  // the original pin. The legacy route never supplies this prop. Do not re-pin
+  // its hash to hide accidental changes to the original page.
+  const legacySource = source
+    .replace(/    if \(presentation\) return <>[^\n]+<\/>;\n/, "")
+    .replace(/\{!presentation && (<SignupReservationOffer[^\n]+autoFocus \/>)\}/, "$1")
+    .replace(/\{presentation && <SignupReservationOffer[^\n]+\/>\}/, "")
+    .replace('autoFocus={Boolean(presentation)}', 'autoFocus={false}')
+    .replace('message={presentation ? "" : pending}', 'message={pending}')
+    .replace('className={presentation ? "wd-segment-confirm-note" : "wd-control-copy text-sm leading-relaxed text-white/90"}', 'className="wd-control-copy text-sm leading-relaxed text-white/90"');
+  const digest = sha256(jsxStructure(legacySource));
   assert.equal(digest, "8e305a20335f8540a70ffb9b17afbadf35b8922644020ac0e386867a9f0f6bf1");
 
   const expectedOrder = [

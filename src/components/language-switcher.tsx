@@ -1,5 +1,6 @@
 import { LOCALE_PREFERENCE_COOKIE } from "@/lib/i18n/auto-locale";
-import { isLocale, LANGUAGE_OPTIONS, switchLocalePath } from "@/lib/i18n/locale";
+import { isLocale, LANGUAGE_OPTIONS } from "@/lib/i18n/locale";
+import { languageSwitchPath } from "@/lib/segments/navigation";
 import { useCurrentLocale } from "@/lib/i18n/use-current-locale";
 
 /**
@@ -38,7 +39,7 @@ export function LanguageSwitcher() {
           const next = event.target.value;
           if (!isLocale(next)) return;
           document.cookie = `${LOCALE_PREFERENCE_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=31536000; samesite=lax`;
-          window.location.assign(switchLocalePath(window.location.pathname, next));
+          window.location.assign(languageSwitchPath(window.location, next));
         }}
         className="h-11 min-h-11 w-max min-w-11 max-w-full cursor-pointer appearance-none rounded-full border border-white/45 bg-[#201748] py-0 pl-9 pr-8 text-caption text-[#F6FAFC] outline-none hover:bg-white/10 focus:ring-2 focus:ring-[#36A9E1] [&>option]:bg-white [&>option]:text-[#10212E]"
       >

@@ -930,7 +930,7 @@ function CheckInboxCard({
           {m.inbox.wrongAddress}
         </button>
       </div>
-      <p className="mt-2 text-xs leading-relaxed text-white/65">{message}</p>
+      {message && <p className="mt-2 text-xs leading-relaxed text-white/65">{message}</p>}
       {shareNote && <p className="mt-1 text-xs leading-relaxed text-white/60">{shareNote}</p>}
       {onAllowMeasurement && (
         <MeasurementAsk onAllow={onAllowMeasurement} onDecline={onDeclineMeasurement} />
@@ -943,7 +943,7 @@ function CheckInboxCard({
 // means a new placement is a type error rather than a rejected submit.
 type FormPlacement = "hero" | "offer";
 
-function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePhone?: boolean }) {
+export function EmailForm({ id, includePhone = false, presentation }: { id: FormPlacement; includePhone?: boolean; presentation?: { cta: string; note: string } }) {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const copy = useConversionCopy(locale);
@@ -986,7 +986,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   useEffect(() => {
     const check = () => {
       const form = formRef.current;
-      if (form && signupActionsVisible(form)) markConversionMilestone("formVisible");
+      if (form && signupActionsVisible(form)) markConversionMilestone("formVisible", id);
     };
     const observer = new ResizeObserver(check);
     if (formRef.current) observer.observe(formRef.current);
@@ -1172,6 +1172,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   }
 
   if (verified) {
+    if (presentation) return <><ReferralSuccess refCode={refCode} /><PhoneOptInCard credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} /><SignupReservationOffer locale={locale} verified credential={{ kind: "attempt", value: handle }} /></>;
     return <><SignupReservationOffer locale={locale} verified credential={{ kind: "attempt", value: handle }} /><ReferralSuccess refCode={refCode} /><PhoneOptInCard credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} /></>;
   }
 
@@ -1313,11 +1314,11 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
 
   if (pending) {
     return (<>
-      <SignupReservationOffer locale={locale} inboxId={`${id}-verify-inbox`} autoFocus />
+      {!presentation && <SignupReservationOffer locale={locale} inboxId={`${id}-verify-inbox`} autoFocus />}
       <CheckInboxCard
         regionId={`${id}-verify-inbox`}
-        autoFocus={false}
-        message={pending}
+        autoFocus={Boolean(presentation)}
+        message={presentation ? "" : pending}
         shareNote={shareNote || undefined}
         phoneOptIn={<PhoneOptInCard key={handle} credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} />}
         email={email}
@@ -1347,6 +1348,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           requestAnimationFrame(() => document.getElementById(`${id}-email`)?.focus());
         }}
       />
+      {presentation && <SignupReservationOffer locale={locale} inboxId={`${id}-verify-inbox`} />}
     </>);
   }
 
@@ -1363,7 +1365,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           return;
         }
         closeExperimentEnrollmentOnSubmit();
-        markConversionMilestone("submitAttempted");
+        markConversionMilestone("submitAttempted", id);
         setLoading(true);
         try {
           // Captured here, in the browser that actually chose it, and carried
@@ -1428,7 +1430,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       {/* Form-first leads the hero form with the first-100 limit: price,
           Kickstarter, at launch, in one sentence (the offer form keeps the
           benefit line). Control keeps production's note in the price chip. */}
-      {id === "hero" ? (
+      {presentation ? null : id === "hero" ? (
         <EarlyBirdRace />
       ) : (
         <p className="wd-experiment-copy wd-experiment-benefit">{copy.benefit}</p>
@@ -1436,9 +1438,9 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
       <SocialAuthEntry locale={locale} source={id} disabled={loading} referredBy={getRef()} />
       <p
         id={`${id}-confirm-note`}
-        className="wd-control-copy text-sm leading-relaxed text-white/90"
+        className={presentation ? "wd-segment-confirm-note" : "wd-control-copy text-sm leading-relaxed text-white/90"}
       >
-        {m.form.confirmRequired}
+        {presentation?.note ?? m.form.confirmRequired}
       </p>
       <div className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <input
@@ -1454,7 +1456,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onFocus={() => {
-            markConversionMilestone("formFocused");
+            markConversionMilestone("formFocused", id);
             if (!formStartSent.current) {
               formStartSent.current = true;
               trackMetaCustom("FormStart", { source: id });
@@ -1477,7 +1479,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
         >
           {loading ? (
             m.form.saving
-          ) : (
+          ) : presentation ? presentation.cta : (
             <>
               <span className="wd-control-copy">{m.cta.label}</span>
               <span className="wd-experiment-copy">{copy.cta}</span>
@@ -1582,7 +1584,7 @@ function HeroProof() {
  * `data-wd-ready` it stops the native reload and marks the form queued; after
  * that it does nothing.
  */
-const HOLD_EARLY_SUBMIT_JS = `document.addEventListener("submit",function(e){var f=e.target;if(!f||!f.hasAttribute||!f.hasAttribute("data-wd-signup")||f.hasAttribute("data-wd-ready"))return;e.preventDefault();e.stopImmediatePropagation();f.setAttribute("data-wd-queued","")},true);`;
+export const HOLD_EARLY_SUBMIT_JS = `document.addEventListener("submit",function(e){var f=e.target;if(!f||!f.hasAttribute||!f.hasAttribute("data-wd-signup")||f.hasAttribute("data-wd-ready"))return;e.preventDefault();e.stopImmediatePropagation();f.setAttribute("data-wd-queued","")},true);`;
 
 /**
  * The first screen answers what this is before anything loads: the headline

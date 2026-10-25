@@ -20,7 +20,7 @@ import {
   parseBehaviorSections,
   parseLeadExperiment,
   unionFunnels,
-  type ExperimentContext,
+  type LegacyExperimentContext,
   type ExperimentFunnel,
 } from "./conversionExperimentContract.ts";
 import {
@@ -36,7 +36,11 @@ import {
   MEASUREMENT_CONSENT_WITHDRAWN,
   STATUS_VERIFIED,
 } from "./verification/contracts.ts";
-import { createNotionRequest, NotionRequestError, type NotionRequest } from "./verification/notionLead.ts";
+import {
+  createNotionRequest,
+  NotionRequestError,
+  type NotionRequest,
+} from "./verification/notionLead.ts";
 
 export const EXPERIMENT_REPORT_TOKEN_MIN = 32;
 export const EXPERIMENT_REPORT_MAX_PAGES = 40;
@@ -134,7 +138,10 @@ export type ExperimentReport = {
   };
   byArm: Record<
     (typeof EXPERIMENT_VARIANTS)[number],
-    { byTeam: Record<(typeof EXPERIMENT_TEAMS)[number], ExperimentReportCell>; total: ExperimentReportCell }
+    {
+      byTeam: Record<(typeof EXPERIMENT_TEAMS)[number], ExperimentReportCell>;
+      total: ExperimentReportCell;
+    }
   >;
   total: ExperimentReportCell;
 };
@@ -232,8 +239,7 @@ function dateMs(property: unknown): number | null {
 /** Dedupe key only. Never copied onto the report. */
 function dedupeKey(properties: Record<string, unknown>): string {
   const property = properties["Canonical email"] as
-    | { email?: unknown; rich_text?: { plain_text?: string }[] }
-    | undefined;
+    { email?: unknown; rich_text?: { plain_text?: string }[] } | undefined;
   if (typeof property?.email === "string" && property.email.trim()) {
     return property.email.trim().toLowerCase();
   }
@@ -298,8 +304,8 @@ function cell(bucket: Bucket, behaviorOk: boolean, leadsOk: boolean): Experiment
 type SessionStatus = "ok" | "inconsistent" | "qa" | "malformed" | "no_exposure";
 
 type Session = {
-  variant: ExperimentContext["variant"];
-  team: ExperimentContext["team"];
+  variant: LegacyExperimentContext["variant"];
+  team: LegacyExperimentContext["team"];
   assignedAt: number;
   funnels: ExperimentFunnel[];
   status: SessionStatus;
@@ -354,6 +360,7 @@ export function buildExperimentReport(input: ReportPages): ExperimentReport {
       const properties = page.properties ?? {};
       const title = titleText(properties.Name).trim();
       const parsed = parseBehaviorSections(richText(properties.Sections));
+      if (parsed.context && parsed.context.experimentId !== EXPERIMENT_ID) continue;
       if (parsed.malformed || !parsed.context || !title) {
         quality.malformedBehaviorRows += 1;
         if (title) mark(sessions, title.toLowerCase(), "malformed");
@@ -419,7 +426,10 @@ export function buildExperimentReport(input: ReportPages): ExperimentReport {
 
   const conversions = new Map<string, { emails: number; verified: number }>();
   if (leadsOk) {
-    const kept = new Map<string, { context: ExperimentContext; signedUp: number; verifiedAt: number | null }>();
+    const kept = new Map<
+      string,
+      { context: LegacyExperimentContext; signedUp: number; verifiedAt: number | null }
+    >();
     for (const page of input.leads.pages) {
       const properties = page.properties ?? {};
       const parsed = parseLeadExperiment(richText(properties[FIELD_CONVERSION_EXPERIMENT]));
@@ -427,6 +437,7 @@ export function buildExperimentReport(input: ReportPages): ExperimentReport {
         if (parsed.malformed) quality.malformedLeadRows += 1;
         continue;
       }
+      if (parsed.context.experimentId !== EXPERIMENT_ID) continue;
       if (parsed.context.qa) {
         quality.qaExcludedLeads += 1;
         continue;
@@ -474,7 +485,11 @@ export function buildExperimentReport(input: ReportPages): ExperimentReport {
         continue;
       }
       if (previous) quality.duplicateExcluded += 1;
-      kept.set(key, { context: parsed.context, signedUp, verifiedAt: verified ? verifiedAt : null });
+      kept.set(key, {
+        context: parsed.context,
+        signedUp,
+        verifiedAt: verified ? verifiedAt : null,
+      });
     }
 
     for (const lead of kept.values()) {
@@ -558,10 +573,7 @@ export function buildExperimentReport(input: ReportPages): ExperimentReport {
   }
 
   const complete =
-    behaviorOk &&
-    leadsReadable &&
-    !input.behavior.truncated &&
-    !input.leads.truncated;
+    behaviorOk && leadsReadable && !input.behavior.truncated && !input.leads.truncated;
   const partial = input.behavior.truncated || input.leads.truncated;
   const matureSessions = behaviorOk ? total.matureSessions : 0;
   // Winner readiness stays false: no statistical test is applied, and new
@@ -606,12 +618,13 @@ function mark(sessions: Map<string, Session>, key: string, status: SessionStatus
     });
     return;
   }
-  existing.status = status === "malformed" || existing.status === "malformed" ? "malformed" : status;
+  existing.status =
+    status === "malformed" || existing.status === "malformed" ? "malformed" : status;
 }
 
 function absorb(
   sessions: Map<string, Session>,
-  context: ExperimentContext,
+  context: LegacyExperimentContext,
   funnel: ExperimentFunnel | null,
 ) {
   const key = context.sessionId.toLowerCase();
@@ -640,9 +653,10 @@ function addBucket(into: Bucket, extra: Bucket) {
   for (const key of COUNT_KEYS) into[key] += extra[key];
 }
 
-export type BehaviorQuery = (body: Record<string, unknown>) => Promise<
-  | { ok: true; page: Record<string, unknown> }
-  | { ok: false; reason: "unconfigured" | "failed" }
+export type BehaviorQuery = (
+  body: Record<string, unknown>,
+) => Promise<
+  { ok: true; page: Record<string, unknown> } | { ok: false; reason: "unconfigured" | "failed" }
 >;
 
 export type ExperimentReportSource = {
@@ -671,18 +685,27 @@ function json(status: number, body: unknown): Response {
   });
 }
 
-async function readBehavior(source: ExperimentReportSource, maxPages: number): Promise<ReportPages["behavior"]> {
+async function readBehavior(
+  source: ExperimentReportSource,
+  maxPages: number,
+): Promise<ReportPages["behavior"]> {
   const env = source.env ?? process.env;
   if (!env.NOTION_API_KEY?.trim() || !env.NOTION_UX_DB_ID?.trim()) {
     return { availability: "unconfigured", pages: [], truncated: false };
   }
   const notion = createBehaviorNotion({ env, log: source.log });
-  const query = source.behaviorQuery ?? ((body: Record<string, unknown>) => notion.queryDetailed(body));
+  const query =
+    source.behaviorQuery ?? ((body: Record<string, unknown>) => notion.queryDetailed(body));
   const pages: NotionPageLike[] = [];
   let cursor: string | undefined;
   for (let pageNumber = 0; pageNumber < maxPages; pageNumber += 1) {
     const result = await query({
-      filter: { property: "Sections", rich_text: { contains: EXPERIMENT_SECTION_MARKER } },
+      filter: {
+        and: [
+          { property: "Sections", rich_text: { contains: EXPERIMENT_SECTION_MARKER } },
+          { property: "Sections", rich_text: { contains: EXPERIMENT_ID } },
+        ],
+      },
       page_size: PAGE_SIZE,
       ...(cursor ? { start_cursor: cursor } : {}),
     });
@@ -707,7 +730,10 @@ async function readBehavior(source: ExperimentReportSource, maxPages: number): P
   return { availability: "ok", pages, truncated: true };
 }
 
-async function readLeads(source: ExperimentReportSource, maxPages: number): Promise<ReportPages["leads"]> {
+async function readLeads(
+  source: ExperimentReportSource,
+  maxPages: number,
+): Promise<ReportPages["leads"]> {
   const env = source.env ?? process.env;
   if (!env.NOTION_API_KEY?.trim() || !env.NOTION_WAITLIST_DB_ID?.trim()) {
     return { availability: "unconfigured", column: "unknown", pages: [], truncated: false };
@@ -755,10 +781,15 @@ async function readLeads(source: ExperimentReportSource, maxPages: number): Prom
   return { availability: "ok", column: "present", pages, truncated: true };
 }
 
-export async function loadExperimentReport(source: ExperimentReportSource = {}): Promise<ExperimentReport> {
+export async function loadExperimentReport(
+  source: ExperimentReportSource = {},
+): Promise<ExperimentReport> {
   const now = source.now?.() ?? Date.now();
   const maxPages = source.maxPages ?? EXPERIMENT_REPORT_MAX_PAGES;
-  const [behavior, leads] = await Promise.all([readBehavior(source, maxPages), readLeads(source, maxPages)]);
+  const [behavior, leads] = await Promise.all([
+    readBehavior(source, maxPages),
+    readLeads(source, maxPages),
+  ]);
   return buildExperimentReport({ now, behavior, leads });
 }
 
@@ -768,13 +799,20 @@ export async function handleExperimentReport(
 ): Promise<Response> {
   const env = source?.env ?? process.env;
   // Refuse before any CRM or behavior read, including when the token is unset.
-  if (!experimentReportAuthorized(request.headers.get("authorization"), env.WATCHDIVE_EXPERIMENT_REPORT_TOKEN)) {
+  if (
+    !experimentReportAuthorized(
+      request.headers.get("authorization"),
+      env.WATCHDIVE_EXPERIMENT_REPORT_TOKEN,
+    )
+  ) {
     return json(401, { error: "unauthorized" });
   }
   try {
     return json(200, await loadExperimentReport({ ...source, env }));
   } catch (error) {
-    source?.log?.(`[conversion-experiment] report failed — ${error instanceof Error ? error.name : "error"}`);
+    source?.log?.(
+      `[conversion-experiment] report failed — ${error instanceof Error ? error.name : "error"}`,
+    );
     const now = source?.now?.() ?? Date.now();
     return json(
       200,

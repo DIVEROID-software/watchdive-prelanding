@@ -4,6 +4,7 @@
 // import from client code: it has no secrets, no network, and no Node APIs.
 // A malformed payload is dropped. It must never fail a signup or a behavior write.
 import { z } from "zod";
+import { segmentContextSchema, segmentPlacementSchema } from "./segments/measurementContract.ts";
 
 export const EXPERIMENT_ID = "wd-form-first-20261008" as const;
 
@@ -25,15 +26,23 @@ export const SECTIONS_TEXT_MAX = 1_900;
 /** A verified email counts for the experiment only inside this window after first exposure. */
 export const EXPERIMENT_MATURITY_MS = 48 * 60 * 60 * 1000;
 
-export const experimentContextSchema = z.object({
+export const legacyExperimentContextSchema = z.object({
   experimentId: z.literal(EXPERIMENT_ID),
   variant: z.enum(EXPERIMENT_VARIANTS),
   sessionId: z.string().uuid(),
-  assignedAt: z.number().int().refine((value) => Number.isSafeInteger(value) && value > 0),
+  assignedAt: z
+    .number()
+    .int()
+    .refine((value) => Number.isSafeInteger(value) && value > 0),
   team: z.enum(EXPERIMENT_TEAMS),
   qa: z.boolean(),
 });
 
+export const experimentContextSchema = z.discriminatedUnion("experimentId", [
+  legacyExperimentContextSchema,
+  segmentContextSchema,
+]);
+export type LegacyExperimentContext = z.infer<typeof legacyExperimentContextSchema>;
 export type ExperimentContext = z.infer<typeof experimentContextSchema>;
 
 export const experimentFunnelSchema = z.object({
@@ -41,6 +50,7 @@ export const experimentFunnelSchema = z.object({
   formVisible: z.boolean(),
   formFocused: z.boolean(),
   submitAttempted: z.boolean(),
+  placements: segmentPlacementSchema.optional().catch(undefined),
 });
 
 export type ExperimentFunnel = z.infer<typeof experimentFunnelSchema>;
@@ -49,7 +59,7 @@ export type ExperimentFunnel = z.infer<typeof experimentFunnelSchema>;
  * An optional object that is either valid or absent. Invalid input becomes
  * `undefined` so a bad experiment payload cannot reject the rest of the request.
  */
-export function lenientOptional<T>(schema: z.ZodType<T>) {
+export function lenientOptional<S extends z.ZodTypeAny>(schema: S) {
   return z.preprocess((value) => {
     if (value == null) return undefined;
     const parsed = schema.safeParse(value);
@@ -77,9 +87,10 @@ export function persistableExperimentContext(
   return parsed.success ? parsed.data : undefined;
 }
 
-const storedBehaviorSchema = experimentContextSchema.and(
-  z.object({ funnel: experimentFunnelSchema.nullable() }),
-);
+const storedBehaviorSchema = z.discriminatedUnion("experimentId", [
+  legacyExperimentContextSchema.extend({ funnel: experimentFunnelSchema.nullable() }),
+  segmentContextSchema.extend({ funnel: experimentFunnelSchema.nullable() }),
+]);
 
 export type StoredBehaviorExperiment = z.infer<typeof storedBehaviorSchema>;
 
@@ -144,7 +155,8 @@ export function parseBehaviorSections(raw: string): {
   try {
     const parsed = storedBehaviorSchema.safeParse(JSON.parse(json));
     if (!parsed.success) return { context: null, funnel: null, malformed: true };
-    return { context: parsed.data, funnel: parsed.data.funnel, malformed: false };
+    const { funnel, ...context } = parsed.data;
+    return { context, funnel, malformed: false };
   } catch {
     return { context: null, funnel: null, malformed: true };
   }

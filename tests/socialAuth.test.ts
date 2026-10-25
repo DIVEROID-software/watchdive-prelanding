@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { generateKeyPair, exportJWK, exportPKCS8, SignJWT, importPKCS8, decodeJwt } from "jose";
-import { test } from "node:test";
+import { after, mock, test } from "node:test";
 
+import { segmentPath } from "../src/lib/segments/navigation.ts";
 import { SUPPORTED_LOCALES } from "../src/lib/i18n/locale.ts";
 import { delaySkipReason } from "../src/lib/reservation-mail/schedule.ts";
 import { classifyProviderClaims } from "../src/lib/socialAuth/claims.ts";
@@ -31,6 +32,10 @@ import { EXPERIMENT_ID } from "../src/lib/conversionExperimentContract.ts";
 import { FakeLeadStore, FakeMailer, TEST_ENV, leadIdFactory } from "./helpers/fakes.ts";
 
 const NOW = new Date("2026-10-19T12:00:00.000Z");
+// OIDC validates JWT timestamps against the wall clock as well as our injected
+// service clock. Freeze both to keep signed fixtures valid on future test dates.
+mock.timers.enable({ apis: ["Date"], now: NOW });
+after(() => mock.timers.reset());
 const SECRET = "social-auth-secret-must-be-32-bytes";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36";
 const GOOGLE_SECRET = "google-client-secret-test";
@@ -1174,4 +1179,98 @@ test("apple client secret is a short ES256 JWT and a non-PKCS8 key fails", async
   const imported = await importPKCS8(appleKey, "ES256");
   assert.equal(imported.type, "private");
   assert.equal(createHash("sha256").update(GOOGLE_SECRET).digest("hex").length, 64);
+});
+
+
+// Audience returns use fake stores, mailers, token exchanges and signing keys only.
+for (const provider of ["google", "apple"] as const) {
+  test(`${provider} signed audience context returns to all locale routes and both signup anchors`, async () => {
+    resetSocialStateForTests();
+    for (const segment of ["freediving", "scuba"] as const) {
+      for (const locale of SUPPORTED_LOCALES) {
+        for (const source of ["hero", "offer"] as const) {
+          const store = new FakeLeadStore();
+          const harness = deps(store);
+          const attribution = { landingPath: segmentPath(segment, locale), utmSource: "meta", utmCampaign: "segment-offline-fixture", utmContent: "video" };
+          const started = await begin(harness, { provider, source, locale, segment, attribution, next: "https://evil.example" });
+          assert.equal(started.bound.segment, segment);
+          assert.equal(started.bound.source, source);
+          assert.deepEqual(started.bound.attribution, attribution);
+          assert.equal(new URL(started.url).searchParams.get("redirect_uri"), `https://watchdive.diveroid.com/api/auth/${provider}/callback`);
+          const idToken = await signToken(provider === "google" ? googleClaims(started.bound.nonce) : appleClaims(started.bound.nonce));
+          const response = provider === "google"
+            ? (await googleCallback(harness, started.cookie, started.bound.state, idToken, "&segment=scuba&next=https://evil.example")).response
+            : await handleAppleCallback(new Request("https://watchdive.diveroid.com/api/auth/apple/callback", {
+                method: "POST",
+                headers: { cookie: started.cookie, "user-agent": UA, "content-type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({ code: CODE, state: started.bound.state, segment: "scuba", next: "https://evil.example" }).toString(),
+              }), { ...harness, fetchImpl: tokenFetch(idToken).fetchImpl });
+          assert.equal(response.status, 303);
+          const target = new URL(response.headers.get("location")!);
+          assert.equal(target.origin, "https://watchdive.diveroid.com");
+          assert.equal(target.pathname, segmentPath(segment, locale));
+          assert.equal(target.search, "?auth=confirmed");
+          assert.equal(target.hash, source === "hero" ? "#signup-middle" : "#signup-bottom");
+          assert.equal([...store.rows.values()][0]?.source, source);
+          for (const [key, value] of Object.entries(attribution)) {
+            assert.equal(store.createPendingInputs[0]?.attribution?.[key as keyof typeof attribution], value);
+          }
+          assert.ok(response.headers.getSetCookie().some((cookie) => cookie.startsWith("__Host-wd_social_ack=1;")));
+        }
+      }
+    }
+  });
+}
+
+test("malformed audience context is rejected at start and signed-state read", async () => {
+  const harness = deps(new FakeLeadStore());
+  const started = await begin(harness, { provider: "google", source: "hero", locale: "en" });
+  assert.equal(started.bound.segment, undefined);
+  for (const segment of [null, "", "SCUBA", "scuba/", "/scuba", "//evil.example", "https://evil.example", "scuba?next=evil", "freediving#token", {}, ["scuba"], 1]) {
+    const response = await handleSocialStart(startRequest({ provider: "google", source: "hero", locale: "en", segment }), harness);
+    assert.equal(response.status, 400, JSON.stringify(segment));
+    assert.equal(response.headers.get("set-cookie"), null);
+    const signed = signSocialState({ ...started.bound, segment } as unknown as Parameters<typeof signSocialState>[0], SECRET);
+    assert.equal(readSocialState(signed, SECRET, harness.env, NOW.getTime()), undefined);
+  }
+});
+
+test("audience errors and open-browser results return to signed context and replay grants nothing", async () => {
+  resetSocialStateForTests();
+  for (const error of ["access_denied", "disallowed_useragent"]) {
+    const store = new FakeLeadStore();
+    const harness = deps(store);
+    const started = await begin(harness, { provider: "google", source: "offer", locale: "ko", segment: "freediving" });
+    const request = () => new Request(`https://watchdive.diveroid.com/api/auth/google/callback?state=${started.bound.state}&error=${error}&segment=scuba`, { headers: { cookie: started.cookie, "user-agent": UA } });
+    const first = await handleGoogleCallback(request(), harness);
+    assert.equal(first.headers.get("location"), `https://watchdive.diveroid.com/ko/freediving?auth=${error === "disallowed_useragent" ? "open-browser" : "error"}#signup-bottom`);
+    assert.equal(store.rows.size, 0);
+    assert.equal(harness.mailer.sent.length, 0);
+    assert.ok(first.headers.getSetCookie().every((cookie) => !cookie.startsWith("__Host-wd_social_ack=1;")));
+    const replay = await handleGoogleCallback(request(), harness);
+    assert.equal(replay.headers.get("location"), "https://watchdive.diveroid.com/ko/freediving?auth=error#signup-bottom");
+  }
+});
+
+test("legacy OAuth context still returns home without a new anchor", async () => {
+  resetSocialStateForTests();
+  const harness = deps(new FakeLeadStore());
+  const started = await begin(harness, { provider: "google", source: "offer", locale: "ko", next: "/scuba" });
+  const result = await googleCallback(harness, started.cookie, started.bound.state, await signToken(googleClaims(started.bound.nonce)));
+  assert.equal(result.response.headers.get("location"), "https://watchdive.diveroid.com/ko?auth=confirmed");
+});
+
+
+test("segmented external-email fallback keeps its destination without claiming verification", async () => {
+  resetSocialStateForTests();
+  const store = new FakeLeadStore();
+  const harness = deps(store);
+  const started = await begin(harness, { provider: "google", source: "hero", locale: "fr", segment: "scuba" });
+  const token = await signToken(googleClaims(started.bound.nonce, { email: "diver@example.com", hd: "other.example" }));
+  const result = await googleCallback(harness, started.cookie, started.bound.state, token);
+  assert.equal(result.response.headers.get("location"), "https://watchdive.diveroid.com/fr/scuba?auth=check-email#signup-middle");
+  assert.equal([...store.rows.values()][0]?.emailVerified, false);
+  assert.equal(store.markVerifiedCalls, 0);
+  assert.equal(harness.mailer.sent.length, 1); // FakeMailer only.
+  assert.ok(result.response.headers.getSetCookie().every((cookie) => !cookie.startsWith("__Host-wd_social_ack=1;")));
 });
