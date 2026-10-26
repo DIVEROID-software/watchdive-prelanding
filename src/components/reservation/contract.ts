@@ -30,8 +30,8 @@ export const RESERVATION_RETURN_PATH = "/reservation";
 /** Retries after the first immediate status read, only while a Checkout return is unresolved. */
 export const STATUS_RETRY_DELAYS_MS = [1_500, 3_000, 5_000] as const;
 
-/** Same shape as a signed invite from src/lib/reservation/invite.ts. The server still verifies it. */
-const INVITE_TOKEN = /^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+/** Signed invite or pending reservation token. The server still verifies it. */
+const INVITE_TOKEN = /^(?:v1|pv1)\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 
 /** Same Checkout Session shape accepted by handleReservationStatus. */
 const SESSION_ID = /^cs_(?:test|live)_[A-Za-z0-9]{1,200}$/;

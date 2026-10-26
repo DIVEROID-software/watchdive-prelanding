@@ -55,8 +55,10 @@ function sign(secret: string, body: string): string {
 }
 
 function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
+  const left = Buffer.from(a, "utf8");
+  const right = Buffer.from(b, "utf8");
+  if (left.length !== right.length) return false;
+  return timingSafeEqual(left, right);
 }
 
 export function isReservationEmail(value: string): boolean {

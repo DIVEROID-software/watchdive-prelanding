@@ -3,6 +3,8 @@
 // Duplicate protection is a deterministic Idempotency-Key of
 // canonical-inbox + offer + spent attempt. The key does not include a lead
 // id or a token jti, and the Stripe parameters for that key do not either.
+// Pending signup sessions also carry a stable Notion page id; a racing different
+// entry point with different metadata resolves the idempotency conflict by re-reading.
 // Customer and session lists are reads used to choose the attempt and to
 // reuse or expire sessions. They are not an atomic lock. An unknown Stripe
 // error does not advance the attempt. Notion is not a lock.
@@ -15,6 +17,8 @@ import {
   FEE_POLICY,
   LATER_PRODUCT_PRICE_CENTS,
   META_ACCEPTED_TERMS,
+  META_CHECKOUT_CONSENT,
+  META_PAGE_ID,
   META_CURRENCY,
   META_EMAIL_SHA256,
   META_FEE_CENTS,
@@ -37,7 +41,7 @@ import {
   TERMS_VERSION,
 } from "./constants.ts";
 import type { EnabledReservationConfig } from "./config.ts";
-import { verifyReservationInvite, type ReservationInvite } from "./invite.ts";
+import { verifyReservationInvite } from "./invite.ts";
 import {
   isIdempotencyConflict,
   type StripeApi,
@@ -72,7 +76,7 @@ export function reservationEmailHash(email: string): string {
 
 /** One key per canonical inbox, offer, and spent attempt. Lead and jti are not inputs. */
 export function reservationIdempotencyKey(emailSha256: string, attempt: number): string {
-  return `wdres_v1_${emailSha256}_${RESERVATION_OFFER_VERSION}_a${attempt}`;
+  return `wdres_v2_${emailSha256}_${RESERVATION_OFFER_VERSION}_a${attempt}`;
 }
 
 export function reservationSuccessUrl(origin: string): string {
@@ -126,12 +130,21 @@ export function reservationSessionParams(input: {
   origin: string;
   customerId: string;
   emailSha256: string;
+  pageId?: string;
 }): Record<string, string> {
-  const metadata = contractMetadata(input);
+  const metadata = {
+    ...contractMetadata(input),
+    [META_CHECKOUT_CONSENT]: "required",
+    ...(input.pageId ? { [META_PAGE_ID]: input.pageId } : {}),
+  };
   const params: Record<string, string> = {
     mode: "payment",
     ui_mode: "hosted",
     submit_type: "pay",
+    "consent_collection[terms_of_service]": "required",
+    "custom_text[terms_of_service_acceptance][message]": `I agree to the [WatchDive reservation terms](${input.origin}/terms).`,
+    "custom_text[submit][message]":
+      "USD 3 is a separate reservation fee, not credited toward the later USD 149 price. Nonrefundable except launch cancellation or mandatory rights. No automatic later charge. Shipping and tax are additional if applicable.",
     "branding_settings[display_name]": "DIVEROID LTD",
     "branding_settings[button_color]": "#412681",
     "branding_settings[background_color]": "#f7fafc",
@@ -231,7 +244,11 @@ export async function loadReservationState(
   email: string,
   livemode: boolean,
   nowMs: number,
-): Promise<{ snapshot: ReservationSnapshot; inspected: InspectedSession[]; customers: StripeCustomer[] }> {
+): Promise<{
+  snapshot: ReservationSnapshot;
+  inspected: InspectedSession[];
+  customers: StripeCustomer[];
+}> {
   const emailSha256 = reservationEmailHash(email);
   const customers = await listCustomers(stripe, email);
   const sessions = await listSessionsFor(stripe, customers);
@@ -306,7 +323,11 @@ export async function retirePastDueOpenSessions(
   email: string,
   livemode: boolean,
   nowMs: number,
-  loaded: { snapshot: ReservationSnapshot; inspected: InspectedSession[]; customers: StripeCustomer[] },
+  loaded: {
+    snapshot: ReservationSnapshot;
+    inspected: InspectedSession[];
+    customers: StripeCustomer[];
+  },
 ): Promise<
   | { snapshot: ReservationSnapshot; inspected: InspectedSession[]; customers: StripeCustomer[] }
   | "fail_closed"
@@ -358,7 +379,10 @@ async function createSession(
   attempt: number,
 ): Promise<StripeCheckoutSession | "conflict"> {
   try {
-    return await stripe.createCheckoutSession(params, reservationIdempotencyKey(emailSha256, attempt));
+    return await stripe.createCheckoutSession(
+      params,
+      reservationIdempotencyKey(emailSha256, attempt),
+    );
   } catch (error) {
     if (isIdempotencyConflict(error)) return "conflict";
     throw error;
@@ -382,12 +406,16 @@ export async function startReservationCheckout(input: {
   const invite = verifyReservationInvite(input.inviteToken, secret, input.nowMs);
   if (!invite) return { kind: "invalid_invite" };
   try {
-    return await checkoutForInvite(invite, origin, input.config.livemode, input.stripe, input.nowMs);
+    return await checkoutForInvite(
+      invite,
+      origin,
+      input.config.livemode,
+      input.stripe,
+      input.nowMs,
+    );
   } catch (error) {
     if (isIdempotencyConflict(error)) return { kind: "in_progress" };
-    console.error(
-      `[reservation] checkout stripe ${error instanceof Error ? error.name : "error"}`,
-    );
+    console.error(`[reservation] checkout stripe ${error instanceof Error ? error.name : "error"}`);
     return { kind: "stripe_error" };
   }
 }
@@ -418,15 +446,42 @@ async function afterConflict(
   return { kind: "in_progress" };
 }
 
+export type ReservationCheckoutIdentity = { email: string; leadId: string; pageId?: string };
+
+/** Only callers that validated a server-issued credential and row may use this. */
+export async function startAuthorizedReservationCheckout(input: {
+  identity: ReservationCheckoutIdentity;
+  config: EnabledReservationConfig;
+  stripe: StripeApi;
+  nowMs: number;
+}): Promise<CheckoutDecision> {
+  if (!input.config.origin) return { kind: "stripe_error" };
+  try {
+    return await checkoutForInvite(
+      input.identity,
+      input.config.origin,
+      input.config.livemode,
+      input.stripe,
+      input.nowMs,
+    );
+  } catch (error) {
+    return { kind: isIdempotencyConflict(error) ? "in_progress" : "stripe_error" };
+  }
+}
+
 async function acceptCreated(
   stripe: StripeApi,
   created: StripeCheckoutSession,
-  invite: ReservationInvite,
+  invite: ReservationCheckoutIdentity,
   origin: string,
   livemode: boolean,
   nowMs: number,
 ): Promise<CheckoutDecision> {
-  if (!isHostedCheckoutUrl(created.url) || created.livemode !== livemode || created.status !== "open") {
+  if (
+    !isHostedCheckoutUrl(created.url) ||
+    created.livemode !== livemode ||
+    created.status !== "open"
+  ) {
     if (created.status === "open") await expireSessions(stripe, [created]);
     return { kind: "contract_mismatch" };
   }
@@ -447,13 +502,24 @@ async function acceptCreated(
 
   const refreshed = await loadReservationState(stripe, invite.email, livemode, nowMs);
   if (blockingError(refreshed.snapshot.status)) return blockedDecision(stripe, refreshed, nowMs);
+  if (
+    refreshed.inspected.some(
+      (item) =>
+        item.kind === "invalid" &&
+        item.session.status === "complete" &&
+        item.session.paymentStatus === "paid",
+    )
+  ) {
+    await expireOpenSessions(stripe, refreshed.inspected, nowMs);
+    return { kind: "contract_mismatch" };
+  }
   const keeper = await collapseOpenSessions(stripe, refreshed.inspected);
   if (isHostedCheckoutUrl(keeper?.url)) return { kind: "url", url: keeper.url };
   return { kind: "in_progress" };
 }
 
 async function checkoutForInvite(
-  invite: ReservationInvite,
+  invite: ReservationCheckoutIdentity,
   origin: string,
   livemode: boolean,
   stripe: StripeApi,
@@ -462,22 +528,42 @@ async function checkoutForInvite(
   const emailSha256 = reservationEmailHash(invite.email);
   let loaded = await loadReservationState(stripe, invite.email, livemode, nowMs);
   if (blockingError(loaded.snapshot.status)) return blockedDecision(stripe, loaded, nowMs);
+  // A completed charge with an invalid contract (including missing Checkout
+  // consent) needs reconciliation, never another charge to the same inbox.
+  if (
+    loaded.inspected.some(
+      (item) =>
+        item.kind === "invalid" &&
+        item.session.status === "complete" &&
+        item.session.paymentStatus === "paid",
+    )
+  ) {
+    await expireOpenSessions(stripe, loaded.inspected, nowMs);
+    return { kind: "contract_mismatch" };
+  }
 
-  const invalidOpen = loaded.inspected
-    .flatMap((item) => item.kind === "invalid" && item.session.status === "open" ? [item.session] : []);
+  // Legacy open sessions predate Checkout consent; retire them before reusing a URL.
+  const withoutConsent = loaded.inspected.flatMap((item) =>
+    item.kind === "open" && item.session.metadata[META_CHECKOUT_CONSENT] !== "required"
+      ? [item.session]
+      : [],
+  );
+  if (withoutConsent.length) {
+    await expireSessions(stripe, withoutConsent);
+    loaded = await loadReservationState(stripe, invite.email, livemode, nowMs);
+    if (blockingError(loaded.snapshot.status)) return blockedDecision(stripe, loaded, nowMs);
+  }
+
+  const invalidOpen = loaded.inspected.flatMap((item) =>
+    item.kind === "invalid" && item.session.status === "open" ? [item.session] : [],
+  );
   if (invalidOpen.length > 0) {
     await expireSessions(stripe, invalidOpen);
     loaded = await loadReservationState(stripe, invite.email, livemode, nowMs);
     if (blockingError(loaded.snapshot.status)) return blockedDecision(stripe, loaded, nowMs);
   }
 
-  const retired = await retirePastDueOpenSessions(
-    stripe,
-    invite.email,
-    livemode,
-    nowMs,
-    loaded,
-  );
+  const retired = await retirePastDueOpenSessions(stripe, invite.email, livemode, nowMs, loaded);
   if (retired === "fail_closed") return { kind: "in_progress" };
   loaded = retired;
   if (blockingError(loaded.snapshot.status)) return blockedDecision(stripe, loaded, nowMs);
@@ -489,14 +575,16 @@ async function checkoutForInvite(
   }
 
   const customer =
-    chooseCustomer(loaded.customers, loaded.inspected.flatMap((item) =>
-      item.kind === "foreign" ? [] : [item.session],
-    )) ?? (await findOrCreateCustomer(stripe, invite.email, emailSha256));
+    chooseCustomer(
+      loaded.customers,
+      loaded.inspected.flatMap((item) => (item.kind === "foreign" ? [] : [item.session])),
+    ) ?? (await findOrCreateCustomer(stripe, invite.email, emailSha256));
 
   const params = reservationSessionParams({
     origin,
     customerId: customer.id,
     emailSha256,
+    pageId: invite.pageId,
   });
   const attempt = spentAttempts(loaded.inspected) + 1;
   let created = await createSession(stripe, params, emailSha256, attempt);
@@ -515,7 +603,8 @@ async function checkoutForInvite(
     if (next === attempt) return { kind: "in_progress" };
     const retried = await createSession(stripe, params, emailSha256, next);
     if (retried === "conflict") return afterConflict(stripe, invite.email, livemode, nowMs);
-    if (sessionExpired(retried, nowMs) || retried.status === "complete") return { kind: "in_progress" };
+    if (sessionExpired(retried, nowMs) || retried.status === "complete")
+      return { kind: "in_progress" };
     created = retried;
   }
 

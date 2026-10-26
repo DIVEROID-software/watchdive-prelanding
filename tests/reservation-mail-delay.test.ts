@@ -488,7 +488,8 @@ test("CLI help no longer claims Stripe is unread, and a bad prospective start is
   assert.match(USAGE, /WATCHDIVE_RESERVATION_ENABLED/);
   assert.match(USAGE, /Verified at/);
   assert.match(USAGE, /issueReservationInvite/);
-  assert.match(USAGE, /fragment/);
+  assert.match(USAGE, /signed invite query parameter/);
+  assert.match(USAGE, /redact invite query values from access logs/);
   const bad = parseCli(["--not-before", "2026-10-18"]);
   assert.equal(bad.ok, false);
   if (!bad.ok) assert.equal(bad.error.includes("2026-10-18"), false);
@@ -497,4 +498,17 @@ test("CLI help no longer claims Stripe is unread, and a bad prospective start is
   if (good.ok) assert.equal(good.options.notBefore, NOT_BEFORE);
   const fromEnv = parseCli([], { WATCHDIVE_RESERVATION_MAIL_NOT_BEFORE: NOT_BEFORE });
   assert.equal(fromEnv.ok && fromEnv.options.notBefore, NOT_BEFORE);
+});
+
+
+test("a reservation paid before verification stays excluded after verification becomes due", async () => {
+  const pending = row(44, { status: "pending", emailVerified: false, payment: "live" });
+  assert.equal(reservationSkipReason(pending), "paid_live");
+  const verified = { ...pending, status: "verified", emailVerified: true, verifiedAt: DUE };
+  const audience = selectAudience([verified], { schedule: SCHEDULE });
+  assert.equal(audience.recipients.length, 0);
+  assert.equal(audience.skipped.paid_live, 1);
+  const send = await sendOne(verified);
+  assert.equal(send.result.sent, 0);
+  assert.equal(send.sink.calls.length, 0);
 });

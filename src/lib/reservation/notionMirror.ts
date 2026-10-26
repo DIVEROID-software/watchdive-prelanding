@@ -4,10 +4,7 @@
 // charge. A missing or failed write throws so the webhook can refuse to
 // acknowledge the event.
 import { canonicalEmail } from "../api/abuse.ts";
-import {
-  canonicalEmailFilters,
-  withCanonicalEmailShape,
-} from "../api/notionCanonicalEmail.ts";
+import { canonicalEmailFilters, withCanonicalEmailShape } from "../api/notionCanonicalEmail.ts";
 import { NotionRequestError, type NotionRequest } from "../verification/notionLead.ts";
 import {
   ENV_NOTION_API_KEY,
@@ -48,6 +45,8 @@ export type ReservationMirrorSession = {
 export type ReservationMirrorInput = {
   /** Customer email as Stripe returned it. */
   rawEmail: string;
+  /** Trusted Stripe session metadata, originally bound by the signed signup token. */
+  pageId?: string;
   /** Reservation inbox key. Plus-tags stay distinct outside Gmail. */
   email: string;
   snapshot: ReservationSnapshot;
@@ -62,12 +61,7 @@ export type ReservationPaymentMirror = {
 };
 
 export type NotionMirrorReason =
-  | "lead_missing"
-  | "delivery"
-  | "misconfigured"
-  | "mode_mismatch"
-  | "truncated"
-  | "contract";
+  "lead_missing" | "delivery" | "misconfigured" | "mode_mismatch" | "truncated" | "contract";
 
 export class NotionMirrorError extends Error {
   readonly reason: NotionMirrorReason;
@@ -92,7 +86,8 @@ export function readReservationNotionMirrorConfig(
   if ((env[ENV_RESERVATION_NOTION_MIRROR] ?? "").trim() !== "true") return { enabled: false };
   const databaseId = (env[ENV_NOTION_WAITLIST_DB_ID] ?? "").trim();
   const key = (env[ENV_NOTION_API_KEY] ?? "").trim();
-  if (!NOTION_DATABASE_ID.test(databaseId)) return { enabled: true, ok: false, problem: "missing_database" };
+  if (!NOTION_DATABASE_ID.test(databaseId))
+    return { enabled: true, ok: false, problem: "missing_database" };
   if (!key) return { enabled: true, ok: false, problem: "missing_key" };
   return { enabled: true, ok: true, databaseId };
 }
@@ -137,16 +132,22 @@ export function reservationMirrorWrite(input: ReservationMirrorInput): MirrorWri
   const session = input.session;
   const sessionId = session?.id && SESSION_ID.test(session.id) ? session.id : "";
   const paymentId =
-    session?.paymentIntentId && PAYMENT_ID.test(session.paymentIntentId) ? session.paymentIntentId : "";
-  const currency =
-    snapshot.currency && CURRENCY.test(snapshot.currency) ? snapshot.currency : "";
+    session?.paymentIntentId && PAYMENT_ID.test(session.paymentIntentId)
+      ? session.paymentIntentId
+      : "";
+  const currency = snapshot.currency && CURRENCY.test(snapshot.currency) ? snapshot.currency : "";
   const amountCents =
     typeof snapshot.amountTotal === "number" && Number.isInteger(snapshot.amountTotal)
       ? snapshot.amountTotal
       : null;
   const contractMoney = amountCents === RESERVATION_FEE_CENTS && currency === RESERVATION_CURRENCY;
   let status = snapshot.status;
-  let paid = snapshot.paid === true && status === "paid" && contractMoney && sessionId.length > 0 && paymentId.length > 0;
+  let paid =
+    snapshot.paid === true &&
+    status === "paid" &&
+    contractMoney &&
+    sessionId.length > 0 &&
+    paymentId.length > 0;
   if ((snapshot.paid || status === "paid") && !contractMoney) {
     status = "invalid";
     paid = false;
@@ -236,7 +237,12 @@ function deliveryError(error: unknown): NotionMirrorError {
 }
 
 function filterClauses(rawEmail: string, email: string): Record<string, unknown>[] {
-  const titles = [rawEmail.trim(), email.trim(), reservationCanonicalEmail(rawEmail), canonicalEmail(rawEmail)];
+  const titles = [
+    rawEmail.trim(),
+    email.trim(),
+    reservationCanonicalEmail(rawEmail),
+    canonicalEmail(rawEmail),
+  ];
   const uniqueTitles = [...new Set(titles.filter((value) => value.length > 0))];
   const clauses: Record<string, unknown>[] = uniqueTitles.map((value) => ({
     property: "Email",
@@ -307,17 +313,41 @@ export function createReservationNotionMirror(input: {
       } catch (error) {
         throw deliveryError(error);
       }
+      if (
+        mirrorInput.pageId &&
+        /^[A-Za-z0-9-]{1,100}$/.test(mirrorInput.pageId) &&
+        !pages.some((page) => page.id === mirrorInput.pageId)
+      ) {
+        try {
+          const bound = (await input.request(
+            "GET",
+            `pages/${encodeURIComponent(mirrorInput.pageId)}`,
+          )) as NotionPage;
+          if (reservationCanonicalEmail(pageTitle(bound)) !== mirrorInput.email)
+            throw new NotionMirrorError("contract");
+          pages.push(bound);
+        } catch (error) {
+          throw deliveryError(error);
+        }
+      }
       const targets = pagesToUpdate(pages, mirrorInput.rawEmail, mirrorInput.email).filter(
         (page) => typeof page.id === "string" && page.id.length > 0,
       );
+      const bound = mirrorInput.pageId && pages.find((page) => page.id === mirrorInput.pageId);
+      if (bound && reservationCanonicalEmail(pageTitle(bound)) !== mirrorInput.email)
+        throw new NotionMirrorError("contract");
+      if (bound && !targets.includes(bound)) targets.push(bound);
       if (targets.length === 0) {
-        if (reservationMirrorRequiresLead(mirrorInput.snapshot)) throw new NotionMirrorError("lead_missing");
+        if (reservationMirrorRequiresLead(mirrorInput.snapshot))
+          throw new NotionMirrorError("lead_missing");
         return { skipped: "no_lead" };
       }
       const properties = reservationMirrorProperties(write);
       try {
         for (const page of targets) {
-          await input.request("PATCH", `pages/${encodeURIComponent(String(page.id))}`, { properties });
+          await input.request("PATCH", `pages/${encodeURIComponent(String(page.id))}`, {
+            properties,
+          });
         }
       } catch (error) {
         throw deliveryError(error);

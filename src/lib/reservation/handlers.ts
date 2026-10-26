@@ -1,5 +1,6 @@
 // HTTP adapters for the reservation routes. Routes stay thin so tests can call
 // these with a fake fetch and a fake env. Nothing here reads the Host header.
+import { verifyPendingReservationToken } from "./pending.ts";
 import { reservationCanonicalEmail } from "./emailIdentity.ts";
 import { StripeApiError, createStripeClient } from "./stripeApi.ts";
 import {
@@ -9,11 +10,7 @@ import {
   startReservationCheckout,
 } from "./checkout.ts";
 import { TERMS_VERSION } from "./constants.ts";
-import {
-  readReservationConfig,
-  type EnvSource,
-  type ReservationConfigResult,
-} from "./config.ts";
+import { readReservationConfig, type EnvSource, type ReservationConfigResult } from "./config.ts";
 import { verifyReservationInvite, type ReservationInvite } from "./invite.ts";
 import {
   createReservationNotionMirror,
@@ -54,11 +51,7 @@ function envOf(deps: ReservationDeps): EnvSource {
   return deps.env ?? process.env;
 }
 
-function stripeFor(
-  secretKey: string,
-  livemode: boolean,
-  deps: ReservationDeps,
-) {
+function stripeFor(secretKey: string, livemode: boolean, deps: ReservationDeps) {
   return createStripeClient({
     secretKey,
     fetchImpl: deps.fetchImpl,
@@ -143,7 +136,8 @@ export async function handleReservationCheckout(
       nowMs: deps.nowMs ?? Date.now(),
     });
     if (decision.kind === "url") {
-      if (!isHostedCheckoutUrl(decision.url)) return json(502, { error: "stripe_contract_mismatch" });
+      if (!isHostedCheckoutUrl(decision.url))
+        return json(502, { error: "stripe_contract_mismatch" });
       return json(200, { url: decision.url });
     }
     if (decision.kind === "invalid_invite") return json(400, { error: "invalid_invite" });
@@ -175,7 +169,7 @@ function bearerToken(request: Request): string | null {
 
 async function inboxStatus(
   stripe: ReturnType<typeof stripeFor>,
-  invite: ReservationInvite,
+  invite: Pick<ReservationInvite, "email">,
   livemode: boolean,
   nowMs: number,
   sessionId: string | null,
@@ -220,7 +214,9 @@ export async function handleReservationStatus(
   const secret = config.value.tokenSecret;
   if (!secret) return json(503, { error: "reservation_misconfigured" });
   const nowMs = deps.nowMs ?? Date.now();
-  const invite = verifyReservationInvite(token, secret, nowMs);
+  const invite =
+    verifyReservationInvite(token, secret, nowMs) ??
+    verifyPendingReservationToken(token, secret, nowMs, true);
   if (!invite) return json(401, { error: "invalid_invite" });
 
   const stripe = stripeFor(config.value.secretKey, config.value.livemode, deps);

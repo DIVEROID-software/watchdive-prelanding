@@ -146,22 +146,26 @@ test("the invite is read from the fragment and a query token is ignored", () => 
   assert.equal(strippedUrl.searchParams.get("lang"), "ko");
 });
 
-test("a mailed invitation link is the fragment this page reads", () => {
+test("a mailed invitation uses the direct route and legacy fragments still parse", () => {
   const mailed = buildReservationInviteUrl("https://watchdive.diveroid.com", "en", INVITE);
   const url = new URL(mailed);
-  assert.equal(url.pathname, "/reservation");
+  assert.equal(url.pathname, "/api/reservation/direct");
   assert.equal(url.searchParams.get("lang"), "en");
   assert.equal(url.searchParams.get("inviteToken"), null);
-  assert.equal(parseInviteFragment(url.hash).token, INVITE);
+  assert.equal(url.searchParams.get("invite"), INVITE);
+  assert.equal(url.hash, "");
+  assert.equal(parseInviteFragment(`#invite=${INVITE}`).token, INVITE);
   const korean = new URL(buildReservationInviteUrl("https://watchdive.diveroid.com", "ko", INVITE));
-  assert.equal(korean.pathname, "/reservation");
+  assert.equal(korean.pathname, "/api/reservation/direct");
   assert.equal(korean.searchParams.get("lang"), "ko");
   assert.equal(parseInviteFragment(korean.search).token, null);
-  assert.equal(parseInviteFragment(korean.hash).token, INVITE);
+  assert.equal(korean.searchParams.get("invite"), INVITE);
+  assert.equal(korean.hash, "");
   const french = new URL(buildReservationInviteUrl("https://watchdive.diveroid.com", "fr", INVITE));
-  assert.equal(french.pathname, "/reservation");
+  assert.equal(french.pathname, "/api/reservation/direct");
   assert.equal(french.searchParams.get("lang"), "fr");
-  assert.equal(parseInviteFragment(french.hash).token, INVITE);
+  assert.equal(french.searchParams.get("invite"), INVITE);
+  assert.equal(french.hash, "");
   assert.equal(parseReservationQuery("?lang=ja").lang, "ja");
   assert.equal(parseReservationQuery("?lang=pt-BR").lang, "pt-BR");
   assert.equal(parseReservationQuery("?lang=zz").lang, null);

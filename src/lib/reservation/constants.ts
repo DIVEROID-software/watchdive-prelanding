@@ -29,6 +29,9 @@ export const PRODUCT_DESCRIPTION =
 
 export const TERMS_VERSION = "2026-10-18";
 
+export const META_CHECKOUT_CONSENT = "checkout_terms_consent";
+export const META_PAGE_ID = "notion_page_id";
+
 export const META_PRODUCT = "product";
 export const META_OFFER_VERSION = "offer_version";
 export const META_EMAIL_SHA256 = "email_sha256";

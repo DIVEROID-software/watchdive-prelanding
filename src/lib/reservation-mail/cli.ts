@@ -58,10 +58,10 @@ or invalid Verified at is not eligible. Optional RESERVATION_MAIL_RECEIPT_DIR
 overrides --receipt-dir. Values are never printed.
 
 A send mints each invite with issueReservationInvite in
-src/lib/reservation/invite.ts, passing the verified row email. The only query
-parameter is lang, using the signup locale (en, ko, zh-CN, zh-TW, ja, es, fr, de, or pt-BR). The invite is
-the URL fragment, never a query parameter, so it is not written to access
-logs. This command never prints an address or a token. The office Mac mini
+src/lib/reservation/invite.ts, passing the verified row email. The direct Checkout URL uses lang and a signed invite query parameter.
+The signup locale is en, ko, zh-CN, zh-TW, ja, es, fr, de, or pt-BR.
+Infrastructure must redact invite query values from access logs; no-store and
+no-referrer response headers do not redact infrastructure logs. This command never prints an address or a token. The office Mac mini
 tick keeps one private ledger under
 ~/.config/watchdive-autopilot/reservation-mail/receipts. Do not put that
 ledger on Vercel or any other ephemeral disk.`;

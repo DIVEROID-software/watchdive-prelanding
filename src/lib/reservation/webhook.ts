@@ -5,7 +5,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { reservationCanonicalEmail } from "./emailIdentity.ts";
-import { META_EMAIL_SHA256, META_PRODUCT, PRODUCT_CODE } from "./constants.ts";
+import { META_PAGE_ID, META_EMAIL_SHA256, META_PRODUCT, PRODUCT_CODE } from "./constants.ts";
 import type { EnabledReservationConfig } from "./config.ts";
 import {
   collapseOpenSessions,
@@ -14,11 +14,7 @@ import {
   reservationEmailHash,
   retirePastDueOpenSessions,
 } from "./checkout.ts";
-import {
-  StripeApiError,
-  type StripeApi,
-  type StripeCheckoutSession,
-} from "./stripeApi.ts";
+import { StripeApiError, type StripeApi, type StripeCheckoutSession } from "./stripeApi.ts";
 import {
   NotionMirrorError,
   reservationMirrorRequiresLead,
@@ -88,9 +84,7 @@ export function verifyStripeSignature(
   if (!/^[0-9]+$/.test(timestamp) || signatures.length === 0) return false;
   const timestampSeconds = Number(timestamp);
   if (!Number.isSafeInteger(timestampSeconds)) return false;
-  const expected = createHmac("sha256", secret)
-    .update(`${timestamp}.${payload}`)
-    .digest("hex");
+  const expected = createHmac("sha256", secret).update(`${timestamp}.${payload}`).digest("hex");
   if (!signatures.some((signature) => safeEqual(signature, expected))) return false;
   const age = Math.floor(nowMs / 1000) - timestampSeconds;
   return age <= toleranceSeconds && age >= -toleranceSeconds;
@@ -310,12 +304,7 @@ export async function processReservationWebhook(input: {
   } else if (retired.snapshot.status === "open") {
     await collapseOpenSessions(input.stripe, retired.inspected);
   }
-  const after = await loadReservationState(
-    input.stripe,
-    email,
-    input.config.livemode,
-    input.nowMs,
-  );
+  const after = await loadReservationState(input.stripe, email, input.config.livemode, input.nowMs);
   return acknowledge(eventId, after.snapshot, after.inspected, customer.email, email);
 
   async function acknowledge(
@@ -329,7 +318,10 @@ export async function processReservationWebhook(input: {
     if (!rawEmail || !inbox) {
       if (reservationMirrorRequiresLead(snapshot)) {
         console.error("[reservation] webhook notion unaddressed");
-        return { httpStatus: 500, body: { error: "notion_mirror_failed", reason: "unaddressed", retryable: true } };
+        return {
+          httpStatus: 500,
+          body: { error: "notion_mirror_failed", reason: "unaddressed", retryable: true },
+        };
       }
       return snapshotBody(id, snapshot);
     }
@@ -337,17 +329,19 @@ export async function processReservationWebhook(input: {
       (item) => "session" in item && item.session.id === snapshot.sessionId,
     );
     const mirrorInput: ReservationMirrorInput = {
+      pageId: chosen && "session" in chosen ? chosen.session.metadata[META_PAGE_ID] : undefined,
       rawEmail,
       email: inbox,
       snapshot,
-      session: chosen && "session" in chosen
-        ? {
-            id: chosen.session.id,
-            paymentIntentId: chosen.session.paymentIntentId,
-            chargeCreated: chosen.kind === "paid" ? chosen.chargeCreated : null,
-            livemode: chosen.session.livemode,
-          }
-        : null,
+      session:
+        chosen && "session" in chosen
+          ? {
+              id: chosen.session.id,
+              paymentIntentId: chosen.session.paymentIntentId,
+              chargeCreated: chosen.kind === "paid" ? chosen.chargeCreated : null,
+              livemode: chosen.session.livemode,
+            }
+          : null,
       mode: input.config.mode,
     };
     try {

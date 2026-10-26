@@ -952,6 +952,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
   const [alreadyVerified, setAlreadyVerified] = useState(false);
   const [closed, setClosed] = useState<string | null>(null);
   const [handle, setHandle] = useState("");
+  const [pendingReservationToken, setPendingReservationToken] = useState("");
   const [refCode, setRefCode] = useState("");
   const [verified, setVerified] = useState(false);
   const [email, setEmail] = useState("");
@@ -1219,6 +1220,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
     }
     clearWithdrawalRecorded();
     setHandle(res.handle);
+    setPendingReservationToken(res.pendingReservationToken ?? "");
     // Kept past a reload or "Wrong address?", so a later refusal (footer
     // Cookie settings included) still reaches this signup's row.
     rememberSignupHandle(res.handle);
@@ -1313,7 +1315,7 @@ function EmailForm({ id, includePhone = false }: { id: FormPlacement; includePho
 
   if (pending) {
     return (<>
-      <SignupReservationOffer locale={locale} inboxId={`${id}-verify-inbox`} autoFocus />
+      <SignupReservationOffer locale={locale} credential={pendingReservationToken ? { kind: "pending", value: pendingReservationToken } : undefined} inboxId={`${id}-verify-inbox`} autoFocus />
       <CheckInboxCard
         regionId={`${id}-verify-inbox`}
         autoFocus={false}
