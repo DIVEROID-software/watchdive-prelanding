@@ -389,6 +389,17 @@ test("on: the landing catalog, head and structured data carry the disclosed clai
   }
 });
 
+test("Korean brand remains in search metadata with either referral setting", () => {
+  const base = FROZEN_LANDING_MESSAGES.ko;
+  for (const claim of [undefined, referralPriceClaim("ko")]) {
+    const messages = applyPriceClaim(base, claim);
+    for (const key of ["title", "description", "ogTitle", "ogDescription", "twitterTitle", "twitterDescription"] as const) {
+      assert.ok(messages.meta[key].includes("워치다이브 (WatchDive)"), key);
+    }
+    assert.ok(messages.hero.h1.includes("워치다이브 (WatchDive)"));
+  }
+});
+
 test("on: the experiment terms and the SMS card terms are replaced, nothing else", () => {
   for (const locale of SUPPORTED_LOCALES) {
     const claim = referralPriceClaim(locale);

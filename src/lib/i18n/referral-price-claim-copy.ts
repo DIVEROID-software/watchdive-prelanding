@@ -64,11 +64,11 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     landing: {
       meta: {
         description:
-          "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. 얼리버드 $149: Kickstarter 선착순 후원자 {seats}명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원.",
+          "워치다이브 (WatchDive): 수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. 얼리버드 $149: Kickstarter 선착순 후원자 {seats}명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원.",
         ogDescription:
-          "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. 얼리버드 $149: Kickstarter 선착순 후원자 {seats}명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원.",
+          "워치다이브 (WatchDive): 수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. 얼리버드 $149: Kickstarter 선착순 후원자 {seats}명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원.",
         twitterDescription:
-          "쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징. 얼리버드 $149: Kickstarter 선착순 후원자 {seats}명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원.",
+          "워치다이브 (WatchDive): 쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징. 얼리버드 $149: Kickstarter 선착순 후원자 {seats}명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원.",
       },
       cta: { label: "출시 알림 받기 · 얼리버드 $149" },
       referral: {
