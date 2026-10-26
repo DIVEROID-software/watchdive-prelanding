@@ -71,9 +71,11 @@ test("off: every claim surface is the catalog's own object, untouched", () => {
   assert.equal(applyPriceClaim(EN_FROZEN_LANDING_MESSAGES, undefined), EN_FROZEN_LANDING_MESSAGES);
 });
 
-test("off: rendered copy stays frozen except the owner-approved 2026-10-23 hero line", () => {
+test("off: rendered copy stays frozen with owner-approved hero and Korean brand updates", () => {
   // Computed on a checkout of fd2e434, before this change, with the same
-  // inputs. Only the hero race hash is repinned for owner approval 2026-10-23.
+  // inputs. The hero race hash reflects owner approval 2026-10-23.
+  // The landing catalog hash also includes the owner-approved Korean brand
+  // spelling in Korean metadata and H1 (2026-10-26); all other copy is unchanged.
   const race = SUPPORTED_LOCALES.map((l) =>
     earlyBirdRace(l, FROZEN_LANDING_MESSAGES[l].hero.nowPrice),
   );
@@ -94,7 +96,7 @@ test("off: rendered copy stays frozen except the owner-approved 2026-10-23 hero 
   );
   assert.equal(
     sha256(FROZEN_LANDING_MESSAGES),
-    "7855b49d7d0b969960d146dbb7fedac46f165638222e6f6ab0666761b184d80a",
+    "5f768d0904354b4025b5a3a3fc21c08c6799f01fd36364f09e3a1ef72cc1a1fb",
   );
   assert.equal(
     sha256(conversionCopy),

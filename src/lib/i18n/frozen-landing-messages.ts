@@ -136,15 +136,15 @@ const en = EN_FROZEN_LANDING_MESSAGES;
 
 const ko: FrozenLandingMessages = {
   meta: {
-    title: "WatchDive — 쓰던 스마트워치 그대로, 바닷속으로",
+    title: "워치다이브 (WatchDive) — 쓰던 스마트워치 그대로, 바닷속으로",
     description:
-      "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 선착순 100명 얼리버드 $149.",
-    ogTitle: "WatchDive — 쓰던 스마트워치 그대로, 바닷속으로",
+      "워치다이브 (WatchDive): 수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 선착순 100명 얼리버드 $149.",
+    ogTitle: "워치다이브 (WatchDive) — 쓰던 스마트워치 그대로, 바닷속으로",
     ogDescription:
-      "수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 선착순 100명 얼리버드 $149.",
-    twitterTitle: "WatchDive — 쓰던 스마트워치 그대로, 바닷속으로",
+      "워치다이브 (WatchDive): 수심과 수온은 하우징 안의 DIVEROID 센서가 읽고, 지원되는 Apple Watch·Galaxy Watch가 보여 줍니다. Kickstarter 선착순 100명 얼리버드 $149.",
+    twitterTitle: "워치다이브 (WatchDive) — 쓰던 스마트워치 그대로, 바닷속으로",
     twitterDescription:
-      "쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징. Kickstarter 선착순 100명 얼리버드 $149.",
+      "워치다이브 (WatchDive): 쓰던 Apple Watch·Galaxy Watch에 끼우는 DIVEROID 센서 하우징. Kickstarter 선착순 100명 얼리버드 $149.",
   },
   banner: {
     kicker: "Kickstarter",
@@ -247,7 +247,7 @@ const ko: FrozenLandingMessages = {
   },
   hero: {
     badge: "Kickstarter",
-    h1: "WatchDive. 쓰던 스마트워치가 다이브 컴퓨터로, 그대로 바닷속으로.",
+    h1: "워치다이브 (WatchDive). 쓰던 스마트워치가 다이브 컴퓨터로, 그대로 바닷속으로.",
     h1Highlight: "다이브 컴퓨터",
     sub: "차고 있던 Apple Watch나 Galaxy Watch를 하우징에 끼우면, 안의 DIVEROID 센서가 수심과 수온을 잽니다. 다이브 컴퓨터를 따로 사고 익힐 필요가 없습니다.",
     priceLine: "Kickstarter 선착순 100명 얼리버드 $149. 12월 킥스타터 런칭.",
