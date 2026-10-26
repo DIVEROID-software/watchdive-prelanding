@@ -190,6 +190,8 @@ async function begin(
   return { url: payload.url, cookie, bound };
 }
 
+// The OAuth validator uses the wall clock; keep provider tokens current while
+// the application clock stays fixed for cohort and scheduling assertions.
 function googleClaims(nonce: string, extra: Record<string, unknown> = {}) {
   return {
     iss: "https://accounts.google.com",
@@ -198,8 +200,8 @@ function googleClaims(nonce: string, extra: Record<string, unknown> = {}) {
     email: "ab@gmail.com",
     email_verified: true,
     nonce,
-    iat: Math.floor(NOW.getTime() / 1000),
-    exp: Math.floor(NOW.getTime() / 1000) + 600,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 600,
     ...extra,
   };
 }
@@ -212,8 +214,8 @@ function appleClaims(nonce: string, extra: Record<string, unknown> = {}) {
     email: "diver@icloud.com",
     email_verified: true,
     nonce,
-    iat: Math.floor(NOW.getTime() / 1000),
-    exp: Math.floor(NOW.getTime() / 1000) + 600,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 600,
     ...extra,
   };
 }
