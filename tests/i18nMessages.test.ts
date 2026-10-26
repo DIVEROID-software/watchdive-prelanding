@@ -801,7 +801,7 @@ test("the translated frozen catalog is fail-closed behind the exact internal-rev
   assert.doesNotMatch(landing, /VITE_WATCHDIVE_PRODUCT_CLAIMS_REVIEW/);
 
   const seoSource = readFileSync(new URL("../src/lib/i18n/seo.ts", import.meta.url), "utf8");
-  assert.match(seoSource, /hero-background\.webp/);
+  assert.match(seoSource, /wrist-reef-wide-1080\.webp/);
   assert.doesNotMatch(seoSource, /og-image\.png/);
   assert.match(seoSource, /socialImage/);
   assert.equal(

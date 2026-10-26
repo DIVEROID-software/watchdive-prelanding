@@ -1,4 +1,4 @@
-import localizedSocialImage from "../../assets/live/hero-background.webp";
+import localizedSocialImage from "../../assets/live/hero/wrist-reef-wide-1080.webp";
 import { EN_FROZEN_LANDING_MESSAGES, type FrozenLandingMessages } from "./frozen-landing-en.ts";
 import { homePath, privacyPath, SUPPORTED_LOCALES, termsPath, type Locale } from "./locale.ts";
 import { absoluteWatchDivePath, WATCHDIVE_PUBLIC_ORIGIN as SOURCE_ORIGIN } from "./publicOrigin.ts";
@@ -52,6 +52,7 @@ export function landingHead(
   // The legacy campaign card contains USD copy and claims that are not in the
   // current Product Truth. Every locale therefore shares the same text-free
   // underwater image until approved locale-specific cards exist.
+  // Share the current WatchDive hero photo across all supported languages.
   const socialImage = absoluteWatchDivePath(localizedSocialImage);
 
   return {
@@ -65,8 +66,8 @@ export function landingHead(
       { property: "og:url", content: canonical },
       { property: "og:locale", content: OG_LOCALE[locale] },
       { property: "og:image", content: socialImage },
-      { property: "og:image:width", content: "1600" },
-      { property: "og:image:height", content: "971" },
+      { property: "og:image:width", content: "1080" },
+      { property: "og:image:height", content: "720" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: copy.twitterTitle },
       { name: "twitter:description", content: copy.twitterDescription },
