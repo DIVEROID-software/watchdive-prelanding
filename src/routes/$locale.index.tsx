@@ -2,18 +2,26 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { loadLocalizedBetaReviewBodies } from "@/data/beta-reviews.loader";
 import { loadWaitlistCount } from "@/lib/api/waitlist.functions";
-import { localeFromPathSegment, type Locale } from "@/lib/i18n/locale";
+import { LOCALE_PATH_SEGMENTS, localeFromPathSegment, type Locale } from "@/lib/i18n/locale";
 import { applyPriceClaim, priceClaimFromLoaderData } from "@/lib/i18n/price-claim";
 import { loadReferralPriceClaim } from "@/lib/i18n/price-claim-loader";
 import { landingHead } from "@/lib/i18n/seo";
 import { readLiteMediaHint } from "@/lib/liteMedia";
+import { canonicalScubaHref } from "@/lib/segments/canonical-entry";
 import { LocalizedBetaReviewBodiesProvider } from "@/lib/i18n/use-current-locale";
 import { DesignFrozenLanding } from "@/routes/index";
 
 export const Route = createFileRoute("/$locale/")({
-  beforeLoad: ({ params }) => {
+  beforeLoad: ({ location, params }) => {
     const locale = localeFromPathSegment(params.locale);
-    if (locale === "en") throw redirect({ to: "/" });
+    const fallback = !locale || locale === "en" ? "/scuba" : `/${LOCALE_PATH_SEGMENTS[locale]}/scuba`;
+    const hash = location.hash ? `#${location.hash}` : "";
+    throw redirect({
+      href: canonicalScubaHref(location, typeof window === "undefined" ? undefined : window.location) ?? `${fallback}${location.searchStr}${hash}`,
+      statusCode: 307,
+      replace: true,
+      reloadDocument: true,
+    });
   },
   loader: async ({ params }) => {
     const locale = localeFromPathSegment(params.locale);

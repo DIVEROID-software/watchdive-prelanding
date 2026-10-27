@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { LanguageSwitcher } from '../language-switcher';
 import { CookieSettingsLink } from '../cookie-choice-bar';
 import { SocialSignupResultProvider, SocialAuthResult } from '../social-auth-entry';
@@ -7,6 +7,7 @@ import { useCurrentLocale, useFrozenLandingMessages } from '@/lib/i18n/use-curre
 import { localizePath, privacyPath, termsPath } from '@/lib/i18n/locale';
 import { getAttribution } from '@/lib/attribution';
 import { segmentCopy, type DiveSegment } from '@/lib/segments/copy';
+import { legacyHomeAnchor } from '@/lib/segments/canonical-entry';
 import { ONSITE_OFFER_COPY } from '../reservation/onsite-copy';
 import { SegmentHeroMedia } from './SegmentHeroMedia';
 import { SegmentHeroJump, focusMiddleSignup } from './SegmentHeroJump';
@@ -54,6 +55,16 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   const isFree = segment === 'freediving';
   const alternate: DiveSegment = isFree ? 'scuba' : 'freediving';
   useEffect(() => { getAttribution(); setCampaignQuery(window.location.search); }, []);
+  useLayoutEffect(() => {
+    if (segment !== 'scuba' || typeof window === 'undefined') return;
+    const nextHash = legacyHomeAnchor(window.location.hash);
+    if (!nextHash || nextHash === window.location.hash) return;
+    const next = `${window.location.pathname}${window.location.search}${nextHash}`;
+    window.history.replaceState(window.history.state, '', next);
+    const node = document.getElementById(nextHash.slice(1));
+    if (node instanceof HTMLDetailsElement) node.open = true;
+    node?.scrollIntoView();
+  }, [segment]);
   useEffect(() => {
     document.documentElement.dataset.wdSegment = segment;
     const update = () => {

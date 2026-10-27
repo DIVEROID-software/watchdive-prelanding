@@ -5,6 +5,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { geoCookie, normalizeCountry, consentRegionFor } from "./lib/consentRegion";
 import { autoLocaleRedirect } from "./lib/i18n/auto-locale";
+import { canonicalScubaHref } from "./lib/segments/canonical-entry";
 import { publicCrawlResponse, applySearchIndexingPolicy } from "./lib/i18n/crawl.ts";
 import { localeFromPathname } from "./lib/i18n/locale";
 import { isI18nReviewEnabled } from "./lib/i18n/review-gate";
@@ -182,6 +183,25 @@ const server = {
           ...(redirect.setCookie ? { "set-cookie": redirect.setCookie } : {}),
         },
       });
+    }
+
+    // Redirect public home documents before TanStack parses search values.
+    // Meta's numeric IDs exceed Number.MAX_SAFE_INTEGER; resolving the redirect
+    // through the router can round them and break campaign attribution.
+    if (
+      (request.method === "GET" || request.method === "HEAD") &&
+      (pathname === "/" || isI18nReviewEnabled(import.meta.env.VITE_WATCHDIVE_I18N_REVIEW))
+    ) {
+      const home = canonicalScubaHref({
+        pathname,
+        searchStr: new URL(request.url).search,
+      });
+      if (home) {
+        return new Response(null, {
+          status: 307,
+          headers: { location: home, "cache-control": "private, no-store" },
+        });
+      }
     }
 
     const locale = localeFromPathname(new URL(request.url).pathname);
