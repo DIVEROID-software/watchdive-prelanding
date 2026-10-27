@@ -1,0 +1,16 @@
+{
+  "purpose": "Pinned offline cross-language scoring contract fixture for standalone CI; no network sender or production configuration",
+  "source": "country-campaigns-20261025/weighted-scoring",
+  "sha256": {
+    "score.py": "8be0e5a7ce6a82c8bb2f419f035072d62ba446d35fac96dfffae64e70c45e40c",
+    "crm_score.py": "494041c2e8cb73229ebb94e6f9736d877861163a29afa833acfda157e4337033",
+    "integration/__init__.py": "ef8a99e553238e66a6c39cb564ec60611a84b7370ee86a287572c3238237aa06",
+    "integration/identity.py": "aa7a2be4bf26e71887d61067ed1ecb013cf192b1f53cfe2973841fafca82315b",
+    "integration/ledger.py": "d59e8c2e44120fbf0fe5ab354a010e0ea7183ae234ad6fb6108e5c46797241b0",
+    "integration/lifecycle.py": "65270d1b72de5bb700bec6afd439fe97ead56a46bce479fdc56e069eab052732",
+    "integration/crm_ingest.py": "3f116c3e3a3b7a5e6f26a30d424b976ea1b64962bfc700e6c11e6266d2d499bc",
+    "integration/plan_cli.py": "d227459ee2e6a85443a6051b19dc995f50a09009bb47817bf07c5001e472fda0",
+    "integration/schema.sql": "7d8077a6360b123a1d2fcffafd5b7850b11057df271d2dc0a4beb3b3653a9270",
+    "scoring-policy.json": "0261f8174aca935e778cdcf6755c12ae55fecd778b78638e414037bd0c2ab863"
+  }
+}

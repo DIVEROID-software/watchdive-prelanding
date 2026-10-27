@@ -106,6 +106,8 @@ type StoredCharge = {
   refunded: boolean;
   disputed: boolean;
   paymentIntentId: string;
+  /** Charge.created seconds. Null omits the field, which refuses Purchase. */
+  created: number | null;
 };
 type StoredRefund = { id: string; amount: number; currency: string; status: string; chargeId: string };
 type StoredDispute = { id: string; amount: number; currency: string; status: string; chargeId: string };
@@ -152,6 +154,7 @@ class MemoryStripe {
     status?: "open" | "complete" | "expired";
     disputed?: boolean;
     disputeStatus?: string;
+    chargeCreated?: number | null;
   } = {}): StoredSession {
     const leadId = input.leadId ?? LEAD;
     const email = input.email ?? EMAIL;
@@ -176,6 +179,7 @@ class MemoryStripe {
       refunded: (input.amountRefunded ?? 0) >= amount,
       disputed: input.disputed === true,
       paymentIntentId: pi,
+      created: input.chargeCreated === undefined ? Math.floor(NOW / 1000) : input.chargeCreated,
     });
     if (input.disputed) {
       this.disputes.push({
@@ -342,6 +346,7 @@ class MemoryStripe {
         refunded: charge.refunded,
         disputed: charge.disputed,
         payment_intent: charge.paymentIntentId,
+        ...(charge.created == null ? {} : { created: charge.created }),
       });
     }
     if (path === "/v1/disputes" && method === "GET") {
@@ -861,6 +866,237 @@ test("webhook signature uses the raw body and a tampered or stale payload is ref
   assert.equal(accepted.status, 200);
 });
 
+test("a clean paid webhook and status share one Purchase id, and a refund does not", async () => {
+  const verifySecret = "test-verification-secret-at-least-32b";
+  const previous = {
+    META_CAPI_ENABLED: process.env.META_CAPI_ENABLED,
+    META_CAPI_ACCESS_TOKEN: process.env.META_CAPI_ACCESS_TOKEN,
+    META_PIXEL_ID: process.env.META_PIXEL_ID,
+    VITE_META_TRACKING_ENABLED: process.env.VITE_META_TRACKING_ENABLED,
+    VITE_META_PIXEL_ID: process.env.VITE_META_PIXEL_ID,
+  };
+  const pixel = "123456789012345";
+  process.env.META_CAPI_ENABLED = "true";
+  process.env.META_CAPI_ACCESS_TOKEN = "test-token-not-live";
+  process.env.META_PIXEL_ID = pixel;
+  process.env.VITE_META_TRACKING_ENABLED = "true";
+  process.env.VITE_META_PIXEL_ID = pixel;
+  const originalFetch = globalThis.fetch;
+  const posts: string[] = [];
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes("/events") && init?.method === "POST") posts.push(String(init.body ?? ""));
+    return new Response(JSON.stringify({ events_received: 1 }), { status: 200 });
+  }) as typeof fetch;
+  const lookups: string[] = [];
+  const signup = {
+    pageId: "page-paid-1",
+    emailVerified: true,
+    status: "verified",
+    suspect: false,
+    duplicate: false,
+    abusive: false,
+    unsubscribed: false,
+    measurementConsent: "WD-AD-MEASUREMENT-CONSENT-V1:granted",
+    signupLocale: "en",
+    source: "hero",
+    landingPath: "/en",
+    fbc: null,
+  };
+  const measured = async (email: string) => {
+    lookups.push(email);
+    return signup;
+  };
+  try {
+    const fake = new MemoryStripe();
+    const session = fake.seedPaid();
+    const payload = JSON.stringify({
+      id: "evt_measured_paid",
+      type: "checkout.session.completed",
+      livemode: false,
+      data: { object: { id: session.id, payment_status: "unpaid", amount_total: 1 } },
+    });
+    const request = () =>
+      new Request("https://watchdive.diveroid.com/api/reservation/webhook", {
+        method: "POST",
+        headers: {
+          "stripe-signature": stripeSignature(payload, WEBHOOK_SECRET, Math.floor(NOW / 1000)),
+        },
+        body: payload,
+      });
+    const env = { ...ENV, WATCHDIVE_VERIFICATION_SECRET: verifySecret };
+    const depsPaid = () => ({ ...deps(fake, env), loadMeasuredSignup: measured });
+    const first = await bodyOf(await handleReservationWebhook(request(), depsPaid()));
+    const second = await bodyOf(await handleReservationWebhook(request(), depsPaid()));
+    assert.equal(first.paid, true);
+    assert.equal("measurement" in first, false);
+    assert.equal("email" in first, false);
+    assert.equal(posts.length, 2);
+    const sent = posts.map((body) => JSON.parse(body) as {
+      data: Array<{ event_name: string; event_id: string; event_time: number }>;
+    });
+    assert.equal(sent[0].data[0].event_name, "Purchase");
+    assert.equal(sent[0].data[0].event_id, sent[1].data[0].event_id);
+    assert.equal(sent[0].data[0].event_time, Math.floor(NOW / 1000));
+    assert.equal(sent[1].data[0].event_time, sent[0].data[0].event_time);
+    assert.equal(posts.some((body) => body.includes(EMAIL) || body.includes(session.id)), false);
+    const status = await bodyOf(await handleReservationStatus(
+      new Request("https://watchdive.diveroid.com/api/reservation/status", {
+        headers: { authorization: `Bearer ${invite()}` },
+      }),
+      depsPaid(),
+    ));
+    const purchase = (status.measurement as {
+      purchase?: { eventId?: string; eventName?: string; eventTime?: number };
+    }).purchase;
+    assert.equal(purchase?.eventName, "Purchase");
+    assert.equal(purchase?.eventId, sent[0].data[0].event_id);
+    assert.equal(purchase?.eventTime, Math.floor(NOW / 1000));
+    assert.equal("paidAtSeconds" in status, false);
+    assert.equal(JSON.stringify(status.measurement).includes(EMAIL), false);
+    assert.equal(JSON.stringify(status.measurement).includes(session.id), false);
+    const gpc = await bodyOf(await handleReservationStatus(
+      new Request("https://watchdive.diveroid.com/api/reservation/status", {
+        headers: { authorization: `Bearer ${invite()}`, "sec-gpc": "1" },
+      }),
+      depsPaid(),
+    ));
+    assert.equal("measurement" in gpc, false);
+    const beforeRefund = lookups.length;
+    const refundedStripe = new MemoryStripe();
+    refundedStripe.seedPaid({ amountRefunded: 300 });
+    const charge = [...refundedStripe.charges.values()][0];
+    const refundPayload = JSON.stringify({
+      id: "evt_measured_refund",
+      type: "charge.refunded",
+      livemode: false,
+      data: { object: { id: charge.id, amount_refunded: 300, object: "charge" } },
+    });
+    await handleReservationWebhook(
+      new Request("https://watchdive.diveroid.com/api/reservation/webhook", {
+        method: "POST",
+        headers: {
+          "stripe-signature": stripeSignature(refundPayload, WEBHOOK_SECRET, Math.floor(NOW / 1000)),
+        },
+        body: refundPayload,
+      }),
+      { ...deps(refundedStripe, env), loadMeasuredSignup: measured },
+    );
+    assert.equal(lookups.length, beforeRefund);
+    assert.equal(posts.length, 2);
+    const unpaidLookups = lookups.length;
+    await handleReservationStatus(
+      new Request("https://watchdive.diveroid.com/api/reservation/status", {
+        headers: { authorization: `Bearer ${invite()}` },
+      }),
+      { ...deps(new MemoryStripe(), env), loadMeasuredSignup: measured },
+    );
+    assert.equal(lookups.length, unpaidLookups);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
+test("a paid session older than 48 hours and a charge without created do not emit Purchase", async () => {
+  const verifySecret = "test-verification-secret-at-least-32b";
+  const previousToken = process.env.META_CAPI_ACCESS_TOKEN;
+  process.env.META_CAPI_ENABLED = "true";
+  process.env.META_CAPI_ACCESS_TOKEN = "test-token-not-live";
+  process.env.META_PIXEL_ID = "123456789012345";
+  process.env.VITE_META_TRACKING_ENABLED = "true";
+  process.env.VITE_META_PIXEL_ID = "123456789012345";
+  const originalFetch = globalThis.fetch;
+  const posts: string[] = [];
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes("/events") && init?.method === "POST") posts.push(String(init.body ?? ""));
+    return new Response(JSON.stringify({ events_received: 1 }), { status: 200 });
+  }) as typeof fetch;
+  const lookups: string[] = [];
+  const measured = async () => {
+    lookups.push("lookup");
+    return {
+      pageId: "page-old",
+      emailVerified: true,
+      status: "verified",
+      suspect: false,
+      duplicate: false,
+      abusive: false,
+      unsubscribed: false,
+      measurementConsent: "WD-AD-MEASUREMENT-CONSENT-V1:granted",
+      signupLocale: "en",
+      source: "hero",
+      landingPath: "/en",
+      fbc: null,
+    };
+  };
+  try {
+    const env = { ...ENV, WATCHDIVE_VERIFICATION_SECRET: verifySecret };
+    const oldStripe = new MemoryStripe();
+    const oldSession = oldStripe.seedPaid({ chargeCreated: Math.floor(NOW / 1000) - 48 * 3600 - 1 });
+    const oldPayload = JSON.stringify({
+      id: "evt_old_paid",
+      type: "checkout.session.completed",
+      livemode: false,
+      data: { object: { id: oldSession.id, payment_status: "unpaid", amount_total: 1 } },
+    });
+    const oldDeps = { ...deps(oldStripe, env), loadMeasuredSignup: measured };
+    const oldWebhook = await bodyOf(await handleReservationWebhook(
+      new Request("https://watchdive.diveroid.com/api/reservation/webhook", {
+        method: "POST",
+        headers: { "stripe-signature": stripeSignature(oldPayload, WEBHOOK_SECRET, Math.floor(NOW / 1000)) },
+        body: oldPayload,
+      }),
+      oldDeps,
+    ));
+    assert.equal(oldWebhook.paid, true);
+    assert.equal(posts.length, 0);
+    assert.equal(lookups.length, 0);
+    const oldStatus = await bodyOf(await handleReservationStatus(
+      new Request("https://watchdive.diveroid.com/api/reservation/status", {
+        headers: { authorization: `Bearer ${invite()}` },
+      }),
+      oldDeps,
+    ));
+    assert.equal(oldStatus.paid, true);
+    assert.equal("measurement" in oldStatus, false);
+    assert.equal(lookups.length, 0);
+
+    const missingStripe = new MemoryStripe();
+    const missingSession = missingStripe.seedPaid({ chargeCreated: null });
+    const missingPayload = JSON.stringify({
+      id: "evt_missing_created",
+      type: "checkout.session.completed",
+      livemode: false,
+      data: { object: { id: missingSession.id, payment_status: "unpaid", amount_total: 1 } },
+    });
+    const missingDeps = { ...deps(missingStripe, env), loadMeasuredSignup: measured };
+    const missingWebhook = await bodyOf(await handleReservationWebhook(
+      new Request("https://watchdive.diveroid.com/api/reservation/webhook", {
+        method: "POST",
+        headers: { "stripe-signature": stripeSignature(missingPayload, WEBHOOK_SECRET, Math.floor(NOW / 1000)) },
+        body: missingPayload,
+      }),
+      missingDeps,
+    ));
+    assert.equal(missingWebhook.paid, true);
+    assert.equal(posts.length, 0);
+    assert.equal(lookups.length, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousToken === undefined) delete process.env.META_CAPI_ACCESS_TOKEN;
+    else process.env.META_CAPI_ACCESS_TOKEN = previousToken;
+    delete process.env.META_CAPI_ENABLED;
+    delete process.env.META_PIXEL_ID;
+    delete process.env.VITE_META_TRACKING_ENABLED;
+    delete process.env.VITE_META_PIXEL_ID;
+  }
+});
+
 test("a paid webhook trusts the retrieved session, and a replay does not double the fee", async () => {
   const fake = new MemoryStripe();
   const session = fake.seedPaid();
@@ -1306,4 +1542,530 @@ test("route files and the route tree expose checkout, status, and the webhook", 
   assert.match(tree, /routes\/api\/reservation\/webhook/);
   assert.match(tree, /\/reservation/);
   assert.equal(tree.match(/from '\.\/routes\/api\/reservation\/checkout'/g)?.length, 1);
+});
+
+test("verified payment measurement receives fetched state and retries without a second purchase", async () => {
+  const { createGoogleConversions } =
+    await import("../src/lib/analytics/googleConversions.server.ts");
+  const { purchaseEvent } = await import("../src/lib/reservation/measurement.server.ts");
+  for (const variant of ["paid", "unpaid", "refunded"]) {
+    const fake = new MemoryStripe();
+    const session = fake.seedPaid(
+      variant === "unpaid"
+        ? { paymentStatus: "unpaid" }
+        : variant === "refunded"
+          ? { amountRefunded: 300 }
+          : {},
+    );
+    const payload = JSON.stringify({
+      id: "evt_analytics",
+      type: "checkout.session.completed",
+      livemode: false,
+      data: { object: { id: session.id, payment_status: "paid" } },
+    });
+    const claims = new Set<string>();
+    let posts = 0;
+    const google = createGoogleConversions({
+      env: {
+        WATCHDIVE_GA4_CONVERSIONS_ENABLED: "true",
+        VITE_GA4_SERVER_CONVERSIONS_ENABLED: "true",
+        VITE_GA_MEASUREMENT_ID: "G-TEST1234",
+        GA4_API_SECRET: "fixture",
+        WATCHDIVE_VERIFICATION_SECRET: SECRET,
+        WATCHDIVE_CONVERSION_REDIS_REST_URL: "https://store.example.test",
+        WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: "fixture",
+      },
+      now: () => NOW,
+      store: {
+        context: async () => ({ clientId: "123.456", capturedAt: NOW }),
+        capture: async () => {},
+        forget: async () => {},
+        claim: async (key) => {
+          if (claims.has(key)) return false;
+          claims.add(key);
+          return true;
+        },
+        status: async (key) => (claims.has(key) ? ("accepted" as const) : null),
+        finish: async () => {},
+        release: async (key) => {
+          claims.delete(key);
+        },
+      },
+      fetchImpl: async () => {
+        posts++;
+        return new Response(null, { status: 204 });
+      },
+    });
+    const measurement = {
+      capture: async () => {},
+      completed: async (
+        email: string,
+        snapshot: import("../src/lib/reservation/state.ts").ReservationSnapshot,
+      ) => {
+        const event = purchaseEvent(snapshot);
+        return event ? google.send(email, event, async () => true) : ("skipped" as const);
+      },
+    };
+    const request = () =>
+      new Request(`${ORIGIN}/api/reservation/webhook`, {
+        method: "POST",
+        headers: {
+          "stripe-signature": stripeSignature(payload, WEBHOOK_SECRET, Math.floor(NOW / 1000)),
+        },
+        body: payload,
+      });
+    assert.equal(
+      (await handleReservationWebhook(request(), { ...deps(fake), measurement })).status,
+      200,
+    );
+    assert.equal(
+      (await handleReservationWebhook(request(), { ...deps(fake), measurement })).status,
+      200,
+    );
+    assert.equal(posts, variant === "paid" ? 1 : 0);
+  }
+});
+
+test("webhook retries pre-dispatch measurement failure; invalid signatures never measure", async () => {
+  const fake = new MemoryStripe();
+  const session = fake.seedPaid();
+  let attempts = 0;
+  const payload = JSON.stringify({
+    id: "evt_retry",
+    type: "checkout.session.completed",
+    livemode: false,
+    data: { object: { id: session.id } },
+  });
+  const measurement = {
+    capture: async () => {},
+    completed: async () => (++attempts === 1 ? "retry" : "accepted") as "retry" | "accepted",
+  };
+  const request = (signature: string) =>
+    new Request(`${ORIGIN}/api/reservation/webhook`, {
+      method: "POST",
+      headers: { "stripe-signature": signature },
+      body: payload,
+    });
+  assert.equal(
+    (await handleReservationWebhook(request("invalid"), { ...deps(fake), measurement })).status,
+    400,
+  );
+  assert.equal(attempts, 0);
+  const signature = stripeSignature(payload, WEBHOOK_SECRET, Math.floor(NOW / 1000));
+  assert.equal(
+    (await handleReservationWebhook(request(signature), { ...deps(fake), measurement })).status,
+    500,
+  );
+  assert.equal(
+    (await handleReservationWebhook(request(signature), { ...deps(fake), measurement })).status,
+    200,
+  );
+});
+
+test("checkout uses separate measurement choice, honors GPC and fails closed if refusal cannot persist", async () => {
+  const fake = new MemoryStripe();
+  const choices: boolean[] = [];
+  const measurement = {
+    capture: async (_email: string, _id: unknown, permitted: boolean) => {
+      choices.push(permitted);
+    },
+    completed: async () => "skipped" as const,
+  };
+  const denied = post(invite(), { measurementConsent: false });
+  assert.equal(
+    (await handleReservationCheckout(denied, { ...deps(fake), measurement })).status,
+    200,
+  );
+  const gpc = post(invite(), { measurementConsent: true });
+  gpc.headers.set("sec-gpc", "1");
+  assert.equal((await handleReservationCheckout(gpc, { ...deps(fake), measurement })).status, 200);
+  assert.deepEqual(choices, [false, false]);
+  const before = fake.calls.length;
+  assert.equal(
+    (
+      await handleReservationCheckout(post(invite()), {
+        ...deps(fake),
+        measurement: {
+          ...measurement,
+          capture: async () => {
+            throw new Error("store down");
+          },
+        },
+      })
+    ).status,
+    503,
+  );
+  assert.equal(fake.calls.length, before);
+});
+
+test("enabled durable Purchase posts once, shares the browser id, and skips the legacy post", async () => {
+  const verifySecret = "test-verification-secret-at-least-32b";
+  const pixel = "123456789012345";
+  const purchaseEnv = {
+    ...ENV,
+    WATCHDIVE_META_PURCHASE_ENABLED: "true",
+    META_CAPI_ENABLED: "true",
+    VITE_META_TRACKING_ENABLED: "true",
+    META_PIXEL_ID: pixel,
+    VITE_META_PIXEL_ID: pixel,
+    META_CAPI_ACCESS_TOKEN: "fixture-only",
+    WATCHDIVE_VERIFICATION_SECRET: verifySecret,
+    WATCHDIVE_CONVERSION_REDIS_REST_URL: "https://store.example.test",
+    WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: "fixture-only",
+  };
+  const previous = {
+    META_CAPI_ENABLED: process.env.META_CAPI_ENABLED,
+    META_CAPI_ACCESS_TOKEN: process.env.META_CAPI_ACCESS_TOKEN,
+    META_PIXEL_ID: process.env.META_PIXEL_ID,
+    VITE_META_TRACKING_ENABLED: process.env.VITE_META_TRACKING_ENABLED,
+    VITE_META_PIXEL_ID: process.env.VITE_META_PIXEL_ID,
+    WATCHDIVE_META_PURCHASE_ENABLED: process.env.WATCHDIVE_META_PURCHASE_ENABLED,
+  };
+  process.env.META_CAPI_ENABLED = "true";
+  process.env.META_CAPI_ACCESS_TOKEN = "fixture-only";
+  process.env.META_PIXEL_ID = pixel;
+  process.env.VITE_META_TRACKING_ENABLED = "true";
+  process.env.VITE_META_PIXEL_ID = pixel;
+  process.env.WATCHDIVE_META_PURCHASE_ENABLED = "true";
+  const originalFetch = globalThis.fetch;
+  const legacyPosts: string[] = [];
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes("/events") && init?.method === "POST") legacyPosts.push(String(init.body ?? ""));
+    return new Response(JSON.stringify({ events_received: 1 }), { status: 200 });
+  }) as typeof fetch;
+  try {
+    const { createMetaPurchases } = await import("../src/lib/analytics/metaPurchases.server.ts");
+    const { createGoogleConversions } = await import("../src/lib/analytics/googleConversions.server.ts");
+    const { createReservationMeasurement } = await import("../src/lib/reservation/measurement.server.ts");
+    const { retargetingEventId } = await import("../src/lib/retargeting/eventId.ts");
+    const { MEASUREMENT_CONSENT_GRANTED } = await import("../src/lib/verification/contracts.ts");
+    const contexts = new Map<string, { capturedAt: number; clientId?: string }>();
+    const states = new Map<string, "accepted" | "uncertain">();
+    const store = {
+      async context(key: string) {
+        return contexts.get(key) ?? null;
+      },
+      async capture(key: string, context: { capturedAt: number; clientId?: string }) {
+        if (!contexts.has(key)) contexts.set(key, context);
+      },
+      async forget(key: string) {
+        contexts.delete(key);
+      },
+      async claim(key: string) {
+        if (states.has(key)) return false;
+        states.set(key, "uncertain");
+        return true;
+      },
+      async status(key: string) {
+        return states.get(key) ?? null;
+      },
+      async finish(key: string, status: "accepted" | "uncertain") {
+        states.set(key, status);
+      },
+      async release(key: string) {
+        states.delete(key);
+      },
+    };
+    const bodies: { data: { event_id: string; event_name: string; event_time: number }[] }[] = [];
+    const meta = createMetaPurchases({
+      env: purchaseEnv,
+      store,
+      now: () => NOW,
+      fetchImpl: async (_url, init) => {
+        bodies.push(JSON.parse(String(init?.body)));
+        return Response.json({ events_received: 1 });
+      },
+    });
+    const google = createGoogleConversions({ env: {} });
+    const row = {
+      email: EMAIL,
+      emailVerified: true,
+      status: "verified",
+      duplicate: false,
+      flags: [],
+      measurementConsent: MEASUREMENT_CONSENT_GRANTED,
+    } as unknown as import("../src/lib/verification/contracts.ts").LeadRecord;
+    const measurement = createReservationMeasurement(google, meta, async () => row);
+    await measurement.capture(EMAIL, undefined, true);
+    const signup = {
+      pageId: "page-paid-durable",
+      emailVerified: true,
+      status: "verified",
+      suspect: false,
+      duplicate: false,
+      abusive: false,
+      unsubscribed: false,
+      measurementConsent: MEASUREMENT_CONSENT_GRANTED,
+      signupLocale: "en",
+      source: "hero",
+      landingPath: "/en",
+      fbc: null,
+    };
+    const fake = new MemoryStripe();
+    const session = fake.seedPaid();
+    const payload = JSON.stringify({
+      id: "evt_durable_paid",
+      type: "checkout.session.completed",
+      livemode: false,
+      data: { object: { id: session.id, payment_status: "unpaid", amount_total: 1 } },
+    });
+    const request = () =>
+      new Request(`${ORIGIN}/api/reservation/webhook`, {
+        method: "POST",
+        headers: {
+          "stripe-signature": stripeSignature(payload, WEBHOOK_SECRET, Math.floor(NOW / 1000)),
+        },
+        body: payload,
+      });
+    const paidDeps = {
+      ...deps(fake, purchaseEnv),
+      measurement,
+      loadMeasuredSignup: async () => signup,
+    };
+    const [first, second] = await Promise.all([
+      handleReservationWebhook(request(), paidDeps),
+      handleReservationWebhook(request(), paidDeps),
+    ]);
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 200);
+    assert.equal(bodies.length, 1);
+    assert.equal(legacyPosts.length, 0);
+    const expectedId = retargetingEventId("purchase", session.id, verifySecret);
+    assert.equal(bodies[0]?.data[0]?.event_name, "Purchase");
+    assert.equal(bodies[0]?.data[0]?.event_id, expectedId);
+    assert.equal(bodies[0]?.data[0]?.event_time, Math.floor(NOW / 1000));
+    assert.equal(JSON.stringify(bodies).includes(EMAIL), false);
+    const replay = await handleReservationWebhook(request(), paidDeps);
+    assert.equal(replay.status, 200);
+    assert.equal(bodies.length, 1);
+    const status = await bodyOf(
+      await handleReservationStatus(
+        new Request(`${ORIGIN}/api/reservation/status`, {
+          headers: { authorization: `Bearer ${invite()}` },
+        }),
+        paidDeps,
+      ),
+    );
+    const purchase = (
+      status.measurement as {
+        purchase?: { eventId?: string; eventName?: string; eventTime?: number; metaDelivery?: string };
+      }
+    ).purchase;
+    assert.equal(purchase?.eventName, "Purchase");
+    assert.equal(purchase?.eventId, expectedId);
+    assert.equal(purchase?.eventTime, Math.floor(NOW / 1000));
+    assert.equal(purchase?.metaDelivery, "server");
+    const charge = [...fake.charges.values()][0];
+    charge.amountRefunded = 300;
+    charge.refunded = true;
+    fake.refunds.push({
+      id: "re_test_durable",
+      amount: 300,
+      currency: "usd",
+      status: "succeeded",
+      chargeId: charge.id,
+    });
+    const refunded = await bodyOf(await handleReservationWebhook(request(), paidDeps));
+    assert.equal(refunded.status, "refunded");
+    assert.equal(bodies.length, 1);
+    assert.equal(legacyPosts.length, 0);
+    const refundStatus = await bodyOf(
+      await handleReservationStatus(
+        new Request(`${ORIGIN}/api/reservation/status`, {
+          headers: { authorization: `Bearer ${invite()}` },
+        }),
+        paidDeps,
+      ),
+    );
+    assert.equal("measurement" in refundStatus, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
+test("durable measurement retry, uncertain, and storage failure keep a single Purchase", async () => {
+  const verifySecret = "test-verification-secret-at-least-32b";
+  const pixel = "123456789012345";
+  const purchaseEnv = {
+    ...ENV,
+    WATCHDIVE_META_PURCHASE_ENABLED: "true",
+    META_CAPI_ENABLED: "true",
+    VITE_META_TRACKING_ENABLED: "true",
+    META_PIXEL_ID: pixel,
+    VITE_META_PIXEL_ID: pixel,
+    META_CAPI_ACCESS_TOKEN: "fixture-only",
+    WATCHDIVE_VERIFICATION_SECRET: verifySecret,
+    WATCHDIVE_CONVERSION_REDIS_REST_URL: "https://store.example.test",
+    WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: "fixture-only",
+  };
+  const { createMetaPurchases } = await import("../src/lib/analytics/metaPurchases.server.ts");
+  const { createGoogleConversions } = await import("../src/lib/analytics/googleConversions.server.ts");
+  const { createReservationMeasurement } = await import("../src/lib/reservation/measurement.server.ts");
+  const { MEASUREMENT_CONSENT_GRANTED } = await import("../src/lib/verification/contracts.ts");
+  const contexts = new Map<string, { capturedAt: number }>();
+  const states = new Map<string, "accepted" | "uncertain">();
+  let contextDown = false;
+  let mode: "retry" | "uncertain" | "ok" = "retry";
+  const store = {
+    async context(key: string) {
+      if (contextDown) throw new Error("store down");
+      return contexts.get(key) ?? null;
+    },
+    async capture(key: string, context: { capturedAt: number }) {
+      if (!contexts.has(key)) contexts.set(key, context);
+    },
+    async forget(key: string) {
+      contexts.delete(key);
+    },
+    async claim(key: string) {
+      if (states.has(key)) return false;
+      states.set(key, "uncertain");
+      return true;
+    },
+    async status(key: string) {
+      return states.get(key) ?? null;
+    },
+    async finish(key: string, status: "accepted" | "uncertain") {
+      states.set(key, status);
+    },
+    async release(key: string) {
+      states.delete(key);
+    },
+  };
+  let posts = 0;
+  const meta = createMetaPurchases({
+    env: purchaseEnv,
+    store,
+    now: () => NOW,
+    fetchImpl: async () => {
+      posts += 1;
+      if (mode === "retry") return Response.json({ events_received: 0 });
+      if (mode === "uncertain") throw new Error("connection lost");
+      return Response.json({ events_received: 1 });
+    },
+  });
+  const row = {
+    email: EMAIL,
+    emailVerified: true,
+    status: "verified",
+    duplicate: false,
+    flags: [],
+    measurementConsent: MEASUREMENT_CONSENT_GRANTED,
+  } as unknown as import("../src/lib/verification/contracts.ts").LeadRecord;
+  const measurement = createReservationMeasurement(
+    createGoogleConversions({ env: {} }),
+    meta,
+    async () => row,
+  );
+  await measurement.capture(EMAIL, undefined, true);
+  const fake = new MemoryStripe();
+  const session = fake.seedPaid();
+  const payload = JSON.stringify({
+    id: "evt_durable_failures",
+    type: "checkout.session.completed",
+    livemode: false,
+    data: { object: { id: session.id } },
+  });
+  const request = () =>
+    new Request(`${ORIGIN}/api/reservation/webhook`, {
+      method: "POST",
+      headers: {
+        "stripe-signature": stripeSignature(payload, WEBHOOK_SECRET, Math.floor(NOW / 1000)),
+      },
+      body: payload,
+    });
+  const paidDeps = { ...deps(fake, purchaseEnv), measurement };
+  contextDown = true;
+  assert.equal((await handleReservationWebhook(request(), paidDeps)).status, 500);
+  assert.equal(posts, 0);
+  contextDown = false;
+  assert.equal((await handleReservationWebhook(request(), paidDeps)).status, 500);
+  assert.equal(posts, 1);
+  mode = "ok";
+  assert.equal((await handleReservationWebhook(request(), paidDeps)).status, 200);
+  assert.equal(posts, 2);
+  assert.equal((await handleReservationWebhook(request(), paidDeps)).status, 200);
+  assert.equal(posts, 2);
+
+  mode = "uncertain";
+  states.clear();
+  const other = new MemoryStripe();
+  const otherSession = other.seedPaid();
+  const otherPayload = JSON.stringify({
+    id: "evt_durable_uncertain",
+    type: "checkout.session.completed",
+    livemode: false,
+    data: { object: { id: otherSession.id } },
+  });
+  const otherRequest = () =>
+    new Request(`${ORIGIN}/api/reservation/webhook`, {
+      method: "POST",
+      headers: {
+        "stripe-signature": stripeSignature(otherPayload, WEBHOOK_SECRET, Math.floor(NOW / 1000)),
+      },
+      body: otherPayload,
+    });
+  const uncertainDeps = { ...deps(other, purchaseEnv), measurement };
+  const before = posts;
+  assert.equal((await handleReservationWebhook(otherRequest(), uncertainDeps)).status, 200);
+  assert.equal((await handleReservationWebhook(otherRequest(), uncertainDeps)).status, 200);
+  assert.equal(posts, before + 1);
+});
+
+test("paid then refunded and a replayed old paid webhook never report a second purchase", async () => {
+  const { purchaseEvent } = await import("../src/lib/reservation/measurement.server.ts");
+  const fake = new MemoryStripe();
+  const session = fake.seedPaid();
+  let purchases = 0;
+  const measurement = {
+    capture: async () => {},
+    completed: async (
+      _email: string,
+      snapshot: import("../src/lib/reservation/state.ts").ReservationSnapshot,
+    ) => {
+      if (purchaseEvent(snapshot)) purchases++;
+      return "accepted" as const;
+    },
+  };
+  const payload = JSON.stringify({
+    id: "evt_paid_then_refunded",
+    type: "checkout.session.completed",
+    livemode: false,
+    data: { object: { id: session.id, payment_status: "paid" } },
+  });
+  const request = () =>
+    new Request(`${ORIGIN}/api/reservation/webhook`, {
+      method: "POST",
+      headers: {
+        "stripe-signature": stripeSignature(payload, WEBHOOK_SECRET, Math.floor(NOW / 1000)),
+      },
+      body: payload,
+    });
+  assert.equal(
+    (await handleReservationWebhook(request(), { ...deps(fake), measurement })).status,
+    200,
+  );
+  const charge = [...fake.charges.values()][0];
+  charge.amountRefunded = 300;
+  charge.refunded = true;
+  fake.refunds.push({
+    id: "re_test_after_payment",
+    amount: 300,
+    currency: "usd",
+    status: "succeeded",
+    chargeId: charge.id,
+  });
+  for (let replay = 0; replay < 2; replay++) {
+    const result = await bodyOf(
+      await handleReservationWebhook(request(), { ...deps(fake), measurement }),
+    );
+    assert.equal(result.status, "refunded");
+    assert.equal(result.paid, false);
+  }
+  assert.equal(purchases, 1);
 });

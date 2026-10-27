@@ -107,7 +107,10 @@ test("off: rendered copy stays frozen with owner-approved hero and Korean brand 
     sha256(phoneOptInCopy),
     "5da27009d4661df3099eaaab47e64fa7c039f1c864613b44cbf16ba462d83d0d",
   );
-  assert.equal(sha256(mails), "2058e290c5ad1a1cb7db1eec5b792a733782c47515a929a473c336f8bc9afc31");
+  // 2026-10-26 brutalism replaced the launch-mail HTML shell. The digest is the
+  // rendered mail (subject, text and HTML) with launch times masked. The four
+  // copy digests above stay the pre-change pins.
+  assert.equal(sha256(mails), "e17e8f1e7c665b4e6dbd3d01b26cc0d802d0e6cee3f36bd651ace546d04bb377");
   // `referralProgram: false` is the same mail as no flag at all.
   for (const locale of SUPPORTED_LOCALES) {
     for (const wave of WAVES) {
@@ -463,10 +466,10 @@ test("on: the launch mail price line names both exceptions in every language", (
       assert.ok(copy.includes(diveTeam(locale)), `${locale}.${path}: Dive Team`);
       assert.doesNotMatch(copy, EXCLUSIVE, `${locale}.${path}: exclusive wording`);
       for (const number of copy.match(/\d+/g) ?? []) {
-        assert.ok(["149", "299", "100"].includes(number), `${locale}.${path}: ${number}`);
+        assert.ok(["149", "200", "100"].includes(number), `${locale}.${path}: ${number}`);
       }
     }
-    assert.match(price, /299/, `${locale}: public price`);
+    assert.match(price, /200/, `${locale}: next price after the first 100`);
     for (const wave of WAVES) {
       const on = launchWaveCopy(locale, wave, true);
       const off = LAUNCH_COPY[locale].waves[wave];

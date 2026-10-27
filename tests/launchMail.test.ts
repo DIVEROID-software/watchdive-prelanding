@@ -674,7 +674,7 @@ test("every language states both prices and the first-100 condition, and nothing
     for (const wave of ["t-1d", "t-1h", "t-0"] as const) {
       const copy = LAUNCH_COPY[locale].waves[wave];
       assert.match(copy.price, /149/, `${locale} ${wave}`);
-      assert.match(copy.price, /299/, `${locale} ${wave}`);
+      assert.match(copy.price, /200/, `${locale} ${wave}`);
       assert.match(copy.price, /100/, `${locale} ${wave}`);
       const all = Object.values(copy).join(" ");
       assert.ok(
@@ -684,7 +684,7 @@ test("every language states both prices and the first-100 condition, and nothing
       // Only the numbers the page states (plus the "1" of one hour).
       for (const number of all.match(/\d+/g) ?? []) {
         assert.ok(
-          ["149", "299", "100", "1"].includes(number),
+          ["149", "200", "100", "1"].includes(number),
           `${locale} ${wave}: unexpected number ${number}`,
         );
       }
@@ -711,7 +711,10 @@ test("rendering is deterministic and carries the URL, time, unsubscribe link and
   assert.ok(a.html.includes(KS));
   assert.ok(a.html.includes("/unsubscribe/u1.test"));
   assert.ok(a.html.includes("Postal &lt;line&gt;"), "footer text is escaped");
-  assert.ok(!/<img|<script|https:\/\/fonts\./.test(a.html), "no remote image, script or font");
+  assert.equal((a.html.match(/<img\b/g) ?? []).length, 1, "the only image is the WatchDive wordmark");
+  assert.match(a.html, /watchdive-primary@1x\.png\?v=2\.6\.1/);
+  assert.equal(a.html.includes("DIVEROID · KICKSTARTER"), false);
+  assert.ok(!/<script|https:\/\/fonts\./.test(a.html), "no script or remote font");
   assert.match(a.text, /US\$149/);
 });
 

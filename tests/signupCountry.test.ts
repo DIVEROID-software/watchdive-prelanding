@@ -430,7 +430,9 @@ test("no probe writes no country, and a withheld experiment still stores country
   const bare = new FakeLeadStore();
   await requestVerificationService(base, depsFor(bare));
   assert.equal(bare.createPendingInputs[0].signupCountry, undefined);
-  assert.equal(bare.createPendingInputs[0].phone, "+821012345678");
+  // The initial signup may receive a legacy payload, but phone and SMS
+  // consent must only be recorded through authenticated phone opt-in.
+  assert.equal(bare.createPendingInputs[0].phone, undefined);
 
   const gpc = new FakeLeadStore();
   await requestVerificationService(

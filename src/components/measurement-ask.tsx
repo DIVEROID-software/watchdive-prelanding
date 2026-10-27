@@ -160,7 +160,9 @@ const COPY: Record<Locale, AskCopy> = {
  * `{ choice: "granted" | "denied", origin: "card" | "banner" }` as detail, so
  * the other control closes and a pending signup can record the answer.
  */
-export const MEASUREMENT_CHOICE_EVENT = "watchdive:measurement-choice";
+import { MEASUREMENT_CHOICE_EVENT } from "../lib/measurementChoice";
+
+export { MEASUREMENT_CHOICE_EVENT };
 
 export type MeasurementChoiceDetail = {
   choice: "granted" | "denied";

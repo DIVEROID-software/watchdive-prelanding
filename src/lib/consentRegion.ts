@@ -107,13 +107,19 @@ export function readCookieValue(cookieHeader: string | null | undefined, name: s
 
 // ---- browser helpers --------------------------------------------------------
 
+let runtimeChoice: StoredChoice = null;
+export function rememberMeasurementChoice(choice: StoredChoice): void {
+  runtimeChoice = choice;
+}
+
 export function readStoredMeasurementChoice(): StoredChoice {
+  if (runtimeChoice === "denied") return "denied";
   if (typeof window === "undefined") return null;
   try {
     const stored = window.localStorage.getItem(CONSENT_STORAGE_KEY);
-    return stored === "granted" || stored === "denied" ? stored : null;
+    return stored === "granted" || stored === "denied" ? stored : runtimeChoice;
   } catch {
-    return null;
+    return runtimeChoice;
   }
 }
 

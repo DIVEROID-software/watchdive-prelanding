@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-25",
+  "status": "local-review-only",
+  "hero": {
+    "source": "User-supplied 06_WatchDive_프리다이빙 컴퓨터.jpg",
+    "source_evidence": "/Users/diveroid/orca/projects/디지털마케팅-WatchDive/ads/autopilot/landing-segments-20261025/free-photo-logbook/source-freediving-surface.jpg",
+    "treatment": "Resize/encode to 800px and 1600px WebP only; no generative editing."
+  },
+  "logbook": {
+    "base": "/Users/diveroid/Library/CloudStorage/Dropbox-DIVEROID/DIVEROID/04_Growth & Ops/02_Marketing_Brand/04_WatchDive/03_Crowdfunding/01_TCF/02_images/08_APP/4_APP.jpeg",
+    "base_sha256": "d1ba5d3636cf69f6eb5b77ab5adeb2ccf312efdd834bb08f96a319b007c47a11",
+    "source_type": "Existing poolside photograph traced to DSC05611.JPG/ARW by worker",
+    "figma_frame": "06_free-details-_-major",
+    "figma_url": "https://www.figma.com/design/LEofkGXoA4hqQWX0kOnKue/QA-reference---English-2023-06-16---French-font-restoration?node-id=387-45482",
+    "figma_export": "/Users/diveroid/orca/projects/디지털마케팅-WatchDive/ads/autopilot/landing-segments-20261025/free-photo-logbook/figma-freediving-logbook.png",
+    "tool": "image_gen.imagegen",
+    "mode": "edit using two referenced_image_paths, transparent_background=false",
+    "output": "/Users/diveroid/orca/projects/디지털마케팅-WatchDive/ads/autopilot/landing-segments-20261025/free-photo-logbook/freediving-logbook-composite.png",
+    "treatment": "AI-assisted phone-screen composite using the upper app-logbook reference. Not an unedited capture or pixel-exact UI screenshot. No performance claims inferred from sample screen numbers.",
+    "unused_candidate": "candidate-1-untraced-base-not-selected.png",
+    "selected_reason": "Second candidate uses the traced existing scuba logbook photograph; first base had unknown capture provenance.",
+    "prompt_file": "/Users/diveroid/orca/projects/디지털마케팅-WatchDive/ads/autopilot/landing-segments-20261025/free-photo-logbook/generation-prompt.txt"
+  }
+}

@@ -1,3 +1,4 @@
+import { googleBrowserContext } from "../../lib/analytics/browserContext.ts";
 import {
   CHECKOUT_PATH,
   checkoutPayload,
@@ -84,7 +85,9 @@ export async function requestReservationCheckout(
   try {
     const response = await fetchImpl(
       CHECKOUT_PATH,
-      sameOriginJson("POST", { body: JSON.stringify(checkoutPayload(token)) }),
+      sameOriginJson("POST", {
+        body: JSON.stringify({ ...checkoutPayload(token), ...googleBrowserContext() }),
+      }),
     );
     if (response.status === 409) return { ok: false, reason: "conflict" };
     const closed = await closedFailure(response);

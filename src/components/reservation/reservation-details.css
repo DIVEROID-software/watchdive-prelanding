@@ -1,0 +1,103 @@
+.wd-reservation-dialog {
+  margin: auto;
+  width: min(32rem, calc(100vw - 24px));
+  max-height: min(90vh, 44rem);
+  overflow: auto;
+  padding: 18px 18px 16px;
+  border: 3px solid #201748;
+  background: #fff;
+  color: #10212e;
+  box-shadow: 8px 8px 0 #65ceee;
+  font-family: "Pangram Sans", "Spoqa Han Sans Neo", "Helvetica Neue", "Apple SD Gothic Neo", sans-serif;
+  font-size: 15px;
+  text-align: left;
+}
+.wd-reservation-dialog::backdrop { background: rgb(32 23 72 / 0.55); }
+.wd-reservation-dialog[lang="ko"] { word-break: keep-all; }
+.wd-reservation-dialog-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.wd-reservation-dialog-eyebrow { margin: 0; color: #3d2683; font-size: 13px; font-weight: 650; }
+.wd-reservation-dialog-close {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 2px solid #201748;
+  background: #fff;
+  color: #201748;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+html:root .wd-reservation-dialog[aria-labelledby] h2[id] {
+  margin: 8px 0 12px !important;
+  color: #201748 !important;
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.25 !important;
+}
+html:root .wd-reservation-dialog h2:focus { outline: none; }
+html:root .wd-reservation-dialog h2:focus-visible { outline: 3px solid #36a9e1; outline-offset: 3px; }
+.wd-reservation-dialog-status {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border: 2px solid #201748;
+  color: #201748;
+  font-size: 14px;
+  font-weight: 700;
+}
+html:root .wd-reservation-dialog p { margin: 0 0 8px; line-height: 1.6 !important; }
+html:root .wd-reservation-dialog p + p { margin-top: 0; }
+.wd-reservation-dialog-emph { font-weight: 700; color: #201748; }
+html:root .wd-reservation-dialog .wd-reservation-dialog-fee {
+  margin: 12px 0 0 !important;
+  color: #201748;
+  font-size: 56px !important;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1 !important;
+}
+html:root .wd-reservation-dialog .wd-reservation-dialog-fee span { font-size: 26px !important; margin-right: 2px; vertical-align: baseline; }
+.wd-reservation-dialog-fee-label { margin: 2px 0 6px !important; color: #526874; font-size: 12px; }
+.wd-reservation-dialog-next { color: #3d2683; font-size: 14px; font-weight: 650; }
+.wd-reservation-dialog-steps { margin: 12px 0 14px; padding: 0; list-style: none; }
+.wd-reservation-dialog-steps li {
+  margin: 0;
+  padding: 8px 0;
+  border-top: 1px solid #dce6eb;
+  font-size: 14px;
+  font-weight: 650;
+}
+.wd-reservation-dialog-inbox {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 2px solid #201748;
+  border-radius: 0;
+  box-shadow: 4px 4px 0 #201748;
+  background: #65ceee;
+  color: #201748;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.wd-reservation-dialog-inbox:hover { background: #8ddcf2; }
+.wd-reservation-dialog-inbox:focus-visible,
+.wd-reservation-dialog-close:focus-visible { outline: 3px solid #36a9e1; outline-offset: 3px; }
+.wd-reservation-dialog-terms {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #dce6eb;
+  color: #526874;
+  font-size: 12px;
+}
+html:root .wd-reservation-dialog-terms p { margin: 0 0 5px; font-size: 12px; }
+@media (max-width: 380px) {
+  html:root .wd-reservation-dialog[aria-labelledby] h2[id] { font-size: 22px !important; }
+  html:root .wd-reservation-dialog .wd-reservation-dialog-fee { font-size: 48px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wd-reservation-dialog { scroll-behavior: auto; }
+}

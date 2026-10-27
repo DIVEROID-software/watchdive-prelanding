@@ -12,6 +12,7 @@
 // Mail-bomb protection lives in `networkGate.ts`, entirely in process memory.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
+import type { CompatibilityContext } from "../compatibility/context.ts";
 import type { ExperimentContext } from "../conversionExperimentContract.ts";
 
 /** Confirmation links last 24 hours. */
@@ -204,6 +205,8 @@ export const STATUS_SUPPRESSED = "suppressed";
 export type VerificationStatus = "pending" | "verified" | "unsubscribed" | "legacy";
 
 export type LeadRecord = {
+  /** Explicitly requested model result, not verification or purchase status. */
+  compatibility?: CompatibilityContext;
   pageId: string;
   email: string;
   status: VerificationStatus;
@@ -355,6 +358,8 @@ export type LaunchOsReplaySeed = {
 };
 
 export type CreatePendingInput = {
+  /** Required durable field for an explicit compatibility request; never silently dropped. */
+  compatibility?: CompatibilityContext;
   email: string;
   canonical: string;
   phone?: string;
@@ -440,6 +445,7 @@ export interface LeadStore {
   /** `Measurement consent` = withdrawn, adds the withdrawal flag, clears the click cookie. */
   recordMeasurementWithdrawal(pageId: string): Promise<void>;
   reread(pageId: string): Promise<LeadRecord | undefined>;
+  recordCompatibility?(pageId: string, context: CompatibilityContext): Promise<void>;
   recordPhoneOptIn?(pageId: string, phone: string, consent: string): Promise<void>;
   /** Pages whose provider subject cell equals `sub`. Empty when the column is absent. */
   listByProviderSubject?(provider: "google" | "apple", sub: string): Promise<LeadRecord[]>;
@@ -489,6 +495,22 @@ export type ConfirmStatus = "verified" | "expired" | "already_verified" | "inval
  */
 export type BrowserLead = { eventId: string; source: string; hasPhone: boolean };
 
+/**
+ * Browser half of a true CompleteRegistration.
+ * `eventTime` is the original verification, in unix seconds. It is not the
+ * time the tag happens to run.
+ */
+export type BrowserRegistration = {
+  eventName: "CompleteRegistration";
+  eventId: string;
+  eventTime: number;
+  contentName: string;
+  value: number;
+  currency: string;
+  signupLocale: string | null;
+  source: string | null;
+};
+
 export type ConfirmResponse = {
   /** Buddy settings credential; ON + successful confirmation only, kept in memory. */
   statusToken?: string;
@@ -499,6 +521,12 @@ export type ConfirmResponse = {
   phoneAdded?: true;
   /** Present only when measurement is permitted for this lead. */
   browserLead?: BrowserLead;
+  /**
+   * First email-link CompleteRegistration, for the token holder only.
+   * Omitted on resend, already-verified, and every public submit response.
+   * `eventTime` is the verification clock. The browser refuses this after 48 hours.
+   */
+  registration?: BrowserRegistration;
   /**
    * The lead is confirmed but nobody has allowed advertising measurement for
    * it yet (and nobody withdrew it). The page may ask once; the answer goes to
@@ -522,22 +550,27 @@ export type ConfirmResponse = {
  * The answer to a measurement grant.
  *
  * An attempt grant (poll handle) is exactly `{ ok: true }` for a real row, a
- * decoy, an invalid or expired handle, a withdrawal, and an abuse flag. The
- * late Lead is sent server-side only. A confirmation-token grant may include
- * the verification browser half, because presenting the token already proves the caller
- * received the mail. `status: "retry"` is only that confirmation path, and
- * only when the consent write could not be confirmed.
+ * decoy, an invalid or expired handle, a withdrawal, and an abuse flag. It
+ * never carries a browser event. A confirmation-token grant may include the
+ * legacy verification half and, when the stored verification time is still
+ * fresh, the CompleteRegistration half. `status: "retry"` is only that
+ * confirmation path, and only when the consent write could not be confirmed.
  */
 export type MeasurementGrantResponse = {
   ok: true;
   /** Confirmation token only: the server could not confirm the grant. */
   status?: "retry";
   /**
-   * The confirmation's browser half — only on the confirmation-page grant,
-   * whose caller holds the token, and only when it was actually sent. The
-   * late submit `Lead` is server-only and never has a browser half.
+   * The confirmation's legacy browser half — only on the confirmation-page
+   * grant, whose caller holds the token, and only when it was actually sent.
    */
   browserLead?: BrowserLead;
+  /**
+   * CompleteRegistration for a verified row whose stored `Verified at` is
+   * still inside 48 hours. Same event id as the first verification path.
+   * Omitted when that time is missing, stale, or the row is not allowed.
+   */
+  registration?: BrowserRegistration;
 };
 
 export type PollResponse = {
@@ -545,6 +578,11 @@ export type PollResponse = {
   status: "pending" | "verified" | "expired";
   refCode?: string;
   browserLead?: BrowserLead;
+  /**
+   * Browser half only. The poll does not send. Present when the verified row
+   * allows measurement and its stored `Verified at` is still inside 48 hours.
+   */
+  registration?: BrowserRegistration;
 };
 
 /**

@@ -43,7 +43,9 @@ export function SocialSignupButtonGroup({
   ...props
 }: SocialSignupButtonsProps & { embedded: EmbeddedBrowserAssessment }) {
   const model = socialSignupRenderModel(props, embedded);
-  if (model.items.length === 0 && !model.fallback) return null;
+  // Unsupported Google sign-in should disappear without a warning panel.
+  // Apple and the surrounding email form remain available.
+  if (model.items.length === 0) return null;
 
   return (
     <div className="wd-social-signup" data-wd-social-signup="" data-locale={props.locale}>
@@ -69,12 +71,6 @@ export function SocialSignupButtonGroup({
             />
           ))}
         </div>
-      ) : null}
-      {model.fallback ? (
-        <p className="wd-social-fallback" data-wd-social-fallback={model.fallback.kind} role="note">
-          <strong>{model.fallback.title}</strong>
-          {model.fallback.body}
-        </p>
       ) : null}
     </div>
   );

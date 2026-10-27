@@ -12,6 +12,15 @@
 import { createHash } from "node:crypto";
 
 import { META_LEAD_CURRENCY, META_LEAD_VALUE } from "../metaLeadValue.ts";
+import {
+  expectedMeasurement,
+  isRetargetingEventName,
+  RETARGETING_CONTENT,
+  signupLocaleOrNull,
+  signupSourceOrNull,
+  type RetargetingEventName,
+} from "../retargeting/constants.ts";
+import { cookieIdOrNull, isRetargetingEventId, landingPathOrNull } from "../retargeting/privacy.ts";
 
 const GRAPH_URL = "https://graph.facebook.com/v21.0";
 const META_REQUEST_TIMEOUT_MS = 5_000;
@@ -424,4 +433,183 @@ export async function sendMetaCrmQualifiedLead(args: MetaEventArgs): Promise<boo
     console.error("Meta CAPI LeadVerified error", err);
     return false;
   }
+}
+
+export type RetargetingStandardEventArgs = {
+  eventName: RetargetingEventName;
+  eventId: string;
+  /** Original occurrence in unix seconds. A missing time does not fall back to now. */
+  eventTime?: number;
+  email: string;
+  /** Caller has already applied the row consent gate. Anything other than true refuses. */
+  consentGranted: boolean;
+  contentName: string;
+  value: number;
+  currency: string;
+  source?: string;
+  signupLocale?: string;
+  landingPath?: string;
+  fbp?: string;
+  fbc?: string;
+  ip?: string;
+  ua?: string;
+};
+
+/**
+ * Prospective Lead, CompleteRegistration, or Purchase.
+ * Refuses opt-out, a bad id, or a value that is not the contract value.
+ * Does not send the historical submit Lead.
+ * Reservation webhooks must not call this for Purchase while
+ * WATCHDIVE_META_PURCHASE_ENABLED is on; that flag owns the one server Purchase.
+ */
+export async function deliverRetargetingStandardEvent(
+  args: RetargetingStandardEventArgs,
+): Promise<MetaCapiDelivery> {
+  const label = isRetargetingEventName(args.eventName) ? args.eventName : "retargeting";
+  if (args.consentGranted !== true) {
+    console.warn(`[meta-capi] ${label} NOT sent event_id=${args.eventId || "?"}: consent withheld`);
+    return "disabled";
+  }
+  if (!isRetargetingEventName(args.eventName) || !isRetargetingEventId(args.eventId)) {
+    console.warn(`[meta-capi] ${label} NOT sent: event contract rejected`);
+    return "disabled";
+  }
+  if (typeof args.eventTime !== "number" || !Number.isInteger(args.eventTime) || args.eventTime < 0) {
+    console.warn(`[meta-capi] ${label} NOT sent event_id=${args.eventId}: event_time missing`);
+    return "disabled";
+  }
+  const measurement = expectedMeasurement(args.eventName);
+  if (
+    args.contentName !== RETARGETING_CONTENT[args.eventName] ||
+    args.value !== measurement.value ||
+    args.currency !== measurement.currency
+  ) {
+    console.warn(`[meta-capi] ${args.eventName} NOT sent event_id=${args.eventId}: value mismatch`);
+    return "disabled";
+  }
+  const email = args.email.trim().toLowerCase();
+  if (!email.includes("@") || email.includes(" ") || email.length > 320) {
+    console.warn(`[meta-capi] ${args.eventName} NOT sent event_id=${args.eventId}: address rejected`);
+    return "disabled";
+  }
+  const config = metaCapiConfig();
+  if (!config) {
+    logSkipped(args.eventName, args.eventId);
+    return "disabled";
+  }
+
+  const source = signupSourceOrNull(args.source);
+  const signupLocale = signupLocaleOrNull(args.signupLocale);
+  const fbp = cookieIdOrNull(args.fbp);
+  const fbc = cookieIdOrNull(args.fbc);
+  const sent = await postEvents(config, args.eventName, [
+    {
+      event_name: args.eventName,
+      event_time: args.eventTime,
+      event_id: args.eventId,
+      action_source: "website",
+      event_source_url: eventSourceUrl(landingPathOrNull(args.landingPath) ?? undefined),
+      user_data: hashedUserData(
+        {
+          eventId: args.eventId,
+          email,
+          ...(args.ip ? { ip: args.ip } : {}),
+          ...(args.ua ? { ua: args.ua } : {}),
+          ...(fbp ? { fbp } : {}),
+          ...(fbc ? { fbc } : {}),
+        },
+        undefined,
+      ),
+      custom_data: {
+        content_name: args.contentName,
+        value: measurement.value,
+        currency: measurement.currency,
+        ...(source ? { content_category: source } : {}),
+        ...(signupLocale ? { signup_locale: signupLocale } : {}),
+      },
+    },
+  ]);
+  return sent ? "sent" : "error";
+}
+
+/**
+ * Reservation purchase only. Uses the existing dataset/token and hashing
+ * helpers, but keeps a separate opt-in deployment flag and sanitized receipts.
+ * Existing Lead / EmailVerified / LeadVerified dispatchers are unchanged.
+ * The event id is chosen by the caller so it matches the browser Purchase.
+ */
+export function createMetaPurchaseSender(
+  env: Record<string, string | undefined> = process.env,
+  fetchImpl: typeof fetch = fetch,
+) {
+  const publicEnv = env === process.env ? buildTimeEnv() : {};
+  const pixelId = env.META_PIXEL_ID?.trim() ?? "";
+  const publicId = (env.VITE_META_PIXEL_ID ?? publicEnv.VITE_META_PIXEL_ID)?.trim();
+  const token = env.META_CAPI_ACCESS_TOKEN?.trim();
+  if (
+    env.WATCHDIVE_META_PURCHASE_ENABLED !== "true" ||
+    env.META_CAPI_ENABLED !== "true" ||
+    (env.VITE_META_TRACKING_ENABLED ?? publicEnv.VITE_META_TRACKING_ENABLED) !== "true" ||
+    !/^\d{10,20}$/.test(pixelId) ||
+    publicId !== pixelId ||
+    !token
+  )
+    return null;
+  return {
+    pixelId,
+    async send(input: {
+      email: string;
+      eventId: string;
+      sessionId: string;
+      occurredAt: number;
+    }): Promise<"accepted" | "uncertain" | "retry"> {
+      // Timestamp comes from the retrieved Stripe Charge, not this webhook's
+      // delivery time. Stale events are not re-dated to look like new sales.
+      if (!Number.isSafeInteger(input.occurredAt) || input.occurredAt <= 0) return "retry";
+      // A non-matching id would be a second Purchase. Refuse it without a retry
+      // loop: the caller skips before claiming when it cannot mint the shared id.
+      if (!isRetargetingEventId(input.eventId)) return "uncertain";
+      const data = [
+        {
+          event_name: "Purchase",
+          event_time: input.occurredAt,
+          event_id: input.eventId,
+          action_source: "website",
+          event_source_url: `${PUBLIC_ORIGIN}/reservation`,
+          user_data: hashedUserData({ email: input.email, eventId: input.eventId }, undefined),
+          custom_data: {
+            value: 3,
+            currency: "USD",
+            order_id: input.sessionId,
+            content_type: "product",
+            contents: [{ id: "watchdive_reservation_fee", quantity: 1, item_price: 3 }],
+          },
+        },
+      ];
+      try {
+        const response = await fetchImpl(`${GRAPH_URL}/${pixelId}/events`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data,
+            ...(env.META_CAPI_TEST_EVENT_CODE
+              ? { test_event_code: env.META_CAPI_TEST_EVENT_CODE }
+              : {}),
+          }),
+          signal: AbortSignal.timeout(META_REQUEST_TIMEOUT_MS),
+          redirect: "error",
+        });
+        const receipt = (await response.json().catch(() => null)) as {
+          events_received?: number;
+        } | null;
+        if (response.ok && receipt?.events_received === 1) return "accepted";
+        // Only a positive acknowledgement of zero received is a known-safe
+        // retry. Lost, malformed and error responses remain quarantined.
+        if (response.ok && receipt?.events_received === 0) return "retry";
+        return "uncertain";
+      } catch {
+        return "uncertain";
+      }
+    },
+  };
 }

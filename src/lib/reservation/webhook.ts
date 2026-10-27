@@ -33,6 +33,8 @@ import {
   type InspectedSession,
   type ReservationSnapshot,
 } from "./state.ts";
+import { noteStagePayment } from "../stageScore/observe.ts";
+import { refundsFromInspections, type PurchaseRefund } from "./measurement.server.ts";
 
 export const STRIPE_SIGNATURE_TOLERANCE_SECONDS = 300;
 
@@ -155,6 +157,35 @@ async function sessionForPaymentIntent(
   return sessions.find((session) => isOurProduct(session)) ?? sessions[0] ?? null;
 }
 
+async function sessionForChargeId(
+  stripe: StripeApi,
+  chargeId: string,
+): Promise<StripeCheckoutSession | null> {
+  if (!chargeId) return null;
+  const charge = await stripe.retrieveCharge(chargeId);
+  if (!charge.paymentIntentId) return null;
+  return sessionForPaymentIntent(stripe, charge.paymentIntentId);
+}
+
+/**
+ * `charge.refund.updated` and `refund.*` deliver a Refund (`re_`), whose
+ * `charge` is the charge id. Treating the refund id as a charge id drops the
+ * event. A Charge-shaped payload still resolves from its own id.
+ */
+async function sessionForRefundEvent(
+  stripe: StripeApi,
+  event: Record<string, unknown>,
+): Promise<StripeCheckoutSession | null> {
+  const objectIdValue = objectId(event);
+  const chargeId =
+    chargeIdFrom(objectString(event, "charge")) ||
+    (objectIdValue.startsWith("ch_") ? objectIdValue : "");
+  if (chargeId) return sessionForChargeId(stripe, chargeId);
+  const paymentIntentId = objectString(event, "payment_intent");
+  if (paymentIntentId.startsWith("pi_")) return sessionForPaymentIntent(stripe, paymentIntentId);
+  return null;
+}
+
 async function resolveSession(
   stripe: StripeApi,
   eventType: string,
@@ -172,32 +203,20 @@ async function resolveSession(
     return sessionForPaymentIntent(stripe, id);
   }
 
+  if (eventType === "charge.refund.updated" || eventType.startsWith("refund.")) {
+    return sessionForRefundEvent(stripe, event);
+  }
+
   if (eventType.startsWith("charge.dispute.")) {
     const chargeId = chargeIdFrom(objectString(event, "charge"));
     if (!chargeId) return null;
-    const charge = await stripe.retrieveCharge(chargeId);
-    if (!charge.paymentIntentId) return null;
-    return sessionForPaymentIntent(stripe, charge.paymentIntentId);
+    return sessionForChargeId(stripe, chargeId);
   }
 
   if (eventType.startsWith("charge.")) {
     const id = objectId(event);
     if (!id.startsWith("ch_")) return null;
-    const charge = await stripe.retrieveCharge(id);
-    if (!charge.paymentIntentId) return null;
-    return sessionForPaymentIntent(stripe, charge.paymentIntentId);
-  }
-
-  if (eventType.startsWith("refund.")) {
-    const chargeId = chargeIdFrom(objectString(event, "charge"));
-    const paymentIntentId = objectString(event, "payment_intent");
-    if (chargeId) {
-      const charge = await stripe.retrieveCharge(chargeId);
-      if (!charge.paymentIntentId) return null;
-      return sessionForPaymentIntent(stripe, charge.paymentIntentId);
-    }
-    if (paymentIntentId.startsWith("pi_")) return sessionForPaymentIntent(stripe, paymentIntentId);
-    return null;
+    return sessionForChargeId(stripe, id);
   }
 
   return null;
@@ -217,6 +236,23 @@ export async function processReservationWebhook(input: {
   stripe: StripeApi;
   nowMs: number;
   mirror?: ReservationPaymentMirror;
+  /**
+   * Optional legacy hook. Called only after a 200 acknowledgement,
+   * and a throw here does not change that acknowledgement.
+   * It must not post Purchase when the durable sender is enabled.
+   */
+  onPaidSnapshot?: (snapshot: ReservationSnapshot, email: string | null) => Promise<void>;
+  /**
+   * Durable purchase measurement. Runs before acknowledgement.
+   * `retry` refuses the ack so Stripe redelivers. `uncertain` is logged and
+   * still acknowledged; the claim stays. A throw is treated as retry.
+   */
+  measure?: (
+    email: string,
+    snapshot: ReservationSnapshot,
+    occurredAt: number | null,
+    refunds?: PurchaseRefund[],
+  ) => Promise<string>;
 }): Promise<WebhookResult> {
   const secret = input.config.webhookSecret;
   if (!secret) return { httpStatus: 503, body: { error: "reservation_misconfigured" } };
@@ -325,7 +361,51 @@ export async function processReservationWebhook(input: {
     rawEmail: string | null,
     inbox: string | null,
   ): Promise<WebhookResult> {
-    if (!input.mirror) return snapshotBody(id, snapshot);
+    const chosen = inspected.find(
+      (item) => "session" in item && item.session.id === snapshot.sessionId,
+    );
+    const finish = async (result: WebhookResult): Promise<WebhookResult> => {
+      if (
+        result.httpStatus === 200 &&
+        inbox &&
+        process.env.WATCHDIVE_STAGE_SCORE_INTEGRATION === "enabled"
+      ) {
+        await noteStagePayment({
+          email: rawEmail || inbox,
+          at: new Date(input.nowMs).toISOString(),
+          eventId: id,
+          livemode: input.config.livemode,
+          snapshot,
+        });
+      }
+      // Persist payment/CRM state first. Analytics outages must not leave a
+      // paid customer eligible for an unpaid-reservation email or audience.
+      if (result.httpStatus === 200 && input.measure && inbox) {
+        const delivery = await input
+          .measure(
+            inbox,
+            snapshot,
+            chosen?.kind === "paid" ? chosen.chargeCreated : null,
+            refundsFromInspections(inspected),
+          )
+          .catch(() => "retry");
+        if (delivery === "retry") {
+          return { httpStatus: 500, body: { error: "measurement_unavailable", retryable: true } };
+        }
+        if (delivery === "uncertain") {
+          console.warn("[reservation] measurement outcome uncertain; reconcile before retry");
+        }
+      }
+      if (result.httpStatus === 200 && input.onPaidSnapshot) {
+        try {
+          await input.onPaidSnapshot(snapshot, inbox);
+        } catch {
+          // Measurement never turns a paid acknowledgement into a retry.
+        }
+      }
+      return result;
+    };
+    if (!input.mirror) return finish(snapshotBody(id, snapshot));
     if (!rawEmail || !inbox) {
       if (reservationMirrorRequiresLead(snapshot)) {
         console.error("[reservation] webhook notion unaddressed");
@@ -333,9 +413,7 @@ export async function processReservationWebhook(input: {
       }
       return snapshotBody(id, snapshot);
     }
-    const chosen = inspected.find(
-      (item) => "session" in item && item.session.id === snapshot.sessionId,
-    );
+
     const mirrorInput: ReservationMirrorInput = {
       rawEmail,
       email: inbox,
@@ -352,8 +430,8 @@ export async function processReservationWebhook(input: {
     };
     try {
       const result = await input.mirror.apply(mirrorInput);
-      if ("skipped" in result) return snapshotBody(id, snapshot, { mirror: result.skipped });
-      return snapshotBody(id, snapshot, { mirror: "updated", pages: result.updated });
+      if ("skipped" in result) return finish(snapshotBody(id, snapshot, { mirror: result.skipped }));
+      return finish(snapshotBody(id, snapshot, { mirror: "updated", pages: result.updated }));
     } catch (error) {
       const reason = error instanceof NotionMirrorError ? error.reason : "delivery";
       console.error(`[reservation] webhook notion ${reason}`);

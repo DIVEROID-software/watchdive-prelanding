@@ -1,5 +1,5 @@
 import { absoluteWatchDivePath, WATCHDIVE_PUBLIC_ORIGIN } from "./publicOrigin.ts";
-import { SUPPORTED_LOCALES, homePath, privacyPath, termsPath, type Locale } from "./locale.ts";
+import { SUPPORTED_LOCALES, homePath, privacyPath, termsPath, localizePath, type Locale } from "./locale.ts";
 
 /**
  * Public crawl files for the production origin.
@@ -16,6 +16,8 @@ const PUBLIC_DOCUMENTS = [
   { pathFor: homePath },
   { pathFor: privacyPath },
   { pathFor: termsPath },
+  { pathFor: (locale: Locale) => localizePath('/freediving', locale) },
+  { pathFor: (locale: Locale) => localizePath('/scuba', locale) },
 ] as const;
 
 function xmlEscape(value: string): string {

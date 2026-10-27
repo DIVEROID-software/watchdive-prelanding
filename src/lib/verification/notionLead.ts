@@ -1,3 +1,4 @@
+import { COMPATIBILITY_NOTION_PROPERTY, prepareCompatibilityRequest, compatibilityNotionProperties } from "../compatibility/context.ts";
 // Notion projection for the verification flow, over the exact live columns.
 //
 // What is persisted is deliberately thin: an opaque `Lead ID` naming the
@@ -359,6 +360,10 @@ export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefi
     ...(isMetaFbc(metaFbc) ? { metaFbc } : {}),
     ...(hasUtm ? { utm } : {}),
     ...readSocialIdentity(properties),
+    ...(() => {
+      try { const context = prepareCompatibilityRequest(JSON.parse(readText(properties[COMPATIBILITY_NOTION_PROPERTY]) || 'null')); return context ? { compatibility: context } : {}; }
+      catch { return {}; }
+    })(),
     ...(pressOutbox ? { pressOutbox } : {}),
     ...(pressSync ? { pressSync } : {}),
   };
@@ -611,6 +616,10 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
   }
 
   return {
+    async recordCompatibility(pageId, context) {
+      // Required context only; no retry without it and no verification/profile writes.
+      await request("PATCH", `pages/${pageId}`, { properties: compatibilityNotionProperties(context) });
+    },
     async recordPhoneOptIn(pageId, phone, consent) {
       // Narrow PATCH: never change email status, attribution, dates, or measurement consent.
       await request("PATCH", `pages/${pageId}`, {
@@ -781,6 +790,7 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
               ...canonicalEmailProperties(input.canonical),
               ...(input.phone?.trim() ? { Phone: textProp(input.phone.trim()) } : {}),
               Source: { select: { name: input.source } },
+              ...(input.compatibility ? compatibilityNotionProperties(input.compatibility) : {}),
               ...(options.method && input.signupMethod
                 ? { [FIELD_SIGNUP_METHOD]: { select: { name: input.signupMethod } } }
                 : {}),

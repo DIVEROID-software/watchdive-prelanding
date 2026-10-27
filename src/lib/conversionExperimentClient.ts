@@ -1,6 +1,17 @@
 import { measurementAllowed } from "./consentRegion.ts";
 import { competitionRegistry } from "./competitionRegistry.ts";
-import type { ExperimentContext } from "./conversionExperimentContract.ts";
+import type { ExperimentContext, LegacyExperimentContext } from "./conversionExperimentContract.ts";
+
+import { segmentFromPathname } from "./segments/navigation.ts";
+import { localeFromPathname } from "./i18n/locale.ts";
+import {
+  SEGMENT_MEASUREMENT_ID,
+  SEGMENT_MEASUREMENT_STORAGE,
+  SEGMENT_LAYOUT_REVISION,
+  segmentContextSchema,
+  segmentSourceTuple,
+  emptySegmentPlacements,
+} from "./segments/measurementContract.ts";
 
 export const EXPERIMENT_ENABLED = import.meta.env?.VITE_CONVERSION_EXPERIMENT_ENABLED === "true";
 export const EXPERIMENT_STORAGE_KEY = "watchdive.form-first.variant.20261008";
@@ -9,7 +20,7 @@ const SESSION_SEEN_KEY = "watchdive.behavior-seen.v1";
 export const EXPERIMENT_CHANGED = "watchdive:experiment-ready";
 export const FUNNEL_CHANGED = "watchdive:funnel-milestone";
 const EXPERIMENT_ID = "wd-form-first-20261008" as const;
-type Variant = ExperimentContext["variant"];
+type Variant = LegacyExperimentContext["variant"];
 
 declare global {
   interface Window {
@@ -83,6 +94,8 @@ let context: ExperimentContext | undefined;
 let revoked = false;
 let enrollmentClosed = false;
 const SESSION_CONTEXT_KEY = "watchdive.form-first.session.20261008";
+const SEGMENT_BASE_SESSION_KEY = `${SEGMENT_MEASUREMENT_STORAGE}.base`;
+let placements = emptySegmentPlacements();
 const funnel = { exposed: false, formVisible: false, formFocused: false, submitAttempted: false };
 
 export function currentLandingVariant(): Variant {
@@ -93,16 +106,83 @@ export function currentLandingVariant(): Variant {
     : "control";
 }
 
-export function initializeConversionExperiment(): void {
-  if (!EXPERIMENT_ENABLED || typeof window === "undefined" || !window.__wdLandingVariant) return;
+export function initializeConversionExperiment(enabled = EXPERIMENT_ENABLED): void {
+  if (!enabled || typeof window === "undefined") return;
+  const segment = segmentFromPathname(location.pathname);
+  if (!segment && !window.__wdLandingVariant) return;
   if (!measurementAllowed()) return;
-  if (context || revoked || enrollmentClosed) return;
+  if (revoked || enrollmentClosed) return;
+  // SPA transitions may switch instruments, but never mix their stored contexts.
+  if (context && (context.experimentId === SEGMENT_MEASUREMENT_ID) !== Boolean(segment)) {
+    context = undefined;
+    Object.assign(funnel, {
+      exposed: false,
+      formVisible: false,
+      formFocused: false,
+      submitAttempted: false,
+    });
+    placements = emptySegmentPlacements();
+  }
+  if (context) {
+    if (
+      context.experimentId === SEGMENT_MEASUREMENT_ID &&
+      segment !== context.entrySegment &&
+      !placements.crossedSegment
+    ) {
+      placements.crossedSegment = true;
+      window.dispatchEvent(new Event(FUNNEL_CHANGED));
+    }
+    return;
+  }
   // Opening a background tab is not an exposure. Begin the observation
   // window only when the visitor can actually see this document.
   if (document.visibilityState === "hidden") return;
   const qa = window.__wdLandingQa === true || location.hostname !== "watchdive.diveroid.com";
   const variant = currentLandingVariant();
   const now = Date.now();
+  if (segment) {
+    // A separate row identity prevents the existing session-keyed Notion updater
+    // from overwriting a legacy summary after an in-tab route transition.
+    const baseSessionId = behaviorSessionId();
+    const sessionId = crypto.randomUUID();
+    const candidate = segmentContextSchema.parse({
+      experimentId: SEGMENT_MEASUREMENT_ID,
+      variant: "segmented",
+      team: experimentTeam(location.search),
+      sessionId,
+      assignedAt: now,
+      qa,
+      entrySegment: segment,
+      layoutRevision: SEGMENT_LAYOUT_REVISION,
+      locale: localeFromPathname(location.pathname),
+      device: window.innerWidth < 768 ? "phone" : window.innerWidth < 1024 ? "tablet" : "desktop",
+      attribution: segmentSourceTuple(location.search),
+    });
+    context = candidate;
+    if (!qa) {
+      try {
+        const saved = segmentContextSchema.safeParse(
+          JSON.parse(sessionStorage.getItem(SEGMENT_MEASUREMENT_STORAGE) ?? "null"),
+        );
+        if (
+          saved.success &&
+          !saved.data.qa &&
+          sessionStorage.getItem(SEGMENT_BASE_SESSION_KEY) === baseSessionId &&
+          saved.data.assignedAt <= now &&
+          saved.data.assignedAt > now - 86400_000
+        )
+          context = saved.data;
+        sessionStorage.setItem(SEGMENT_MEASUREMENT_STORAGE, JSON.stringify(context));
+        sessionStorage.setItem(SEGMENT_BASE_SESSION_KEY, baseSessionId);
+      } catch {
+        /* Optional storage never blocks signup. */
+      }
+    }
+    placements.crossedSegment = context.entrySegment !== segment;
+    funnel.exposed = true;
+    window.dispatchEvent(new Event(EXPERIMENT_CHANGED));
+    return;
+  }
   if (!qa) {
     try {
       localStorage.setItem(
@@ -135,7 +215,7 @@ export function initializeConversionExperiment(): void {
         old.assignedAt > now - 86400_000 &&
         ["A", "B", "C", "D", "E", "organic"].includes(old.team)
       )
-        context = old as ExperimentContext;
+        context = old as LegacyExperimentContext;
       sessionStorage.setItem(SESSION_CONTEXT_KEY, JSON.stringify(context));
     } catch {
       /* Restricted browser: use this page's assignment. */
@@ -157,6 +237,8 @@ export function revokeConversionExperiment(): void {
   }
   try {
     sessionStorage.removeItem(SESSION_CONTEXT_KEY);
+    sessionStorage.removeItem(SEGMENT_MEASUREMENT_STORAGE);
+    sessionStorage.removeItem(SEGMENT_BASE_SESSION_KEY);
     sessionStorage.removeItem(BEHAVIOR_SESSION_KEY);
     sessionStorage.removeItem(SESSION_SEEN_KEY);
     ephemeralSession = undefined;
@@ -178,12 +260,32 @@ export function closeExperimentEnrollmentOnSubmit(): void {
 
 export function markConversionMilestone(
   name: "formVisible" | "formFocused" | "submitAttempted",
+  source?: "hero" | "offer",
 ): void {
-  if (!getConversionExperiment() || funnel[name]) return;
+  const active = getConversionExperiment();
+  if (!active) return;
+  if (active.experimentId === SEGMENT_MEASUREMENT_ID) {
+    // Unknown physical placement is not silently assigned to either form.
+    if (!source) return;
+    const placement = source === "hero" ? "middle" : "bottom";
+    if (placements[placement][name]) return;
+    placements[placement][name] = true;
+  } else if (funnel[name]) return;
   funnel[name] = true;
   window.dispatchEvent(new Event(FUNNEL_CHANGED));
 }
 
 export function getConversionFunnel() {
-  return { ...funnel };
+  return {
+    ...funnel,
+    ...(context?.experimentId === SEGMENT_MEASUREMENT_ID
+      ? {
+          placements: {
+            middle: { ...placements.middle },
+            bottom: { ...placements.bottom },
+            crossedSegment: placements.crossedSegment,
+          },
+        }
+      : {}),
+  };
 }

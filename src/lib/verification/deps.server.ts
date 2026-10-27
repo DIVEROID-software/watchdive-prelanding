@@ -1,12 +1,17 @@
+import { createMetaPurchases } from "../analytics/metaPurchases.server.ts";
 // Server-only assembly of the verification dependencies.
 //
 // Named `.server.ts` and imported solely from server functions, so the Resend
 // and Notion credentials have no path into a client bundle.
+import { createGoogleConversions } from "../analytics/googleConversions.server.ts";
 import {
-  deliverMetaLead,
   sendMetaCrmQualifiedLead,
   sendMetaEmailVerified,
 } from "@/lib/api/metaCapi";
+import {
+  deliverRetargetingLead,
+  deliverRetargetingRegistration,
+} from "@/lib/retargeting/capi.ts";
 import type { PollResponse } from "./contracts.ts";
 import { createDeliveryAlerter, createSlackPoster } from "./deliveryAlert.ts";
 import { createNotionLeadStore, createNotionRequest } from "./notionLead.ts";
@@ -39,8 +44,31 @@ export function createServiceDependencies(
   const databaseId = process.env.NOTION_WAITLIST_DB_ID;
   if (!databaseId) throw new Error("NOTION_WAITLIST_DB_ID is not set");
   const notionRequest = createNotionRequest();
+  const google = createGoogleConversions();
+  const metaPurchases = createMetaPurchases();
   return {
     store: createNotionLeadStore(notionRequest, databaseId),
+    captureGoogleContext: google.capture,
+    forgetGoogleContext: async (email) => {
+      // Attempt both even if one store operation fails. Persisted Notion refusal
+      // independently prevents either sink from dispatching afterwards.
+      const results = await Promise.allSettled([google.forget(email), metaPurchases.forget(email)]);
+      if (results.some((result) => result.status === "rejected"))
+        throw new Error("conversion_context_withdrawal_incomplete");
+    },
+    dispatchGoogleVerified: async (row, allowed) => {
+      const result = await google.send(
+        row.email,
+        {
+          name: "sign_up",
+          key: row.pageId,
+          params: { method: row.signupMethod ?? "email" },
+        },
+        allowed,
+      );
+      if (result === "retry" || result === "uncertain")
+        console.warn(`[ga4] verified signup delivery ${result}`);
+    },
     mailer: createResendMailer(),
     resolveWelcomeShareCode: async (refCode) => {
       const [{ referralServiceDeps }, { getMyShareCodeService }] = await Promise.all([
@@ -66,13 +94,16 @@ export function createServiceDependencies(
       await sendMetaCrmQualifiedLead(event);
       return sent;
     },
-    // The submit Lead: for a brand-new consented signup, and for a re-submit
-    // that newly allows measurement, under the browser pixel's id; when
-    // allowed later (inbox card, confirmation page), server-only under the
-    // row-derived id.
-    dispatchSubmitLead: async (input) => {
-      // Acknowledged only when Meta took it; anything else stays pending.
-      return (await deliverMetaLead({ ...input, ...client })) === "sent";
+    // Historical submit Lead stopped in the same edit as the durable Lead.
+    // Kept so an older caller cannot revive deliverMetaLead from this assembly.
+    dispatchSubmitLead: async () => false,
+    dispatchDurableMeasurement: async (input) => {
+      const payload = { ...input, ...client };
+      if (input.plan.browser?.eventName === "CompleteRegistration") {
+        await deliverRetargetingRegistration(payload);
+        return;
+      }
+      await deliverRetargetingLead(payload);
     },
   };
 }

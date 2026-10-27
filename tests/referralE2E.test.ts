@@ -102,12 +102,12 @@ const MIN = 60 * 1000;
 const LEGACY_ROWS = 230;
 const SENDER_PHONE = "+82 10-6517-6232";
 
-// sha256 of the request body createResendMailer().sendWelcome produced at
-// b364429 (before any Buddy Invite mail work) for exactly A's welcome:
-// en, to diver@example.com, code abc12345, lead A_LEAD, origin ORIGIN,
-// scheduled 2026-08-02T00:00:00.000Z, BASE_ENV sender. Recomputed from that
-// commit's resend.ts on 2026-10-22 (git archive b364429 src).
-const LEGACY_A_WELCOME_SHA256 = "c3e162e1e3fe07d83edc7122fe620d5bb4f6b965d195df7c50b4002903586253";
+// sha256 of the request body createResendMailer().sendWelcome produces for
+// exactly A's welcome while the program switch is off: en, diver@example.com,
+// code abc12345, lead A_LEAD, origin ORIGIN, scheduled 2026-08-02T00:00:00.000Z.
+// The 2026-10-26 brutalism pass replaced the visual HTML. Subject, plain text,
+// the single share link and the idempotency key stay.
+const LEGACY_A_WELCOME_SHA256 = "8acea47b86b2a6daec63621d41ecc5cebb5e95ff2a69e62c0c85ed3dfb3be103";
 
 const BASE_ENV = {
   NOTION_API_KEY: "secret_fake_notion_key",
@@ -361,8 +361,11 @@ function assertNoPii(
   options: { refCodes?: string[] } = {},
 ) {
   // The sender's own published contact address is required in every mail
-  // footer (opt-out and Korean advertising rules); email CSS may contain @media but no other address.
-  const text = JSON.stringify(value).replaceAll("help@diveroid.com", "");
+  // footer (opt-out and Korean advertising rules); email CSS may contain @media.
+  // The official logo filename is watchdive-primary@1x.png. That @ is not an address.
+  const text = JSON.stringify(value)
+    .replaceAll("help@diveroid.com", "")
+    .replaceAll("watchdive-primary@1x.png", "watchdive-primary-1x.png");
   assert.equal(text.replaceAll("@media", "").includes("@"), false, `${label}: no address in ${text}`);
   for (const email of s.participants)
     assert.equal(text.includes(email), false, `${label}: no ${email}`);
@@ -392,10 +395,9 @@ function assertBuddyOptOut(m: ResendMessage): string {
   return match[1];
 }
 
-/** Korean reader: "(광고)" subject, Korean sender block with the phone, Korean opt-out line. */
-function assertKoreanAdMail(m: ResendMessage): string {
+/** Korean sender block, phone and opt-out. The subject prefix is a separate check. */
+function assertKoreanSender(m: ResendMessage): string {
   const link = assertBuddyOptOut(m);
-  assert.ok((m.body.subject as string).startsWith("(광고) "), m.body.subject);
   assert.equal(KR_AD_SUBJECT_PREFIX, "(광고) ");
   assert.ok(
     (m.body.text as string).includes(
@@ -408,6 +410,22 @@ function assertKoreanAdMail(m: ResendMessage): string {
   assert.ok(
     (m.body.html as string).includes(`<span style="white-space:nowrap;">${SENDER_PHONE}</span>`),
   );
+  return link;
+}
+
+/** Korean marketing mail: "(광고)" subject plus the sender block. */
+function assertKoreanAdMail(m: ResendMessage): string {
+  const link = assertKoreanSender(m);
+  assert.ok((m.body.subject as string).startsWith("(광고) "), m.body.subject);
+  return link;
+}
+
+/** Korean buddy-joined status notice: same sender and opt-out, no subject prefix. */
+function assertKoreanStatusNotice(m: ResendMessage, count: number): string {
+  const link = assertKoreanSender(m);
+  assert.equal(m.body.subject, `내 링크로 버디가 참여했어요 (지금까지 ${count}명)`);
+  assert.equal((m.body.subject as string).includes("(광고)"), false);
+  assert.equal((m.body.text as string).includes("/r/"), false);
   return link;
 }
 
@@ -690,7 +708,7 @@ async function runStory(on: boolean) {
     const toB = notices().filter((m) => m.body.to.includes(bEmail));
     assert.equal(toB.length, 1);
     assert.equal(toB[0].idempotencyKey, `${REFERRAL_PROGRAM_ID}-notice-${bCode}-1`);
-    // B's notice is the Korean one, byte for byte: "(광고)" subject, Korean
+    // B's notice is the Korean status mail: no "(광고)" subject, Korean
     // sender block with the phone, Korean opt-out line.
     const bStatusUrl = /https:\/\/\S+?\/ko\/buddy#[a-z0-9]{8}\.1\.[A-Za-z0-9_-]{24}/.exec(
       toB[0].body.text,
@@ -711,7 +729,7 @@ async function runStory(on: boolean) {
         footerFor(bLead, "ko"),
       ),
     );
-    assertKoreanAdMail(toB[0], bLead);
+    assertKoreanStatusNotice(toB[0], 1);
     assertNotKoreanAdMail(notice);
     for (const m of notices()) {
       assertNoPii(

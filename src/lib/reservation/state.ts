@@ -58,6 +58,11 @@ export type ReservationSnapshot = {
   duplicatePaid: boolean;
   leadId: string | null;
   source: "stripe";
+  /**
+   * Charge.created seconds for a clean paid snapshot. Absent on every other status.
+   * Not copied onto the public status JSON.
+   */
+  paidAtSeconds?: number | null;
 };
 
 export type RefundState = "none" | "partial" | "full" | "pending";
@@ -80,7 +85,18 @@ export type InspectedSession =
       amountRefundPending: number;
       refundState: RefundState;
       dispute: DisputeState;
+      /**
+       * Succeeded Stripe refunds on this charge. Absent on hand-built fixtures.
+       * Pending, failed, and canceled refunds are not included.
+       */
+      succeededRefunds?: SettledRefund[];
     };
+
+export type SettledRefund = {
+  id: string;
+  amount: number;
+  currency: string;
+};
 
 const EMPTY: ReservationSnapshot = {
   status: "unpaid",
@@ -157,6 +173,18 @@ export function lineItemsMatch(items: StripeLineItem[]): boolean {
     item.unitAmount === RESERVATION_FEE_CENTS &&
     item.recurring === false
   );
+}
+
+/** Individual succeeded refunds. Callers must not invent one from a cumulative total. */
+export function succeededRefundRecords(refunds: StripeRefund[]): SettledRefund[] {
+  const settled: SettledRefund[] = [];
+  for (const refund of refunds) {
+    if (refund.status !== "succeeded") continue;
+    if (!Number.isSafeInteger(refund.amount) || refund.amount <= 0) continue;
+    if (!refund.id.startsWith("re_")) continue;
+    settled.push({ id: refund.id, amount: refund.amount, currency: refund.currency });
+  }
+  return settled.sort((a, b) => a.id.localeCompare(b.id));
 }
 
 export function refundStateOf(
@@ -246,6 +274,7 @@ export function aggregateInspections(items: InspectedSession[]): ReservationSnap
       amountRefunded: 0,
       amountRefundPending: 0,
       duplicatePaid,
+      paidAtSeconds: firstClean.chargeCreated,
     });
   }
 
@@ -341,6 +370,7 @@ export async function inspectSession(
     amountRefundPending: refund.pending,
     refundState: refund.state,
     dispute: disputeStateOf(charge, disputes),
+    succeededRefunds: succeededRefundRecords(refunds),
   };
 }
 
@@ -356,6 +386,24 @@ export async function inspectSessions(
     inspected.push(await inspectSession(stripe, session, livemode, nowMs, emailSha256));
   }
   return inspected;
+}
+
+/**
+ * The $149 guarantee applies only while Stripe still shows one clean contract
+ * payment. Refunded, partial, pending, disputed, and invalid snapshots are
+ * not eligible. Metadata on a refunded session is not eligibility.
+ * `duplicatePaid` stays a separate warning: two clean fees are still a paid
+ * contract, so eligibility remains.
+ */
+export function isPriceGuaranteeEligible(snapshot: ReservationSnapshot): boolean {
+  return (
+    snapshot.status === "paid" &&
+    snapshot.paid === true &&
+    snapshot.amountRefunded === 0 &&
+    snapshot.amountRefundPending === 0 &&
+    snapshot.amountTotal === RESERVATION_FEE_CENTS &&
+    snapshot.currency === RESERVATION_CURRENCY
+  );
 }
 
 export function blockingError(

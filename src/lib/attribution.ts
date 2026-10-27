@@ -8,7 +8,7 @@
 // the submit, which is why signups have been landing with no campaign at all.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
-import { normalizeCountry } from "./consentRegion.ts";
+import { normalizeCountry, measurementAllowed } from "./consentRegion.ts";
 import type { LeadAttribution } from "./verification/contracts.ts";
 import {
   SIGNUP_COUNTRY_SOURCE_UNKNOWN,
@@ -100,6 +100,40 @@ const CAMPAIGN_KEYS = [
 ] as const;
 
 const CLICK_ID_KEYS = ["fbclid", "gclid", "gbraid", "wbraid", "ttclid"] as const;
+
+export function withoutClickIds(value: Attribution): Attribution {
+  const clean = { ...value };
+  for (const key of CLICK_ID_KEYS) delete clean[key];
+  delete clean.capturedAt;
+  return clean;
+}
+
+/** Purge only our click identifiers, including retired competition rounds. */
+export function clearStoredClickIds(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const storage = window.localStorage;
+    for (const key of Object.keys(storage)) {
+      if (key !== STORAGE_KEY && !key.startsWith("wd_competition_attr_v1:")) continue;
+      try {
+        const raw = JSON.parse(storage.getItem(key) ?? "null");
+        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+          storage.removeItem(key);
+          continue;
+        }
+        const clean =
+          key === STORAGE_KEY
+            ? withoutClickIds(raw)
+            : { ...raw, attribution: withoutClickIds(raw.attribution ?? {}) };
+        storage.setItem(key, JSON.stringify(clean));
+      } catch {
+        storage.removeItem(key);
+      }
+    }
+  } catch {
+    /* Storage unavailable; getAttribution still returns no click IDs. */
+  }
+}
 
 export function hasCampaignSignal(attribution: Attribution | undefined): boolean {
   return Boolean(attribution && CAMPAIGN_KEYS.some((key) => attribution[key]));
@@ -232,7 +266,10 @@ export function getAttribution(
 ): Attribution {
   if (typeof window === "undefined") return {};
   const now = Date.now();
-  const incoming = readAttribution(window.location.search, window.location.pathname, now);
+  const allowed = measurementAllowed();
+  if (!allowed) clearStoredClickIds();
+  const rawIncoming = readAttribution(window.location.search, window.location.pathname, now);
+  const incoming = allowed ? rawIncoming : withoutClickIds(rawIncoming);
   const params = new URLSearchParams(window.location.search);
   // Repeated tuple keys are ambiguous, rather than a choice of first/last value.
   const tupleValue = (key: string) =>
@@ -249,7 +286,8 @@ export function getAttribution(
     /* Restricted webview. */
   }
   const scoped = resolveCompetitionAttribution({ incoming, rawTuple, now, registry, storage });
-  if (scoped.kind === "competition") return sanitizeAttribution(scoped.attribution);
+  if (scoped.kind === "competition")
+    return sanitizeAttribution(allowed ? scoped.attribution : withoutClickIds(scoped.attribution));
   if (scoped.kind === "rejected" || isCompetitionAttempt(incoming, registry)) {
     return sanitizeAttribution({ landingPath: incoming.landingPath });
   }
@@ -260,7 +298,7 @@ export function getAttribution(
       : undefined;
     // Never resurrect a competition tuple from the unbounded legacy key.
     const legacy = stored && !isCompetitionAttempt(stored, registry) ? stored : undefined;
-    const merged = mergeAttribution(legacy, incoming);
+    const merged = mergeAttribution(allowed ? legacy : legacy && withoutClickIds(legacy), incoming);
     storage?.setItem(STORAGE_KEY, JSON.stringify(merged));
     return merged;
   } catch {

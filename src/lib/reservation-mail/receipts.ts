@@ -17,6 +17,7 @@ import {
   withinIdempotencyWindow,
   type FailureClass,
 } from "./campaign.ts";
+import { isReservationEmailSegment, type ReservationEmailSegment } from "./segment.ts";
 
 export type ReceiptState = "intent" | "accepted" | "failed" | "unresolved";
 
@@ -29,6 +30,12 @@ export type ReceiptRecord = {
   firstIntentAt: string;
   notion: "pending" | "ok" | "failed";
   failureClass?: FailureClass;
+  /**
+   * Segment frozen at the first intent of this campaign and lead. Absent on
+   * receipts written before segment routing. Not a message body and not a
+   * path: a resume uses this value so a later path edit cannot change bytes.
+   */
+  segment?: ReservationEmailSegment;
 };
 
 export type ResolvedReceipt = {
@@ -36,6 +43,8 @@ export type ResolvedReceipt = {
   firstIntentAt: string;
   notion: "pending" | "ok" | "failed";
   failureClass?: FailureClass;
+  /** Present only when the first receipt line for this lead recorded one. */
+  segment?: ReservationEmailSegment;
 };
 
 export type Ledger = {
@@ -95,8 +104,17 @@ function isRecord(value: unknown): value is ReceiptRecord {
     !Number.isNaN(Date.parse(record.at)) &&
     typeof record.firstIntentAt === "string" &&
     !Number.isNaN(Date.parse(record.firstIntentAt)) &&
-    (record.notion === "pending" || record.notion === "ok" || record.notion === "failed")
+    (record.notion === "pending" || record.notion === "ok" || record.notion === "failed") &&
+    segmentFieldValid(record)
   );
+}
+
+/** Missing segment is a legacy line. A present value must be one of the three. */
+function segmentFieldValid(record: ReceiptRecord): boolean {
+  if (!Object.prototype.hasOwnProperty.call(record, "segment") || record.segment === undefined) {
+    return true;
+  }
+  return isReservationEmailSegment(record.segment);
 }
 
 export function emptyLedger(): Ledger {
@@ -135,11 +153,15 @@ export function applyReceiptLine(ledger: Ledger, line: string): void {
   const firstIntentAt = previous
     ? earlier(previous.firstIntentAt, parsed.firstIntentAt)
     : parsed.firstIntentAt;
+  // The first line wins. A later line cannot add or replace a segment, so a
+  // legacy intent stays unsegmented and a frozen intent cannot be rewritten.
+  const segment = previous ? previous.segment : parsed.segment;
   ledger.byLead.set(parsed.leadId.toLowerCase(), {
     state: parsed.state,
     firstIntentAt,
     notion: parsed.notion,
     ...(parsed.failureClass ? { failureClass: parsed.failureClass } : {}),
+    ...(segment ? { segment } : {}),
   });
 }
 

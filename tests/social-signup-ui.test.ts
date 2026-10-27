@@ -366,7 +366,7 @@ async function loadRenderedModule(): Promise<RenderedModule> {
   return import(pathToFileURL(output).href) as Promise<RenderedModule>;
 }
 
-test("static React markup covers locales, states, and the Instagram fallback", async () => {
+test("static React markup covers locales and hides unsupported Google without a warning", async () => {
   const ui = await loadRenderedModule();
   try {
     for (const locale of SUPPORTED_LOCALES) {
@@ -420,9 +420,9 @@ test("static React markup covers locales, states, and the Instagram fallback", a
     const blockedBody = markup(blocked);
     assert.equal(blockedBody.includes('data-wd-provider="google"'), false);
     assert.equal(blockedBody.includes('data-wd-provider="apple"'), true);
-    assert.equal(blockedBody.includes('data-wd-social-fallback="instagram"'), true);
-    assert.match(blockedBody, /does not open that browser/);
-    assert.equal(blockedBody.includes("Continue with Google"), true);
+    assert.equal(blockedBody.includes('data-wd-social-fallback='), false);
+    assert.equal(blockedBody.includes("does not open that browser"), false);
+    assert.equal(blockedBody.includes("Continue with Google"), false);
 
     const inApp = renderToStaticMarkup(
       createElement(ui.SocialSignupButtonGroup, {
@@ -431,10 +431,16 @@ test("static React markup covers locales, states, and the Instagram fallback", a
       }),
     );
     const inAppBody = markup(inApp);
-    assert.equal(inAppBody.includes('data-wd-social-fallback="in-app"'), true);
-    assert.equal(inAppBody.includes("Weiter mit Google"), true);
+    assert.equal(inAppBody.includes('data-wd-social-fallback='), false);
+    assert.equal(inAppBody.includes("Weiter mit Google"), false);
     assert.equal(inAppBody.includes('data-wd-provider="google"'), false);
     assert.equal(inAppBody.includes("Mit Apple fortfahren"), true);
+
+    const blockedOnly = renderToStaticMarkup(createElement(ui.SocialSignupButtonGroup, {
+      ...props({ enabledProviders: { google: true, apple: false } }),
+      embedded: classifyEmbeddedBrowser(INSTAGRAM),
+    }));
+    assert.equal(blockedOnly, "");
 
     const loading = renderToStaticMarkup(
       createElement(ui.SocialSignupButtonGroup, {

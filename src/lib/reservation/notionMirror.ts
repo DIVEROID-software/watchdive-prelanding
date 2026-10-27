@@ -277,6 +277,56 @@ async function loadPages(
   throw new NotionMirrorError("truncated");
 }
 
+export type ReservationNotionView = {
+  status: string | null;
+  paid: boolean | null;
+  sessionId: string | null;
+  refundedCents: number | null;
+  refundPendingCents: number | null;
+  mode: string | null;
+  duplicatePaid: boolean | null;
+};
+
+function richTextValue(property: unknown): string {
+  const parts = (property as { rich_text?: { plain_text?: string }[] } | undefined)?.rich_text;
+  if (!Array.isArray(parts)) return "";
+  return parts.map((part) => part.plain_text ?? "").join("");
+}
+
+function selectValue(property: unknown): string | null {
+  const name = (property as { select?: { name?: unknown } | null } | undefined)?.select?.name;
+  return typeof name === "string" ? name : null;
+}
+
+function checkboxValue(property: unknown): boolean | null {
+  const value = (property as { checkbox?: unknown } | undefined)?.checkbox;
+  return typeof value === "boolean" ? value : null;
+}
+
+function numberValue(property: unknown): number | null {
+  const value = (property as { number?: unknown } | undefined)?.number;
+  return typeof value === "number" ? value : null;
+}
+
+/** Reads one column set. Does not include the page id or the email title. */
+export function readReservationNotionView(
+  page: NotionPage,
+  mode: ReservationMirrorMode,
+): ReservationNotionView {
+  const fields = reservationNotionFields(mode);
+  const properties = page.properties ?? {};
+  const sessionId = richTextValue(properties[fields.sessionId]);
+  return {
+    status: selectValue(properties[fields.status]),
+    paid: checkboxValue(properties[fields.paid]),
+    sessionId: sessionId.length > 0 ? sessionId : null,
+    refundedCents: numberValue(properties[fields.refundedCents]),
+    refundPendingCents: numberValue(properties[fields.refundPendingCents]),
+    mode: selectValue(properties[fields.mode]),
+    duplicatePaid: checkboxValue(properties[fields.duplicatePaid]),
+  };
+}
+
 function pagesToUpdate(pages: NotionPage[], rawEmail: string, email: string): NotionPage[] {
   const exact = pages.filter((page) => {
     const title = pageTitle(page);
@@ -325,6 +375,24 @@ export function createReservationNotionMirror(input: {
       return { updated: targets.length };
     },
   };
+}
+
+/**
+ * Read-only lead lookup used by the dry-run reconciler. It uses the same
+ * title and canonical filters as the webhook mirror and does not PATCH.
+ */
+export async function lookupReservationMirrorLeads(input: {
+  request: NotionRequest;
+  databaseId: string;
+  rawEmail: string;
+  email: string;
+  mode: ReservationMirrorMode;
+}): Promise<ReservationNotionView[]> {
+  const clauses = filterClauses(input.rawEmail, input.email);
+  const pages = await loadPages(input.request, input.databaseId, clauses);
+  return pagesToUpdate(pages, input.rawEmail, input.email)
+    .filter((page) => typeof page.id === "string" && page.id.length > 0)
+    .map((page) => readReservationNotionView(page, input.mode));
 }
 
 export function unavailableReservationMirror(): ReservationPaymentMirror {

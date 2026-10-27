@@ -1,3 +1,5 @@
+import { isLandingSegment, segmentPath, type LandingSegment } from "../segments/navigation.ts";
+import { validGoogleClientId } from "../analytics/contract.ts";
 import { socialAckCookie } from "../socialAuthAcknowledgement.ts";
 // HTTP entry points for Google and Apple signup.
 // Routes stay thin. This module does not import the server-only dependency
@@ -10,9 +12,16 @@ import { sanitizePressRef } from "../press/pressAttribution.server.ts";
 import { experimentContextSchema } from "../conversionExperimentContract.ts";
 import { homePath, isLocale, type Locale } from "../i18n/locale.ts";
 import type { ServiceDependencies } from "../verification/service.ts";
-import { networkKey } from "../verification/token.ts";
+import { networkKey, requireSecret } from "../verification/token.ts";
 import { classifyEmbeddedBrowser } from "../socialSignupCopy.ts";
-import { completeSocialIdentity, type SocialFinish } from "./complete.ts";
+import { retargetingReceiptSetCookie } from "../retargeting/receipt.ts";
+import { completeSocialIdentity, type SocialContinuationSink, type SocialFinish } from "./complete.ts";
+import { validSubject } from "./claims.ts";
+import {
+  clearSocialContinuationCookie,
+  exchangeSocialContinuation,
+  issueSocialContinuationCookie,
+} from "./continuation.ts";
 import {
   appleClient,
   googleClient,
@@ -63,10 +72,16 @@ function browserPostAllowed(request: Request, origin: string): boolean {
   return site === "same-origin" || site === "none";
 }
 
-function finishUrl(origin: string, locale: Locale, auth: SocialFinish | "open-browser"): string {
-  const url = new URL(homePath(locale), origin);
+function finishUrl(
+  origin: string,
+  locale: Locale,
+  auth: SocialFinish | "open-browser",
+  segment?: LandingSegment,
+  source?: SocialState["source"],
+): string {
+  const url = new URL(segment ? segmentPath(segment, locale) : homePath(locale), origin);
   url.search = "";
-  url.hash = "";
+  url.hash = segment && source ? (source === "hero" ? "signup-middle" : "signup-bottom") : "";
   url.searchParams.set("auth", auth);
   return url.toString();
 }
@@ -81,11 +96,18 @@ function redirectFinish(
   origin: string,
   locale: Locale,
   auth: SocialFinish | "open-browser",
+  segment?: LandingSegment,
+  source?: SocialState["source"],
+  continuation?: string,
+  receipt?: string,
 ): Response {
   const headers = noStore(new Headers());
-  headers.set("Location", finishUrl(origin, locale, auth));
+  headers.set("Location", finishUrl(origin, locale, auth, segment, source));
   headers.append("Set-Cookie", clearSocialStateCookie());
   headers.append("Set-Cookie", socialAckCookie(auth === "confirmed"));
+  // A confirmed presentation without a bound verified lead clears any older grant.
+  headers.append("Set-Cookie", continuation ?? clearSocialContinuationCookie());
+  if (receipt) headers.append("Set-Cookie", receipt);
   return new Response(null, { status: 303, headers });
 }
 
@@ -148,6 +170,8 @@ export async function handleSocialStart(
   const provider = body.provider === "google" || body.provider === "apple" ? body.provider : undefined;
   const source = body.source === "hero" || body.source === "offer" ? body.source : undefined;
   if (!provider || !source || !isLocale(body.locale)) return json({ error: "body" }, 400);
+  // Reject malformed context; never accept a free-form return URL.
+  if (body.segment !== undefined && !isLandingSegment(body.segment)) return json({ error: "body" }, 400);
   if (!providerConfigured(env, provider)) return json({ error: "disabled" }, 404);
 
   const userAgent = request.headers.get("user-agent");
@@ -186,12 +210,16 @@ export async function handleSocialStart(
       provider,
       source,
       locale: body.locale,
+      ...(isLandingSegment(body.segment) ? { segment: body.segment } : {}),
       origin,
       attribution: {
         ...toLeadAttribution(sanitized),
-        ...(sanitized.fbclid ? { fbclid: sanitized.fbclid } : {}),
+        ...(measurementConsent && sanitized.fbclid ? { fbclid: sanitized.fbclid } : {}),
       },
       measurementConsent,
+      ...(measurementConsent && validGoogleClientId(body.googleClientId)
+        ? { googleClientId: body.googleClientId }
+        : {}),
       ...(measurementConsent && experiment.success ? { experiment: experiment.data } : {}),
       country: readSignupCountryProbe({
         vercelEnv: env.VERCEL,
@@ -261,23 +289,23 @@ async function finishCallback(
   const now = (dependencies.now ?? (() => new Date()))();
   const bound = readBound(request, env, provider, now.getTime());
   if (!bound || !oauth || bound.state !== oauth) {
-    return bound ? redirectFinish(bound.origin, bound.locale, "error") : plainReject();
+    return bound ? redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source) : plainReject();
   }
   if (!consumeJti(bound.jti, bound.exp * 1000, now.getTime())) {
-    return redirectFinish(bound.origin, bound.locale, "error");
+    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
   }
   if (providerError === "disallowed_useragent" || (provider === "google" && isInAppBrowser(request.headers.get("user-agent")))) {
-    return redirectFinish(bound.origin, bound.locale, "open-browser");
+    return redirectFinish(bound.origin, bound.locale, "open-browser", bound.segment, bound.source);
   }
   if (providerError || !code || !providerConfigured(env, provider) || isHeadlessUA(request.headers.get("user-agent"))) {
-    return redirectFinish(bound.origin, bound.locale, "error");
+    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
   }
   const secret = socialAuthSecret(env);
   const gate = dependencies.networkGate ?? moduleGate;
   if (!secret || gate.record(networkKey(firstIp(request.headers.get("x-forwarded-for")), secret)).blocked) {
-    return redirectFinish(bound.origin, bound.locale, "error");
+    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
   }
-  if (!dependencies.serviceDependencies) return redirectFinish(bound.origin, bound.locale, "error");
+  if (!dependencies.serviceDependencies) return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
 
   let claims;
   try {
@@ -295,12 +323,13 @@ async function finishCallback(
   } catch (error) {
     if (error instanceof SocialTokenRejected) dependencies.log?.("social_token_rejected");
     else dependencies.log?.("social_token_rejected");
-    return redirectFinish(bound.origin, bound.locale, "error");
+    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
   }
   if (formIdToken && unverifiedSub(formIdToken) !== claims.sub) {
-    return redirectFinish(bound.origin, bound.locale, "error");
+    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
   }
   const gpc = request.headers.get("sec-gpc") === "1" || dependencies.serviceDependencies.gpc === true;
+  const grant: SocialContinuationSink = {};
   const finish = await completeSocialIdentity({
     provider,
     claims,
@@ -309,8 +338,16 @@ async function finishCallback(
     now,
     relayReady: env.WATCHDIVE_APPLE_RELAY_MAIL_READY === "true",
     blocked: false,
-  });
-  return redirectFinish(bound.origin, bound.locale, finish);
+  }, grant);
+  const sub = validSubject(claims.sub);
+  const continuation =
+    finish === "confirmed" && grant.leadId && secret && sub
+      ? issueSocialContinuationCookie({ leadId: grant.leadId, provider, sub }, secret, now.getTime())
+      : undefined;
+  const receipt = grant.measurement?.length
+    ? retargetingReceiptSetCookie(grant.measurement) ?? undefined
+    : undefined;
+  return redirectFinish(bound.origin, bound.locale, finish, bound.segment, bound.source, continuation, receipt);
 }
 
 function unverifiedSub(jwt: string): string | undefined {
@@ -322,6 +359,37 @@ function unverifiedSub(jwt: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+export async function handleSocialContinuation(
+  request: Request,
+  dependencies: SocialHttpDependencies,
+): Promise<Response> {
+  if (request.method !== "POST") return json({ status: "unavailable", reason: "missing" }, 405);
+  const origin = requestOrigin(request, dependencies.env);
+  if (!origin || !browserPostAllowed(request, origin)) return json({ status: "unavailable", reason: "missing" }, 400);
+  const text = await request.text().catch(() => "");
+  if (text.length > 4000) return json({ status: "unavailable", reason: "tampered" }, 400);
+  const socialSecret = socialAuthSecret(dependencies.env);
+  const service = dependencies.serviceDependencies;
+  if (!socialSecret || !service) return json({ status: "unavailable", reason: "unavailable" }, 200);
+  let verificationSecret: string;
+  try {
+    verificationSecret = requireSecret(service.env ?? dependencies.env);
+  } catch {
+    return json({ status: "unavailable", reason: "unavailable" }, 200);
+  }
+  const now = (dependencies.now ?? (() => new Date()))();
+  const result = await exchangeSocialContinuation({
+    cookieHeader: request.headers.get("cookie"),
+    socialSecret,
+    verificationSecret,
+    now,
+    store: service.store,
+  });
+  if (result.status === "ready") return json({ status: "ready", credential: result.credential }, 200);
+  dependencies.log?.(`social_continuation_${result.reason}`);
+  return json({ status: "unavailable", reason: result.reason }, 200);
 }
 
 export async function handleGoogleCallback(

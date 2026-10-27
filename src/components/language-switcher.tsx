@@ -1,5 +1,7 @@
+import type { ChangeEvent } from "react";
 import { LOCALE_PREFERENCE_COOKIE } from "@/lib/i18n/auto-locale";
-import { isLocale, LANGUAGE_OPTIONS, switchLocalePath } from "@/lib/i18n/locale";
+import { isLocale, LANGUAGE_OPTIONS, LOCALE_SWITCH_CODE } from "@/lib/i18n/locale";
+import { languageSwitchPath } from "@/lib/segments/navigation";
 import { useCurrentLocale } from "@/lib/i18n/use-current-locale";
 
 /**
@@ -12,8 +14,48 @@ import { useCurrentLocale } from "@/lib/i18n/use-current-locale";
  * performs a full navigation so the SSR HTML, <html lang> and SEO tags all
  * arrive already in the chosen language.
  */
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ variant = "full" }: { variant?: "full" | "code" } = {}) {
   const locale = useCurrentLocale();
+  const current = LANGUAGE_OPTIONS.find((option) => option.locale === locale);
+  const onChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const next = event.target.value;
+    if (!isLocale(next)) return;
+    document.cookie = `${LOCALE_PREFERENCE_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=31536000; samesite=lax`;
+    window.location.assign(languageSwitchPath(window.location, next));
+  };
+
+  if (variant === "code") {
+    return (
+      <label className="wd-locale-code">
+        <svg
+          aria-hidden
+          className="wd-locale-code-globe"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2 12h20" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+        <span className="wd-locale-code-value" aria-hidden="true">{LOCALE_SWITCH_CODE[locale]}</span>
+        <select
+          aria-label={current ? `Language, ${current.label}` : "Language"}
+          value={locale}
+          onChange={onChange}
+        >
+          {LANGUAGE_OPTIONS.map((option) => (
+            <option key={option.locale} value={option.locale}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
 
   return (
     <label className="relative flex h-11 min-w-0 max-w-full items-center text-[#F6FAFC]">
@@ -34,12 +76,7 @@ export function LanguageSwitcher() {
       <select
         aria-label="Language"
         value={locale}
-        onChange={(event) => {
-          const next = event.target.value;
-          if (!isLocale(next)) return;
-          document.cookie = `${LOCALE_PREFERENCE_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=31536000; samesite=lax`;
-          window.location.assign(switchLocalePath(window.location.pathname, next));
-        }}
+        onChange={onChange}
         className="h-11 min-h-11 w-max min-w-11 max-w-full cursor-pointer appearance-none rounded-full border border-white/45 bg-[#201748] py-0 pl-9 pr-8 text-caption text-[#F6FAFC] outline-none hover:bg-white/10 focus:ring-2 focus:ring-[#36A9E1] [&>option]:bg-white [&>option]:text-[#10212E]"
       >
         {LANGUAGE_OPTIONS.map((option) => (

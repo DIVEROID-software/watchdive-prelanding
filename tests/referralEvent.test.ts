@@ -24,7 +24,7 @@ test("event model preserves reviewed conditions and program-derived thresholds i
   }
 });
 
-test("compact notices show crossed and next steps without treating top rank as earned", () => {
+test("status notices name only crossed tiers and do not pitch the next reward", () => {
   const footer = { korean: false, unsubscribeUrl: "https://watchdive.example/unsubscribe/fake" };
   for (const credited of [3, 10]) {
     const body = referralNoticeBody(
@@ -35,14 +35,22 @@ test("compact notices show crossed and next steps without treating top rank as e
         nextTier: credited === 3 ? "team" : null,
         remainingToNext: credited === 3 ? 2 : null,
         statusUrl: "https://watchdive.example/buddy#fake",
+        shareUrl: "https://watchdive.example/r/fake",
       },
       footer,
     );
-    assert.equal((body.html.match(/<strong /g) ?? []).length, credited === 3 ? 2 : 3);
-    assert.ok(body.html.includes("✓ Reached"));
-    assert.ok(body.html.includes("→ Up next"));
-    assert.ok(body.text.includes("Good to know"));
-    assert.ok(body.text.includes("https://watchdive.example/buddy-rules"));
+    assert.equal((body.html.match(/<strong /g) ?? []).length, 0);
+    assert.equal(body.html.includes("✓ Reached"), false);
+    assert.equal(body.html.includes("→ Up next"), false);
+    assert.equal(body.text.includes("Good to know"), false);
+    assert.equal(body.text.includes("https://watchdive.example/buddy-rules"), false);
+    assert.equal(body.text.includes("https://watchdive.example/r/fake"), false);
+    if (credited === 3) assert.ok(body.text.includes("Reached: Buddy · 3 friends"));
+    else {
+      assert.ok(body.text.includes("Reached: Dive Team · 5 friends"));
+      assert.ok(body.text.includes("Reached: Dive Leader · 10 friends"));
+      assert.equal(body.text.includes("Keep going"), false);
+    }
     assert.doesNotMatch(body.html, /display:\s*(flex|grid)/);
   }
   const guide = buddyGuideBody(

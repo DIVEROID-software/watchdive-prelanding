@@ -13,14 +13,18 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as BuddyRouteImport } from './routes/buddy'
 import { Route as BuddyRulesRouteImport } from './routes/buddy-rules'
+import { Route as FreedivingRouteImport } from './routes/freediving'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReservationRouteImport } from './routes/reservation'
+import { Route as ScubaRouteImport } from './routes/scuba'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as LocaleIndexRouteImport } from './routes/$locale.index'
 import { Route as LocaleBuddyRouteImport } from './routes/$locale.buddy'
 import { Route as LocaleBuddyRulesRouteImport } from './routes/$locale.buddy-rules'
+import { Route as LocaleFreedivingRouteImport } from './routes/$locale.freediving'
 import { Route as LocalePrivacyRouteImport } from './routes/$locale.privacy'
+import { Route as LocaleScubaRouteImport } from './routes/$locale.scuba'
 import { Route as LocaleTermsRouteImport } from './routes/$locale.terms'
 import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
 import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
@@ -29,12 +33,15 @@ import { Route as ApiMayaReportRouteImport } from './routes/api.maya-report'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
+import { Route as ApiAuthContinuationRouteImport } from './routes/api/auth/continuation'
 import { Route as ApiAuthProvidersRouteImport } from './routes/api/auth/providers'
 import { Route as ApiAuthStartRouteImport } from './routes/api/auth/start'
 import { Route as ApiCronManualVerification20261019RouteImport } from './routes/api.cron.manual-verification-20261019'
 import { Route as ApiCronReferralAnnounceRouteImport } from './routes/api.cron.referral-announce'
 import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cron.verification-reminder'
 import { Route as ApiCronVerificationReminderV2RouteImport } from './routes/api.cron.verification-reminder-v2'
+import { Route as ApiPushConfigRouteImport } from './routes/api/push/config'
+import { Route as ApiPushSubscriptionRouteImport } from './routes/api/push/subscription'
 import { Route as ApiReferralLeaderboardRouteImport } from './routes/api.referral.leaderboard'
 import { Route as ApiReservationCheckoutRouteImport } from './routes/api/reservation/checkout'
 import { Route as ApiReservationStatusRouteImport } from './routes/api/reservation/status'
@@ -62,6 +69,11 @@ const BuddyRulesRoute = BuddyRulesRouteImport.update({
   path: '/buddy-rules',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FreedivingRoute = FreedivingRouteImport.update({
+  id: '/freediving',
+  path: '/freediving',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -70,6 +82,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const ReservationRoute = ReservationRouteImport.update({
   id: '/reservation',
   path: '/reservation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScubaRoute = ScubaRouteImport.update({
+  id: '/scuba',
+  path: '/scuba',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -97,9 +114,19 @@ const LocaleBuddyRulesRoute = LocaleBuddyRulesRouteImport.update({
   path: '/buddy-rules',
   getParentRoute: () => LocaleRoute,
 } as any)
+const LocaleFreedivingRoute = LocaleFreedivingRouteImport.update({
+  id: '/freediving',
+  path: '/freediving',
+  getParentRoute: () => LocaleRoute,
+} as any)
 const LocalePrivacyRoute = LocalePrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => LocaleRoute,
+} as any)
+const LocaleScubaRoute = LocaleScubaRouteImport.update({
+  id: '/scuba',
+  path: '/scuba',
   getParentRoute: () => LocaleRoute,
 } as any)
 const LocaleTermsRoute = LocaleTermsRouteImport.update({
@@ -142,6 +169,11 @@ const LocaleRCodeRoute = LocaleRCodeRouteImport.update({
   path: '/r/$code',
   getParentRoute: () => LocaleRoute,
 } as any)
+const ApiAuthContinuationRoute = ApiAuthContinuationRouteImport.update({
+  id: '/api/auth/continuation',
+  path: '/api/auth/continuation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthProvidersRoute = ApiAuthProvidersRouteImport.update({
   id: '/api/auth/providers',
   path: '/api/auth/providers',
@@ -175,6 +207,16 @@ const ApiCronVerificationReminderV2Route =
     path: '/api/cron/verification-reminder-v2',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPushConfigRoute = ApiPushConfigRouteImport.update({
+  id: '/api/push/config',
+  path: '/api/push/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPushSubscriptionRoute = ApiPushSubscriptionRouteImport.update({
+  id: '/api/push/subscription',
+  path: '/api/push/subscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReferralLeaderboardRoute = ApiReferralLeaderboardRouteImport.update({
   id: '/api/referral/leaderboard',
   path: '/api/referral/leaderboard',
@@ -211,13 +253,17 @@ export interface FileRoutesByFullPath {
   '/$locale': typeof LocaleRouteWithChildren
   '/buddy': typeof BuddyRoute
   '/buddy-rules': typeof BuddyRulesRoute
+  '/freediving': typeof FreedivingRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
+  '/scuba': typeof ScubaRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/buddy': typeof LocaleBuddyRoute
   '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
+  '/$locale/freediving': typeof LocaleFreedivingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
+  '/$locale/scuba': typeof LocaleScubaRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
@@ -227,12 +273,15 @@ export interface FileRoutesByFullPath {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/auth/continuation': typeof ApiAuthContinuationRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/push/config': typeof ApiPushConfigRoute
+  '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
@@ -244,13 +293,17 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/buddy': typeof BuddyRoute
   '/buddy-rules': typeof BuddyRulesRoute
+  '/freediving': typeof FreedivingRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
+  '/scuba': typeof ScubaRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/buddy': typeof LocaleBuddyRoute
   '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
+  '/$locale/freediving': typeof LocaleFreedivingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
+  '/$locale/scuba': typeof LocaleScubaRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
@@ -260,12 +313,15 @@ export interface FileRoutesByTo {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/auth/continuation': typeof ApiAuthContinuationRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/push/config': typeof ApiPushConfigRoute
+  '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
@@ -279,13 +335,17 @@ export interface FileRoutesById {
   '/$locale': typeof LocaleRouteWithChildren
   '/buddy': typeof BuddyRoute
   '/buddy-rules': typeof BuddyRulesRoute
+  '/freediving': typeof FreedivingRoute
   '/privacy': typeof PrivacyRoute
   '/reservation': typeof ReservationRoute
+  '/scuba': typeof ScubaRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/$locale/buddy': typeof LocaleBuddyRoute
   '/$locale/buddy-rules': typeof LocaleBuddyRulesRoute
+  '/$locale/freediving': typeof LocaleFreedivingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
+  '/$locale/scuba': typeof LocaleScubaRoute
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
@@ -295,12 +355,15 @@ export interface FileRoutesById {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/auth/continuation': typeof ApiAuthContinuationRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/push/config': typeof ApiPushConfigRoute
+  '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
@@ -315,13 +378,17 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/buddy'
     | '/buddy-rules'
+    | '/freediving'
     | '/privacy'
     | '/reservation'
+    | '/scuba'
     | '/terms'
     | '/verify'
     | '/$locale/buddy'
     | '/$locale/buddy-rules'
+    | '/$locale/freediving'
     | '/$locale/privacy'
+    | '/$locale/scuba'
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
@@ -331,12 +398,15 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/$locale/'
     | '/$locale/r/$code'
+    | '/api/auth/continuation'
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/push/config'
+    | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
@@ -348,13 +418,17 @@ export interface FileRouteTypes {
     | '/'
     | '/buddy'
     | '/buddy-rules'
+    | '/freediving'
     | '/privacy'
     | '/reservation'
+    | '/scuba'
     | '/terms'
     | '/verify'
     | '/$locale/buddy'
     | '/$locale/buddy-rules'
+    | '/$locale/freediving'
     | '/$locale/privacy'
+    | '/$locale/scuba'
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
@@ -364,12 +438,15 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/$locale'
     | '/$locale/r/$code'
+    | '/api/auth/continuation'
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/push/config'
+    | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
@@ -382,13 +459,17 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/buddy'
     | '/buddy-rules'
+    | '/freediving'
     | '/privacy'
     | '/reservation'
+    | '/scuba'
     | '/terms'
     | '/verify'
     | '/$locale/buddy'
     | '/$locale/buddy-rules'
+    | '/$locale/freediving'
     | '/$locale/privacy'
+    | '/$locale/scuba'
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
@@ -398,12 +479,15 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/$locale/'
     | '/$locale/r/$code'
+    | '/api/auth/continuation'
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/push/config'
+    | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
@@ -417,8 +501,10 @@ export interface RootRouteChildren {
   LocaleRoute: typeof LocaleRouteWithChildren
   BuddyRoute: typeof BuddyRoute
   BuddyRulesRoute: typeof BuddyRulesRoute
+  FreedivingRoute: typeof FreedivingRoute
   PrivacyRoute: typeof PrivacyRoute
   ReservationRoute: typeof ReservationRoute
+  ScubaRoute: typeof ScubaRoute
   TermsRoute: typeof TermsRoute
   VerifyRoute: typeof VerifyRoute
   AdminBehaviorRoute: typeof AdminBehaviorRoute
@@ -426,12 +512,15 @@ export interface RootRouteChildren {
   ApiMayaReportRoute: typeof ApiMayaReportRoute
   RCodeRoute: typeof RCodeRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
+  ApiAuthContinuationRoute: typeof ApiAuthContinuationRoute
   ApiAuthProvidersRoute: typeof ApiAuthProvidersRoute
   ApiAuthStartRoute: typeof ApiAuthStartRoute
   ApiCronManualVerification20261019Route: typeof ApiCronManualVerification20261019Route
   ApiCronReferralAnnounceRoute: typeof ApiCronReferralAnnounceRoute
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
   ApiCronVerificationReminderV2Route: typeof ApiCronVerificationReminderV2Route
+  ApiPushConfigRoute: typeof ApiPushConfigRoute
+  ApiPushSubscriptionRoute: typeof ApiPushSubscriptionRoute
   ApiReferralLeaderboardRoute: typeof ApiReferralLeaderboardRoute
   ApiReservationCheckoutRoute: typeof ApiReservationCheckoutRoute
   ApiReservationStatusRoute: typeof ApiReservationStatusRoute
@@ -470,6 +559,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuddyRulesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/freediving': {
+      id: '/freediving'
+      path: '/freediving'
+      fullPath: '/freediving'
+      preLoaderRoute: typeof FreedivingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -482,6 +578,13 @@ declare module '@tanstack/react-router' {
       path: '/reservation'
       fullPath: '/reservation'
       preLoaderRoute: typeof ReservationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scuba': {
+      id: '/scuba'
+      path: '/scuba'
+      fullPath: '/scuba'
+      preLoaderRoute: typeof ScubaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -519,11 +622,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleBuddyRulesRouteImport
       parentRoute: typeof LocaleRoute
     }
+    '/$locale/freediving': {
+      id: '/$locale/freediving'
+      path: '/freediving'
+      fullPath: '/$locale/freediving'
+      preLoaderRoute: typeof LocaleFreedivingRouteImport
+      parentRoute: typeof LocaleRoute
+    }
     '/$locale/privacy': {
       id: '/$locale/privacy'
       path: '/privacy'
       fullPath: '/$locale/privacy'
       preLoaderRoute: typeof LocalePrivacyRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/scuba': {
+      id: '/$locale/scuba'
+      path: '/scuba'
+      fullPath: '/$locale/scuba'
+      preLoaderRoute: typeof LocaleScubaRouteImport
       parentRoute: typeof LocaleRoute
     }
     '/$locale/terms': {
@@ -582,6 +699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleRCodeRouteImport
       parentRoute: typeof LocaleRoute
     }
+    '/api/auth/continuation': {
+      id: '/api/auth/continuation'
+      path: '/api/auth/continuation'
+      fullPath: '/api/auth/continuation'
+      preLoaderRoute: typeof ApiAuthContinuationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/providers': {
       id: '/api/auth/providers'
       path: '/api/auth/providers'
@@ -622,6 +746,20 @@ declare module '@tanstack/react-router' {
       path: '/api/cron/verification-reminder-v2'
       fullPath: '/api/cron/verification-reminder-v2'
       preLoaderRoute: typeof ApiCronVerificationReminderV2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push/config': {
+      id: '/api/push/config'
+      path: '/api/push/config'
+      fullPath: '/api/push/config'
+      preLoaderRoute: typeof ApiPushConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push/subscription': {
+      id: '/api/push/subscription'
+      path: '/api/push/subscription'
+      fullPath: '/api/push/subscription'
+      preLoaderRoute: typeof ApiPushSubscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/referral/leaderboard': {
@@ -672,7 +810,9 @@ declare module '@tanstack/react-router' {
 interface LocaleRouteChildren {
   LocaleBuddyRoute: typeof LocaleBuddyRoute
   LocaleBuddyRulesRoute: typeof LocaleBuddyRulesRoute
+  LocaleFreedivingRoute: typeof LocaleFreedivingRoute
   LocalePrivacyRoute: typeof LocalePrivacyRoute
+  LocaleScubaRoute: typeof LocaleScubaRoute
   LocaleTermsRoute: typeof LocaleTermsRoute
   LocaleVerifyRoute: typeof LocaleVerifyRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
@@ -682,7 +822,9 @@ interface LocaleRouteChildren {
 const LocaleRouteChildren: LocaleRouteChildren = {
   LocaleBuddyRoute: LocaleBuddyRoute,
   LocaleBuddyRulesRoute: LocaleBuddyRulesRoute,
+  LocaleFreedivingRoute: LocaleFreedivingRoute,
   LocalePrivacyRoute: LocalePrivacyRoute,
+  LocaleScubaRoute: LocaleScubaRoute,
   LocaleTermsRoute: LocaleTermsRoute,
   LocaleVerifyRoute: LocaleVerifyRoute,
   LocaleIndexRoute: LocaleIndexRoute,
@@ -697,8 +839,10 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleRoute: LocaleRouteWithChildren,
   BuddyRoute: BuddyRoute,
   BuddyRulesRoute: BuddyRulesRoute,
+  FreedivingRoute: FreedivingRoute,
   PrivacyRoute: PrivacyRoute,
   ReservationRoute: ReservationRoute,
+  ScubaRoute: ScubaRoute,
   TermsRoute: TermsRoute,
   VerifyRoute: VerifyRoute,
   AdminBehaviorRoute: AdminBehaviorRoute,
@@ -706,6 +850,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMayaReportRoute: ApiMayaReportRoute,
   RCodeRoute: RCodeRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
+  ApiAuthContinuationRoute: ApiAuthContinuationRoute,
   ApiAuthProvidersRoute: ApiAuthProvidersRoute,
   ApiAuthStartRoute: ApiAuthStartRoute,
   ApiCronManualVerification20261019Route:
@@ -713,6 +858,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronReferralAnnounceRoute: ApiCronReferralAnnounceRoute,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
   ApiCronVerificationReminderV2Route: ApiCronVerificationReminderV2Route,
+  ApiPushConfigRoute: ApiPushConfigRoute,
+  ApiPushSubscriptionRoute: ApiPushSubscriptionRoute,
   ApiReferralLeaderboardRoute: ApiReferralLeaderboardRoute,
   ApiReservationCheckoutRoute: ApiReservationCheckoutRoute,
   ApiReservationStatusRoute: ApiReservationStatusRoute,

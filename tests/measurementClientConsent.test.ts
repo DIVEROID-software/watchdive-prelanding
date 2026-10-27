@@ -40,8 +40,18 @@ test("the inbox grant checks permission before tags and does not fire a browser 
   assert.ok(permitted >= 0 && permitted < pixel);
   assert.equal(allow.includes("submitLead"), false);
   assert.equal(allow.includes("res.browserLead"), false);
+  assert.equal(allow.includes("trackGoogleDurableSignup"), false);
+  assert.ok(allow.includes("fireVerifiedRegistration(polled.registration)"));
   assert.ok(source.includes("declineMeasurementAfterSubmit(res.handle)"));
   assert.ok(source.includes("withdrawalNeedsRetry()"));
+  const helperStart = source.indexOf("function fireVerifiedRegistration");
+  const helper = source.slice(helperStart, source.indexOf("const whySrcSet"));
+  assert.ok(helper.includes('event.eventName !== "CompleteRegistration"'));
+  assert.equal(helper.includes("Date.now"), false);
+  const verify = read("src/routes/verify.tsx");
+  const grant = verify.slice(verify.indexOf("const grantMeasurement"), verify.indexOf("const declineMeasurement"));
+  assert.ok(grant.includes("registration: res.registration"));
+  assert.ok(grant.indexOf("await grantConfirmationMeasurement") < grant.indexOf("fireConversions("));
 });
 
 test("the server trusts Sec-GPC and not a body field", () => {

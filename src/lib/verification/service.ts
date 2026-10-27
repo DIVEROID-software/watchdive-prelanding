@@ -1,3 +1,4 @@
+import { prepareCompatibilityRequest, type CompatibilityRequest } from "../compatibility/context.ts";
 // Policy for the transactional double opt-in flow. Every external system is
 // injected, so the whole state machine runs in tests against fakes.
 //
@@ -9,6 +10,7 @@
 // Kept free of path-alias imports so `npm test` can load it directly.
 import type {
   BrowserLead,
+  BrowserRegistration,
   ConfirmResponse,
   LeadAttribution,
   LeadRecord,
@@ -42,6 +44,16 @@ import type { PollGate } from "./pollGate.ts";
 import type { VerificationMailer } from "./resend.ts";
 import { observeSignupCountry, type SignupCountryProbe } from "../attribution.ts";
 import { canonicalEmail } from "../api/abuse.ts";
+import {
+  deliverRetargetingLead,
+  deliverRetargetingRegistration,
+} from "../retargeting/capi.ts";
+import { retargetingConsentFromRow, type RetargetingConsent } from "../retargeting/consent.ts";
+import {
+  planCompleteRegistration,
+  planDurableLead,
+  type MeasurementPlan,
+} from "../retargeting/events.ts";
 import { DEFAULT_LOCALE, isLocale, parseLocalePath, type Locale } from "../i18n/locale.ts";
 import type { TokenEnvironment } from "./token.ts";
 // Core-owned (feat/referral-core): `referralSecret(env)` → status-page signing
@@ -65,7 +77,6 @@ import {
 import {
   createVerificationToken,
   deterministicMetaEventId,
-  deterministicSubmitEventId,
   isLeadId,
   isVerificationTokenShape,
   newLeadId,
@@ -75,6 +86,12 @@ import {
   signPollHandle,
   verifyPollHandle,
 } from "./token.ts";
+import {
+  measurementFromCell,
+  noteStageMeasurement,
+  noteStageSignup,
+  noteStageVerified,
+} from "../stageScore/observe.ts";
 
 /**
  * Meta cookies of the browser that produced a conversion. The click cookie is
@@ -84,6 +101,7 @@ import {
  * dispatchers (`createServiceDependencies`).
  */
 export type ConversionContext = {
+  googleClientId?: string;
   fbp?: string;
   fbc?: string;
 };
@@ -116,6 +134,9 @@ export type SubmitLeadDispatch = (
 ) => Promise<boolean>;
 
 export type RequestVerificationInput = {
+  compatibility?: CompatibilityRequest;
+  /** Existing pending row may only receive new context with its signed live attempt. */
+  compatibilityCredential?: string;
   email: string;
   canonical: string;
   phone?: string;
@@ -137,6 +158,7 @@ export type RequestVerificationInput = {
   signupCountryProbe?: SignupCountryProbe;
   /** The browser's measurement choice at submit time. */
   measurementConsent: boolean;
+  googleClientId?: string;
   /** Meta click cookie, stored only when `measurementConsent` is true. */
   metaFbc?: string;
   /** Meta browser cookie, forwarded (never stored) when `measurementConsent` is true. */
@@ -166,6 +188,8 @@ export type RequestVerificationInput = {
 };
 
 export type ServiceDependencies = {
+  /** Server schema/readiness gate; false by default. */
+  compatibilityEnabled?: boolean;
   store: LeadStore;
   mailer: VerificationMailer;
   /** ON-only best-effort public code for the verified row’s welcome guide. */
@@ -175,7 +199,24 @@ export type ServiceDependencies = {
   leadId?: () => string;
   refCode?: () => string;
   dispatchVerifiedLead?: VerifiedLeadDispatch;
+  captureGoogleContext?: (email: string, clientId: unknown, allowed: boolean) => Promise<void>;
+  forgetGoogleContext?: (email: string) => Promise<void>;
+  /** Canonical verified GA4 sign_up. Repeats collapse inside that sender. */
+  dispatchGoogleVerified?: (row: LeadRecord, allowed: () => Promise<boolean>) => Promise<void>;
+  /** Historical submit Lead. The durable signup path does not call this. */
   dispatchSubmitLead?: SubmitLeadDispatch;
+  /** Prospective Lead and CompleteRegistration. Absent calls the retargeting deliverers. */
+  dispatchDurableMeasurement?: (input: {
+    plan: MeasurementPlan;
+    consent: RetargetingConsent;
+    email: string;
+    landingPath?: string | null;
+    fbp?: string | null;
+    fbc?: string | null;
+    ip?: string | null;
+    ua?: string | null;
+    nowSeconds?: number;
+  }) => Promise<void>;
   /** Per-attempt limit on grant/withdraw calls. Defaults to one per process. */
   grantGate?: (leadId: string) => boolean;
   /** Refusals have their own replay budget. */
@@ -331,6 +372,51 @@ function attemptCooled(record: LeadRecord | undefined, nowMs: number): boolean {
   return true;
 }
 
+function stageScoreEnabled(): boolean {
+  return process.env.WATCHDIVE_STAGE_SCORE_INTEGRATION === "enabled";
+}
+
+function stageSource(input: { signupMethod?: string }): "email" | "oauth" {
+  return input.signupMethod === "google" || input.signupMethod === "apple" ? "oauth" : "email";
+}
+
+async function recordStageSignup(
+  input: RequestVerificationInput,
+  at: string,
+  measurementCell: string,
+  suppressedRow: boolean,
+): Promise<void> {
+  if (!stageScoreEnabled()) return;
+  await noteStageSignup({
+    email: input.email,
+    at,
+    source: stageSource(input),
+    measurementCell,
+    suspect: input.suspect === true,
+    suppressed: suppressedRow,
+    // A bare signup payload cannot confer phone consent or a phone score.
+    phonePresent: false,
+  });
+}
+
+async function recordStageVerified(
+  email: string,
+  at: string,
+  source: "email" | "oauth",
+): Promise<void> {
+  if (!stageScoreEnabled()) return;
+  await noteStageVerified({ email, at, source });
+}
+
+async function recordStageMeasurementCell(
+  email: string,
+  at: string,
+  cell: string | undefined,
+): Promise<void> {
+  if (!stageScoreEnabled()) return;
+  await noteStageMeasurement({ email, at, measurement: measurementFromCell(cell) });
+}
+
 export async function requestVerificationService(
   input: RequestVerificationInput,
   dependencies: ServiceDependencies,
@@ -354,7 +440,16 @@ export async function requestVerificationService(
   const decoyHandle = () =>
     signPollHandle(mintLeadId(), now.getTime(), consentRequested, secret, input.email);
 
+  const compatibility = input.compatibility ? prepareCompatibilityRequest(input.compatibility) : null;
+  if (input.compatibility && (!compatibility || !dependencies.compatibilityEnabled || compatibility.locale !== (input.locale ?? DEFAULT_LOCALE))) {
+    throw new Error("Compatibility request unavailable");
+  }
   const existing = await store.findByEmail(input.canonical, input.email);
+  const compatibilityProof = compatibility && existing && input.compatibilityCredential
+    ? verifyPollHandle(input.compatibilityCredential, secret, now.getTime(), POLL_HANDLE_TTL_MS)
+    : undefined;
+  const ownCompatibilityAttempt = Boolean(compatibilityProof && compatibilityProof.leadId === existing?.leadId);
+
 
   // A honeypot, a disposable domain or a headless client is somebody using the
   // form to mail a third party. The row is still written for review, but no
@@ -397,7 +492,7 @@ export async function requestVerificationService(
     existing &&
     (!attemptCooled(existing, now.getTime()) || existing.sends >= VERIFICATION_MAX_SENDS)
   ) {
-    return floor(pendingResponse(decoyHandle()));
+    return floor(pendingResponse(ownCompatibilityAttempt ? input.compatibilityCredential! : decoyHandle()));
   }
 
   const leadId = mintLeadId();
@@ -414,7 +509,6 @@ export async function requestVerificationService(
       await store.createPending({
         email: input.email,
         canonical: input.canonical,
-        ...(input.phone ? { phone: input.phone } : {}),
         source: input.source,
         refCode: (dependencies.refCode ?? defaultRefCode)(),
         ...(input.referredBy ? { referredBy: input.referredBy } : {}),
@@ -431,8 +525,23 @@ export async function requestVerificationService(
         ...newRowIdentity(input),
         ...pressOutboxField(input, now.toISOString(), true, env),
       });
+      await recordStageSignup(input, now.toISOString(), MEASUREMENT_CONSENT_WITHHELD, true);
     }
     return floor(pendingResponse(decoyHandle()));
+  }
+
+  // Model context never overwrites another person's row by public email lookup.
+  // A new request is durable with the new lead; a pending resend needs its current signed handle.
+  if (compatibility && existing) {
+    if (!ownCompatibilityAttempt || !store.recordCompatibility) {
+      return floor(pendingResponse(decoyHandle()));
+    }
+    await store.recordCompatibility(existing.pageId, compatibility);
+    const reread = await store.reread(existing.pageId);
+    if (!reread || reread.leadId !== existing.leadId || reread.status !== "pending" || reread.emailVerified ||
+        reread.compatibility?.modelId !== compatibility.modelId || reread.compatibility.locale !== compatibility.locale) {
+      return floor(pendingResponse(decoyHandle()));
+    }
   }
 
   let record: LeadRecord;
@@ -443,9 +552,9 @@ export async function requestVerificationService(
     record = existing;
   } else {
     record = await store.createPending({
+      ...(compatibility ? { compatibility } : {}),
       email: input.email,
       canonical: input.canonical,
-      ...(input.phone ? { phone: input.phone } : {}),
       source: input.source,
       refCode: (dependencies.refCode ?? defaultRefCode)(),
       ...(input.referredBy ? { referredBy: input.referredBy } : {}),
@@ -464,15 +573,39 @@ export async function requestVerificationService(
       ...newRowIdentity(input),
       ...pressOutboxField(input, now.toISOString(), input.suspect, env),
     });
-    // The server leg of the browser's submit Lead, same id, through the row
-    // gate (a No thanks may already have landed). Never fails the signup.
-    if (consentRequested && input.submitEventId) {
-      await dispatchSubmitLeadGated(
+    if (compatibility && (record.compatibility?.modelId !== compatibility.modelId || record.compatibility.locale !== compatibility.locale)) {
+      throw new Error("Compatibility context was not persisted");
+    }
+    await recordStageSignup(
+      input,
+      now.toISOString(),
+      consentRequested ? MEASUREMENT_CONSENT_GRANTED : MEASUREMENT_CONSENT_WITHHELD,
+      false,
+    );
+    // Durable Lead for this new row only. The public response stays generic.
+    // The historical browser-id Lead stopped in this same edit.
+    if (consentRequested) {
+      await emitDurableSignupLead(
         record.pageId,
-        input.submitEventId,
         submitContext(input),
         dependencies,
-      ).catch(() => false);
+        secret,
+        Math.floor(now.getTime() / 1000),
+      ).catch(() => undefined);
+    }
+  }
+
+  const mailLocale = compatibility && isLocale(existing?.signupLocale) ? existing.signupLocale : (input.locale ?? DEFAULT_LOCALE);
+  if (dependencies.captureGoogleContext) {
+    try {
+      const fresh = consentRequested ? await dependencies.store.reread(record.pageId) : undefined;
+      await dependencies.captureGoogleContext(
+        record.email,
+        input.googleClientId,
+        Boolean(fresh && measurementAllows(fresh, false)),
+      );
+    } catch {
+      /* An unavailable consent read is not a refusal or a signup failure. */
     }
   }
 
@@ -481,7 +614,7 @@ export async function requestVerificationService(
     now.getTime() + VERIFICATION_TTL_MS,
     consentRequested,
     secret,
-    input.locale ?? DEFAULT_LOCALE,
+    mailLocale,
   );
 
   try {
@@ -490,7 +623,8 @@ export async function requestVerificationService(
       token,
       leadId,
       publicOrigin,
-      locale: input.locale ?? DEFAULT_LOCALE,
+      locale: mailLocale,
+      ...(compatibility ? { compatibility } : {}),
     });
   } catch (error) {
     // The attempt stays armed. Nothing about the failure reaches the response,
@@ -640,6 +774,9 @@ export async function completeSocialVerification(
     record.status === "verified" ||
     record.verifiedAt
   ) {
+    if (record.emailVerified || record.status === "verified" || record.verifiedAt) {
+      await recordStageVerified(record.email, now.toISOString(), "oauth");
+    }
     return "already";
   }
   if (!isLeadId(record.leadId)) return "already";
@@ -653,12 +790,16 @@ export async function completeSocialVerification(
     fresh.verifiedAt ||
     !isLeadId(fresh.leadId)
   ) {
+    if (fresh?.emailVerified || fresh?.status === "verified" || fresh?.verifiedAt) {
+      await recordStageVerified(fresh.email, now.toISOString(), "oauth");
+    }
     return "already";
   }
   const secret = requireSecret(dependencies.env ?? process.env);
   const metaEventId = deterministicMetaEventId(fresh.leadId, secret);
   const verifiedAt = now.toISOString();
   await dependencies.store.markVerified(fresh.pageId, { verifiedAt, metaEventId });
+  await recordStageVerified(fresh.email, verifiedAt, "oauth");
   await sendConversions(
     { ...fresh, emailVerified: true, status: "verified", verifiedAt },
     metaEventId,
@@ -783,6 +924,7 @@ export async function confirmVerificationService(
   const metaEventId = deterministicMetaEventId(parsed.leadId, secret);
 
   if (record.emailVerified || record.status === "verified") {
+    await recordStageVerified(record.email, now.toISOString(), "email");
     // The second click of one link, and the loser of two concurrent clicks,
     // both land here. Re-dispatching is the right move rather than a wasteful
     // one: the first attempt may have been the one that failed, and the event
@@ -824,6 +966,7 @@ export async function confirmVerificationService(
 
   const verifiedAt = now.toISOString();
   await dependencies.store.markVerified(record.pageId, { verifiedAt, metaEventId });
+  await recordStageVerified(record.email, verifiedAt, "email");
 
   // Notion has no compare-and-set, so two racing confirmations can both reach
   // this line. Both emit the identical ids, so Meta collapses them.
@@ -838,6 +981,13 @@ export async function confirmVerificationService(
   await scheduleWelcome({ ...record, emailVerified: true, status: "verified" }, dependencies, now, parsed.locale);
   // First confirmation: the signup is complete and its address verified.
   await reportPressNow(dependencies, "confirmed", record, now);
+  const registration = await emitEmailRegistration(
+    { ...record, emailVerified: true, status: "verified" },
+    dependencies,
+    secret,
+    context,
+    Math.floor(now.getTime() / 1000),
+  );
 
   return {
     ok: true,
@@ -848,6 +998,7 @@ export async function confirmVerificationService(
       : {}),
     ...(record.phone && !record.suspect ? { phoneAdded: true as const } : {}),
     ...(sent ? browserLead(record, metaEventId) : {}),
+    ...(registration ? { registration } : {}),
     ...measurementAsk(record, parsed.measurementConsent, options.localRefusal),
     ...refusal,
   };
@@ -872,6 +1023,12 @@ export async function pollVerificationService(
     const record = await dependencies.store.findByLeadId(parsed.leadId);
     if (!record || !record.emailVerified) return { ok: true, status: "pending" };
 
+    const registration = storedRegistrationBrowser(
+      record,
+      secret,
+      Math.floor(now.getTime() / 1000),
+      dependencies.gpc === true,
+    );
     return {
       ok: true,
       status: "verified",
@@ -881,6 +1038,8 @@ export async function pollVerificationService(
       measurementAllows(record, parsed.measurementConsent)
         ? browserLead(record, record.metaEventId)
         : {}),
+      // Read only. The send already happened on confirm or on the grant.
+      ...(registration ? { registration } : {}),
     };
   };
 
@@ -971,32 +1130,22 @@ async function rowAllowsSend(
 }
 
 /**
- * Sends the withheld submit `Lead` if — and only if — the row says it is
- * pending, under an id derived from the row (stable across resends, so a retry
- * dedupes). The row moves to `granted` only after Meta acknowledged the event.
- * A refusal racing that last write still wins: it lives in `Flags`, which this
- * never touches.
+ * Closes a `granted-lead-pending` cell after a later Allow. It does not emit a
+ * standard Lead: that event belongs only to the request that created the row.
+ * A refusal racing the close still wins: it lives in `Flags`, which this never
+ * touches. A failed close leaves the cell pending for the next Allow.
  */
 async function flushPendingLead(
   pageId: string,
-  context: ConversionContext,
+  _context: ConversionContext,
   dependencies: ServiceDependencies,
-  secret: string,
-  browserEventId?: string,
+  _secret: string,
+  _browserEventId?: string,
 ): Promise<void> {
-  if (!dependencies.dispatchSubmitLead) return;
+  // Historical submit Lead stopped. A late Allow records consent and does not
+  // emit another standard Lead: the row was not created by this request.
   const row = await rowAllowsSend(pageId, false, dependencies);
   if (!row || row.measurementConsent !== MEASUREMENT_CONSENT_LEAD_PENDING) return;
-  const acknowledged = await sendSubmitLead(
-    row,
-    browserEventId || deterministicSubmitEventId(row.pageId, secret),
-    context,
-    dependencies,
-  );
-  // With a browser id the browser leg has already fired under it: this change
-  // of consent has had its one id, and a later retry under a different id
-  // would be a second Lead. Without one, only Meta's acknowledgement closes it.
-  if (!acknowledged && !browserEventId) return;
   const after = await dependencies.store.reread(pageId).catch(() => undefined);
   if (
     after &&
@@ -1006,7 +1155,7 @@ async function flushPendingLead(
     await dependencies.store
       .recordMeasurementState(pageId, MEASUREMENT_CONSENT_GRANTED)
       .catch(() => {
-        // Stays pending: the next opportunity re-sends under the row's id.
+        // Stays pending: the next Allow tries the close again. No Lead is sent.
       });
     // A refusal whose write landed between that read and this write must not
     // be left overwritten.
@@ -1017,40 +1166,223 @@ async function flushPendingLead(
       settled.measurementConsent !== MEASUREMENT_CONSENT_WITHDRAWN
     ) {
       await dependencies.store.recordMeasurementWithdrawal(pageId).catch(() => {});
+      await recordStageMeasurementCell(
+        settled.email,
+        (dependencies.now ?? (() => new Date()))().toISOString(),
+        MEASUREMENT_CONSENT_WITHDRAWN,
+      );
+    } else if (settled?.measurementConsent === MEASUREMENT_CONSENT_GRANTED) {
+      await recordStageMeasurementCell(
+        settled.email,
+        (dependencies.now ?? (() => new Date()))().toISOString(),
+        settled.measurementConsent,
+      );
     }
   }
 }
 
-function sendSubmitLead(
-  row: LeadRecord,
-  eventId: string,
-  context: ConversionContext,
+async function dispatchDurable(
   dependencies: ServiceDependencies,
-): Promise<boolean> {
-  if (!dependencies.dispatchSubmitLead) return Promise.resolve(false);
-  return dependencies
-    .dispatchSubmitLead({
-      eventId,
-      email: row.email,
-      ...(row.phone ? { phone: row.phone } : {}),
-      source: row.source,
-      ...(row.landingPath ? { landingPath: row.landingPath } : {}),
-      ...(row.utm ? { utm: row.utm } : {}),
-      ...conversionContext(row, context),
-    })
-    .catch(() => false);
+  plan: MeasurementPlan,
+  consent: RetargetingConsent,
+  row: LeadRecord,
+  context: ConversionContext,
+  nowSeconds: number,
+): Promise<void> {
+  const input = {
+    plan,
+    consent,
+    email: row.email,
+    landingPath: row.landingPath ?? null,
+    fbp: context.fbp ?? null,
+    fbc: context.fbc || row.metaFbc || null,
+    nowSeconds,
+  };
+  if (dependencies.dispatchDurableMeasurement) {
+    await dependencies.dispatchDurableMeasurement(input);
+    return;
+  }
+  if (plan.browser?.eventName === "CompleteRegistration") {
+    await deliverRetargetingRegistration(input);
+    return;
+  }
+  await deliverRetargetingLead(input);
 }
 
-/** A brand-new row's submit Lead: re-read, then sent only if the row allows it. */
-async function dispatchSubmitLeadGated(
+/** Server Lead for the request that created the row. Nothing is returned to the browser. */
+async function emitDurableSignupLead(
   pageId: string,
-  eventId: string,
   context: ConversionContext,
   dependencies: ServiceDependencies,
-): Promise<boolean> {
+  secret: string,
+  nowSeconds: number,
+): Promise<void> {
   const row = await rowAllowsSend(pageId, false, dependencies);
-  if (!row) return false;
-  return sendSubmitLead(row, eventId, context, dependencies);
+  if (!row) return;
+  const consent = retargetingConsentFromRow({
+    measurementConsent: row.measurementConsent,
+    gpc: dependencies.gpc === true,
+    unsubscribed: row.status === "unsubscribed",
+  });
+  const plan = planDurableLead({
+    rowCreated: true,
+    resend: false,
+    duplicate: row.duplicate === true,
+    abusive: conversionBlocked(row.flags),
+    suspect: row.suspect,
+    unsubscribed: row.status === "unsubscribed",
+    pageId: row.pageId,
+    secret,
+    consent,
+    source: row.source,
+    signupLocale: row.signupLocale,
+    occurredAtSeconds: nowSeconds,
+    nowSeconds,
+  });
+  if (!plan.emit || !plan.browser) return;
+  await dispatchDurable(dependencies, plan, consent, row, context, nowSeconds);
+}
+
+/** First email-link verification only. The browser payload has no address. */
+async function emitEmailRegistration(
+  record: LeadRecord,
+  dependencies: ServiceDependencies,
+  secret: string,
+  context: ConversionContext,
+  nowSeconds: number,
+): Promise<BrowserRegistration | undefined> {
+  const row = await rowAllowsSend(record.pageId, true, dependencies);
+  if (!row) return undefined;
+  const consent = retargetingConsentFromRow({
+    measurementConsent: row.measurementConsent,
+    gpc: dependencies.gpc === true,
+    unsubscribed: row.status === "unsubscribed",
+  });
+  const plan = planCompleteRegistration({
+    verified: true,
+    source: "email_link",
+    pageId: row.pageId,
+    secret,
+    consent,
+    duplicate: row.duplicate === true,
+    abusive: conversionBlocked(row.flags),
+    suspect: row.suspect,
+    unsubscribed: row.status === "unsubscribed",
+    signupLocale: row.signupLocale,
+    occurredAtSeconds: nowSeconds,
+    nowSeconds,
+  });
+  const registration = registrationFromPlan(plan, nowSeconds);
+  if (!registration) return undefined;
+  await dispatchDurable(dependencies, plan, consent, row, context, nowSeconds);
+  return registration;
+}
+
+/**
+ * CRM `Verified at` only. This is the instant markVerified wrote, not Signed up,
+ * the welcome, the grant clock, or a checkbox. Missing and unparseable are absent.
+ */
+function authoritativeVerifiedAtSeconds(record: LeadRecord): number | undefined {
+  if (!record.verifiedAt) return undefined;
+  const ms = Date.parse(record.verifiedAt);
+  if (!Number.isFinite(ms)) return undefined;
+  const seconds = Math.floor(ms / 1000);
+  if (!Number.isInteger(seconds) || seconds < 0) return undefined;
+  return seconds;
+}
+
+/**
+ * Same registration id as the first email-link send. The event time is the
+ * stored verification. deduped_retry refuses a missing time instead of using now.
+ */
+function planStoredRegistration(
+  row: LeadRecord,
+  secret: string,
+  nowSeconds: number,
+  gpc: boolean,
+): { plan: MeasurementPlan; occurredAtSeconds: number | undefined } {
+  const occurredAtSeconds = authoritativeVerifiedAtSeconds(row);
+  const consent = retargetingConsentFromRow({
+    measurementConsent: row.measurementConsent,
+    gpc,
+    unsubscribed: row.status === "unsubscribed",
+  });
+  const plan = planCompleteRegistration({
+    verified: row.emailVerified || row.status === "verified",
+    source: "deduped_retry",
+    pageId: row.pageId,
+    secret,
+    consent,
+    duplicate: row.duplicate === true,
+    abusive: conversionBlocked(row.flags),
+    suspect: row.suspect,
+    unsubscribed: row.status === "unsubscribed",
+    signupLocale: row.signupLocale,
+    ...(occurredAtSeconds == null ? {} : { occurredAtSeconds }),
+    nowSeconds,
+  });
+  return { plan, occurredAtSeconds };
+}
+
+function registrationFromPlan(
+  plan: MeasurementPlan,
+  occurredAtSeconds: number,
+): BrowserRegistration | undefined {
+  const registration = plan.browser;
+  if (!plan.emit || registration?.eventName !== "CompleteRegistration") return undefined;
+  if (plan.eventTime !== occurredAtSeconds || registration.eventTime !== occurredAtSeconds) {
+    return undefined;
+  }
+  return {
+    eventName: "CompleteRegistration",
+    eventId: registration.eventId,
+    eventTime: registration.eventTime,
+    contentName: registration.contentName,
+    value: registration.value,
+    currency: registration.currency,
+    signupLocale: registration.signupLocale,
+    source: registration.source,
+  };
+}
+
+/** Browser half for a poll. Does not send. */
+function storedRegistrationBrowser(
+  record: LeadRecord,
+  secret: string,
+  nowSeconds: number,
+  gpc: boolean,
+): BrowserRegistration | undefined {
+  const { plan, occurredAtSeconds } = planStoredRegistration(record, secret, nowSeconds, gpc);
+  if (occurredAtSeconds == null) return undefined;
+  return registrationFromPlan(plan, occurredAtSeconds);
+}
+
+/** Server send for a late Allow. Uses the stored verification time. */
+async function emitStoredRegistration(
+  pageId: string,
+  context: ConversionContext,
+  dependencies: ServiceDependencies,
+  secret: string,
+  nowSeconds: number,
+): Promise<BrowserRegistration | undefined> {
+  const row = await rowAllowsSend(pageId, false, dependencies);
+  if (!row) return undefined;
+  const { plan, occurredAtSeconds } = planStoredRegistration(
+    row,
+    secret,
+    nowSeconds,
+    dependencies.gpc === true,
+  );
+  if (occurredAtSeconds == null) return undefined;
+  const registration = registrationFromPlan(plan, occurredAtSeconds);
+  if (!registration) return undefined;
+  const consent = retargetingConsentFromRow({
+    measurementConsent: row.measurementConsent,
+    gpc: dependencies.gpc === true,
+    unsubscribed: row.status === "unsubscribed",
+  });
+  await dispatchDurable(dependencies, plan, consent, row, context, nowSeconds);
+  return registration;
 }
 
 function submitContext(input: RequestVerificationInput): ConversionContext {
@@ -1062,11 +1394,9 @@ function submitContext(input: RequestVerificationInput): ConversionContext {
 
 /**
  * A consented submit for an address that already has a row: the same grant as
- * the inbox card (re-read, refusal wins), then the submit Lead only if the
- * row's cell says it is pending. The browser's id is used only when this call
- * is the one that moved the cell from withheld; a cell already pending is a
- * retry of an earlier send and keeps the row's id. A row already granted gets
- * no second Lead. Legacy and unsubscribed rows are left alone.
+ * the inbox card (re-read, refusal wins), then the pending cell is closed.
+ * No standard Lead is emitted. The row was not created by this request.
+ * Legacy and unsubscribed rows are left alone.
  */
 async function grantFromSubmit(
   existing: LeadRecord,
@@ -1132,6 +1462,37 @@ async function sendConversions(
   dependencies: ServiceDependencies,
   secret: string,
 ): Promise<boolean> {
+  if (context.googleClientId && dependencies.captureGoogleContext) {
+    try {
+      const fresh = dependencies.gpc ? undefined : await dependencies.store.reread(record.pageId);
+      await dependencies.captureGoogleContext(
+        record.email,
+        context.googleClientId,
+        Boolean(fresh && measurementAllows(fresh, signedConsent)),
+      );
+    } catch {
+      /* Preserve context on transient CRM failure; send fails closed below. */
+    }
+  }
+  // Independent of Meta configuration and of the browser polling lifecycle.
+  // The sink rechecks persisted refusal immediately before dispatch.
+  if (
+    dependencies.dispatchGoogleVerified &&
+    (record.emailVerified || record.status === "verified")
+  ) {
+    const allowed = async () => {
+      if (dependencies.gpc) return false;
+      // A failed read propagates as retry, rather than deleting allowed context.
+      const fresh = await dependencies.store.reread(record.pageId);
+      return Boolean(
+        fresh &&
+        !fresh.duplicate &&
+        measurementAllows(fresh, signedConsent) &&
+        (fresh.emailVerified || fresh.status === "verified"),
+      );
+    };
+    await dependencies.dispatchGoogleVerified(record, allowed).catch(() => {});
+  }
   await flushPendingLead(record.pageId, context, dependencies, secret);
   return sendConfirmation(record.pageId, confirmationEventId, signedConsent, context, dependencies);
 }
@@ -1224,6 +1585,11 @@ async function applyGrant(
     return "refused";
   const cell = fresh.measurementConsent ?? "";
   if (cell === MEASUREMENT_CONSENT_GRANTED || cell === MEASUREMENT_CONSENT_LEAD_PENDING) {
+    await recordStageMeasurementCell(
+      fresh.email,
+      (dependencies.now ?? (() => new Date()))().toISOString(),
+      cell,
+    );
     return "granted";
   }
   const target =
@@ -1243,6 +1609,11 @@ async function applyGrant(
   }
   if (after.status === "unsubscribed" || conversionBlocked(after.flags)) return "refused";
   if (!measurementAllows(after, false)) return "uncertain";
+  await recordStageMeasurementCell(
+    after.email,
+    (dependencies.now ?? (() => new Date()))().toISOString(),
+    after.measurementConsent,
+  );
   return target === MEASUREMENT_CONSENT_LEAD_PENDING ? "opened" : "granted";
 }
 
@@ -1258,8 +1629,10 @@ function grantFloor(dependencies: ServiceDependencies) {
  * Measurement allowed from the inbox card (or the banner) after the submit.
  * The poll handle — held only by the submitting tab, signed, short-lived —
  * names the attempt. The answer is always `{ ok: true }` after the same floor,
- * real attempt or decoy: nothing in it says what the row is. Conversions are
- * server-side only; the browser fires nothing from this answer.
+ * real attempt or decoy: nothing in it says what the row is. A form submit
+ * does not emit a Lead or a CompleteRegistration. A row that is already
+ * verified can emit CompleteRegistration from its stored time. This answer
+ * still carries no browser event; the poll does.
  */
 export async function grantAttemptMeasurementService(
   handle: string,
@@ -1282,6 +1655,7 @@ export async function grantAttemptMeasurementService(
   const outcome = await applyGrant(record, dependencies);
   if (outcome === "granted" || outcome === "opened") {
     const context = {
+      ...(input.googleClientId ? { googleClientId: input.googleClientId } : {}),
       ...(input.fbp ? { fbp: input.fbp } : {}),
       ...(input.fbc ? { fbc: input.fbc } : {}),
     };
@@ -1294,14 +1668,23 @@ export async function grantAttemptMeasurementService(
       secret,
     );
     await storeClickCookie(record.pageId, input.fbc, dependencies);
+    // Unverified rows produce no registration. The answer stays `{ ok: true }`.
+    await emitStoredRegistration(
+      record.pageId,
+      context,
+      dependencies,
+      secret,
+      Math.floor(now.getTime() / 1000),
+    );
   }
   return floor({ ok: true });
 }
 
 /**
  * Measurement allowed on the confirmation page. The confirmation token names
- * the attempt; the lead must already be confirmed. Sends what was withheld and
- * returns the confirmation's browser half only if that was actually sent.
+ * the attempt; the lead must already be confirmed. Sends what was withheld.
+ * The legacy browser half comes back only if that send landed. CompleteRegistration
+ * uses the stored verification time and the same event id as the first path.
  */
 export async function grantConfirmationMeasurementService(
   rawToken: string,
@@ -1344,8 +1727,20 @@ export async function grantConfirmationMeasurementService(
   const final = await dependencies.store.reread(record.pageId).catch(() => undefined);
   if (!final) return floor({ ok: true, status: "retry" });
   if (!measurementAllows(final, parsed.measurementConsent)) return floor({ ok: true });
-  if (!sent) return floor({ ok: true, status: "retry" });
-  return floor({ ok: true, ...browserLead(final, eventId) });
+  // A failed legacy EmailVerified receipt must not suppress the independent
+  // standard registration payload (including the Google verified-signup label).
+  const registration = await emitStoredRegistration(
+    final.pageId,
+    input,
+    dependencies,
+    secret,
+    Math.floor(now.getTime() / 1000),
+  );
+  return floor({
+    ok: true,
+    ...(sent ? browserLead(final, eventId) : { status: "retry" as const }),
+    ...(registration ? { registration } : {}),
+  });
 }
 
 /**
@@ -1394,7 +1789,22 @@ async function withdrawRecord(
   record: LeadRecord,
   dependencies: ServiceDependencies,
 ): Promise<boolean> {
-  if (measurementWithdrawn(record)) return true;
+  let contextErased = true;
+  try {
+    await dependencies.forgetGoogleContext?.(record.email);
+  } catch {
+    contextErased = false;
+  }
+  // Persist refusal even if external context cleanup failed. The UI gets a
+  // retry response until both are acknowledged; dispatch checks the row now.
+  if (measurementWithdrawn(record)) {
+    await recordStageMeasurementCell(
+      record.email,
+      (dependencies.now ?? (() => new Date()))().toISOString(),
+      MEASUREMENT_CONSENT_WITHDRAWN,
+    );
+    return contextErased;
+  }
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       await dependencies.store.recordMeasurementWithdrawal(record.pageId);
@@ -1402,7 +1812,14 @@ async function withdrawRecord(
       // The re-read decides; the write may have landed before the error.
     }
     const after = await dependencies.store.reread(record.pageId).catch(() => undefined);
-    if (after && measurementWithdrawn(after)) return true;
+    if (after && measurementWithdrawn(after)) {
+      await recordStageMeasurementCell(
+        after.email,
+        (dependencies.now ?? (() => new Date()))().toISOString(),
+        MEASUREMENT_CONSENT_WITHDRAWN,
+      );
+      return contextErased;
+    }
   }
   return false;
 }

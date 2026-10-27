@@ -1,14 +1,18 @@
 // Measurement allowed or refused after the submit (2026-10-08, rebuilt after
 // three Grok QA rounds). The `Measurement consent` cell is a state machine —
 // withheld → granted-lead-pending → granted, or withdrawn (plus a flag a grant
-// never writes). The late submit Lead is server-only, sent once Meta takes it,
-// under an id derived from the row; every send re-reads the row right before
-// it leaves and fails closed. These pin each scenario the QA rounds raised.
+// never writes). A standard Lead fires only for the request that creates the
+// row, under an id derived from that row. A later Allow closes a pending cell
+// and does not emit another Lead. Every send re-reads the row right before it
+// leaves and fails closed. These pin each scenario the QA rounds raised.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { beforeEach, test } from "node:test";
 
 import { canonicalEmail } from "../src/lib/api/abuse.ts";
+import type { RetargetingConsent } from "../src/lib/retargeting/consent.ts";
+import { planCompleteRegistration, type MeasurementPlan } from "../src/lib/retargeting/events.ts";
+import { RETARGETING_FRESHNESS_SECONDS } from "../src/lib/retargeting/freshness.ts";
 import {
   conversionBlocked,
   FLAG_MEASUREMENT_WITHDRAWN,
@@ -29,7 +33,7 @@ import {
   withdrawAttemptMeasurementService,
   withdrawConfirmationMeasurementService,
 } from "../src/lib/verification/service.ts";
-import { deterministicSubmitEventId, signPollHandle } from "../src/lib/verification/token.ts";
+import { signPollHandle } from "../src/lib/verification/token.ts";
 import { createNotionLeadStore, isMetaFbc } from "../src/lib/verification/notionLead.ts";
 import {
   FakeLeadStore,
@@ -43,15 +47,31 @@ const EMAIL = "diver@example.com";
 const CANONICAL = canonicalEmail(EMAIL);
 const FBC = "fb.1.1759900000000.IwAR0abcdefghijklmnop";
 
+type DurableCall = {
+  plan: MeasurementPlan;
+  consent: RetargetingConsent;
+  email: string;
+  landingPath?: string | null;
+  fbp?: string | null;
+  fbc?: string | null;
+  ip?: string | null;
+  ua?: string | null;
+};
+
 let store: FakeLeadStore;
 let mailer: FakeMailer;
 let verified: Record<string, unknown>[];
 let submits: Record<string, unknown>[];
+let durable: DurableCall[];
 let metaAcks: boolean;
 let slept: number[];
 let clock: Date;
 let gate: (leadId: string) => boolean;
 let withdrawGate: (leadId: string) => boolean;
+
+const leadCalls = () => durable.filter((call) => call.plan.browser?.eventName === "Lead");
+const registrationCalls = () =>
+  durable.filter((call) => call.plan.browser?.eventName === "CompleteRegistration");
 
 function deps() {
   return {
@@ -70,6 +90,9 @@ function deps() {
     dispatchSubmitLead: async (input: Record<string, unknown>) => {
       submits.push(input);
       return metaAcks;
+    },
+    dispatchDurableMeasurement: async (input: DurableCall) => {
+      durable.push(input);
     },
     grantGate: gate,
     withdrawGate,
@@ -90,13 +113,13 @@ function submit(measurementConsent: boolean, extra: Record<string, unknown> = {}
 }
 
 const onlyRow = () => [...store.rows.values()][0];
-const rowLeadId = () => deterministicSubmitEventId(onlyRow().pageId, TEST_SECRET);
 
 beforeEach(() => {
   store = new FakeLeadStore();
   mailer = new FakeMailer();
   verified = [];
   submits = [];
+  durable = [];
   metaAcks = true;
   slept = [];
   gate = createGrantGate();
@@ -118,17 +141,18 @@ test("without any consent the confirmation converts nothing and asks once", asyn
   const confirmed = await confirmVerificationService(mailer.sent[0].token, deps());
   assert.equal(confirmed.status, "verified");
   assert.equal(confirmed.browserLead, undefined);
+  assert.equal(confirmed.registration, undefined);
   assert.equal(confirmed.measurementAsk, true);
   assert.equal(verified.length, 0);
+  assert.equal(durable.length, 0);
 });
 
-test("an inbox grant sends the withheld Lead server-side, under the row's id, then marks it sent", async () => {
+test("an inbox grant records consent and does not emit a standard Lead", async () => {
   const pending = await requestVerificationService(submit(false), deps());
   const grant = await grantAttemptMeasurementService(pending.handle, { fbc: FBC }, deps());
   assert.deepEqual(grant, { ok: true }, "nothing for the browser to fire");
-  assert.equal(submits.length, 1);
-  assert.equal(submits[0].eventId, rowLeadId());
-  assert.equal(submits[0].fbc, FBC);
+  assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0, "a late Allow is not a new signup");
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
   assert.equal(onlyRow().metaFbc, FBC);
 
@@ -137,7 +161,13 @@ test("an inbox grant sends the withheld Lead server-side, under the row's id, th
   assert.ok(confirmed.browserLead);
   assert.equal(verified.length, 1);
   assert.equal(verified[0].fbc, FBC, "the stored click cookie is used in the mail app");
-  assert.equal(submits.length, 1, "the Lead is not sent again");
+  assert.equal(submits.length, 0, "the retired submit Lead stays retired");
+  assert.equal(leadCalls().length, 0);
+  assert.equal(registrationCalls().length, 1);
+  assert.equal(confirmed.registration?.eventName, "CompleteRegistration");
+  assert.match(confirmed.registration?.eventId ?? "", /^[a-f0-9]{64}$/);
+  assert.equal(confirmed.registration?.eventId, registrationCalls()[0].plan.browser?.eventId);
+  assert.equal(JSON.stringify(confirmed.registration).includes("@"), false);
 });
 
 test("the grant answer is identical for a real attempt, a decoy and a forged handle", async () => {
@@ -156,13 +186,16 @@ test("the grant answer is identical for a real attempt, a decoy and a forged han
   assert.deepEqual(decoy, { ok: true });
   assert.deepEqual(forged, { ok: true });
   assert.equal(slept.length, 3, "every path waits out the floor");
-  assert.equal(submits.length, 1, "only the real attempt reaches Meta");
+  assert.equal(submits.length, 0, "a late Allow reaches Meta for nobody, real or decoy");
+  assert.equal(leadCalls().length, 0);
+  assert.equal(registrationCalls().length, 0);
 });
 
 test("replaying the grant cannot mint extra Leads or extra writes", async () => {
   const pending = await requestVerificationService(submit(false), deps());
   for (let i = 0; i < 10; i++) await grantAttemptMeasurementService(pending.handle, {}, deps());
-  assert.equal(submits.length, 1);
+  assert.equal(submits.length, 0);
+  assert.equal(durable.length, 0);
   assert.equal(
     store.measurementStates.filter(([, s]) => s !== MEASUREMENT_CONSENT_WITHHELD).length,
     2,
@@ -170,16 +203,19 @@ test("replaying the grant cannot mint extra Leads or extra writes", async () => 
   );
 });
 
-test("a Meta failure keeps the Lead pending, and the next opportunity retries it under the same id", async () => {
+test("a late Allow closes consent without waiting for Meta, and the confirmation adds no Lead", async () => {
   const pending = await requestVerificationService(submit(false), deps());
   metaAcks = false;
   await grantAttemptMeasurementService(pending.handle, {}, deps());
-  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_LEAD_PENDING);
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
+  assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0);
   metaAcks = true;
   clock = new Date(clock.getTime() + 60_000);
   await confirmVerificationService(mailer.sent[0].token, deps());
-  assert.equal(submits.length, 2);
-  assert.equal(submits[0].eventId, submits[1].eventId, "Meta collapses the pair");
+  assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0);
+  assert.equal(registrationCalls().length, 1);
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
 });
 
@@ -208,7 +244,9 @@ test("a refusal landing during the click-cookie write sends nothing and leaves n
     store.onFbcWrite = undefined;
     void store.recordMeasurementWithdrawal(pageId);
   };
-  await grantConfirmationMeasurementService(token, { fbc: FBC }, deps());
+  const grant = await grantConfirmationMeasurementService(token, { fbc: FBC }, deps());
+  assert.equal(grant.registration, undefined);
+  assert.equal(registrationCalls().length, 0, "the refusal lands before the stored registration");
   assert.ok(measurementAllows(onlyRow(), false) === false, "the refusal stands");
   assert.equal(onlyRow().metaFbc, undefined, "the click cookie is not left on a refused row");
   const before = { submits: submits.length, verified: verified.length };
@@ -248,7 +286,11 @@ test("an unreadable row sends nothing (fail closed) and the Lead stays pending f
   store.reread = reread;
   clock = new Date(clock.getTime() + 60_000);
   await confirmVerificationService(mailer.sent[0].token, deps());
-  assert.equal(submits.length, 1, "recovered at the confirmation");
+  assert.equal(submits.length, 0, "confirmation does not recover the retired submit Lead");
+  assert.equal(leadCalls().length, 0);
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
+  assert.equal(verified.length, 1, "EmailVerified still sends once the cell can be read");
+  assert.equal(registrationCalls().length, 1);
 });
 
 test("Reject after Allow (before the confirmation): the confirmation sends nothing", async () => {
@@ -316,14 +358,40 @@ test("a failed withdrawal write is retried and reported honestly", async () => {
   assert.equal((await withdrawAttemptMeasurementService(second.handle, deps())).recorded, false);
 });
 
-test("a confirmation-page grant sends the withheld Lead and the confirmation", async () => {
+test("a confirmation-page grant sends the legacy confirmation and the original verified signup", async () => {
   await requestVerificationService(submit(false), deps());
   clock = new Date(clock.getTime() + 60_000);
   const token = mailer.sent[0].token;
   await confirmVerificationService(token, deps());
+  const verifiedAt = onlyRow().verifiedAt ?? "";
+  const verifiedSeconds = Math.floor(Date.parse(verifiedAt) / 1000);
+  clock = new Date(clock.getTime() + 2 * 60 * 60 * 1000);
   const grant = await grantConfirmationMeasurementService(token, { fbc: FBC }, deps());
   assert.ok(grant.browserLead, "the token holder gets the confirmation's browser half");
-  assert.equal(submits.length, 1);
+  assert.equal(grant.registration?.eventName, "CompleteRegistration");
+  assert.equal(grant.registration?.eventTime, verifiedSeconds);
+  assert.notEqual(grant.registration?.eventTime, Math.floor(clock.getTime() / 1000));
+  assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0);
+  assert.equal(registrationCalls().length, 1);
+  assert.equal(registrationCalls()[0].plan.reason, "deduped_retry");
+  assert.equal(registrationCalls()[0].plan.eventTime, verifiedSeconds);
+  assert.equal(grant.registration?.eventId, registrationCalls()[0].plan.browser?.eventId);
+  const firstPath = planCompleteRegistration({
+    verified: true,
+    source: "email_link",
+    pageId: onlyRow().pageId,
+    secret: TEST_SECRET,
+    consent: { state: "granted", gpc: false, unsubscribed: false },
+    duplicate: false,
+    abusive: false,
+    suspect: false,
+    unsubscribed: false,
+    occurredAtSeconds: verifiedSeconds,
+    nowSeconds: verifiedSeconds,
+  });
+  assert.equal(grant.registration?.eventId, firstPath.eventId);
+  assert.equal(JSON.stringify(grant.registration).includes("@"), false);
   assert.equal(verified.length, 1);
   assert.equal(verified[0].fbc, FBC);
 });
@@ -337,6 +405,7 @@ test("a confirmation-page refusal is recorded and no browser half comes back", a
   const grant = await grantConfirmationMeasurementService(token, {}, deps());
   assert.deepEqual(grant, { ok: true });
   assert.equal(verified.length, 0);
+  assert.equal(registrationCalls().length, 0);
 });
 
 test("the poll in the submitting tab reports the confirmation after a late grant", async () => {
@@ -349,25 +418,38 @@ test("the poll in the submitting tab reports the confirmation after a late grant
   assert.ok(polled.browserLead);
 });
 
-test("a grant after the confirmation sends the confirmation server-side", async () => {
+test("a grant after the confirmation sends the confirmation server-side and keeps the attempt answer empty", async () => {
   const pending = await requestVerificationService(submit(false), deps());
   clock = new Date(clock.getTime() + 60_000);
   await confirmVerificationService(mailer.sent[0].token, deps());
-  await grantAttemptMeasurementService(pending.handle, {}, deps());
+  const verifiedSeconds = Math.floor(Date.parse(onlyRow().verifiedAt ?? "") / 1000);
+  clock = new Date(clock.getTime() + 30 * 60 * 1000);
+  const grant = await grantAttemptMeasurementService(pending.handle, {}, deps());
+  assert.deepEqual(grant, { ok: true });
   assert.equal(verified.length, 1);
-  assert.equal(submits.length, 1);
+  assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0);
+  assert.equal(registrationCalls().length, 1);
+  assert.equal(registrationCalls()[0].plan.eventTime, verifiedSeconds);
+  const polled = await pollVerificationService(pending.handle, deps());
+  assert.equal(polled.registration?.eventTime, verifiedSeconds);
+  assert.equal(polled.registration?.eventId, registrationCalls()[0].plan.eventId);
+  assert.equal(registrationCalls().length, 1, "the poll does not send another registration");
 });
 
-test("a cooled resend that now carries consent sends the withheld Lead once", async () => {
-  await requestVerificationService(submit(false), deps());
+test("a cooled resend that now carries consent closes the cell and emits no Lead", async () => {
+  const first = await requestVerificationService(submit(false), deps());
   clock = new Date(clock.getTime() + 61_000);
-  await requestVerificationService(submit(true, { metaFbc: FBC }), deps());
-  assert.equal(submits.length, 1);
-  assert.equal(submits[0].eventId, rowLeadId(), "keyed on the row, not the rotated attempt");
-  assert.equal(submits[0].fbc, FBC);
+  const again = await requestVerificationService(submit(true, { metaFbc: FBC }), deps());
+  assert.equal(again.status, first.status);
+  assert.equal(again.message, first.message);
+  assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0);
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
   clock = new Date(clock.getTime() + 61_000);
   await requestVerificationService(submit(true), deps());
-  assert.equal(submits.length, 1, "already granted: not sent twice");
+  assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0, "already granted: not sent twice");
 });
 
 test("a refusal racing a consented resend wins", async () => {
@@ -475,6 +557,8 @@ test("trusted GPC defeats grants, confirmation, and poll even for a granted row"
   assert.equal((await pollVerificationService(pending.handle, denied)).browserLead, undefined);
   await grantConfirmationMeasurementService(mailer.sent[0].token, { fbc: FBC }, denied);
   assert.equal(submits.length + verified.length + store.measurementFbcs.length, 0);
+  assert.equal(registrationCalls().length, 0);
+  assert.equal(confirmed.registration, undefined);
 });
 
 test("a failed fresh grant read never falls back to the earlier row", async () => {
@@ -500,11 +584,12 @@ test("a landed grant followed by an outage is recovered on cooled resend", async
   await grantAttemptMeasurementService(pending.handle, {}, deps());
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_LEAD_PENDING);
   assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0);
   store.reread = read;
   clock = new Date(clock.getTime() + 61_000);
   await requestVerificationService(submit(true), { ...deps(), leadId: leadIdFactory(100) });
-  assert.equal(submits.length, 1);
-  assert.equal(submits[0].eventId, rowLeadId());
+  assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0, "an existing row is not a new signup");
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
 });
 
@@ -516,7 +601,8 @@ test("ambiguous grant write success is recognized by a fresh read", async () => 
     throw new Error("lost response");
   };
   await grantAttemptMeasurementService(pending.handle, {}, deps());
-  assert.equal(submits.length, 1);
+  assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0);
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
 });
 
@@ -562,7 +648,7 @@ test("local refusal blocks conversions even when its CRM write fails", async () 
   assert.equal(verified.length, 0);
 });
 
-test("verified dispatch failure stays retryable under the same id", async () => {
+test("legacy verified dispatch failure retries while standard registration keeps its own id", async () => {
   await requestVerificationService(submit(false), deps());
   const token = mailer.sent[0].token;
   await confirmVerificationService(token, deps());
@@ -573,9 +659,18 @@ test("verified dispatch failure stays retryable under the same id", async () => 
       return false;
     },
   };
-  assert.equal((await grantConfirmationMeasurementService(token, {}, failed)).status, "retry");
+  const failedGrant = await grantConfirmationMeasurementService(token, {}, failed);
+  assert.equal(failedGrant.status, "retry");
+  assert.equal(failedGrant.browserLead, undefined);
+  assert.equal(failedGrant.registration?.eventName, "CompleteRegistration");
+  assert.equal(registrationCalls().length, 1);
   const retry = await grantConfirmationMeasurementService(token, {}, deps());
+  assert.equal(retry.registration?.eventId, failedGrant.registration?.eventId);
+  assert.equal(retry.registration?.eventTime, failedGrant.registration?.eventTime);
+  assert.equal(registrationCalls().length, 2);
   assert.ok(retry.browserLead);
+  assert.equal(retry.registration?.eventName, "CompleteRegistration");
+  assert.equal(retry.registration?.eventTime, Math.floor(Date.parse(onlyRow().verifiedAt ?? "") / 1000));
   assert.equal(verified.length, 2);
   assert.equal(verified[0].eventId, verified[1].eventId);
 });
@@ -595,6 +690,8 @@ test("withdrawal during verified dispatch withholds the browser conversion", asy
     },
   );
   assert.equal(result.browserLead, undefined);
+  assert.equal(result.registration, undefined);
+  assert.equal(registrationCalls().length, 0);
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
 });
 
@@ -612,63 +709,90 @@ test("a fresh abuse flag after the grant write suppresses both sends", async () 
 
 const BROWSER_ID = "browser-lead-0001";
 
-test("a brand-new consented submit sends its Lead once, under the browser's id", async () => {
-  await requestVerificationService(
+test("a brand-new consented submit sends one durable Lead, not the browser id", async () => {
+  const pending = await requestVerificationService(
     submit(true, { submitEventId: BROWSER_ID, metaFbc: FBC }),
     deps(),
   );
-  assert.equal(submits.length, 1);
-  assert.equal(submits[0].eventId, BROWSER_ID);
-  assert.equal(submits[0].fbc, FBC);
+  assert.equal(pending.status, "pending");
+  assert.equal(submits.length, 0, "the historical browser-id Lead is stopped");
+  assert.equal(leadCalls().length, 1);
+  const eventId = leadCalls()[0].plan.browser?.eventId ?? "";
+  assert.match(eventId, /^[a-f0-9]{64}$/);
+  assert.notEqual(eventId, BROWSER_ID);
+  assert.equal(leadCalls()[0].fbc, FBC);
+  assert.equal(JSON.stringify(leadCalls()[0].plan.browser).includes(EMAIL), false);
+  assert.equal(JSON.stringify(pending).includes(eventId), false);
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
   clock = new Date(clock.getTime() + 60_000);
-  await confirmVerificationService(mailer.sent[0].token, deps());
-  assert.equal(submits.length, 1, "the confirmation does not add a second submit Lead");
+  const confirmed = await confirmVerificationService(mailer.sent[0].token, deps());
+  assert.equal(leadCalls().length, 1, "the confirmation does not add a second Lead");
+  assert.equal(registrationCalls().length, 1);
+  assert.equal(confirmed.registration?.eventName, "CompleteRegistration");
+  assert.match(confirmed.registration?.eventId ?? "", /^[a-f0-9]{64}$/);
+  assert.notEqual(confirmed.registration?.eventId, eventId);
+  assert.equal(confirmed.registration?.eventId, registrationCalls()[0].plan.browser?.eventId);
+  assert.equal(JSON.stringify(confirmed.registration).includes("@"), false);
+  assert.equal(submits.length, 0);
 });
 
-test("a consented re-submit of a withheld row is one Lead, under the browser's id only", async () => {
-  await requestVerificationService(submit(false), deps());
+test("a consented re-submit of a withheld row emits no standard Lead", async () => {
+  const first = await requestVerificationService(submit(false), deps());
   clock = new Date(clock.getTime() + 61_000);
-  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  const second = await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  assert.equal(second.status, first.status);
+  assert.equal(second.message, first.message);
+  assert.deepEqual(Object.keys(second).sort(), Object.keys(first).sort());
   assert.deepEqual(
     submits.map((s) => s.eventId),
-    [BROWSER_ID],
+    [],
   );
+  assert.equal(leadCalls().length, 0);
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
   const handle = signPollHandle(onlyRow().leadId, clock.getTime(), true, TEST_SECRET);
   await grantAttemptMeasurementService(handle, {}, deps());
   clock = new Date(clock.getTime() + 60_000);
-  await confirmVerificationService(mailer.sent.at(-1)!.token, deps());
-  assert.equal(submits.length, 1, "no second id from a later grant or the confirmation");
+  const confirmed = await confirmVerificationService(mailer.sent.at(-1)!.token, deps());
+  assert.equal(submits.length, 0, "no Lead from a later grant or the confirmation");
+  assert.equal(leadCalls().length, 0);
+  assert.equal(confirmed.registration?.eventName, "CompleteRegistration");
+  assert.notEqual(confirmed.registration?.eventId, BROWSER_ID);
 });
 
-test("inside the resend cooldown the consented re-submit still settles its one Lead", async () => {
+test("inside the resend cooldown a consented re-submit emits no Lead and no second mail", async () => {
   await requestVerificationService(submit(false), deps());
   clock = new Date(clock.getTime() + 5_000);
   await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
   assert.deepEqual(
     submits.map((s) => s.eventId),
-    [BROWSER_ID],
+    [],
   );
+  assert.equal(leadCalls().length, 0);
   assert.equal(mailer.sent.length, 1, "the cooldown still holds for mail");
   clock = new Date(clock.getTime() + 60_000);
   await grantConfirmationMeasurementService(mailer.sent[0].token, {}, deps());
-  assert.equal(submits.length, 1, "the confirmation page does not send a second id");
+  assert.equal(submits.length, 0, "the confirmation page does not send a Lead for an unverified row");
+  assert.equal(leadCalls().length, 0);
+  assert.equal(registrationCalls().length, 0);
 });
 
-test("a Meta failure on the browser-id Lead does not leave a second id pending", async () => {
+test("a Meta outage on a re-submit does not mint a browser id or a second Lead", async () => {
   await requestVerificationService(submit(false), deps());
   clock = new Date(clock.getTime() + 61_000);
   metaAcks = false;
   await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
   metaAcks = true;
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
+  assert.equal(leadCalls().length, 0);
   clock = new Date(clock.getTime() + 60_000);
   await confirmVerificationService(mailer.sent.at(-1)!.token, deps());
   assert.deepEqual(
     submits.map((s) => s.eventId),
-    [BROWSER_ID],
+    [],
   );
+  assert.equal(leadCalls().length, 0);
+  assert.equal(registrationCalls().length, 1);
+  assert.notEqual(registrationCalls()[0].plan.browser?.eventId, BROWSER_ID);
 });
 
 test("a consented re-submit after a recorded refusal sends nothing server-side", async () => {
@@ -679,17 +803,24 @@ test("a consented re-submit after a recorded refusal sends nothing server-side",
   clock = new Date(clock.getTime() + 5_000);
   await requestVerificationService(submit(true, { submitEventId: "browser-lead-0002" }), deps());
   assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 1, "the refusal stops every later Lead");
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
 });
 
 test("an already-granted row gets no second submit Lead from a re-submit", async () => {
-  await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  const first = await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
+  const firstId = leadCalls()[0]?.plan.browser?.eventId;
   clock = new Date(clock.getTime() + 61_000);
-  await requestVerificationService(submit(true, { submitEventId: "browser-lead-0002" }), deps());
-  assert.deepEqual(
-    submits.map((s) => s.eventId),
-    [BROWSER_ID],
-  );
+  const second = await requestVerificationService(submit(true, { submitEventId: "browser-lead-0002" }), deps());
+  assert.equal(second.status, first.status);
+  assert.equal(second.message, first.message);
+  assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 1);
+  assert.equal(leadCalls()[0].plan.browser?.eventId, firstId);
+  assert.notEqual(firstId, BROWSER_ID);
+  assert.notEqual(firstId, "browser-lead-0002");
+  assert.match(firstId ?? "", /^[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(second).includes(firstId ?? "missing"), false);
 });
 
 test("an abuse-flagged stored row gets no submit Lead even from a clean request", async () => {
@@ -709,6 +840,7 @@ test("a refusal landing before a new row's Lead leaves stops it", async () => {
   };
   await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
   assert.equal(submits.length, 0);
+  assert.equal(durable.length, 0);
 });
 
 test("a reminder-link grant on a pre-release empty row does not send a submit Lead", async () => {
@@ -803,28 +935,22 @@ test("a handle's sealed address is unreadable and tamper-evident", async () => {
   });
 });
 
-test("a pending Lead retried by a form re-submit keeps the row's id and waits for Meta", async () => {
+test("a form re-submit does not keep a pending Lead or adopt the browser id", async () => {
   const pending = await requestVerificationService(submit(false), deps());
   metaAcks = false;
   await grantAttemptMeasurementService(pending.handle, {}, deps());
-  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_LEAD_PENDING);
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
+  assert.equal(leadCalls().length, 0);
   clock = new Date(clock.getTime() + 61_000);
   await requestVerificationService(submit(true, { submitEventId: BROWSER_ID }), deps());
-  assert.deepEqual(
-    submits.map((s) => s.eventId),
-    [rowLeadId(), rowLeadId()],
-    "never a second id",
-  );
-  assert.equal(
-    onlyRow().measurementConsent,
-    MEASUREMENT_CONSENT_LEAD_PENDING,
-    "not closed unacked",
-  );
+  assert.deepEqual(submits.map((s) => s.eventId), []);
+  assert.equal(leadCalls().length, 0);
+  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
   metaAcks = true;
   clock = new Date(clock.getTime() + 61_000);
   await requestVerificationService(submit(true, { submitEventId: "browser-lead-0003" }), deps());
-  assert.equal(submits.at(-1)!.eventId, rowLeadId());
-  assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
+  assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0);
 });
 
 test("Notion: the withdrawal flag is written before the cell, and the cell even if the flag fails", async () => {
@@ -854,6 +980,7 @@ test("under Global Privacy Control a consented submit sends no server Lead, new 
     gpc: true,
   });
   assert.equal(submits.length, 0);
+  assert.equal(durable.length, 0);
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHHELD);
 });
 
@@ -899,19 +1026,18 @@ test("a refusal still lands through a handle older than a day, while a reminder 
   });
 });
 
-test("a send-blocked create is withheld, so the later real submit opens its one Lead", async () => {
+test("a send-blocked create stays withheld, and the later real submit is not a new Lead", async () => {
   await requestVerificationService(
     submit(true, { submitEventId: BROWSER_ID, networkSendBlocked: true }),
     deps(),
   );
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHHELD);
   assert.equal(submits.length, 0);
+  assert.equal(leadCalls().length, 0);
   clock = new Date(clock.getTime() + 61_000);
   await requestVerificationService(submit(true, { submitEventId: "browser-lead-0002" }), deps());
-  assert.deepEqual(
-    submits.map((s) => s.eventId),
-    ["browser-lead-0002"],
-  );
+  assert.deepEqual(submits.map((s) => s.eventId), []);
+  assert.equal(leadCalls().length, 0, "the row already exists, so this is not a durable new signup");
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_GRANTED);
 });
 
@@ -1068,4 +1194,185 @@ test("the confirmation's refusal handle can refuse but never grant or poll", asy
     recorded: true,
   });
   assert.equal(onlyRow().measurementConsent, MEASUREMENT_CONSENT_WITHDRAWN);
+});
+
+async function withheldVerified(): Promise<string> {
+  store = new FakeLeadStore();
+  mailer = new FakeMailer();
+  verified = [];
+  submits = [];
+  durable = [];
+  slept = [];
+  gate = createGrantGate();
+  clock = new Date("2026-10-08T09:00:00.000Z");
+  await requestVerificationService(submit(false), deps());
+  clock = new Date(clock.getTime() + 60_000);
+  const token = mailer.sent[0].token;
+  const confirmed = await confirmVerificationService(token, deps());
+  assert.equal(confirmed.status, "verified");
+  assert.equal(confirmed.registration, undefined, "the withheld confirmation does not mint");
+  assert.equal(registrationCalls().length, 0);
+  return token;
+}
+
+test("a late Allow refuses a missing, stale, future, or blocked verification time", async () => {
+  const missingToken = await withheldVerified();
+  delete onlyRow().verifiedAt;
+  const missing = await grantConfirmationMeasurementService(missingToken, {}, deps());
+  assert.ok(missing.browserLead, "the legacy confirmation still has its own id");
+  assert.equal(missing.registration, undefined);
+  assert.equal(registrationCalls().length, 0);
+  assert.equal(leadCalls().length, 0);
+
+  const staleToken = await withheldVerified();
+  const staleVerifiedAt = new Date(
+    clock.getTime() - (RETARGETING_FRESHNESS_SECONDS + 10) * 1000,
+  ).toISOString();
+  onlyRow().verifiedAt = staleVerifiedAt;
+  const stale = await grantConfirmationMeasurementService(staleToken, {}, deps());
+  assert.ok(stale.browserLead);
+  assert.equal(stale.registration, undefined);
+  assert.equal(registrationCalls().length, 0);
+  assert.equal(
+    Math.floor(Date.parse(onlyRow().verifiedAt ?? "") / 1000),
+    Math.floor(Date.parse(staleVerifiedAt) / 1000),
+    "the refusal does not rewrite Verified at",
+  );
+
+  const edgeToken = await withheldVerified();
+  onlyRow().verifiedAt = new Date(clock.getTime() - RETARGETING_FRESHNESS_SECONDS * 1000).toISOString();
+  const edge = await grantConfirmationMeasurementService(edgeToken, {}, deps());
+  assert.equal(edge.registration?.eventName, "CompleteRegistration");
+  assert.equal(
+    edge.registration?.eventTime,
+    Math.floor(Date.parse(onlyRow().verifiedAt ?? "") / 1000),
+  );
+  assert.notEqual(edge.registration?.eventTime, Math.floor(clock.getTime() / 1000));
+  assert.equal(registrationCalls().length, 1);
+
+  const futureToken = await withheldVerified();
+  onlyRow().verifiedAt = new Date(clock.getTime() + 400_000).toISOString();
+  const future = await grantConfirmationMeasurementService(futureToken, {}, deps());
+  assert.ok(future.browserLead);
+  assert.equal(future.registration, undefined);
+  assert.equal(registrationCalls().length, 0);
+
+  const invalidToken = await withheldVerified();
+  onlyRow().verifiedAt = "not-a-date";
+  const invalid = await grantConfirmationMeasurementService(invalidToken, {}, deps());
+  assert.ok(invalid.browserLead);
+  assert.equal(invalid.registration, undefined);
+  assert.equal(registrationCalls().length, 0);
+
+  const duplicateToken = await withheldVerified();
+  onlyRow().duplicate = true;
+  const duplicate = await grantConfirmationMeasurementService(duplicateToken, {}, deps());
+  assert.ok(duplicate.browserLead);
+  assert.equal(duplicate.registration, undefined);
+  assert.equal(registrationCalls().length, 0);
+
+  const suspectToken = await withheldVerified();
+  onlyRow().suspect = true;
+  const suspect = await grantConfirmationMeasurementService(suspectToken, {}, deps());
+  assert.ok(suspect.browserLead);
+  assert.equal(suspect.registration, undefined);
+  assert.equal(registrationCalls().length, 0);
+
+  const unsubscribedToken = await withheldVerified();
+  onlyRow().status = "unsubscribed";
+  assert.deepEqual(await grantConfirmationMeasurementService(unsubscribedToken, {}, deps()), {
+    ok: true,
+  });
+  assert.equal(registrationCalls().length, 0);
+  assert.equal(leadCalls().length, 0);
+});
+
+test("a form submit Allow and an unverified poll do not mint a verified event", async () => {
+  const pending = await requestVerificationService(submit(false), deps());
+  assert.equal("registration" in pending, false);
+  const grant = await grantAttemptMeasurementService(pending.handle, {}, deps());
+  assert.deepEqual(grant, { ok: true });
+  const polled = await pollVerificationService(pending.handle, deps());
+  assert.deepEqual(polled, { ok: true, status: "pending" });
+  assert.equal(polled.registration, undefined);
+  assert.equal(leadCalls().length, 0);
+  assert.equal(registrationCalls().length, 0);
+});
+
+test("a second confirmation grant repeats the original id and time", async () => {
+  const token = await withheldVerified();
+  const verifiedSeconds = Math.floor(Date.parse(onlyRow().verifiedAt ?? "") / 1000);
+  const first = await grantConfirmationMeasurementService(token, {}, deps());
+  clock = new Date(clock.getTime() + 60 * 60 * 1000);
+  const second = await grantConfirmationMeasurementService(token, {}, deps());
+  assert.equal(first.registration?.eventId, second.registration?.eventId);
+  assert.equal(first.registration?.eventTime, verifiedSeconds);
+  assert.equal(second.registration?.eventTime, verifiedSeconds);
+  assert.notEqual(second.registration?.eventTime, Math.floor(clock.getTime() / 1000));
+  assert.equal(registrationCalls().length, 2);
+  assert.equal(leadCalls().length, 0);
+  const call = registrationCalls()[1] as DurableCall & { nowSeconds?: number };
+  assert.equal(call.plan.eventTime, verifiedSeconds);
+  assert.equal(call.nowSeconds, Math.floor(clock.getTime() / 1000));
+  assert.equal(call.plan.reason, "deduped_retry");
+});
+
+test("the stored verification time is the only source for a late grant", () => {
+  const source = readFileSync(new URL("../src/lib/verification/service.ts", import.meta.url), "utf8");
+  const clockRead = source.slice(
+    source.indexOf("function authoritativeVerifiedAtSeconds"),
+    source.indexOf("function planStoredRegistration"),
+  );
+  assert.ok(clockRead.includes("record.verifiedAt"));
+  assert.equal(clockRead.includes("Date.now"), false);
+  assert.equal(clockRead.includes("signedUpAt"), false);
+  assert.equal(clockRead.includes("welcomeAt"), false);
+  assert.equal(clockRead.includes("sentAt"), false);
+  const planner = source.slice(
+    source.indexOf("function planStoredRegistration"),
+    source.indexOf("function registrationFromPlan"),
+  );
+  assert.ok(planner.includes('source: "deduped_retry"'));
+  assert.equal(planner.includes("success_screen"), false);
+  assert.equal(planner.includes("notion_flag"), false);
+  assert.equal(planner.includes('source: "url"'), false);
+  assert.equal(planner.includes("occurredAtSeconds: nowSeconds"), false);
+});
+
+
+test("late standard registration survives an unavailable legacy confirmation sink", async () => {
+  for (const failure of ["absent", "rejected", "throws"] as const) {
+    const token = await withheldVerified();
+    const originalSecond = Math.floor(Date.parse(onlyRow().verifiedAt!) / 1000);
+    clock = new Date(clock.getTime() + 3_600_000);
+    const dependencies = {
+      ...deps(),
+      dispatchVerifiedLead: failure === "absent" ? undefined : async () => {
+        if (failure === "throws") throw new Error("legacy transport unavailable");
+        return false;
+      },
+    };
+    const result = await grantConfirmationMeasurementService(token, {}, dependencies);
+    assert.equal(result.status, "retry", failure);
+    assert.equal(result.browserLead, undefined, failure);
+    assert.equal(result.registration?.eventName, "CompleteRegistration", failure);
+    assert.equal(result.registration?.eventTime, originalSecond, failure);
+    assert.equal(registrationCalls().length, 1, failure);
+    assert.equal(leadCalls().length, 0, failure);
+    assert.equal(result.registration?.eventId, registrationCalls()[0].plan.eventId, failure);
+  }
+});
+
+test("late standard registration still refuses a withdrawal during a failed legacy send", async () => {
+  const token = await withheldVerified();
+  const result = await grantConfirmationMeasurementService(token, {}, {
+    ...deps(),
+    dispatchVerifiedLead: async () => {
+      await store.recordMeasurementWithdrawal(onlyRow().pageId);
+      return false;
+    },
+  });
+  assert.equal(result.registration, undefined);
+  assert.equal(result.browserLead, undefined);
+  assert.equal(registrationCalls().length, 0);
 });

@@ -1,6 +1,6 @@
 // Signed reservation invites. The email worker mints these for a lead whose
-// email is already verified. Checkout trusts the signature, never an email
-// field on the request. Notion does not store the token.
+// email is already verified. Checkout verifies the signature and rechecks the
+// live signup row, never an email field on the request. Notion does not store the token.
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 import { reservationCanonicalEmail } from "./emailIdentity.ts";

@@ -1,0 +1,115 @@
+{
+  "policy_id": "WD-STAGE-SCORE-20261025",
+  "aggregation": "highest_currently_true_stage",
+  "forbidden_aggregation": "sum",
+  "weights": {
+    "email_signup": 1,
+    "email_verified": 3,
+    "phone_without_verified_email": 5,
+    "verified_email_and_phone": 10,
+    "paid_reservation": 30
+  },
+  "stage_rank_high_to_low": [
+    "paid_reservation",
+    "verified_email_and_phone",
+    "phone_without_verified_email",
+    "email_verified",
+    "email_signup"
+  ],
+  "phone_consent_version": "WD-SMS-CONSENT-V2",
+  "phone_stage_requires_sms_consent": false,
+  "phone_stage_is_saved_phone": true,
+  "sms_marketing_consent_is_separate": true,
+  "phone_ownership_verified": false,
+  "phone_only_signup_supported_by_current_product": false,
+  "payment": {
+    "amount_cents": 300,
+    "currency": "usd",
+    "product_code": "watchdive_reservation_fee",
+    "requires_livemode": true,
+    "requires_webhook_verified": true,
+    "qualifying_refund_state": "none",
+    "qualifying_dispute": ["none", "won"]
+  },
+  "score_field_rules": {
+    "use_score_for_ranking_only_when_completeness": "complete",
+    "unknown_is_not_zero": true,
+    "excluded_is_not_zero": true,
+    "no_qualifying_stage_is_null_not_zero": true,
+    "payment_30_does_not_depend_on_email_or_phone": true,
+    "nested_stages_are_listed_and_not_added": true
+  },
+  "retractions": {
+    "full_refund": "removes paid_reservation",
+    "partial_refund": "removes paid_reservation",
+    "pending_refund": "removes paid_reservation",
+    "open_dispute": "removes paid_reservation",
+    "won_dispute_with_no_refund": "paid_reservation may remain",
+    "test_mode_or_livemode_false": "never paid_reservation",
+    "sms_marketing_opt_out": "keeps a saved phone stage and does not authorize an SMS",
+    "phone_data_withdrawn": "removes phone stages",
+    "lead_suppressed_or_suspect": "excludes the person"
+  },
+  "identity": {
+    "input_key": "person_key",
+    "person_key_is_opaque": true,
+    "raw_email_phone_forbidden_in_input": true,
+    "duplicate_rows_merge_by_person_key": true,
+    "duplicate_payments_do_not_add": true
+  },
+  "record_mapping": {
+    "email_verified_when": "emailVerified is true, or verification status is verified, or verifiedAt is set. Google and Apple rows use the same flags after the provider check in socialAuth/complete.ts alreadyVerified.",
+    "email_signup_when": "an email lead exists and the verified flags are false",
+    "email_none_when": "the loaded record has no email. Current joinWaitlist requires an email, so this state is not produced. Score the phone stage only when the caller sets phone_only_lead_valid true.",
+    "email_unknown_when": "the email columns were not loaded. Do not treat that as no signup.",
+    "phone_qualifies_when": "the Phone column was loaded and is non-empty. SMS marketing consent is recorded beside the score and does not grant or remove the stage. A saved phone is not proof of ownership and does not authorize an SMS.",
+    "phone_unknown_when": "the Phone column was not loaded. An empty Phone cell is absent. A missing SMS consent column is unknown consent, not an unknown phone.",
+    "payment_qualifies_when": "reservation mirror loaded, mode live, paid true, amount 300 USD cents, currency usd, product watchdive_reservation_fee, webhook-verified settlement, refunded cents 0, refund pending cents 0, dispute none or won",
+    "payment_unknown_when": "the reservation mirror was not loaded. Do not treat a missing mirror as unpaid.",
+    "exclude_when": "suspect is true or verification status is suppressed. Those scores stay null."
+  },
+  "meta_recommendation": {
+    "choose_before_creation": "OUTCOME_LEADS",
+    "current_paused_campaigns": {
+      "objective": "OUTCOME_LEADS",
+      "optimization_goal": "OFFSITE_CONVERSIONS",
+      "promoted_custom_conversion_id": "1080978008182811",
+      "role": "verified_email_count_fallback"
+    },
+    "optimization_goal": "OFFSITE_CONVERSIONS",
+    "promoted_custom_conversion_id": "1080978008182811",
+    "future_value_optimization": {
+      "requires_new_campaign": true,
+      "objective": "OUTCOME_SALES",
+      "optimization_goal": "VALUE",
+      "event_name": "WatchDiveStageScore",
+      "value_semantics": "one_highest_stage_per_person",
+      "currency_code_required": "USD",
+      "currency_code_is_not_stripe_revenue": true,
+      "eligibility_minimum": "100 events and 5 distinct values over 14 days",
+      "send_once_after_maturity": true
+    },
+    "paused_leads_reconstruction": {
+      "reconstruct_as_outcome_sales": false,
+      "custom_conversion_id": "1080978008182811",
+      "custom_event_type": "LEAD",
+      "sales_website_event_list_includes_lead": false,
+      "leads_website_optimization_goals_include_value": false,
+      "in_place_objective_edit": "The campaign update endpoint lists objective. Success while child ad sets still promote this LEAD conversion was not shown. Do not send the edit.",
+      "same_ad_set_cannot_become_the_value_goal": true,
+      "coordinator_note": "Root reported 4 Leads campaigns and 8 lookalike ad sets, paused, no ads. This pass did not re-read the 8 ad sets."
+    },
+    "do_not_attach_value_rules_for_stage_weights": true,
+    "do_not_put_stage_score_on_purchase_value": true,
+    "purchase_value_if_a_real_charge_is_later_authorized": "3.00 USD",
+    "purchase_value_forbidden": "30",
+    "send_events_from_this_module": false,
+    "historical_backfill": false
+  },
+  "emission": {
+    "measurement_consent_required": "granted",
+    "withdrawn_measurement_blocks_emission": true,
+    "internal_score_does_not_require_measurement_consent": true,
+    "idempotency": "Recomputing the score is safe. A future Purchase event_id must be the payment id. Meta dedupes the same event_name and event_id; a new id would count again. This module does not send."
+  }
+}

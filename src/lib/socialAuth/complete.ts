@@ -16,6 +16,7 @@ import {
   type LeadRecord,
   type LeadStore,
 } from "../verification/contracts.ts";
+import { socialContinuationAllowed } from "./continuation.ts";
 import {
   completeSocialVerification,
   reportPressNow,
@@ -23,8 +24,11 @@ import {
   sendSocialVerificationMail,
   type ServiceDependencies,
 } from "../verification/service.ts";
+import { noteStageSignup } from "../stageScore/observe.ts";
 import { PRESS_SYNC_PENDING, pressOutboxFor } from "../press/pressAttribution.server.ts";
-import { newLeadId } from "../verification/token.ts";
+import { newLeadId, requireSecret } from "../verification/token.ts";
+import { measureSocialSignup } from "../retargeting/apply.ts";
+import type { BrowserRetargetingEvent } from "../retargeting/events.ts";
 import { SocialAuthSchemaError } from "../verification/notionLead.ts";
 import { classifyProviderClaims, isDocumentedRelayDomain, validSubject, type ProviderClaims } from "./claims.ts";
 import type { SocialProvider } from "./config.ts";
@@ -96,16 +100,42 @@ async function listSubject(
   }
 }
 
-export async function completeSocialIdentity(input: {
-  provider: SocialProvider;
-  claims: ProviderClaims;
-  bound: SocialState;
-  dependencies: ServiceDependencies;
-  now: Date;
-  relayReady: boolean;
-  /** Disposable, headless, or network-blocked. Nothing is written. */
-  blocked: boolean;
-}): Promise<SocialFinish> {
+export type SocialContinuationSink = {
+  leadId?: string;
+  /** Browser events for this finish. Never put these on the redirect URL. */
+  measurement?: BrowserRetargetingEvent[];
+};
+
+async function rememberContinuation(
+  store: LeadStore,
+  pageId: string,
+  provider: SocialProvider,
+  sub: string,
+  grant: SocialContinuationSink | undefined,
+): Promise<void> {
+  if (!grant) return;
+  try {
+    const fresh = await store.reread(pageId);
+    const leadId = socialContinuationAllowed(fresh, provider, sub);
+    if (leadId) grant.leadId = leadId;
+  } catch {
+    // The presentation redirect still finishes. No phone or reservation grant.
+  }
+}
+
+export async function completeSocialIdentity(
+  input: {
+    provider: SocialProvider;
+    claims: ProviderClaims;
+    bound: SocialState;
+    dependencies: ServiceDependencies;
+    now: Date;
+    relayReady: boolean;
+    /** Disposable, headless, or network-blocked. Nothing is written. */
+    blocked: boolean;
+  },
+  grant?: SocialContinuationSink,
+): Promise<SocialFinish> {
   if (input.blocked) return "error";
   if (input.bound.provider !== input.provider) return "error";
   const store = input.dependencies.store;
@@ -124,7 +154,9 @@ export async function completeSocialIdentity(input: {
       if (!peers) return "error";
       const row = peers.filter((peer) => !peer.duplicate && peer.status !== "unsubscribed").sort((a, b) => createdMs(a) - createdMs(b))[0];
       if (!row) return "error";
-      return alreadyVerified(row) ? "confirmed" : "error";
+      if (!alreadyVerified(row)) return "error";
+      await rememberContinuation(store, row.pageId, "apple", sub, grant);
+      return "confirmed";
     }
 
     const identity = classified.identity;
@@ -160,6 +192,9 @@ export async function completeSocialIdentity(input: {
           );
           if (attached === "conflict") return "error";
         }
+        if (current || !externalGoogle) {
+          await rememberContinuation(store, existing.pageId, identity.provider, identity.sub, grant);
+        }
         return "confirmed";
       }
       if (externalGoogle) {
@@ -183,14 +218,25 @@ export async function completeSocialIdentity(input: {
       if (!authoritative) return "pending";
       const fresh = await store.reread(existing.pageId);
       if (!fresh || fresh.duplicate || fresh.status === "unsubscribed") return "error";
-      if (alreadyVerified(fresh)) return "confirmed";
+      if (alreadyVerified(fresh)) {
+        await rememberContinuation(store, fresh.pageId, identity.provider, identity.sub, grant);
+        return "confirmed";
+      }
       const outcome = await completeSocialVerification(
         fresh,
         input.dependencies,
         conversionContext(input.bound),
         input.now,
       );
-      return outcome === "verified" || outcome === "already" ? "confirmed" : "error";
+      if (outcome !== "verified" && outcome !== "already") return "error";
+      if (outcome === "verified") {
+        const measured = await store.reread(fresh.pageId).catch(() => undefined);
+        if (measured) {
+          await rememberSocialMeasurement(grant, measured, false, true, input.dependencies, input.bound, input.now);
+        }
+      }
+      await rememberContinuation(store, fresh.pageId, identity.provider, identity.sub, grant);
+      return "confirmed";
     }
 
     if (identity.provenance === "google:external-email") {
@@ -202,9 +248,10 @@ export async function completeSocialIdentity(input: {
           ...(input.bound.referredBy ? { referredBy: input.bound.referredBy } : {}),
           flags: [],
           suspect: false,
-          attribution: leadAttribution(input.bound),
+          attribution: leadAttribution(input.bound, Boolean(input.dependencies.gpc)),
           signupCountryProbe: input.bound.country,
           measurementConsent: input.bound.measurementConsent && !input.dependencies.gpc,
+          googleClientId: input.bound.googleClientId,
           ...(input.bound.measurementConsent && !input.dependencies.gpc && input.bound.fbc
             ? { metaFbc: input.bound.fbc }
             : {}),
@@ -238,7 +285,7 @@ export async function completeSocialIdentity(input: {
       signedUpAt: input.now.toISOString(),
       leadId: (input.dependencies.leadId ?? newLeadId)(),
       expiresAt: new Date(input.now.getTime() + VERIFICATION_TTL_MS).toISOString(),
-      attribution: leadAttribution(input.bound),
+      attribution: leadAttribution(input.bound, Boolean(input.dependencies.gpc)),
       signupCountry: observeSignupCountry({
         trustedVercel: input.bound.country.trustedVercel,
         header: input.bound.country.header,
@@ -258,7 +305,18 @@ export async function completeSocialIdentity(input: {
       requireProviderSubject: true,
       ...socialPressOutbox(input.bound, canonical, input.now),
     });
-    return settleCreated(created, identity.provider, identity.sub, authoritative, input);
+    if (process.env.WATCHDIVE_STAGE_SCORE_INTEGRATION === "enabled") {
+      await noteStageSignup({
+        email: identity.email,
+        at: input.now.toISOString(),
+        source: "oauth",
+        measurementCell: measurementState(input.bound, Boolean(input.dependencies.gpc)),
+        suspect: false,
+        suppressed: false,
+        phonePresent: false,
+      });
+    }
+    return settleCreated(created, identity.provider, identity.sub, authoritative, input, grant);
   } catch (error) {
     if (error instanceof SocialAuthSchemaError) return "error";
     return "error";
@@ -271,21 +329,29 @@ function socialPressOutbox(bound: SocialState, canonical: string, now: Date): { 
   return pressOutbox ? { pressOutbox, pressSync: PRESS_SYNC_PENDING } : {};
 }
 
-function conversionContext(bound: SocialState): { fbp?: string; fbc?: string } {
+function conversionContext(bound: SocialState): {
+  fbp?: string;
+  fbc?: string;
+  googleClientId?: string;
+} {
   if (!bound.measurementConsent) return {};
   return {
+    ...(bound.googleClientId ? { googleClientId: bound.googleClientId } : {}),
     ...(bound.fbp ? { fbp: bound.fbp } : {}),
     ...(bound.fbc ? { fbc: bound.fbc } : {}),
   };
 }
 
-function leadAttribution(bound: SocialState) {
+function leadAttribution(bound: SocialState, gpc: boolean) {
   const landingPath = signupLandingPath(
     bound.locale,
     bound.attribution.landingPath,
   );
   const fbclid =
-    bound.attribution.fbclid && process.env.NOTION_FBCLID_PROPERTY?.trim()
+    !gpc &&
+    bound.measurementConsent &&
+    bound.attribution.fbclid &&
+    process.env.NOTION_FBCLID_PROPERTY?.trim()
       ? bound.attribution.fbclid
       : undefined;
   return {
@@ -314,6 +380,7 @@ async function settleCreated(
     now: Date;
     bound: SocialState;
   },
+  grant: SocialContinuationSink | undefined,
 ): Promise<SocialFinish> {
   const store = input.dependencies.store;
   const peers = await listSubject(store, provider, sub);
@@ -325,6 +392,7 @@ async function settleCreated(
   const verifiedOther = live.find((peer) => peer.pageId !== created.pageId && alreadyVerified(peer));
   if (verifiedOther) {
     await store.markDuplicate?.(created.pageId);
+    await rememberContinuation(store, verifiedOther.pageId, provider, sub, grant);
     return "confirmed";
   }
   const winner = live.reduce<LeadRecord | undefined>(
@@ -338,16 +406,25 @@ async function settleCreated(
   if (!verify) {
     // The lead is written without a verified address: a completed signup, not a confirmed one.
     await reportPressNow(input.dependencies, "accepted", created, input.now);
+    const measured = await store.reread(created.pageId).catch(() => undefined);
+    if (measured) {
+      await rememberSocialMeasurement(grant, measured, true, false, input.dependencies, input.bound, input.now);
+    }
     return "pending";
   }
   const fresh = await store.reread(created.pageId);
   if (!fresh || fresh.duplicate || fresh.status === "unsubscribed") return "error";
-  if (alreadyVerified(fresh)) return "confirmed";
+  if (alreadyVerified(fresh)) {
+    await rememberContinuation(store, fresh.pageId, provider, sub, grant);
+    return "confirmed";
+  }
   const again = await listSubject(store, provider, sub);
   if (!again) return "error";
   const still = again.filter((peer) => !peer.duplicate && peer.status !== "unsubscribed");
-  if (still.some((peer) => peer.pageId !== fresh.pageId && alreadyVerified(peer))) {
+  const verifiedPeer = still.find((peer) => peer.pageId !== fresh.pageId && alreadyVerified(peer));
+  if (verifiedPeer) {
     await store.markDuplicate?.(fresh.pageId);
+    await rememberContinuation(store, verifiedPeer.pageId, provider, sub, grant);
     return "confirmed";
   }
   const stillWinner = still.reduce<LeadRecord | undefined>(
@@ -364,7 +441,48 @@ async function settleCreated(
     conversionContext(input.bound),
     input.now,
   );
-  return outcome === "verified" || outcome === "already" ? "confirmed" : "error";
+  if (outcome !== "verified" && outcome !== "already") return "error";
+  if (outcome === "verified") {
+    const measured = await store.reread(fresh.pageId).catch(() => undefined);
+    if (measured) {
+      await rememberSocialMeasurement(grant, measured, true, true, input.dependencies, input.bound, input.now);
+    }
+  }
+  await rememberContinuation(store, fresh.pageId, provider, sub, grant);
+  return "confirmed";
+}
+
+async function rememberSocialMeasurement(
+  grant: SocialContinuationSink | undefined,
+  row: LeadRecord,
+  rowCreated: boolean,
+  verifiedNow: boolean,
+  dependencies: ServiceDependencies,
+  bound: SocialState,
+  now: Date,
+): Promise<void> {
+  if (!grant) return;
+  try {
+    const secret = requireSecret(dependencies.env ?? {});
+    const source = row.signupMethod === "google" || row.signupMethod === "apple"
+      ? row.signupMethod
+      : row.source;
+    const events = await measureSocialSignup({
+      row,
+      rowCreated,
+      verifiedNow,
+      secret,
+      gpc: dependencies.gpc === true,
+      source,
+      landingPath: bound.attribution.landingPath,
+      fbp: bound.fbp,
+      fbc: bound.fbc ?? row.metaFbc,
+      nowSeconds: Math.floor(now.getTime() / 1000),
+    });
+    if (events.length) grant.measurement = events;
+  } catch {
+    // The redirect still finishes. No event id is added to the URL.
+  }
 }
 
 export function isSocialLocale(value: string | undefined): value is Locale {

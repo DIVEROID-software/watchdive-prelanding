@@ -1,3 +1,5 @@
+import { compatibilityEmailFragment } from "../compatibility/email.ts";
+import type { CompatibilityContext } from "../compatibility/context.ts";
 import { phoneOptInCopy } from "../phoneOptInCopy.ts";
 // Direct Resend HTTP client. No SDK, so nothing can drag an API key into a
 // client bundle: this module is only ever reached from a server function.
@@ -15,6 +17,7 @@ import {
   verificationUrl,
   type TokenEnvironment,
 } from "./token.ts";
+import { watchdiveLogoImg } from "../mail/brutal.ts";
 import { buildReminderEmail } from "./reminderEmail.ts";
 import { DEFAULT_LOCALE, referralPath, type Locale } from "../i18n/locale.ts";
 import type { ReferralMailer, ReferralNoticeMail } from "../referral/contract.ts";
@@ -72,6 +75,7 @@ export type ResendConfig = {
 };
 
 export type VerificationMail = {
+  compatibility?: CompatibilityContext;
   to: string;
   token: string;
   leadId: string;
@@ -437,17 +441,19 @@ export function verificationEmailUiCopy(locale: Locale): {
   return { subject, button };
 }
 
-function body(url: string, locale: Locale): { subject: string; text: string; html: string } {
+function body(url: string, locale: Locale, compatibility?: CompatibilityContext): { subject: string; text: string; html: string } {
   const safeUrl = escapeHtml(url);
+  const result = compatibility ? compatibilityEmailFragment(compatibility, locale) : null;
   const copy = EMAIL_COPY[locale].verification;
-  // Own, approved asset: no dependency on the brand hub or a third-party CDN.
-  const wordmark = escapeHtml(new URL("/brand/reservation/diveroid-wordmark-color-transparent.png", url).href);
+  // Official WatchDive primary PNG. The signed page origin is not used, so a
+  // verification token never becomes part of the image address.
+  const wordmark = watchdiveLogoImg();
   const font = "Arial,'Helvetica Neue','Apple SD Gothic Neo','Malgun Gothic','Hiragino Sans','Microsoft YaHei','PingFang SC','PingFang TC',sans-serif";
   const wrap = locale === "ko" ? "word-break:keep-all;overflow-wrap:break-word;" : "overflow-wrap:break-word;";
   // Kept separate from buddyDocument: this is transactional and must never
   // inherit the Buddy Invite advertising footer, rewards or unsubscribe links.
   return {
-    text: [copy.heading, "", copy.intro, url, "", phoneOptInCopy[locale].emailHint, "", copy.expires, copy.ignore].join("\n"),
+    text: [copy.heading, "", ...(result ? [result.text, ""] : []), copy.intro, url, "", phoneOptInCopy[locale].emailHint, "", copy.expires, copy.ignore].join("\n"),
     html: [
       "<!doctype html>",
       `<html lang="${locale}" dir="ltr"><head><meta charset="utf-8">`,
@@ -478,17 +484,19 @@ function body(url: string, locale: Locale): { subject: string; text: string; htm
       // Table-cell shadows survive Outlook's Word renderer without box-shadow.
       '<tr><td class="verify-shadow" bgcolor="#111111" style="padding:0 6px 6px 0;background-color:#111111;">',
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="verify-frame" style="width:100%;table-layout:fixed;border:3px solid #111111;border-collapse:separate;">',
-      '<tr><td class="verify-brand verify-frame" bgcolor="#ffffff" style="padding:20px 22px;background-color:#ffffff;border-bottom:3px solid #111111;">',
-      `<img src="${wordmark}" width="150" height="22" alt="DIVEROID" style="display:block;width:150px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;">`,
-      '</td></tr><tr><td class="verify-blue verify-frame" bgcolor="#36A9E1" style="padding:26px 22px;background-color:#36A9E1;background-image:linear-gradient(#36A9E1,#36A9E1);border-bottom:3px solid #111111;">',
+      '<tr><td class="verify-brand verify-frame" bgcolor="#ffffff" style="padding:34px!important;background-color:#ffffff;border-bottom:3px solid #111111;">',
+      wordmark,
+      '</td></tr><tr><td class="verify-yellow verify-frame" bgcolor="#ffe55c" height="8" style="height:8px;font-size:0;line-height:8px;background-color:#ffe55c;background-image:linear-gradient(#ffe55c,#ffe55c);border-bottom:3px solid #111111;">&nbsp;</td></tr>',
+      '<tr><td class="verify-blue verify-frame" bgcolor="#36A9E1" style="padding:26px 22px;background-color:#36A9E1;background-image:linear-gradient(#36A9E1,#36A9E1);border-bottom:3px solid #111111;">',
       `<p style="margin:0 0 12px;font-size:13px;line-height:18px;font-weight:700;letter-spacing:1px;color:#1a1238;">WatchDive</p>`,
       `<h1 style="margin:0;font-family:${font};font-size:30px;line-height:1.25;font-weight:700;letter-spacing:-0.5px;color:#1a1238;${wrap}">${escapeHtml(copy.heading)}</h1>`,
       `</td></tr><tr><td class="verify-card" bgcolor="#ffffff" style="padding:24px 22px;background-color:#ffffff;font-family:${font};${wrap}">`,
+      ...(result ? [`<div class="verify-copy" style="font-size:15px;line-height:1.6;">${result.html}</div>`] : []),
       `<p class="verify-copy" style="margin:0 0 24px;font-size:16px;line-height:1.65;color:#1a1238;">${escapeHtml(copy.intro)}</p>`,
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;border-collapse:separate;">',
       '<tr><td class="verify-shadow" bgcolor="#111111" style="padding:0 4px 4px 0;background-color:#111111;">',
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;border-collapse:separate;"><tr>',
-      '<td class="verify-yellow verify-frame" align="center" bgcolor="#ffe55c" style="background-color:#ffe55c;background-image:linear-gradient(#ffe55c,#ffe55c);border:3px solid #111111;mso-padding-alt:18px 12px;">',
+      '<td class="verify-blue verify-frame" align="center" bgcolor="#36A9E1" style="background-color:#36A9E1;background-image:linear-gradient(#36A9E1,#36A9E1);border:3px solid #111111;mso-padding-alt:18px 12px;">',
       `<a href="${safeUrl}" rel="noreferrer noopener" style="display:block;padding:18px 12px;font-family:${font};font-size:18px;line-height:24px;font-weight:700;color:#1a1238;text-decoration:none;mso-padding-alt:0;">${escapeHtml(copy.button)}</a>`,
       '</td></tr></table></td></tr><tr><td height="24" style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr></table>',
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;border-collapse:collapse;"><tr>',
@@ -506,35 +514,58 @@ function body(url: string, locale: Locale): { subject: string; text: string; htm
   };
 }
 
+/** Offline preview of the initial verification mail. Does not sign, send, or read secrets. */
+export function renderInitialVerificationMail(
+  url: string,
+  locale: Locale,
+  compatibility?: CompatibilityContext,
+): { subject: string; text: string; html: string } {
+  return body(url, locale, compatibility);
+}
+
 // Copy stays as neutral as the confirmation mail. The referral reward is still
 // unapproved in `docs/01-product-truth.md`, so this hands over the link and
 // says nothing about what sharing it earns.
 function welcomeBody(url: string, locale: Locale): { subject: string; text: string; html: string } {
   const safeUrl = escapeHtml(url);
   const copy = EMAIL_COPY[locale].welcome;
+  const font = "Arial,'Helvetica Neue','Apple SD Gothic Neo','Malgun Gothic','Hiragino Sans','Microsoft YaHei','PingFang SC','PingFang TC',sans-serif";
+  const wrap = locale === "ko" ? "word-break:keep-all;overflow-wrap:break-word;" : "overflow-wrap:break-word;";
   return {
     text: [copy.heading, "", copy.intro, url, "", copy.outro].join("\n"),
     html: [
-      `<div lang="${locale}" style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px">`,
-      `<h1 style="font-size:20px;margin:0 0 12px">${copy.heading}</h1>`,
-      '<p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 24px">',
-      copy.intro,
-      "</p>",
-      `<p style="margin:0 0 24px"><a href="${safeUrl}" rel="noreferrer noopener" `,
-      'style="display:inline-block;background:#0ea5e9;color:#04121f;font-weight:600;',
-      'font-size:16px;padding:14px 28px;border-radius:12px;text-decoration:none">',
-      `${copy.button}</a></p>`,
-      '<p style="font-size:13px;line-height:1.6;color:#64748b;margin:0 0 8px">',
-      `${copy.fallback}<br>`,
-      `<span style="word-break:break-all">${safeUrl}</span>`,
-      "</p>",
-      '<p style="font-size:13px;line-height:1.6;color:#64748b;margin:0">',
-      copy.outro,
-      "</p>",
-      "</div>",
+      "<!doctype html>",
+      `<html lang="${locale}" dir="ltr"><head><meta charset="utf-8">`,
+      '<meta name="viewport" content="width=device-width,initial-scale=1">',
+      '<meta name="color-scheme" content="light">',
+      `<title>${escapeHtml(copy.subject)}</title></head>`,
+      `<body style="margin:0;padding:0;width:100%;background-color:#f5f3ee;font-family:${font};-webkit-text-size-adjust:100%;">`,
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5f3ee" style="width:100%;background-color:#f5f3ee;border-collapse:collapse;">',
+      '<tr><td align="center" style="padding:24px 12px;">',
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:separate;">',
+      '<tr><td bgcolor="#111111" style="padding:0 6px 6px 0;background-color:#111111;">',
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border:3px solid #111111;border-collapse:separate;">',
+      `<tr><td bgcolor="#ffffff" style="padding:34px!important;background-color:#ffffff;border-bottom:3px solid #111111;">${watchdiveLogoImg()}</td></tr>`,
+      '<tr><td bgcolor="#ffe55c" height="8" style="height:8px;font-size:0;line-height:8px;background-color:#ffe55c;border-bottom:3px solid #111111;">&nbsp;</td></tr>',
+      `<tr><td bgcolor="#ffffff" style="padding:24px 22px;background-color:#ffffff;font-family:${font};${wrap}">`,
+      `<h1 style="margin:0 0 12px;font-size:28px;line-height:1.25;font-weight:700;color:#1a1238;">${escapeHtml(copy.heading)}</h1>`,
+      `<p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#1a1238;">${escapeHtml(copy.intro)}</p>`,
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;"><tr>',
+      '<td align="center" bgcolor="#36A9E1" style="background-color:#36A9E1;border:3px solid #111111;mso-padding-alt:14px 18px;">',
+      `<a href="${safeUrl}" rel="noreferrer noopener" style="display:block;padding:14px 18px;font-family:${font};font-size:16px;line-height:22px;font-weight:700;color:#1a1238;text-decoration:none;">${escapeHtml(copy.button)}</a>`,
+      "</td></tr></table>",
+      `<p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#534e63;">${escapeHtml(copy.fallback)}<br>`,
+      `<span style="word-break:break-all;overflow-wrap:anywhere;">${safeUrl}</span></p>`,
+      `<p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#534e63;">${escapeHtml(copy.outro)}</p>`,
+      "</td></tr></table></td></tr></table></td></tr></table></body></html>",
     ].join(""),
     subject: copy.subject,
   };
+}
+
+/** Program-off welcome. Same bytes as the mailer sends. Preview-only callers use this. */
+export function renderLegacyWelcomeMail(url: string, locale: Locale): { subject: string; text: string; html: string } {
+  return welcomeBody(url, locale);
 }
 
 /**
@@ -628,14 +659,20 @@ async function deliverWithRetries(
 // no web font, no image, no flex or grid. Long links break anywhere so a phone
 // never scrolls sideways.
 //
-// These are promotional messages, so each carries the sender's identity and a
-// working opt-out: the launch-mail /unsubscribe/<token> endpoint, which records
-// `unsubscribed` in the row's `Launch mail` cell. Every later launch,
-// reservation, Buddy Invite notice and announcement run treats that marker as
-// final. For Korean readers (ko locale, or a KR signup country) Korean law
-// (정보통신망법 제50조, 시행령 별표6) adds a "(광고)" subject prefix and a
-// Korean sender block with a phone number; without that number the mail is
-// refused rather than sent non-compliant.
+// The welcome guide and the one-off announcement are promotional. The
+// friend-joined notice is a status mail: verified count, tiers already
+// reached, and a link to the invite status page. It does not carry the share
+// call to action or the reward ladder. All three still carry the sender's
+// identity and a working opt-out: the launch-mail /unsubscribe/<token>
+// endpoint, which records `unsubscribed` in the row's `Launch mail` cell.
+// Every later launch, reservation, Buddy Invite notice and announcement run
+// treats that marker as final. For Korean readers (ko locale, or a KR signup
+// country) the guide and the announcement take the "(광고)" subject prefix
+// (정보통신망법 제50조, 시행령 별표6) and a Korean sender block with a phone
+// number; without that number the mail is refused rather than sent. The
+// status notice keeps that sender block and opt-out, and omits only the
+// subject prefix. That omission is the 2026-10-27 local candidate for this
+// one factual subject. It is not a finding that the notice is exempt.
 
 const FONT_STACK =
   "'Pangram Sans','Spoqa Han Sans Neo','Helvetica Neue',Arial," +
@@ -744,7 +781,12 @@ export function buddyListUnsubscribeHeaders(
   };
 }
 
-function adSubject(subject: string, footer: AdFooter): string {
+function adSubject(
+  subject: string,
+  footer: AdFooter,
+  kind: "marketing" | "status-notice" = "marketing",
+): string {
+  if (kind === "status-notice") return subject;
   return footer.korean ? `${KR_AD_SUBJECT_PREFIX}${subject}` : subject;
 }
 
@@ -773,13 +815,29 @@ function linkHtml(url: string, label?: string): string {
  * A button that survives Outlook: the colour sits on the table cell, the link
  * fills it, and `mso-padding-alt` restores the padding Word ignores on <a>.
  */
-function buttonHtml(url: string, label: string): string {
+function buttonHtml(url: string, label: string, tone: "primary" | "secondary" = "primary"): string {
+  const primary = tone === "primary";
+  const bg = primary ? BUTTON_BG : CARD_BG;
+  const ink = primary ? BUTTON_INK : INK;
+  const klass = primary ? "mail-accent mail-frame" : "mail-frame";
+  const fill = primary ? `background-image:linear-gradient(${bg},${bg});` : "";
   return (
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:separate;">' +
-    `<tr><td class="mail-accent mail-frame" align="center" bgcolor="${BUTTON_BG}" style="background-color:${BUTTON_BG};background-image:linear-gradient(${BUTTON_BG},${BUTTON_BG});border:3px solid ${INK};mso-padding-alt:14px 28px;">` +
-    `<a href="${escapeHtml(url)}" rel="noreferrer noopener" style="display:inline-block;padding:14px 28px;` +
-    `font-family:${FONT_STACK};font-size:16px;font-weight:700;line-height:20px;color:${BUTTON_INK};` +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 16px;border-collapse:separate;">' +
+    `<tr><td class="${klass}" align="center" bgcolor="${bg}" style="background-color:${bg};${fill}border:3px solid ${INK};mso-padding-alt:14px 18px;">` +
+    `<a href="${escapeHtml(url)}" rel="noreferrer noopener" style="display:block;padding:14px 18px;` +
+    `font-family:${FONT_STACK};font-size:16px;font-weight:700;line-height:22px;color:${ink};` +
     `text-decoration:none;">${escapeHtml(label)}</a></td></tr></table>`
+  );
+}
+
+/** White plate so the cyan-and-black wordmark stays recognizable in dark mode. */
+function logoHeader(): string {
+  return (
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 16px;border-collapse:separate;table-layout:fixed;">' +
+    `<tr><td class="mail-shadow" bgcolor="${INK}" style="background-color:${INK};padding:0 6px 6px 0;">` +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;"><tr>' +
+    `<td class="mail-logo mail-frame" bgcolor="${CARD_BG}" style="border:3px solid ${INK};background-color:${CARD_BG};padding:34px!important;">${watchdiveLogoImg()}</td>` +
+    "</tr></table></td></tr></table>"
   );
 }
 
@@ -858,6 +916,7 @@ function buddyDocument(input: {
       .mail-accent [style*="color:"]{color:${INK}!important;-webkit-text-fill-color:${INK}!important;}
       .mail-highlight{background-color:${HIGHLIGHT_BG}!important;color:${INK}!important;}
       .mail-highlight [style*="color:"]{color:${INK}!important;-webkit-text-fill-color:${INK}!important;}
+      .mail-logo{background-color:#ffffff!important;}
     }</style>`,
     `<title>${escapeHtml(input.subject)}</title>`,
     // Outlook's Word engine falls back to Times for an unknown first font.
@@ -872,6 +931,7 @@ function buddyDocument(input: {
     '<!--[if mso]><table role="presentation" width="576" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->',
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:576px;border-collapse:separate;">',
     `<tr><td style="color:${BODY_INK};font-family:${FONT_STACK};">`,
+    logoHeader(),
     input.content,
     "</td></tr>",
     `<tr><td style="padding:4px 12px 0;font-family:${FONT_STACK};">${foot.html}</td></tr>`,
@@ -970,7 +1030,7 @@ export type WelcomeLinks = { shareUrl: string; statusUrl: string; rulesUrl: stri
  * The Buddy Invite guide: the welcome mail while the program is switched on,
  * and the one-off announcement to people who verified before the release. The
  * three sections confirm signup, explain the event, then provide sharing and
- * status links. The OFF welcome uses its separate, unchanged renderer.
+ * status links. The program-off welcome uses renderLegacyWelcomeMail.
  */
 export function buddyGuideBody(
   links: WelcomeLinks,
@@ -1011,8 +1071,13 @@ export function buddyGuideBody(
 }
 
 /**
- * Friend-joined notice. It carries counts and tiers only: nothing about who
- * joined, which the referrer is never told (contract.ts privacy invariants).
+ * Friend-joined status notice. The subject is the verified count, with no
+ * "(광고)" prefix. The body names only tiers already crossed and links to the
+ * private status page. Share links, share codes, the reward ladder, and the
+ * "invite more" lines stay in the guide and the announcement. The referrer is
+ * still never told who joined (contract.ts). `shareUrl`, `shareCode`,
+ * `nextTier` and `remainingToNext` are accepted so existing callers compile,
+ * and they are not rendered. Korean sender identity and opt-out stay.
  */
 export function referralNoticeBody(
   input: Pick<
@@ -1025,47 +1090,57 @@ export function referralNoticeBody(
   const copy = buddyMailCopy(locale);
   const values = { ...copyValues(locale), count: input.credited };
   const mail = copy.mail;
-  const rewards = referralRewardLines(locale);
-  const rewardByTier = new Map(REFERRAL_TIERS.map((tier, index) => [tier.id, rewards[index]!]));
-  const next =
-    input.nextTier && input.remainingToNext !== null
-      ? fill(mail.noticeNext, {
-          ...values,
-          remaining: input.remainingToNext,
-          tier: rewardByTier.get(input.nextTier)!.name,
-        })
-      : fill(mail.noticeMax, values);
   const heading = fill(mail.noticeHeading, values);
   const body = fill(mail.noticeBody, values);
   const noticeFooter = fill(mail.noticeFooter, values);
-  const subject = adSubject(fill(mail.noticeSubject, values), footer);
-  const event = eventRewardBlock(locale, new URL(buddyMailEvent(locale).rulesPath, input.statusUrl).href, input);
-  const code = validShareCode(input.shareCode);
+  const subject = adSubject(fill(mail.noticeSubject, values), footer, "status-notice");
+  const crossed = new Set(input.crossed);
+  const reachedLines = REFERRAL_TIERS.filter((tier) => crossed.has(tier.id)).map(
+    (tier) => `${copy.event.reached}: ${fill(copy.tiers[tier.id].name, values)}`,
+  );
+  const statusLabel = fill(mail.noticeButton, values);
   const content = [
-    brutalPanel(headingHtml(heading, locale) +
-      para(STYLE_BODY_P.replace("20px", "0"), escapeHtml(body), locale), locale),
-    event.html,
-    brutalPanel([
-      sectionHeading(mail.shareHeading),
-      para(STYLE_BODY_P, escapeHtml(next), locale),
-      ...(input.shareUrl || code ? [para(STYLE_BODY_P, escapeHtml(mail.welcomeIntro), locale)] : []),
-      ...(input.shareUrl ? [
-        buttonHtml(input.shareUrl, fill(mail.welcomeButton, values)),
-        labelledLinkHtml(fill(mail.welcomeFallback, values), input.shareUrl, locale),
-      ] : []),
-      shareCodeHtml(code, fill(mail.welcomeCode, values), locale),
-      buttonHtml(input.statusUrl, fill(mail.noticeButton, values)),
-      para(`margin:0 0 14px;font-size:13px;line-height:1.6;`, linkHtml(input.statusUrl), locale),
-      para(`margin:8px 0 0;font-size:13px;line-height:1.6;color:${MUTED_INK};`, escapeHtml(noticeFooter), locale),
-    ].join("\n"), locale),
+    brutalPanel(
+      headingHtml(heading, locale) +
+        para(STYLE_BODY_P, escapeHtml(body), locale) +
+        reachedLines
+          .map((line) =>
+            para(
+              `margin:0 0 8px;font-size:15px;line-height:1.6;color:${BODY_INK};`,
+              escapeHtml(line),
+              locale,
+            ),
+          )
+          .join(""),
+      locale,
+    ),
+    brutalPanel(
+      [
+        buttonHtml(input.statusUrl, statusLabel),
+        para(`margin:0 0 14px;font-size:13px;line-height:1.6;`, linkHtml(input.statusUrl), locale),
+        para(
+          `margin:8px 0 0;font-size:13px;line-height:1.6;color:${MUTED_INK};`,
+          escapeHtml(noticeFooter),
+          locale,
+        ),
+      ].join("\n"),
+      locale,
+    ),
   ].join("\n");
   return {
     subject,
     text: [
-      heading, "", body, event.text, next, "", mail.shareHeading, ...(input.shareUrl || code ? [mail.welcomeIntro] : []),
-      ...(input.shareUrl ? [fill(mail.welcomeButton, values), input.shareUrl] : []),
-      ...(code ? [`${fill(mail.welcomeCode, values)} ${code}`] : []),
-      "", input.statusUrl, "", noticeFooter, "", ...footerParts(locale, footer).text,
+      heading,
+      "",
+      body,
+      ...reachedLines,
+      "",
+      statusLabel,
+      input.statusUrl,
+      "",
+      noticeFooter,
+      "",
+      ...footerParts(locale, footer).text,
     ].join("\n"),
     html: buddyDocument({ locale, subject, preheader: body, content, footer }),
   };
@@ -1140,13 +1215,13 @@ export function createResendMailer(
   const programOn = referralProgramEnabled(env);
 
   return {
-    async send({ to, token, leadId, publicOrigin, locale, reminder, manualCampaign }) {
+    async send({ to, token, leadId, publicOrigin, locale, reminder, manualCampaign, compatibility }) {
       const signedLocale = verificationTokenLocale(token);
       if (!signedLocale || signedLocale !== locale) {
         throw new Error("Verification token locale mismatch");
       }
       const url = verificationUrl(publicOrigin, token);
-      const content = reminder ? buildReminderEmail(url, signedLocale) : body(url, signedLocale);
+      const content = reminder ? buildReminderEmail(url, signedLocale) : body(url, signedLocale, compatibility);
       // Ties every retry of one attempt to one message. A new attempt mints a
       // new lead id, so a resend is a genuinely new key. The reminder reuses
       // the attempt's lead id, so it gets its own namespace — one key per

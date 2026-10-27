@@ -332,7 +332,8 @@ class NotionLedger {
 
     const query = url.pathname.match(/^\/v1\/databases\/([^/]+)\/query$/);
     if (method === "POST" && query) {
-      const filter = (body as { filter?: { or?: Record<string, unknown>[] } } | undefined)?.filter?.or ?? [];
+      const rawFilter = (body as { filter?: Record<string, unknown> } | undefined)?.filter ?? {};
+      const filter = (rawFilter.or as Record<string, unknown>[] | undefined) ?? [rawFilter];
       const hits = this.pages.filter((page) => filter.some((clause) => pageMatches(page, clause)));
       return json(200, { results: hits.map(toNotionPage), has_more: false, next_cursor: null });
     }
@@ -376,6 +377,7 @@ class NotionLedger {
 }
 
 function pageMatches(page: StoredPage, clause: Record<string, unknown>): boolean {
+  if (clause.property === "Lead ID") return (clause.rich_text as { equals?: string })?.equals === LEAD;
   if (clause.property === "Email") {
     const equals = (clause.title as { equals?: string } | undefined)?.equals;
     return typeof equals === "string" && page.title.toLowerCase() === equals.toLowerCase();
@@ -395,6 +397,10 @@ function toNotionPage(page: StoredPage): Record<string, unknown> {
     properties: {
       Email: { title: [{ plain_text: page.title }] },
       "Canonical email": { email: page.canonical },
+      "Lead ID": { rich_text: [{ plain_text: LEAD }] },
+      "Verification status": { select: { name: "verified" } },
+      "Email verified": { checkbox: true },
+      ...page.properties,
     },
   };
 }
@@ -698,7 +704,8 @@ test("checkout and the success URL do not write Notion, and a disabled flag make
   notion.add(EMAIL);
   const opened = await checkout(stripe, notion);
   assert.equal(opened.status, 200);
-  assert.equal(notion.calls.length, 0);
+  assert.equal(notion.calls.length, 1); // Read-only checkout identity check.
+  assert.equal(notion.patches().length, 0);
   const session = stripe.sessions[0];
   if (!session) throw new Error("missing session");
   const token = invite();
@@ -711,7 +718,7 @@ test("checkout and the success URL do not write Notion, and a disabled flag make
   );
   const statusBody = await statusResponse.json() as Record<string, unknown>;
   assert.equal(statusBody.paid, false);
-  assert.equal(notion.calls.length, 0);
+  assert.equal(notion.calls.length, 1); // Status adds no Notion read/write.
 
   stripe.pay(session.id);
   const disabled = new NotionLedger();
@@ -720,6 +727,48 @@ test("checkout and the success URL do not write Notion, and a disabled flag make
   assert.equal(paid.body.paid, true);
   assert.equal(paid.body.received, true);
   assert.equal(disabled.calls.length, 0);
+});
+
+test("checkout refuses missing, mismatched or no-longer-verified leads before creating Stripe objects", async () => {
+  const invalidProperties: (Record<string, unknown> | null)[] = [
+    null,
+    { "Verification status": { select: { name: "pending" } } },
+    { "Verification status": { select: { name: "unsubscribed" } } },
+    { "Email verified": { checkbox: false } },
+    { Email: { title: [{ plain_text: "another@example.com" }] } },
+    { "Lead ID": { rich_text: [{ plain_text: "22222222-2222-4222-8222-222222222222" }] } },
+    { Suspect: { checkbox: true } },
+  ];
+  for (const properties of invalidProperties) {
+    const stripe = new MemoryStripe();
+    const notion = new NotionLedger();
+    if (properties) notion.add(EMAIL).properties = properties;
+    const result = await checkout(stripe, notion);
+    assert.equal(result.status, 400);
+    assert.equal(result.body.error, "invalid_invite");
+    assert.equal(stripe.posts.length, 0);
+    assert.equal(stripe.customers.length, 0);
+    assert.equal(stripe.sessions.length, 0);
+    assert.equal(notion.patches().length, 0);
+  }
+});
+
+test("live checkout requires a configured mirror and fails closed on a Notion read failure", async () => {
+  const stripe = new MemoryStripe();
+  const notion = new NotionLedger();
+  for (const env of [
+    { ...ENV, WATCHDIVE_RESERVATION_ALLOW_LIVE: "true", STRIPE_SECRET_KEY: LIVE_KEY },
+    { ...MIRROR_ENV, NOTION_API_KEY: "" },
+  ]) {
+    assert.equal((await checkout(stripe, notion, env)).status, 503);
+  }
+  notion.fetch = async () => json(503, { object: "error", code: "service_unavailable" });
+  const result = await checkout(stripe, notion);
+  assert.equal(result.status, 503);
+  assert.equal(result.body.error, "reservation_unavailable");
+  assert.equal(stripe.posts.length, 0);
+  assert.equal(stripe.sessions.length, 0);
+  assert.equal(notion.patches().length, 0);
 });
 
 test("a paid webhook marks the existing lead once, and a second delivery repeats the same absolute patch", async () => {
@@ -797,7 +846,8 @@ test("a failed payment clears a paid mark, and a later refund wins over a stale 
 test("a live-mode event on a test key and a missing lead do not acknowledge a payment", async () => {
   const stripe = new MemoryStripe();
   const notion = new NotionLedger();
-  await checkout(stripe, notion);
+  // Reproduce an orphan created before the pre-check existed.
+  await checkout(stripe, notion, ENV);
   const session = stripe.sessions[0];
   if (!session) throw new Error("missing session");
   stripe.pay(session.id);

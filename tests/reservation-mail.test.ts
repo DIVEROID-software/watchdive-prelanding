@@ -182,32 +182,35 @@ function options(
   };
 }
 
-test("every locale states the fee, the later price, and the refund limit", () => {
+test("every locale keeps checkout facts in disclosure and a short marketing mail", () => {
   const englishFacts = RESERVATION_COPY.en.disclosure;
+  const legalKeys = ["pay", "notDeducted", "laterManual", "total", "independence", "cancellation", "mandatory"] as const;
   for (const locale of SUPPORTED_LOCALES) {
     const copy = RESERVATION_COPY[locale];
-    const text = copyParagraphs(copy).join("\n");
-    assert.equal(copy.disclosure.includes(copy.preheader), true, locale);
-    assert.equal(copy.preheader.length < copy.disclosure.length, true, locale);
-    for (const phrase of Object.values(copy.anchors)) {
-      assert.equal(text.includes(phrase), true, locale);
+    const marketing = copyParagraphs(copy).join("\n");
+    assert.equal(marketing.includes(copy.disclosure), false, locale);
+    assert.equal(copy.reason.includes(copy.anchors.thanks), true, locale);
+    assert.equal(marketing.includes(copy.anchors.thanks), true, locale);
+    for (const key of legalKeys) {
+      assert.equal(copy.disclosure.includes(copy.anchors[key]), true, `${locale} ${key}`);
+      assert.equal(marketing.includes(copy.anchors[key]), false, `${locale} ${key} stayed out of the mail`);
     }
-    assert.match(text, /\$3/);
-    assert.match(text, /\$149/);
-    assert.match(text, /\$152/);
-    assert.equal(text.includes(copy.disclosure), true, locale);
+    assert.match(copy.disclosure, /152/);
+    assert.match(marketing, locale === "fr" ? /3 \$/ : /\$3/);
+    assert.match(marketing, locale === "fr" ? /149 \$/ : /\$149/);
     assert.doesNotMatch(
-      text,
+      `${marketing}\n${copy.disclosure}`,
       /\$299|December|12월|재고|free shipping|체크아웃|크레딧|영수증|チェックアウト|not a receipt|not itself a reservation/i,
     );
-    if (locale !== "en") assert.equal(text.includes(englishFacts), false, locale);
+    if (locale !== "en") assert.equal(copy.disclosure.includes(englishFacts), false, locale);
   }
-  assert.equal(RESERVATION_COPY.ko.subject, "WatchDive 출시가 $149 보장 — 예약금 $3");
+  assert.equal(RESERVATION_COPY.ko.subject, "선착순 걱정 없이 $149, 예약은 $3로");
+  assert.equal(RESERVATION_COPY.ko.button, "$3로 $149 보장받기");
   assert.match(RESERVATION_COPY.en.subject, /\$149/);
-  assert.match(RESERVATION_COPY.en.subject, /\$3 reservation fee/);
+  assert.match(RESERVATION_COPY.en.button, /\$3/);
 });
 
-test("rendered mail keeps the disclosure and rejects a country claim", () => {
+test("rendered mail stays short and rejects a country claim", () => {
   const invite = buildReservationInviteUrl(TEST_ORIGIN, "ko", SECRET_TOKEN);
   const unsub = `${TEST_ORIGIN}/unsubscribe/example-token-value-0001`;
   const mail = renderReservationMail({
@@ -231,17 +234,22 @@ test("rendered mail keeps the disclosure and rejects a country claim", () => {
   );
   assert.match(mail.text, /\$3/);
   assert.match(mail.text, /\$149/);
-  assert.match(mail.text, /\$152/);
-  assert.match(mail.text, /차감되지 않으며/);
-  assert.match(mail.text, /자동 결제되지 않습니다/);
-  assert.match(mail.text, /선착순 100명 혜택과 별도로/);
+  assert.equal(mail.text.includes("US$152"), false);
+  assert.equal(mail.text.includes("차감되지 않으며"), false);
+  assert.equal(mail.text.includes("자동 결제되지 않습니다"), false);
+  assert.equal(mail.text.includes("선착순 100명 혜택과 별도로"), false);
+  assert.equal(mail.text.includes(RESERVATION_COPY.ko.feeNote), false);
+  assert.equal(mail.html.includes(RESERVATION_COPY.ko.feeNote), false);
   assert.match(mail.html, /#201748/);
   assert.match(mail.html, /#3D2683/);
   assert.match(mail.html, /#EEF9FF/);
   assert.match(mail.html, /#F6FAFC/);
-  assert.match(mail.html, /\/brand\/reservation\/diveroid-wordmark-color-transparent\.png/);
+  assert.match(mail.html, /watchdive-primary@1x\.png\?v=2\.6\.1/);
+  assert.equal(mail.html.includes("diveroid-wordmark"), false);
+  assert.match(mail.html, /alt="WatchDive"/);
   assert.match(mail.html, /\/brand\/reservation\/watchdive-underwater\.jpg/);
-  assert.match(mail.html, /\$3로 내 최저가 확보하기/);
+  assert.match(mail.html, /\$3로 \$149 보장받기/);
+  assert.equal(mail.html.includes("font-size:64px"), false);
   assert.match(mail.text, /모든 다이빙이, 바다의 지도가 됩니다/);
   assert.equal(mail.html.includes("Work Sans"), false);
   assert.equal(mail.html.includes("#08021f"), false);
@@ -249,8 +257,8 @@ test("rendered mail keeps the disclosure and rejects a country claim", () => {
   assert.match(mail.html, /DIVEROID LTD/);
   assert.match(mail.html, new RegExp(RESERVATION_COMPANY_NUMBER));
   assert.match(mail.text, /E6 2JA/);
-  assert.equal(mail.text.split("예약금 US$3을 결제하면").length, 2);
-  assert.equal(mail.subject, "WatchDive 출시가 $149 보장 — 예약금 $3");
+  assert.equal(mail.text.split("예약금 US$3을 결제하면").length, 1);
+  assert.equal(mail.subject, "선착순 걱정 없이 $149, 예약은 $3로");
   const linkedMatch = mail.text.match(
     /https:\/\/watchdive\.diveroid\.com\/reservation\?lang=ko#invite=\S+/,
   );
@@ -1095,7 +1103,7 @@ const LOWEST_WORD: Record<(typeof SUPPORTED_LOCALES)[number], string> = {
   "zh-CN": "最低",
   "zh-TW": "最低",
   ja: "最安",
-  es: "más bajo",
+  es: "mínimo",
   fr: "plus bas",
   de: "niedrigst",
   "pt-BR": "menor",

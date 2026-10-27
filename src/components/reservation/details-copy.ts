@@ -1,0 +1,135 @@
+import type { Locale } from "../../lib/i18n/locale.ts";
+
+export type ReservationDetailsCopy = {
+  closeLabel: string;
+  statusChip: string;
+  lead: string;
+  emailPending: string;
+  notGuaranteed: string;
+  noticePending: string;
+  stepReview: string;
+  stepVerify: string;
+  stepPay: string;
+  inboxCta: string;
+  phoneOptional: string;
+};
+
+export const RESERVATION_DETAILS_COPY: Record<Locale, ReservationDetailsCopy> = {
+  ko: {
+    closeLabel: "닫기",
+    statusChip: "결제 전 · 이메일 미인증",
+    lead: "예약금 $3를 결제하면 선착순과 관계없이 출시 최저가 $149가 보장됩니다. 이 창은 결제 전이라 아직 보장되지 않습니다.",
+    emailPending: "이메일은 아직 인증되지 않았습니다.",
+    notGuaranteed: "최저가 보장은 $3 결제가 끝난 뒤에만 시작됩니다.",
+    noticePending: "출시 알림은 받은 메일의 인증 링크를 열어야 완료됩니다.",
+    stepReview: "1. 예약 조건을 확인합니다",
+    stepVerify: "1. 메일의 인증 링크를 엽니다",
+    stepPay: "2. 인증이 끝난 뒤 $3 결제가 열립니다",
+    inboxCta: "메일 인증 안내 보기",
+    phoneOptional: "전화번호는 선택입니다. 이 예약에는 필요하지 않습니다.",
+  },
+  en: {
+    closeLabel: "Close",
+    statusChip: "Not paid · Email not verified",
+    lead: "Paying the $3 reservation fee guarantees the $149 lowest launch price, whatever your place in line. Nothing is paid here, so the price is not guaranteed yet.",
+    emailPending: "Your email is not verified.",
+    notGuaranteed: "The lowest-price guarantee starts only after the $3 payment is complete.",
+    noticePending: "Launch emails are complete only after you open the verification link we sent.",
+    stepReview: "1. Read the reservation terms",
+    stepVerify: "1. Open the verification link in your email",
+    stepPay: "2. The $3 payment opens after that link confirms your email",
+    inboxCta: "View the email instructions",
+    phoneOptional: "A phone number is optional and is not required for this reservation.",
+  },
+  ja: {
+    closeLabel: "閉じる",
+    statusChip: "支払い前 · メール未認証",
+    lead: "予約金$3を支払うと、先着順に関係なく発売最安値$149が保証されます。この画面ではまだ支払っていないため、保証は始まっていません。",
+    emailPending: "メールはまだ認証されていません。",
+    notGuaranteed: "最安値の保証は$3の支払いが完了してから始まります。",
+    noticePending: "発売通知は、届いたメールの認証リンクを開いて初めて完了します。",
+    stepReview: "1. 予約条件を確認します",
+    stepVerify: "1. メールの認証リンクを開きます",
+    stepPay: "2. 認証のあとで$3の支払いが開きます",
+    inboxCta: "メール認証の案内を見る",
+    phoneOptional: "電話番号は任意で、この予約には必要ありません。",
+  },
+  "zh-CN": {
+    closeLabel: "关闭",
+    statusChip: "尚未付款 · 邮箱未验证",
+    lead: "支付$3预约费后，无论先后，都会保证$149的发布最低价。这里尚未付款，所以最低价现在并未保证。",
+    emailPending: "邮箱尚未验证。",
+    notGuaranteed: "最低价保证只在$3付款完成后开始。",
+    noticePending: "发布通知要等您打开邮件中的验证链接后才算完成。",
+    stepReview: "1. 查看预约条件",
+    stepVerify: "1. 打开邮件中的验证链接",
+    stepPay: "2. 验证完成后再打开$3付款",
+    inboxCta: "查看邮箱验证说明",
+    phoneOptional: "电话号码是可选项，此项预约不需要。",
+  },
+  "zh-TW": {
+    closeLabel: "關閉",
+    statusChip: "尚未付款 · 信箱未驗證",
+    lead: "支付$3預約費後，無論先後，都會保證$149的上市最低價。這裡尚未付款，所以最低價現在並未保證。",
+    emailPending: "信箱尚未驗證。",
+    notGuaranteed: "最低價保證只在$3付款完成後開始。",
+    noticePending: "上市通知要等您打開郵件中的驗證連結後才算完成。",
+    stepReview: "1. 查看預約條件",
+    stepVerify: "1. 打開郵件中的驗證連結",
+    stepPay: "2. 驗證完成後再打開$3付款",
+    inboxCta: "查看信箱驗證說明",
+    phoneOptional: "電話號碼是可選項，此項預約不需要。",
+  },
+  es: {
+    closeLabel: "Cerrar",
+    statusChip: "Sin pagar · Email sin verificar",
+    lead: "Al pagar la reserva de $3 se garantiza el precio mínimo de lanzamiento de $149, sin importar el orden. Aquí no hay ningún pago, así que el precio aún no está garantizado.",
+    emailPending: "Tu email no está verificado.",
+    notGuaranteed: "La garantía del precio mínimo empieza solo cuando el pago de $3 se completa.",
+    noticePending: "Los avisos de lanzamiento se completan solo al abrir el enlace de verificación que enviamos.",
+    stepReview: "1. Lee las condiciones de la reserva",
+    stepVerify: "1. Abre el enlace de verificación de tu email",
+    stepPay: "2. El pago de $3 se abre después de que ese enlace confirme tu email",
+    inboxCta: "Ver las instrucciones del email",
+    phoneOptional: "El teléfono es opcional y no hace falta para esta reserva.",
+  },
+  fr: {
+    closeLabel: "Fermer",
+    statusChip: "Non payé · E-mail non vérifié",
+    lead: "Le paiement des 3 $ de réservation garantit le prix de lancement le plus bas, 149 $, quel que soit votre ordre d’arrivée. Rien n’est payé ici : le prix n’est pas encore garanti.",
+    emailPending: "Votre e-mail n’est pas vérifié.",
+    notGuaranteed: "La garantie du prix le plus bas ne commence qu’une fois le paiement de 3 $ terminé.",
+    noticePending: "Les messages de lancement ne sont complets qu’après l’ouverture du lien de vérification envoyé.",
+    stepReview: "1. Lisez les conditions de réservation",
+    stepVerify: "1. Ouvrez le lien de vérification dans votre e-mail",
+    stepPay: "2. Le paiement de 3 $ s’ouvre une fois l’e-mail confirmé par ce lien",
+    inboxCta: "Voir les instructions de l’e-mail",
+    phoneOptional: "Le numéro de téléphone est facultatif et n’est pas requis pour cette réservation.",
+  },
+  de: {
+    closeLabel: "Schließen",
+    statusChip: "Nicht bezahlt · E-Mail nicht bestätigt",
+    lead: "Mit der Reservierungsgebühr von $3 ist der niedrigste Einführungspreis von $149 garantiert, unabhängig von der Reihenfolge. Hier ist nichts bezahlt, der Preis ist also noch nicht garantiert.",
+    emailPending: "Ihre E-Mail ist nicht bestätigt.",
+    notGuaranteed: "Die Tiefstpreisgarantie beginnt erst, wenn die Zahlung von $3 abgeschlossen ist.",
+    noticePending: "Start-Nachrichten sind erst vollständig, wenn Sie den gesendeten Bestätigungslink öffnen.",
+    stepReview: "1. Reservierungsbedingungen lesen",
+    stepVerify: "1. Den Bestätigungslink in der E-Mail öffnen",
+    stepPay: "2. Die Zahlung von $3 öffnet sich, nachdem der Link die E-Mail bestätigt hat",
+    inboxCta: "E-Mail-Anleitung ansehen",
+    phoneOptional: "Eine Telefonnummer ist freiwillig und für diese Reservierung nicht erforderlich.",
+  },
+  "pt-BR": {
+    closeLabel: "Fechar",
+    statusChip: "Sem pagamento · E-mail não confirmado",
+    lead: "Pagar a reserva de $3 garante o menor preço de lançamento de $149, seja qual for a sua posição. Nada foi pago aqui, então o preço ainda não está garantido.",
+    emailPending: "Seu e-mail não está confirmado.",
+    notGuaranteed: "A garantia do menor preço só começa depois que o pagamento de $3 é concluído.",
+    noticePending: "Os avisos de lançamento só ficam completos quando você abre o link de confirmação que enviamos.",
+    stepReview: "1. Leia as condições da reserva",
+    stepVerify: "1. Abra o link de confirmação no seu e-mail",
+    stepPay: "2. O pagamento de $3 abre depois que esse link confirmar o e-mail",
+    inboxCta: "Ver as instruções do e-mail",
+    phoneOptional: "O telefone é opcional e não é necessário para esta reserva.",
+  },
+};

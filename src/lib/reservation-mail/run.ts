@@ -70,7 +70,8 @@ import {
   releaseReceiptLock,
   type ReceiptRecord,
 } from "./receipts.ts";
-import { renderReservationMail, type RenderedReservationMail } from "./render.ts";
+import { renderReservationMail, type RenderedReservationMail, type ReservationMailInput } from "./render.ts";
+import { resolveReservationEmailSegment, type ReservationEmailSegment } from "./segment.ts";
 import type { ReservationSchema, ReservationStore } from "./store.ts";
 
 export const DEFAULT_SEND_RATE_PER_SECOND = 2;
@@ -94,6 +95,8 @@ export type ReservationMessage = {
 
 export type ReservationRunOptions = {
   mode: "dry-run" | "send";
+  /** Internal stage offset; the public legacy CLI keeps its existing default. */
+  delayMs?: number;
   /** Omit, or pass the registered office. Any other address aborts the run. */
   postalAddress?: string;
   /** Omit, or pass DIVEROID LTD. Any other name aborts the run. */
@@ -119,6 +122,10 @@ export type ReservationDependencies = {
   now?: () => Date;
   sleep?: (ms: number) => Promise<void>;
   writeSample?: (locale: Locale, mail: RenderedReservationMail) => Promise<void>;
+  /** Reviewed drip template. Legacy callers always use renderReservationMail. */
+  renderMail?: (input: ReservationMailInput) => RenderedReservationMail;
+  /** Additional server-owned suppression immediately before delivery. Errors hold. */
+  canSend?: (row: ReservationRow) => Promise<boolean>;
   /** Test double. Production uses assertLiveCustomerSend and the read-only probe. */
   liveGate?: (env: EnvSource) => Promise<LiveGateResult>;
   /** Test double for the read-only Checkout probe. Ignored when liveGate is set. */
@@ -245,6 +252,10 @@ function createMutex(): <T>(fn: () => Promise<T>) => Promise<T> {
   };
 }
 
+function sameRenderedMail(left: RenderedReservationMail, right: RenderedReservationMail): boolean {
+  return left.subject === right.subject && left.html === right.html && left.text === right.text;
+}
+
 function isValidationError(error: unknown): boolean {
   return error instanceof Error && /validation_error/.test(error.message);
 }
@@ -293,6 +304,9 @@ export async function runReservationMail(
   }
   if (options.limit !== undefined && !(Number.isInteger(options.limit) && options.limit > 0)) {
     return abort("invalid_input", "--limit must be a positive whole number");
+  }
+  if (options.delayMs !== undefined && ![180_000, 86_400_000, 259_200_000, 604_800_000].includes(options.delayMs)) {
+    return abort("invalid_input", "Unsupported drip-stage delay");
   }
   const notBeforeRaw = options.notBefore?.trim() ?? "";
   let notBeforeMs: number | undefined;
@@ -381,6 +395,7 @@ export async function runReservationMail(
   }
   const schedule: MailSchedule = {
     nowMs: clock().getTime(),
+    delayMs: options.delayMs,
     ...(notBeforeMs !== undefined ? { notBeforeMs } : {}),
   };
 
@@ -436,8 +451,14 @@ export async function runReservationMail(
   const unsubscribeFor = (leadId: string, locale: Locale) =>
     unsubscribeUrl(publicOrigin, createUnsubscribeToken(leadId, locale, secret, unsubscribeVersion));
   const pageUrl = (path: string) => new URL(path, publicOrigin).toString();
-  const renderFor = (locale: Locale, leadId: string, invite: string) =>
-    renderReservationMail({
+  const renderFor = (
+    locale: Locale,
+    leadId: string,
+    invite: string,
+    segment: ReservationEmailSegment | undefined,
+  ) => {
+    const render = dependencies.renderMail ?? renderReservationMail;
+    const input: ReservationMailInput = {
       locale,
       inviteUrl: invite,
       unsubscribeUrl: unsubscribeFor(leadId, locale),
@@ -445,7 +466,31 @@ export async function runReservationMail(
       termsUrl: pageUrl(termsPath(locale)),
       postalAddress: postal,
       legalName,
-    });
+    };
+    // A fresh send always passes one segment. Undefined means a receipt from
+    // before this field existed. That resume must keep the omitted-segment
+    // bytes. If omitting the field now renders the same body as an explicit
+    // `general`, the historical template is gone and the old idempotency key
+    // must not carry the new bytes.
+    if (segment !== undefined) {
+      const personalized: ReservationMailInput & { segment: ReservationEmailSegment } = {
+        ...input,
+        segment,
+      };
+      return render(personalized);
+    }
+    const legacy = render(input);
+    let generalized: RenderedReservationMail | undefined;
+    try {
+      generalized = render({ ...input, segment: "general" });
+    } catch {
+      generalized = undefined;
+    }
+    if (generalized && sameRenderedMail(legacy, generalized)) {
+      throw new Error("Reservation mail legacy body collapsed into the general template");
+    }
+    return legacy;
+  };
 
   if (!notBeforeRaw) {
     blockers.push(
@@ -471,10 +516,18 @@ export async function runReservationMail(
       return "unreadable";
     }
     if (!fresh || fresh.leadId.toLowerCase() !== row.leadId.toLowerCase()) return "unreadable";
+    if (dependencies.canSend) {
+      try {
+        if (!(await dependencies.canSend(fresh))) return "held";
+      } catch {
+        return "unreadable";
+      }
+    }
     return (
       reservationSkipReason(fresh) ??
       delaySkipReason(fresh, {
         nowMs: clock().getTime(),
+        delayMs: options.delayMs,
         ...(notBeforeMs !== undefined ? { notBeforeMs } : {}),
       })
     );
@@ -532,7 +585,7 @@ export async function runReservationMail(
         invite = buildReservationInviteUrl(publicOrigin, locale, UNSIGNED_PREVIEW_TOKEN);
       }
       try {
-        await dependencies.writeSample?.(locale, renderFor(locale, PREVIEW_LEAD_ID, invite));
+        await dependencies.writeSample?.(locale, renderFor(locale, PREVIEW_LEAD_ID, invite, "general"));
       } catch {
         return abort("template_rejected", "A sample could not be rendered");
       }
@@ -572,10 +625,13 @@ export async function runReservationMail(
   let stopped: ReservationAbort | undefined;
   let cursor = 0;
 
+  const segmentByLead = new Map<string, ReservationEmailSegment | undefined>();
   const remember = async (record: ReceiptRecord): Promise<boolean> => {
+    const segment = segmentByLead.get(record.leadId.toLowerCase());
+    const stamped: ReceiptRecord = segment ? { ...record, segment } : record;
     try {
-      await appendReceipt(handle, record);
-      applyReceiptLine(ledger, JSON.stringify(record));
+      await appendReceipt(handle, stamped);
+      applyReceiptLine(ledger, JSON.stringify(stamped));
       return true;
     } catch {
       stopped = "receipt_write_failed";
@@ -607,6 +663,16 @@ export async function runReservationMail(
       const { row, locale } = item;
       const decidedAt = clock();
       const optimistic = inboxAction(row, decidedAt);
+      const priorReceipt = ledger.byLead.get(row.leadId.toLowerCase());
+      // A receipt already in the ledger freezes the segment, including the
+      // legacy case where the field is absent. Only a first send resolves
+      // the current landing path.
+      const segmentStamp: ReservationEmailSegment | undefined = priorReceipt
+        ? priorReceipt.segment
+        : optimistic.type === "deliver"
+          ? resolveReservationEmailSegment(row.landingPath)
+          : undefined;
+      segmentByLead.set(row.leadId.toLowerCase(), segmentStamp);
       let message: ReservationMessage | undefined;
       if (optimistic.type === "deliver") {
         try {
@@ -620,7 +686,7 @@ export async function runReservationMail(
             nowMs: decidedAt.getTime(),
             ...(dependencies.signInvite ? { sign: dependencies.signInvite } : {}),
           });
-          const mail = renderFor(locale, row.leadId, invite);
+          const mail = renderFor(locale, row.leadId, invite, segmentStamp);
           const unsubscribe = unsubscribeFor(row.leadId, locale);
           message = {
             to: row.email.trim(),
@@ -640,7 +706,9 @@ export async function runReservationMail(
         } catch (error) {
           if (
             error instanceof Error &&
-            /forbidden claim|required fee|required paragraph|mail link/i.test(error.message)
+            /forbidden claim|required fee|required paragraph|mail link|legacy body collapsed/i.test(
+              error.message,
+            )
           ) {
             stopped = "template_rejected";
             break;

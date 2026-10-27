@@ -53,6 +53,19 @@ export const LANGUAGE_OPTIONS: readonly LanguageOption[] = [
   { locale: "pt-BR", label: "Português (Brasil)", dir: "ltr" },
 ] as const;
 
+/** Short code for the closed segment picker. The open menu still uses native names. */
+export const LOCALE_SWITCH_CODE: Record<Locale, string> = {
+  en: "EN",
+  ko: "KR",
+  "zh-CN": "CN",
+  "zh-TW": "TW",
+  ja: "JP",
+  es: "ES",
+  fr: "FR",
+  de: "DE",
+  "pt-BR": "BR",
+};
+
 const LOCALE_SET = new Set<string>(SUPPORTED_LOCALES);
 const LOCALE_BY_PATH_SEGMENT = new Map<string, Locale>(
   Object.entries(LOCALE_PATH_SEGMENTS).map(([locale, segment]) => [segment, locale as Locale]),

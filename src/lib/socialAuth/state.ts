@@ -1,7 +1,10 @@
 // Short-lived HMAC state. The OAuth state parameter is only the random id.
 // The verifier, nonce, and signup context stay in the HttpOnly cookie.
 
+import { validGoogleClientId } from "../analytics/contract.ts";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+
+import { isLandingSegment, type LandingSegment } from "../segments/navigation.ts";
 
 import type { SignupCountryProbe } from "../attribution.ts";
 import type { ExperimentContext } from "../conversionExperimentContract.ts";
@@ -25,10 +28,13 @@ export type SocialState = {
   nonce: string;
   verifier: string;
   source: "hero" | "offer";
+  /** Optional signed audience return; absent keeps the legacy homepage flow. */
+  segment?: LandingSegment;
   locale: Locale;
   origin: string;
   attribution: LeadAttribution;
   measurementConsent: boolean;
+  googleClientId?: string;
   experiment?: ExperimentContext;
   country: SignupCountryProbe;
   fbp?: string;
@@ -98,11 +104,14 @@ export function readSocialState(
   if (row.provider !== "google" && row.provider !== "apple") return undefined;
   if (row.source !== "hero" && row.source !== "offer") return undefined;
   if (!isLocale(row.locale)) return undefined;
+  if (row.segment !== undefined && !isLandingSegment(row.segment)) return undefined;
   if (typeof row.state !== "string" || typeof row.nonce !== "string") return undefined;
   if (typeof row.verifier !== "string" || typeof row.jti !== "string") return undefined;
   if (typeof row.origin !== "string" || !isAllowedSocialOrigin(row.origin, env)) return undefined;
   if (typeof row.exp !== "number" || row.exp * 1000 <= nowMs) return undefined;
   if (row.measurementConsent !== true && row.measurementConsent !== false) return undefined;
+  if (row.googleClientId !== undefined && !validGoogleClientId(row.googleClientId))
+    return undefined;
   const country = row.country;
   if (!country || typeof country !== "object") return undefined;
   if (country.trustedVercel !== true && country.trustedVercel !== false) return undefined;

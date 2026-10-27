@@ -8,6 +8,7 @@ import {
 } from "./token.ts";
 import { normalizePhone } from "../phoneNumbers.ts";
 import { PHONE_CONSENT_VERSION } from "../phoneOptInCopy.ts";
+import { noteStagePhoneSaved } from "../stageScore/observe.ts";
 import { SUPPORTED_LOCALES, type Locale } from "../i18n/locale.ts";
 
 export type PhoneCredential = { kind: "attempt" | "confirmation"; value: string };
@@ -93,6 +94,13 @@ async function save(input: PhoneOptInInput, deps: Dependencies): Promise<PhoneOp
       !saved.smsConsent?.includes(PHONE_CONSENT_VERSION)
     )
       return { status: "retry" };
+    if (process.env.WATCHDIVE_STAGE_SCORE_INTEGRATION === "enabled") {
+      await noteStagePhoneSaved({
+        email: saved.email,
+        at: now.toISOString(),
+        sms: "granted",
+      });
+    }
     return { status: input.credential.kind === "attempt" ? "accepted" : "saved" };
   } catch {
     return { status: "retry" };

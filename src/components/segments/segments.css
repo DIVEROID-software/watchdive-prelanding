@@ -1,0 +1,440 @@
+.wd-segment-page{--seg-bg:#f6fafc;--seg-ink:#10212e;--seg-muted:#485e6c;--seg-accent:#201748;--seg-line:#d5e3ea;background:var(--seg-bg);color:var(--seg-ink);font-family:"Pangram Sans","Spoqa Han Sans Neo",system-ui,sans-serif;overflow:clip;line-height:1.55;min-height:100vh}
+.wd-segment-scuba{--seg-bg:#201748;--seg-ink:#f6fafc;--seg-muted:#d5e3ea;--seg-accent:#65ceee;--seg-line:#4b416c}
+.wd-segment-page *{box-sizing:border-box}
+.wd-segment-page a{color:inherit;text-decoration:none}
+.wd-segment-page button,.wd-segment-page input,.wd-segment-page select{font:inherit}
+.wd-segment-page :focus-visible{outline:3px solid #36a9e1;outline-offset:5px}
+/* Zero-specificity defaults must not erase spacing inside shared signup cards. */
+:where(.wd-segment-page) :where(h1,h2,h3,figure){margin:0}
+.wd-segment-page h1,.wd-segment-page h2,.wd-segment-page h3{text-wrap:balance;font-weight:650;letter-spacing:-.045em}
+.wd-segment-page h2{font-size:clamp(29px,3.5vw,46px);line-height:1.1}
+.wd-segment-page h3{font-size:22px;line-height:1.2;letter-spacing:-.025em}
+:where(.wd-segment-page) p{font-size:17px;line-height:1.6}
+.wd-segment-page img{display:block;max-width:100%;height:auto}
+.wd-segment-shell{width:min(1120px,calc(100% - 96px));margin-inline:auto}
+.wd-segment-header{background:#201748;color:#f6fafc;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:19px 48px;border-bottom:1px solid #4b416c}
+.wd-segment-header>a{display:flex;align-items:center;min-height:44px;flex:0 1 165px}
+.wd-segment-header>a img{width:165px;height:auto}
+.wd-segment-header label{max-width:175px}
+.wd-segment-header select{font-size:14px;min-height:44px;border:1px solid #918ba4;border-radius:0}
+.wd-segment-hero{display:grid;grid-template-columns:1fr 1fr;max-width:1600px;margin:auto;min-height:650px}
+.wd-segment-hero-copy{padding:48px clamp(30px,5vw,80px) 62px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.wd-segment-modes{display:flex;gap:22px;margin-bottom:54px;border-bottom:1px solid var(--seg-line);font-size:14px}
+.wd-segment-modes a{min-height:44px;display:flex;align-items:center;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--seg-muted)}
+.wd-segment-modes a[aria-current=page]{color:var(--seg-ink);border-color:var(--seg-accent);font-weight:700}
+.wd-segment-page .wd-segment-eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--seg-accent);margin-bottom:18px;line-height:1.5}
+.wd-segment-page h1{font-size:clamp(40px,4.5vw,70px);line-height:1.02;margin-bottom:24px;max-width:650px}
+.wd-segment-page h1 span{display:block}
+.wd-segment-title-accent{color:var(--seg-accent)}
+.wd-segment-page .wd-segment-intro{font-size:19px;max-width:450px;line-height:1.55;color:var(--seg-muted)}
+.wd-segment-explore{display:inline-flex;align-items:center;gap:35px;min-height:48px;margin-top:28px;font-size:15px;font-weight:700;border-bottom:1px solid var(--seg-ink)}
+.wd-segment-explore span{font-size:22px}
+.wd-segment-hero-offer{display:flex;align-items:center;gap:15px;margin-top:24px;max-width:400px}
+.wd-segment-hero-offer>strong{font-size:34px;line-height:1;letter-spacing:-.04em}
+.wd-segment-hero-offer>span{font-size:11px;line-height:1.4;max-width:200px;color:var(--seg-muted)}
+.wd-segment-hero-media{position:relative;width:100%;min-width:0;min-height:0;aspect-ratio:4/3;align-self:center;overflow:hidden;background:#096f9a}
+.wd-segment-hero-media>img,.wd-segment-hero-media>video{width:100%;height:100%;max-width:none;position:absolute;inset:0;object-fit:cover;object-position:50% 50%;padding:0}
+.wd-segment-hero-media>video{opacity:0;transition:opacity .25s ease}
+.wd-segment-hero-media>video.has-frame{opacity:1}
+.wd-segment-hero-media::after{content:"";position:absolute;inset:60% 0 0;background:linear-gradient(transparent,rgba(7,24,43,.65));pointer-events:none}
+.wd-segment-hero-media figcaption{position:absolute;z-index:1;left:26px;bottom:25px;top:auto;color:#fff;font-size:12px;font-weight:500;max-width:calc(100% - 110px);text-shadow:0 1px 4px #10212e;line-height:1.5}
+.wd-segment-page .wd-segment-motion-toggle{position:absolute;z-index:2;right:20px;bottom:17px;display:grid;place-items:center;width:44px;height:44px;padding:10px;border:1px solid #ffffff8f;border-radius:50%;color:#fff;background:#10212e75;cursor:pointer;backdrop-filter:blur(8px)}
+.wd-segment-motion-toggle svg{width:20px;height:20px}
+.wd-segment-motion-toggle:hover{background:#201748}
+.wd-segment-benefits{padding-block:76px 64px}
+.wd-segment-benefit-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px;margin-top:42px}
+.wd-segment-benefit-list article{border-top:1px solid var(--seg-line);padding-top:24px}
+.wd-segment-number{display:block;font-size:12px;color:var(--seg-accent);margin-bottom:20px;font-weight:700}
+.wd-segment-benefit-list h3{margin-bottom:12px}
+.wd-segment-benefit-list p{color:var(--seg-muted);font-size:16px;line-height:1.6}
+.wd-segment-how{display:grid;grid-template-columns:1fr 1fr;gap:66px;align-items:center;padding-block:20px 86px}
+.wd-segment-how-image{background:#fff;overflow:hidden;aspect-ratio:1.05}
+.wd-segment-how-image img{width:100%;height:100%;object-fit:cover}
+.wd-segment-how-copy>p:not(.wd-segment-eyebrow){color:var(--seg-muted);margin-top:20px}
+.wd-segment-how ol{padding:0;margin:28px 0 18px;list-style:none}
+.wd-segment-how li{display:flex;align-items:center;gap:16px;border-top:1px solid var(--seg-line);padding:16px 0;font-size:16px;font-weight:650}
+.wd-segment-how li>span{font-size:11px;border:1px solid var(--seg-line);width:25px;height:25px;display:grid;place-content:center;color:var(--seg-accent)}
+.wd-segment-text-link{font-size:14px;display:inline-flex;gap:30px;align-items:center;min-height:44px;border-bottom:1px solid var(--seg-line)}
+.wd-segment-signup{display:grid;grid-template-columns:1fr 1fr;gap:65px;background:#201748;color:#f6fafc;padding:48px;scroll-margin-top:24px;border:1px solid #4b416c}
+.wd-segment-signup .wd-segment-eyebrow{color:#65ceee}
+.wd-segment-signup-heading>p:not(.wd-segment-eyebrow){margin-top:17px;color:#d5e3ea;font-size:16px}
+.wd-segment-signup h2{font-size:clamp(28px,3.2vw,40px)}
+.wd-segment-price{display:flex;align-items:baseline;gap:18px;margin-top:26px;line-height:1}
+.wd-segment-price strong{font-size:48px;letter-spacing:-.05em;font-weight:700}
+.wd-segment-price s{color:#b9b2cc;font-size:22px}
+.wd-segment-signup-heading>p.wd-segment-price-note{font-size:12px;line-height:1.4;margin-top:11px;color:#f6fafc}
+.wd-segment-signup-heading>p.wd-segment-small{font-size:11px;line-height:1.5;margin-top:8px;color:#d5e3ea}
+.wd-segment-form{align-self:center;min-width:0}
+.wd-segment-form form{gap:12px}
+.wd-segment-form form>div.grid{grid-template-columns:1fr;gap:12px}
+.wd-segment-form input[type=email]{height:54px;border:1px solid #d5e3ea;background:#fff;border-radius:0;box-shadow:none;color:#10212e;font-size:16px;order:1}
+.wd-segment-form button[type=submit]{background:#65ceee;color:#201748;border:1px solid #65ceee;box-shadow:none;border-radius:0;font-size:15px;font-weight:700;min-height:54px;order:2;transform:none}
+.wd-segment-form button[type=submit]:hover{background:#36a9e1}
+.wd-segment-page .wd-segment-confirm-note{font-size:12px;color:#d5e3ea;line-height:1.5;order:4}
+.wd-segment-page .wd-segment-free-note{font-size:11px;color:#d5e3ea;margin-top:12px;text-align:center}
+.wd-segment-form .wd-signup-steps{display:none}
+.wd-segment-form .wd-social-fallback{display:none}
+.wd-segment-form .wd-onsite-offer{color:#10212e}
+.wd-segment-form .wd-onsite-offer h2{font-size:28px}
+
+.wd-segment-log{display:grid;grid-template-columns:.8fr 1.2fr;gap:70px;align-items:center;padding-block:104px 70px}
+.wd-segment-log-copy>p:not(.wd-segment-eyebrow){color:var(--seg-muted);margin-top:22px}
+.wd-segment-log-images{position:relative;padding:20px 38px 70px 0}
+.wd-segment-log-images .wd-segment-sync{aspect-ratio:1.3;object-fit:cover;width:100%}
+.wd-segment-log-images .wd-segment-app{position:absolute;right:0;bottom:0;width:31%;height:80%;object-fit:cover;object-position:top;border:5px solid var(--seg-bg);box-shadow:0 12px 30px #10212e26}
+.wd-segment-camera{display:grid;grid-template-columns:1fr 1fr;gap:65px;align-items:center;padding-block:20px 88px}
+.wd-segment-camera>div:first-child>p:not(.wd-segment-eyebrow){color:var(--seg-muted);margin-top:20px}
+.wd-segment-video{aspect-ratio:16/9;overflow:hidden;background:#10212e;position:relative}
+.wd-segment-video>video,.wd-segment-video>button,.wd-segment-video>button>img{width:100%;height:100%;object-fit:cover}
+.wd-segment-video>button{display:block;border:0;padding:0;cursor:pointer}
+.wd-segment-video>button>span{position:absolute;bottom:20px;left:20px;background:#f6fafc;color:#201748;padding:12px 18px;font-size:13px;font-weight:700;min-height:44px}
+.wd-segment-faq{display:grid;grid-template-columns:.7fr 1.3fr;column-gap:80px;padding-block:20px 82px}
+.wd-segment-faq>.wd-segment-eyebrow{grid-column:1/-1;margin-bottom:20px}
+.wd-segment-faq details{border-top:1px solid var(--seg-line);scroll-margin-top:30px}
+.wd-segment-faq details:last-child{border-bottom:1px solid var(--seg-line)}
+.wd-segment-faq summary{display:flex;align-items:center;justify-content:space-between;gap:30px;min-height:64px;padding:18px 0;cursor:pointer;list-style:none;font-size:16px;font-weight:650;line-height:1.4}
+.wd-segment-faq summary::-webkit-details-marker{display:none}
+.wd-segment-faq summary>span{flex-shrink:0;font-size:23px;font-weight:400;transition:transform .15s}
+.wd-segment-faq details[open] summary>span{transform:rotate(45deg)}
+.wd-segment-faq details>p{color:var(--seg-muted);font-size:15px;padding-bottom:22px}
+.wd-segment-switch{display:flex;justify-content:space-between;align-items:center;gap:20px;font-size:13px!important;padding-block:32px;border-bottom:1px solid var(--seg-line)}
+.wd-segment-switch>a{display:inline-flex;align-items:center;min-height:44px;gap:16px;font-weight:650}
+.wd-segment-footer{padding-block:48px 90px}
+.wd-segment-freediving .wd-segment-footer>img{background:#201748;padding:10px;width:165px}
+.wd-segment-footer>p{max-width:650px;font-size:12px;color:var(--seg-muted);margin-top:24px}
+.wd-segment-footer>nav{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-block:16px}
+.wd-segment-footer nav a,.wd-segment-footer nav button{min-height:44px;display:inline-flex;align-items:center;font-size:12px;color:var(--seg-ink)}
+.wd-segment-footer>small{display:block;font-size:11px;color:var(--seg-muted)}
+.wd-segment-sticky{position:fixed;z-index:45;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:12px max(24px,calc((100vw - 1120px)/2));padding-bottom:max(12px,env(safe-area-inset-bottom));background:#f6fafc;color:#201748;border-top:1px solid #d5e3ea;box-shadow:0 -4px 24px #10212e14;gap:20px}
+.wd-segment-sticky>div{display:flex;flex-direction:column;font-size:13px;line-height:1.45}
+.wd-segment-sticky>div span{font-size:11px;color:#485e6c}
+.wd-segment-sticky>a{display:flex;gap:26px;align-items:center;justify-content:center;padding:13px 20px;min-height:46px;font-size:13px;font-weight:700;background:#201748;color:#f6fafc}
+.wd-segment-page section[id]{scroll-margin-top:24px}
+/* Shared form layout and type scale for the audience pages. */
+html:root .wd-segment-page h1{font-size:clamp(40px,4.5vw,70px)!important;line-height:1.04!important;letter-spacing:-.045em!important}
+html:root .wd-segment-page h2{font-size:clamp(29px,3.5vw,46px)!important;line-height:1.12!important}
+html:root .wd-segment-page .wd-segment-signup h2{font-size:clamp(28px,3.2vw,40px)!important}
+html:root .wd-segment-form input[type=email],html:root .wd-segment-form input[type=tel]{border:1px solid #d5e3ea!important;box-shadow:none!important;font-weight:400}
+html:root .wd-segment-form .wd-submit{border:1px solid #65ceee!important;box-shadow:none!important;text-transform:none;letter-spacing:0}
+html:root .wd-segment-form .wd-submit:active{transform:none}
+.wd-segment-form .wd-submit,.wd-segment-form .wd-submit::before{animation:none;filter:none}
+.wd-segment-form .wd-submit::before{display:none}
+.wd-segment-form form>span[aria-hidden=true]{display:none}
+.wd-segment-signup:has(.wd-onsite-offer){grid-template-columns:1fr}
+.wd-segment-signup:has(.wd-onsite-offer) .wd-segment-signup-heading,.wd-segment-signup:has(.wd-onsite-offer) .wd-segment-free-note{display:none}
+.wd-segment-signup:has(.wd-onsite-offer) .wd-segment-form{width:100%;max-width:620px;margin:auto}
+.wd-segment-form .wd-onsite-photo{display:none}
+.wd-segment-form .wd-onsite-offer{margin-top:24px}
+html:root .wd-segment-form .wd-inbox-card{border:1px solid #4b416c!important;box-shadow:none!important;padding:24px}
+html:root .wd-segment-form .wd-onsite-offer h2{font-size:28px!important}
+.wd-segment-form .wd-onsite-content{padding:24px}
+.wd-segment-form .wd-onsite-price svg{width:36px;height:36px}
+.wd-segment-form .wd-onsite-terms p{font-size:12px;line-height:1.5}
+.wd-segment-form .wd-onsite-auth{font-size:13px!important}
+
+@media(max-width:959px){
+ .wd-segment-shell{width:calc(100% - 48px);max-width:650px}
+ .wd-segment-header{padding:12px 24px}
+ .wd-segment-header>a,.wd-segment-header>a img{width:140px;flex-basis:140px}
+ .wd-segment-header label{max-width:155px}
+ .wd-segment-hero{display:flex;flex-direction:column;min-height:0;max-width:750px}
+ .wd-segment-hero-copy{padding:20px 24px 28px}
+ .wd-segment-modes{margin-bottom:28px;gap:26px;font-size:13px}
+ .wd-segment-page .wd-segment-eyebrow{font-size:10px;margin-bottom:13px}
+ .wd-segment-page h1{font-size:clamp(37px,7vw,60px);line-height:1.04;margin-bottom:18px;letter-spacing:-.047em}
+ .wd-segment-page .wd-segment-intro{font-size:16px;line-height:1.55;max-width:520px}
+ .wd-segment-explore{margin-top:16px;min-height:44px;font-size:13px;gap:30px}
+ .wd-segment-hero-media{min-height:0;aspect-ratio:4/3}
+ .wd-segment-hero-media figcaption{left:20px;bottom:22px;font-size:11px;max-width:calc(100% - 95px)}
+ .wd-segment-benefits{padding-block:52px 24px}
+ .wd-segment-benefit-list{grid-template-columns:1fr;gap:0;margin-top:26px}
+ .wd-segment-benefit-list article{display:flex;gap:24px;padding:21px 0}
+ .wd-segment-number{margin-top:4px;margin-bottom:0;flex:0 0 20px}
+ .wd-segment-benefit-list h3{font-size:20px;margin-bottom:8px}
+ .wd-segment-benefit-list p{font-size:15px;line-height:1.55}
+ .wd-segment-how{grid-template-columns:1fr;gap:26px;padding-block:14px 46px}
+ .wd-segment-how-image{aspect-ratio:1.65}
+ .wd-segment-how-copy>p:not(.wd-segment-eyebrow){font-size:15px;margin-top:16px}
+ .wd-segment-how ol{margin-top:22px;margin-bottom:6px}
+ .wd-segment-how li{padding:14px 0;font-size:15px}
+ .wd-segment-signup{grid-template-columns:1fr;gap:28px;padding:30px 24px}
+ .wd-segment-signup-heading>p:not(.wd-segment-eyebrow){font-size:15px;margin-top:14px}
+ .wd-segment-signup h2{font-size:29px}
+ .wd-segment-price{margin-top:22px}
+ .wd-segment-price strong{font-size:43px}
+ .wd-segment-log{grid-template-columns:1fr;gap:24px;padding-block:54px 32px}
+ .wd-segment-log-copy>p:not(.wd-segment-eyebrow){font-size:15px;margin-top:16px}
+ .wd-segment-log-images{padding:0 28px 52px 0}
+ .wd-segment-camera{grid-template-columns:1fr;gap:24px;padding-block:16px 48px}
+ .wd-segment-camera>div:first-child>p:not(.wd-segment-eyebrow){font-size:15px;margin-top:16px}
+ .wd-segment-video>button>span{bottom:12px;left:12px;padding:10px 14px}
+ .wd-segment-faq{grid-template-columns:1fr;gap:0;padding-block:12px 40px}
+ .wd-segment-faq h2{margin-bottom:26px}
+ .wd-segment-faq summary{min-height:60px;font-size:15px}
+ .wd-segment-switch{font-size:12px!important;padding-block:20px}
+ .wd-segment-footer{padding-top:32px}
+ .wd-segment-sticky{padding-inline:16px;gap:12px}
+ .wd-segment-sticky>a{font-size:12px;gap:12px;max-width:70%;padding-inline:16px}
+}
+@media(max-width:359px){
+ .wd-segment-shell{width:calc(100% - 32px)}
+ .wd-segment-header{padding-inline:16px;gap:10px}
+ .wd-segment-header>a,.wd-segment-header>a img{width:110px;flex-basis:110px}
+ .wd-segment-header label{max-width:150px}
+ .wd-segment-hero-copy{padding-inline:16px}
+ .wd-segment-page h1{font-size:34px}
+ .wd-segment-signup{padding:25px 18px}
+}
+@media(prefers-reduced-motion:reduce){.wd-segment-page *, .wd-segment-page *:before,.wd-segment-page *:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+@media(prefers-reduced-motion:reduce){.wd-segment-hero-media>video{transition:none}}
+
+/* Phone hero follows source order: title, intro, price, CTA, then video and badge. */
+
+/* DIVEROID brutalism: hard frames, flat brand blocks and offset shadows. */
+.wd-segment-page{--seg-frame:#201748;--seg-card:#fff;--seg-shadow:#65ceee;--seg-marker:#f5ff3d}
+.wd-segment-scuba{--seg-frame:#eef9ff;--seg-card:#2c205c;--seg-shadow:#65ceee}
+.wd-segment-page h3{font-weight:700}
+.wd-segment-header{border-bottom:3px solid #65ceee}
+.wd-segment-header select{border:2px solid #eef9ff;box-shadow:3px 3px 0 #65ceee}
+.wd-segment-modes{gap:10px;border:0}
+.wd-segment-modes a{border:2px solid var(--seg-frame);padding:9px 14px;margin:0;font-weight:700;color:var(--seg-ink);background:var(--seg-card)}
+.wd-segment-modes a[aria-current=page]{background:#65ceee;color:#201748;border-color:var(--seg-frame);box-shadow:4px 4px 0 var(--seg-frame)}
+.wd-segment-page .wd-segment-eyebrow{display:table;max-width:100%;width:fit-content;border:2px solid currentColor;padding:4px 8px;letter-spacing:.08em}
+.wd-segment-hero{padding-block:24px 48px;border-bottom:3px solid var(--seg-frame)}
+.wd-segment-hero-media{width:calc(100% - 32px);margin-right:32px;border:3px solid var(--seg-frame);box-shadow:8px 8px 0 var(--seg-shadow)}
+.wd-segment-page .wd-segment-motion-toggle{border:2px solid #fff;background:#201748;box-shadow:3px 3px 0 #65ceee;backdrop-filter:none}
+.wd-segment-hero-offer{padding:13px 16px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:5px 5px 0 var(--seg-shadow)}
+.wd-segment-explore,.wd-segment-text-link{padding:10px 14px;border:2px solid var(--seg-frame);background:var(--seg-card);box-shadow:4px 4px 0 var(--seg-shadow);font-weight:700}
+.wd-segment-benefit-list{gap:20px}
+.wd-segment-benefit-list article{padding:24px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:5px 5px 0 var(--seg-shadow)}
+.wd-segment-number{display:grid;place-items:center;width:34px;height:34px;background:#65ceee;border:2px solid var(--seg-frame);color:#201748;font-weight:700}
+.wd-segment-how-image,.wd-segment-video{border:3px solid var(--seg-frame);box-shadow:7px 7px 0 var(--seg-shadow)}
+.wd-segment-how li{border-top:2px solid var(--seg-frame)}
+.wd-segment-how li>span{flex-shrink:0;border:2px solid var(--seg-frame);width:29px;height:29px;background:#65ceee;color:#201748;font-weight:700}
+.wd-segment-log-images .wd-segment-sync{border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow)}
+.wd-segment-log-images .wd-segment-app{border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow)}
+.wd-segment-faq details{border:2px solid var(--seg-frame);background:var(--seg-card);margin-bottom:12px;padding-inline:18px;box-shadow:4px 4px 0 var(--seg-shadow)}
+.wd-segment-faq details:last-child{border-bottom:2px solid var(--seg-frame)}
+.wd-segment-faq summary{font-weight:700}
+.wd-segment-switch{border-bottom:3px solid var(--seg-frame)}
+.wd-segment-signup{position:relative;isolation:isolate;border:3px solid #eef9ff;box-shadow:7px 7px 0 #65ceee}
+.wd-segment-signup-middle{border-color:var(--seg-marker);box-shadow:7px 7px 0 #65ceee}
+/* Only the decorative frame pulses; the text and controls stay still. */
+.wd-segment-signup-middle::before{content:"";position:absolute;inset:-5px;border:5px solid var(--seg-marker);box-shadow:4px 4px 0 var(--seg-marker);pointer-events:none;animation:wd-segment-marker-pulse 2.4s ease-in-out infinite;opacity:1}
+@keyframes wd-segment-marker-pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.wd-segment-signup-middle:focus-within::before,.wd-segment-signup-middle:has(.wd-onsite-offer)::before{animation:none;opacity:1}
+.wd-segment-signup-middle .wd-segment-eyebrow{background:var(--seg-marker);border-color:var(--seg-marker);color:#201748}
+html:root .wd-segment-form input[type=email],html:root .wd-segment-form input[type=tel]{border:3px solid #201748!important;box-shadow:4px 4px 0 #eef9ff!important}
+html:root .wd-segment-form .wd-submit{border:3px solid #eef9ff!important;box-shadow:4px 4px 0 #eef9ff!important}
+html:root .wd-segment-form .wd-submit:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #eef9ff!important}
+html:root .wd-segment-form .wd-inbox-card{border:3px solid #eef9ff!important;box-shadow:5px 5px 0 #65ceee!important}
+.wd-segment-sticky{border-top:3px solid #201748;box-shadow:none}
+.wd-segment-sticky>a{border:2px solid #201748;box-shadow:4px 4px 0 #65ceee}
+@media(max-width:959px){
+ .wd-segment-hero{padding-top:0;padding-bottom:34px}
+ .wd-segment-hero-media{width:calc(100% - 48px);margin:0 24px;box-shadow:6px 6px 0 var(--seg-shadow)}
+ .wd-segment-hero-copy>.wd-segment-modes{gap:10px;margin-bottom:27px}
+ .wd-segment-modes a{padding:8px 10px}
+ .wd-segment-hero-copy>.wd-segment-eyebrow{margin-bottom:17px}
+ .wd-segment-benefit-list{gap:16px}
+ .wd-segment-benefit-list article{padding:20px;gap:16px}
+ .wd-segment-number{flex:0 0 32px;height:32px}
+ .wd-segment-signup{padding:30px 24px}
+ .wd-segment-faq details{padding-inline:14px}
+ .wd-segment-how-image,.wd-segment-video{box-shadow:5px 5px 0 var(--seg-shadow)}
+}
+@media(max-width:359px){
+ .wd-segment-hero-media{width:calc(100% - 32px);margin-inline:16px}
+ .wd-segment-hero-copy>.wd-segment-modes{margin-inline:16px;gap:8px}
+ .wd-segment-modes a{font-size:12px;padding-inline:8px}
+ .wd-segment-signup{padding:25px 18px}
+}
+@media(prefers-reduced-motion:reduce){.wd-segment-signup-middle::before{animation:none!important;opacity:1}}
+
+/* Offer stickers: localised, with no layout shift or flashing form controls. */
+.wd-segment-price{flex-wrap:wrap;column-gap:14px;row-gap:16px;align-items:center}
+.wd-segment-discount{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;flex:0 0 auto;min-width:76px;max-width:108px;padding:7px 10px;background:#f5ff3d;color:#201748;border:2px solid #201748;box-shadow:4px 4px 0 #65ceee;transform:rotate(-4deg);text-align:center;line-height:1.1;pointer-events:none;animation:wd-segment-discount-pulse 2.4s ease-in-out infinite}
+.wd-segment-discount b{font-size:26px;font-weight:800;letter-spacing:-.05em}
+.wd-segment-discount>span{font-size:11px;font-weight:750;line-height:1.15;margin-top:2px}
+@keyframes wd-segment-discount-pulse{0%,100%{opacity:1}50%{opacity:.48}}
+.wd-segment-signup:focus-within .wd-segment-discount{animation:none;opacity:1}
+.wd-segment-signup-heading>p.wd-segment-price-note{line-height:1.8;margin-top:18px}
+.wd-segment-first100{display:inline-block;color:#65ceee;font-size:clamp(20px,2vw,24px);font-weight:800;line-height:1.5;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:5px}
+@media(max-width:359px){
+ .wd-segment-price{column-gap:10px}
+ .wd-segment-price>strong{font-size:40px}
+ .wd-segment-price>s{font-size:19px}
+ .wd-segment-discount{min-width:68px;max-width:90px;padding:6px 8px}
+ .wd-segment-discount b{font-size:23px}
+ .wd-segment-discount>span{font-size:10px}
+ .wd-segment-first100{font-size:20px}
+}
+@media(prefers-reduced-motion:reduce){.wd-segment-discount{animation:none!important;opacity:1}}
+
+/* User-provided freediving photograph and app-screen composite. */
+.wd-segment-how-image-free{aspect-ratio:3/2}
+.wd-segment-log .wd-segment-free-logbook{margin:0;width:100%;min-width:0}
+.wd-segment-free-logbook>img{width:100%;height:auto;aspect-ratio:3/2;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow);background:#096f9a}
+
+/* Dive-computer use is included; price comparisons keep the plan explicit. */
+.wd-segment-page .wd-segment-hero-usp{display:flex;align-items:center;gap:9px;background:#65ceee;color:#201748;border:2px solid var(--seg-frame);box-shadow:3px 3px 0 var(--seg-frame);padding:9px 12px;margin:0 0 22px;font-size:14px;font-weight:750;line-height:1.45;max-width:450px}
+.wd-segment-hero-usp svg{width:21px;height:21px;flex:0 0 21px}
+.wd-segment-signup-heading>p.wd-segment-subscription-note{color:#65ceee;font-size:14px;line-height:1.5;font-weight:750;margin-top:18px;border-left:3px solid #65ceee;padding-left:11px}
+.wd-subscription-comparison{padding-block:0 76px}
+.wd-subscription-comparison h2{max-width:780px}
+.wd-segment-page .wd-subscription-lead{margin-top:18px;color:var(--seg-muted);max-width:700px}
+.wd-subscription-panels{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:64px;margin-top:32px}
+.wd-subscription-vs{position:absolute;z-index:1;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-7deg);display:grid;place-items:center;width:64px;height:64px;background:#f5ff3d;color:#201748;border:3px solid #201748;box-shadow:4px 4px 0 #201748;font-size:25px;font-weight:800;line-height:1;letter-spacing:-.04em}
+.wd-subscription-card{min-width:0;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow);background:var(--seg-card);padding:30px}
+@supports(grid-template-rows:subgrid){
+ .wd-subscription-panels{row-gap:0}
+ .wd-subscription-card{display:grid;grid-template-rows:subgrid;grid-row:span 5;row-gap:0}
+}
+.wd-subscription-card h3{font-size:24px;line-height:1.2;letter-spacing:-.025em;min-height:66px}
+.wd-subscription-card h3>span{display:block;font-size:15px;line-height:1.5;font-weight:500;letter-spacing:0;margin-top:7px}
+.wd-subscription-watch{background:#65ceee;color:#201748;border-color:#201748;box-shadow:6px 6px 0 #201748}
+.wd-segment-page .wd-subscription-term{font-size:14px;margin-top:25px;line-height:1.4}
+.wd-segment-page .wd-subscription-amount{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;line-height:1.1;margin-top:8px}
+.wd-subscription-amount strong{font-size:clamp(30px,4.8vw,56px);font-weight:750;letter-spacing:-.05em}
+.wd-subscription-amount>span{font-size:12px;font-weight:700}
+.wd-segment-page .wd-subscription-calculation,.wd-segment-page .wd-subscription-included{font-size:15px;line-height:1.5;margin-top:24px}
+.wd-subscription-included{font-weight:750}
+.wd-segment-page .wd-subscription-offer{font-size:12px;line-height:1.5;margin-top:12px}
+.wd-segment-page .wd-subscription-caveat{font-size:12px;color:var(--seg-muted);line-height:1.5;margin-top:24px}
+.wd-subscription-basis{margin-top:14px;border-block:1px solid var(--seg-line);color:var(--seg-muted);font-size:12px}
+.wd-subscription-basis summary{display:flex;align-items:center;justify-content:space-between;min-height:44px;cursor:pointer;list-style:none;gap:20px}
+.wd-subscription-basis summary::-webkit-details-marker{display:none}
+.wd-subscription-basis summary>span{font-size:20px}
+.wd-subscription-basis[open] summary>span{transform:rotate(45deg)}
+.wd-segment-page .wd-subscription-basis p{font-size:12px;line-height:1.7;margin-block:0 8px;max-width:900px}
+.wd-subscription-basis>a{display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-underline-offset:3px;font-weight:700}
+@media(max-width:959px){
+ .wd-segment-hero-copy>h1{margin-bottom:16px}
+ .wd-segment-hero-copy>.wd-segment-hero-usp{order:3;align-self:flex-start;margin:0 24px 24px;max-width:calc(100% - 48px)}
+ .wd-subscription-comparison{padding-bottom:48px}
+ .wd-segment-page .wd-subscription-lead{font-size:15px;margin-top:16px}
+ .wd-subscription-panels{column-gap:26px;margin-top:24px}
+ .wd-subscription-vs{width:38px;height:38px;font-size:16px;border-width:2px;box-shadow:2px 2px 0 #201748}
+ .wd-subscription-card{padding:18px 14px;box-shadow:4px 4px 0 var(--seg-shadow)}
+ .wd-subscription-watch{box-shadow:4px 4px 0 #201748}
+ .wd-subscription-card h3{font-size:18px;min-height:112px;overflow-wrap:anywhere}
+ .wd-subscription-card h3>span{font-size:12px}
+ .wd-segment-page .wd-subscription-term{font-size:12px;min-height:34px;margin-top:14px}
+ .wd-segment-page .wd-subscription-amount{flex-direction:column;align-items:flex-start;gap:6px}
+ .wd-subscription-amount>span{font-size:10px}
+ .wd-segment-page .wd-subscription-calculation,.wd-segment-page .wd-subscription-included{font-size:12px;margin-top:18px}
+ .wd-segment-page .wd-subscription-offer{font-size:11px}
+}
+/* Hero jump sits with the headline, before the photo on a phone. The compat summary stays one short block; the exact list opens in place. */
+.wd-segment-hero-jump{display:inline-flex;align-items:center;justify-content:center;gap:10px;align-self:flex-start;box-sizing:border-box;max-width:100%;min-width:0;min-height:48px;margin:0 0 10px;padding:11px 16px;background:#65ceee;color:#201748!important;border:3px solid var(--seg-frame);box-shadow:4px 4px 0 var(--seg-shadow);font-size:15px;font-weight:750;line-height:1.25;text-align:center;white-space:normal}
+html:root .wd-segment-page .wd-segment-hero-jump{color:#201748!important}
+.wd-segment-hero-jump span{font-size:18px;line-height:1}
+.wd-segment-hero-compat{width:min(450px,100%);min-width:0;margin:0 0 18px;border:2px solid var(--seg-frame);background:var(--seg-card);color:var(--seg-ink);box-shadow:3px 3px 0 var(--seg-shadow)}
+.wd-segment-hero-compat summary{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;justify-content:center;min-height:44px;padding:10px 32px 10px 12px;cursor:pointer;list-style:none;font-size:14px;font-weight:650;line-height:1.35}
+.wd-segment-hero-compat summary>span{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.wd-segment-hero-compat summary::-webkit-details-marker{display:none}
+.wd-segment-hero-compat summary>span[aria-hidden]{position:absolute;right:12px;top:12px;font-size:18px;font-weight:500;line-height:1}
+.wd-segment-hero-compat[open] summary>span[aria-hidden]{transform:rotate(45deg)}
+.wd-segment-compat-now{font-weight:750}
+.wd-segment-compat-later{font-weight:650}
+.wd-segment-compat-later strong{display:inline-block;margin-right:4px;padding:0 5px;background:#f5ff3d;color:#201748;border:2px solid #201748;font-weight:750;line-height:1.35}
+.wd-segment-compat-panel{padding:0 10px 10px;border-top:2px solid var(--seg-frame)}
+.wd-segment-page .wd-segment-compat-panel p,.wd-segment-page .wd-segment-compat-panel li{font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.wd-segment-compat-panel ul{margin:8px 0;padding:0;list-style:none}
+.wd-segment-compat-panel li{padding:4px 0;border-top:1px solid var(--seg-line)}
+.wd-segment-compat-panel a{display:inline-flex;align-items:center;min-height:44px;font-size:13px;font-weight:750;text-decoration:underline;text-underline-offset:3px}
+.wd-segment-signup-middle h2:focus{outline:3px solid #36a9e1;outline-offset:4px}
+@media(max-width:959px){
+ .wd-segment-hero-copy>.wd-segment-hero-usp{margin-bottom:12px}
+ .wd-segment-hero-copy>.wd-segment-hero-jump,.wd-segment-hero-copy>.wd-segment-hero-compat{order:3;align-self:stretch;margin-left:24px;margin-right:24px;max-width:calc(100% - 48px)}
+ .wd-segment-hero-copy>.wd-segment-hero-jump{align-self:flex-start;width:auto}
+ .wd-segment-hero-copy>.wd-segment-hero-compat{margin-bottom:16px}
+}
+@media(max-width:359px){
+ .wd-segment-hero-copy>.wd-segment-hero-jump,.wd-segment-hero-copy>.wd-segment-hero-compat{margin-left:16px;margin-right:16px;max-width:calc(100% - 32px)}
+ .wd-segment-hero-jump{font-size:14px;padding-inline:12px}
+ .wd-segment-hero-compat summary{font-size:13px}
+}
+@media(max-width:359px){
+ .wd-segment-hero-copy>.wd-segment-hero-usp{margin-inline:16px;max-width:calc(100% - 32px);font-size:13px}
+ .wd-subscription-card{padding-inline:10px}
+ .wd-subscription-card h3{font-size:16px;min-height:136px}
+ .wd-segment-page .wd-subscription-term{min-height:51px}
+ .wd-subscription-amount strong{font-size:28px}
+}
+
+/* Signup states: one outer frame; nested forms retain their own rhythm. */
+html:root .wd-segment-form .wd-inbox-card {
+  padding: 0;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+}
+html:root .wd-segment-form .wd-inbox-card > h2 { font-size: 26px !important; line-height: 1.3 !important; margin-bottom: 12px; }
+.wd-segment-form .wd-inbox-card > p { font-size: 14px; line-height: 1.6; }
+.wd-segment-form .wd-phone-card { padding: 20px; }
+.wd-segment-form .wd-phone-card h3 { font-size: 21px; line-height: 1.3; }
+.wd-segment-form .wd-phone-consent { font-size: 13px; }
+.wd-segment-form .wd-phone-terms { font-size: 12px; }
+.wd-segment-form .wd-onsite-content { padding: 24px; }
+@media (max-width: 600px) {
+  .wd-segment-signup:has(.wd-inbox-card),
+  .wd-segment-signup:has(.wd-onsite-offer) { padding: 24px 16px; }
+  .wd-segment-form .wd-onsite-content { padding: 20px 16px; }
+  .wd-segment-form .wd-phone-card { padding: 18px 16px; }
+  html:root .wd-segment-form .wd-onsite-offer h2 { font-size: 26px !important; line-height: 1.3 !important; }
+}
+
+/* The next Kickstarter tier is distinct from the regular retail comparison. */
+.wd-segment-next-price { margin: 8px 0 16px; font-size: clamp(14px, 1.5vw, 17px); line-height: 1.5; font-weight: 600; }
+
+/* Header holds the mode tabs. The closed language control is a globe plus a short code. */
+.wd-segment-header{flex-wrap:wrap;align-items:center;gap:10px 14px}
+.wd-segment-header .wd-segment-modes{margin:0;min-width:0;flex:1 1 auto;flex-wrap:wrap;gap:8px;border:0}
+.wd-segment-header .wd-segment-modes a{color:#f6fafc;background:transparent;border:2px solid #eef9ff;box-shadow:none;padding:8px 12px;font-size:13px;line-height:1.2;min-height:44px}
+.wd-segment-header .wd-segment-modes a[aria-current=page]{background:#65ceee;color:#201748;border-color:#eef9ff;box-shadow:3px 3px 0 #65ceee}
+.wd-locale-code{position:relative;display:inline-flex;align-items:center;flex:0 0 auto;height:44px;min-width:76px;padding:0 12px 0 10px;border:2px solid #eef9ff;background:#201748;box-shadow:3px 3px 0 #65ceee;color:#f6fafc;max-width:96px}
+.wd-locale-code-globe{width:16px;height:16px;flex:0 0 16px}
+.wd-locale-code-value{margin-left:6px;font-size:13px;font-weight:750;letter-spacing:.04em;line-height:1}
+.wd-segment-header .wd-locale-code select{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;box-shadow:none;background:transparent;color:transparent;opacity:0;cursor:pointer;appearance:none}
+.wd-locale-code select option{color:#10212e;background:#fff}
+.wd-locale-code:focus-within{outline:3px solid #36a9e1;outline-offset:3px}
+
+/* Hero stack: copy, then the video with the subscription badge under it. */
+.wd-segment-hero-visual{display:flex;flex-direction:column;justify-content:center;align-items:stretch;min-width:0;gap:14px;padding:28px 32px 28px 0}
+.wd-segment-hero-visual .wd-segment-hero-media{width:100%;margin:0}
+.wd-segment-hero-visual .wd-segment-hero-usp{margin:0;max-width:none;align-self:flex-start}
+.wd-segment-hero-copy .wd-segment-hero-jump{margin-top:14px}
+.wd-segment-hero-compat-slot{grid-column:1 / -1;padding:0 clamp(30px,5vw,80px) 8px;min-width:0}
+.wd-segment-how-logo-wrap{display:inline-block;white-space:nowrap;max-width:100%;vertical-align:baseline}
+.wd-segment-page h2 .wd-watchdive-logo{display:inline-block;height:.72em;width:auto;max-width:7.6em;vertical-align:-.08em;margin-inline:.08em .04em;background:none;padding:0}
+.wd-segment-page .wd-segment-footer .wd-watchdive-logo{display:block;width:auto;height:22px;max-width:168px;background:none;padding:0}
+.wd-segment-how-image,.wd-segment-how-image-free{aspect-ratio:16/9}
+.wd-segment-how-image .wd-segment-how-media,.wd-segment-how-image img,.wd-segment-how-image video{width:100%;height:100%;object-fit:cover;display:block}
+.wd-segment-how-media{position:relative}
+.wd-segment-surface-photo img{display:block;width:100%;height:auto;border:3px solid var(--seg-frame);box-shadow:7px 7px 0 var(--seg-shadow)}
+.wd-segment-how-compat{grid-column:1 / -1;display:flex;flex-direction:column;align-items:flex-start;gap:16px;min-width:0}
+.wd-segment-how-compat .wd-capture-card{width:min(640px,100%)}
+button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align:start}
+.wd-segment-how-compat [hidden]{display:none}
+@media(max-width:959px){
+ .wd-segment-hero-visual{padding:18px 24px 0;width:100%}
+ .wd-segment-hero-visual .wd-segment-hero-media{width:100%;margin:0}
+ .wd-segment-hero-compat-slot{padding:16px 24px 0}
+ .wd-segment-hero-copy>.wd-segment-hero-jump,.wd-segment-hero-copy>.wd-segment-hero-compat{order:0;margin-left:0;margin-right:0;max-width:100%}
+ .wd-segment-hero-copy>.wd-segment-hero-usp{margin-left:0;margin-right:0;max-width:100%}
+}
+@media(max-width:359px){
+ .wd-segment-header{padding-inline:12px;gap:8px}
+ .wd-segment-header .wd-segment-modes{gap:6px}
+ .wd-segment-header .wd-segment-modes a{font-size:12px;padding:8px}
+ .wd-segment-hero-visual,.wd-segment-hero-compat-slot{padding-inline:16px}
+ .wd-segment-hero-copy>.wd-segment-hero-jump,.wd-segment-hero-copy>.wd-segment-hero-compat{margin-left:0;margin-right:0;max-width:100%}
+ .wd-segment-hero-copy>.wd-segment-hero-usp{margin-inline:0;max-width:100%}
+}
+
+/* Larger title lockup with clear space; keep the suffix with the mark on mobile. */
+.wd-segment-page h2 .wd-watchdive-logo{width:clamp(180px,42vw,210px);height:auto;max-width:210px;margin:28px 24px;vertical-align:middle}
+.wd-segment-page .wd-segment-footer .wd-watchdive-logo{width:180px;height:auto;max-width:180px;margin:24px}
+@media(max-width:420px){.wd-segment-how-copy #how-title{font-size:25px;line-height:1.3}}
