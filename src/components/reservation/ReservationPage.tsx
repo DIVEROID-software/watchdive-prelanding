@@ -16,6 +16,7 @@ import {
   STATUS_RETRY_DELAYS_MS,
   type ReservationStatus,
 } from "./contract";
+import { getOnsiteReservation } from "@/lib/api/onsiteReservation.functions";
 import { buildReservationView } from "./model";
 import {
   parseReservationQuery,
@@ -24,6 +25,9 @@ import {
   writeStoredLang,
   type ReservationLocale,
 } from "./query";
+import { ReturnLinkForm } from "./ReturnLinkForm";
+import { shouldOfferReturnForm } from "./returnClient";
+import { resumeVerifiedReservation } from "./returnResume";
 import "./reservation.css";
 
 const LOCALIZED_SITE = isI18nReviewEnabled(import.meta.env.VITE_WATCHDIVE_I18N_REVIEW);
@@ -54,6 +58,8 @@ export function ReservationPage({ search }: { search: string }) {
   const [statusError, setStatusError] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const [entryResolved, setEntryResolved] = useState(false);
+  const [resumeSettled, setResumeSettled] = useState(false);
   const acceptId = useId();
   const hintId = useId();
   const statusId = useId();
@@ -70,7 +76,44 @@ export function ReservationPage({ search }: { search: string }) {
     }
     setInviteToken(entry.inviteToken);
     setInvalidInvite(entry.invalidInvite);
+    setEntryResolved(true);
   }, [search]);
+
+  useEffect(() => {
+    if (!entryResolved) return;
+    if (inviteToken) {
+      setResumeSettled(true);
+      return;
+    }
+    let cancelled = false;
+    void resumeVerifiedReservation({
+      locale: query.lang ?? "en",
+      exchange: async () => {
+        const response = await fetch("/api/auth/continuation", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { accept: "application/json", "content-type": "application/json" },
+          body: "{}",
+        });
+        return response.json().catch(() => null);
+      },
+      openReservation: async (credential, locale) => getOnsiteReservation({ data: { credential, locale } }),
+    })
+      .then((href) => {
+        if (cancelled) return;
+        if (href) {
+          window.location.assign(href);
+          return;
+        }
+        setResumeSettled(true);
+      })
+      .catch(() => {
+        if (!cancelled) setResumeSettled(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [entryResolved, inviteToken, query.lang]);
 
   useEffect(() => {
     const lookup = { inviteToken, sessionId: query.sessionId };
@@ -141,6 +184,12 @@ export function ReservationPage({ search }: { search: string }) {
   const copy = view.copy;
   const presentation = RESERVATION_PRESENTATION[view.locale];
   const showStatus = statusLoading || (view.phase !== "offer" && status?.serverStatus !== "open");
+  const offerReturn = shouldOfferReturnForm({
+    inviteToken,
+    phase: view.phase,
+    entryResolved,
+    resumeSettled,
+  });
 
   useEffect(() => {
     document.title = copy.metaTitle;
@@ -187,10 +236,10 @@ export function ReservationPage({ search }: { search: string }) {
           >
             <img
               className="wd-rsv-wordmark"
-              src="/brand/reservation/diveroid-wordmark-color-transparent.png"
+              src="/brand/mail/watchdive-primary.png"
               alt={copy.home}
-              width={1033}
-              height={152}
+              width={1200}
+              height={177}
             />
           </a>
           {import.meta.env.VITE_RESERVATION_TEST_MODE === "true" ? (
@@ -241,6 +290,7 @@ export function ReservationPage({ search }: { search: string }) {
                 {view.checkoutErrorText}
               </p>
             ) : null}
+            {offerReturn ? <ReturnLinkForm locale={view.locale} /> : null}
             {view.showCheckoutForm ? (
               <form onSubmit={onSubmit} noValidate>
                 <div className="wd-rsv-disclosure">

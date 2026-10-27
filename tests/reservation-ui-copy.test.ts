@@ -11,6 +11,18 @@ function read(path: string): string {
   return readFileSync(new URL(path, root), "utf8");
 }
 
+function checkoutCopyText(locale: "en" | "ko"): string {
+  const copy = { ...reservationCopy(locale) };
+  delete copy.returnLead;
+  delete copy.returnEmailLabel;
+  delete copy.returnSubmit;
+  delete copy.returnSending;
+  delete copy.returnAccepted;
+  delete copy.returnInvalid;
+  delete copy.returnUnavailable;
+  return JSON.stringify(copy);
+}
+
 const reservationSources = [
   "src/routes/reservation.tsx",
   "src/components/reservation/ReservationPage.tsx",
@@ -21,6 +33,9 @@ const reservationSources = [
   "src/components/reservation/pricing.ts",
   "src/components/reservation/copy.ts",
   "src/components/reservation/reservation.css",
+  "src/components/reservation/ReturnLinkForm.tsx",
+  "src/components/reservation/returnClient.ts",
+  "src/components/reservation/returnResume.ts",
 ];
 
 test("every site locale states the fee, the product price, and the pre-tax total separately", () => {
@@ -61,7 +76,7 @@ test("buyer copy states the separate fee, the launch price, and the refund rule"
   assert.match(english, /before shipping and tax/i);
   assert.match(englishCopy.needsInvitation, /email/i);
   assert.doesNotMatch(
-    english,
+    checkoutCopyText("en"),
     /signed invitation|not proof of payment|credential|stock quantity|session id/i,
   );
   assert.doesNotMatch(
@@ -84,8 +99,15 @@ test("buyer copy states the separate fee, the launch price, and the refund rule"
   assert.match(korean, /출시를 취소하는 경우에만 환불/);
   assert.match(korean, /법이 요구하는 권리/);
   assert.match(korean, /배송비와 세금/);
-  assert.doesNotMatch(korean, /서명된 초대|재고|인증|증거|세션/);
-  assert.doesNotMatch(korean, /할인|보증금|전액 환불|언제든 환불/);
+  assert.doesNotMatch(checkoutCopyText("ko"), /서명된 초대|재고|인증|증거|세션/);
+  assert.doesNotMatch(checkoutCopyText("ko"), /할인|보증금|전액 환불|언제든 환불/);
+  assert.equal(
+    koreanCopy.returnAccepted,
+    "인증된 미결제 신청 내역이 있으면 예약 링크를 보내드립니다. 인증 전이라면 기존 인증 메일을 확인해 주세요.",
+  );
+  assert.match(englishCopy.returnAccepted, /verified, unpaid/);
+  assert.match(englishCopy.returnAccepted, /not verified yet/);
+  assert.doesNotMatch(englishCopy.returnAccepted, /on its way|already on the WatchDive list/i);
   assert.match(koreanCopy.priceRows[0]?.detail ?? "", /차감되지 않습니다/);
 });
 
@@ -118,12 +140,18 @@ test("every locale names the lowest launch price and a closed dispute", () => {
   assert.match(reservationCopy("ja").metaDescription, /含まれません/);
 });
 
-test("the reservation screen does not collect email, phone, SMS consent, or a card", () => {
+test("checkout stays card-free and the return form is the only email field", () => {
   const page = read("src/components/reservation/ReservationPage.tsx");
   const route = read("src/routes/reservation.tsx");
   const client = read("src/components/reservation/client.ts");
+  const form = read("src/components/reservation/ReturnLinkForm.tsx");
   assert.doesNotMatch(page, /type=["'](?:email|tel|password|number)["']/);
   assert.doesNotMatch(page, /sms|phone-number|PhoneOptIn|card number|cardNumber/i);
+  assert.match(page, /shouldOfferReturnForm/);
+  assert.match(page, /<ReturnLinkForm/);
+  assert.equal(form.match(/type="email"/g)?.length, 1);
+  assert.match(form, /name="company"/);
+  assert.doesNotMatch(form, /type=["'](?:tel|password|number)["']|sms|cardNumber|markConversion|metaPixel/i);
   assert.doesNotMatch(route, /sms|PhoneOptIn|metaPixel|conversionExperiment/i);
   assert.equal(page.match(/requestReservationCheckout/g)?.length, 2);
   assert.equal(page.match(/tryBegin\(/g)?.length, 1);

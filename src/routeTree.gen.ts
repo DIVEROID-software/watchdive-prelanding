@@ -44,6 +44,7 @@ import { Route as ApiPushConfigRouteImport } from './routes/api/push/config'
 import { Route as ApiPushSubscriptionRouteImport } from './routes/api/push/subscription'
 import { Route as ApiReferralLeaderboardRouteImport } from './routes/api.referral.leaderboard'
 import { Route as ApiReservationCheckoutRouteImport } from './routes/api/reservation/checkout'
+import { Route as ApiReservationReturnRouteImport } from './routes/api/reservation/return'
 import { Route as ApiReservationStatusRouteImport } from './routes/api/reservation/status'
 import { Route as ApiReservationWebhookRouteImport } from './routes/api/reservation/webhook'
 import { Route as ApiAuthAppleCallbackRouteImport } from './routes/api/auth/apple/callback'
@@ -227,6 +228,11 @@ const ApiReservationCheckoutRoute = ApiReservationCheckoutRouteImport.update({
   path: '/api/reservation/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiReservationReturnRoute = ApiReservationReturnRouteImport.update({
+  id: '/api/reservation/return',
+  path: '/api/reservation/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReservationStatusRoute = ApiReservationStatusRouteImport.update({
   id: '/api/reservation/status',
   path: '/api/reservation/status',
@@ -284,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/return': typeof ApiReservationReturnRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
   '/api/auth/apple/callback': typeof ApiAuthAppleCallbackRoute
@@ -324,6 +331,7 @@ export interface FileRoutesByTo {
   '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/return': typeof ApiReservationReturnRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
   '/api/auth/apple/callback': typeof ApiAuthAppleCallbackRoute
@@ -366,6 +374,7 @@ export interface FileRoutesById {
   '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/return': typeof ApiReservationReturnRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
   '/api/auth/apple/callback': typeof ApiAuthAppleCallbackRoute
@@ -409,6 +418,7 @@ export interface FileRouteTypes {
     | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
+    | '/api/reservation/return'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
     | '/api/auth/apple/callback'
@@ -449,6 +459,7 @@ export interface FileRouteTypes {
     | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
+    | '/api/reservation/return'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
     | '/api/auth/apple/callback'
@@ -490,6 +501,7 @@ export interface FileRouteTypes {
     | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
+    | '/api/reservation/return'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
     | '/api/auth/apple/callback'
@@ -523,6 +535,7 @@ export interface RootRouteChildren {
   ApiPushSubscriptionRoute: typeof ApiPushSubscriptionRoute
   ApiReferralLeaderboardRoute: typeof ApiReferralLeaderboardRoute
   ApiReservationCheckoutRoute: typeof ApiReservationCheckoutRoute
+  ApiReservationReturnRoute: typeof ApiReservationReturnRoute
   ApiReservationStatusRoute: typeof ApiReservationStatusRoute
   ApiReservationWebhookRoute: typeof ApiReservationWebhookRoute
   ApiAuthAppleCallbackRoute: typeof ApiAuthAppleCallbackRoute
@@ -776,6 +789,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReservationCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/reservation/return': {
+      id: '/api/reservation/return'
+      path: '/api/reservation/return'
+      fullPath: '/api/reservation/return'
+      preLoaderRoute: typeof ApiReservationReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/reservation/status': {
       id: '/api/reservation/status'
       path: '/api/reservation/status'
@@ -862,6 +882,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPushSubscriptionRoute: ApiPushSubscriptionRoute,
   ApiReferralLeaderboardRoute: ApiReferralLeaderboardRoute,
   ApiReservationCheckoutRoute: ApiReservationCheckoutRoute,
+  ApiReservationReturnRoute: ApiReservationReturnRoute,
   ApiReservationStatusRoute: ApiReservationStatusRoute,
   ApiReservationWebhookRoute: ApiReservationWebhookRoute,
   ApiAuthAppleCallbackRoute: ApiAuthAppleCallbackRoute,

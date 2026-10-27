@@ -210,7 +210,7 @@ test("a Stripe return restores the stored language and keeps the invite out of t
     "utf8",
   );
   const route = readFileSync(new URL("../src/routes/reservation.tsx", import.meta.url), "utf8");
-  assert.match(page, /\/brand\/reservation\/diveroid-wordmark-color-transparent\.png/);
+  assert.match(page, /\/brand\/mail\/watchdive-primary\.png/);
   assert.match(route, /reservationLangBootstrapScript/);
   assert.doesNotMatch(`${page}\n${css}`, /linear-gradient|radial-gradient/);
   for (const hex of ["#201748", "#3D2683", "#EEF9FF", "#10212E", "#F6FAFC"]) {

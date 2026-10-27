@@ -330,3 +330,42 @@ html:root .wd-rsv h2 {
   html:root .wd-rsv h1 { font-size: 28px !important; }
   .wd-rsv-card { padding: 22px 18px; }
 }
+.wd-rsv-return {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.wd-rsv-return p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.wd-rsv-return-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+.wd-rsv-return-email {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid #c5d5df;
+  border-radius: 10px;
+  font: inherit;
+  color: #10212e;
+  background: #fff;
+}
+.wd-rsv-return-trap {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  height: 0;
+  width: 0;
+  opacity: 0;
+}
+.wd-rsv-return-status:empty {
+  display: none;
+}
+.wd-rsv-return .wd-rsv-submit {
+  margin-top: 4px;
+}
