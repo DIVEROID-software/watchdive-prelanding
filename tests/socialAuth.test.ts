@@ -197,6 +197,8 @@ async function begin(
   return { url: payload.url, cookie, bound };
 }
 
+// The OAuth validator uses the wall clock; keep provider tokens current while
+// the application clock stays fixed for cohort and scheduling assertions.
 function googleClaims(nonce: string, extra: Record<string, unknown> = {}) {
   return {
     iss: "https://accounts.google.com",
