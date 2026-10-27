@@ -17,7 +17,8 @@ import {
 import { PhoneNumberFields } from "@/components/phone-number-fields";
 import { defaultPhoneCountry, normalizePhone } from "@/lib/phoneNumbers";
 import { phoneOptInCopy } from "@/lib/phoneOptInCopy";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { canonicalScubaHref } from "@/lib/segments/canonical-entry";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -190,6 +191,19 @@ function AppIcon({ svg, className }: { svg: string; className?: string }) {
 }
 
 export const Route = createFileRoute("/")({
+  // The frozen home stays in this module for its shared form exports, but `/`
+  // itself opens scuba. searchStr and hash are copied whole so attribution and
+  // any fragment stay out of a re-encoded query.
+  beforeLoad: ({ location }) => {
+    throw redirect({
+      href:
+        canonicalScubaHref(location, typeof window === "undefined" ? undefined : window.location) ??
+        `/scuba${location.searchStr}${location.hash ? `#${location.hash}` : ""}`,
+      statusCode: 307,
+      replace: true,
+      reloadDocument: true,
+    });
+  },
   // The list figure is part of the server render, so it does not change a
   // second after load (see WaitlistProgress). `liteMedia` is the Save-Data
   // hint, read once here so the server render and hydration agree on it.
