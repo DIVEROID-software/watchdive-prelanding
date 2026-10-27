@@ -58,6 +58,13 @@ export type ReservationCopy = {
   privacy: string;
   siteTerms: string;
   contact: string;
+  returnLead: string;
+  returnEmailLabel: string;
+  returnSubmit: string;
+  returnSending: string;
+  returnAccepted: string;
+  returnInvalid: string;
+  returnUnavailable: string;
 };
 
 const fee = RESERVATION_FEE_USD;
@@ -132,6 +139,14 @@ const english: ReservationCopy = {
   privacy: "Privacy",
   siteTerms: "Terms",
   contact: "Questions: help@diveroid.com",
+  returnLead: "Send the reservation link to the email address I already used.",
+  returnEmailLabel: "Email",
+  returnSubmit: "Send my link",
+  returnSending: "Sending",
+  returnAccepted:
+    "If this address has a verified, unpaid WatchDive signup, we send the reservation link there. If it is not verified yet, check the confirmation email you already received.",
+  returnInvalid: "Enter a valid email address.",
+  returnUnavailable: "The link could not be sent just now. Try again later.",
 };
 
 const korean: ReservationCopy = {
@@ -201,6 +216,14 @@ const korean: ReservationCopy = {
   privacy: "개인정보처리방침",
   siteTerms: "이용약관",
   contact: "문의: help@diveroid.com",
+  returnLead: "이미 사용한 이메일로 예약 링크를 보내 주세요.",
+  returnEmailLabel: "이메일",
+  returnSubmit: "링크 보내기",
+  returnSending: "보내는 중",
+  returnAccepted:
+    "인증된 미결제 신청 내역이 있으면 예약 링크를 보내드립니다. 인증 전이라면 기존 인증 메일을 확인해 주세요.",
+  returnInvalid: "올바른 이메일 주소를 입력해 주세요.",
+  returnUnavailable: "지금은 링크를 보내지 못했습니다. 잠시 후 다시 시도해 주세요.",
 };
 
 const chineseSimplified: ReservationCopy = {
@@ -265,6 +288,14 @@ const chineseSimplified: ReservationCopy = {
   privacy: "隐私",
   siteTerms: "条款",
   contact: "咨询：help@diveroid.com",
+  returnLead: "把预约链接发到我已经使用的邮箱。",
+  returnEmailLabel: "邮箱",
+  returnSubmit: "发送链接",
+  returnSending: "正在发送",
+  returnAccepted:
+    "如果这个地址有已验证且尚未付款的 WatchDive 申请，我们会把预约链接发到那里。如果尚未验证，请查看之前收到的确认邮件。",
+  returnInvalid: "请输入有效的邮箱地址。",
+  returnUnavailable: "现在无法发送链接。请稍后再试。",
 };
 
 const chineseTraditional: ReservationCopy = {
@@ -329,6 +360,14 @@ const chineseTraditional: ReservationCopy = {
   privacy: "隱私",
   siteTerms: "條款",
   contact: "諮詢：help@diveroid.com",
+  returnLead: "把預約連結寄到我已經使用的電子郵件。",
+  returnEmailLabel: "電子郵件",
+  returnSubmit: "寄送連結",
+  returnSending: "正在寄送",
+  returnAccepted:
+    "如果這個地址有已驗證且尚未付款的 WatchDive 申請，我們會把預約連結寄到那裡。如果尚未驗證，請查看之前收到的確認郵件。",
+  returnInvalid: "請輸入有效的電子郵件地址。",
+  returnUnavailable: "現在無法寄送連結。請稍後再試。",
 };
 
 const japanese: ReservationCopy = {
@@ -398,6 +437,14 @@ const japanese: ReservationCopy = {
   privacy: "プライバシー",
   siteTerms: "利用規約",
   contact: "お問い合わせ：help@diveroid.com",
+  returnLead: "すでに使ったメールアドレスへ予約リンクを送ります。",
+  returnEmailLabel: "メール",
+  returnSubmit: "リンクを送る",
+  returnSending: "送信中",
+  returnAccepted:
+    "このアドレスに確認済みで未払いの WatchDive 申請があれば、予約リンクをそこへ送ります。まだ確認前なら、すでにお届けした確認メールをご覧ください。",
+  returnInvalid: "有効なメールアドレスを入力してください。",
+  returnUnavailable: "今はリンクを送れません。しばらくしてからもう一度お試しください。",
 };
 
 const spanish: ReservationCopy = {
@@ -468,6 +515,14 @@ const spanish: ReservationCopy = {
   privacy: "Privacidad",
   siteTerms: "Condiciones",
   contact: "Preguntas: help@diveroid.com",
+  returnLead: "Enviad el enlace de reserva al correo que ya usé.",
+  returnEmailLabel: "Correo",
+  returnSubmit: "Enviar mi enlace",
+  returnSending: "Enviando",
+  returnAccepted:
+    "Si esta dirección tiene una solicitud de WatchDive verificada y sin pago, enviamos el enlace de reserva ahí. Si aún no está verificada, revisa el correo de confirmación que ya recibiste.",
+  returnInvalid: "Introduce un correo válido.",
+  returnUnavailable: "No se pudo enviar el enlace ahora. Inténtalo más tarde.",
 };
 
 const french: ReservationCopy = {
@@ -541,6 +596,14 @@ const french: ReservationCopy = {
   privacy: "Confidentialité",
   siteTerms: "Conditions",
   contact: "Questions : help@diveroid.com",
+  returnLead: "Envoyez le lien de réservation à l’adresse que j’ai déjà utilisée.",
+  returnEmailLabel: "E-mail",
+  returnSubmit: "Envoyer mon lien",
+  returnSending: "Envoi",
+  returnAccepted:
+    "Si cette adresse a une inscription WatchDive vérifiée et non payée, nous envoyons le lien de réservation à cette boîte. Si elle n’est pas encore vérifiée, ouvrez le message de confirmation déjà reçu.",
+  returnInvalid: "Indiquez une adresse e-mail valide.",
+  returnUnavailable: "Le lien n’a pas pu partir pour le moment. Réessayez plus tard.",
 };
 
 const german: ReservationCopy = {
@@ -613,6 +676,14 @@ const german: ReservationCopy = {
   privacy: "Datenschutz",
   siteTerms: "Bedingungen",
   contact: "Fragen: help@diveroid.com",
+  returnLead: "Schickt den Reservierungslink an die Adresse, die ich schon verwendet habe.",
+  returnEmailLabel: "E-Mail",
+  returnSubmit: "Meinen Link senden",
+  returnSending: "Wird gesendet",
+  returnAccepted:
+    "Wenn zu dieser Adresse eine bestätigte, unbezahlte WatchDive-Anmeldung vorliegt, senden wir den Reservierungslink dorthin. Wenn sie noch nicht bestätigt ist, sieh in der Bestätigungsmail nach, die du schon bekommen hast.",
+  returnInvalid: "Gib eine gültige E-Mail-Adresse ein.",
+  returnUnavailable: "Der Link konnte gerade nicht gesendet werden. Versuch es später noch einmal.",
 };
 
 const portuguese: ReservationCopy = {
@@ -683,6 +754,14 @@ const portuguese: ReservationCopy = {
   privacy: "Privacidade",
   siteTerms: "Termos",
   contact: "Dúvidas: help@diveroid.com",
+  returnLead: "Enviem o link de reserva para o e-mail que eu já usei.",
+  returnEmailLabel: "E-mail",
+  returnSubmit: "Enviar meu link",
+  returnSending: "Enviando",
+  returnAccepted:
+    "Se este endereço tem uma inscrição WatchDive verificada e sem pagamento, enviamos o link de reserva para lá. Se ela ainda não foi verificada, confira o e-mail de confirmação que você já recebeu.",
+  returnInvalid: "Informe um e-mail válido.",
+  returnUnavailable: "Não foi possível enviar o link agora. Tente de novo mais tarde.",
 };
 
 const COPY: Record<ReservationLocale, ReservationCopy> = {
