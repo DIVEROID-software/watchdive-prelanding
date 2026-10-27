@@ -1,5 +1,7 @@
 // Mail-only tone: the public site, official rules and program values stay shared
 // and unchanged. In particular, never replace the five reviewed conditions.
+// The guide and the announcement use the event block below. The friend-joined
+// status notice uses noticeHeading and noticeBody only, not these benefits.
 import type { Locale } from "../i18n/locale.ts";
 import { fill, referralCopy } from "./copy.ts";
 import { referralEvent } from "./event.ts";

@@ -82,7 +82,7 @@ test("the verify page starts the pixel only after a confirmation, never on load"
   // The grant posts the token first, then fires.
   const grant = source.slice(source.indexOf("const grantMeasurement"));
   assert.ok(
-    grant.indexOf("await grantConfirmationMeasurement") < grant.indexOf("fireConversions(res)"),
+    grant.indexOf("await grantConfirmationMeasurement") < grant.indexOf("fireConversions("),
     "the token request completes before the pixel starts",
   );
   const strip = source.indexOf("window.history.replaceState");
@@ -380,7 +380,7 @@ test("the Claim form still submits through joinWaitlist with its honeypot", () =
   assert.ok(form.includes("const res = await joinWaitlist({"));
   assert.ok(form.includes("honeypot: hp,"));
   assert.ok(form.includes('name="company"'));
-  assert.ok(form.includes("measurementConsent: hasMetaMeasurementConsent(),"));
+  assert.ok(form.includes("measurementConsent: measurementPermitted(),"));
   assert.ok(form.includes("locale,"), "the verification email can lose the selected locale");
 });
 

@@ -1,3 +1,6 @@
+import { prepareCompatibilityRequest } from "@/lib/compatibility/context";
+import { compatibilitySchemaReady } from "@/lib/compatibility/readiness.server";
+import { publicPushConfig } from "@/lib/push/config";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -78,6 +81,12 @@ import {
 // address is used as a map key here and nowhere else — it is never written to
 // Notion, never logged, and never leaves memory.
 const networkGate = createNetworkGate();
+
+export const getAcquisitionReadiness = createServerFn({ method: "GET" }).handler(async () => ({
+  compatibility: await compatibilitySchemaReady(process.env, (method, path) => createNotionRequest()(method, path)),
+  push: publicPushConfig(process.env),
+}));
+
 
 type NotionQueryPage = {
   results?: unknown[];
@@ -259,7 +268,10 @@ export const joinWaitlist = createServerFn({ method: "POST" })
   .validator(
     z.object({
       email: z.string().email().max(320),
-      phone: z.string().max(40).optional(),
+      compatibility: z.object({ modelId: z.string().max(80), locale: z.enum(SUPPORTED_LOCALES), requested: z.literal(true) }).optional(),
+      compatibilityCredential: z.string().max(1000).optional(),
+      // Phone is deliberately not accepted here. The authenticated phone
+      // opt-in endpoint records the normalized number together with consent.
       // The two form placements that exist. An open string would let a caller
       // invent Source values and pollute the CRM's select options.
       source: z.enum(["hero", "offer"]),
@@ -308,6 +320,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
         .optional(),
       // Pixel cookies, forwarded so the server leg matches as well as the
       // browser one. Never stored — they go to Meta and nowhere else.
+      googleClientId: z.string().max(41).optional(),
       fbp: z.string().max(META_COOKIE_MAX).optional(),
       fbc: z.string().max(META_COOKIE_MAX).optional(),
       // Same-session experiment context. A bad object is ignored below so it
@@ -327,6 +340,11 @@ export const joinWaitlist = createServerFn({ method: "POST" })
     if (waitlistClosed(await countableRows(dbId))) {
       return { ok: true, status: "closed", message: WAITLIST_CLOSED_MESSAGE } as const;
     }
+
+    const compatibility = data.compatibility ? prepareCompatibilityRequest(data.compatibility) : null;
+    const compatibilityEnabled = Boolean(compatibility && compatibility.locale === data.locale &&
+      await compatibilitySchemaReady(process.env, (method, path) => createNotionRequest()(method, path)));
+    if (data.compatibility && !compatibilityEnabled) throw new Error("Request unavailable");
 
     const email = data.email.trim().toLowerCase();
     const canonical = canonicalEmail(email);
@@ -405,13 +423,16 @@ export const joinWaitlist = createServerFn({ method: "POST" })
         {
           email,
           canonical,
-          ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
+          ...(compatibility ? { compatibility, compatibilityCredential: data.compatibilityCredential } : {}),
           source: data.source,
           ...(referredBy ? { referredBy } : {}),
           attribution: {
             ...toLeadAttribution(attribution),
             // Only when the CRM has a column for it (NOTION_FBCLID_PROPERTY).
-            ...(attribution.fbclid && process.env.NOTION_FBCLID_PROPERTY?.trim()
+            ...(data.measurementConsent &&
+            getRequestHeader("sec-gpc") !== "1" &&
+            attribution.fbclid &&
+            process.env.NOTION_FBCLID_PROPERTY?.trim()
               ? { fbclid: attribution.fbclid }
               : {}),
           },
@@ -424,6 +445,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
           flags,
           suspect: flags.length > 0,
           measurementConsent: data.measurementConsent,
+          googleClientId: data.googleClientId,
           // Kept with the lead only when measurement was allowed, so the
           // confirmation — usually opened in a mail app — can name the click.
           ...(data.measurementConsent && submitFbc ? { metaFbc: submitFbc } : {}),
@@ -459,7 +481,7 @@ export const joinWaitlist = createServerFn({ method: "POST" })
             return experiment ? { experiment } : {};
           })(),
         },
-        serviceDependencies({ ...(ip ? { ip } : {}), ...(ua ? { ua } : {}) }),
+        { ...serviceDependencies({ ...(ip ? { ip } : {}), ...(ua ? { ua } : {}) }), compatibilityEnabled },
       );
     } catch (error) {
       throw sanitizeServerError("verification-request", error);
@@ -501,6 +523,7 @@ export const confirmVerification = createServerFn({ method: "POST" })
     z.object({
       token: z.string().min(16).max(400),
       // Only sent when this browser already allows measurement.
+      googleClientId: z.string().max(41).optional(),
       fbp: z.string().max(META_COOKIE_MAX).optional(),
       fbc: z.string().max(META_COOKIE_MAX).optional(),
       // This browser has a refusal stored: record it before anything is sent.
@@ -516,7 +539,7 @@ export const confirmVerification = createServerFn({ method: "POST" })
       return await confirmVerificationService(
         data.token,
         serviceDependencies(requestMeta()),
-        { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
+        { googleClientId: data.googleClientId, ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
         { localRefusal: data.refused === true },
       );
     } catch (error) {
@@ -566,6 +589,7 @@ export const grantAttemptMeasurement = createServerFn({ method: "POST" })
       // Accepted and ignored. The response never echoes it: echoing the caller's
       // label, or the row's source, told a decoy apart from a real attempt.
       source: z.enum(["hero", "offer"]).optional(),
+      googleClientId: z.string().max(41).optional(),
       fbp: z.string().max(META_COOKIE_MAX).optional(),
       fbc: z.string().max(META_COOKIE_MAX).optional(),
     }),
@@ -577,6 +601,7 @@ export const grantAttemptMeasurement = createServerFn({ method: "POST" })
       return await grantAttemptMeasurementService(
         data.handle,
         {
+          googleClientId: data.googleClientId,
           ...(fbp ? { fbp } : {}),
           ...(fbc ? { fbc } : {}),
         },
@@ -593,6 +618,7 @@ export const grantConfirmationMeasurement = createServerFn({ method: "POST" })
   .validator(
     z.object({
       token: z.string().min(16).max(400),
+      googleClientId: z.string().max(41).optional(),
       fbp: z.string().max(META_COOKIE_MAX).optional(),
       fbc: z.string().max(META_COOKIE_MAX).optional(),
     }),
@@ -603,7 +629,7 @@ export const grantConfirmationMeasurement = createServerFn({ method: "POST" })
       const fbc = sanitizeMetaCookie(data.fbc);
       return await grantConfirmationMeasurementService(
         data.token,
-        { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
+        { googleClientId: data.googleClientId, ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) },
         serviceDependencies(requestMeta()),
       );
     } catch (error) {

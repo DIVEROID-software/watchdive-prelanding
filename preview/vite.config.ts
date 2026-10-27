@@ -36,9 +36,9 @@ function previewBoundary(): Plugin {
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const url = new URL(req.url ?? "/", "http://127.0.0.1:5195");
+        const url = new URL(req.url ?? "/", "http://127.0.0.1:5202");
         res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
-        res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; connect-src 'self' ws://127.0.0.1:5195; frame-src 'none'; form-action 'self'; base-uri 'self'");
+        res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; connect-src 'self' ws://127.0.0.1:5202; frame-src 'none'; form-action 'self'; base-uri 'self'");
         if (url.pathname === "/preview/" || url.pathname === "/preview") {
           res.writeHead(302, { location: "/ko/" }); res.end(); return;
         }
@@ -63,9 +63,17 @@ function previewBoundary(): Plugin {
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Cache-Control", "no-store");
         if (url.pathname === "/api/auth/providers") { res.end(JSON.stringify({google:true, apple:true})); return; }
+        if (url.pathname === "/api/auth/continuation" && req.method === "POST") {
+          // Explicit local fixture, never a real OAuth cookie or credential.
+          const scenario = new URL(req.headers.referer ?? "/", "http://127.0.0.1:5202").searchParams.get("qaSocial");
+          res.end(JSON.stringify(scenario === "verified"
+            ? { status: "ready", credential: { kind: "confirmation", value: "local-preview-social-confirmation-not-a-real-token" } }
+            : { status: "unavailable", reason: scenario === "expired" ? "expired" : "missing" }));
+          return;
+        }
         // Opt-in UI QA fixture; the real OAuth handler remains unreachable.
         if (url.pathname === "/api/auth/start" && req.method === "POST" &&
-            new URL(req.headers.referer ?? "/", "http://127.0.0.1:5195").searchParams.get("qaGoogleBlocked") === "1") {
+            new URL(req.headers.referer ?? "/", "http://127.0.0.1:5202").searchParams.get("qaGoogleBlocked") === "1") {
           let body = "";
           req.on("data", chunk => { if (body.length < 8000) body += chunk; });
           req.on("end", () => {
@@ -79,7 +87,7 @@ function previewBoundary(): Plugin {
         if (url.pathname === "/api/geo") {
           // Same contract as production: JSON body + wd_geo cookie. ?qaGeo=US on the page picks the access country;
           // qaGeoCookie=0 withholds the cookie so the fetch-only fallback path can be exercised.
-          const ref = new URL(req.headers.referer ?? "/", "http://127.0.0.1:5195").searchParams;
+          const ref = new URL(req.headers.referer ?? "/", "http://127.0.0.1:5202").searchParams;
           const country = (ref.get("qaGeo") ?? "KR").toUpperCase();
           if (ref.get("qaGeoCookie") !== "0") res.setHeader("Set-Cookie", `wd_geo=${country}; Path=/; Max-Age=86400; SameSite=Lax`);
           res.end(JSON.stringify({country: country === "XX" ? null : country})); return;
@@ -132,6 +140,6 @@ export default defineConfig(async env => {
       "import.meta.env.VITE_CONVERSION_EXPERIMENT_ENABLED": JSON.stringify("false"),
       "import.meta.env.VITE_RESERVATION_TEST_MODE": JSON.stringify("true"),
     },
-    server:{...config.server,host:"127.0.0.1",port:5195,strictPort:true},
+    server:{...config.server,host:"127.0.0.1",port:5202,strictPort:true},
   };
 });

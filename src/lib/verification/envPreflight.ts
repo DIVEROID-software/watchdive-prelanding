@@ -112,10 +112,58 @@ export function assertVerificationEnv(
   env: VerificationEnv,
   log: (message: string) => void = console.warn,
 ): void {
-  const problems = checkVerificationEnv(env);
+  const problems = [...checkVerificationEnv(env), ...checkConversionRolloutEnv(env)];
   if (problems.length === 0) return;
 
   const report = formatEnvProblems(problems);
   if ((env.VERCEL ?? "").trim()) throw new Error(report);
   log(`[verification-env] ${report}`);
+}
+
+/** Prevent a half-enabled rollout from disabling browser completion reporting. */
+export function checkConversionRolloutEnv(env: VerificationEnv): EnvProblem[] {
+  const problems: EnvProblem[] = [];
+  const publicGa = env.VITE_GA4_SERVER_CONVERSIONS_ENABLED === "true";
+  const serverGa = env.WATCHDIVE_GA4_CONVERSIONS_ENABLED === "true";
+  const meta = env.WATCHDIVE_META_PURCHASE_ENABLED === "true";
+  if (publicGa !== serverGa)
+    problems.push({
+      name: "VITE_GA4_SERVER_CONVERSIONS_ENABLED / WATCHDIVE_GA4_CONVERSIONS_ENABLED",
+      problem: "must be enabled together",
+    });
+  if (publicGa || serverGa) {
+    if (!/^G-[A-Z0-9]{4,20}$/.test(present(env, "VITE_GA_MEASUREMENT_ID")))
+      problems.push({ name: "VITE_GA_MEASUREMENT_ID", problem: "is missing or invalid" });
+    if (!present(env, "GA4_API_SECRET"))
+      problems.push({ name: "GA4_API_SECRET", problem: "is not set" });
+  }
+  if (meta) {
+    for (const key of ["META_CAPI_ENABLED", "VITE_META_TRACKING_ENABLED"]) {
+      if (env[key] !== "true")
+        problems.push({ name: key, problem: "must be enabled for Meta Purchase" });
+    }
+    if (!present(env, "META_CAPI_ACCESS_TOKEN"))
+      problems.push({ name: "META_CAPI_ACCESS_TOKEN", problem: "is not set" });
+    const pixel = present(env, "META_PIXEL_ID");
+    if (!/^\d{10,20}$/.test(pixel) || pixel !== present(env, "VITE_META_PIXEL_ID"))
+      problems.push({
+        name: "META_PIXEL_ID / VITE_META_PIXEL_ID",
+        problem: "must be valid and match",
+      });
+  }
+  if (publicGa || serverGa || meta) {
+    if (!present(env, "WATCHDIVE_CONVERSION_REDIS_REST_TOKEN"))
+      problems.push({ name: "WATCHDIVE_CONVERSION_REDIS_REST_TOKEN", problem: "is not set" });
+    try {
+      const url = new URL(present(env, "WATCHDIVE_CONVERSION_REDIS_REST_URL"));
+      if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash)
+        throw new Error("invalid");
+    } catch {
+      problems.push({
+        name: "WATCHDIVE_CONVERSION_REDIS_REST_URL",
+        problem: "must be an HTTPS endpoint without credentials, query or fragment",
+      });
+    }
+  }
+  return problems;
 }

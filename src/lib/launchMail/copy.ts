@@ -2,7 +2,7 @@
 //
 // Facts allowed here, and nothing else (src/lib/i18n/frozen-landing-en.ts):
 //   - WatchDive opens on Kickstarter; the launch time and URL are run inputs.
-//   - The first 100 backers get it for $149; the public price is $299.
+//   - The first 100 backers get it for $149; the next price after the first 100 starts at $200.
 //   - The page promised one note the day before, one an hour before, and the
 //     link the moment the campaign opens — these three mails keep that promise.
 // No date, discount percentage, stock figure or product claim is introduced.
@@ -99,7 +99,7 @@ export const LAUNCH_COPY = {
         preheader: "One more note an hour before, then the link the moment it opens.",
         heading: "Tomorrow, WatchDive opens on Kickstarter",
         body: "The campaign goes live on {time}. We’ll write once more an hour before, then send the link the moment it opens.",
-        price: "The first 100 backers get WatchDive for $149. The public price is $299.",
+        price: "The first 100 backers get WatchDive for $149. After the first 100, the next price starts at $200.",
         button: "View the Kickstarter page",
       },
       "t-1h": {
@@ -107,7 +107,7 @@ export const LAUNCH_COPY = {
         preheader: "$149 is for the first 100 backers only.",
         heading: "One hour to go",
         body: "WatchDive opens on Kickstarter at {time}. The link reaches you the moment the campaign is live.",
-        price: "$149 is for the first 100 backers only. The public price is $299.",
+        price: "$149 is for the first 100 backers only. After the first 100, the next price starts at $200.",
         button: "View the Kickstarter page",
       },
       "t-0": {
@@ -115,7 +115,7 @@ export const LAUNCH_COPY = {
         preheader: "The first 100 backers get $149.",
         heading: "WatchDive is live on Kickstarter",
         body: "The campaign just opened. Back it now for a chance to be one of the first 100 backers.",
-        price: "The first 100 backers get WatchDive for $149. The public price is $299.",
+        price: "The first 100 backers get WatchDive for $149. After the first 100, the next price starts at $200.",
         button: "Back WatchDive on Kickstarter",
       },
     },
@@ -152,7 +152,7 @@ export const LAUNCH_COPY = {
         preheader: "시작 1시간 전에 한 번 더, 열리는 순간 바로 링크를 보내드려요.",
         heading: "내일, Kickstarter에서 만나요",
         body: "WatchDive 캠페인은 {time}에 시작합니다. 시작 1시간 전에 한 번 더 알려드리고, 캠페인이 열리는 순간 바로 링크를 보내드릴게요.",
-        price: "선착순 후원자 100명은 US$149에 만날 수 있어요. 일반가는 US$299입니다.",
+        price: "선착순 후원자 100명은 US$149에 만날 수 있어요. 선착순 100명 이후에는 US$200부터 시작합니다.",
         button: "Kickstarter 페이지 보기",
       },
       "t-1h": {
@@ -160,7 +160,7 @@ export const LAUNCH_COPY = {
         preheader: "US$149는 선착순 후원자 100명에게만 적용돼요.",
         heading: "이제 1시간 남았어요",
         body: "WatchDive는 {time}에 Kickstarter에서 공개됩니다. 캠페인이 열리면 곧바로 링크를 보내드릴게요.",
-        price: "US$149는 선착순 후원자 100명에게만 적용됩니다. 일반가는 US$299입니다.",
+        price: "US$149는 선착순 후원자 100명에게만 적용됩니다. 선착순 100명 이후에는 US$200부터 시작합니다.",
         button: "Kickstarter 페이지 보기",
       },
       "t-0": {
@@ -168,7 +168,7 @@ export const LAUNCH_COPY = {
         preheader: "선착순 후원자 100명은 US$149.",
         heading: "지금 Kickstarter에서 만나 보세요",
         body: "방금 캠페인이 열렸습니다. 지금 후원하고 선착순 100명에 도전해 보세요.",
-        price: "선착순 후원자 100명은 US$149, 일반가는 US$299입니다.",
+        price: "선착순 후원자 100명은 US$149, 선착순 100명 이후에는 US$200부터 시작합니다.",
         button: "Kickstarter에서 후원하기",
       },
     },
@@ -203,7 +203,7 @@ export const LAUNCH_COPY = {
         preheader: "开始前一小时再提醒一次，上线那一刻立刻发链接给你。",
         heading: "明天，Kickstarter 见",
         body: "WatchDive 众筹将于{time}开始。开始前一小时我们会再提醒你一次，众筹上线的那一刻立刻把链接发给你。",
-        price: "前 100 位支持者可享 US$149，公开价格为 US$299。",
+        price: "前 100 位支持者可享 US$149，前 100 名之后，下一档价格为 US$200 起。",
         button: "查看 Kickstarter 页面",
       },
       "t-1h": {
@@ -211,7 +211,7 @@ export const LAUNCH_COPY = {
         preheader: "US$149 仅限前 100 位支持者。",
         heading: "还有 1 小时",
         body: "WatchDive 将于{time}在 Kickstarter 上线。上线后我们会第一时间把链接发给你。",
-        price: "US$149 仅限前 100 位支持者，公开价格为 US$299。",
+        price: "US$149 仅限前 100 位支持者，前 100 名之后，下一档价格为 US$200 起。",
         button: "查看 Kickstarter 页面",
       },
       "t-0": {
@@ -219,7 +219,7 @@ export const LAUNCH_COPY = {
         preheader: "前 100 位支持者 US$149。",
         heading: "WatchDive 已在 Kickstarter 上线",
         body: "众筹刚刚开始。现在就去支持，争取成为前 100 位支持者。",
-        price: "前 100 位支持者 US$149，公开价格 US$299。",
+        price: "前 100 位支持者 US$149，前 100 名之后，下一档价格为 US$200 起。",
         button: "去 Kickstarter 支持",
       },
     },
@@ -254,7 +254,7 @@ export const LAUNCH_COPY = {
         preheader: "開始前一小時再提醒一次，上線那一刻馬上寄連結給你。",
         heading: "明天，Kickstarter 見",
         body: "WatchDive 募資活動將於{time}開跑。開跑前一小時我們會再提醒你一次，活動上線的那一刻馬上把連結寄給你。",
-        price: "前 100 位贊助者可享 US$149，公開售價為 US$299。",
+        price: "前 100 位贊助者可享 US$149，前 100 名之後，下一檔價格為 US$200 起。",
         button: "查看 Kickstarter 頁面",
       },
       "t-1h": {
@@ -262,7 +262,7 @@ export const LAUNCH_COPY = {
         preheader: "US$149 僅限前 100 位贊助者。",
         heading: "倒數 1 小時",
         body: "WatchDive 將於{time}在 Kickstarter 上線。一上線我們就會把連結寄給你。",
-        price: "US$149 僅限前 100 位贊助者，公開售價為 US$299。",
+        price: "US$149 僅限前 100 位贊助者，前 100 名之後，下一檔價格為 US$200 起。",
         button: "查看 Kickstarter 頁面",
       },
       "t-0": {
@@ -270,7 +270,7 @@ export const LAUNCH_COPY = {
         preheader: "前 100 位贊助者 US$149。",
         heading: "WatchDive 已在 Kickstarter 上線",
         body: "募資活動剛剛開跑。現在贊助，搶當前 100 位贊助者。",
-        price: "前 100 位贊助者 US$149，公開售價 US$299。",
+        price: "前 100 位贊助者 US$149，前 100 名之後，下一檔價格為 US$200 起。",
         button: "前往 Kickstarter 贊助",
       },
     },
@@ -305,7 +305,7 @@ export const LAUNCH_COPY = {
         preheader: "開始1時間前にもう一度、公開と同時にリンクをお届けします。",
         heading: "明日、Kickstarterで公開します",
         body: "WatchDiveのキャンペーンは{time}に始まります。開始1時間前にもう一度お知らせし、公開と同時にリンクをお送りします。",
-        price: "先着100名のバッカーはUS$149。一般価格はUS$299です。",
+        price: "先着100名のバッカーはUS$149。先着100名以降はUS$200からとなります。",
         button: "Kickstarterページを見る",
       },
       "t-1h": {
@@ -313,7 +313,7 @@ export const LAUNCH_COPY = {
         preheader: "US$149は先着100名のバッカー限定です。",
         heading: "公開まで、あと1時間",
         body: "WatchDiveは{time}にKickstarterで公開されます。公開と同時にリンクをお送りします。",
-        price: "US$149は先着100名のバッカー限定です。一般価格はUS$299です。",
+        price: "US$149は先着100名のバッカー限定です。先着100名以降はUS$200からとなります。",
         button: "Kickstarterページを見る",
       },
       "t-0": {
@@ -321,7 +321,7 @@ export const LAUNCH_COPY = {
         preheader: "先着100名のバッカーはUS$149。",
         heading: "Kickstarterで公開しました",
         body: "キャンペーンが始まりました。先着100名を狙うなら、今がチャンスです。",
-        price: "先着100名のバッカーはUS$149、一般価格はUS$299です。",
+        price: "先着100名のバッカーはUS$149、先着100名以降はUS$200からとなります。",
         button: "Kickstarterで支援する",
       },
     },
@@ -361,7 +361,7 @@ export const LAUNCH_COPY = {
         heading: "Mañana abrimos en Kickstarter",
         body: "La campaña de WatchDive empieza el {time}. Te escribiremos una vez más una hora antes y te mandaremos el enlace en cuanto se abra.",
         price:
-          "Los primeros 100 mecenas se llevan WatchDive por 149 US$. El precio público es de 299 US$.",
+          "Los primeros 100 mecenas se llevan WatchDive por 149 US$. Después de los primeros 100, el siguiente precio empieza en 200 US$.",
         button: "Ver la página de Kickstarter",
       },
       "t-1h": {
@@ -370,7 +370,7 @@ export const LAUNCH_COPY = {
         heading: "Falta una hora",
         body: "WatchDive abre en Kickstarter el {time}. Te mandamos el enlace en cuanto la campaña esté activa.",
         price:
-          "Los 149 US$ son solo para los primeros 100 mecenas. El precio público es de 299 US$.",
+          "Los 149 US$ son solo para los primeros 100 mecenas. Después de los primeros 100, el siguiente precio empieza en 200 US$.",
         button: "Ver la página de Kickstarter",
       },
       "t-0": {
@@ -379,7 +379,7 @@ export const LAUNCH_COPY = {
         heading: "WatchDive ya está en Kickstarter",
         body: "La campaña acaba de abrir. Entra ahora y prueba a estar entre los primeros 100 mecenas.",
         price:
-          "Los primeros 100 mecenas se llevan WatchDive por 149 US$. El precio público es de 299 US$.",
+          "Los primeros 100 mecenas se llevan WatchDive por 149 US$. Después de los primeros 100, el siguiente precio empieza en 200 US$.",
         button: "Apoyar WatchDive en Kickstarter",
       },
     },
@@ -418,7 +418,7 @@ export const LAUNCH_COPY = {
         heading: "Rendez-vous demain sur Kickstarter",
         body: "La campagne WatchDive démarre le {time}. Nous vous écrirons une dernière fois une heure avant, puis nous vous enverrons le lien dès l’ouverture.",
         price:
-          "Les 100 premiers contributeurs obtiennent WatchDive à 149 $ US. Le prix public est de 299 $ US.",
+          "Les 100 premiers contributeurs obtiennent WatchDive à 149 $ US. Après les 100 premiers, le tarif suivant commence à 200 $ US.",
         button: "Voir la page Kickstarter",
       },
       "t-1h": {
@@ -427,7 +427,7 @@ export const LAUNCH_COPY = {
         heading: "Plus qu’une heure",
         body: "WatchDive ouvre sur Kickstarter le {time}. Vous recevrez le lien dès que la campagne sera en ligne.",
         price:
-          "Le prix de 149 $ US est réservé aux 100 premiers contributeurs. Le prix public est de 299 $ US.",
+          "Le prix de 149 $ US est réservé aux 100 premiers contributeurs. Après les 100 premiers, le tarif suivant commence à 200 $ US.",
         button: "Voir la page Kickstarter",
       },
       "t-0": {
@@ -436,7 +436,7 @@ export const LAUNCH_COPY = {
         heading: "WatchDive est en ligne sur Kickstarter",
         body: "La campagne vient d’ouvrir. Soutenez-la maintenant pour tenter d’être parmi les 100 premiers contributeurs.",
         price:
-          "Les 100 premiers contributeurs obtiennent WatchDive à 149 $ US. Le prix public est de 299 $ US.",
+          "Les 100 premiers contributeurs obtiennent WatchDive à 149 $ US. Après les 100 premiers, le tarif suivant commence à 200 $ US.",
         button: "Soutenir WatchDive sur Kickstarter",
       },
     },
@@ -475,7 +475,7 @@ export const LAUNCH_COPY = {
         heading: "Morgen geht’s los auf Kickstarter",
         body: "Die WatchDive-Kampagne startet am {time}. Eine Stunde vorher melden wir uns noch einmal, und sobald sie live ist, schicken wir dir den Link.",
         price:
-          "Die ersten 100 Unterstützer bekommen WatchDive für 149 US$. Der reguläre Preis liegt bei 299 US$.",
+          "Die ersten 100 Unterstützer bekommen WatchDive für 149 US$. Nach den ersten 100 beginnt der nächste Preis bei 200 US$.",
         button: "Zur Kickstarter-Seite",
       },
       "t-1h": {
@@ -484,7 +484,7 @@ export const LAUNCH_COPY = {
         heading: "Noch eine Stunde",
         body: "WatchDive startet am {time} auf Kickstarter. Den Link bekommst du, sobald die Kampagne live ist.",
         price:
-          "149 US$ gelten nur für die ersten 100 Unterstützer. Der reguläre Preis liegt bei 299 US$.",
+          "149 US$ gelten nur für die ersten 100 Unterstützer. Nach den ersten 100 beginnt der nächste Preis bei 200 US$.",
         button: "Zur Kickstarter-Seite",
       },
       "t-0": {
@@ -493,7 +493,7 @@ export const LAUNCH_COPY = {
         heading: "WatchDive ist live auf Kickstarter",
         body: "Die Kampagne ist gerade gestartet. Sei jetzt dabei und hol dir die Chance auf einen der ersten 100 Plätze.",
         price:
-          "Die ersten 100 Unterstützer bekommen WatchDive für 149 US$. Der reguläre Preis liegt bei 299 US$.",
+          "Die ersten 100 Unterstützer bekommen WatchDive für 149 US$. Nach den ersten 100 beginnt der nächste Preis bei 200 US$.",
         button: "WatchDive auf Kickstarter unterstützen",
       },
     },
@@ -532,7 +532,7 @@ export const LAUNCH_COPY = {
         heading: "Amanhã no Kickstarter",
         body: "O WatchDive entra no Kickstarter amanhã: {time}. Vamos escrever mais uma vez uma hora antes e mandar o link assim que a campanha abrir.",
         price:
-          "Os 100 primeiros apoiadores levam o WatchDive por US$ 149. O preço público é US$ 299.",
+          "Os 100 primeiros apoiadores levam o WatchDive por US$ 149. Após os 100 primeiros, o próximo preço começa em US$ 200.",
         button: "Ver a página no Kickstarter",
       },
       "t-1h": {
@@ -541,7 +541,7 @@ export const LAUNCH_COPY = {
         heading: "Falta uma hora",
         body: "O WatchDive abre no Kickstarter daqui a uma hora: {time}. Você recebe o link assim que a campanha estiver no ar.",
         price:
-          "O preço de US$ 149 vale só para os 100 primeiros apoiadores. O preço público é US$ 299.",
+          "O preço de US$ 149 vale só para os 100 primeiros apoiadores. Após os 100 primeiros, o próximo preço começa em US$ 200.",
         button: "Ver a página no Kickstarter",
       },
       "t-0": {
@@ -550,7 +550,7 @@ export const LAUNCH_COPY = {
         heading: "O WatchDive está no ar no Kickstarter",
         body: "A campanha acabou de abrir. Apoie agora e tente ficar entre os 100 primeiros apoiadores.",
         price:
-          "Os 100 primeiros apoiadores levam o WatchDive por US$ 149. O preço público é US$ 299.",
+          "Os 100 primeiros apoiadores levam o WatchDive por US$ 149. Após os 100 primeiros, o próximo preço começa em US$ 200.",
         button: "Apoiar o WatchDive no Kickstarter",
       },
     },
@@ -598,48 +598,48 @@ export const LAUNCH_COPY = {
 export const LAUNCH_REFERRAL_PRICE: Record<Locale, { price: string; preheader: string }> = {
   en: {
     price:
-      "$149 early bird: the first 100 Kickstarter backers, plus waitlist members with a price reservation or Dive Team status. The public price is $299.",
+      "$149 early bird: the first 100 Kickstarter backers, plus waitlist members with a price reservation or Dive Team status. After the first 100, the next price starts at $200.",
     preheader: "$149 early bird: the first 100 backers, price reservations and Dive Team.",
   },
   ko: {
     price:
-      "얼리버드 US$149: Kickstarter 선착순 후원자 100명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원. 일반가는 US$299입니다.",
+      "얼리버드 US$149: Kickstarter 선착순 후원자 100명, 그리고 가격 예약 또는 다이브 팀 등급을 가진 대기 명단 회원. 선착순 100명 이후에는 US$200부터 시작합니다.",
     preheader: "얼리버드 US$149: 선착순 100명, 가격 예약·다이브 팀 회원.",
   },
   "zh-CN": {
     price:
-      "早鸟价 US$149 适用于前 100 位支持者，以及有价格预约或潜水小队等级的名单成员；公开价格为 US$299。",
+      "早鸟价 US$149 适用于前 100 位支持者，以及有价格预约或潜水小队等级的名单成员；前 100 名之后，下一档价格为 US$200 起。",
     preheader: "早鸟价 US$149：前 100 位支持者，以及价格预约和潜水小队成员。",
   },
   "zh-TW": {
     price:
-      "早鳥價 US$149 適用於前 100 位贊助者，以及有價格預約或潛水小隊等級的名單成員；公開售價為 US$299。",
+      "早鳥價 US$149 適用於前 100 位贊助者，以及有價格預約或潛水小隊等級的名單成員；前 100 名之後，下一檔價格為 US$200 起。",
     preheader: "早鳥價 US$149：前 100 位贊助者，以及價格預約和潛水小隊成員。",
   },
   ja: {
     price:
-      "早割US$149の対象は、先着100名のバッカーと、価格予約またはダイブチームの資格を持つリスト登録者です。一般価格はUS$299です。",
+      "早割US$149の対象は、先着100名のバッカーと、価格予約またはダイブチームの資格を持つリスト登録者です。先着100名以降はUS$200からとなります。",
     preheader: "早割US$149は先着100名と、価格予約・ダイブチームの方が対象。",
   },
   es: {
     price:
-      "El early bird de 149 US$ es para los primeros 100 mecenas y para quienes estén en la lista con una reserva de precio o el nivel Equipo de buceo. El precio público es de 299 US$.",
+      "El early bird de 149 US$ es para los primeros 100 mecenas y para quienes estén en la lista con una reserva de precio o el nivel Equipo de buceo. Después de los primeros 100, el siguiente precio empieza en 200 US$.",
     preheader: "149 US$: los primeros 100 mecenas, reservas de precio y Equipo de buceo.",
   },
   fr: {
     price:
-      "Le tarif early bird de 149 $ US est réservé aux 100 premiers contributeurs, ainsi qu’aux inscrits qui ont une réservation de prix ou font partie de la Palanquée. Le prix public est de 299 $ US.",
+      "Le tarif early bird de 149 $ US est réservé aux 100 premiers contributeurs, ainsi qu’aux inscrits qui ont une réservation de prix ou font partie de la Palanquée. Après les 100 premiers, le tarif suivant commence à 200 $ US.",
     preheader:
       "149 $ US : les 100 premiers contributeurs, les réservations de prix et la Palanquée.",
   },
   de: {
     price:
-      "Der Early Bird für 149 US$ gilt für die ersten 100 Unterstützer sowie für alle auf der Warteliste mit Preisreservierung oder Tauchteam-Status. Der reguläre Preis liegt bei 299 US$.",
+      "Der Early Bird für 149 US$ gilt für die ersten 100 Unterstützer sowie für alle auf der Warteliste mit Preisreservierung oder Tauchteam-Status. Nach den ersten 100 beginnt der nächste Preis bei 200 US$.",
     preheader: "149 US$: die ersten 100 Unterstützer, Preisreservierungen und das Tauchteam.",
   },
   "pt-BR": {
     price:
-      "O early bird de US$ 149 vale para os 100 primeiros apoiadores e para quem está na lista com reserva de preço ou nível Equipe de mergulho. O preço público é US$ 299.",
+      "O early bird de US$ 149 vale para os 100 primeiros apoiadores e para quem está na lista com reserva de preço ou nível Equipe de mergulho. Após os 100 primeiros, o próximo preço começa em US$ 200.",
     preheader: "US$ 149: os 100 primeiros apoiadores, reservas de preço e Equipe de mergulho.",
   },
 };

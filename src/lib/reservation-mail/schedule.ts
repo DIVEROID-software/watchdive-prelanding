@@ -15,6 +15,8 @@ const INSTANT =
 
 export type MailSchedule = {
   nowMs: number;
+  /** Internal drip-stage offset. Legacy callers retain the three-minute delay. */
+  delayMs?: number;
   /**
    * Epoch milliseconds. Rows verified before this instant are historic and
    * are not invited. Omit it and no row is invited.
@@ -41,14 +43,16 @@ export function delaySkipReason(
   row: Pick<ReservationRow, "verifiedAt">,
   schedule: MailSchedule,
 ): SkipReason | undefined {
+  const delayMs = schedule.delayMs ?? RESERVATION_INVITE_DELAY_MS;
+  if (!Number.isSafeInteger(delayMs) || delayMs < RESERVATION_INVITE_DELAY_MS) return "not_due";
   if (row.verifiedAt === undefined || row.verifiedAt.trim() === "") return "missing_verified_at";
   const parsed = parseVerifiedInstant(row.verifiedAt);
   if (!parsed.ok) return "invalid_verified_at";
   if (schedule.notBeforeMs === undefined) {
-    if (parsed.ms + RESERVATION_INVITE_DELAY_MS > schedule.nowMs) return "not_due";
+    if (parsed.ms + delayMs > schedule.nowMs) return "not_due";
     return "cutoff_unconfigured";
   }
   if (parsed.ms < schedule.notBeforeMs) return "before_cutoff";
-  if (parsed.ms + RESERVATION_INVITE_DELAY_MS > schedule.nowMs) return "not_due";
+  if (parsed.ms + delayMs > schedule.nowMs) return "not_due";
   return undefined;
 }

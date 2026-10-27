@@ -1,3 +1,4 @@
+import { googleClientId } from "@/lib/analytics/browserContext";
 import { SignupReservationOffer } from "@/components/reservation/SignupReservationOffer";
 import { VerifyStep } from "@/components/reservation/verify-steps";
 import { VerifiedBuddyCard } from "@/components/referral/VerifiedBuddyCard";
@@ -16,6 +17,9 @@ import {
   measurementAskEligible,
   withdrawalNeedsRetry,
 } from "@/components/measurement-ask";
+import { MEASUREMENT_CHOICE_EVENT } from "@/lib/measurementChoice";
+import { trackRetargetingBrowser } from "@/lib/retargeting/browser";
+import { parseBrowserRetargetingEvent } from "@/lib/retargeting/receipt";
 import { withdrawEverySignup } from "@/lib/signupHandleWithdrawal";
 import { rememberSignupHandle } from "@/lib/signupHandles";
 import { resolveGeoCountry } from "@/lib/consentRegion";
@@ -137,7 +141,7 @@ export function VerifyPage() {
    * event ids so each pair dedupes. The pixel starts here and only here — after
    * every request that carries the token has already been made.
    */
-  const fireConversions = (sent: { browserLead?: BrowserLead }) => {
+  const fireConversions = (sent: { browserLead?: BrowserLead; registration?: unknown }) => {
     initMetaPixel();
     if (sent.browserLead) {
       trackMetaEmailVerified(sent.browserLead.eventId, sent.browserLead.source);
@@ -145,6 +149,15 @@ export function VerifyPage() {
         trackMetaPhoneLead(`${sent.browserLead.eventId}:phone`, sent.browserLead.source);
       }
     }
+    const registration = parseBrowserRetargetingEvent(sent.registration);
+    if (!registration) return;
+    const result = trackRetargetingBrowser(registration);
+    if (result.reason !== "consent") return;
+    const retry = () => {
+      window.removeEventListener(MEASUREMENT_CHOICE_EVENT, retry);
+      trackRetargetingBrowser(registration);
+    };
+    window.addEventListener(MEASUREMENT_CHOICE_EVENT, retry);
   };
 
   /**
@@ -160,6 +173,7 @@ export function VerifyPage() {
     const payload = {
       data: {
         token: token.current,
+        googleClientId: googleClientId(),
         ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
         ...(cookies.fbc ? { fbc: cookies.fbc } : {}),
       },
@@ -170,7 +184,12 @@ export function VerifyPage() {
       res = await grantConfirmationMeasurement(payload);
     }
     if (res.status === "retry" || !measurementPermitted()) return false;
-    fireConversions(res);
+    // Late Allow: legacy EmailVerified plus CompleteRegistration from the
+    // server's original verification time. This call does not stamp now.
+    fireConversions({
+      browserLead: res.browserLead,
+      registration: res.registration,
+    });
     return true;
   };
 
@@ -214,6 +233,7 @@ export function VerifyPage() {
         data: {
           token: token.current,
           ...(refused ? { refused: true } : {}),
+          googleClientId: googleClientId(),
           ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
           ...(cookies.fbc ? { fbc: cookies.fbc } : {}),
         },
@@ -242,10 +262,19 @@ export function VerifyPage() {
           }
           return;
         }
-        if (result.browserLead && measurementPermitted()) {
+        if ((result.browserLead || result.registration) && measurementPermitted()) {
           // Measurement was allowed for this lead and this browser allows it
           // too: the pixel leg, deduplicated against the server leg by id.
-          fireConversions({ browserLead: result.browserLead });
+          fireConversions({ browserLead: result.browserLead, registration: result.registration });
+        } else if (result.registration) {
+          const registration = parseBrowserRetargetingEvent(result.registration);
+          if (registration && trackRetargetingBrowser(registration).reason === "consent") {
+            const retry = () => {
+              window.removeEventListener(MEASUREMENT_CHOICE_EVENT, retry);
+              if (measurementPermitted()) fireConversions({ registration: result.registration });
+            };
+            window.addEventListener(MEASUREMENT_CHOICE_EVENT, retry);
+          }
         } else if (result.measurementAsk) {
           if (getMetaMeasurementConsent() === "granted" && measurementPermitted()) {
             // This browser already said yes (on the page, before or after the

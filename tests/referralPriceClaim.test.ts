@@ -71,9 +71,11 @@ test("off: every claim surface is the catalog's own object, untouched", () => {
   assert.equal(applyPriceClaim(EN_FROZEN_LANDING_MESSAGES, undefined), EN_FROZEN_LANDING_MESSAGES);
 });
 
-test("off: rendered copy stays frozen except the owner-approved 2026-10-23 hero line", () => {
+test("off: rendered copy stays frozen with owner-approved hero and Korean brand updates", () => {
   // Computed on a checkout of fd2e434, before this change, with the same
-  // inputs. Only the hero race hash is repinned for owner approval 2026-10-23.
+  // inputs. The hero race hash reflects owner approval 2026-10-23.
+  // The landing catalog hash also includes the owner-approved Korean brand
+  // spelling in Korean metadata and H1 (2026-10-26); all other copy is unchanged.
   const race = SUPPORTED_LOCALES.map((l) =>
     earlyBirdRace(l, FROZEN_LANDING_MESSAGES[l].hero.nowPrice),
   );
@@ -94,7 +96,7 @@ test("off: rendered copy stays frozen except the owner-approved 2026-10-23 hero 
   );
   assert.equal(
     sha256(FROZEN_LANDING_MESSAGES),
-    "7855b49d7d0b969960d146dbb7fedac46f165638222e6f6ab0666761b184d80a",
+    "5f768d0904354b4025b5a3a3fc21c08c6799f01fd36364f09e3a1ef72cc1a1fb",
   );
   assert.equal(
     sha256(conversionCopy),
@@ -105,7 +107,10 @@ test("off: rendered copy stays frozen except the owner-approved 2026-10-23 hero 
     sha256(phoneOptInCopy),
     "5da27009d4661df3099eaaab47e64fa7c039f1c864613b44cbf16ba462d83d0d",
   );
-  assert.equal(sha256(mails), "2058e290c5ad1a1cb7db1eec5b792a733782c47515a929a473c336f8bc9afc31");
+  // 2026-10-26 brutalism replaced the launch-mail HTML shell. The digest is the
+  // rendered mail (subject, text and HTML) with launch times masked. The four
+  // copy digests above stay the pre-change pins.
+  assert.equal(sha256(mails), "e17e8f1e7c665b4e6dbd3d01b26cc0d802d0e6cee3f36bd651ace546d04bb377");
   // `referralProgram: false` is the same mail as no flag at all.
   for (const locale of SUPPORTED_LOCALES) {
     for (const wave of WAVES) {
@@ -387,6 +392,17 @@ test("on: the landing catalog, head and structured data carry the disclosed clai
   }
 });
 
+test("Korean brand remains in search metadata with either referral setting", () => {
+  const base = FROZEN_LANDING_MESSAGES.ko;
+  for (const claim of [undefined, referralPriceClaim("ko")]) {
+    const messages = applyPriceClaim(base, claim);
+    for (const key of ["title", "description", "ogTitle", "ogDescription", "twitterTitle", "twitterDescription"] as const) {
+      assert.ok(messages.meta[key].includes("워치다이브 (WatchDive)"), key);
+    }
+    assert.ok(messages.hero.h1.includes("워치다이브 (WatchDive)"));
+  }
+});
+
 test("on: the experiment terms and the SMS card terms are replaced, nothing else", () => {
   for (const locale of SUPPORTED_LOCALES) {
     const claim = referralPriceClaim(locale);
@@ -450,10 +466,10 @@ test("on: the launch mail price line names both exceptions in every language", (
       assert.ok(copy.includes(diveTeam(locale)), `${locale}.${path}: Dive Team`);
       assert.doesNotMatch(copy, EXCLUSIVE, `${locale}.${path}: exclusive wording`);
       for (const number of copy.match(/\d+/g) ?? []) {
-        assert.ok(["149", "299", "100"].includes(number), `${locale}.${path}: ${number}`);
+        assert.ok(["149", "200", "100"].includes(number), `${locale}.${path}: ${number}`);
       }
     }
-    assert.match(price, /299/, `${locale}: public price`);
+    assert.match(price, /200/, `${locale}: next price after the first 100`);
     for (const wave of WAVES) {
       const on = launchWaveCopy(locale, wave, true);
       const off = LAUNCH_COPY[locale].waves[wave];

@@ -33,12 +33,15 @@ import { Route as ApiMayaReportRouteImport } from './routes/api.maya-report'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
+import { Route as ApiAuthContinuationRouteImport } from './routes/api/auth/continuation'
 import { Route as ApiAuthProvidersRouteImport } from './routes/api/auth/providers'
 import { Route as ApiAuthStartRouteImport } from './routes/api/auth/start'
 import { Route as ApiCronManualVerification20261019RouteImport } from './routes/api.cron.manual-verification-20261019'
 import { Route as ApiCronReferralAnnounceRouteImport } from './routes/api.cron.referral-announce'
 import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cron.verification-reminder'
 import { Route as ApiCronVerificationReminderV2RouteImport } from './routes/api.cron.verification-reminder-v2'
+import { Route as ApiPushConfigRouteImport } from './routes/api/push/config'
+import { Route as ApiPushSubscriptionRouteImport } from './routes/api/push/subscription'
 import { Route as ApiReferralLeaderboardRouteImport } from './routes/api.referral.leaderboard'
 import { Route as ApiReservationCheckoutRouteImport } from './routes/api/reservation/checkout'
 import { Route as ApiReservationStatusRouteImport } from './routes/api/reservation/status'
@@ -166,6 +169,11 @@ const LocaleRCodeRoute = LocaleRCodeRouteImport.update({
   path: '/r/$code',
   getParentRoute: () => LocaleRoute,
 } as any)
+const ApiAuthContinuationRoute = ApiAuthContinuationRouteImport.update({
+  id: '/api/auth/continuation',
+  path: '/api/auth/continuation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthProvidersRoute = ApiAuthProvidersRouteImport.update({
   id: '/api/auth/providers',
   path: '/api/auth/providers',
@@ -199,6 +207,16 @@ const ApiCronVerificationReminderV2Route =
     path: '/api/cron/verification-reminder-v2',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPushConfigRoute = ApiPushConfigRouteImport.update({
+  id: '/api/push/config',
+  path: '/api/push/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPushSubscriptionRoute = ApiPushSubscriptionRouteImport.update({
+  id: '/api/push/subscription',
+  path: '/api/push/subscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReferralLeaderboardRoute = ApiReferralLeaderboardRouteImport.update({
   id: '/api/referral/leaderboard',
   path: '/api/referral/leaderboard',
@@ -255,12 +273,15 @@ export interface FileRoutesByFullPath {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/auth/continuation': typeof ApiAuthContinuationRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/push/config': typeof ApiPushConfigRoute
+  '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
@@ -292,12 +313,15 @@ export interface FileRoutesByTo {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/auth/continuation': typeof ApiAuthContinuationRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/push/config': typeof ApiPushConfigRoute
+  '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
@@ -331,12 +355,15 @@ export interface FileRoutesById {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
+  '/api/auth/continuation': typeof ApiAuthContinuationRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
   '/api/auth/start': typeof ApiAuthStartRoute
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/push/config': typeof ApiPushConfigRoute
+  '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
@@ -371,12 +398,15 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/$locale/'
     | '/$locale/r/$code'
+    | '/api/auth/continuation'
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/push/config'
+    | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
@@ -408,12 +438,15 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/$locale'
     | '/$locale/r/$code'
+    | '/api/auth/continuation'
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/push/config'
+    | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
@@ -446,12 +479,15 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/$locale/'
     | '/$locale/r/$code'
+    | '/api/auth/continuation'
     | '/api/auth/providers'
     | '/api/auth/start'
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/push/config'
+    | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
     | '/api/reservation/status'
@@ -476,12 +512,15 @@ export interface RootRouteChildren {
   ApiMayaReportRoute: typeof ApiMayaReportRoute
   RCodeRoute: typeof RCodeRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
+  ApiAuthContinuationRoute: typeof ApiAuthContinuationRoute
   ApiAuthProvidersRoute: typeof ApiAuthProvidersRoute
   ApiAuthStartRoute: typeof ApiAuthStartRoute
   ApiCronManualVerification20261019Route: typeof ApiCronManualVerification20261019Route
   ApiCronReferralAnnounceRoute: typeof ApiCronReferralAnnounceRoute
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
   ApiCronVerificationReminderV2Route: typeof ApiCronVerificationReminderV2Route
+  ApiPushConfigRoute: typeof ApiPushConfigRoute
+  ApiPushSubscriptionRoute: typeof ApiPushSubscriptionRoute
   ApiReferralLeaderboardRoute: typeof ApiReferralLeaderboardRoute
   ApiReservationCheckoutRoute: typeof ApiReservationCheckoutRoute
   ApiReservationStatusRoute: typeof ApiReservationStatusRoute
@@ -660,6 +699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleRCodeRouteImport
       parentRoute: typeof LocaleRoute
     }
+    '/api/auth/continuation': {
+      id: '/api/auth/continuation'
+      path: '/api/auth/continuation'
+      fullPath: '/api/auth/continuation'
+      preLoaderRoute: typeof ApiAuthContinuationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/providers': {
       id: '/api/auth/providers'
       path: '/api/auth/providers'
@@ -700,6 +746,20 @@ declare module '@tanstack/react-router' {
       path: '/api/cron/verification-reminder-v2'
       fullPath: '/api/cron/verification-reminder-v2'
       preLoaderRoute: typeof ApiCronVerificationReminderV2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push/config': {
+      id: '/api/push/config'
+      path: '/api/push/config'
+      fullPath: '/api/push/config'
+      preLoaderRoute: typeof ApiPushConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push/subscription': {
+      id: '/api/push/subscription'
+      path: '/api/push/subscription'
+      fullPath: '/api/push/subscription'
+      preLoaderRoute: typeof ApiPushSubscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/referral/leaderboard': {
@@ -790,6 +850,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMayaReportRoute: ApiMayaReportRoute,
   RCodeRoute: RCodeRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
+  ApiAuthContinuationRoute: ApiAuthContinuationRoute,
   ApiAuthProvidersRoute: ApiAuthProvidersRoute,
   ApiAuthStartRoute: ApiAuthStartRoute,
   ApiCronManualVerification20261019Route:
@@ -797,6 +858,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronReferralAnnounceRoute: ApiCronReferralAnnounceRoute,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
   ApiCronVerificationReminderV2Route: ApiCronVerificationReminderV2Route,
+  ApiPushConfigRoute: ApiPushConfigRoute,
+  ApiPushSubscriptionRoute: ApiPushSubscriptionRoute,
   ApiReferralLeaderboardRoute: ApiReferralLeaderboardRoute,
   ApiReservationCheckoutRoute: ApiReservationCheckoutRoute,
   ApiReservationStatusRoute: ApiReservationStatusRoute,

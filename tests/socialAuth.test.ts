@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { generateKeyPair, exportJWK, exportPKCS8, SignJWT, importPKCS8, decodeJwt } from "jose";
-import { after, mock, test } from "node:test";
+import { test } from "node:test";
 
 import { segmentPath } from "../src/lib/segments/navigation.ts";
 import { SUPPORTED_LOCALES } from "../src/lib/i18n/locale.ts";
@@ -13,6 +13,7 @@ import { appleClientSecret } from "../src/lib/socialAuth/appleSecret.ts";
 import {
   handleAppleCallback,
   handleGoogleCallback,
+  handleSocialContinuation,
   handleSocialProviders,
   handleSocialStart,
   type SocialHttpDependencies,
@@ -29,13 +30,14 @@ import {
 import { requestVerificationService } from "../src/lib/verification/service.ts";
 import { runSocialSignupNotionSchema } from "../scripts/social-signup-notion-schema.ts";
 import { EXPERIMENT_ID } from "../src/lib/conversionExperimentContract.ts";
-import { FakeLeadStore, FakeMailer, TEST_ENV, leadIdFactory } from "./helpers/fakes.ts";
+import { FakeLeadStore, FakeMailer, TEST_ENV, TEST_SECRET, leadIdFactory } from "./helpers/fakes.ts";
+import { readRetargetingReceipt } from "../src/lib/retargeting/receipt.ts";
+import { parseVerificationToken } from "../src/lib/verification/token.ts";
+import { resetSocialContinuationForTests } from "../src/lib/socialAuth/continuation.ts";
 
 const NOW = new Date("2026-10-19T12:00:00.000Z");
-// OIDC validates JWT timestamps against the wall clock as well as our injected
-// service clock. Freeze both to keep signed fixtures valid on future test dates.
-mock.timers.enable({ apis: ["Date"], now: NOW });
-after(() => mock.timers.reset());
+// Provider JWTs are checked against the wall clock. The application clock stays
+// fixed below through `now: () => NOW`.
 const SECRET = "social-auth-secret-must-be-32-bytes";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36";
 const GOOGLE_SECRET = "google-client-secret-test";
@@ -203,8 +205,8 @@ function googleClaims(nonce: string, extra: Record<string, unknown> = {}) {
     email: "ab@gmail.com",
     email_verified: true,
     nonce,
-    iat: Math.floor(NOW.getTime() / 1000),
-    exp: Math.floor(NOW.getTime() / 1000) + 600,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 600,
     ...extra,
   };
 }
@@ -217,8 +219,8 @@ function appleClaims(nonce: string, extra: Record<string, unknown> = {}) {
     email: "diver@icloud.com",
     email_verified: true,
     nonce,
-    iat: Math.floor(NOW.getTime() / 1000),
-    exp: Math.floor(NOW.getTime() / 1000) + 600,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 600,
     ...extra,
   };
 }
@@ -239,6 +241,10 @@ async function googleCallback(
     { ...harness, fetchImpl: transport.fetchImpl },
   );
   return { response, calls: transport.calls };
+}
+
+function continuationHeader(response: Response): string | undefined {
+  return response.headers.getSetCookie().find((cookie) => cookie.startsWith("__Host-wd_social_continue="));
 }
 
 test("authorization code flow verifies a gmail identity once and repeats do not move Verified at", async () => {
@@ -278,6 +284,13 @@ test("authorization code flow verifies a gmail identity once and repeats do not 
   assert.equal(harness.submits, 0);
   assert.equal(harness.mailer.welcomes.length, 1);
   assert.equal(row.measurementConsent, "WD-AD-MEASUREMENT-CONSENT-V1:granted");
+  const receipt = cookies.find((cookie) => cookie.startsWith("wd_rt="));
+  assert.ok(receipt, "the first confirmed finish carries the browser receipt");
+  assert.equal(receipt.includes("@"), false);
+  assert.equal(/[a-f0-9]{64}/.test(location), false);
+  const events = readRetargetingReceipt(receipt.split(";")[0]);
+  assert.deepEqual(events?.map((event) => event.eventName).sort(), ["CompleteRegistration", "Lead"]);
+  assert.notEqual(events?.[0].eventId, events?.[1].eventId);
 
   const again = await begin(harness, { provider: "google", source: "offer", locale: "ko", measurementConsent: true });
   const secondToken = await signToken(googleClaims(again.bound.nonce, { email: "a.b+tag@gmail.com" }));
@@ -292,6 +305,7 @@ test("authorization code flow verifies a gmail identity once and repeats do not 
   assert.equal(row.source, "hero");
   assert.equal(harness.verified, 1);
   assert.equal(harness.mailer.welcomes.length, 1);
+  assert.equal(second.response.headers.getSetCookie().some((cookie) => cookie.startsWith("wd_rt=")), false);
 });
 
 test("tampered, wrong audience, wrong issuer, and expired tokens write nothing", async () => {
@@ -407,6 +421,7 @@ test("external google email uses confirmation mail and does not set Verified at"
   const row = [...store.rows.values()][0];
   assert.equal(row.emailVerified, false);
   assert.equal(row.verifiedAt, undefined);
+  assert.match(continuationHeader(result.response) ?? "", /Max-Age=0/);
   assert.equal(row.signupMethod, "google");
   assert.equal(row.authVerificationProvenance, "google:external-email");
   assert.equal(row.source, "offer");
@@ -439,6 +454,7 @@ test("external google does not bind a subject onto an existing verified email", 
   const result = await googleCallback(harness, started.cookie, started.bound.state, idToken);
   assert.equal(new URL(result.response.headers.get("location") ?? "").searchParams.get("auth"), "confirmed");
   assert.equal(row.googleSubject, undefined);
+  assert.match(continuationHeader(result.response) ?? "", /Max-Age=0/);
   assert.equal(row.verifiedAt, stamp);
   assert.equal(row.signupMethod, "email");
   assert.equal(store.markVerifiedCalls, 0);
@@ -539,6 +555,7 @@ test("apple form_post accepts a relay address and does not verify it until the r
   assert.equal(row.verifiedAt, undefined);
   assert.equal(row.authVerificationProvenance, "apple:private-relay");
   assert.equal(row.signupLocale, "ja");
+  assert.match(continuationHeader(response) ?? "", /Max-Age=0/);
   assert.equal(harness.mailer.sent.length, 0);
   assert.equal(store.markVerifiedCalls, 0);
   assert.equal(JSON.stringify(row).includes("Hidden"), false);
@@ -1216,6 +1233,18 @@ for (const provider of ["google", "apple"] as const) {
             assert.equal(store.createPendingInputs[0]?.attribution?.[key as keyof typeof attribution], value);
           }
           assert.ok(response.headers.getSetCookie().some((cookie) => cookie.startsWith("__Host-wd_social_ack=1;")));
+          const grant = continuationHeader(response);
+          assert.ok(grant);
+          assert.match(grant, /HttpOnly/);
+          assert.match(grant, /Secure/);
+          assert.match(grant, /SameSite=Lax/);
+          assert.match(grant, /Path=\//);
+          assert.match(grant, /Max-Age=600/);
+          assert.doesNotMatch(grant, /Domain=/i);
+          assert.equal(grant.includes("@"), false);
+          const grantValue = grant.split(";")[0].slice("__Host-wd_social_continue=".length);
+          assert.equal(target.toString().includes(grantValue), false);
+          assert.equal([...store.rows.values()][0]?.signupLocale, locale);
         }
       }
     }
@@ -1273,4 +1302,124 @@ test("segmented external-email fallback keeps its destination without claiming v
   assert.equal(store.markVerifiedCalls, 0);
   assert.equal(harness.mailer.sent.length, 1); // FakeMailer only.
   assert.ok(result.response.headers.getSetCookie().every((cookie) => !cookie.startsWith("__Host-wd_social_ack=1;")));
+  assert.match(continuationHeader(result.response) ?? "", /Max-Age=0/);
+});
+
+test("a confirmed continuation exchanges only for that verified lead", async () => {
+  resetSocialStateForTests();
+  resetSocialContinuationForTests();
+  const store = new FakeLeadStore();
+  const harness = deps(store);
+  const started = await begin(harness, {
+    provider: "google",
+    source: "offer",
+    locale: "ko",
+    segment: "freediving",
+    attribution: { landingPath: segmentPath("freediving", "ko") },
+  });
+  const idToken = await signToken(googleClaims(started.bound.nonce, { email: "ko.diver@gmail.com", sub: "ko-sub" }));
+  const result = await googleCallback(harness, started.cookie, started.bound.state, idToken);
+  const location = result.response.headers.get("location") ?? "";
+  assert.equal(location, "https://watchdive.diveroid.com/ko/freediving?auth=confirmed#signup-bottom");
+  const grant = continuationHeader(result.response);
+  assert.ok(grant);
+  const row = [...store.rows.values()][0];
+  const before = { source: row.source, locale: row.signupLocale, country: row.signupCountry, email: row.email };
+  const other = "other-person@example.com";
+  const logs: string[] = [];
+  const exchanged = await handleSocialContinuation(
+    new Request("https://watchdive.diveroid.com/api/auth/continuation", {
+      method: "POST",
+      headers: {
+        origin: "https://watchdive.diveroid.com",
+        cookie: `${grant.split(";")[0]}; __Host-wd_social_ack=1`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ email: other, leadId: "aaaaaaaa-bbbb-4ccc-8ddd-000000000099" }),
+    }),
+    { ...harness, log: (line) => logs.push(line) },
+  );
+  const body = await exchanged.text();
+  assert.equal(body.includes(other), false);
+  assert.equal(body.includes(row.email), false);
+  assert.equal(body.includes(idToken), false);
+  assert.equal(logs.join(" ").includes(other), false);
+  assert.equal(logs.join(" ").includes(row.email), false);
+  const grantValue = grant.split(";")[0].slice("__Host-wd_social_continue=".length);
+  assert.equal(location.includes(grantValue), false);
+  const parsed = JSON.parse(body) as { status: string; credential: { kind: string; value: string } };
+  assert.equal(parsed.status, "ready");
+  assert.equal(parsed.credential.kind, "confirmation");
+  const token = parseVerificationToken(parsed.credential.value, TEST_SECRET, NOW.getTime());
+  assert.equal(token?.leadId, row.leadId);
+  assert.equal(token?.locale, "ko");
+  assert.equal(row.source, before.source);
+  assert.equal(row.signupLocale, before.locale);
+  assert.equal(row.signupCountry, before.country);
+  assert.equal(row.email, before.email);
+  const ackOnly = await handleSocialContinuation(
+    new Request("https://watchdive.diveroid.com/api/auth/continuation", {
+      method: "POST",
+      headers: {
+        origin: "https://watchdive.diveroid.com",
+        cookie: "__Host-wd_social_ack=1",
+        "content-type": "application/json",
+      },
+      body: "{}",
+    }),
+    harness,
+  );
+  const ackBody = await ackOnly.json() as { reason?: string };
+  assert.equal(ackBody.reason, "missing");
+  const replay = await googleCallback(harness, started.cookie, started.bound.state, idToken);
+  assert.equal(new URL(replay.response.headers.get("location") ?? "").searchParams.get("auth"), "error");
+  assert.match(continuationHeader(replay.response) ?? "", /Max-Age=0/);
+  assert.ok(replay.response.headers.getSetCookie().every((cookie) => !cookie.startsWith("__Host-wd_social_ack=1;")));
+});
+
+test("social start keeps a Google client id only with measurement consent", async () => {
+  const harness = deps(new FakeLeadStore());
+  const allowed = await begin(harness, {
+    provider: "google",
+    source: "hero",
+    locale: "en",
+    measurementConsent: true,
+    googleClientId: "123.456",
+  });
+  assert.equal(allowed.bound.googleClientId, "123.456");
+  assert.equal(allowed.bound.measurementConsent, true);
+
+  const denied = await begin(harness, {
+    provider: "google",
+    source: "hero",
+    locale: "ko",
+    measurementConsent: false,
+    googleClientId: "123.456",
+  });
+  assert.equal(denied.bound.measurementConsent, false);
+  assert.equal(denied.bound.googleClientId, undefined);
+
+  const gpc = await begin(
+    harness,
+    {
+      provider: "google",
+      source: "offer",
+      locale: "en",
+      measurementConsent: true,
+      googleClientId: "123.456",
+    },
+    { "sec-gpc": "1" },
+  );
+  assert.equal(gpc.bound.measurementConsent, false);
+  assert.equal(gpc.bound.googleClientId, undefined);
+
+  const malformed = await begin(harness, {
+    provider: "google",
+    source: "hero",
+    locale: "de",
+    measurementConsent: true,
+    googleClientId: "not-a-client-id",
+  });
+  assert.equal(malformed.bound.measurementConsent, true);
+  assert.equal(malformed.bound.googleClientId, undefined);
 });

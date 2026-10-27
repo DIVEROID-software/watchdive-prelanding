@@ -494,6 +494,7 @@ test("the checkout request posts the token and rejects a non-Stripe URL", async 
     inviteToken: INVITE,
     acceptedTerms: true,
     termsVersion: "2026-10-18",
+    measurementConsent: false,
   });
   assert.equal(JSON.stringify(JSON.parse(String(calls[0]?.init?.body))).includes("email"), false);
 

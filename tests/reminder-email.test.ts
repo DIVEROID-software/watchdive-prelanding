@@ -94,7 +94,9 @@ test("every signup locale has reminder copy, plaintext, and one verify button", 
     assert.equal(mail.text.split(url).length - 1, 2);
     const hrefs = [...mail.html.matchAll(/href="([^"]*)"/g)].map((match) => match[1]);
     assert.deepEqual(hrefs, [escapeHtml(url), escapeHtml(url)]);
-    assert.equal(mail.html.split("background-color:#3D2683").length - 1, 1);
+    assert.ok(mail.html.includes("background-color:#36A9E1"));
+    assert.ok(mail.html.includes("border:3px solid #111111"));
+    assert.equal(mail.html.includes("border-radius"), false);
     assert.equal(mail.html.split("<a ").length - 1, 2);
     assert.match(mail.html, /padding:14px 28px/);
     assert.match(mail.html, /line-height:22px/);
@@ -107,7 +109,8 @@ test("every signup locale has reminder copy, plaintext, and one verify button", 
     }
     assert.ok(mail.html.includes(`src="${REMINDER_WORDMARK_URL}"`));
     assert.ok(mail.html.includes(`src="${REMINDER_PHOTO_URL}"`));
-    assert.ok(mail.html.includes('alt="DIVEROID"'));
+    assert.ok(mail.html.includes('alt="WatchDive"'));
+    assert.equal(mail.html.includes("diveroid-wordmark"), false);
     assert.ok(mail.html.includes(`alt="${escapeHtml(copy.imageAlt)}"`));
     const prose = `${mail.subject}\n${copy.preheader}\n${copy.headline}\n${copy.received}\n${copy.instruction}\n${copy.button}\n${copy.once}\n${copy.ignore}`;
     for (const pattern of BANNED) {
@@ -220,17 +223,19 @@ test("reviewed copy, welcome markup and reminder routing in resend.ts stay fixed
       .digest("hex"),
     "a68c60a7c570a10b367e9faa4d991228e738b84b3665e1789ee7a5fe19150c53",
   );
-  // The owner-authorized first-confirmation redesign is covered by
-  // verificationMailPresentation.test.ts; its copy remains frozen above.
+  // 2026-10-26 brutalism pass replaced the program-off welcome markup.
+  // EMAIL_COPY above stays frozen. This hash is the new welcomeBody source.
   assert.equal(
     createHash("sha256")
       .update(sliceBetween(copy, "function welcomeBody(", "/**\n * One accepted send"))
       .digest("hex"),
-    "a47de982877491f18257b81e6f2c01743907483f72a0657565921ed2f4fcfb15",
+    "ca596bf79e4b9df3536b0bb9110c3f0a3006ca35334bf4b45984ea6d17df4e48",
   );
+  // Compatibility is added only to the initial message; the reviewed reminder
+  // still uses its original builder and signed locale.
   assert.match(
     copy,
-    /reminder \? buildReminderEmail\(url, signedLocale\) : body\(url, signedLocale\)/,
+    /reminder \? buildReminderEmail\(url, signedLocale\) : body\(url, signedLocale, compatibility\)/,
   );
   assert.match(
     copy,

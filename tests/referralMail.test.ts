@@ -81,10 +81,11 @@ function guideLinks(locale: Locale) {
 // --- Switch off: nothing changes for anyone --------------------------------
 
 // sha256 of the nine request bodies (one per locale, joined by "\n") produced
-// by createResendMailer().sendWelcome at commit b364429, before any Buddy
-// Invite mail work. Recomputed from that commit's resend.ts on 2026-10-22.
+// by createResendMailer().sendWelcome while the program switch is off.
+// The 2026-10-26 brutalism pass replaced the visual HTML. Subjects, plain
+// text, the single share link, and the idempotency key stay as they were.
 const LEGACY_WELCOME_BODIES_SHA256 =
-  "a4e3cf6c955cf6ceb2a0bb95a6d02b8cd5ec401f4dec9558d085f632a573d2e7";
+  "fca22803b8d5a4175de9b5e214f64a525c72802a9d238778b7589859bc6128e6";
 
 test("switch off: the welcome request bodies are byte-identical to the pre-program mail", async () => {
   for (const withLinks of [false, true]) {
@@ -257,19 +258,22 @@ function notice(overrides: Partial<ReferralNoticeMail> = {}): ReferralNoticeMail
   };
 }
 
-test("notice: count in subject, crossed tier with its reward, next tier, status button, footer", async () => {
+test("notice: count in subject, reached tier name, status link, no invite-more pitch", async () => {
   const { calls, impl } = capture();
-  await createResendReferralMailer(ON_ENV, impl, async () => {}).sendReferralNotice(notice());
+  const shareUrl = `${ORIGIN}/r/abc12345`;
+  await createResendReferralMailer(ON_ENV, impl, async () => {}).sendReferralNotice(
+    notice({ shareUrl, shareCode: "REEF42" }),
+  );
   const { body, init } = calls[0]!;
   assert.equal(body.subject, "A buddy joined through your link (3 so far)");
   for (const part of [body.html, body.text]) {
     assert.ok(part.includes("So far, 3 buddies have joined through your link and confirmed their email."));
-    assert.ok(
-      part.includes(
-        "Get the launch email 2 hours early",
-      ),
-    );
-    assert.ok(part.includes("2 more for Dive Team · 5 friends."));
+    assert.ok(part.includes("Reached: Buddy · 3 friends"));
+    assert.equal(part.includes("Get the launch email 2 hours early"), false);
+    assert.equal(part.includes("2 more for"), false);
+    assert.equal(part.includes(shareUrl), false);
+    assert.equal(part.includes("REEF42"), false);
+    assert.equal(part.includes("Bonus event!"), false);
     assert.ok(part.includes(notice().statusUrl));
     assert.ok(part.includes("You can turn these emails off on your invite page."));
     assert.equal(/\{\w+\}/.test(part), false);
@@ -291,7 +295,7 @@ test("notice: count in subject, crossed tier with its reward, next tier, status 
   assert.equal(body.scheduled_at, undefined);
 });
 
-test("notice: several crossed tiers each get a line; at the top the max line replaces next", () => {
+test("notice: crossed tiers are named, with no next-tier pitch and no (광고)", () => {
   const content = referralNoticeBody(
     notice({
       locale: "ko",
@@ -302,20 +306,26 @@ test("notice: several crossed tiers each get a line; at the top the max line rep
     }),
     KO_FOOTER,
   );
-  assert.equal(content.subject, "(광고) 내 링크로 버디가 참여했어요 (지금까지 10명)");
-  assert.ok(content.text.includes("5명 초대하면 → 다이브 팀: 얼리버드 $149 그대로 후원해요 — 달성"));
-  assert.ok(content.text.includes("10명 초대하면 → 다이브 리더: 수중 라이트를 드려요 · 선착순 30명 — 달성"));
-  assert.ok(content.text.includes("모든 단계를 달성했어요. 랭킹 Top 3에 계속 도전해 보세요."));
+  assert.equal(content.subject, "내 링크로 버디가 참여했어요 (지금까지 10명)");
+  assert.equal(content.subject.includes("(광고)"), false);
+  assert.ok(content.text.includes("달성: 다이브 팀 · 5명"));
+  assert.ok(content.text.includes("달성: 다이브 리더 · 10명"));
+  assert.equal(content.text.includes("계속 도전"), false);
   assert.equal(content.text.includes("남았어요"), false);
+  assert.equal(content.text.includes("$149"), false);
+  assert.ok(content.text.includes(KR_SENDER_BLOCK));
+  assert.ok(content.text.includes(KR_OPT_OUT_LINE));
 });
 
-test("notice: no tier crossed means no reached line", () => {
+test("notice: no tier crossed means no reached line and no next-tier pitch", () => {
   const content = referralNoticeBody(
-    notice({ credited: 2, crossed: [], nextTier: "buddy", remainingToNext: 1 }),
+    notice({ credited: 2, crossed: [], nextTier: "buddy", remainingToNext: 1, shareUrl: `${ORIGIN}/r/abc12345` }),
     EN_FOOTER,
   );
-  assert.equal(content.text.includes("You reached"), false);
-  assert.ok(content.text.includes("1 more for Buddy · 3 friends."));
+  assert.equal(content.text.includes("Reached:"), false);
+  assert.equal(content.text.includes("1 more for"), false);
+  assert.equal(content.text.includes(`${ORIGIN}/r/`), false);
+  assert.ok(content.text.includes("So far, 2 buddies have joined through your link and confirmed their email."));
 });
 
 test("notice: never carries an address or any identity, only counts", async () => {
@@ -325,7 +335,11 @@ test("notice: never carries an address or any identity, only counts", async () =
   for (const part of [html, text, subject]) {
     // The only address is the sender's own help inbox in the footer.
     assert.equal(
-      part.replaceAll("help@diveroid.com", "").replaceAll("@media", "").includes("@"),
+      part
+        .replaceAll("help@diveroid.com", "")
+        .replaceAll("watchdive-primary@1x.png", "watchdive-primary-1x.png")
+        .replaceAll("@media", "")
+        .includes("@"),
       false,
       "no recipient or friend address",
     );
@@ -358,10 +372,7 @@ test("notice: provider failures are logged under their own operation, with no pa
 
 const KR_SENDER_BLOCK = `보내는 곳: DIVEROID LTD · help@diveroid.com · ${PHONE} · Office 12146, 182-184 High Street North, East Ham, London E6 2JA, United Kingdom`;
 
-function assertKoreanAdMail(body: Captured["body"]) {
-  assert.ok(body.subject.startsWith(KR_AD_SUBJECT_PREFIX), body.subject);
-  assert.equal(KR_AD_SUBJECT_PREFIX, "(광고) ");
-  // Tags stripped: the phone number sits in a no-wrap span in the HTML.
+function assertKoreanSenderAndOptOut(body: Captured["body"]) {
   for (const part of [body.html.replace(/<[^>]+>/g, ""), body.text]) {
     assert.ok(part.includes(KR_SENDER_BLOCK), "sender block");
     assert.ok(part.includes(KR_OPT_OUT_LINE), "bilingual opt-out line");
@@ -376,6 +387,12 @@ function assertKoreanAdMail(body: Captured["body"]) {
   assert.match(oneClick, /^https:\/\/[^=]*\/unsubscribe\/u1\./);
   assert.ok(body.html.includes(`href="${oneClick}"`), "working unsubscribe link in the body");
   assert.equal(body.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
+}
+
+function assertKoreanAdMail(body: Captured["body"]) {
+  assert.ok(body.subject.startsWith(KR_AD_SUBJECT_PREFIX), body.subject);
+  assert.equal(KR_AD_SUBJECT_PREFIX, "(광고) ");
+  assertKoreanSenderAndOptOut(body);
 }
 
 test("Korean rules: a ko guide has (광고), the sender block and the bilingual opt-out", async () => {
@@ -434,12 +451,37 @@ test("Korean rules: without WATCHDIVE_SENDER_PHONE the ko/KR guide and notice ar
   assert.equal(calls.length, 2);
 });
 
-test("Korean rules: a ko notice carries them with the phone set", async () => {
+test("Korean rules: a ko notice keeps the sender and opt-out, and the subject has no (광고)", async () => {
   const { calls, impl } = capture();
   await createResendReferralMailer(ON_ENV, impl, async () => {}).sendReferralNotice(
-    notice({ locale: "ko", unsubscribeUrl: KO_FOOTER.unsubscribeUrl }),
+    notice({
+      locale: "ko",
+      credited: 1,
+      crossed: ["first"],
+      nextTier: "buddy",
+      remainingToNext: 2,
+      unsubscribeUrl: KO_FOOTER.unsubscribeUrl,
+      shareUrl: `${ORIGIN}/r/abc12345`,
+    }),
   );
-  assertKoreanAdMail(calls[0]!.body);
+  const body = calls[0]!.body;
+  assertKoreanSenderAndOptOut(body);
+  assert.equal(body.subject, "내 링크로 버디가 참여했어요 (지금까지 1명)");
+  assert.equal(body.subject.startsWith("(광고)"), false);
+  assert.equal(body.text.includes("내 초대 링크 공유하기"), false);
+  assert.equal(body.text.includes(`${ORIGIN}/r/`), false);
+  assert.ok(body.text.includes("달성: 첫 초대 · 1명"));
+});
+
+test("Korean rules: an English notice for a KR signup also drops only the subject prefix", async () => {
+  const { calls, impl } = capture();
+  await createResendReferralMailer(ON_ENV, impl, async () => {}).sendReferralNotice(
+    notice({ signupCountry: "KR", credited: 1, crossed: ["first"], unsubscribeUrl: KO_FOOTER.unsubscribeUrl }),
+  );
+  const body = calls[0]!.body;
+  assertKoreanSenderAndOptOut(body);
+  assert.equal(body.subject, "A buddy joined through your link (1 so far)");
+  assert.equal(body.subject.includes("(광고)"), false);
 });
 
 test("no https opt-out, no Buddy mail: guide without a signing secret and notice without a link are refused", async () => {
@@ -500,7 +542,11 @@ test("every Buddy mail in every locale: email-safe HTML, absolute https links wi
     // The only non-Outlook stylesheet is a progressive dark-mode override;
     // every layout and light colour remains inline when a client drops it.
     assert.match(html, /@media \(prefers-color-scheme:dark\)/);
-    assert.equal(/<(script|img|link)\b/.test(html), false);
+    assert.equal(/<(script|link)\b/.test(html), false);
+    const images = [...html.matchAll(/<img\b[^>]*>/g)].map((match) => match[0]);
+    assert.equal(images.length, 1, "one official WatchDive logo");
+    assert.match(images[0], /watchdive-primary@1x\.png\?v=2\.6\.1/);
+    assert.match(images[0], /alt="WatchDive"/);
     assert.ok(html.includes('role="presentation"'));
     assert.ok(html.includes(`bgcolor="${BUTTON_BG}"`), "bulletproof button cell");
     assert.ok(html.includes(`color:${BUTTON_INK};`), "button label colour");
@@ -738,12 +784,15 @@ test("Buddy buttons use Surface Blue with dark ink and explicit dark-mode protec
   assert.ok(html.includes(`-webkit-text-fill-color:${BUTTON_INK}!important`));
 });
 
-test("the legacy welcome keeps its own button colours untouched", async () => {
+test("the legacy welcome uses the WatchDive brutal shell and one cyan action", async () => {
   const { calls, impl } = capture();
   await createResendMailer(BASE_ENV, impl, async () => {}).sendWelcome(welcome("en"));
   const html = calls[0]!.body.html as string;
-  assert.ok(html.includes("background:#0ea5e9;color:#04121f"));
-  assert.equal(html.includes(BUTTON_BG), false);
+  assert.equal(html.includes("background:#0ea5e9"), false);
+  assert.equal(html.includes("border-radius"), false);
+  assert.ok(html.includes(BUTTON_BG));
+  assert.ok(html.includes('alt="WatchDive"'));
+  assert.equal((html.match(/<a\b/g) ?? []).length, 1);
 });
 
 test("welcome code resolver is ON-only, verified-row scoped and best effort", async () => {

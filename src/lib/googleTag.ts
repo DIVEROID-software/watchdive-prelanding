@@ -4,13 +4,24 @@
 // the tag loads by default; inside, or with an unknown country, only after
 // Allow. "Not now" or Global Privacy Control never loads it. Consent Mode v2
 // is set before any tag config.
+//
+// Three Ads labels stay separate. `VITE_GOOGLE_ADS_CONVERSION_LABEL` is only the
+// historical confirmed-email conversion. The signup label is the verified
+// signup (first CompleteRegistration), not the raw email Lead. The purchase
+// label is the Stripe-confirmed USD 3 reservation. A set label only means this
+// tag will call that send_to. It does not mean the Ads account has that action
+// configured, or that GA4 and Ads are both primary. A blank env sends nothing.
 
 import {
   CONSENT_STORAGE_KEY,
   INLINE_MEASUREMENT_ALLOWED_JS,
   measurementAllowedFor,
   readGeoCountry,
+  readStoredMeasurementChoice,
 } from "./consentRegion.ts";
+import { RESERVATION_CURRENCY, RESERVATION_FEE_CENTS } from "./reservation/constants.ts";
+
+export { googleClientId } from "./analytics/browserContext.ts";
 
 const GA_ID_PATTERN = /^G-[A-Z0-9]{4,20}$/;
 const ADS_ID_PATTERN = /^AW-\d{6,20}$/;
@@ -28,8 +39,16 @@ export const GOOGLE_CONSENT_STORAGE_KEY = CONSENT_STORAGE_KEY;
 export type GoogleTagConfig = {
   gaId?: string;
   adsId?: string;
+  /** Historical confirmed-email conversion. Not signup and not purchase. */
   adsLabel?: string;
+  /** Verified signup (first CompleteRegistration). Not the raw email Lead. */
+  signupLabel?: string;
+  /** Stripe-confirmed USD 3 reservation. Charge time is the transaction time. */
+  purchaseLabel?: string;
 };
+
+const RESERVATION_PURCHASE_VALUE = RESERVATION_FEE_CENTS / 100;
+const RESERVATION_PURCHASE_CURRENCY = RESERVATION_CURRENCY.toUpperCase();
 
 export type GoogleConsentChoice = "granted" | "denied";
 
@@ -49,10 +68,15 @@ export function readGoogleTagConfig(
   const gaId = env.VITE_GA_MEASUREMENT_ID?.trim() ?? "";
   const adsId = env.VITE_GOOGLE_ADS_ID?.trim() ?? "";
   const adsLabel = env.VITE_GOOGLE_ADS_CONVERSION_LABEL?.trim() ?? "";
+  const signupLabel = env.VITE_GOOGLE_ADS_SIGNUP_LABEL?.trim() ?? "";
+  const purchaseLabel = env.VITE_GOOGLE_ADS_PURCHASE_LABEL?.trim() ?? "";
+  const adsReady = ADS_ID_PATTERN.test(adsId);
   return {
     ...(GA_ID_PATTERN.test(gaId) ? { gaId } : {}),
-    ...(ADS_ID_PATTERN.test(adsId) ? { adsId } : {}),
-    ...(ADS_ID_PATTERN.test(adsId) && ADS_LABEL_PATTERN.test(adsLabel) ? { adsLabel } : {}),
+    ...(adsReady ? { adsId } : {}),
+    ...(adsReady && ADS_LABEL_PATTERN.test(adsLabel) ? { adsLabel } : {}),
+    ...(adsReady && ADS_LABEL_PATTERN.test(signupLabel) ? { signupLabel } : {}),
+    ...(adsReady && ADS_LABEL_PATTERN.test(purchaseLabel) ? { purchaseLabel } : {}),
   };
 }
 
@@ -72,14 +96,9 @@ export function googleConsentChoice(input: {
     : "denied";
 }
 
-function readBrowserConsent(): GoogleConsentChoice {
+export function readBrowserConsent(): GoogleConsentChoice {
   if (typeof window === "undefined") return "denied";
-  let stored: string | null = null;
-  try {
-    stored = localStorage.getItem(GOOGLE_CONSENT_STORAGE_KEY);
-  } catch {
-    stored = null;
-  }
+  const stored = readStoredMeasurementChoice();
   const gpc =
     typeof navigator !== "undefined" &&
     (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true;
@@ -156,41 +175,70 @@ export function initGoogleTag() {
   }
 }
 
-function canTrack(): boolean {
+function canTrack(config: GoogleTagConfig = readGoogleTagConfig()): boolean {
   return (
     typeof window !== "undefined" &&
-    isGoogleTagConfigured() &&
+    isGoogleTagConfigured(config) &&
     readBrowserConsent() === "granted" &&
     Boolean(window.gtag)
   );
 }
 
-export function trackGoogleFormStart(placement: string) {
-  if (!canTrack() || !readGoogleTagConfig().gaId) return;
+export function trackGoogleFormStart(placement: string, config: GoogleTagConfig = readGoogleTagConfig()) {
+  if (!canTrack(config) || !config.gaId) return;
   window.gtag!("event", "form_start", {
     form_id: placement,
     page_path: window.location.pathname,
   });
 }
 
-export function trackGoogleSubmit(eventId: string, placement: string) {
-  if (!canTrack() || !readGoogleTagConfig().gaId || !isGoogleEventId(eventId)) return;
-  window.gtag!("event", "sign_up", {
+const browserVerifiedLeadIds = new Set<string>();
+
+export function trackGoogleSubmit(
+  eventId: string,
+  placement: string,
+  config: GoogleTagConfig = readGoogleTagConfig(),
+) {
+  if (!canTrack(config) || !config.gaId || !isGoogleEventId(eventId)) return;
+  window.gtag!("event", "signup_pending", {
     method: "email",
     form_id: placement,
     event_id: eventId,
   });
 }
 
-export function trackGoogleLead(eventId: string, placement: string) {
-  if (!canTrack() || !isGoogleEventId(eventId)) return;
-  const config = readGoogleTagConfig();
-  if (config.gaId) {
+export function serverSignupMeasurementEnabled(
+  env: Record<string, string | undefined> = import.meta.env ?? {},
+): boolean {
+  return env.VITE_GA4_SERVER_CONVERSIONS_ENABLED === "true";
+}
+
+/** First call for an event id wins. The poll and a late Allow share this sender. */
+function claimBrowserVerifiedLead(eventId: string): boolean {
+  if (browserVerifiedLeadIds.has(eventId)) return false;
+  if (browserVerifiedLeadIds.size > 1000) browserVerifiedLeadIds.clear();
+  browserVerifiedLeadIds.add(eventId);
+  return true;
+}
+
+export function trackGoogleLead(
+  eventId: string,
+  placement: string,
+  config: GoogleTagConfig = readGoogleTagConfig(),
+  env?: Record<string, string | undefined>,
+) {
+  if (!canTrack(config) || !isGoogleEventId(eventId)) return;
+  // Verified GA4 completion. Once the public rollout switch is on, the server
+  // sender owns sign_up and this fallback stays quiet. The server itself also
+  // requires the private switch, so a half-enabled flag cannot emit both.
+  if (config.gaId && !serverSignupMeasurementEnabled(env) && claimBrowserVerifiedLead(eventId)) {
     window.gtag!("event", "generate_lead", {
       form_id: placement,
       event_id: eventId,
     });
   }
+  // Confirmed-email label only. Signup and purchase labels must not ride this call.
+  // Google Ads remains separate from the GA4 server signup.
   if (config.adsId && config.adsLabel) {
     window.gtag!("event", "conversion", {
       send_to: `${config.adsId}/${config.adsLabel}`,
@@ -199,12 +247,74 @@ export function trackGoogleLead(eventId: string, placement: string) {
   }
 }
 
-export function trackGooglePhone(eventId: string, placement: string) {
-  if (!canTrack() || !readGoogleTagConfig().gaId || !isGoogleEventId(eventId)) return;
+export function trackGooglePhone(
+  eventId: string,
+  placement: string,
+  config: GoogleTagConfig = readGoogleTagConfig(),
+) {
+  if (!canTrack(config) || !config.gaId || !isGoogleEventId(eventId)) return;
   window.gtag!("event", "watchdive_phone", {
     form_id: placement,
     event_id: eventId,
   });
+}
+
+/**
+ * Verified-signup Ads conversion. Callers pass the CompleteRegistration event id.
+ * The raw email Lead does not call this. No-op until VITE_GOOGLE_ADS_SIGNUP_LABEL
+ * is set. Setting the label does not create or verify an Ads account action.
+ */
+export function trackGoogleDurableSignup(
+  eventId: string,
+  config: GoogleTagConfig = readGoogleTagConfig(),
+): boolean {
+  if (!canTrack(config) || !isGoogleEventId(eventId) || !config.adsId || !config.signupLabel) return false;
+  window.gtag!("event", "conversion", {
+    send_to: `${config.adsId}/${config.signupLabel}`,
+    transaction_id: eventId,
+  });
+  return true;
+}
+
+/**
+ * Stripe-confirmed reservation fee. Browser GA4 `purchase` is the fallback
+ * until the public server switch is on; the server sender then owns that
+ * event. The Ads conversion stays separate and fires only when its own label
+ * is set. A set label does not mean the Ads account has that action.
+ */
+export function trackGoogleReservationPurchase(
+  eventId: string,
+  config: GoogleTagConfig = readGoogleTagConfig(),
+  env?: Record<string, string | undefined>,
+): { ads: boolean; ga4: boolean } {
+  const result = { ads: false, ga4: false };
+  if (!canTrack(config) || !isGoogleEventId(eventId)) return result;
+  if (config.gaId && !serverSignupMeasurementEnabled(env)) {
+    window.gtag!("event", "purchase", {
+      transaction_id: eventId,
+      value: RESERVATION_PURCHASE_VALUE,
+      currency: RESERVATION_PURCHASE_CURRENCY,
+      items: [
+        {
+          item_id: "watchdive_reservation_fee",
+          item_name: "WatchDive reservation fee",
+          price: RESERVATION_PURCHASE_VALUE,
+          quantity: 1,
+        },
+      ],
+    });
+    result.ga4 = true;
+  }
+  if (config.adsId && config.purchaseLabel) {
+    window.gtag!("event", "conversion", {
+      send_to: `${config.adsId}/${config.purchaseLabel}`,
+      transaction_id: eventId,
+      value: RESERVATION_PURCHASE_VALUE,
+      currency: RESERVATION_PURCHASE_CURRENCY,
+    });
+    result.ads = true;
+  }
+  return result;
 }
 
 /** Inline head snippet. Empty when no id is configured. */

@@ -1,0 +1,166 @@
+.wd-capture-card {
+  position: relative;
+  box-sizing: border-box;
+  background: #f6fafc;
+  color: #10212e;
+  border: 2px solid #201748;
+  padding: clamp(22px, 5vw, 42px);
+  font-family: "Pangram Sans", "Spoqa Han Sans Neo", system-ui, sans-serif;
+  line-height: 1.5;
+  text-align: left;
+}
+.wd-capture-card h2 {
+  font-size: clamp(25px, 4vw, 36px);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  margin: 0 36px 20px 0;
+  color: #201748;
+}
+.wd-capture-card p {
+  margin: 0 0 20px;
+}
+.wd-capture-card .wd-capture-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #201748;
+}
+.wd-capture-card label {
+  display: block;
+  margin-block: 16px 8px;
+  font-weight: 650;
+}
+.wd-capture-card select {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #201748;
+  background: white;
+  color: #10212e;
+  border-radius: 0;
+  padding: 12px;
+  font: inherit;
+}
+.wd-capture-card .wd-capture-note {
+  font-size: 12px;
+  margin-block: 12px 20px;
+}
+.wd-capture-card button {
+  font: inherit;
+  cursor: pointer;
+}
+.wd-capture-card :focus-visible {
+  outline: 3px solid #36a9e1;
+  outline-offset: 4px;
+}
+.wd-capture-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  width: min(540px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.wd-capture-dialog::backdrop {
+  background: #10212ebf;
+}
+.wd-capture-close {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #201748;
+  color: #201748;
+  background: transparent;
+  font-size: 26px !important;
+}
+.wd-capture-decline {
+  min-height: 44px;
+  border: 0;
+  border-bottom: 1px solid #201748;
+  background: transparent;
+  color: #201748;
+  margin-top: 20px;
+  padding: 8px 0;
+}
+.wd-compatibility-checker {
+  margin: 32px auto;
+  width: min(760px, calc(100% - 32px));
+  box-shadow: 6px 6px 0 #201748;
+}
+.wd-push-optin {
+  max-width: 680px;
+  margin: 24px auto;
+  padding: 24px;
+  border: 1px solid currentColor;
+}
+.wd-push-optin button {
+  min-height: 44px;
+  padding: 10px 16px;
+  font: inherit;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+}
+.wd-push-optin button:focus-visible {
+  outline: 3px solid #36a9e1;
+  outline-offset: 4px;
+}
+/* Existing signup/pending cards inherit accessible ink inside the light capture card. */
+.wd-capture-card [class*="text-white"] {
+  color: #201748;
+}
+.wd-capture-card [class*="bg-white/"] {
+  background: #fff;
+}
+.wd-capture-card .wd-submit {
+  color: #f6fafc;
+  border-radius: 0;
+  box-shadow: none;
+}
+.wd-capture-card input[type="email"] {
+  border: 1px solid #201748;
+  border-radius: 0;
+  box-shadow: none;
+  background: #fff;
+  color: #10212e;
+}
+.wd-capture-card .wd-segment-confirm-note {
+  color: #485e6c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+/* The compact form repeats the card introduction for its accessible input
+   description; keep that description in the DOM without a duplicate visual note. */
+html:root .wd-capture-card [data-wd-capture-form] > .wd-segment-confirm-note {
+  display: none !important;
+}
+/* Existing global brutalist rules use !important on dark signup sections. These
+   narrowly scoped overrides keep their inherited copy readable on this light card. */
+html:root .wd-capture-card [class*="text-white"] {
+  color: #201748 !important;
+}
+html:root .wd-capture-card .wd-submit {
+  background: #201748 !important;
+  color: #f6fafc !important;
+  border: 2px solid #201748 !important;
+  box-shadow: 3px 3px 0 #65ceee !important;
+}
+html:root .wd-capture-card input[type="email"] {
+  background: #fff !important;
+  color: #10212e !important;
+  border: 2px solid #201748 !important;
+}
+
+/* Capture cards are narrow even on desktop: never squeeze the one email input. */
+html:root .wd-capture-card [data-wd-capture-form] > .grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+html:root .wd-capture-card [data-wd-capture-form] .wd-submit {
+  width: 100%;
+  white-space: normal;
+}

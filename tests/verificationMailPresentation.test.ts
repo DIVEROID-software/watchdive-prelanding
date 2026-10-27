@@ -62,9 +62,10 @@ test("all nine verification mails preserve transactional copy and intact signed 
     assert.match(html, /prefers-color-scheme:dark/);
     assert.match(html, /-webkit-text-fill-color:#1a1238!important/);
     assert.match(html, /word-break:break-all;overflow-wrap:anywhere/);
-    assert.match(html, /<img[^>]+width="150"[^>]+height="22"[^>]+alt="DIVEROID"/);
-    assert.ok(html.includes(`${ORIGIN}/brand/reservation/diveroid-wordmark-color-transparent.png`), locale);
-    assert.doesNotMatch(html, /border-radius|box-shadow|display:(?:flex|grid)|@font-face|<script|<form|hub\.diveroid\.ai/);
+    assert.match(html, /<img[^>]+width="237"[^>]+height="35"[^>]+alt="WatchDive"/);
+    assert.ok(html.includes("watchdive-primary@1x.png?v=2.6.1"), locale);
+    assert.doesNotMatch(html, /diveroid-wordmark|alt="DIVEROID"/);
+    assert.doesNotMatch(html, /border-radius|box-shadow|display:(?:flex|grid)|@font-face|<script|<form/);
     assert.doesNotMatch(`${subject}\n${text}\n${html}`, /\(광고\)|Buddy Invite|unsubscribe|buddy-rules|\$149|50%/i);
     assert.ok([...html.matchAll(/<table\b([^>]*)>/g)].every(([, attrs]) => attrs.includes('role="presentation"')), locale);
   }

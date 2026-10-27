@@ -135,17 +135,19 @@ function isDocumentRequest(request: Request): boolean {
 }
 
 /**
- * The language a first visit to `/` should see: the visitor's explicit choice
- * (language switcher cookie), else the browser's language. The IP country is
- * deliberately NOT used (2026-09-26): an English-language browser stays on the
- * English root wherever it connects from, and only a Korean-language browser
- * (or an explicit pick) is sent to `/ko`.
+ * The language a first visit to `/` should see.
+ * An explicit `watchdive.locale` cookie wins, including an explicit English choice.
+ * Otherwise the access country (`x-vercel-ip-country`, or the country the server
+ * already resolved) picks the locale. An unmapped or missing country stays English.
+ * Accept-Language and `cf-ipcountry` are not a location guess. This function does
+ * not read `WATCHDIVE_DEV_GEO_COUNTRY`; the server passes `requestCountry()`.
  */
-export function preferredLocaleFromRequest(request: Request): Locale {
+export function preferredLocaleFromRequest(request: Request, country?: string | null): Locale {
   const cookieLocale = localeFromPreferenceCookie(request.headers.get("cookie"));
   if (cookieLocale) return cookieLocale;
 
-  return localeFromAcceptLanguage(request.headers.get("accept-language")) ?? DEFAULT_LOCALE;
+  const resolved = country !== undefined ? country : request.headers.get("x-vercel-ip-country");
+  return localeFromCountry(resolved) ?? DEFAULT_LOCALE;
 }
 
 /**
@@ -163,6 +165,7 @@ export type AutoLocaleRedirect = {
 export function autoLocaleRedirect(
   request: Request,
   reviewEnabled = false,
+  country?: string | null,
 ): AutoLocaleRedirect | undefined {
   if (!reviewEnabled) return undefined;
   if (request.method !== "GET" && request.method !== "HEAD") return undefined;
@@ -178,7 +181,7 @@ export function autoLocaleRedirect(
     return undefined;
   }
 
-  const locale = preferredLocaleFromRequest(request);
+  const locale = preferredLocaleFromRequest(request, country);
   if (locale === DEFAULT_LOCALE) return undefined;
 
   return {

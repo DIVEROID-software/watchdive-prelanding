@@ -3,12 +3,25 @@
 // `consentRegion.ts` decides: outside EU/EEA/UK/CH the pixel loads by default;
 // inside (or when the country is unknown) it waits for Allow. Global Privacy
 // Control and an explicit Not now always keep it off.
-import { browserGpc, readGeoCountry, measurementAllowedFor } from "./consentRegion.ts";
+import { clearStoredClickIds } from "./attribution.ts";
+import {
+  browserGpc,
+  readGeoCountry,
+  measurementAllowedFor,
+  rememberMeasurementChoice,
+} from "./consentRegion.ts";
 import { META_LEAD_CURRENCY, META_LEAD_VALUE } from "./metaLeadValue.ts";
+import {
+  expectedMeasurement,
+  isRetargetingEventName,
+  RETARGETING_CONTENT,
+  type RetargetingEventName,
+} from "./retargeting/constants.ts";
+import { isRetargetingEventId, paramsAreMeasurementSafe } from "./retargeting/privacy.ts";
 
 const META_TRACKING_ENABLED =
-  (import.meta.env.VITE_META_TRACKING_ENABLED as string | undefined)?.trim() === "true";
-const META_PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID as string | undefined)?.trim() ?? "";
+  (import.meta.env?.VITE_META_TRACKING_ENABLED as string | undefined)?.trim() === "true";
+const META_PIXEL_ID = (import.meta.env?.VITE_META_PIXEL_ID as string | undefined)?.trim() ?? "";
 const META_CONSENT_STORAGE_KEY = "watchdive.measurement-consent.v3";
 const META_PIXEL_SCRIPT_ID = "watchdive-meta-pixel";
 
@@ -70,6 +83,8 @@ export function hasMetaMeasurementConsent(): boolean {
 
 export function setMetaMeasurementConsent(choice: MetaMeasurementConsent): void {
   inMemoryConsent = choice;
+  rememberMeasurementChoice(choice);
+  if (choice === "denied") clearStoredClickIds();
   if (typeof window === "undefined") return;
 
   try {
@@ -197,6 +212,37 @@ export function trackMetaPhoneLead(eventId: string, source: string) {
     { content_name: "watchdive_phone_signup", content_category: source },
     { eventID: eventId },
   );
+}
+
+/**
+ * Prospective standard event. The historical `trackMetaLead` is unchanged.
+ * Opt-out fails closed through `canTrackStandardEvent`. Params cannot carry an address.
+ */
+export function trackMetaRetargetingEvent(
+  name: RetargetingEventName,
+  eventId: string,
+  params: { content_name: string; value: number; currency: string; signup_locale?: string; content_category?: string },
+): boolean {
+  if (!isRetargetingEventName(name) || !isRetargetingEventId(eventId)) return false;
+  if (!canTrackStandardEvent(eventId)) return false;
+  const measurement = expectedMeasurement(name);
+  if (
+    params.content_name !== RETARGETING_CONTENT[name] ||
+    params.value !== measurement.value ||
+    params.currency !== measurement.currency
+  ) {
+    return false;
+  }
+  const body: Record<string, unknown> = {
+    content_name: params.content_name,
+    value: params.value,
+    currency: params.currency,
+    ...(params.signup_locale ? { signup_locale: params.signup_locale } : {}),
+    ...(params.content_category ? { content_category: params.content_category } : {}),
+  };
+  if (!paramsAreMeasurementSafe(body)) return false;
+  window.fbq!("track", name, body, { eventID: eventId });
+  return true;
 }
 
 // Funnel micro-signal (reporting only — optimization stays on Lead).

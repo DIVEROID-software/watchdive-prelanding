@@ -2,7 +2,9 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { isI18nReviewEnabled } from "@/lib/i18n/review-gate";
 import { LOCALE_PREFERENCE_COOKIE } from "@/lib/i18n/auto-locale";
+import { MEASUREMENT_CHOICE_EVENT } from "@/components/measurement-ask";
 import { RESERVATION_PRESENTATION } from "./presentation";
+import { recordAuthoritativeReservation } from "./measurement";
 
 import {
   createReservationSubmitLock,
@@ -94,6 +96,7 @@ export function ReservationPage({ search }: { search: string }) {
           return;
         }
         setStatus(result.status);
+        recordAuthoritativeReservation(result.status);
         setStatusError(false);
         const terminal = isTerminalReservationStatus(result.status);
         if (!lookup.sessionId || terminal || attempt >= STATUS_RETRY_DELAYS_MS.length) return;
@@ -109,6 +112,17 @@ export function ReservationPage({ search }: { search: string }) {
       window.clearTimeout(timer);
     };
   }, [inviteToken, query.sessionId, refreshNonce]);
+
+  useEffect(() => {
+    const onChoice = () => {
+      setStatus((current) => {
+        if (current) recordAuthoritativeReservation(current);
+        return current;
+      });
+    };
+    window.addEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
+    return () => window.removeEventListener(MEASUREMENT_CHOICE_EVENT, onChoice);
+  }, []);
 
   const view = buildReservationView({
     search,

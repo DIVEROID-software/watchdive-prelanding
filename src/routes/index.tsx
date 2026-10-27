@@ -1,7 +1,19 @@
+import { ExitIntentCapture } from "@/components/retargeting/ExitIntentCapture";
+import { CompatibilityChecker } from "@/components/retargeting/CompatibilityChecker";
+import { WebPushOptIn } from "@/components/retargeting/WebPushOptIn";
+import { RETARGETING_COPY } from "@/components/retargeting/copy";
+import { markDeviceSignupStatus, readDeviceSignupStatus } from "@/components/retargeting/device-status";
+import type { CompatibilityRequest } from "@/lib/compatibility/context";
+import type { PushPublicConfig } from "@/lib/push/config";
 import { SignupReservationOffer } from "@/components/reservation/SignupReservationOffer";
 import { socialAuthResultCopy } from "@/lib/socialAuthResultCopy";
 import { alreadyVerifiedCopy } from "@/lib/i18n/already-verified";
 import { PhoneOptInCard } from "@/components/phone-optin-card";
+import {
+  phoneRetryDraft,
+  recordInitialPhoneConsent,
+  type InitialPhoneOutcome,
+} from "@/components/initial-phone-consent";
 import { PhoneNumberFields } from "@/components/phone-number-fields";
 import { defaultPhoneCountry, normalizePhone } from "@/lib/phoneNumbers";
 import { phoneOptInCopy } from "@/lib/phoneOptInCopy";
@@ -16,8 +28,10 @@ import { track } from "@vercel/analytics";
 import {
   grantAttemptMeasurement,
   joinWaitlist,
+  getAcquisitionReadiness,
   withdrawAttemptMeasurement,
   pollVerification,
+  savePhoneOptIn,
   getReferralCount,
   loadWaitlistCount,
 } from "@/lib/api/waitlist.functions";
@@ -29,7 +43,7 @@ import { fill, referralCopy } from "@/lib/referral/copy";
 import { nextTier } from "@/lib/referral/program";
 import { copyValues } from "@/lib/referral/values";
 import { referralShareCopy } from "@/lib/referral/shareCopy";
-import { SocialAuthEntry, SocialAuthResult, SocialSignupResultProvider, useSocialSignupCompleted } from "@/components/social-auth-entry";
+import { SocialAuthEntry, SocialAuthResult, SocialSignupResultProvider, useSocialContinuation, useSocialSignupCompleted } from "@/components/social-auth-entry";
 import { HeroPhoto } from "@/components/hero-photo";
 import { ProductGallery } from "@/components/product-gallery";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -59,15 +73,16 @@ import { betaReviewBody } from "@/data/beta-reviews.loader";
 import { nextPollDelayMs, VERIFY_POLL_MAX_ATTEMPTS } from "@/lib/verifyPolling";
 import {
   getMetaCookies,
-  hasMetaMeasurementConsent,
   initMetaPixel,
   measurementPermitted,
   newMetaEventId,
   trackMetaCustom,
   trackMetaEmailVerified,
-  trackMetaLead,
   trackMetaPhoneLead,
 } from "@/lib/metaPixel";
+import { trackRetargetingBrowser } from "@/lib/retargeting/browser";
+import { parseBrowserRetargetingEvent } from "@/lib/retargeting/receipt";
+import { consumeSocialRetargetingReceipt } from "@/lib/retargeting/socialClient";
 import { getAttribution } from "@/lib/attribution";
 import {
   currentLandingVariant,
@@ -80,6 +95,7 @@ import { trackClarity } from "@/lib/clarity";
 import {
   trackGoogleFormStart,
   trackGoogleLead,
+  googleClientId,
   trackGooglePhone,
   trackGoogleSubmit,
 } from "@/lib/googleTag";
@@ -144,6 +160,13 @@ import samsungFeature1200 from "../assets/live/responsive/samsung-feature-1200.w
 import watchScreen400 from "../assets/live/responsive/watch-screen-400.webp";
 import watchdiveClip720 from "../assets/live/responsive/watchdive-clip-720.mp4";
 
+/** Dispatches the server's CompleteRegistration. Does not invent an event time. */
+function fireVerifiedRegistration(registration: unknown): void {
+  const event = parseBrowserRetargetingEvent(registration);
+  if (!event || event.eventName !== "CompleteRegistration" || !measurementPermitted()) return;
+  trackRetargetingBrowser(event);
+}
+
 const whySrcSet = `${why640} 640w, ${why1000} 1000w, ${why1600} 1600w, ${why2200} 2200w`;
 const stepSrcSets = {
   step1: `${step1_800} 800w, ${step1_1200} 1200w, ${step1Image} 1600w`,
@@ -193,6 +216,7 @@ export function DesignFrozenLanding() {
   // and by the time the form runs the URL that paid for them is gone.
   useEffect(() => {
     getAttribution();
+    consumeSocialRetargetingReceipt();
   }, []);
 
   // Live chat is not a peer of the notify bar. On a phone it stays out of the
@@ -223,6 +247,7 @@ export function DesignFrozenLanding() {
         <ValueSection />
         <HowItWorks />
         <Compatibility />
+        <AcquisitionTools />
         <FunctionsSection />
         <AppEcosystem />
         <ActionCameras />
@@ -943,11 +968,13 @@ function CheckInboxCard({
 // means a new placement is a type error rather than a rejected submit.
 type FormPlacement = "hero" | "offer";
 
-export function EmailForm({ id, includePhone = false, presentation }: { id: FormPlacement; includePhone?: boolean; presentation?: { cta: string; note: string } }) {
+export function EmailForm({ id, includePhone = false, presentation, compact = false, domId, compatibility, beforeSubmit }: { id: FormPlacement; includePhone?: boolean; presentation?: { cta: string; note: string }; compact?: boolean; domId?: string; compatibility?: CompatibilityRequest; beforeSubmit?: () => boolean }) {
+  const inputId = domId ?? id;
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const copy = useConversionCopy(locale);
   const socialCompleted = useSocialSignupCompleted();
+  const socialContinuation = useSocialContinuation();
   const [pending, setPending] = useState<string | null>(null);
   const [alreadyVerified, setAlreadyVerified] = useState(false);
   const [closed, setClosed] = useState<string | null>(null);
@@ -959,6 +986,8 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
   const [smsConsent, setSmsConsent] = useState(false);
   const [phoneCountry, setPhoneCountry] = useState<string>(defaultPhoneCountry(locale));
   const [phoneAdded, setPhoneAdded] = useState(false);
+  const [phoneStatus, setPhoneStatus] = useState<"accepted" | "saved" | null>(null);
+  const [phoneRetry, setPhoneRetry] = useState(false);
   const [hp, setHp] = useState(""); // honeypot — real users never fill this
   const [loading, setLoading] = useState(false);
   // A link ref (?ref / wd_ref) wins over a typed code. Hidden until that read,
@@ -972,6 +1001,9 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
     setLinkRef(getRef());
     setRefReady(true);
   }, []);
+  useEffect(() => {
+    if (socialCompleted || socialContinuation.credential) markDeviceSignupStatus("social");
+  }, [socialCompleted, socialContinuation.credential]);
   const formStartSent = useRef(false); // FormStart once per form instance
   // Decided once, when the inbox card appears: asking is for browsers that
   // have not answered yet in a country where measurement is opt-in.
@@ -1037,7 +1069,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
   useLayoutEffect(() => {
     const form = formRef.current;
     if (!form) return;
-    const typedEmail = form.querySelector<HTMLInputElement>(`#${id}-email`)?.value ?? "";
+    const typedEmail = form.querySelector<HTMLInputElement>(`#${inputId}-email`)?.value ?? "";
     if (typedEmail) setEmail(typedEmail);
     const typedPhone = form.querySelector<HTMLInputElement>('input[type="tel"]')?.value ?? "";
     if (typedPhone) setPhone(typedPhone);
@@ -1046,7 +1078,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
       form.removeAttribute("data-wd-queued");
       setQueued(true);
     }
-  }, [id]);
+  }, [inputId]);
   useEffect(() => {
     if (!queued) return;
     setQueued(false);
@@ -1098,6 +1130,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
         if (res.status === "verified") {
           setRefCode(res.refCode ?? "");
           setVerified(true);
+          markDeviceSignupStatus("verified");
           track("waitlist_verified", { source: id });
           if (res.browserLead && measurementPermitted()) {
             trackMetaEmailVerified(res.browserLead.eventId, res.browserLead.source);
@@ -1108,6 +1141,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
               trackGooglePhone(`${res.browserLead.eventId}:phone`, res.browserLead.source);
             }
           }
+          fireVerifiedRegistration(res.registration);
           stop();
           return;
         }
@@ -1159,6 +1193,25 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handle]);
 
+  const phoneCard = (surface: "pending" | "verified") => (
+    <PhoneOptInCard
+      key={handle}
+      credential={{ kind: "attempt", value: handle }}
+      complete={phoneAdded}
+      resultStatus={phoneAdded ? (surface === "verified" ? "saved" : phoneStatus) : null}
+      draft={phoneRetryDraft(
+        { phone, country: phoneCountry, consent: smsConsent },
+        phoneRetry,
+        phoneAdded,
+      )}
+      onSaved={(status) => {
+        setPhoneAdded(true);
+        setPhoneRetry(false);
+        if (status) setPhoneStatus(status);
+      }}
+    />
+  );
+
   if (alreadyVerified) {
     const copy = alreadyVerifiedCopy[locale];
     return <div role="status" aria-live="polite" className="rounded-2xl bg-white/10 p-5 text-white backdrop-blur">
@@ -1166,14 +1219,15 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
       <p className="mt-2 text-sm text-white/80">{copy.body}</p>
       <button type="button" className="mt-4 text-sm underline" onClick={() => {
         setAlreadyVerified(false); setPending(null); setHandle("");
-        requestAnimationFrame(() => document.getElementById(`${id}-email`)?.focus());
+        requestAnimationFrame(() => document.getElementById(`${inputId}-email`)?.focus());
       }}>{copy.other}</button>
     </div>;
   }
 
   if (verified) {
-    if (presentation) return <><ReferralSuccess refCode={refCode} /><PhoneOptInCard credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} /><SignupReservationOffer locale={locale} verified credential={{ kind: "attempt", value: handle }} /></>;
-    return <><SignupReservationOffer locale={locale} verified credential={{ kind: "attempt", value: handle }} /><ReferralSuccess refCode={refCode} /><PhoneOptInCard credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} /></>;
+    if (compact) return <div role="status" aria-live="polite"><strong>{socialAuthResultCopy(locale).confirmed}</strong><p>{m.referral.successBody}</p></div>;
+    if (presentation) return <><ReferralSuccess refCode={refCode} />{phoneCard("verified")}<SignupReservationOffer locale={locale} verified credential={{ kind: "attempt", value: handle }} /></>;
+    return <><SignupReservationOffer locale={locale} verified credential={{ kind: "attempt", value: handle }} /><ReferralSuccess refCode={refCode} />{phoneCard("verified")}</>;
   }
 
   // The server treats a repeat submit of the same address as a resend, under
@@ -1186,8 +1240,8 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
     const res = await joinWaitlist({
       data: {
         email: email.trim().toLowerCase(),
-        // A number is only ever sent with its own explicit consent.
-        phone: phone.trim() && smsConsent ? normalizePhone(phone, phoneCountry) || undefined : undefined,
+        // The email signup never carries a phone. A number is stored only by
+        // savePhoneOptIn, and only after an explicit SMS consent.
         source: id,
         referredBy: getRef(),
         // Omitted while the program is off, and omitted when a link ref is
@@ -1201,9 +1255,11 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
         // Opaque press link reference; kept on the row, reported only once the signup completes.
         pressRef: getPressRef(),
         honeypot: hp,
-        measurementConsent: hasMetaMeasurementConsent(),
+        measurementConsent: measurementPermitted(),
+        googleClientId: googleClientId(),
         experiment: getConversionExperiment(),
         locale,
+        ...(compatibility ? { compatibility, ...(handle ? { compatibilityCredential: handle } : {}) } : {}),
         ...(submitEventId ? { submitEventId } : {}),
         ...getMetaCookies(),
       },
@@ -1214,15 +1270,38 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
     }
     if (res.status === "already_verified") {
       setAlreadyVerified(true);
+      markDeviceSignupStatus("verified");
       setPending(null);
       setHandle("");
       return res;
+    }
+    // Email delivery already succeeded. A phone failure stays on this attempt
+    // and must not reject the pending signup or mark the number saved.
+    let phoneOutcome: InitialPhoneOutcome = { action: "skipped", completed: false, retry: false };
+    try {
+      phoneOutcome = await recordInitialPhoneConsent(
+        { phone, country: phoneCountry, consent: smsConsent, locale },
+        { kind: "attempt", value: res.handle },
+        (input) => savePhoneOptIn({ data: input }),
+      );
+    } catch {
+      phoneOutcome = { action: "retry", completed: false, retry: true, status: "failed" };
     }
     clearWithdrawalRecorded();
     setHandle(res.handle);
     // Kept past a reload or "Wrong address?", so a later refusal (footer
     // Cookie settings included) still reaches this signup's row.
     rememberSignupHandle(res.handle);
+    markDeviceSignupStatus("pending");
+    if (phoneOutcome.completed) {
+      setPhoneAdded(true);
+      setPhoneStatus(phoneOutcome.status);
+      setPhoneRetry(false);
+    } else if (phoneOutcome.retry) {
+      setPhoneRetry(true);
+    } else {
+      setPhoneRetry(false);
+    }
     setPending(res.message);
     return res;
   };
@@ -1253,6 +1332,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
         await grantAttemptMeasurement({
           data: {
             handle,
+            googleClientId: googleClientId(),
             ...(cookies.fbp ? { fbp: cookies.fbp } : {}),
             ...(fbc ? { fbc } : {}),
           },
@@ -1274,6 +1354,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
           trackGooglePhone(`${polled.browserLead.eventId}:phone`, polled.browserLead.source);
         }
       }
+      fireVerifiedRegistration(polled.registration);
     } catch {
       // The grant calls already landed. The poll effect retries EmailVerified.
     }
@@ -1290,13 +1371,28 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
     return withdrawEverySignup(current ? [current] : []);
   }
 
-  if (socialCompleted) {
-    return (
+  if (socialCompleted || socialContinuation.credential) {
+    const credential = socialContinuation.credential;
+    const phone = credential ? (
+      <PhoneOptInCard
+        credential={credential}
+        complete={socialContinuation.phoneSaved}
+        onSaved={socialContinuation.markPhoneSaved}
+      />
+    ) : null;
+    const offer = credential ? (
+      <SignupReservationOffer locale={locale} verified credential={credential} />
+    ) : null;
+    const message = (
       <div role="status" aria-live="polite" className="rounded-2xl bg-white/10 p-5 text-white">
         <div className="text-base font-semibold">{socialAuthResultCopy(locale).confirmed}</div>
         <p className="mt-2 text-sm text-white/80">{m.referral.successBody}</p>
       </div>
     );
+    if (compact) return message;
+    // Same order as the email-verified branch. Both placements share one grant.
+    if (presentation) return <>{message}{phone}{offer}</>;
+    return <>{offer}{message}{phone}</>;
   }
 
   if (closed) {
@@ -1314,13 +1410,13 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
 
   if (pending) {
     return (<>
-      {!presentation && <SignupReservationOffer locale={locale} inboxId={`${id}-verify-inbox`} autoFocus />}
+      {!compact && !presentation && <SignupReservationOffer locale={locale} inboxId={`${inputId}-verify-inbox`} autoFocus />}
       <CheckInboxCard
-        regionId={`${id}-verify-inbox`}
+        regionId={`${inputId}-verify-inbox`}
         autoFocus={Boolean(presentation)}
         message={presentation ? "" : pending}
         shareNote={shareNote || undefined}
-        phoneOptIn={<PhoneOptInCard key={handle} credential={{ kind: "attempt", value: handle }} complete={phoneAdded || Boolean(phone.trim() && smsConsent)} onSaved={() => setPhoneAdded(true)} />}
+        phoneOptIn={compact ? undefined : phoneCard("pending")}
         email={email}
         resending={loading}
         onResend={async () => {
@@ -1345,10 +1441,12 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
           setPending(null);
           setHandle("");
           setPhoneAdded(false);
-          requestAnimationFrame(() => document.getElementById(`${id}-email`)?.focus());
+          setPhoneStatus(null);
+          setPhoneRetry(false);
+          requestAnimationFrame(() => document.getElementById(`${inputId}-email`)?.focus());
         }}
       />
-      {presentation && <SignupReservationOffer locale={locale} inboxId={`${id}-verify-inbox`} />}
+      {!compact && presentation && <SignupReservationOffer locale={locale} inboxId={`${inputId}-verify-inbox`} />}
     </>);
   }
 
@@ -1360,6 +1458,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
       onSubmit={async (e) => {
         e.preventDefault();
         if (loading) return;
+        if (beforeSubmit && !beforeSubmit()) return;
         if (phone.trim() && smsConsent && !normalizePhone(phone, phoneCountry)) {
           toast.error(phoneOptInCopy[locale].invalid);
           return;
@@ -1387,16 +1486,12 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
           // 퍼널 앞단 신호 — 가입 확정이 아니라 확인 메일 요청 시점 측정.
           track("waitlist_pending", { source: id, referred: !!getRef() });
           trackMetaCustom("SignupPending", { source: id });
-          // `Lead` fires here, at the accepted submit (2026-09-26): one
-          // confirmation a week is too little for delivery to optimise on. When
-          // this submit was the one that allowed measurement for the signup,
-          // the server sent the Conversions API leg under the same event id,
-          // so Meta counts one Lead. It fires the same way for a new or a known
-          // address, so it says nothing about which this was. A tripped
-          // honeypot is knowable right here, and a bot is not something to
-          // optimise for.
+          // Pending GA4 is signup_pending. It does not prove mail delivery or a
+          // unique subscriber. Verified GA4 sign_up belongs to the server sender
+          // when both rollout switches are on; the poll otherwise keeps
+          // generate_lead. The durable Meta Lead stays server-only. Clarity
+          // keeps its historical sign_up name.
           if (res.status === "pending" && !hp.trim() && measurementPermitted()) {
-            trackMetaLead(submitEventId, id);
             trackGoogleSubmit(submitEventId, id);
             trackClarity("sign_up", id);
           }
@@ -1406,6 +1501,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
           setLoading(false);
         }
       }}
+      data-wd-capture-form={compact ? "" : undefined}
       className="relative flex flex-col gap-3 w-full"
     >
       {/* Honeypot: off-screen field. Real users never see or fill it; bots that
@@ -1420,7 +1516,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
         onChange={(e) => setHp(e.target.value)}
         className="absolute left-[-9999px] top-[-9999px] h-0 w-0 opacity-0"
       />
-      {ring && (
+      {!compact && ring && (
         <span
           aria-hidden="true"
           className="pointer-events-none absolute -inset-1.5 rounded-2xl border-2 border-[color:var(--color-cyan-glow)] motion-safe:animate-[wd-focus-ring_650ms_cubic-bezier(0.2,0.8,0.2,1)_forwards] motion-reduce:hidden"
@@ -1435,23 +1531,23 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
       ) : (
         <p className="wd-experiment-copy wd-experiment-benefit">{copy.benefit}</p>
       )}
-      <SocialAuthEntry locale={locale} source={id} disabled={loading} referredBy={getRef()} />
+      {!compact && <SocialAuthEntry locale={locale} source={id} disabled={loading} referredBy={getRef()} />}
       <p
-        id={`${id}-confirm-note`}
+        id={`${inputId}-confirm-note`}
         className={presentation ? "wd-segment-confirm-note" : "wd-control-copy text-sm leading-relaxed text-white/90"}
       >
         {presentation?.note ?? m.form.confirmRequired}
       </p>
       <div className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <input
-          id={`${id}-email`}
+          id={`${inputId}-email`}
           type="email"
           autoComplete="email"
           inputMode="email"
           autoCapitalize="none"
           spellCheck={false}
           aria-label={m.form.step1}
-          aria-describedby={`${id}-confirm-note`}
+          aria-describedby={`${inputId}-confirm-note`}
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -1467,7 +1563,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
           placeholder={m.form.emailPlaceholder}
           className="order-1 h-14 w-full min-w-0 px-4 rounded-xl bg-gradient-to-b from-white to-[oklch(0.92_0.006_255)] text-[color:var(--color-deep-2)] placeholder:text-muted-foreground border border-white/50 shadow-[inset_0_1px_0_oklch(1_0_0/0.85),0_22px_48px_-8px_oklch(0.008_0.01_270/0.85),0_6px_16px_-3px_oklch(0.008_0.01_270/0.7)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-cyan-glow)]"
         />
-        {includePhone && (
+        {!compact && includePhone && (
           <div className="order-2 sm:order-3 sm:col-span-2">
             <PhoneNumberFields locale={locale} phone={phone} onPhone={setPhone} country={phoneCountry} onCountry={setPhoneCountry} disabled={loading} />
           </div>
@@ -1488,7 +1584,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
         </button>
       </div>
 
-      {programOn && refReady && !linkRef && (
+      {!compact && programOn && refReady && !linkRef && (
         <details className="text-sm text-white/80">
           <summary className="block cursor-pointer list-none [&::-webkit-details-marker]:hidden">
             <span className="inline-flex min-h-11 items-center underline decoration-white/40 underline-offset-4">
@@ -1498,7 +1594,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
           <label className="mt-1 block">
             <span className="sr-only">{referralCopy(locale).shareCode.signupPlaceholder}</span>
             <input
-              id={`${id}-share-code`}
+              id={`${inputId}-share-code`}
               value={typedCode}
               maxLength={64}
               autoCapitalize="characters"
@@ -1513,7 +1609,7 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
       )}
 
       {/* Never pre-ticked, and separate from the email signup: WD-SMS-CONSENT-V1. */}
-      {includePhone && phone.trim() && (
+      {!compact && includePhone && phone.trim() && (
         <label className="mt-3 flex items-start gap-2.5 text-xs leading-relaxed text-white/70">
           <input
             type="checkbox"
@@ -1539,6 +1635,36 @@ export function EmailForm({ id, includePhone = false, presentation }: { id: Form
       </p>
     </form>
   );
+}
+
+/** All acquisition placements share the existing email service and GA4 hooks.
+ * Readiness is server-owned; absent schema/config hides only the unavailable feature. */
+export function AcquisitionTools({ compatibility = true }: { compatibility?: boolean } = {}) {
+  const locale = useCurrentLocale();
+  const socialCompleted = useSocialSignupCompleted();
+  const socialContinuation = useSocialContinuation();
+  const [ready, setReady] = useState<{ compatibility: boolean; push: PushPublicConfig }>({ compatibility: false, push: { enabled: false } });
+  useEffect(() => {
+    let cancelled = false;
+    // This is suppression only. A social pending return never marks verification.
+    const auth = new URL(window.location.href).searchParams.get("auth");
+    if (auth === "check-email" || auth === "pending") markDeviceSignupStatus("pending");
+    void getAcquisitionReadiness().then(result => { if (!cancelled) setReady(result); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  const copy = RETARGETING_COPY[locale];
+  return <>
+    {compatibility && ready.compatibility && <CompatibilityChecker locale={locale} renderSignup={(request, presentation) =>
+      <EmailForm id="hero" domId="compatibility-checker" compact compatibility={request} presentation={presentation} />
+    } />}
+    <ExitIntentCapture locale={locale} getKnownStatus={() => {
+      const local = readDeviceSignupStatus();
+      return { signedUp: local.signedUp || socialCompleted || Boolean(socialContinuation.credential), paid: local.paid };
+    }}>
+      <EmailForm id="offer" domId="exit-capture" compact presentation={{ cta: copy.exitCta, note: copy.exitBody }} />
+    </ExitIntentCapture>
+    <WebPushOptIn locale={locale} config={ready.push} />
+  </>;
 }
 
 // One published review supports the first signup; the full review set stays below.

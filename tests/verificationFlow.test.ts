@@ -4,6 +4,7 @@ import { beforeEach, test } from "node:test";
 import { SUPPORTED_LOCALES } from "../src/lib/i18n/locale.ts";
 import { reminderLocale } from "../src/lib/verification/reminder.ts";
 import { canonicalEmail } from "../src/lib/api/abuse.ts";
+import { savePhoneOptInService } from "../src/lib/verification/phoneOptIn.ts";
 import {
   FIELD_LEAD_ID,
   GENERIC_PENDING_MESSAGE,
@@ -177,10 +178,12 @@ test("the Meta event id is derived from the attempt, not the moment", async () =
 });
 
 test("confirmation exposes only phone presence and does not require measurement consent", async () => {
-  await requestVerificationService(
-    submit({ phone: "+447700900123", measurementConsent: false }),
-    deps(),
-  );
+  const attempt = await requestVerificationService(submit({ measurementConsent: false }), deps());
+  const saved = await savePhoneOptInService({
+    credential: { kind: "attempt", value: attempt.handle },
+    phone: "+447700900123", country: "GB", consent: true, locale: "en",
+  }, { ...deps(), gate: () => true });
+  assert.equal(saved.status, "accepted");
   const token = mailer.sent[0].token;
   for (const expected of ["verified", "already_verified"]) {
     const response = await confirmVerificationService(token, deps());
@@ -189,6 +192,34 @@ test("confirmation exposes only phone presence and does not require measurement 
     assert.equal(JSON.stringify(response).includes("447700900123"), false);
   }
   assert.equal(dispatched.length, 0);
+});
+
+test("bare phone values in legacy signup payloads never persist or imply consent", async () => {
+  for (const suppressed of [false, true]) {
+    store = new FakeLeadStore();
+    mailer = new FakeMailer();
+    await requestVerificationService(submit({
+      phone: "+447700900123",
+      flags: suppressed ? ["headless"] : [],
+      suspect: suppressed,
+      measurementConsent: false,
+    }), deps());
+    const row = await store.findByEmail(CANONICAL, EMAIL);
+    assert.ok(row);
+    assert.equal(row.phone || "", "");
+    assert.equal(row.smsConsent || "", "");
+    assert.equal(mailer.sent.length, suppressed ? 0 : 1);
+  }
+});
+
+test("legacy signup phone values cannot replace a previously consented number", async () => {
+  const row = store.seed({ email: EMAIL, canonical: CANONICAL,
+    status: "pending", emailVerified: false, phone: "+447700900123",
+    smsConsent: "existing-consent", sends: 0, sentAt: "" });
+  await requestVerificationService(submit({ phone: "+12025550123" }), deps());
+  const unchanged = await store.reread(row.pageId);
+  assert.equal(unchanged?.phone, "+447700900123");
+  assert.equal(unchanged?.smsConsent, "existing-consent");
 });
 
 test("a second click on the same link re-states the same conversion, never a new one", async () => {

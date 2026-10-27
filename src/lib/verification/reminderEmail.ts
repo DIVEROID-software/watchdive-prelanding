@@ -5,21 +5,29 @@
 // signed verification URL the caller already built. Images are the approved
 // public assets, unaltered.
 import { isLocale, type Locale } from "../i18n/locale.ts";
+import {
+  MAIL_CYAN,
+  MAIL_FONT,
+  MAIL_INK,
+  MAIL_MID,
+  MAIL_PAGE,
+  MAIL_PAPER,
+  MAIL_TEXT,
+  MAIL_YELLOW,
+  WATCHDIVE_MAIL_LOGO_URL,
+  watchdiveLogoImg,
+} from "../mail/brutal.ts";
 
 export const REMINDER_ASSET_ORIGIN = "https://watchdive.diveroid.com";
-export const REMINDER_WORDMARK_URL = `${REMINDER_ASSET_ORIGIN}/brand/reservation/diveroid-wordmark-color-transparent.png`;
+export const REMINDER_WORDMARK_URL = WATCHDIVE_MAIL_LOGO_URL;
 export const REMINDER_PHOTO_URL = `${REMINDER_ASSET_ORIGIN}/brand/reservation/watchdive-underwater.jpg`;
 
-const FONT =
-  "'Pangram Sans','Spoqa Han Sans Neo','Helvetica Neue','Apple SD Gothic Neo',Helvetica,Arial,'Malgun Gothic',sans-serif";
-
+const FONT = MAIL_FONT;
 const DEEP = "#201748";
-const MID = "#3D2683";
-const SURFACE = "#36A9E1";
-const FOAM = "#EEF9FF";
-const CANVAS = "#F6FAFC";
-const PAPER = "#FFFFFF";
-const INK = "#10212E";
+const MID = MAIL_MID;
+const SURFACE = MAIL_CYAN;
+const PAPER = MAIL_PAPER;
+const INK = MAIL_TEXT;
 
 export type ReminderEmailCopy = {
   subject: string;
@@ -197,59 +205,52 @@ export function buildReminderEmail(url: string, locale: Locale): ReminderEmail {
     "<style>",
     "@media only screen and (max-width:480px){",
     ".wd-shell{padding:16px 8px!important}",
-    ".wd-foam,.wd-card{width:100%!important;max-width:100%!important}",
-    ".wd-foam{padding:8px!important}",
-    ".wd-pad{padding-left:22px!important;padding-right:22px!important}",
-    ".wd-title{font-size:24px!important;line-height:1.4!important}",
+    ".wd-pad{padding-left:16px!important;padding-right:16px!important}",
+    ".wd-title{font-size:24px!important;line-height:1.35!important}",
     ".wd-photo{width:100%!important;max-width:100%!important;height:auto!important}",
     "}",
     "</style>",
     "</head>",
-    `<body style="margin:0;padding:0;width:100%;background-color:${CANVAS};font-family:${FONT};-webkit-text-size-adjust:100%;">`,
-    `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;color:${CANVAS};">${escapeHtml(copy.preheader)}${preheaderPad}</div>`,
-    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${CANVAS}" style="width:100%;border-collapse:collapse;background-color:${CANVAS};">`,
-    `<tr><td class="wd-shell" align="center" style="padding:40px 16px;">`,
+    `<body style="margin:0;padding:0;width:100%;background-color:${MAIL_PAGE};font-family:${FONT};-webkit-text-size-adjust:100%;">`,
+    `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;color:${MAIL_PAGE};">${escapeHtml(copy.preheader)}${preheaderPad}</div>`,
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${MAIL_PAGE}" style="width:100%;border-collapse:collapse;background-color:${MAIL_PAGE};">`,
+    `<tr><td class="wd-shell" align="center" style="padding:24px 12px;">`,
     '<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->',
-    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${FOAM}" class="wd-foam" style="width:100%;max-width:600px;border-collapse:collapse;background-color:${FOAM};border-radius:28px;">`,
-    `<tr><td class="wd-foam" style="padding:12px;">`,
-    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${PAPER}" class="wd-card" style="width:100%;max-width:100%;border-collapse:collapse;background-color:${PAPER};border-radius:20px;">`,
-    `<tr><td class="wd-pad" align="left" bgcolor="${PAPER}" style="padding:32px 40px 20px;background-color:${PAPER};border-radius:20px 20px 0 0;">`,
-    `<img src="${REMINDER_WORDMARK_URL}" width="160" height="24" alt="DIVEROID" style="display:block;width:160px;max-width:160px;height:auto;border:0;outline:none;text-decoration:none;">`,
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:separate;">',
+    `<tr><td bgcolor="${MAIL_INK}" style="padding:0 6px 6px 0;background-color:${MAIL_INK};">`,
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border:3px solid ${MAIL_INK};border-collapse:separate;background-color:${PAPER};">`,
+    `<tr><td class="wd-pad" align="left" bgcolor="${PAPER}" style="padding:34px!important;background-color:${PAPER};border-bottom:3px solid ${MAIL_INK};">`,
+    watchdiveLogoImg(REMINDER_WORDMARK_URL),
     "</td></tr>",
-    `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:0 40px 4px;background-color:${PAPER};">`,
-    `<img class="wd-photo" src="${REMINDER_PHOTO_URL}" width="520" alt="${escapeHtml(copy.imageAlt)}" style="display:block;width:100%;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;border-radius:16px;">`,
+    `<tr><td bgcolor="${MAIL_YELLOW}" height="8" style="height:8px;font-size:0;line-height:8px;background-color:${MAIL_YELLOW};border-bottom:3px solid ${MAIL_INK};">&nbsp;</td></tr>`,
+    `<tr><td bgcolor="${PAPER}" style="padding:0;background-color:${PAPER};font-size:0;line-height:0;border-bottom:3px solid ${MAIL_INK};">`,
+    `<img class="wd-photo" src="${REMINDER_PHOTO_URL}" width="600" alt="${escapeHtml(copy.imageAlt)}" style="display:block;width:100%;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;">`,
     "</td></tr>",
-    `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:0 40px;background-color:${PAPER};">`,
-    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:520px;"><tr>`,
-    `<td height="3" bgcolor="${SURFACE}" style="height:3px;line-height:3px;font-size:0;background-color:${SURFACE};border-radius:2px;">&nbsp;</td>`,
-    "</tr></table>",
+    `<tr><td class="wd-pad" bgcolor="${SURFACE}" style="padding:22px 22px 8px;background-color:${SURFACE};border-bottom:3px solid ${MAIL_INK};">`,
+    `<h1 class="wd-title" style="margin:0;color:${INK};font-family:${FONT};font-size:28px;font-weight:700;line-height:1.3;letter-spacing:${headlineTracking};word-break:${wordBreak};overflow-wrap:anywhere;">${headlineHtml(copy.headline)}</h1>`,
     "</td></tr>",
-    `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:28px 40px 8px;background-color:${PAPER};">`,
-    `<h1 class="wd-title" style="margin:0;color:${DEEP};font-family:${FONT};font-size:28px;font-weight:500;line-height:1.35;letter-spacing:${headlineTracking};word-break:${wordBreak};overflow-wrap:anywhere;">${headlineHtml(copy.headline)}</h1>`,
-    "</td></tr>",
-    `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:16px 40px 0;background-color:${PAPER};">`,
+    `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:18px 22px 0;background-color:${PAPER};">`,
     `<p style="margin:0 0 8px;color:${INK};font-family:${FONT};font-size:15px;font-weight:400;line-height:1.6;${bodyTracking}word-break:${wordBreak};overflow-wrap:anywhere;">${escapeHtml(copy.received)}</p>`,
     `<p style="margin:0;color:${INK};font-family:${FONT};font-size:15px;font-weight:400;line-height:1.6;${bodyTracking}word-break:${wordBreak};overflow-wrap:anywhere;">${escapeHtml(copy.instruction)}</p>`,
     "</td></tr>",
-    `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:28px 40px 0;background-color:${PAPER};">`,
-    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;"><tr>`,
-    `<td align="center" bgcolor="${MID}" style="background-color:${MID};border-radius:12px;mso-padding-alt:14px 28px;">`,
-    `<a href="${safeUrl}" rel="noreferrer noopener" style="display:block;padding:14px 28px;border-radius:12px;color:#FFFFFF;font-family:${FONT};font-size:16px;font-weight:600;line-height:22px;text-align:center;text-decoration:none;">${escapeHtml(copy.button)}</a>`,
+    `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:22px 22px 0;background-color:${PAPER};">`,
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;"><tr>`,
+    `<td align="center" bgcolor="${SURFACE}" style="background-color:${SURFACE};border:3px solid ${MAIL_INK};mso-padding-alt:14px 28px;">`,
+    `<a href="${safeUrl}" rel="noreferrer noopener" style="display:block;padding:14px 28px;color:${INK};font-family:${FONT};font-size:16px;font-weight:600;line-height:22px;text-align:center;text-decoration:none;">${escapeHtml(copy.button)}</a>`,
     "</td></tr></table>",
     "</td></tr>",
-    `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:16px 40px 0;background-color:${PAPER};">`,
+    `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:16px 22px 0;background-color:${PAPER};">`,
     `<p style="margin:0 0 6px;color:${INK};font-family:${FONT};font-size:12px;font-weight:400;line-height:1.5;text-align:left;word-break:${wordBreak};overflow-wrap:anywhere;">${escapeHtml(copy.fallback)}</p>`,
     `<p style="margin:0;word-break:break-all;overflow-wrap:anywhere;text-align:left;">`,
     `<a href="${safeUrl}" rel="noreferrer noopener" style="color:${MID};font-family:${FONT};font-size:12px;font-weight:400;line-height:1.45;text-decoration:underline;">${safeUrl}</a>`,
     "</p>",
     "</td></tr>",
-    `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:24px 40px 32px;background-color:${PAPER};border-radius:0 0 20px 20px;">`,
-    `<p style="margin:0 0 4px;color:${INK};font-family:${FONT};font-size:13px;font-weight:400;line-height:1.6;${bodyTracking}word-break:${wordBreak};overflow-wrap:anywhere;">${escapeHtml(copy.once)}</p>`,
-    `<p style="margin:0;color:${INK};font-family:${FONT};font-size:13px;font-weight:400;line-height:1.6;${bodyTracking}word-break:${wordBreak};overflow-wrap:anywhere;">${escapeHtml(copy.ignore)}</p>`,
+    `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:20px 22px 28px;background-color:${PAPER};">`,
+    `<p style="margin:0 0 4px;color:${DEEP};font-family:${FONT};font-size:13px;font-weight:400;line-height:1.6;${bodyTracking}word-break:${wordBreak};overflow-wrap:anywhere;">${escapeHtml(copy.once)}</p>`,
+    `<p style="margin:0;color:${DEEP};font-family:${FONT};font-size:13px;font-weight:400;line-height:1.6;${bodyTracking}word-break:${wordBreak};overflow-wrap:anywhere;">${escapeHtml(copy.ignore)}</p>`,
     "</td></tr>",
     "</table>",
-    "</td></tr>",
-    "</table>",
+    "</td></tr></table>",
     "<!--[if mso]></td></tr></table><![endif]-->",
     "</td></tr></table>",
     "</body>",

@@ -13,18 +13,18 @@ export function SegmentCostComparison({ locale }: { locale: Locale }) {
     <p className="wd-subscription-lead">{c.lead}</p>
     <div id="subscription-panels" className="wd-subscription-panels">
       <span className="wd-subscription-vs" aria-hidden="true">VS</span>
-      <article className="wd-subscription-card">
-        <h3>Apple Watch Ultra<span>{c.competitorPlan}</span></h3>
-        <p className="wd-subscription-term">{c.twoYearLabel}</p>
-        <p className="wd-subscription-amount"><strong>${total}</strong><span>USD</span></p>
-        <p className="wd-subscription-calculation">{c.calculation}</p>
-      </article>
       <article className="wd-subscription-card wd-subscription-watch">
         <h3>WatchDive<span>{c.watchIncludes}</span></h3>
         <p className="wd-subscription-term">{c.oneTimeLabel}</p>
         <p className="wd-subscription-amount"><strong>${SUBSCRIPTION_PRICING.watchDiveCents / 100}</strong><span>USD</span></p>
         <p className="wd-subscription-included">{c.uspShort}</p>
         <p className="wd-subscription-offer">{c.watchOffer}</p>
+      </article>
+      <article className="wd-subscription-card">
+        <h3>Apple Watch Ultra<span>{c.competitorPlan}</span></h3>
+        <p className="wd-subscription-term">{c.twoYearLabel}</p>
+        <p className="wd-subscription-amount"><strong>${total}</strong><span>USD</span></p>
+        <p className="wd-subscription-calculation">{c.calculation}</p>
       </article>
     </div>
     <p className="wd-subscription-caveat">{c.caveat}</p>

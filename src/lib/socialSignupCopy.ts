@@ -524,7 +524,7 @@ export const SOCIAL_SIGNUP_INTEGRATION = {
     "Render type=button controls so they do not submit the email form.",
     "Do not change the form-first 50:50 experiment, its copy classes, or the email field.",
     "Place one group in the hero form and one in the offer form, above or below the email field.",
-    "Keep enabledProviders.google true inside an in-app browser so the fallback note can render. Enforce the same block on the server.",
+    "Omit Google and the fallback warning inside an unsupported in-app browser. Keep Apple and email available and enforce the same Google block on the server.",
     "Do not spoof the user agent and do not claim this page opens an external browser.",
     "Pass loadingProvider for the provider whose redirect the caller has started, then clear it.",
     "Leave disabled true until the caller wires a real onProvider handler.",

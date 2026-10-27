@@ -16,7 +16,7 @@ type ServerEntry = {
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
-const AUTO_LOCALE_VARY = "Cookie, Accept-Language, User-Agent";
+const AUTO_LOCALE_VARY = "Cookie, Accept-Language, User-Agent, X-Vercel-IP-Country";
 
 /**
  * The visitor's country from Vercel's edge (`x-vercel-ip-country`). Off Vercel
@@ -170,6 +170,7 @@ const server = {
     const redirect = autoLocaleRedirect(
       request,
       isI18nReviewEnabled(import.meta.env.VITE_WATCHDIVE_I18N_REVIEW),
+      requestCountry(request) ?? null,
     );
     if (redirect) {
       return new Response(null, {

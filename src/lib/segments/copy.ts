@@ -43,7 +43,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "Scuba diving"
       },
       "discover": "See how it works",
-      "howTitle": "Keep your watch. Add WatchDive.",
+      "howTitle": "Keep your watch. Add {logo}.",
       "howIntro": "The housing measures depth and water temperature. Your smartwatch displays the readings.",
       "signupTitle": "Get the WatchDive launch alert.",
       "signupBody": "Receive the link when WatchDive launches on Kickstarter.",
@@ -64,7 +64,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "Free launch alert. No payment required.",
       "switchPrompt": "Explore the other dive mode",
       "title": "Your smartwatch.\nYour freedive computer.",
-      "intro": "Add the WatchDive sensor housing to a compatible Apple Watch or Galaxy Watch. See depth, dive time and water temperature on your wrist.",
+      "intro": "Turn the Apple Watch or Galaxy Watch you already have into a dive computer. It doesn't have to be an Ultra.",
       "heroCaption": "Freediving with WatchDive",
       "benefitTitle": "The essentials for your freedive.",
       "benefits": [
@@ -90,7 +90,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "Scuba diving"
       },
       "discover": "See how it works",
-      "howTitle": "Keep your watch. Add WatchDive.",
+      "howTitle": "Keep your watch. Add {logo}.",
       "howIntro": "The housing measures depth and water temperature. Your smartwatch displays the readings.",
       "signupTitle": "Get the WatchDive launch alert.",
       "signupBody": "Receive the link when WatchDive launches on Kickstarter.",
@@ -111,7 +111,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "Free launch alert. No payment required.",
       "switchPrompt": "Explore the other dive mode",
       "title": "Your smartwatch.\nYour dive computer.",
-      "intro": "Add the WatchDive sensor housing to a compatible Apple Watch or Galaxy Watch. See your dive information on the watch you already know.",
+      "intro": "Turn the Apple Watch or Galaxy Watch you already have into a dive computer. It doesn't have to be an Ultra.",
       "heroCaption": "WatchDive in action underwater",
       "benefitTitle": "Your dive information, on your wrist.",
       "benefits": [
@@ -139,7 +139,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "스쿠버다이빙"
       },
       "discover": "작동 방식 보기",
-      "howTitle": "쓰던 워치에 WatchDive를 더하세요.",
+      "howTitle": "쓰던 워치에 {logo}를 더하세요.",
       "howIntro": "하우징이 수심과 수온을 측정하고, 스마트워치가 측정값을 보여줍니다.",
       "signupTitle": "WatchDive 출시 소식을 받아보세요.",
       "signupBody": "Kickstarter 캠페인이 열리면 링크를 보내드립니다.",
@@ -160,7 +160,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "무료 출시 알림 · 결제 없이 신청",
       "switchPrompt": "다른 다이빙 모드도 살펴보세요",
       "title": "매일 쓰는 스마트워치,\n이제 프리다이빙 컴퓨터로.",
-      "intro": "지원되는 Apple Watch나 Galaxy Watch에 WatchDive 센서 하우징을 더하세요. 손목에서 수심, 다이빙 시간, 수온을 확인할 수 있습니다.",
+      "intro": "가지고 있는 Apple Watch / Galaxy Watch를 다이브 컴퓨터로 바꿔보세요. 울트라가 아니어도 됩니다.",
       "heroCaption": "WatchDive와 함께하는 프리다이빙",
       "benefitTitle": "프리다이빙에 필요한 정보를 한눈에.",
       "benefits": [
@@ -186,7 +186,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "스쿠버다이빙"
       },
       "discover": "작동 방식 보기",
-      "howTitle": "쓰던 워치에 WatchDive를 더하세요.",
+      "howTitle": "쓰던 워치에 {logo}를 더하세요.",
       "howIntro": "하우징이 수심과 수온을 측정하고, 스마트워치가 측정값을 보여줍니다.",
       "signupTitle": "WatchDive 출시 소식을 받아보세요.",
       "signupBody": "Kickstarter 캠페인이 열리면 링크를 보내드립니다.",
@@ -207,7 +207,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "무료 출시 알림 · 결제 없이 신청",
       "switchPrompt": "다른 다이빙 모드도 살펴보세요",
       "title": "매일 쓰는 스마트워치,\n이제 다이브 컴퓨터로.",
-      "intro": "지원되는 Apple Watch나 Galaxy Watch에 WatchDive 센서 하우징을 더하세요. 익숙한 워치에서 다이빙 정보를 확인할 수 있습니다.",
+      "intro": "가지고 있는 Apple Watch / Galaxy Watch를 다이브 컴퓨터로 바꿔보세요. 울트라가 아니어도 됩니다.",
       "heroCaption": "수중에서 직접 사용하는 WatchDive",
       "benefitTitle": "다이빙에 필요한 정보를 손목에서.",
       "benefits": [
@@ -235,7 +235,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "水肺潜水"
       },
       "discover": "了解工作原理",
-      "howTitle": "保留你的手表，装上 WatchDive。",
+      "howTitle": "保留你的手表，装上 {logo}。",
       "howIntro": "外壳测量水深和水温，智能手表显示读数。",
       "signupTitle": "接收 WatchDive 上线通知。",
       "signupBody": "WatchDive 在 Kickstarter 上线时，我们会发送链接。",
@@ -256,7 +256,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "免费上线通知，无需付款。",
       "switchPrompt": "了解另一种潜水模式",
       "title": "你的智能手表，\n也是自由潜水电脑。",
-      "intro": "为兼容的 Apple Watch 或 Galaxy Watch 装上 WatchDive 传感器外壳，在腕上查看水深、潜水时间和水温。",
+      "intro": "把你已有的 Apple Watch 或 Galaxy Watch 变成潜水电脑。不必是 Ultra。",
       "heroCaption": "与 WatchDive 一起自由潜水",
       "benefitTitle": "自由潜水信息，一眼掌握。",
       "benefits": [
@@ -282,7 +282,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "水肺潜水"
       },
       "discover": "了解工作原理",
-      "howTitle": "保留你的手表，装上 WatchDive。",
+      "howTitle": "保留你的手表，装上 {logo}。",
       "howIntro": "外壳测量水深和水温，智能手表显示读数。",
       "signupTitle": "接收 WatchDive 上线通知。",
       "signupBody": "WatchDive 在 Kickstarter 上线时，我们会发送链接。",
@@ -303,7 +303,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "免费上线通知，无需付款。",
       "switchPrompt": "了解另一种潜水模式",
       "title": "你的智能手表，\n也是潜水电脑。",
-      "intro": "为兼容的 Apple Watch 或 Galaxy Watch 装上 WatchDive 传感器外壳，在熟悉的手表上查看潜水信息。",
+      "intro": "把你已有的 Apple Watch 或 Galaxy Watch 变成潜水电脑。不必是 Ultra。",
       "heroCaption": "水下使用 WatchDive",
       "benefitTitle": "潜水信息，就在腕上。",
       "benefits": [
@@ -331,7 +331,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "水肺潛水"
       },
       "discover": "了解運作方式",
-      "howTitle": "保留你的手錶，加上 WatchDive。",
+      "howTitle": "保留你的手錶，加上 {logo}。",
       "howIntro": "防水殼測量深度與水溫，智慧手錶顯示讀數。",
       "signupTitle": "接收 WatchDive 上線通知。",
       "signupBody": "WatchDive 在 Kickstarter 上線時，我們會寄送連結。",
@@ -352,7 +352,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "免費上線通知，無須付款。",
       "switchPrompt": "探索另一種潛水模式",
       "title": "你的智慧手錶，\n也是自由潛水電腦。",
-      "intro": "為相容的 Apple Watch 或 Galaxy Watch 裝上 WatchDive 感測器防水殼，在手腕上查看深度、潛水時間與水溫。",
+      "intro": "把你已有的 Apple Watch 或 Galaxy Watch 變成潛水電腦。不必是 Ultra。",
       "heroCaption": "與 WatchDive 一起自由潛水",
       "benefitTitle": "自由潛水資訊，一眼掌握。",
       "benefits": [
@@ -378,7 +378,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "水肺潛水"
       },
       "discover": "了解運作方式",
-      "howTitle": "保留你的手錶，加上 WatchDive。",
+      "howTitle": "保留你的手錶，加上 {logo}。",
       "howIntro": "防水殼測量深度與水溫，智慧手錶顯示讀數。",
       "signupTitle": "接收 WatchDive 上線通知。",
       "signupBody": "WatchDive 在 Kickstarter 上線時，我們會寄送連結。",
@@ -399,7 +399,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "免費上線通知，無須付款。",
       "switchPrompt": "探索另一種潛水模式",
       "title": "你的智慧手錶，\n也是潛水電腦。",
-      "intro": "為相容的 Apple Watch 或 Galaxy Watch 裝上 WatchDive 感測器防水殼，在熟悉的手錶上查看潛水資訊。",
+      "intro": "把你已有的 Apple Watch 或 Galaxy Watch 變成潛水電腦。不必是 Ultra。",
       "heroCaption": "水下使用 WatchDive",
       "benefitTitle": "潛水資訊，就在手腕上。",
       "benefits": [
@@ -427,7 +427,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "スキューバダイビング"
       },
       "discover": "仕組みを見る",
-      "howTitle": "いつものウォッチに、WatchDiveを。",
+      "howTitle": "いつものウォッチに、{logo}を。",
       "howIntro": "ハウジングが深度と水温を測定し、スマートウォッチに表示します。",
       "signupTitle": "WatchDiveの公開通知を受け取る。",
       "signupBody": "Kickstarterでの公開時に、リンクをお送りします。",
@@ -448,7 +448,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "公開通知の登録は無料。お支払いは不要です。",
       "switchPrompt": "もう一つのダイビングモードを見る",
       "title": "いつものスマートウォッチを、\nフリーダイビングコンピュータに。",
-      "intro": "対応するApple WatchまたはGalaxy Watchに、WatchDiveセンサーハウジングを装着。深度、潜水時間、水温を手首で確認できます。",
+      "intro": "お持ちの Apple Watch または Galaxy Watch をダイブコンピュータに。Ultra である必要はありません。",
       "heroCaption": "WatchDive とフリーダイビング",
       "benefitTitle": "フリーダイビングの情報を、ひと目で。",
       "benefits": [
@@ -474,7 +474,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "スキューバダイビング"
       },
       "discover": "仕組みを見る",
-      "howTitle": "いつものウォッチに、WatchDiveを。",
+      "howTitle": "いつものウォッチに、{logo}を。",
       "howIntro": "ハウジングが深度と水温を測定し、スマートウォッチに表示します。",
       "signupTitle": "WatchDiveの公開通知を受け取る。",
       "signupBody": "Kickstarterでの公開時に、リンクをお送りします。",
@@ -495,7 +495,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "公開通知の登録は無料。お支払いは不要です。",
       "switchPrompt": "もう一つのダイビングモードを見る",
       "title": "いつものスマートウォッチを、\nダイブコンピュータに。",
-      "intro": "対応するApple WatchまたはGalaxy Watchに、WatchDiveセンサーハウジングを装着。使い慣れたウォッチで潜水情報を確認できます。",
+      "intro": "お持ちの Apple Watch または Galaxy Watch をダイブコンピュータに。Ultra である必要はありません。",
       "heroCaption": "水中で使う WatchDive",
       "benefitTitle": "潜水情報を、手首で確認。",
       "benefits": [
@@ -523,7 +523,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "Buceo autónomo"
       },
       "discover": "Descubre cómo funciona",
-      "howTitle": "Tu reloj, con WatchDive.",
+      "howTitle": "Tu reloj, con {logo}.",
       "howIntro": "La carcasa mide la profundidad y la temperatura del agua. Tu smartwatch muestra los datos.",
       "signupTitle": "Recibe el aviso de lanzamiento.",
       "signupBody": "Te enviaremos el enlace cuando WatchDive llegue a Kickstarter.",
@@ -544,7 +544,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "Aviso de lanzamiento gratuito. Sin pago.",
       "switchPrompt": "Descubre el otro modo de buceo",
       "title": "Tu smartwatch.\nTu ordenador de apnea.",
-      "intro": "Añade la carcasa con sensores WatchDive a un Apple Watch o Galaxy Watch compatible. Consulta profundidad, tiempo de inmersión y temperatura del agua en tu muñeca.",
+      "intro": "Convierte el Apple Watch o Galaxy Watch que ya tienes en un ordenador de buceo. No hace falta que sea un Ultra.",
       "heroCaption": "Apnea con WatchDive",
       "benefitTitle": "Lo esencial para tu apnea.",
       "benefits": [
@@ -570,7 +570,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "Buceo autónomo"
       },
       "discover": "Descubre cómo funciona",
-      "howTitle": "Tu reloj, con WatchDive.",
+      "howTitle": "Tu reloj, con {logo}.",
       "howIntro": "La carcasa mide la profundidad y la temperatura del agua. Tu smartwatch muestra los datos.",
       "signupTitle": "Recibe el aviso de lanzamiento.",
       "signupBody": "Te enviaremos el enlace cuando WatchDive llegue a Kickstarter.",
@@ -591,7 +591,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "Aviso de lanzamiento gratuito. Sin pago.",
       "switchPrompt": "Descubre el otro modo de buceo",
       "title": "Tu smartwatch.\nTu ordenador de buceo.",
-      "intro": "Añade la carcasa con sensores WatchDive a un Apple Watch o Galaxy Watch compatible. Consulta los datos de inmersión en el reloj que ya conoces.",
+      "intro": "Convierte el Apple Watch o Galaxy Watch que ya tienes en un ordenador de buceo. No hace falta que sea un Ultra.",
       "heroCaption": "WatchDive en acción bajo el agua",
       "benefitTitle": "Tu inmersión, en tu muñeca.",
       "benefits": [
@@ -619,7 +619,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "Plongée bouteille"
       },
       "discover": "Voir comment ça marche",
-      "howTitle": "Votre montre, avec WatchDive.",
+      "howTitle": "Votre montre, avec {logo}.",
       "howIntro": "Le caisson mesure la profondeur et la température de l’eau. Votre montre affiche les données.",
       "signupTitle": "Recevez l’alerte de lancement.",
       "signupBody": "Nous vous enverrons le lien dès le lancement de WatchDive sur Kickstarter.",
@@ -640,7 +640,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "Alerte de lancement gratuite. Aucun paiement requis.",
       "switchPrompt": "Découvrir l’autre mode de plongée",
       "title": "Votre montre connectée.\nVotre ordinateur d’apnée.",
-      "intro": "Ajoutez le caisson à capteurs WatchDive à une Apple Watch ou Galaxy Watch compatible. Consultez profondeur, durée et température de l’eau au poignet.",
+      "intro": "Transformez l’Apple Watch ou la Galaxy Watch que vous avez déjà en ordinateur de plongée. Ce n’est pas forcément une Ultra.",
       "heroCaption": "En apnée avec WatchDive",
       "benefitTitle": "L’essentiel pour votre apnée.",
       "benefits": [
@@ -666,7 +666,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "Plongée bouteille"
       },
       "discover": "Voir comment ça marche",
-      "howTitle": "Votre montre, avec WatchDive.",
+      "howTitle": "Votre montre, avec {logo}.",
       "howIntro": "Le caisson mesure la profondeur et la température de l’eau. Votre montre affiche les données.",
       "signupTitle": "Recevez l’alerte de lancement.",
       "signupBody": "Nous vous enverrons le lien dès le lancement de WatchDive sur Kickstarter.",
@@ -687,7 +687,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "Alerte de lancement gratuite. Aucun paiement requis.",
       "switchPrompt": "Découvrir l’autre mode de plongée",
       "title": "Votre montre connectée.\nVotre ordinateur de plongée.",
-      "intro": "Ajoutez le caisson à capteurs WatchDive à une Apple Watch ou Galaxy Watch compatible. Consultez vos données de plongée sur votre montre habituelle.",
+      "intro": "Transformez l’Apple Watch ou la Galaxy Watch que vous avez déjà en ordinateur de plongée. Ce n’est pas forcément une Ultra.",
       "heroCaption": "WatchDive en action sous l’eau",
       "benefitTitle": "Vos données de plongée, au poignet.",
       "benefits": [
@@ -715,7 +715,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "Gerätetauchen"
       },
       "discover": "So funktioniert’s",
-      "howTitle": "Deine Uhr. Dazu WatchDive.",
+      "howTitle": "Deine Uhr. Dazu {logo}.",
       "howIntro": "Das Gehäuse misst Tiefe und Wassertemperatur. Deine Smartwatch zeigt die Werte an.",
       "signupTitle": "Erfahre, wann WatchDive startet.",
       "signupBody": "Wir senden dir den Link, sobald WatchDive auf Kickstarter startet.",
@@ -736,7 +736,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "Kostenlose Startbenachrichtigung. Keine Zahlung nötig.",
       "switchPrompt": "Entdecke den anderen Tauchmodus",
       "title": "Deine Smartwatch.\nDein Apnoecomputer.",
-      "intro": "Ergänze eine kompatible Apple Watch oder Galaxy Watch um das WatchDive-Sensorgehäuse. Lies Tiefe, Tauchzeit und Wassertemperatur am Handgelenk ab.",
+      "intro": "Machen Sie die Apple Watch oder Galaxy Watch, die Sie schon haben, zum Tauchcomputer. Es muss kein Ultra sein.",
       "heroCaption": "Freitauchen mit WatchDive",
       "benefitTitle": "Das Wesentliche für deinen Apnoetauchgang.",
       "benefits": [
@@ -762,7 +762,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "Gerätetauchen"
       },
       "discover": "So funktioniert’s",
-      "howTitle": "Deine Uhr. Dazu WatchDive.",
+      "howTitle": "Deine Uhr. Dazu {logo}.",
       "howIntro": "Das Gehäuse misst Tiefe und Wassertemperatur. Deine Smartwatch zeigt die Werte an.",
       "signupTitle": "Erfahre, wann WatchDive startet.",
       "signupBody": "Wir senden dir den Link, sobald WatchDive auf Kickstarter startet.",
@@ -783,7 +783,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "Kostenlose Startbenachrichtigung. Keine Zahlung nötig.",
       "switchPrompt": "Entdecke den anderen Tauchmodus",
       "title": "Deine Smartwatch.\nDein Tauchcomputer.",
-      "intro": "Ergänze eine kompatible Apple Watch oder Galaxy Watch um das WatchDive-Sensorgehäuse. Sieh deine Tauchdaten auf der Uhr, die du schon kennst.",
+      "intro": "Machen Sie die Apple Watch oder Galaxy Watch, die Sie schon haben, zum Tauchcomputer. Es muss kein Ultra sein.",
       "heroCaption": "WatchDive unter Wasser im Einsatz",
       "benefitTitle": "Deine Tauchdaten am Handgelenk.",
       "benefits": [
@@ -811,7 +811,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "Mergulho autônomo"
       },
       "discover": "Veja como funciona",
-      "howTitle": "Seu relógio, com WatchDive.",
+      "howTitle": "Seu relógio, com {logo}.",
       "howIntro": "A caixa mede a profundidade e a temperatura da água. Seu smartwatch exibe os dados.",
       "signupTitle": "Receba o aviso de lançamento.",
       "signupBody": "Enviaremos o link quando o WatchDive chegar ao Kickstarter.",
@@ -832,7 +832,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "Aviso de lançamento gratuito. Sem pagamento.",
       "switchPrompt": "Conheça o outro modo de mergulho",
       "title": "Seu smartwatch.\nSeu computador de apneia.",
-      "intro": "Adicione a caixa com sensores WatchDive a um Apple Watch ou Galaxy Watch compatível. Veja profundidade, tempo de mergulho e temperatura da água no pulso.",
+      "intro": "Transforme o Apple Watch ou Galaxy Watch que você já tem em um computador de mergulho. Não precisa ser um Ultra.",
       "heroCaption": "Mergulho livre com WatchDive",
       "benefitTitle": "O essencial para sua apneia.",
       "benefits": [
@@ -858,7 +858,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
         "scuba": "Mergulho autônomo"
       },
       "discover": "Veja como funciona",
-      "howTitle": "Seu relógio, com WatchDive.",
+      "howTitle": "Seu relógio, com {logo}.",
       "howIntro": "A caixa mede a profundidade e a temperatura da água. Seu smartwatch exibe os dados.",
       "signupTitle": "Receba o aviso de lançamento.",
       "signupBody": "Enviaremos o link quando o WatchDive chegar ao Kickstarter.",
@@ -879,7 +879,7 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "noPayment": "Aviso de lançamento gratuito. Sem pagamento.",
       "switchPrompt": "Conheça o outro modo de mergulho",
       "title": "Seu smartwatch.\nSeu computador de mergulho.",
-      "intro": "Adicione a caixa com sensores WatchDive a um Apple Watch ou Galaxy Watch compatível. Veja os dados do mergulho no relógio que você já conhece.",
+      "intro": "Transforme o Apple Watch ou Galaxy Watch que você já tem em um computador de mergulho. Não precisa ser um Ultra.",
       "heroCaption": "WatchDive em ação debaixo d’água",
       "benefitTitle": "Os dados do mergulho no seu pulso.",
       "benefits": [

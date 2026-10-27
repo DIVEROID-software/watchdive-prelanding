@@ -203,6 +203,7 @@ test("the page client posts terms and sends the bearer to the handler", async ()
         inviteToken: token,
         acceptedTerms: true,
         termsVersion: TERMS_VERSION,
+        measurementConsent: false,
       });
       return handleReservationCheckout(request, deps);
     }

@@ -45,94 +45,76 @@ function expectRedirect(
   assert.match(actual.location, /^\/(?!\/)/, "redirect must stay on an app-relative path");
 }
 
-test("the IP country never picks the language: an English browser stays on the root", () => {
-  // 2026-09-26: US ad traffic from any country — including a Korean IP — must
-  // land on the English root unless the browser itself asks for Korean.
-  for (const country of ["KR", "JP", "CN", "TW", "DE", "FR", "ES", "MX", "BR", "US", "GB"]) {
-    assert.equal(
+test("the access country picks the locale, and a missing or unmapped country stays English", () => {
+  const mapped: ReadonlyArray<[string, Locale, string]> = [
+    ["KR", "ko", "/ko"],
+    ["JP", "ja", "/ja"],
+    ["CN", "zh-CN", "/zh-cn"],
+    ["TW", "zh-TW", "/zh-tw"],
+    ["HK", "zh-TW", "/zh-tw"],
+    ["DE", "de", "/de"],
+    ["AT", "de", "/de"],
+    ["FR", "fr", "/fr"],
+    ["ES", "es", "/es"],
+    ["MX", "es", "/es"],
+    ["BR", "pt-BR", "/pt-br"],
+  ];
+  for (const [country, locale, path] of mapped) {
+    expectRedirect(
       autoLocaleRedirect(
-        request("/?utm_source=ig&utm_medium=paid", {
+        request(`${path === "/ko" ? "/?utm_source=ig" : "/"}`, {
           headers: {
             "x-vercel-ip-country": country,
-            "cf-ipcountry": country,
             "accept-language": "en-US,en;q=0.9",
           },
         }),
       ),
-      undefined,
-      `country ${country} must not redirect an English browser`,
+      locale,
+      path === "/ko" ? "/ko?utm_source=ig" : path,
     );
   }
-  for (const country of ["KR", "JP", "US"]) {
+  for (const country of ["US", "GB", "SG", "CA", "CH"]) {
     assert.equal(
-      autoLocaleRedirect(request("/", { headers: { "x-vercel-ip-country": country } })),
-      undefined,
-      `country ${country} without Accept-Language stays on the root`,
-    );
-  }
-});
-
-test("a Korean-language browser goes to /ko wherever it connects from", () => {
-  for (const country of ["US", "KR", "GB"]) {
-    expectRedirect(
-      autoLocaleRedirect(
-        request("/?utm_source=ig", {
-          headers: { "x-vercel-ip-country": country, "accept-language": "ko-KR,ko;q=0.9,en;q=0.8" },
-        }),
-      ),
-      "ko",
-      "/ko?utm_source=ig",
-    );
-  }
-});
-
-test("browser language decides, whatever the country", () => {
-  const cases: ReadonlyArray<[country: string, language: string, locale: Locale, path: string]> = [
-    ["CA", "fr-CA,fr;q=0.9,en;q=0.8", "fr", "/fr"],
-    ["CH", "de-CH,de;q=0.9", "de", "/de"],
-    ["SG", "zh-SG,zh;q=0.9,en;q=0.8", "zh-CN", "/zh-cn"],
-    ["US", "ko-KR,ko;q=0.9,en;q=0.8", "ko", "/ko"],
-    ["KR", "fr-FR,fr;q=0.9", "fr", "/fr"],
-  ];
-
-  for (const [country, language, locale, path] of cases) {
-    expectRedirect(
       autoLocaleRedirect(
         request("/", {
-          headers: { "x-vercel-ip-country": country, "accept-language": language },
+          headers: { "x-vercel-ip-country": country, "accept-language": "ko-KR,ko;q=0.9" },
         }),
       ),
-      locale,
-      path,
+      undefined,
+      `${country} stays on the English root even when the browser asks for another language`,
     );
   }
+  assert.equal(
+    autoLocaleRedirect(request("/", { headers: { "accept-language": "ko-KR,ko;q=0.9" } })),
+    undefined,
+    "no country falls back to English and does not read Accept-Language",
+  );
+  assert.equal(
+    autoLocaleRedirect(
+      request("/", { headers: { "cf-ipcountry": "KR", "accept-language": "ko-KR" } }),
+    ),
+    undefined,
+    "cf-ipcountry is not a location guess",
+  );
 });
 
-test("Accept-Language honors q weights, skips q=0, and preserves stable order", () => {
+test("an explicit country argument wins over the header, and null means no country", () => {
   expectRedirect(
-    autoLocaleRedirect(
-      request("/", {
-        headers: { "accept-language": "en-US;q=0.8, ja-JP;q=0.9, fr-FR;q=0.7" },
-      }),
+    rawAutoLocaleRedirect(
+      request("/", { headers: { "x-vercel-ip-country": "US", "accept-language": "en-US" } }),
+      true,
+      "KR",
     ),
-    "ja",
-    "/ja",
+    "ko",
+    "/ko",
   );
-
-  expectRedirect(
-    autoLocaleRedirect(
-      request("/", {
-        headers: { "accept-language": "ko;q=0, de;q=0.5, fr;q=0.5" },
-      }),
-    ),
-    "de",
-    "/de",
-  );
-
   assert.equal(
-    autoLocaleRedirect(request("/", { headers: { "accept-language": "ko;q=0, en-US;q=0.8" } })),
+    rawAutoLocaleRedirect(
+      request("/", { headers: { "x-vercel-ip-country": "KR", "accept-language": "ko-KR" } }),
+      true,
+      null,
+    ),
     undefined,
-    "a language explicitly excluded with q=0 must not cause a redirect",
   );
 });
 
@@ -190,8 +172,8 @@ test("invalid cookie and provider values are ignored instead of becoming redirec
         },
       }),
     ),
-    "fr",
-    "/fr",
+    "ko",
+    "/ko",
   );
 
   assert.doesNotThrow(() =>
@@ -221,8 +203,15 @@ test("invalid cookie and provider values are ignored instead of becoming redirec
 });
 
 test("only a human GET or HEAD request for the exact root is eligible", () => {
-  expectRedirect(
+  assert.equal(
     autoLocaleRedirect(request("/", { method: "HEAD", headers: { "accept-language": "ko-KR" } })),
+    undefined,
+    "HEAD without a country stays English",
+  );
+  expectRedirect(
+    autoLocaleRedirect(
+      request("/", { method: "HEAD", headers: { "x-vercel-ip-country": "KR", "accept-language": "en-US" } }),
+    ),
     "ko",
     "/ko",
   );
@@ -287,7 +276,9 @@ test("known crawlers, link unfurlers, and requests without a browser UA stay can
 
   for (const userAgent of bots) {
     assert.equal(
-      autoLocaleRedirect(request("/", { userAgent, headers: { "accept-language": "ko-KR" } })),
+      autoLocaleRedirect(
+        request("/", { userAgent, headers: { "x-vercel-ip-country": "KR", "accept-language": "ko-KR" } }),
+      ),
       undefined,
       userAgent,
     );
@@ -302,16 +293,17 @@ test("known crawlers, link unfurlers, and requests without a browser UA stay can
 test("root redirects preserve the query exactly and never redirect English to itself", () => {
   const source = "/?utm_source=meta&utm_campaign=launch&ref=ab%2Bcd";
   expectRedirect(
-    autoLocaleRedirect(request(source, { headers: { "accept-language": "ja-JP" } })),
+    autoLocaleRedirect(
+      request(source, { headers: { "x-vercel-ip-country": "JP", "accept-language": "en-US,en;q=0.9" } }),
+    ),
     "ja",
     "/ja?utm_source=meta&utm_campaign=launch&ref=ab%2Bcd",
   );
 
   for (const headers of [
     { "x-vercel-ip-country": "GB", "accept-language": "en-GB,en;q=0.9" },
-    { "x-vercel-ip-country": "US", "accept-language": "en-US,en;q=0.9" },
-    { "x-vercel-ip-country": "KR", "accept-language": "en-US,en;q=0.9" },
-    { "accept-language": "en-US,en;q=0.9" },
+    { "x-vercel-ip-country": "US", "accept-language": "ko-KR,ko;q=0.9" },
+    { "accept-language": "ja-JP,ja;q=0.9" },
     {},
   ]) {
     assert.equal(autoLocaleRedirect(request("/", { headers })), undefined);
@@ -325,7 +317,8 @@ test("the server integration uses a temporary, private, variant-aware redirect",
   assert.match(source, /status:\s*307/);
   assert.match(source, /["']cache-control["']\s*:\s*["']private, no-store["']/i);
 
-  for (const field of ["Cookie", "Accept-Language", "User-Agent"]) {
+  for (const field of ["Cookie", "Accept-Language", "User-Agent", "X-Vercel-IP-Country"]) {
     assert.match(source, new RegExp(field, "i"), `redirect response must vary on ${field}`);
   }
+  assert.match(source, /requestCountry\(request\)/);
 });

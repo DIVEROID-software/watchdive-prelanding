@@ -138,6 +138,10 @@ export type ReferralCopy = {
     noticeSubject: string;
     noticeHeading: string;
     noticeBody: string;
+    /**
+     * Catalog lines for a progress card. The status notice mail does not
+     * render them: that mail states the count and tiers already reached.
+     */
     noticeTierReached: string;
     noticeNext: string;
     noticeMax: string;

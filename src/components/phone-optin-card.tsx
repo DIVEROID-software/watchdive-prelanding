@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { PhoneNumberFields } from "./phone-number-fields";
 import { savePhoneOptIn } from "@/lib/api/waitlist.functions";
 import { defaultPhoneCountry, normalizePhone } from "@/lib/phoneNumbers";
@@ -9,25 +9,34 @@ export function PhoneOptInCard({
   credential,
   complete = false,
   onSaved,
+  resultStatus = null,
+  draft,
 }: {
   credential: PhoneCredential;
   complete?: boolean;
-  onSaved?: () => void;
+  onSaved?: (status?: "accepted" | "saved") => void;
+  /** Set only from a save result. Omitted callers keep the saved confirmation copy. */
+  resultStatus?: "accepted" | "saved" | null;
+  /** Present only when a consented save failed and the same number can be retried. */
+  draft?: { phone: string; country: string; consent: boolean; unsuccessful?: boolean };
 }) {
   const locale = useCurrentLocale();
   // The terms line names the Buddy Invite exceptions while that program is on.
   const copy = usePhoneOptInCopy(locale);
   const id = useId();
-  const [phone, setPhone] = useState("");
-  const [country, setCountry] = useState<string>(defaultPhoneCountry(locale));
-  const [consent, setConsent] = useState(false);
+  const [phone, setPhone] = useState(draft?.phone ?? "");
+  const [country, setCountry] = useState<string>(draft?.country || defaultPhoneCountry(locale));
+  const [consent, setConsent] = useState(draft?.consent === true);
   const [busy, setBusy] = useState(false);
+  const saving = useRef(false);
   const [saved, setSaved] = useState<"accepted" | "saved" | null>(null);
-  const [error, setError] = useState("");
-  if (complete || saved)
+  const [error, setError] = useState(draft?.unsuccessful ? "retry" : "");
+  const shown = saved || (complete ? resultStatus || "saved" : null);
+  const visibleError = error === "retry" ? copy.error : error;
+  if (shown)
     return (
       <div className="wd-phone-success" role="status">
-        ✓ {copy[saved || "saved"]}
+        ✓ {copy[shown]}
       </div>
     );
   return (
@@ -38,7 +47,7 @@ export function PhoneOptInCard({
       <form
         onSubmit={async (event) => {
           event.preventDefault();
-          if (busy) return;
+          if (busy || saving.current) return;
           setError("");
           if (!normalizePhone(phone, country)) {
             setError(copy.invalid);
@@ -48,6 +57,7 @@ export function PhoneOptInCard({
             setError(copy.consentRequired);
             return;
           }
+          saving.current = true;
           setBusy(true);
           try {
             const result = await savePhoneOptIn({
@@ -55,11 +65,12 @@ export function PhoneOptInCard({
             });
             if (result.status === "accepted" || result.status === "saved") {
               setSaved(result.status);
-              onSaved?.();
+              onSaved?.(result.status);
             } else setError(result.status === "invalid" ? copy.invalid : copy.error);
           } catch {
             setError(copy.error);
           } finally {
+            saving.current = false;
             setBusy(false);
           }
         }}
@@ -71,7 +82,7 @@ export function PhoneOptInCard({
           country={country}
           onCountry={setCountry}
           disabled={busy}
-          invalid={error === copy.invalid}
+          invalid={visibleError === copy.invalid}
         />
         <label className="wd-phone-consent">
           <input
@@ -82,9 +93,9 @@ export function PhoneOptInCard({
           />
           <span>{copy.consent}</span>
         </label>
-        {error && (
+        {visibleError && (
           <p className="wd-phone-error" role="alert">
-            {error}
+            {visibleError}
           </p>
         )}
         <button className="wd-phone-save" type="submit" disabled={busy}>

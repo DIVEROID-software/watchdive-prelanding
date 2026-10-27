@@ -19,6 +19,8 @@
  *   pending refund, or dispute is present. A disputed status stays closed.
  */
 import { TERMS_VERSION } from "../../lib/reservation/constants.ts";
+import type { BrowserRetargetingEvent } from "../../lib/retargeting/events.ts";
+import { parseBrowserRetargetingEvent } from "../../lib/retargeting/receipt.ts";
 import { RESERVATION_FEE_USD_CENTS, assertReservationPricing } from "./pricing.ts";
 
 assertReservationPricing();
@@ -56,6 +58,8 @@ export type ReservationStatus = {
   authoritativePaid: boolean;
   amountTotal: number | null;
   currency: "usd" | null;
+  /** Server proof for the browser Purchase. Absent when the server omitted it. */
+  purchase: BrowserRetargetingEvent | null;
 };
 
 const REFUND_STATUSES = new Set<ServerReservationStatus>([
@@ -145,6 +149,7 @@ export function parseReservationStatus(body: unknown): ReservationStatus | null 
     source?: unknown;
     amountRefunded?: unknown;
     amountRefundPending?: unknown;
+    measurement?: unknown;
   };
   if (
     record.source !== "stripe" ||
@@ -174,12 +179,17 @@ export function parseReservationStatus(body: unknown): ReservationStatus | null 
     amount === RESERVATION_FEE_USD_CENTS &&
     currency === "usd" &&
     !blocksPaid;
+  const measurement = record.measurement;
+  const purchase = measurement && typeof measurement === "object" && !Array.isArray(measurement)
+    ? parseBrowserRetargetingEvent((measurement as { purchase?: unknown }).purchase)
+    : null;
   return {
     serverStatus: authoritativePaid ? "paid" : record.status === "paid" ? "invalid" : record.status,
     paid: authoritativePaid,
     authoritativePaid,
     amountTotal: amount,
     currency,
+    purchase: purchase?.eventName === "Purchase" ? purchase : null,
   };
 }
 

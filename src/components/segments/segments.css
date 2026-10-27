@@ -4,11 +4,12 @@
 .wd-segment-page a{color:inherit;text-decoration:none}
 .wd-segment-page button,.wd-segment-page input,.wd-segment-page select{font:inherit}
 .wd-segment-page :focus-visible{outline:3px solid #36a9e1;outline-offset:5px}
-.wd-segment-page h1,.wd-segment-page h2,.wd-segment-page h3,.wd-segment-page p,.wd-segment-page figure{margin:0}
+/* Zero-specificity defaults must not erase spacing inside shared signup cards. */
+:where(.wd-segment-page) :where(h1,h2,h3,figure){margin:0}
 .wd-segment-page h1,.wd-segment-page h2,.wd-segment-page h3{text-wrap:balance;font-weight:650;letter-spacing:-.045em}
 .wd-segment-page h2{font-size:clamp(29px,3.5vw,46px);line-height:1.1}
 .wd-segment-page h3{font-size:22px;line-height:1.2;letter-spacing:-.025em}
-.wd-segment-page p{font-size:17px;line-height:1.6}
+:where(.wd-segment-page) p{font-size:17px;line-height:1.6}
 .wd-segment-page img{display:block;max-width:100%;height:auto}
 .wd-segment-shell{width:min(1120px,calc(100% - 96px));margin-inline:auto}
 .wd-segment-header{background:#201748;color:#f6fafc;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:19px 48px;border-bottom:1px solid #4b416c}
@@ -75,7 +76,7 @@
 .wd-segment-form .wd-social-fallback{display:none}
 .wd-segment-form .wd-onsite-offer{color:#10212e}
 .wd-segment-form .wd-onsite-offer h2{font-size:28px}
-.wd-segment-form .wd-onsite-offer p{font-size:15px}
+
 .wd-segment-log{display:grid;grid-template-columns:.8fr 1.2fr;gap:70px;align-items:center;padding-block:104px 70px}
 .wd-segment-log-copy>p:not(.wd-segment-eyebrow){color:var(--seg-muted);margin-top:22px}
 .wd-segment-log-images{position:relative;padding:20px 38px 70px 0}
@@ -130,7 +131,7 @@ html:root .wd-segment-form .wd-onsite-offer h2{font-size:28px!important}
 .wd-segment-form .wd-onsite-price svg{width:36px;height:36px}
 .wd-segment-form .wd-onsite-terms p{font-size:12px;line-height:1.5}
 .wd-segment-form .wd-onsite-auth{font-size:13px!important}
-.wd-segment-form .wd-phone-card p{font-size:14px;line-height:1.55}
+
 @media(max-width:959px){
  .wd-segment-shell{width:calc(100% - 48px);max-width:650px}
  .wd-segment-header{padding:12px 24px}
@@ -188,17 +189,7 @@ html:root .wd-segment-form .wd-onsite-offer h2{font-size:28px!important}
 
 @media(prefers-reduced-motion:reduce){.wd-segment-hero-media>video{transition:none}}
 
-/* On a phone the product appears before the supporting paragraph. */
-@media(max-width:959px){
- .wd-segment-hero-copy{display:contents}
- .wd-segment-hero-copy>.wd-segment-modes{order:1;align-self:flex-start;margin:20px 24px 24px}
- .wd-segment-hero-copy>.wd-segment-eyebrow{order:2;margin:0 24px 13px}
- .wd-segment-hero-copy>h1{order:3;margin:0 24px 24px}
- .wd-segment-hero-media{order:4}
- .wd-segment-hero-copy>.wd-segment-intro{order:5;margin:24px 24px 0}
- .wd-segment-hero-copy>.wd-segment-hero-offer{order:6;margin:20px 24px 0}
- .wd-segment-hero-copy>.wd-segment-explore{order:7;align-self:flex-start;margin:18px 24px 0}
-}
+/* Phone hero follows source order: title, intro, price, CTA, then video and badge. */
 
 /* DIVEROID brutalism: hard frames, flat brand blocks and offset shadows. */
 .wd-segment-page{--seg-frame:#201748;--seg-card:#fff;--seg-shadow:#65ceee;--seg-marker:#f5ff3d}
@@ -282,7 +273,7 @@ html:root .wd-segment-form .wd-inbox-card{border:3px solid #eef9ff!important;box
 @media(prefers-reduced-motion:reduce){.wd-segment-discount{animation:none!important;opacity:1}}
 
 /* User-provided freediving photograph and app-screen composite. */
-.wd-segment-hero-photo{aspect-ratio:3/2}
+.wd-segment-how-image-free{aspect-ratio:3/2}
 .wd-segment-log .wd-segment-free-logbook{margin:0;width:100%;min-width:0}
 .wd-segment-free-logbook>img{width:100%;height:auto;aspect-ratio:3/2;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow);background:#096f9a}
 
@@ -335,6 +326,36 @@ html:root .wd-segment-form .wd-inbox-card{border:3px solid #eef9ff!important;box
  .wd-segment-page .wd-subscription-calculation,.wd-segment-page .wd-subscription-included{font-size:12px;margin-top:18px}
  .wd-segment-page .wd-subscription-offer{font-size:11px}
 }
+/* Hero jump sits with the headline, before the photo on a phone. The compat summary stays one short block; the exact list opens in place. */
+.wd-segment-hero-jump{display:inline-flex;align-items:center;justify-content:center;gap:10px;align-self:flex-start;box-sizing:border-box;max-width:100%;min-width:0;min-height:48px;margin:0 0 10px;padding:11px 16px;background:#65ceee;color:#201748!important;border:3px solid var(--seg-frame);box-shadow:4px 4px 0 var(--seg-shadow);font-size:15px;font-weight:750;line-height:1.25;text-align:center;white-space:normal}
+html:root .wd-segment-page .wd-segment-hero-jump{color:#201748!important}
+.wd-segment-hero-jump span{font-size:18px;line-height:1}
+.wd-segment-hero-compat{width:min(450px,100%);min-width:0;margin:0 0 18px;border:2px solid var(--seg-frame);background:var(--seg-card);color:var(--seg-ink);box-shadow:3px 3px 0 var(--seg-shadow)}
+.wd-segment-hero-compat summary{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;justify-content:center;min-height:44px;padding:10px 32px 10px 12px;cursor:pointer;list-style:none;font-size:14px;font-weight:650;line-height:1.35}
+.wd-segment-hero-compat summary>span{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.wd-segment-hero-compat summary::-webkit-details-marker{display:none}
+.wd-segment-hero-compat summary>span[aria-hidden]{position:absolute;right:12px;top:12px;font-size:18px;font-weight:500;line-height:1}
+.wd-segment-hero-compat[open] summary>span[aria-hidden]{transform:rotate(45deg)}
+.wd-segment-compat-now{font-weight:750}
+.wd-segment-compat-later{font-weight:650}
+.wd-segment-compat-later strong{display:inline-block;margin-right:4px;padding:0 5px;background:#f5ff3d;color:#201748;border:2px solid #201748;font-weight:750;line-height:1.35}
+.wd-segment-compat-panel{padding:0 10px 10px;border-top:2px solid var(--seg-frame)}
+.wd-segment-page .wd-segment-compat-panel p,.wd-segment-page .wd-segment-compat-panel li{font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.wd-segment-compat-panel ul{margin:8px 0;padding:0;list-style:none}
+.wd-segment-compat-panel li{padding:4px 0;border-top:1px solid var(--seg-line)}
+.wd-segment-compat-panel a{display:inline-flex;align-items:center;min-height:44px;font-size:13px;font-weight:750;text-decoration:underline;text-underline-offset:3px}
+.wd-segment-signup-middle h2:focus{outline:3px solid #36a9e1;outline-offset:4px}
+@media(max-width:959px){
+ .wd-segment-hero-copy>.wd-segment-hero-usp{margin-bottom:12px}
+ .wd-segment-hero-copy>.wd-segment-hero-jump,.wd-segment-hero-copy>.wd-segment-hero-compat{order:3;align-self:stretch;margin-left:24px;margin-right:24px;max-width:calc(100% - 48px)}
+ .wd-segment-hero-copy>.wd-segment-hero-jump{align-self:flex-start;width:auto}
+ .wd-segment-hero-copy>.wd-segment-hero-compat{margin-bottom:16px}
+}
+@media(max-width:359px){
+ .wd-segment-hero-copy>.wd-segment-hero-jump,.wd-segment-hero-copy>.wd-segment-hero-compat{margin-left:16px;margin-right:16px;max-width:calc(100% - 32px)}
+ .wd-segment-hero-jump{font-size:14px;padding-inline:12px}
+ .wd-segment-hero-compat summary{font-size:13px}
+}
 @media(max-width:359px){
  .wd-segment-hero-copy>.wd-segment-hero-usp{margin-inline:16px;max-width:calc(100% - 32px);font-size:13px}
  .wd-subscription-card{padding-inline:10px}
@@ -342,3 +363,78 @@ html:root .wd-segment-form .wd-inbox-card{border:3px solid #eef9ff!important;box
  .wd-segment-page .wd-subscription-term{min-height:51px}
  .wd-subscription-amount strong{font-size:28px}
 }
+
+/* Signup states: one outer frame; nested forms retain their own rhythm. */
+html:root .wd-segment-form .wd-inbox-card {
+  padding: 0;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+}
+html:root .wd-segment-form .wd-inbox-card > h2 { font-size: 26px !important; line-height: 1.3 !important; margin-bottom: 12px; }
+.wd-segment-form .wd-inbox-card > p { font-size: 14px; line-height: 1.6; }
+.wd-segment-form .wd-phone-card { padding: 20px; }
+.wd-segment-form .wd-phone-card h3 { font-size: 21px; line-height: 1.3; }
+.wd-segment-form .wd-phone-consent { font-size: 13px; }
+.wd-segment-form .wd-phone-terms { font-size: 12px; }
+.wd-segment-form .wd-onsite-content { padding: 24px; }
+@media (max-width: 600px) {
+  .wd-segment-signup:has(.wd-inbox-card),
+  .wd-segment-signup:has(.wd-onsite-offer) { padding: 24px 16px; }
+  .wd-segment-form .wd-onsite-content { padding: 20px 16px; }
+  .wd-segment-form .wd-phone-card { padding: 18px 16px; }
+  html:root .wd-segment-form .wd-onsite-offer h2 { font-size: 26px !important; line-height: 1.3 !important; }
+}
+
+/* The next Kickstarter tier is distinct from the regular retail comparison. */
+.wd-segment-next-price { margin: 8px 0 16px; font-size: clamp(14px, 1.5vw, 17px); line-height: 1.5; font-weight: 600; }
+
+/* Header holds the mode tabs. The closed language control is a globe plus a short code. */
+.wd-segment-header{flex-wrap:wrap;align-items:center;gap:10px 14px}
+.wd-segment-header .wd-segment-modes{margin:0;min-width:0;flex:1 1 auto;flex-wrap:wrap;gap:8px;border:0}
+.wd-segment-header .wd-segment-modes a{color:#f6fafc;background:transparent;border:2px solid #eef9ff;box-shadow:none;padding:8px 12px;font-size:13px;line-height:1.2;min-height:44px}
+.wd-segment-header .wd-segment-modes a[aria-current=page]{background:#65ceee;color:#201748;border-color:#eef9ff;box-shadow:3px 3px 0 #65ceee}
+.wd-locale-code{position:relative;display:inline-flex;align-items:center;flex:0 0 auto;height:44px;min-width:76px;padding:0 12px 0 10px;border:2px solid #eef9ff;background:#201748;box-shadow:3px 3px 0 #65ceee;color:#f6fafc;max-width:96px}
+.wd-locale-code-globe{width:16px;height:16px;flex:0 0 16px}
+.wd-locale-code-value{margin-left:6px;font-size:13px;font-weight:750;letter-spacing:.04em;line-height:1}
+.wd-segment-header .wd-locale-code select{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;box-shadow:none;background:transparent;color:transparent;opacity:0;cursor:pointer;appearance:none}
+.wd-locale-code select option{color:#10212e;background:#fff}
+.wd-locale-code:focus-within{outline:3px solid #36a9e1;outline-offset:3px}
+
+/* Hero stack: copy, then the video with the subscription badge under it. */
+.wd-segment-hero-visual{display:flex;flex-direction:column;justify-content:center;align-items:stretch;min-width:0;gap:14px;padding:28px 32px 28px 0}
+.wd-segment-hero-visual .wd-segment-hero-media{width:100%;margin:0}
+.wd-segment-hero-visual .wd-segment-hero-usp{margin:0;max-width:none;align-self:flex-start}
+.wd-segment-hero-copy .wd-segment-hero-jump{margin-top:14px}
+.wd-segment-hero-compat-slot{grid-column:1 / -1;padding:0 clamp(30px,5vw,80px) 8px;min-width:0}
+.wd-segment-how-logo-wrap{display:inline-block;white-space:nowrap;max-width:100%;vertical-align:baseline}
+.wd-segment-page h2 .wd-watchdive-logo{display:inline-block;height:.72em;width:auto;max-width:7.6em;vertical-align:-.08em;margin-inline:.08em .04em;background:none;padding:0}
+.wd-segment-page .wd-segment-footer .wd-watchdive-logo{display:block;width:auto;height:22px;max-width:168px;background:none;padding:0}
+.wd-segment-how-image,.wd-segment-how-image-free{aspect-ratio:16/9}
+.wd-segment-how-image .wd-segment-how-media,.wd-segment-how-image img,.wd-segment-how-image video{width:100%;height:100%;object-fit:cover;display:block}
+.wd-segment-how-media{position:relative}
+.wd-segment-surface-photo img{display:block;width:100%;height:auto;border:3px solid var(--seg-frame);box-shadow:7px 7px 0 var(--seg-shadow)}
+.wd-segment-how-compat{grid-column:1 / -1;display:flex;flex-direction:column;align-items:flex-start;gap:16px;min-width:0}
+.wd-segment-how-compat .wd-capture-card{width:min(640px,100%)}
+button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align:start}
+.wd-segment-how-compat [hidden]{display:none}
+@media(max-width:959px){
+ .wd-segment-hero-visual{padding:18px 24px 0;width:100%}
+ .wd-segment-hero-visual .wd-segment-hero-media{width:100%;margin:0}
+ .wd-segment-hero-compat-slot{padding:16px 24px 0}
+ .wd-segment-hero-copy>.wd-segment-hero-jump,.wd-segment-hero-copy>.wd-segment-hero-compat{order:0;margin-left:0;margin-right:0;max-width:100%}
+ .wd-segment-hero-copy>.wd-segment-hero-usp{margin-left:0;margin-right:0;max-width:100%}
+}
+@media(max-width:359px){
+ .wd-segment-header{padding-inline:12px;gap:8px}
+ .wd-segment-header .wd-segment-modes{gap:6px}
+ .wd-segment-header .wd-segment-modes a{font-size:12px;padding:8px}
+ .wd-segment-hero-visual,.wd-segment-hero-compat-slot{padding-inline:16px}
+ .wd-segment-hero-copy>.wd-segment-hero-jump,.wd-segment-hero-copy>.wd-segment-hero-compat{margin-left:0;margin-right:0;max-width:100%}
+ .wd-segment-hero-copy>.wd-segment-hero-usp{margin-inline:0;max-width:100%}
+}
+
+/* Larger title lockup with clear space; keep the suffix with the mark on mobile. */
+.wd-segment-page h2 .wd-watchdive-logo{width:clamp(180px,42vw,210px);height:auto;max-width:210px;margin:28px 24px;vertical-align:middle}
+.wd-segment-page .wd-segment-footer .wd-watchdive-logo{width:180px;height:auto;max-width:180px;margin:24px}
+@media(max-width:420px){.wd-segment-how-copy #how-title{font-size:25px;line-height:1.3}}
