@@ -397,7 +397,7 @@ const ko: FrozenLandingMessages = {
     point3Title: "수압과 수온은 하우징에서",
     point3Body: "내장 수압 센서와 수온 센서가 측정값을 Bluetooth로 워치 앱에 보냅니다.",
     disclaimer:
-      "WatchDive는 다이빙 보조 장비입니다. 교육을 대신하지 않습니다. 자격과 한계 안에서 다이빙하고, 표준 안전 절차를 지키고, 백업 다이브컴퓨터를 함께 쓰세요.",
+      "WatchDive는 다이빙 보조 장비입니다. 교육을 대신하지 않습니다. 자격과 한계 안에서 다이빙하고, 표준 안전 절차를 지키세요.",
   },
   offer: {
     imageAlt: "수영장 가장자리에 놓인 WatchDive 하우징",
@@ -854,7 +854,7 @@ const zhCN: FrozenLandingMessages = {
     point3Title: "压力与水温，在外壳里测",
     point3Body: "内置压力传感器和水温传感器，通过蓝牙把读数发送到手表 App。",
     disclaimer:
-      "WatchDive 是潜水辅助工具，不能替代正规训练。请在证书与能力范围内潜水，遵守标准安全规程，并携带备用潜水电脑。",
+      "WatchDive 是潜水辅助工具，不能替代正规训练。请在证书与能力范围内潜水，并遵守标准安全规程。",
   },
   offer: {
     imageAlt: "泳池边的 WatchDive 外壳",
@@ -1303,7 +1303,7 @@ const zhTW: FrozenLandingMessages = {
     point3Title: "壓力與水溫，在外殼裡量",
     point3Body: "內建壓力感測器與水溫感測器，透過藍牙把讀值傳送到手錶 App。",
     disclaimer:
-      "WatchDive 是潛水輔助工具，不能取代正規訓練。請在證照與能力範圍內潛水，遵守標準安全程序，並攜帶備用潛水電腦。",
+      "WatchDive 是潛水輔助工具，不能取代正規訓練。請在證照與能力範圍內潛水，並遵守標準安全程序。",
   },
   offer: {
     imageAlt: "泳池邊的 WatchDive 保護殼",
@@ -1763,7 +1763,7 @@ const ja: FrozenLandingMessages = {
     point3Body:
       "内蔵の水圧センサーと水温センサーが、測定値を Bluetooth でウォッチアプリへ送ります。",
     disclaimer:
-      "WatchDive はダイビングの補助器具です。トレーニングの代わりにはなりません。資格と限界の範囲で潜り、標準の安全手順に従い、バックアップのダイブコンピューターを携行してください。",
+      "WatchDive はダイビングの補助器具です。トレーニングの代わりにはなりません。資格と限界の範囲で潜り、標準の安全手順に従ってください。",
   },
   offer: {
     imageAlt: "プールサイドの WatchDive ハウジング",
@@ -2240,7 +2240,7 @@ const es: FrozenLandingMessages = {
     point3Body:
       "Los sensores integrados de presión y de temperatura del agua envían las lecturas a la app del smartwatch por Bluetooth.",
     disclaimer:
-      "WatchDive es una ayuda al buceo y no sustituye a la formación. Bucea dentro de tu certificación y de tus límites, sigue los procedimientos de seguridad habituales y lleva un ordenador de buceo de respaldo.",
+      "WatchDive es una ayuda al buceo y no sustituye a la formación. Bucea dentro de tu certificación y de tus límites y sigue los procedimientos de seguridad habituales.",
   },
   offer: {
     imageAlt: "Carcasa WatchDive junto a la piscina",
@@ -2721,7 +2721,7 @@ const fr: FrozenLandingMessages = {
     point3Body:
       "Les capteurs intégrés de pression et de température de l’eau envoient les relevés à l’appli de la montre connectée en Bluetooth.",
     disclaimer:
-      "WatchDive est une aide à la plongée : il ne remplace pas une formation. Plongez dans les limites de votre certification, respectez les procédures de sécurité habituelles et gardez un ordinateur de plongée de secours.",
+      "WatchDive est une aide à la plongée : il ne remplace pas une formation. Plongez dans les limites de votre certification et respectez les procédures de sécurité habituelles.",
   },
   offer: {
     imageAlt: "Boîtier WatchDive au bord de la piscine",
@@ -3202,7 +3202,7 @@ const de: FrozenLandingMessages = {
     point3Body:
       "Eingebaute Druck- und Wassertemperatursensoren schicken die Messwerte per Bluetooth an die Watch-App.",
     disclaimer:
-      "WatchDive ist eine Tauchhilfe und kein Ersatz für eine Ausbildung. Tauche im Rahmen deiner Zertifizierung und deiner Grenzen, halte dich an die üblichen Sicherheitsverfahren und nimm einen Backup-Tauchcomputer mit.",
+      "WatchDive ist eine Tauchhilfe und kein Ersatz für eine Ausbildung. Tauche im Rahmen deiner Zertifizierung und deiner Grenzen und halte dich an die üblichen Sicherheitsverfahren.",
   },
   offer: {
     imageAlt: "WatchDive Gehäuse am Beckenrand",
@@ -3680,7 +3680,7 @@ const ptBR: FrozenLandingMessages = {
     point3Body:
       "Os sensores internos de pressão e de temperatura da água mandam as leituras para o app do smartwatch por Bluetooth.",
     disclaimer:
-      "O WatchDive é um auxílio ao mergulho e não substitui treinamento. Mergulhe dentro da sua certificação e dos seus limites, siga os procedimentos de segurança de sempre e leve um computador de mergulho reserva.",
+      "O WatchDive é um auxílio ao mergulho e não substitui treinamento. Mergulhe dentro da sua certificação e dos seus limites e siga os procedimentos de segurança de sempre.",
   },
   offer: {
     imageAlt: "Caixa WatchDive na borda da piscina",

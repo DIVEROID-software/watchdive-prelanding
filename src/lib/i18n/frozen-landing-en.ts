@@ -271,7 +271,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     point3Body:
       "Built-in pressure and water-temperature sensors send readings to the watch app over Bluetooth.",
     disclaimer:
-      "WatchDive is a dive aid. It does not replace training. Dive within your certification and your limits, follow standard safety procedures, and carry a backup dive computer.",
+      "WatchDive is a dive aid. It does not replace training. Dive within your certification and your limits, and follow standard safety procedures.",
   },
   offer: {
     imageAlt: "WatchDive housing at the pool edge",
