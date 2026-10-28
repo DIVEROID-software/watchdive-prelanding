@@ -117,7 +117,7 @@ export function VerifiedBuddyCard({
   return (
     <section
       aria-labelledby={id + "-title"}
-      className="wd-buddy-card mt-5 space-y-5 rounded-xl border border-white/15 bg-white/[0.06] p-4"
+      className="wd-buddy-card wd-buddy-verified mt-5 space-y-5 rounded-xl border border-white/15 bg-white/[0.06] p-4"
     >
       <div>
         <h2 id={id + "-title"} className="text-lead font-semibold [html:root_&]:text-[1.5rem]!">
@@ -248,7 +248,7 @@ export function VerifiedBuddyCard({
       </nav>
       {showStatus && (
         <div id={id + "-status"}>
-          <StatusPage locale={locale} token={token} />
+          <StatusPage locale={locale} token={token} embedded />
         </div>
       )}
     </section>

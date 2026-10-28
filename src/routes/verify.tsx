@@ -107,7 +107,7 @@ function Card({
     <div
       role={role}
       aria-live="polite"
-      className="rounded-3xl border border-white/15 bg-white/10 p-6 text-white shadow-2xl backdrop-blur sm:p-8"
+      className="wd-verify-card rounded-3xl border border-white/15 bg-white/10 p-6 text-white shadow-2xl backdrop-blur sm:p-8"
     >
       {children}
     </div>
@@ -336,7 +336,7 @@ export function VerifyPage() {
   }, []);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[color:var(--color-deep-2)] px-5 py-14">
+    <main className="wd-verify-page flex min-h-screen items-center justify-center bg-[color:var(--color-deep-2)] px-5 py-14">
       <div className="w-full max-w-xl">
         <Link
           to={homePath(locale)}

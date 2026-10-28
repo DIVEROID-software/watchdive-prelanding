@@ -1,3 +1,4 @@
+import "./referral-layout.css";
 import type { Locale } from "@/lib/i18n/locale";
 import { referralEvent } from "@/lib/referral/event";
 
@@ -23,7 +24,7 @@ export function TierList({
             key={step.id}
             data-tier={step.id}
             data-state={step.reached ? "reached" : step.next ? "next" : "locked"}
-            className={`flex items-center gap-3 border-[3px] bg-white p-3 ${step.next ? "border-[#36A9E1]" : "border-[#201748]"}`}
+            className={`wd-buddy-tier flex items-center gap-3 border-[3px] bg-white p-3 ${step.next ? "border-[#36A9E1]" : "border-[#201748]"}`}
           >
             <div className="w-16 shrink-0 border-[3px] border-[#201748] bg-[#36A9E1] px-1 py-3 text-center" data-invite-badge>
               <span
@@ -36,7 +37,7 @@ export function TierList({
                 {step.badgeCaption}
               </span>
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="wd-buddy-tier-copy min-w-0 flex-1">
               {step.id === "top" && (
                 <span className="mb-1 inline-block border-2 border-[#201748] bg-[#65ceee] px-2 py-0.5 text-[10px] font-bold text-[#201748]">
                   {locale === "ko" ? "추가 이벤트!" : "Bonus event!"}
