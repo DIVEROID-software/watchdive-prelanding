@@ -1,10 +1,20 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Locale } from "../../lib/i18n/locale";
 import {
+  evaluateCaptureOpen,
+  latchAfterOpen,
+  previewTouchFixtureActive,
+  readCaptureSuppressed,
+  readPointerSignals,
+  resolveCaptureSignals,
+  scheduleMobileDwellRetry,
+  usesMobileScrollTrigger,
+} from "./capture-eligibility";
+import {
   CAPTURE_SESSION_KEY,
   hasCaptureInterruption,
   scrollProgress,
-  shouldOpenCapture,
+  type CaptureFacts,
 } from "./policy";
 import { RETARGETING_COPY } from "./copy";
 import "./retargeting.css";
@@ -25,87 +35,146 @@ export function ExitIntentCapture({
   const dialog = useRef<HTMLDialogElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
   const seen = useRef(false);
+  const opening = useRef(false);
   const status = useRef(getKnownStatus);
   status.current = getKnownStatus;
   const [open, setOpen] = useState(false);
   const copy = RETARGETING_COPY[locale];
   useEffect(() => {
-    // Storage unavailable: fail closed, avoiding repeated prompts on navigation.
-    try {
-      seen.current = Boolean(sessionStorage.getItem(CAPTURE_SESSION_KEY));
-    } catch {
-      seen.current = true;
-    }
-    const attempt = (trigger: Parameters<typeof shouldOpenCapture>[1]) => {
+    const started = Date.now();
+    seen.current = readCaptureSuppressed(() => sessionStorage.getItem(CAPTURE_SESSION_KEY));
+    let stopped = false;
+    let dwellTimer = 0;
+    const signals = () =>
+      resolveCaptureSignals(
+        readPointerSignals((query) => window.matchMedia(query).matches),
+        previewTouchFixtureActive(window.location.search),
+      );
+    const facts = (): CaptureFacts => {
       const known = status.current();
-      if (
-        !shouldOpenCapture(
-          {
-            knownSignup: known.signedUp,
-            paid: known.paid,
-            seen: seen.current,
-            dismissed: false,
-            activeForm: hasCaptureInterruption(document),
-            dialog: false,
-            playingVideo: false,
-            fullscreen: false,
-            hidden: false,
-          },
-          trigger,
-        )
-      )
-        return;
-      try {
-        sessionStorage.setItem(CAPTURE_SESSION_KEY, "shown");
-      } catch {
+      return {
+        knownSignup: known.signedUp,
+        paid: known.paid,
+        seen: seen.current,
+        dismissed: false,
+        activeForm: hasCaptureInterruption(document),
+        dialog: false,
+        playingVideo: false,
+        fullscreen: false,
+        hidden: false,
+      };
+    };
+    const progress = () =>
+      scrollProgress(window.scrollY, document.documentElement.scrollHeight, window.innerHeight);
+    const clearDwell = () => {
+      if (!dwellTimer) return;
+      window.clearTimeout(dwellTimer);
+      dwellTimer = 0;
+    };
+    const tryOpen = (kind: "mobile-scroll" | "desktop-exit", event?: MouseEvent) => {
+      if (stopped || seen.current || opening.current) return;
+      const known = status.current();
+      if (known.signedUp || known.paid) {
+        clearDwell();
         return;
       }
-      seen.current = true;
+      const elapsedMs = Date.now() - started;
+      const currentProgress = progress();
+      const currentSignals = signals();
+      if (
+        !evaluateCaptureOpen({
+          kind,
+          signals: currentSignals,
+          facts: facts(),
+          elapsedMs,
+          progress: currentProgress,
+          clientY: event?.clientY,
+          relatedTarget: Boolean(event?.relatedTarget),
+          suppressed: seen.current,
+        })
+      ) {
+        if (kind !== "mobile-scroll") return;
+        const delay = scheduleMobileDwellRetry({
+          mobile: usesMobileScrollTrigger(currentSignals),
+          progress: currentProgress,
+          elapsedMs,
+          suppressed: seen.current,
+          knownSignup: known.signedUp,
+          paid: known.paid,
+          seen: seen.current,
+          alreadyScheduled: dwellTimer !== 0,
+        });
+        if (delay == null) return;
+        dwellTimer = window.setTimeout(() => {
+          dwellTimer = 0;
+          tryOpen("mobile-scroll");
+        }, delay);
+        return;
+      }
+      clearDwell();
+      opening.current = true;
       returnFocus.current =
         document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setOpen(true);
     };
-    const fine = () => matchMedia("(hover: hover) and (pointer: fine)").matches;
-    const exit = (event: MouseEvent) =>
-      attempt({
-        kind: "desktop-exit",
-        finePointer: fine(),
-        clientY: event.clientY,
-        relatedTarget: Boolean(event.relatedTarget),
-      });
-    const scroll = () =>
-      attempt({
-        kind: "mobile-scroll",
-        finePointer: fine(),
-        progress: scrollProgress(
-          window.scrollY,
-          document.documentElement.scrollHeight,
-          window.innerHeight,
-        ),
-      });
-    document.addEventListener("mouseout", exit);
-    window.addEventListener("scroll", scroll, { passive: true });
+    const onScroll = () => {
+      if (!usesMobileScrollTrigger(signals())) return;
+      tryOpen("mobile-scroll");
+    };
+    const onExit = (event: MouseEvent) => tryOpen("desktop-exit", event);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("mouseout", onExit);
+    onScroll();
     return () => {
-      document.removeEventListener("mouseout", exit);
-      window.removeEventListener("scroll", scroll);
+      stopped = true;
+      clearDwell();
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("mouseout", onExit);
     };
   }, []);
   useEffect(() => {
+    if (!open) return;
     const node = dialog.current;
-    if (!open || !node || typeof node.showModal !== "function") return;
-    // Recheck when the render commits, before stealing focus.
     const known = status.current();
-    if (known.signedUp || known.paid || hasCaptureInterruption(document)) {
+    const blocked =
+      !node ||
+      known.signedUp ||
+      known.paid ||
+      hasCaptureInterruption(document) ||
+      typeof node.showModal !== "function";
+    if (blocked || !node) {
+      const latch = latchAfterOpen("blocked");
+      seen.current = latch.seen;
+      opening.current = false;
       setOpen(false);
       return;
     }
-    node.showModal();
+    try {
+      if (!node.open) node.showModal();
+    } catch {
+      const latch = latchAfterOpen("blocked");
+      seen.current = latch.seen;
+      opening.current = false;
+      setOpen(false);
+      return;
+    }
+    const latch = latchAfterOpen("shown");
+    seen.current = latch.seen;
+    if (latch.persist) {
+      try {
+        sessionStorage.setItem(CAPTURE_SESSION_KEY, latch.persist);
+      } catch {
+        /* seen still stops a second prompt in this document */
+      }
+    }
     return () => {
-      node.close();
+      if (node.open) node.close();
       if (returnFocus.current?.isConnected) returnFocus.current.focus({ preventScroll: true });
     };
   }, [open]);
   function dismiss() {
+    seen.current = true;
+    opening.current = false;
     try {
       sessionStorage.setItem(CAPTURE_SESSION_KEY, "dismissed");
     } catch {
