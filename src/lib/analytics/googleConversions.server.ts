@@ -21,6 +21,22 @@ export interface ConversionStore {
 const CONTEXT_SECONDS = 7 * 24 * 60 * 60;
 // Claim tombstones have no expiry: replay of an old confirmation must not
 // become a fresh signup. Store only an HMAC key and a delivery state.
+const BLOCKED_STORE_HOSTS = [
+  "google-analytics.com",
+  "analytics.google.com",
+  "googleadservices.com",
+  "googletagmanager.com",
+  "facebook.com",
+  "facebook.net",
+  "stripe.com",
+];
+
+/** The ledger URL must not be an analytics, ads, or payment host. */
+export function forbiddenConversionStoreHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/\.+$/, "");
+  return BLOCKED_STORE_HOSTS.some((name) => host === name || host.endsWith(`.${name}`));
+}
+
 export function readDeliveryStoreConfig(env: Env) {
   const signingSecret = env.WATCHDIVE_VERIFICATION_SECRET ?? "";
   const redisUrl = (env.WATCHDIVE_CONVERSION_REDIS_REST_URL ?? "").trim();
@@ -28,7 +44,14 @@ export function readDeliveryStoreConfig(env: Env) {
   if (Buffer.byteLength(signingSecret, "utf8") < 32 || !redisToken) return null;
   try {
     const url = new URL(redisUrl);
-    if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash)
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      forbiddenConversionStoreHost(url.hostname)
+    )
       return null;
   } catch {
     return null;
@@ -89,13 +112,7 @@ export function redisConversionStore(
         : null;
     },
     async capture(key, context) {
-      await command(
-        "SET",
-        `wdconv:context:${key}`,
-        JSON.stringify(context),
-        "EX",
-        CONTEXT_SECONDS,
-      );
+      await command("SET", `wdconv:context:${key}`, JSON.stringify(context), "EX", CONTEXT_SECONDS);
     },
     async forget(key) {
       await command("DEL", `wdconv:context:${key}`);
