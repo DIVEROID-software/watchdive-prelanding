@@ -42,6 +42,9 @@ export async function getReferralCount(_input: unknown) {
 export async function waitlistSignupOpen() {
   return true;
 }
+export async function getAcquisitionReadiness() {
+  return { compatibility: true, push: { enabled: false } };
+}
 export async function savePhoneOptIn(_input: unknown) {
   return { status: "saved" };
 }

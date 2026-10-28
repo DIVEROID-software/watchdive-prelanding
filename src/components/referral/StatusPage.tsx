@@ -102,7 +102,7 @@ function Card({ children, role }: { children: React.ReactNode; role?: "status" |
   return (
     <div
       role={role}
-      className="wd-buddy-card rounded-3xl border border-white/15 bg-white/10 p-5 text-white shadow-2xl backdrop-blur sm:p-8"
+      className="wd-buddy-card wd-buddy-status-card rounded-3xl border border-white/15 bg-white/10 p-5 text-white shadow-2xl backdrop-blur sm:p-8"
     >
       {children}
     </div>
@@ -111,14 +111,16 @@ function Card({ children, role }: { children: React.ReactNode; role?: "status" |
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-white/15 bg-white/[0.06] p-3">
+    <div className="wd-buddy-stat rounded-xl border border-white/15 bg-white/[0.06] p-3">
       <dt className="text-caption text-white/65">{label}</dt>
       <dd className="mt-1 text-lead font-semibold text-white">{value}</dd>
     </div>
   );
 }
 
-export function StatusPage({ locale, token: suppliedToken }: { locale: Locale; token?: string }) {
+export function StatusPage({ locale, token: suppliedToken, embedded = false }: { locale: Locale; token?: string; embedded?: boolean }) {
+  const Shell = embedded ? "div" : "main";
+  const Heading = embedded ? "h3" : "h1";
   const copy = referralCopy(locale);
   // Navigation and retry labels come from the site's existing reviewed catalog.
   const frozen = useFrozenLandingMessages();
@@ -154,25 +156,25 @@ export function StatusPage({ locale, token: suppliedToken }: { locale: Locale; t
   }, [token, locale, attempt]);
 
   return (
-    <main className="min-h-screen bg-[color:var(--color-deep-2)] px-4 py-10 sm:px-5 sm:py-14">
+    <Shell className={embedded ? "wd-buddy-status wd-buddy-status-embedded" : "wd-buddy-status min-h-screen bg-[color:var(--color-deep-2)] px-4 py-10 sm:px-5 sm:py-14"}>
       <div className="mx-auto w-full max-w-xl">
-        <Link
+        {!embedded && <Link
           to={homePath(locale)}
           className="mb-5 inline-flex min-h-11 items-center text-body text-white/70 underline"
         >
           {site.back}
-        </Link>
+        </Link>}
 
         {load.state === "loading" && (
           <Card role="status">
-            <h1 className={TITLE}>{copy.status.title}</h1>
+            <Heading className={TITLE}>{copy.status.title}</Heading>
             <div aria-hidden className="mt-5 h-24 animate-pulse rounded-xl bg-white/10" />
           </Card>
         )}
 
         {load.state === "invalid" && (
           <Card role="alert">
-            <h1 className={TITLE}>{copy.status.title}</h1>
+            <Heading className={TITLE}>{copy.status.title}</Heading>
             <p className="mt-3 text-body leading-relaxed text-white/75">
               {copy.status.invalidLink}
             </p>
@@ -181,7 +183,7 @@ export function StatusPage({ locale, token: suppliedToken }: { locale: Locale; t
 
         {load.state === "error" && (
           <Card role="alert">
-            <h1 className={TITLE}>{copy.status.title}</h1>
+            <Heading className={TITLE}>{copy.status.title}</Heading>
             {/* A load failure, not a save: "Could not save" would be wrong here. */}
             <p className="mt-3 text-body leading-relaxed text-white/75">
               {frozen.errors.errorBody}
@@ -199,6 +201,7 @@ export function StatusPage({ locale, token: suppliedToken }: { locale: Locale; t
         {load.state === "ready" && token && (
           <StatusCard
             key={token}
+            embedded={embedded}
             token={token}
             locale={locale}
             status={load.status}
@@ -208,7 +211,7 @@ export function StatusPage({ locale, token: suppliedToken }: { locale: Locale; t
           />
         )}
 
-        <footer className="mt-8 text-center text-caption text-white/55">
+        {!embedded && <footer className="mt-8 text-center text-caption text-white/55">
           <nav className="flex justify-center gap-4">
             <Link
               to={privacyPath(locale)}
@@ -223,9 +226,9 @@ export function StatusPage({ locale, token: suppliedToken }: { locale: Locale; t
               {site.footerTerms}
             </Link>
           </nav>
-        </footer>
+        </footer>}
       </div>
-    </main>
+    </Shell>
   );
 }
 
@@ -234,12 +237,15 @@ function StatusCard({
   locale,
   status,
   onSettings,
+  embedded,
 }: {
+  embedded: boolean;
   token: string;
   locale: Locale;
   status: ReferralStatus;
   onSettings: (settings: Pick<ReferralStatus, "nickname" | "leaderboard" | "noticesOff">) => void;
 }) {
+  const Heading = embedded ? "h3" : "h1";
   const copy = referralCopy(locale).status;
   const tiers = referralCopy(locale).tiers;
   const values = { ...copyValues(locale), min: NICKNAME_MIN, max: NICKNAME_MAX };
@@ -347,9 +353,9 @@ function StatusCard({
   return (
     <div className="space-y-4">
       <Card>
-        <h1 className={TITLE}>{copy.title}</h1>
+        <Heading className={`wd-buddy-status-title ${TITLE}`}>{copy.title}</Heading>
 
-        <dl className="mt-5 grid grid-cols-2 gap-3">
+        <dl className="wd-buddy-stats mt-5 grid grid-cols-2 gap-3">
           <Stat label={copy.countLabel} value={formatNumber(status.credited, locale)} />
           <Stat
             label={copy.rankLabel}
@@ -379,7 +385,7 @@ function StatusCard({
           </p>
         )}
 
-        <div className="mt-5 rounded-xl border border-white/15 bg-[color:var(--color-deep-2)]/50 p-4">
+        <div className="wd-buddy-share mt-5 rounded-xl border border-white/15 bg-[color:var(--color-deep-2)]/50 p-4">
           <div className="text-body font-semibold text-[color:var(--color-cyan-glow)]">
             {copy.shareTitle}
           </div>
@@ -396,7 +402,7 @@ function StatusCard({
             <button
               type="button"
               onClick={share}
-              className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-body font-semibold text-[#F6FAFC] hover:brightness-110"
+              className="inline-flex min-h-11 py-2 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-body font-semibold text-[#F6FAFC] hover:brightness-110"
             >
               {copied ? landing.copied : shareCopy.button}
             </button>
@@ -406,15 +412,15 @@ function StatusCard({
           </span>
           {shownCode && (
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <p className="flex h-11 min-h-11 min-w-0 flex-1 items-center rounded-lg bg-white/10 px-3 text-body font-semibold uppercase tracking-wide">
-                <span className="truncate">
-                  {codeCopy.mine} {shownCode}
+              <p className="flex min-h-11 min-w-0 flex-1 items-center rounded-lg bg-white/10 px-3 text-body font-semibold uppercase tracking-wide">
+                <span className="py-2">
+                  {codeCopy.mine} <strong className="block break-all">{shownCode}</strong>
                 </span>
               </p>
               <button
                 type="button"
                 onClick={copyCode}
-                className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-body font-semibold text-[#F6FAFC] hover:brightness-110"
+                className="inline-flex min-h-11 py-2 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-body font-semibold text-[#F6FAFC] hover:brightness-110"
               >
                 {codeCopied ? codeCopy.copied : codeCopy.copy}
               </button>
@@ -457,7 +463,7 @@ function StatusCard({
                 <button
                   type="submit"
                   disabled={claim.state === "saving" || Boolean(localCodeError(claimValue)) || !claimValue.trim()}
-                  className="mt-2 inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-body font-semibold text-[#F6FAFC] hover:brightness-110 disabled:opacity-60"
+                  className="mt-2 inline-flex min-h-11 py-2 items-center justify-center rounded-lg border border-white/45 bg-[#3D2683] px-4 text-body font-semibold text-[#F6FAFC] hover:brightness-110 disabled:opacity-60"
                 >
                   {claim.state === "saving"
                     ? codeCopy.claimSaving
@@ -471,11 +477,11 @@ function StatusCard({
         </div>
       </Card>
 
-      <Card>
+      <div className="wd-buddy-status-tiers">
         {/* Held tiers (legal review D7): a tier announced by mail stays ticked
             even when friends were removed later, so tick from the held tier. */}
         <TierList locale={locale} credited={heldFriends(status)} />
-      </Card>
+      </div>
 
       <Card>
         <form onSubmit={submit} noValidate className="space-y-4">
