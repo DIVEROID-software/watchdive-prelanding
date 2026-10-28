@@ -42,6 +42,12 @@ export type Attribution = LeadAttribution & {
   ttclid?: string;
   /** When the click id was first seen, which is the time Meta's `fbc` encodes. */
   capturedAt?: number;
+  /**
+   * Storage-only. The placement fields on this touch were unresolved Meta
+   * macros, so source and medium must not lock out a later real placement.
+   * Absent from signup payloads and CRM columns.
+   */
+  unresolvedPlacement?: boolean;
 };
 
 /**
@@ -49,9 +55,75 @@ export type Attribution = LeadAttribution & {
  * but an ad platform never legitimately emits — quotes, angle brackets, `=`,
  * `@`, control characters — is dropped rather than escaped, because the far end
  * is a CRM cell a human reads and exports rather than a string this code parses.
- * The only thing a real campaign loses here is an unresolved macro.
+ * An unresolved Meta macro is dropped whole. So is the brace-stripped token
+ * `campaign.id`, `ad.id`, or `adset.id`: keeping that name made it look like a
+ * campaign and blocked the next real click.
  */
 const DISALLOWED_VALUE = /[^A-Za-z0-9 ._~:%|/+-]/g;
+
+/** What `{{campaign.id}}` becomes after the allowlist removes the braces. */
+const UNRESOLVED_PLACEMENT_TOKENS = new Set(["campaign.id", "ad.id", "adset.id"]);
+
+const PLACEMENT_KEYS = ["utmCampaign", "utmContent", "utmTerm"] as const;
+
+function cleanedAttributionValue(value: string): string {
+  return value
+    .replace(/\s+/g, " ")
+    .replace(DISALLOWED_VALUE, "")
+    .trim()
+    .slice(0, ATTRIBUTION_VALUE_MAX);
+}
+
+/** Raw `{{...}}`, percent-encoded braces, or the exact stripped id token. */
+function isUnresolvedMetaMacro(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  if (value.includes("{{") || value.includes("}}")) return true;
+  if (/%7B%7B/i.test(value) || /%7D%7D/i.test(value)) return true;
+  return UNRESOLVED_PLACEMENT_TOKENS.has(cleanedAttributionValue(value));
+}
+
+function placementState(raw: Record<string, unknown> | null | undefined): {
+  poisoned: boolean;
+  real: boolean;
+} {
+  let poisoned = false;
+  let real = false;
+  if (!raw) return { poisoned, real };
+  for (const key of PLACEMENT_KEYS) {
+    const value = raw[key];
+    if (typeof value !== "string" || value.trim() === "") continue;
+    if (isUnresolvedMetaMacro(value)) poisoned = true;
+    else if (sanitizeAttributionValue(value)) real = true;
+  }
+  return { poisoned, real };
+}
+
+/**
+ * A touch whose campaign, content, and term were only unresolved macros does
+ * not own first touch. A real placement mixed into the same record still does:
+ * only the macro field is emptied by `sanitizeAttributionValue`.
+ */
+function rememberUnresolvedPlacement(
+  clean: Attribution,
+  raw: Record<string, unknown> | null | undefined,
+): Attribution {
+  const { poisoned, real } = placementState(raw);
+  const marked = raw?.unresolvedPlacement === true;
+  if (real || (!poisoned && !marked)) return clean;
+  return { ...clean, unresolvedPlacement: true };
+}
+
+function hasRealPlacement(attribution: Attribution | undefined): boolean {
+  return Boolean(attribution && PLACEMENT_KEYS.some((key) => attribution[key]));
+}
+
+/** Callers and CRM writes never see the storage marker. */
+function presentAttribution(value: Attribution): Attribution {
+  if (!value.unresolvedPlacement) return value;
+  const presented = { ...value };
+  delete presented.unresolvedPlacement;
+  return presented;
+}
 
 /** A path keeps no query and no fragment: those are captured as fields already. */
 const DISALLOWED_PATH = /[^A-Za-z0-9._~/%-]/g;
@@ -60,13 +132,10 @@ const DISALLOWED_FBCLID = /[^A-Za-z0-9._-]/g;
 
 export function sanitizeAttributionValue(value: unknown): string {
   if (typeof value !== "string") return "";
+  if (isUnresolvedMetaMacro(value)) return "";
   // Whitespace collapses before the allowlist runs, so a newline becomes a
   // space rather than joining the two words either side of it.
-  return value
-    .replace(/\s+/g, " ")
-    .replace(DISALLOWED_VALUE, "")
-    .trim()
-    .slice(0, ATTRIBUTION_VALUE_MAX);
+  return cleanedAttributionValue(value);
 }
 
 export function sanitizeLandingPath(value: unknown): string {
@@ -213,7 +282,7 @@ export function sanitizeSignupAttribution(
 /** What this page load's own URL says, before any stored first touch applies. */
 export function readAttribution(search: string, pathname: string, now: number): Attribution {
   const params = new URLSearchParams(search);
-  return sanitizeAttribution({
+  const raw = {
     utmSource: params.get("utm_source"),
     utmMedium: params.get("utm_medium"),
     utmCampaign: params.get("utm_campaign"),
@@ -226,6 +295,11 @@ export function readAttribution(search: string, pathname: string, now: number): 
     wbraid: params.get("wbraid"),
     ttclid: params.get("ttclid"),
     capturedAt: now,
+  };
+  return rememberUnresolvedPlacement(sanitizeAttribution(raw), {
+    utmCampaign: raw.utmCampaign ?? undefined,
+    utmContent: raw.utmContent ?? undefined,
+    utmTerm: raw.utmTerm ?? undefined,
   });
 }
 
@@ -233,9 +307,20 @@ export function mergeAttribution(
   stored: Attribution | undefined,
   incoming: Attribution,
 ): Attribution {
+  // An unresolved-macro touch keeps its source for this visit, but a later URL
+  // with a real campaign, content, or term replaces that whole touch.
+  if (stored?.unresolvedPlacement && hasRealPlacement(incoming)) {
+    if (!incoming.unresolvedPlacement) return incoming;
+    const recovered = { ...incoming };
+    delete recovered.unresolvedPlacement;
+    return recovered;
+  }
   // First touch wins. This is the line that stops an internal navigation, whose
   // URL carries nothing, from replacing the campaign that paid for the visit.
-  if (hasCampaignSignal(stored)) return stored as Attribution;
+  if (stored && hasCampaignSignal(stored) && !stored.unresolvedPlacement) return stored;
+  // Source and medium that arrived with the macros stay until a real placement
+  // shows up. A second unresolved URL does not take that place.
+  if (stored?.unresolvedPlacement && hasCampaignSignal(stored)) return stored;
   // A stored direct visit is not attribution, so a campaign arriving later is
   // still allowed to claim the visitor.
   if (hasCampaignSignal(incoming)) return incoming;
@@ -251,6 +336,7 @@ export function toLeadAttribution(attribution: Attribution): LeadAttribution {
     wbraid: _wbraid,
     ttclid: _ttclid,
     capturedAt: _capturedAt,
+    unresolvedPlacement: _unresolvedPlacement,
     ...lead
   } = attribution;
   return lead;
@@ -292,19 +378,31 @@ export function getAttribution(
     return sanitizeAttribution({ landingPath: incoming.landingPath });
   }
   try {
-    const raw = storage?.getItem(STORAGE_KEY);
-    const stored = raw
-      ? sanitizeAttribution(JSON.parse(raw) as Record<string, unknown>)
-      : undefined;
+    const rawText = storage?.getItem(STORAGE_KEY);
+    const parsed = rawText ? (JSON.parse(rawText) as unknown) : undefined;
+    const rawStored =
+      parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : undefined;
+    // `null` and arrays still sanitize to an empty object, matching the
+    // previous "parsed JSON is re-bounded, then merged" path.
+    const stored = rawText ? sanitizeAttribution(rawStored ?? null) : undefined;
     // Never resurrect a competition tuple from the unbounded legacy key.
-    const legacy = stored && !isCompetitionAttempt(stored, registry) ? stored : undefined;
-    const merged = mergeAttribution(allowed ? legacy : legacy && withoutClickIds(legacy), incoming);
+    const legacyBase = stored && !isCompetitionAttempt(stored, registry) ? stored : undefined;
+    const legacy = legacyBase
+      ? rememberUnresolvedPlacement(
+          allowed ? legacyBase : withoutClickIds(legacyBase),
+          rawStored,
+        )
+      : undefined;
+    const merged = mergeAttribution(legacy, incoming);
+    // The marker stays in localStorage. The object returned to the page does not.
     storage?.setItem(STORAGE_KEY, JSON.stringify(merged));
-    return merged;
+    return presentAttribution(merged);
   } catch {
     // Storage can be unavailable in a restricted webview, and stored JSON can be
     // anything. Either way this page load still reports what its own URL carried.
-    return incoming;
+    return presentAttribution(incoming);
   }
 }
 
