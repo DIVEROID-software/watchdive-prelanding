@@ -105,10 +105,14 @@
 .wd-segment-footer>nav{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-block:16px}
 .wd-segment-footer nav a,.wd-segment-footer nav button{min-height:44px;display:inline-flex;align-items:center;font-size:12px;color:var(--seg-ink)}
 .wd-segment-footer>small{display:block;font-size:11px;color:var(--seg-muted)}
-.wd-segment-sticky{position:fixed;z-index:45;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:12px max(24px,calc((100vw - 1120px)/2));padding-bottom:max(12px,env(safe-area-inset-bottom));background:#f6fafc;color:#201748;border-top:1px solid #d5e3ea;box-shadow:0 -4px 24px #10212e14;gap:20px}
+/* Opaque paper if blur is missing. Where blur works, the same paper is a wash so the page shows through and the ink stays readable. */
+.wd-segment-sticky{position:fixed;z-index:45;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:12px max(24px,calc((100vw - 1120px)/2));padding-bottom:max(12px,env(safe-area-inset-bottom));background-color:#f6fafc;color:#201748;border-top:1px solid #d5e3ea;box-shadow:0 -4px 24px #10212e14;gap:20px;-webkit-backdrop-filter:saturate(1.4) blur(18px);backdrop-filter:saturate(1.4) blur(18px)}
+@supports ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+ .wd-segment-sticky{background-color:rgb(246 250 252 / 64%)}
+}
 .wd-segment-sticky>div{display:flex;flex-direction:column;font-size:13px;line-height:1.45}
-.wd-segment-sticky>div span{font-size:11px;color:#485e6c}
-.wd-segment-sticky>a{display:flex;gap:26px;align-items:center;justify-content:center;padding:13px 20px;min-height:46px;font-size:13px;font-weight:700;background:#201748;color:#f6fafc}
+.wd-segment-sticky>div span{font-size:11px;color:#201748}
+.wd-segment-sticky>a{display:flex;gap:26px;align-items:center;justify-content:center;padding:13px 20px;min-height:46px;font-size:13px;font-weight:700;background:#65ceee;color:#201748}
 .wd-segment-page section[id]{scroll-margin-top:24px}
 /* Shared form layout and type scale for the audience pages. */
 html:root .wd-segment-page h1{font-size:clamp(40px,4.5vw,70px)!important;line-height:1.04!important;letter-spacing:-.045em!important}
