@@ -40,10 +40,11 @@ export const USAGE = `Usage:
 
 Reads NOTION_API_KEY, NOTION_WAITLIST_DB_ID, WATCHDIVE_RESERVATION_UNSUBSCRIBE_SECRET
 (or legacy WATCHDIVE_VERIFICATION_SECRET),
-and WATCHDIVE_PUBLIC_ORIGIN. A send also reads RESEND_API_KEY,
-WATCHDIVE_EMAIL_FROM (and optional WATCHDIVE_EMAIL_FROM_NAME,
-WATCHDIVE_EMAIL_REPLY_TO) and WATCHDIVE_RESERVATION_TOKEN_SECRET (at least
-32 bytes). The token secret is not the verification secret. The sender is
+and WATCHDIVE_PUBLIC_ORIGIN. A send also reads RESEND_API_KEY and
+WATCHDIVE_RESERVATION_TOKEN_SECRET (at least 32 bytes). From is always
+WatchDive <help@diveroid.com>. Optional WATCHDIVE_EMAIL_FROM_NAME replaces
+the WatchDive display name. Optional WATCHDIVE_EMAIL_REPLY_TO sets reply-to.
+WATCHDIVE_EMAIL_FROM is ignored. The token secret is not the verification secret. The sender is
 DIVEROID LTD, company 16343651, Office 12146, 182-184 High Street North,
 East Ham, London, United Kingdom, E6 2JA. Omitting the name and office uses
 that identity. A different name or office is rejected. A send reads

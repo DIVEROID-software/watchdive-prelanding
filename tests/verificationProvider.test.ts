@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  assertFixedSender,
   createResendMailer,
+  deliver,
   readResendConfig,
   ResendDeliveryError,
   senderWithDisplayName,
@@ -61,33 +63,62 @@ function mail() {
 // Config
 // ---------------------------------------------------------------------------
 
-test("the sender and key are required", () => {
+const FIXED_FROM = "WatchDive <help@diveroid.com>";
+
+test("the api key is required and the mailbox is fixed", () => {
   assert.throws(() => readResendConfig({ ...ENV, RESEND_API_KEY: "" }));
-  assert.throws(() => readResendConfig({ ...ENV, WATCHDIVE_EMAIL_FROM: "" }));
+  assert.throws(() => readResendConfig({ ...ENV, RESEND_API_KEY: "   " }));
+  // A missing or foreign From env must not select the mailbox and must not throw.
+  assert.equal(readResendConfig({ ...ENV, WATCHDIVE_EMAIL_FROM: "" }).from, FIXED_FROM);
+  assert.equal(
+    readResendConfig({ RESEND_API_KEY: ENV.RESEND_API_KEY }).from,
+    FIXED_FROM,
+  );
+  assert.equal(
+    readResendConfig({
+      ...ENV,
+      WATCHDIVE_EMAIL_FROM: "OceanWick <verify@mail.oceanwick.ai>",
+    }).from,
+    FIXED_FROM,
+  );
   assert.deepEqual(readResendConfig(ENV), {
     apiKey: "re_test_key",
-    from: "DIVEROID <hello@watchdive.example>",
+    from: FIXED_FROM,
     replyTo: ENV.WATCHDIVE_EMAIL_REPLY_TO,
   });
 });
 
-test("the inbox display name is DIVEROID; the sending address is untouched", () => {
-  assert.equal(
-    senderWithDisplayName("OceanWick <verify@mail.oceanwick.ai>"),
-    "DIVEROID <verify@mail.oceanwick.ai>",
-  );
-  assert.equal(
-    senderWithDisplayName("verify@mail.oceanwick.ai"),
-    "DIVEROID <verify@mail.oceanwick.ai>",
-  );
+test("the inbox display name defaults to WatchDive; the mailbox stays help@diveroid.com", () => {
+  assert.equal(senderWithDisplayName("OceanWick <verify@mail.oceanwick.ai>"), FIXED_FROM);
+  assert.equal(senderWithDisplayName("verify@mail.oceanwick.ai"), FIXED_FROM);
+  assert.equal(senderWithDisplayName(""), FIXED_FROM);
   assert.equal(
     senderWithDisplayName("x <verify@mail.oceanwick.ai>", 'Diveroid "Team"'),
-    "Diveroid Team <verify@mail.oceanwick.ai>",
+    "Diveroid Team <help@diveroid.com>",
+  );
+  // An explicit env display name is kept, including the old DIVEROID default.
+  assert.equal(
+    readResendConfig({ ...ENV, WATCHDIVE_EMAIL_FROM_NAME: "DIVEROID" }).from,
+    "DIVEROID <help@diveroid.com>",
+  );
+  // A name that is itself an address cannot become a second mailbox.
+  assert.equal(
+    senderWithDisplayName("ignored@example.com", "bad@example.com"),
+    "badexample.com <help@diveroid.com>",
   );
   assert.equal(
-    readResendConfig({ ...ENV, WATCHDIVE_EMAIL_FROM_NAME: "  " }).from,
-    "DIVEROID <hello@watchdive.example>",
+    senderWithDisplayName("ignored", "WatchDive, verify@mail.oceanwick.ai"),
+    "WatchDive verifymail.oceanwick.ai <help@diveroid.com>",
   );
+  assert.equal(
+    senderWithDisplayName("ignored", "WatchDive\uFF20mail.oceanwick.ai"),
+    "WatchDivemail.oceanwick.ai <help@diveroid.com>",
+  );
+  assert.equal(readResendConfig({ ...ENV, WATCHDIVE_EMAIL_FROM_NAME: "  " }).from, FIXED_FROM);
+  assert.equal(readResendConfig({ ...ENV, WATCHDIVE_EMAIL_FROM_NAME: "@@@" }).from, FIXED_FROM);
+  assert.doesNotThrow(() => assertFixedSender(FIXED_FROM));
+  assert.throws(() => assertFixedSender("DIVEROID <verify@mail.oceanwick.ai>"));
+  assert.throws(() => assertFixedSender("WatchDive <help@diveroid.com>\nBcc: verify@mail.oceanwick.ai"));
 });
 
 test("reply-to is genuinely optional", () => {
@@ -128,8 +159,12 @@ test("the network key is keyed, stable, and not the address", () => {
 // ---------------------------------------------------------------------------
 
 test("the send carries the key, a fixed user agent, and an attempt-scoped idempotency key", async () => {
+  const oceanwick = {
+    ...ENV,
+    WATCHDIVE_EMAIL_FROM: "OceanWick <verify@mail.oceanwick.ai>",
+  };
   const { impl, calls } = fakeFetch([{ status: 200, body: { id: "msg_1" } }]);
-  await createResendMailer(ENV, impl, noSleep).send(mail());
+  await createResendMailer(oceanwick, impl, noSleep).send(mail());
 
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, "https://api.resend.com/emails");
@@ -138,6 +173,51 @@ test("the send carries the key, a fixed user agent, and an attempt-scoped idempo
   // Resend answers a missing User-Agent with 403 code 1010.
   assert.equal(headers["User-Agent"], "watchdive-prelanding/1.0");
   assert.equal(headers["Idempotency-Key"], `watchdive-verification-${LEAD_ID}`);
+  const body = JSON.parse(String(calls[0].init.body));
+  assert.equal(body.from, FIXED_FROM);
+  assert.equal(body.reply_to, ENV.WATCHDIVE_EMAIL_REPLY_TO);
+  assert.equal(body.from.includes("oceanwick"), false);
+  assert.equal(body.from.includes("watchdive.example"), false);
+  assert.equal(String(calls[0].init.body).includes("oceanwick"), false);
+});
+
+test("a payload from or reply-to cannot replace the fixed mailbox", async () => {
+  const { impl, calls } = fakeFetch([{ status: 200, body: { id: "msg_fixed" } }]);
+  const config = readResendConfig({
+    RESEND_API_KEY: ENV.RESEND_API_KEY,
+    WATCHDIVE_EMAIL_FROM: "verify@mail.oceanwick.ai",
+    WATCHDIVE_EMAIL_REPLY_TO: "help@diveroid.com",
+  });
+  await deliver(config, impl, noSleep, "watchdive-fixed-sender", "reservation_mail", {
+    to: ["person@example.com"],
+    subject: "Reserve",
+    text: "text",
+    html: "<p>text</p>",
+    from: "OceanWick <verify@mail.oceanwick.ai>",
+    reply_to: "verify@mail.oceanwick.ai",
+  });
+  const body = JSON.parse(String(calls[0].init.body));
+  assert.equal(body.from, FIXED_FROM);
+  assert.equal(body.reply_to, "help@diveroid.com");
+  assert.equal(String(calls[0].init.body).includes("oceanwick"), false);
+  assert.equal(Object.keys(body)[0], "from");
+});
+
+test("deliver refuses a config that names another mailbox and does not call the network", async () => {
+  const { impl, calls } = fakeFetch([{ status: 200, body: { id: "msg_should_not_send" } }]);
+  await assert.rejects(
+    () =>
+      deliver(
+        { apiKey: "re_test_key", from: "DIVEROID <verify@mail.oceanwick.ai>" },
+        impl,
+        noSleep,
+        "watchdive-rejected-sender",
+        "launch_mail",
+        { to: ["person@example.com"], subject: "s", text: "t", html: "<p>t</p>" },
+      ),
+    /fixed WatchDive sender/,
+  );
+  assert.equal(calls.length, 0);
 });
 
 test("the message links to the fragment URL and makes no unapproved claim", async () => {
@@ -201,6 +281,8 @@ test("a rate limit is retried with the same key", async () => {
   assert.equal(calls.length, 2);
   const keys = calls.map((c) => (c.init.headers as Record<string, string>)["Idempotency-Key"]);
   assert.equal(keys[0], keys[1]);
+  assert.equal(calls[0].init.body, calls[1].init.body);
+  assert.equal(JSON.parse(String(calls[0].init.body)).from, FIXED_FROM);
 });
 
 test("a server fault is retried and then gives up", async () => {

@@ -14,8 +14,10 @@ import {
 import {
   assertVerificationEnv,
   checkVerificationEnv,
+  FIXED_SENDER_MAILBOX as PREFLIGHT_MAILBOX,
   formatEnvProblems,
 } from "../src/lib/verification/envPreflight.ts";
+import { FIXED_SENDER_MAILBOX as CODE_MAILBOX } from "../src/lib/verification/resend.ts";
 import { describeNotionFailure } from "../src/lib/verification/notionLead.ts";
 import {
   createNetworkGate,
@@ -255,7 +257,6 @@ const COMPLETE_ENV = {
   NOTION_API_KEY: "secret_notion",
   NOTION_WAITLIST_DB_ID: "db-1",
   RESEND_API_KEY: "re_key",
-  WATCHDIVE_EMAIL_FROM: "WatchDive <hello@watchdive.example>",
   WATCHDIVE_PUBLIC_ORIGIN: TEST_ORIGIN,
   WATCHDIVE_VERIFICATION_SECRET: "a-verification-secret-of-32-bytes!!",
 };
@@ -272,12 +273,14 @@ test("every required value is checked, and all gaps are reported at once", () =>
     "NOTION_API_KEY",
     "NOTION_WAITLIST_DB_ID",
     "RESEND_API_KEY",
-    "WATCHDIVE_EMAIL_FROM",
     "WATCHDIVE_PUBLIC_ORIGIN",
     "WATCHDIVE_VERIFICATION_SECRET",
   ]) {
     assert.ok(named.includes(required), `${required} is not validated`);
   }
+  assert.equal(named.includes("WATCHDIVE_EMAIL_FROM"), false);
+  assert.equal(PREFLIGHT_MAILBOX, CODE_MAILBOX);
+  assert.equal(PREFLIGHT_MAILBOX, "help@diveroid.com");
 });
 
 test("the origin rules match the ones the request path enforces", () => {
@@ -303,13 +306,40 @@ test("a too-short signing secret is caught before deployment", () => {
   assert.match(problems[0].problem, /at least 32 bytes/);
 });
 
-test("a malformed sender is caught before deployment", () => {
-  for (const bad of ["not-an-email", "WatchDive <not-an-email>", "a@b"]) {
+test("a From env must repeat the fixed mailbox or stay unset", () => {
+  for (const bad of [
+    "not-an-email",
+    "WatchDive <not-an-email>",
+    "a@b.co",
+    "verify@mail.oceanwick.ai",
+    "OceanWick <verify@mail.oceanwick.ai>",
+    "WatchDive <hello@watchdive.example>",
+    "WatchDive, Help <help@diveroid.com>",
+    '"WatchDive" <help@diveroid.com>',
+  ]) {
     const problems = checkVerificationEnv({ ...COMPLETE_ENV, WATCHDIVE_EMAIL_FROM: bad });
     assert.equal(problems.length, 1, `accepted sender: ${bad}`);
+    assert.equal(problems[0].name, "WATCHDIVE_EMAIL_FROM");
   }
-  // Both accepted forms.
-  assert.deepEqual(checkVerificationEnv({ ...COMPLETE_ENV, WATCHDIVE_EMAIL_FROM: "a@b.co" }), []);
+  assert.deepEqual(checkVerificationEnv(COMPLETE_ENV), []);
+  assert.deepEqual(
+    checkVerificationEnv({ ...COMPLETE_ENV, WATCHDIVE_EMAIL_FROM: "help@diveroid.com" }),
+    [],
+  );
+  assert.deepEqual(
+    checkVerificationEnv({
+      ...COMPLETE_ENV,
+      WATCHDIVE_EMAIL_FROM: "WatchDive <help@diveroid.com>",
+      WATCHDIVE_EMAIL_FROM_NAME: "DIVEROID",
+    }),
+    [],
+  );
+  const named = checkVerificationEnv({
+    ...COMPLETE_ENV,
+    WATCHDIVE_EMAIL_FROM_NAME: "bad@example.com",
+  });
+  assert.equal(named.length, 1);
+  assert.equal(named[0].name, "WATCHDIVE_EMAIL_FROM_NAME");
 });
 
 test("a Vercel build with a gap fails, and names every gap", () => {
@@ -347,6 +377,18 @@ test("the build wires the preflight in", () => {
   assert.ok(config.includes("assertVerificationEnv(process.env)"));
   assert.ok(config.includes('apply: "build" as const'));
   assert.ok(config.includes("verificationEnvPreflight()"));
+});
+
+test("CLI usage names the fixed sender and still requires the API key", () => {
+  for (const path of ["src/lib/launchMail/cli.ts", "src/lib/reservation-mail/cli.ts"]) {
+    const usage = read(path);
+    assert.match(usage, /From is always\nWatchDive <help@diveroid\.com>/);
+    assert.match(usage, /WATCHDIVE_EMAIL_FROM is ignored/);
+    assert.match(usage, /RESEND_API_KEY/);
+    assert.equal(usage.includes("WATCHDIVE_EMAIL_FROM,"), false);
+  }
+  const reservation = read("src/lib/reservation-mail/cli.ts");
+  assert.match(reservation, /DIVEROID LTD, company 16343651/);
 });
 
 // ---------------------------------------------------------------------------

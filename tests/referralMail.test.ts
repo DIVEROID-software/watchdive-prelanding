@@ -82,10 +82,11 @@ function guideLinks(locale: Locale) {
 
 // sha256 of the nine request bodies (one per locale, joined by "\n") produced
 // by createResendMailer().sendWelcome while the program switch is off.
-// The 2026-10-26 brutalism pass replaced the visual HTML. Subjects, plain
-// text, the single share link, and the idempotency key stay as they were.
+// The 2026-10-26 brutalism pass replaced the visual HTML. The 2026-10-30
+// sender fix put WatchDive <help@diveroid.com> in From, so this digest moved.
+// Subjects, plain text, the single share link, and the idempotency key stay.
 const LEGACY_WELCOME_BODIES_SHA256 =
-  "fca22803b8d5a4175de9b5e214f64a525c72802a9d238778b7589859bc6128e6";
+  "81c661c94205d21fa4577b6dab4465b2113ced4b81f52653e5209f03189ee77e";
 
 test("switch off: the welcome request bodies are byte-identical to the pre-program mail", async () => {
   for (const withLinks of [false, true]) {
