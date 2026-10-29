@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
+import { useRouter } from '@tanstack/react-router';
 import { LanguageSwitcher } from '../language-switcher';
 import { CookieSettingsLink } from '../cookie-choice-bar';
 import { SocialSignupResultProvider, SocialAuthResult } from '../social-auth-entry';
@@ -43,6 +44,7 @@ function HowTitle({ template, tone }: { template: string; tone: 'on-dark' | 'on-
  * Legacy source hero=middle and offer=bottom on this phase, with separate DOM placement.
  */
 export function SegmentLanding({ segment }: { segment: DiveSegment }) {
+  const router = useRouter();
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const c = segmentCopy(locale, segment);
@@ -103,6 +105,10 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
     { q: m.faq.q8, a: m.faq.a8 },
   ];
 
+  function jumpToMiddleSignup(event: { preventDefault(): void; metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean; button?: number }) {
+    void focusMiddleSignup(event, (options) => router.navigate(options));
+  }
+
   function signup(position: 'middle' | 'bottom') {
     return <section id={`signup-${position}`} data-segment-signup="" data-wd-segment={segment} data-wd-placement={position} className={`wd-segment-signup wd-segment-signup-${position}`} aria-labelledby={`signup-title-${position}`}>
       <div className="wd-segment-signup-heading">
@@ -138,7 +144,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
             <h1 id="segment-title">{c.title.split('\n').map((line, i) => <span key={line} className={i ? 'wd-segment-title-accent' : ''}>{line}</span>)}</h1>
             <p className="wd-segment-intro">{c.intro}</p>
             <div className="wd-segment-hero-offer"><strong>$149</strong><span>{c.priceNote}</span></div>
-            <a className="wd-segment-hero-jump" href="#signup-middle" onClick={focusMiddleSignup}>{c.signupCta}<span aria-hidden="true">↓</span></a>
+            <a className="wd-segment-hero-jump" href="#signup-middle" onClick={jumpToMiddleSignup}>{c.signupCta}<span aria-hidden="true">↓</span></a>
           </div>
           <div className="wd-segment-hero-visual">
             <SegmentHeroMedia key={segment} segment={segment} caption={c.heroCaption} />
@@ -199,7 +205,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         <nav><a href={termsPath(locale)}>{m.footer.terms}</a><a href={privacyPath(locale)}>{m.footer.privacy}</a><CookieSettingsLink /></nav>
         <small>{m.footer.legal.replace('{year}', String(new Date().getFullYear()))}</small>
       </footer>
-      {sticky && <aside className="wd-segment-sticky"><div><strong>WatchDive</strong><span>$149 · Kickstarter</span></div><a href="#signup-middle" onClick={focusMiddleSignup}>{c.signupCta}<span aria-hidden="true">↗</span></a></aside>}
+      {sticky && <aside className="wd-segment-sticky"><div><strong>WatchDive</strong><span>$149 · Kickstarter</span></div><a href="#signup-middle" onClick={jumpToMiddleSignup}>{c.signupCta}<span aria-hidden="true">↗</span></a></aside>}
     </div>
   </SocialSignupResultProvider>;
 }
