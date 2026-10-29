@@ -164,6 +164,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // and optional push. Reviewed with 18 localized segment screens plus the
   // signup/verification/phone/reservation flow (QA-UI.json). Existing section
   // order assertions below remain; this pins the reviewed local preparation.
+  // 2026-10-29: owner-approved first-visit popup rollout. A build flag selects
+  // one entry capture instead of exit capture (false restores exit). Both reuse
+  // EmailForm; the entry instance does not report legacy middle/bottom funnel
+  // milestones. Existing sections, initial forms and stylesheet stay pinned.
   const legacySource = source
     .replace(/    if \(presentation\) return <>[^\n]+<\/>;\n/, "")
     .replace(/\{!presentation && (<SignupReservationOffer[^\n]+autoFocus \/>)\}/, "$1")
@@ -172,7 +176,7 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
     .replace('message={presentation ? "" : pending}', 'message={pending}')
     .replace('className={presentation ? "wd-segment-confirm-note" : "wd-control-copy text-sm leading-relaxed text-white/90"}', 'className="wd-control-copy text-sm leading-relaxed text-white/90"');
   const digest = sha256(jsxStructure(legacySource));
-  assert.equal(digest, "701f24f95923a9f01b37c4336b28b791a93bef77b02b778f517918285b167c3e");
+  assert.equal(digest, "c6fe0f6bcab147535491e416f719e808539634c62e6cf30f4fa0f1bb54d68b57");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",
@@ -199,8 +203,8 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   }
 
   // The two original form placements remain; two compact, on-demand capture
-  // wrappers are the expressly requested compatibility and exit-intent forms.
-  assert.equal((source.match(/<EmailForm\b/g) ?? []).length, 4);
+  // wrappers are compatibility and mutually exclusive entry/exit prompts.
+  assert.equal((source.match(/<EmailForm\b/g) ?? []).length, 5);
   assert.match(source, /<EmailForm id="hero" domId="compatibility-checker" compact compatibility=\{request\}/);
   assert.match(source, /<EmailForm id="offer" domId="exit-capture" compact/);
   assert.match(source, /<EmailForm id="hero" \/>/);

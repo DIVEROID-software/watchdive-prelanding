@@ -1,0 +1,14 @@
+import type { Locale } from "../../lib/i18n/locale";
+
+type EntryCopy = { title: string; body: string; cta: string; note: string; later: string; close: string; privacy: string; free: string };
+export const ENTRY_COPY: Record<Locale, EntryCopy> = {
+  ko: { title: "WatchDive 출시,\n놓치지 마세요.", body: "다음 다이빙을 위한 새로운 선택.\nKickstarter 출시 소식을 이메일로 받아보세요.", cta: "출시 알림 받기", note: "신청 후 이메일의 인증 링크를 눌러 주세요.", later: "먼저 둘러볼게요", close: "출시 알림 팝업 닫기", privacy: "개인정보처리방침", free: "무료 알림 신청 · 결제 없이 시작" },
+  en: { title: "Your next dive\nstarts here.", body: "Be ready for WatchDive. Get the Kickstarter launch news in your inbox.", cta: "Notify me at launch", note: "Confirm your email using the link we send you.", later: "Let me explore first", close: "Close launch signup", privacy: "Privacy policy", free: "Free signup · No payment needed" },
+  "zh-CN": { title: "别错过\nWatchDive 上线。", body: "通过电子邮件接收 Kickstarter 上线通知。", cta: "接收上线通知", note: "提交后，请点击邮件中的验证链接。", later: "先了解一下", close: "关闭上线通知", privacy: "隐私政策", free: "免费报名 · 无需付款" },
+  "zh-TW": { title: "別錯過\nWatchDive 上線。", body: "透過電子郵件接收 Kickstarter 上線通知。", cta: "接收上線通知", note: "提交後，請點擊郵件中的驗證連結。", later: "先了解一下", close: "關閉上線通知", privacy: "隱私權政策", free: "免費報名 · 無需付款" },
+  ja: { title: "WatchDive の公開を\nお見逃しなく。", body: "Kickstarter の公開情報をメールで受け取りましょう。", cta: "公開通知を受け取る", note: "登録後、メール内の認証リンクを押してください。", later: "先に詳しく見る", close: "公開通知を閉じる", privacy: "プライバシーポリシー", free: "登録無料 · お支払い不要" },
+  es: { title: "Tu próxima inmersión\nempieza aquí.", body: "Recibe por correo el lanzamiento de WatchDive en Kickstarter.", cta: "Avísame del lanzamiento", note: "Confirma tu correo con el enlace que te enviamos.", later: "Primero quiero explorar", close: "Cerrar registro", privacy: "Privacidad", free: "Registro gratis · Sin pago" },
+  fr: { title: "Votre prochaine plongée\ncommence ici.", body: "Recevez le lancement de WatchDive sur Kickstarter par e-mail.", cta: "M’avertir du lancement", note: "Confirmez votre e-mail avec le lien reçu.", later: "Je découvre d’abord", close: "Fermer l’inscription", privacy: "Confidentialité", free: "Inscription gratuite · Sans paiement" },
+  de: { title: "Dein nächster Tauchgang\nbeginnt hier.", body: "Erhalte den Kickstarter-Start von WatchDive per E-Mail.", cta: "Zum Start benachrichtigen", note: "Bestätige deine E-Mail über den zugesandten Link.", later: "Erst einmal umsehen", close: "Anmeldung schließen", privacy: "Datenschutz", free: "Kostenlos anmelden · Keine Zahlung" },
+  "pt-BR": { title: "Seu próximo mergulho\ncomeça aqui.", body: "Receba por e-mail o lançamento do WatchDive no Kickstarter.", cta: "Avise-me no lançamento", note: "Confirme seu e-mail pelo link que enviaremos.", later: "Quero explorar primeiro", close: "Fechar cadastro", privacy: "Privacidade", free: "Cadastro grátis · Sem pagamento" },
+};

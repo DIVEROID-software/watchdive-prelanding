@@ -1,0 +1,54 @@
+.wd-entry-panel {
+  position:fixed;z-index:80;right:28px;bottom:28px;width:420px;max-width:calc(100vw - 32px);
+  box-sizing:border-box;padding:22px 24px 12px;background:#f6fafc;color:#201748;
+  border:2px solid #201748;box-shadow:8px 8px 0 #201748,0 16px 50px #10212e26;
+  font-family:"Pangram Sans","Spoqa Han Sans Neo",system-ui,sans-serif;text-align:left;
+  max-height:calc(100dvh - 32px);overflow:auto;overscroll-behavior:contain;
+  animation:wd-entry-reveal 220ms ease-out;
+}
+.wd-entry-panel *{box-sizing:border-box}
+.wd-entry-topline{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-right:28px;min-height:24px}
+.wd-entry-panel .wd-watchdive-logo{width:116px;height:auto;max-width:none;margin:0}
+.wd-entry-kicker{font-size:9px;font-weight:700;letter-spacing:.09em;line-height:1.4;max-width:90px;border-left:1px solid #bfc9d2;padding-left:12px}
+.wd-entry-panel .wd-entry-close{position:absolute;right:8px;top:8px;display:grid;place-items:center;width:44px;height:44px;border:0;background:transparent;color:#201748;cursor:pointer;padding:0}
+html:root .wd-entry-panel h2,html:root .wd-segment-page .wd-entry-panel h2{font-size:30px!important;line-height:1.15!important;letter-spacing:-.045em!important;color:#201748;margin:0 0 12px;font-weight:750}
+.wd-entry-panel h2 span{display:block}
+.wd-entry-panel .wd-entry-body{font-size:14px;line-height:1.55;color:#485e6c;margin:0 0 18px;white-space:pre-line}
+.wd-entry-form form{display:flex;flex-direction:column;gap:8px}
+.wd-entry-form form>div.grid{display:grid;grid-template-columns:1fr;gap:8px}
+.wd-entry-form input[type=email]{order:1;width:100%;height:48px;min-width:0;padding:0 13px;border:1px solid #8b93a0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;color:#201748;font:inherit;font-size:16px}
+.wd-entry-form input[type=email]::placeholder{color:#7b8090}
+.wd-entry-form .wd-submit{order:2;width:100%;min-height:48px;padding:12px 16px;border:1px solid #201748!important;border-radius:0!important;box-shadow:none!important;background:#201748!important;color:#fff!important;font:inherit;font-size:15px;font-weight:700;letter-spacing:0;text-transform:none;animation:none!important;cursor:pointer}
+.wd-entry-form .wd-submit:hover{background:#3d2683!important}
+.wd-entry-form .wd-submit:disabled{opacity:.65;cursor:wait}
+.wd-entry-form .wd-submit::before{display:none!important}
+.wd-entry-panel .wd-segment-confirm-note{order:4;color:#65717e!important;font-size:11px!important;line-height:1.5;margin:0!important}
+.wd-entry-form .wd-signup-steps,.wd-entry-form .wd-queued-note:empty{display:none}
+.wd-entry-form .wd-inbox-card{color:#201748!important;border:1px solid #ccd5df!important;border-radius:0!important;background:#fff!important;box-shadow:none!important;padding:16px!important}
+.wd-entry-form .wd-inbox-card p,.wd-entry-form .wd-inbox-card button{color:#485e6c!important}
+.wd-entry-form .wd-inbox-card .wd-inbox-address{background:#edf4f8;color:#201748!important;border:1px solid #ccd5df;border-radius:0}
+.wd-entry-form .wd-inbox-card .wd-inbox-step{color:#3d2683!important}
+.wd-entry-form .wd-inbox-card .wd-inapp-hint,.wd-entry-form .wd-inbox-card .wd-provider-hint{background:#edf4f8}
+.wd-entry-form .wd-inbox-card .wd-resend:disabled{color:#65717e!important}
+.wd-entry-form>[role=status],.wd-entry-form>[role=status] p,.wd-entry-form>[role=status] button{color:#201748!important}
+.wd-entry-panel:has(.wd-inbox-card)>h2,.wd-entry-panel:has(.wd-inbox-card)>.wd-entry-body,.wd-entry-panel:has(.wd-inbox-card)>.wd-entry-free{display:none}
+html:root .wd-segment-page .wd-entry-panel .wd-inbox-card h2{font-size:23px!important}
+.wd-entry-panel .wd-entry-free{margin:10px 0 4px;font-size:11px;line-height:1.5;color:#65717e;text-align:center}
+.wd-entry-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #d5e3ea;margin-top:12px}
+.wd-entry-footer button,.wd-entry-footer a{display:inline-flex;align-items:center;min-height:44px;padding:5px 0;font-size:12px;line-height:1.4;color:#485e6c;background:none;border:0;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.wd-entry-footer button span{margin-left:5px}
+.wd-entry-footer a{font-size:10px}
+.wd-entry-panel :focus-visible{outline:3px solid #36a9e1!important;outline-offset:3px}
+@keyframes wd-entry-reveal{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+@media(max-width:600px){
+ .wd-entry-panel{inset:auto 0 0;width:100%;max-width:none;padding:16px 20px max(4px,env(safe-area-inset-bottom));border-width:2px 0 0;box-shadow:0 -12px 40px #10212e20;max-height:82dvh}
+ .wd-entry-topline{margin-bottom:12px}
+ html:root .wd-entry-panel h2,html:root .wd-segment-page .wd-entry-panel h2{font-size:25px!important;margin-bottom:8px}
+ .wd-entry-panel .wd-entry-body{font-size:13px;margin-bottom:12px}
+ .wd-entry-form form>div.grid{grid-template-columns:minmax(0,1fr) auto;gap:7px}
+ .wd-entry-form .wd-submit{font-size:13px;padding:10px 12px;max-width:155px}
+ .wd-entry-panel .wd-entry-free{margin-top:7px}
+ .wd-entry-footer{margin-top:8px}
+}
+@media(max-width:359px){.wd-entry-panel{padding-inline:14px}.wd-entry-form form>div.grid{grid-template-columns:1fr}.wd-entry-form .wd-submit{max-width:none}}
+@media(prefers-reduced-motion:reduce){.wd-entry-panel{animation:none}}
