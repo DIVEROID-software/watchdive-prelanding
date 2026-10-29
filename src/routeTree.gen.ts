@@ -40,6 +40,7 @@ import { Route as ApiCronManualVerification20261019RouteImport } from './routes/
 import { Route as ApiCronReferralAnnounceRouteImport } from './routes/api.cron.referral-announce'
 import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cron.verification-reminder'
 import { Route as ApiCronVerificationReminderV2RouteImport } from './routes/api.cron.verification-reminder-v2'
+import { Route as ApiInternalNativeConfirmationRouteImport } from './routes/api.internal.native-confirmation'
 import { Route as ApiPushConfigRouteImport } from './routes/api/push/config'
 import { Route as ApiPushSubscriptionRouteImport } from './routes/api/push/subscription'
 import { Route as ApiReferralLeaderboardRouteImport } from './routes/api.referral.leaderboard'
@@ -208,6 +209,12 @@ const ApiCronVerificationReminderV2Route =
     path: '/api/cron/verification-reminder-v2',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalNativeConfirmationRoute =
+  ApiInternalNativeConfirmationRouteImport.update({
+    id: '/api/internal/native-confirmation',
+    path: '/api/internal/native-confirmation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPushConfigRoute = ApiPushConfigRouteImport.update({
   id: '/api/push/config',
   path: '/api/push/config',
@@ -286,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/internal/native-confirmation': typeof ApiInternalNativeConfirmationRoute
   '/api/push/config': typeof ApiPushConfigRoute
   '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
@@ -327,6 +335,7 @@ export interface FileRoutesByTo {
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/internal/native-confirmation': typeof ApiInternalNativeConfirmationRoute
   '/api/push/config': typeof ApiPushConfigRoute
   '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
@@ -370,6 +379,7 @@ export interface FileRoutesById {
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
+  '/api/internal/native-confirmation': typeof ApiInternalNativeConfirmationRoute
   '/api/push/config': typeof ApiPushConfigRoute
   '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
@@ -414,6 +424,7 @@ export interface FileRouteTypes {
     | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/internal/native-confirmation'
     | '/api/push/config'
     | '/api/push/subscription'
     | '/api/referral/leaderboard'
@@ -455,6 +466,7 @@ export interface FileRouteTypes {
     | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/internal/native-confirmation'
     | '/api/push/config'
     | '/api/push/subscription'
     | '/api/referral/leaderboard'
@@ -497,6 +509,7 @@ export interface FileRouteTypes {
     | '/api/cron/referral-announce'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
+    | '/api/internal/native-confirmation'
     | '/api/push/config'
     | '/api/push/subscription'
     | '/api/referral/leaderboard'
@@ -531,6 +544,7 @@ export interface RootRouteChildren {
   ApiCronReferralAnnounceRoute: typeof ApiCronReferralAnnounceRoute
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
   ApiCronVerificationReminderV2Route: typeof ApiCronVerificationReminderV2Route
+  ApiInternalNativeConfirmationRoute: typeof ApiInternalNativeConfirmationRoute
   ApiPushConfigRoute: typeof ApiPushConfigRoute
   ApiPushSubscriptionRoute: typeof ApiPushSubscriptionRoute
   ApiReferralLeaderboardRoute: typeof ApiReferralLeaderboardRoute
@@ -761,6 +775,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronVerificationReminderV2RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/native-confirmation': {
+      id: '/api/internal/native-confirmation'
+      path: '/api/internal/native-confirmation'
+      fullPath: '/api/internal/native-confirmation'
+      preLoaderRoute: typeof ApiInternalNativeConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/push/config': {
       id: '/api/push/config'
       path: '/api/push/config'
@@ -878,6 +899,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronReferralAnnounceRoute: ApiCronReferralAnnounceRoute,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
   ApiCronVerificationReminderV2Route: ApiCronVerificationReminderV2Route,
+  ApiInternalNativeConfirmationRoute: ApiInternalNativeConfirmationRoute,
   ApiPushConfigRoute: ApiPushConfigRoute,
   ApiPushSubscriptionRoute: ApiPushSubscriptionRoute,
   ApiReferralLeaderboardRoute: ApiReferralLeaderboardRoute,
