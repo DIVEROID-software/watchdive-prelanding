@@ -44,6 +44,8 @@ const CACHEABLE_QUERY_NAMES = new Set([
   "utm_content",
   "utm_term",
   "utm_id",
+  "utm_language",
+  "utm_segment",
   "fbclid",
   "gclid",
   "gbraid",
