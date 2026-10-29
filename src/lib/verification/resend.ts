@@ -86,12 +86,14 @@ function logVerificationAttempt(
   outcome: VerificationAttemptOutcome,
 ): void {
   if (operation !== "verification") return;
-  console.error("[watchdive] verification_mail_attempt", {
+  const log = outcome === "accepted" ? console.info : console.error;
+  log("[watchdive] verification_mail_attempt", {
     provider: "resend",
     operation: "verification",
     attempt,
     status,
     durationMs: Math.max(0, Date.now() - startedMs),
+    at: new Date().toISOString(),
     outcome,
   });
 }

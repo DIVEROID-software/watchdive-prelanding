@@ -634,7 +634,7 @@ export async function requestVerificationService(
   // pending: it is not a claim that the message was accepted or that the
   // address is verified. With no hook, the send is still awaited here so
   // tests stay deterministic. A hook that throws is awaited the same way.
-  await settleVerificationMail(dependencies.scheduleAfterResponse, () =>
+  const mailDispatchMode = await settleVerificationMail(dependencies.scheduleAfterResponse, () =>
     deliverQueuedVerificationMail({
       store,
       mailer: dependencies.mailer,
@@ -652,6 +652,10 @@ export async function requestVerificationService(
       onDeliveryFailure: dependencies.onDeliveryFailure,
     }),
   );
+  console.info("[watchdive] verification_mail_dispatch", {
+    mode: mailDispatchMode,
+    at: new Date().toISOString(),
+  });
   return floor(pendingResponse(handle));
 }
 

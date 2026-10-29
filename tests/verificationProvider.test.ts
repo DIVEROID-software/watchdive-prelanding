@@ -329,6 +329,7 @@ test("terminal Resend failures log once after retries, without sensitive data", 
 
 test("transport failures log sanitized metadata and recovered retries do not log failure", async (t) => {
   const log = t.mock.method(console, "error", () => {});
+  const info = t.mock.method(console, "info", () => {});
   let attempts = 0;
   const failedFetch = (async () => {
     attempts++;
@@ -350,7 +351,8 @@ test("transport failures log sanitized metadata and recovered retries do not log
     0,
     "successful retries must not report terminal failures",
   );
-  assert.equal(after.filter((call) => call.arguments[0] === "[watchdive] verification_mail_attempt").length, 2);
+  assert.equal(after.filter((call) => call.arguments[0] === "[watchdive] verification_mail_attempt").length, 1);
+  assert.equal(info.mock.calls.filter((call) => call.arguments[0] === "[watchdive] verification_mail_attempt").length, 1);
 });
 
 test("welcome delivery failures are logged with a distinct operation", async (t) => {
