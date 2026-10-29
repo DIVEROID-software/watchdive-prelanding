@@ -3,6 +3,8 @@ import { CompatibilityChecker } from "@/components/retargeting/CompatibilityChec
 import { WebPushOptIn } from "@/components/retargeting/WebPushOptIn";
 import { RETARGETING_COPY } from "@/components/retargeting/copy";
 import { markDeviceSignupStatus, readDeviceSignupStatus } from "@/components/retargeting/device-status";
+import { EntryCapture } from "@/components/retargeting/EntryCapture";
+import { ENTRY_COPY } from "@/components/retargeting/entry-copy";
 import type { CompatibilityRequest } from "@/lib/compatibility/context";
 import type { PushPublicConfig } from "@/lib/push/config";
 import { SignupReservationOffer } from "@/components/reservation/SignupReservationOffer";
@@ -982,7 +984,7 @@ function CheckInboxCard({
 // means a new placement is a type error rather than a rejected submit.
 type FormPlacement = "hero" | "offer";
 
-export function EmailForm({ id, includePhone = false, presentation, compact = false, domId, compatibility, beforeSubmit }: { id: FormPlacement; includePhone?: boolean; presentation?: { cta: string; note: string }; compact?: boolean; domId?: string; compatibility?: CompatibilityRequest; beforeSubmit?: () => boolean }) {
+export function EmailForm({ id, includePhone = false, presentation, compact = false, domId, compatibility, beforeSubmit, recordFunnel = true }: { id: FormPlacement; includePhone?: boolean; presentation?: { cta: string; note: string }; compact?: boolean; domId?: string; compatibility?: CompatibilityRequest; beforeSubmit?: () => boolean; recordFunnel?: boolean }) {
   const inputId = domId ?? id;
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
@@ -1032,7 +1034,7 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
   useEffect(() => {
     const check = () => {
       const form = formRef.current;
-      if (form && signupActionsVisible(form)) markConversionMilestone("formVisible", id);
+      if (recordFunnel && form && signupActionsVisible(form)) markConversionMilestone("formVisible", id);
     };
     const observer = new ResizeObserver(check);
     if (formRef.current) observer.observe(formRef.current);
@@ -1478,7 +1480,7 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
           return;
         }
         closeExperimentEnrollmentOnSubmit();
-        markConversionMilestone("submitAttempted", id);
+        if (recordFunnel) markConversionMilestone("submitAttempted", id);
         setLoading(true);
         try {
           // Captured here, in the browser that actually chose it, and carried
@@ -1566,7 +1568,7 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onFocus={() => {
-            markConversionMilestone("formFocused", id);
+            if (recordFunnel) markConversionMilestone("formFocused", id);
             if (!formStartSent.current) {
               formStartSent.current = true;
               trackMetaCustom("FormStart", { source: id });
@@ -1667,16 +1669,24 @@ export function AcquisitionTools({ compatibility = true }: { compatibility?: boo
     return () => { cancelled = true; };
   }, []);
   const copy = RETARGETING_COPY[locale];
+  // Owner-approved rollout, 2026-10-29. Replaces the exit prompt so the visitor
+  // is not asked twice. Set the build flag to "false" to restore exit capture.
+  // This is a common website phase change, not an A/B experiment launch.
+  const entryEnabled = import.meta.env.VITE_WATCHDIVE_ENTRY_CAPTURE !== "false";
+  const entryCopy = ENTRY_COPY[locale];
+  const getKnownStatus = () => {
+    const local = readDeviceSignupStatus();
+    return { signedUp: local.signedUp || socialCompleted || Boolean(socialContinuation.credential), paid: local.paid };
+  };
   return <>
     {compatibility && ready.compatibility && <CompatibilityChecker locale={locale} renderSignup={(request, presentation) =>
       <EmailForm id="hero" domId="compatibility-checker" compact compatibility={request} presentation={presentation} />
     } />}
-    <ExitIntentCapture locale={locale} getKnownStatus={() => {
-      const local = readDeviceSignupStatus();
-      return { signedUp: local.signedUp || socialCompleted || Boolean(socialContinuation.credential), paid: local.paid };
-    }}>
+    {entryEnabled ? <EntryCapture locale={locale} getKnownStatus={getKnownStatus}>
+      <EmailForm id="offer" domId="entry-capture" compact recordFunnel={false} presentation={{ cta: entryCopy.cta, note: entryCopy.note }} />
+    </EntryCapture> : <ExitIntentCapture locale={locale} getKnownStatus={getKnownStatus}>
       <EmailForm id="offer" domId="exit-capture" compact presentation={{ cta: copy.exitCta, note: copy.exitBody }} />
-    </ExitIntentCapture>
+    </ExitIntentCapture>}
     <WebPushOptIn locale={locale} config={ready.push} />
   </>;
 }
