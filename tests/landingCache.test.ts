@@ -161,6 +161,21 @@ test("tracking queries stay on their own URL, and sensitive queries are no-store
   assert.equal(decide("/scuba?").shared, true);
 });
 
+test("localized ad tracking stays cacheable without opening sensitive queries or paths", () => {
+  const tracking = "?utm_source=ig&utm_medium=paid&utm_campaign=120251795578870215&utm_content=120251795657280215&utm_term=120251795582190215&utm_language=ja&utm_segment=freediving";
+  for (const path of ["/ja/freediving", "/zh-tw/scuba", "/ko/scuba", "/scuba"]) {
+    const request = documentRequest(`${path}${tracking}`);
+    assert.equal(new URL(request.url).search, tracking);
+    assert.equal(decide(`${path}${tracking}`).shared, true, path);
+    for (const extra of ["&token=private", "&auth=confirmed", "&ref=private", "&unknown=1"]) {
+      assert.equal(decide(`${path}${tracking}${extra}`).shared, false, `${path}${extra}`);
+    }
+  }
+  for (const path of ["/ja/verify", "/api/reservation/status", "/reservation", "/_serverFn/joinWaitlist"]) {
+    assert.equal(decide(`${path}${tracking}`).shared, false, path);
+  }
+});
+
 test("shared HTML drops Set-Cookie and varies on Save-Data for both media variants", () => {
   for (const saveData of [undefined, "on"] as const) {
     const decision = decide("/ja/scuba", saveData ? { headers: { "save-data": saveData } } : {});
