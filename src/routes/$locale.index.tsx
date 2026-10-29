@@ -18,7 +18,7 @@ export const Route = createFileRoute("/$locale/")({
     const hash = location.hash ? `#${location.hash}` : "";
     throw redirect({
       href: canonicalScubaHref(location, typeof window === "undefined" ? undefined : window.location) ?? `${fallback}${location.searchStr}${hash}`,
-      statusCode: 307,
+      statusCode: 308,
       replace: true,
       reloadDocument: true,
     });

@@ -41,6 +41,62 @@ import {
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_ATTEMPTS = 3;
+const LINEAR_RETRY_BASE_MS = 200;
+
+/** Verification sends only. Other operations keep the historical linear delay. */
+export const VERIFICATION_RETRY_BASE_MS = 200;
+export const VERIFICATION_RETRY_CAP_MS = 2_000;
+export const VERIFICATION_RETRY_JITTER_MS = 200;
+
+export type DeliveryPolicy = {
+  /** Unit interval [0, 1). Verification backoff only. */
+  random?: () => number;
+  /** Replaces the 10s provider abort. Tests pass a few milliseconds. */
+  requestTimeoutMs?: number;
+};
+
+/**
+ * Delay before another try of the same verification payload. `failedAttempt`
+ * is the attempt that just failed, starting at 1. Jitter is an integer number
+ * of milliseconds in `[0, VERIFICATION_RETRY_JITTER_MS)`.
+ */
+export function verificationBackoffMs(failedAttempt: number, randomUnit: number): number {
+  if (!Number.isInteger(failedAttempt) || failedAttempt < 1) {
+    throw new Error("Invalid retry attempt");
+  }
+  const unit = Number.isFinite(randomUnit) ? Math.min(0.999999, Math.max(0, randomUnit)) : 0;
+  const exponential = VERIFICATION_RETRY_BASE_MS * 2 ** (failedAttempt - 1);
+  const jitter = Math.floor(unit * VERIFICATION_RETRY_JITTER_MS);
+  return Math.min(VERIFICATION_RETRY_CAP_MS, exponential + jitter);
+}
+
+function retryDelayMs(operation: string, failedAttempt: number, random: () => number): number {
+  if (operation !== "verification") return LINEAR_RETRY_BASE_MS * failedAttempt;
+  return verificationBackoffMs(failedAttempt, random());
+}
+
+type VerificationAttemptOutcome = "accepted" | "retry" | "terminal";
+
+/** Timing for one verification provider call. No address, token, key, or body. */
+function logVerificationAttempt(
+  operation: string,
+  attempt: number,
+  startedMs: number,
+  status: number | null,
+  outcome: VerificationAttemptOutcome,
+): void {
+  if (operation !== "verification") return;
+  const log = outcome === "accepted" ? console.info : console.error;
+  log("[watchdive] verification_mail_attempt", {
+    provider: "resend",
+    operation: "verification",
+    attempt,
+    status,
+    durationMs: Math.max(0, Date.now() - startedMs),
+    at: new Date().toISOString(),
+    outcome,
+  });
+}
 
 // Resend answers a request with no User-Agent with 403 code 1010. A fixed
 // product string satisfies it and says nothing about the caller.
@@ -578,20 +634,25 @@ async function deliverWithRetries(
   sleep: (ms: number) => Promise<void>,
   idempotencyKey: string,
   payload: Record<string, unknown>,
+  operation: string,
+  policy: DeliveryPolicy = {},
 ): Promise<void> {
   const serialized = JSON.stringify({
     from: config.from,
     ...(config.replyTo ? { reply_to: config.replyTo } : {}),
     ...payload,
   });
+  const timeoutMs = policy.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
+  const random = policy.random ?? Math.random;
   let lastError: Error | undefined;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const startedMs = Date.now();
     let response: Response;
     try {
       response = await fetchImpl(RESEND_ENDPOINT, {
         method: "POST",
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
         headers: {
           Authorization: `Bearer ${config.apiKey}`,
           "Content-Type": "application/json",
@@ -605,9 +666,11 @@ async function deliverWithRetries(
       // and never echo the cause, which can carry the recipient address.
       lastError = new ResendDeliveryError("Resend request failed", 0);
       if (attempt < MAX_ATTEMPTS) {
-        await sleep(200 * attempt);
+        logVerificationAttempt(operation, attempt, startedMs, 0, "retry");
+        await sleep(retryDelayMs(operation, attempt, random));
         continue;
       }
+      logVerificationAttempt(operation, attempt, startedMs, 0, "terminal");
       throw lastError;
     }
 
@@ -622,9 +685,11 @@ async function deliverWithRetries(
         response.status === 409 ? await isRetryableConflict(response) : false;
       if ((retryable(response.status) || conflictRetryable) && attempt < MAX_ATTEMPTS) {
         lastError = error;
-        await sleep(200 * attempt);
+        logVerificationAttempt(operation, attempt, startedMs, response.status, "retry");
+        await sleep(retryDelayMs(operation, attempt, random));
         continue;
       }
+      logVerificationAttempt(operation, attempt, startedMs, response.status, "terminal");
       throw error;
     }
 
@@ -634,12 +699,15 @@ async function deliverWithRetries(
     try {
       parsed = await response.json();
     } catch {
+      logVerificationAttempt(operation, attempt, startedMs, response.status, "terminal");
       throw new ResendDeliveryError("Resend returned an unreadable success", response.status);
     }
     const id = (parsed as { id?: unknown } | null)?.id;
     if (typeof id !== "string" || !/^[A-Za-z0-9._~-]{1,256}$/.test(id)) {
+      logVerificationAttempt(operation, attempt, startedMs, response.status, "terminal");
       throw new ResendDeliveryError("Resend returned a malformed success", response.status);
     }
+    logVerificationAttempt(operation, attempt, startedMs, response.status, "accepted");
     return;
   }
 
@@ -1189,9 +1257,10 @@ export async function deliver(
     | "launch_mail"
     | "reservation_mail",
   payload: Record<string, unknown>,
+  policy?: DeliveryPolicy,
 ): Promise<void> {
   try {
-    await deliverWithRetries(config, fetchImpl, sleep, idempotencyKey, payload);
+    await deliverWithRetries(config, fetchImpl, sleep, idempotencyKey, payload, operation, policy);
   } catch (error) {
     const { status, reason } = classifyDeliveryFailure(error);
     console.error("[watchdive] email_delivery_failed", {
@@ -1208,6 +1277,7 @@ export function createResendMailer(
   env: ResendEnvironment = process.env,
   fetchImpl: typeof fetch = fetch,
   sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
+  policy: DeliveryPolicy = {},
 ): VerificationMailer {
   const config = readResendConfig(env);
   // Read once per mailer, from the same env as the Resend key, so the guide can
@@ -1243,6 +1313,7 @@ export function createResendMailer(
           text: content.text,
           html: content.html,
         },
+        reminder ? undefined : policy,
       );
     },
 

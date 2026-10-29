@@ -776,7 +776,7 @@ test("the translated frozen catalog is fail-closed behind the exact internal-rev
   assert.equal(autoLocaleRedirect(request, false), undefined);
   assert.deepEqual(autoLocaleRedirect(request, true), {
     locale: "ko",
-    location: "/ko?utm_source=gate-test",
+    location: "/ko/scuba?utm_source=gate-test",
   });
 
   const frozenCatalog = readFileSync(

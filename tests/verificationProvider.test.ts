@@ -310,11 +310,14 @@ test("terminal Resend failures log once after retries, without sensitive data", 
     try {
       await assert.rejects(createResendMailer(ENV, provider.impl, noSleep).send(mail()), ResendDeliveryError);
       assert.equal(provider.calls.length, scenario.attempts);
-      assert.equal(log.mock.callCount(), 1);
-      assert.deepEqual(log.mock.calls[0].arguments, ["[watchdive] email_delivery_failed", {
+      const failure = log.mock.calls.filter((call) => call.arguments[0] === "[watchdive] email_delivery_failed");
+      const attempts = log.mock.calls.filter((call) => call.arguments[0] === "[watchdive] verification_mail_attempt");
+      assert.equal(failure.length, 1);
+      assert.equal(attempts.length, scenario.attempts);
+      assert.deepEqual(failure[0]?.arguments, ["[watchdive] email_delivery_failed", {
         provider: "resend", operation: "verification", status: scenario.status, reason: scenario.reason,
       }]);
-      const output = JSON.stringify(log.mock.calls[0].arguments);
+      const output = JSON.stringify(log.mock.calls.map((call) => call.arguments));
       for (const secret of [mail().to, TOKEN, ENV.RESEND_API_KEY, LEAD_ID]) {
         assert.ok(!output.includes(secret));
       }
@@ -326,6 +329,7 @@ test("terminal Resend failures log once after retries, without sensitive data", 
 
 test("transport failures log sanitized metadata and recovered retries do not log failure", async (t) => {
   const log = t.mock.method(console, "error", () => {});
+  const info = t.mock.method(console, "info", () => {});
   let attempts = 0;
   const failedFetch = (async () => {
     attempts++;
@@ -333,12 +337,22 @@ test("transport failures log sanitized metadata and recovered retries do not log
   }) as typeof fetch;
   await assert.rejects(createResendMailer(ENV, failedFetch, noSleep).send(mail()), ResendDeliveryError);
   assert.equal(attempts, 3);
-  assert.deepEqual(log.mock.calls[0].arguments, ["[watchdive] email_delivery_failed", {
+  const failure = log.mock.calls.filter((call) => call.arguments[0] === "[watchdive] email_delivery_failed");
+  assert.deepEqual(failure[0]?.arguments, ["[watchdive] email_delivery_failed", {
     provider: "resend", operation: "verification", status: 0, reason: "transport_error",
   }]);
+  assert.equal(failure.length, 1);
+  const beforeRecovery = log.mock.callCount();
   const recovered = fakeFetch([{ status: 503 }, { status: 200, body: { id: "msg_recovered" } }]);
   await createResendMailer(ENV, recovered.impl, noSleep).send(mail());
-  assert.equal(log.mock.callCount(), 1, "successful retries must not report terminal failures");
+  const after = log.mock.calls.slice(beforeRecovery);
+  assert.equal(
+    after.filter((call) => call.arguments[0] === "[watchdive] email_delivery_failed").length,
+    0,
+    "successful retries must not report terminal failures",
+  );
+  assert.equal(after.filter((call) => call.arguments[0] === "[watchdive] verification_mail_attempt").length, 1);
+  assert.equal(info.mock.calls.filter((call) => call.arguments[0] === "[watchdive] verification_mail_attempt").length, 1);
 });
 
 test("welcome delivery failures are logged with a distinct operation", async (t) => {

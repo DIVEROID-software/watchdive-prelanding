@@ -90,16 +90,19 @@ test("home routes redirect before the frozen page and do not import the segment 
   assert.match(root, /export function DesignFrozenLanding\(/);
   assert.match(root, /beforeLoad:\s*\(\{ location \}\) =>/);
   assert.match(root, /canonicalScubaHref\(location,/);
-  assert.match(root, /statusCode:\s*307/);
+  assert.match(root, /statusCode:\s*308/);
   assert.match(root, /location\.searchStr/);
   assert.doesNotMatch(root, /SegmentLanding/);
   assert.match(localized, /canonicalScubaHref\(location,/);
-  assert.match(localized, /statusCode:\s*307/);
+  assert.match(localized, /statusCode:\s*308/);
   assert.match(localized, /location\.searchStr/);
   assert.doesNotMatch(localized, /throw redirect\(\{ to: "\/" \}\)/);
   assert.doesNotMatch(freediving, /canonicalScubaHref/);
   assert.doesNotMatch(localizedFreediving, /canonicalScubaHref/);
-  assert.match(autoLocale, /location: `\$\{localePathPrefix\(locale\)\}\$\{url\.search\}`/);
+  assert.match(
+    autoLocale,
+    /location: `\$\{localePathPrefix\(locale\)\}\/scuba\$\{rawSearchFromRequestUrl\(request\.url\)\}`/,
+  );
   assert.match(readFileSync(new URL("../src/components/segments/SegmentLanding.tsx", import.meta.url), "utf8"), /legacyHomeAnchor\(window\.location\.hash\)/);
 });
 

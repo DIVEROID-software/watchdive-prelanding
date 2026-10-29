@@ -30,6 +30,10 @@ export default defineConfig({
   // Build target for hosting. In the Lovable sandbox this is forced back to
   // cloudflare-module; on Vercel's build (non-sandbox) this makes nitro emit
   // the Vercel output structure so SSR + server functions are served correctly.
+  //
+  // Set document caching in server.ts, where the response status, cookies,
+  // and sensitive request paths can be checked before enabling shared cache.
+  // The deployment's compute region is configured in vercel.json.
   nitro: { preset: "vercel" },
   vite: {
     plugins: [verificationEnvPreflight()],
