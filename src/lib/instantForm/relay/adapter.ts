@@ -108,6 +108,12 @@ function classify(result: string, mailSent: boolean): { outcome: PortOutcome; se
     return { outcome: "known_not_sent", sends: 0 };
   }
   if (
+    result === "not_allowlisted" ||
+    result === "before_cutoff" ||
+    result === "disposable" ||
+    result === "missing_consent" ||
+    result === "bad_body" ||
+    result === "resend_without_row" ||
     result === "armed" ||
     result === "unknown_outcome" ||
     result === "mail_failed" ||

@@ -77,8 +77,8 @@ async function ownerQa(raw: string, signature: string | null, body: Record<strin
 
 export async function handleNativeConfirmation(request: Request, env: NodeJS.ProcessEnv = process.env, injected?: ConfirmationDeps): Promise<Response> {
   const deps = injected ?? buildRelayDeps(env);
-  if (confirmationGate(deps.env, deps.allowlist).length || !env.RESEND_API_KEY || !env.NOTION_API_KEY || !env.NOTION_WAITLIST_DB_ID) {
-    return response(configurationClosed());
+  if (confirmationGate(deps.env, deps.allowlist).length || !env.RESEND_API_KEY || !env.NOTION_API_KEY || !env.NOTION_WAITLIST_DB_ID || process.env.WATCHDIVE_STAGE_SCORE_INTEGRATION === "enabled" || deps.env.WATCHDIVE_STAGE_SCORE_INTEGRATION === "enabled") {
+    return response({ ...configurationClosed("not_configured", 503), outcome: "known_not_sent" });
   }
   if (Number(request.headers.get("content-length")) > 8192) return response(configurationClosed("bad_body", 413));
   const raw = await request.text();

@@ -210,3 +210,16 @@ test("owner fixture requires exact private recipient hash and has no paid IDs",a
  assert.equal(store.createPendingInputs[0].source,"instant-form"); assert.equal(store.createPendingInputs[0].attribution?.utmCampaign,"instant_form_qa_20261030");
  assert.equal(mailer.sent[0].locale,"nl"); assert.equal((await http(raw,deps)).result.mail_provider_sends,0);
 });
+
+test("a disabled relay explicitly reports a pre-send failure; policy refusals are never accepted", async()=>{
+ const h=harness();h.deps.env.INSTANT_FORM_CONFIRMATION_ENABLED="0";
+ const first=await http(bodyFor(forms[0]),h.deps);assert.equal(first.status,503);assert.equal(first.result.outcome,"known_not_sent");assert.equal(first.result.result,"not_configured");assert.equal(first.result.mail_provider_sends,0);assert.equal(h.mailer.sent.length,0);
+ for(const patch of [{campaign_id:"120251732832820215"},{email_consent_key:"no"},{submitted_at:"2020-01-01T00:00:00Z"}]){
+  const x=harness();const bad=await http(bodyFor(forms[0],patch),x.deps);assert.equal(bad.result.outcome,"unknown");assert.equal(x.mailer.sent.length,0);
+ }
+});
+test("stage score mode refuses native relay before any request or mail", async()=>{
+ const old=process.env.WATCHDIVE_STAGE_SCORE_INTEGRATION;
+ try{process.env.WATCHDIVE_STAGE_SCORE_INTEGRATION="enabled";const h=harness();const got=await http(bodyFor(forms[0]),h.deps);assert.equal(got.status,503);assert.equal(h.store.createPendingInputs.length,0);assert.equal(h.mailer.sent.length,0);}
+ finally{if(old===undefined)delete process.env.WATCHDIVE_STAGE_SCORE_INTEGRATION;else process.env.WATCHDIVE_STAGE_SCORE_INTEGRATION=old;}
+});
