@@ -47,22 +47,22 @@ function expectRedirect(
 
 test("the access country picks the locale, and a missing or unmapped country stays English", () => {
   const mapped: ReadonlyArray<[string, Locale, string]> = [
-    ["KR", "ko", "/ko"],
-    ["JP", "ja", "/ja"],
-    ["CN", "zh-CN", "/zh-cn"],
-    ["TW", "zh-TW", "/zh-tw"],
-    ["HK", "zh-TW", "/zh-tw"],
-    ["DE", "de", "/de"],
-    ["AT", "de", "/de"],
-    ["FR", "fr", "/fr"],
-    ["ES", "es", "/es"],
-    ["MX", "es", "/es"],
-    ["BR", "pt-BR", "/pt-br"],
+    ["KR", "ko", "/ko/scuba"],
+    ["JP", "ja", "/ja/scuba"],
+    ["CN", "zh-CN", "/zh-cn/scuba"],
+    ["TW", "zh-TW", "/zh-tw/scuba"],
+    ["HK", "zh-TW", "/zh-tw/scuba"],
+    ["DE", "de", "/de/scuba"],
+    ["AT", "de", "/de/scuba"],
+    ["FR", "fr", "/fr/scuba"],
+    ["ES", "es", "/es/scuba"],
+    ["MX", "es", "/es/scuba"],
+    ["BR", "pt-BR", "/pt-br/scuba"],
   ];
   for (const [country, locale, path] of mapped) {
     expectRedirect(
       autoLocaleRedirect(
-        request(`${path === "/ko" ? "/?utm_source=ig" : "/"}`, {
+        request(`${path === "/ko/scuba" ? "/?utm_source=ig" : "/"}`, {
           headers: {
             "x-vercel-ip-country": country,
             "accept-language": "en-US,en;q=0.9",
@@ -70,7 +70,7 @@ test("the access country picks the locale, and a missing or unmapped country sta
         }),
       ),
       locale,
-      path === "/ko" ? "/ko?utm_source=ig" : path,
+      path === "/ko/scuba" ? "/ko/scuba?utm_source=ig" : path,
     );
   }
   for (const country of ["US", "GB", "SG", "CA", "CH"]) {
@@ -106,7 +106,7 @@ test("an explicit country argument wins over the header, and null means no count
       "KR",
     ),
     "ko",
-    "/ko",
+    "/ko/scuba",
   );
   assert.equal(
     rawAutoLocaleRedirect(
@@ -130,7 +130,7 @@ test("an explicit valid locale cookie overrides browser language", () => {
       }),
     ),
     "fr",
-    "/fr?utm_source=meta",
+    "/fr/scuba?utm_source=meta",
   );
 
   assert.equal(
@@ -157,7 +157,7 @@ test("an explicit valid locale cookie overrides browser language", () => {
       }),
     ),
     "pt-BR",
-    "/pt-br",
+    "/pt-br/scuba",
   );
 });
 
@@ -173,7 +173,7 @@ test("invalid cookie and provider values are ignored instead of becoming redirec
       }),
     ),
     "ko",
-    "/ko",
+    "/ko/scuba",
   );
 
   assert.doesNotThrow(() =>
@@ -213,7 +213,7 @@ test("only a human GET or HEAD request for the exact root is eligible", () => {
       request("/", { method: "HEAD", headers: { "x-vercel-ip-country": "KR", "accept-language": "en-US" } }),
     ),
     "ko",
-    "/ko",
+    "/ko/scuba",
   );
 
   assert.equal(
@@ -297,7 +297,7 @@ test("root redirects preserve the query exactly and never redirect English to it
       request(source, { headers: { "x-vercel-ip-country": "JP", "accept-language": "en-US,en;q=0.9" } }),
     ),
     "ja",
-    "/ja?utm_source=meta&utm_campaign=launch&ref=ab%2Bcd",
+    "/ja/scuba?utm_source=meta&utm_campaign=launch&ref=ab%2Bcd",
   );
 
   for (const headers of [
@@ -308,6 +308,25 @@ test("root redirects preserve the query exactly and never redirect English to it
   ]) {
     assert.equal(autoLocaleRedirect(request("/", { headers })), undefined);
   }
+});
+
+test("review off does not infer a locale, and the raw query is not re-encoded", () => {
+  assert.equal(
+    rawAutoLocaleRedirect(
+      request("/?utm_content=video%204", { headers: { "x-vercel-ip-country": "KR" } }),
+      false,
+    ),
+    undefined,
+  );
+  expectRedirect(
+    autoLocaleRedirect(
+      request("/?utm_content=video%204&ad_id=120251732832820215", {
+        headers: { "x-vercel-ip-country": "KR" },
+      }),
+    ),
+    "ko",
+    "/ko/scuba?utm_content=video%204&ad_id=120251732832820215",
+  );
 });
 
 test("the server integration uses a temporary, private, variant-aware redirect", () => {

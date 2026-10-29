@@ -260,10 +260,15 @@ export async function loadWaitlistCount(): Promise<number | null> {
   }
 }
 
-// Submitting arms a verification attempt and sends one transactional mail. The
-// pending response is shared by new/pending addresses and provider failures.
-// At the owner’s request, already-verified addresses get an explicit notice;
-// that notice does not grant inbox ownership or reservation access.
+// Submitting arms a verification attempt, then returns pending. On Vercel the
+// confirmation mail is registered with `waitUntil` before this returns, so
+// provider latency is not part of the response. Outside that request context
+// the same send is awaited. The pending answer is shared by new addresses,
+// addresses already pending, and provider failures. It does not mean the
+// message was accepted or the address was verified. `Verification sent` is
+// written only after acceptance. At the
+// owner’s request, already-verified addresses get an explicit notice; that
+// notice does not grant inbox ownership or reservation access.
 export const joinWaitlist = createServerFn({ method: "POST" })
   .validator(
     z.object({

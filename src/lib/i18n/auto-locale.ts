@@ -1,3 +1,4 @@
+import { rawSearchFromRequestUrl } from "../httpCache.ts";
 import {
   DEFAULT_LOCALE,
   isLocale,
@@ -152,8 +153,12 @@ export function preferredLocaleFromRequest(request: Request, country?: string | 
 
 /**
  * Return a temporary redirect only for a first document request to `/`.
- * Localized, verification, legal and referral routes never reach this branch,
- * so the redirect cannot loop or move a bearer-token URL between locales.
+ * The target is that locale's scuba segment, so a Korean visit goes to
+ * `/ko/scuba` in one hop. The raw query is copied. This redirect is private
+ * and is not cached: the locale is inferred from the country and the
+ * preference cookie. Localized, verification, legal and referral routes never
+ * reach this branch, so the redirect cannot loop or move a bearer-token URL
+ * between locales.
  */
 export type AutoLocaleRedirect = {
   locale: Locale;
@@ -186,7 +191,7 @@ export function autoLocaleRedirect(
 
   return {
     locale,
-    location: `${localePathPrefix(locale)}${url.search}`,
+    location: `${localePathPrefix(locale)}/scuba${rawSearchFromRequestUrl(request.url)}`,
   };
 }
 

@@ -201,7 +201,7 @@ export const Route = createFileRoute("/")({
       href:
         canonicalScubaHref(location, typeof window === "undefined" ? undefined : window.location) ??
         `/scuba${location.searchStr}${location.hash ? `#${location.hash}` : ""}`,
-      statusCode: 307,
+      statusCode: 308,
       replace: true,
       reloadDocument: true,
     });

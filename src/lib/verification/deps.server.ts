@@ -17,6 +17,7 @@ import { createDeliveryAlerter, createSlackPoster } from "./deliveryAlert.ts";
 import { createNotionLeadStore, createNotionRequest } from "./notionLead.ts";
 import { reportPressStage } from "../press/pressAttribution.server.ts";
 import { createPollGate } from "./pollGate.ts";
+import { createVercelAfterResponse } from "./asyncVerificationMail.server.ts";
 import { createResendMailer } from "./resend.ts";
 import type { ServiceDependencies } from "./service.ts";
 
@@ -48,7 +49,10 @@ export function createServiceDependencies(
   const metaPurchases = createMetaPurchases();
   return {
     store: createNotionLeadStore(notionRequest, databaseId),
-    captureGoogleContext: google.capture,
+    // capture() is a no-op while the GA4 server sender is off, but the signup
+    // path rereads Notion before calling it. Omit the hook so that read does
+    // not run. Withdrawal still calls google.forget below.
+    ...(google.enabled ? { captureGoogleContext: google.capture } : {}),
     forgetGoogleContext: async (email) => {
       // Attempt both even if one store operation fails. Persisted Notion refusal
       // independently prevents either sink from dispatching afterwards.
@@ -70,6 +74,10 @@ export function createServiceDependencies(
         console.warn(`[ga4] verified signup delivery ${result}`);
     },
     mailer: createResendMailer(),
+    // Holds the verification send when this request has a Vercel waitUntil.
+    // Outside that runtime the hook throws and the service awaits the send.
+    // The package call alone is a no-op without the request context.
+    scheduleAfterResponse: createVercelAfterResponse(),
     resolveWelcomeShareCode: async (refCode) => {
       const [{ referralServiceDeps }, { getMyShareCodeService }] = await Promise.all([
         import("../api/referral.functions"),

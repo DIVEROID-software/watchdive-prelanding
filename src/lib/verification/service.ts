@@ -42,6 +42,11 @@ import {
 } from "../conversionExperimentContract.ts";
 import type { PollGate } from "./pollGate.ts";
 import type { VerificationMailer } from "./resend.ts";
+import {
+  deliverQueuedVerificationMail,
+  settleVerificationMail,
+  type AfterResponseHook,
+} from "./asyncVerificationMail.ts";
 import { observeSignupCountry, type SignupCountryProbe } from "../attribution.ts";
 import { canonicalEmail } from "../api/abuse.ts";
 import {
@@ -233,6 +238,13 @@ export type ServiceDependencies = {
    * but the fixed failure class into an alert. Never allowed to fail a submit.
    */
   onDeliveryFailure?: (error: unknown) => Promise<void> | void;
+  /**
+   * Runs the confirmation-mail promise after the HTTP response when the
+   * platform can keep the isolate alive. Production passes Vercel
+   * `waitUntil`. Absent, or a hook that throws: the same send is awaited
+   * before the response. The promise is never left without a catch.
+   */
+  scheduleAfterResponse?: AfterResponseHook;
   /**
    * Reports a completed press-attributed signup to the press tracker
    * (pressAttribution.server.ts). Absent = no live report; the row still keeps
@@ -617,35 +629,29 @@ export async function requestVerificationService(
     mailLocale,
   );
 
-  try {
-    await dependencies.mailer.send({
-      to: input.email,
-      token,
+  // The attempt row is already durable. `Verification sent` is written only
+  // after the provider accepts this exact attempt. The public answer stays
+  // pending: it is not a claim that the message was accepted or that the
+  // address is verified. With no hook, the send is still awaited here so
+  // tests stay deterministic. A hook that throws is awaited the same way.
+  await settleVerificationMail(dependencies.scheduleAfterResponse, () =>
+    deliverQueuedVerificationMail({
+      store,
+      mailer: dependencies.mailer,
+      pageId: record.pageId,
       leadId,
-      publicOrigin,
-      locale: mailLocale,
-      ...(compatibility ? { compatibility } : {}),
-    });
-  } catch (error) {
-    // The attempt stays armed. Nothing about the failure reaches the response,
-    // but somebody has to hear about it: the visitor was just told to check an
-    // inbox no mail is going to reach.
-    try {
-      await dependencies.onDeliveryFailure?.(error);
-    } catch {
-      // Alerting is best effort and never changes what the visitor sees.
-    }
-    return floor(pendingResponse(handle));
-  }
-
-  try {
-    await store.markSent(record.pageId, { sentAt: now.toISOString() });
-  } catch {
-    // The message is already gone. Failing the response now would tell somebody
-    // their signup broke moments after they were mailed a working link, and
-    // would invite a resend of a message they already have. The cooldown still
-    // holds without this write, because it falls back to the attempt's start.
-  }
+      mail: {
+        to: input.email,
+        token,
+        leadId,
+        publicOrigin,
+        locale: mailLocale,
+        ...(compatibility ? { compatibility } : {}),
+      },
+      now: clock,
+      onDeliveryFailure: dependencies.onDeliveryFailure,
+    }),
+  );
   return floor(pendingResponse(handle));
 }
 
