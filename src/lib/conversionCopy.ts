@@ -83,4 +83,12 @@ export const conversionCopy: Record<Locale, Copy> = {
     confirmation: "Confirme seu e-mail pelo link que enviaremos.",
     compatibility: "Verificar a compatibilidade do meu relógio",
   },
+  nl: {
+    cta: "Ontvang de lanceringsalert",
+    benefit: "We laten het je weten wanneer de early-birdaanbieding van $149 opent.",
+    terms: "Voor de eerste 100 backers op Kickstarter. Aanmelden legt de aanbieding niet vast.",
+    reassurance: "Gratis aanmelding · Nu geen betaling",
+    confirmation: "Bevestig je e-mail via de link die we je sturen.",
+    compatibility: "Controleer of je horloge past",
+  },
 };

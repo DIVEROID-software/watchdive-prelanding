@@ -210,5 +210,28 @@ export const DRIP_COPY: Record<Locale, Followups> = {
       "sentence1": "Ainda pensando no WatchDive? Reserve por $3 e garanta o menor preço de lançamento.",
       "sentence2": "Você paga $149, independentemente da sua posição."
     }
+  },
+  "nl": {
+    "d1": {
+      "subject": "Je alledaagse horloge. Je volgende duik.",
+      "preheader": "Functies van een duikcomputer, zonder extra abonnement.",
+      "headline": "Je horloge. Een duikcomputer.",
+      "sentence1": "Klik je compatibele smartwatch in WatchDive en maak er een duikcomputer van.",
+      "sentence2": "Geen extra abonnement: alleen het horloge dat je kent, klaar voor je volgende duik."
+    },
+    "d3": {
+      "subject": "Eerst $149. Daarna $200. Houd je prijs.",
+      "preheader": "Een reservering van $3 houdt je lanceringsprijs op $149.",
+      "headline": "Volgende prijs: $200. Jouw prijs: $149.",
+      "sentence1": "Na de eerste 100 op Kickstarter gaat WatchDive naar $200.",
+      "sentence2": "Reserveer voor $3 en houd $149, waar je ook in de rij staat."
+    },
+    "d7": {
+      "subject": "Klaar voor je volgende duik?",
+      "preheader": "Reserveer voor $3 en houd de laagste lanceringsprijs.",
+      "headline": "Je volgende duik. Jouw prijs van $149.",
+      "sentence1": "Denk je nog aan WatchDive? Reserveer voor $3 en houd de laagste lanceringsprijs.",
+      "sentence2": "Je krijgt $149, waar je ook in de rij staat."
+    }
   }
 };

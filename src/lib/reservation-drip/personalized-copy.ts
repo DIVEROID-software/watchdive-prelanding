@@ -411,6 +411,48 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
         "chip": "$3 mantém $149",
         "imageAlt": "Dois mergulhadores na superfície, um olha o WatchDive."
       }
+    },
+    "nl": {
+      "d0": {
+        "subject": "Reserveer voor $3. Zet de lanceringsprijs van $149 vast.",
+        "preheader": "De eerste 100 betalen $149. Daarna is WatchDive $200.",
+        "headline": "Reserveer voor $3. Zet de lanceringsprijs van $149 vast.",
+        "sentence1": "Klik een compatibele smartwatch in WatchDive en duik met het horloge dat je al hebt.",
+        "sentence2": "De eerste 100 betalen $149. Daarna is de prijs $200.",
+        "eyebrow": "$149-lanceringsprijs",
+        "chip": "Eén reservering $3",
+        "imageAlt": "Handen klikken de doorzichtige WatchDive-behuizing op een horloge."
+      },
+      "d1": {
+        "subject": "Je horloge kan de duikcomputer zijn.",
+        "preheader": "Diepte en temperatuur op je pols, daarna een logboek in de app.",
+        "headline": "Een duikcomputer, op het horloge dat je al hebt.",
+        "sentence1": "De behuizing leest diepte en watertemperatuur, en je smartwatch toont ze.",
+        "sentence2": "Na de duik bekijk je het logboek in de DIVEROID-app. Geen extra abonnement voor de duikcomputerfuncties.",
+        "eyebrow": "Om je pols",
+        "chip": "Logboek erbij",
+        "imageAlt": "WatchDive op roze vinnen, naast een duikmasker."
+      },
+      "d3": {
+        "subject": "Aanmeldingen lopen door. De early bird van $149 is voor de eerste 100.",
+        "preheader": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen.",
+        "headline": "Na de eerste 100 is de prijs $200.",
+        "sentence1": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen. De early-birdprijs van $149 is er voor de eerste 100.",
+        "sentence2": "Reserveer voor $3 en houd $149, waar je ook in de rij staat.",
+        "eyebrow": "Eerste 100 voor $149",
+        "chip": "Aanmeldingen lopen",
+        "imageAlt": "WatchDive om een pols onder water, met een andere duiker erachter."
+      },
+      "d7": {
+        "subject": "Klaar voor je volgende duik. Zet $149 vast.",
+        "preheader": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen.",
+        "headline": "Klaar voor je volgende duik. Zet $149 vast.",
+        "sentence1": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen. Na de eerste 100 is de prijs $200.",
+        "sentence2": "Reserveer voor $3 en houd $149, waar je ook in de rij staat.",
+        "eyebrow": "Volgende duik",
+        "chip": "$3 houdt $149",
+        "imageAlt": "Twee duikers aan de oppervlakte, een kijkt naar WatchDive."
+      }
     }
   },
   "scuba": {
@@ -793,6 +835,48 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
         "chip": "$3 mantém $149",
         "imageAlt": "Dois mergulhadores na superfície, um confere o WatchDive."
       }
+    },
+    "nl": {
+      "d0": {
+        "subject": "Reserveer voor $3. Zet de lanceringsprijs van $149 vast.",
+        "preheader": "Het horloge dat je draagt wordt een duikcomputer. De eerste 100 betalen $149.",
+        "headline": "Reserveer voor $3. Zet de lanceringsprijs van $149 vast.",
+        "sentence1": "WatchDive maakt van de smartwatch die je al draagt een duikcomputer voor scubaduiken.",
+        "sentence2": "De eerste 100 betalen $149. Daarna is de prijs $200.",
+        "eyebrow": "Voor scubaduiken",
+        "chip": "Eén reservering $3",
+        "imageAlt": "WatchDive om een pols onder water, scherm aan."
+      },
+      "d1": {
+        "subject": "Kompas, diepte en een logboek. Geen extra abonnement.",
+        "preheader": "Scubawaarden op je horloge, daarna het logboek in de app.",
+        "headline": "Je duikcomputer, kompas en logboek.",
+        "sentence1": "Tijdens een scubaduik toont het horloge het kompas, de diepte, de duiktijd en de watertemperatuur.",
+        "sentence2": "Terug aan de oppervlakte synchroniseert het logboek met de DIVEROID-app. Geen extra abonnement voor deze duikcomputerfuncties.",
+        "eyebrow": "Voor scubaduiken",
+        "chip": "Kompas en logboek",
+        "imageAlt": "WatchDive om een pols tijdens een scubaduik, een andere duiker erachter."
+      },
+      "d3": {
+        "subject": "Aanmeldingen lopen door. De early bird van $149 is voor de eerste 100.",
+        "preheader": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen.",
+        "headline": "Na de eerste 100 is de prijs $200.",
+        "sentence1": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen. De early-birdprijs van $149 is er voor de eerste 100.",
+        "sentence2": "Voor scubaduiken: reserveer voor $3 en houd $149, waar je ook in de rij staat.",
+        "eyebrow": "Eerste 100 voor $149",
+        "chip": "Aanmeldingen lopen",
+        "imageAlt": "WatchDive op roze vinnen, naast een duikmasker."
+      },
+      "d7": {
+        "subject": "Klaar voor je volgende scubaduik. Zet $149 vast.",
+        "preheader": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen.",
+        "headline": "Klaar voor je volgende scubaduik. Zet $149 vast.",
+        "sentence1": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen. Na de eerste 100 is de prijs $200.",
+        "sentence2": "Reserveer voor $3 en houd $149 voor de duikcomputer, waar je ook in de rij staat.",
+        "eyebrow": "Volgende scubaduik",
+        "chip": "$3 houdt $149",
+        "imageAlt": "Twee duikers aan de oppervlakte, een controleert WatchDive."
+      }
     }
   },
   "freediving": {
@@ -1174,6 +1258,48 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
         "eyebrow": "Mergulho livre",
         "chip": "$3 mantém $149",
         "imageAlt": "Mãos encaixando a caixa transparente do WatchDive em um relógio."
+      }
+    },
+    "nl": {
+      "d0": {
+        "subject": "Reserveer voor $3. Zet de lanceringsprijs van $149 vast.",
+        "preheader": "Vrijduikwaarden op je horloge. De eerste 100 betalen $149.",
+        "headline": "Reserveer voor $3. Zet de lanceringsprijs van $149 vast.",
+        "sentence1": "Bij een vrijduik toont WatchDive diepte en tijd op de smartwatch die je al draagt.",
+        "sentence2": "De eerste 100 betalen $149. Daarna is de prijs $200.",
+        "eyebrow": "Voor vrijduiken",
+        "chip": "Diepte en tijd",
+        "imageAlt": "WatchDive om een pols onder water, hand aan een gidslijn."
+      },
+      "d1": {
+        "subject": "Diepte, tijd, oppervlakte-interval, en daarna je logboek.",
+        "preheader": "Lees de vrijduik op je horloge. Bekijk hem daarna in het logboek.",
+        "headline": "Diepte, tijd en het oppervlakte-interval.",
+        "sentence1": "Tijdens de vrijduik toont je horloge diepte en duiktijd.",
+        "sentence2": "Tussen duiken check je het oppervlakte-interval en bekijk je het profiel in je DIVEROID-logboek.",
+        "eyebrow": "Voor vrijduiken",
+        "chip": "Dan het logboek",
+        "imageAlt": "Aan de oppervlakte tussen duiken, WatchDive om een pols."
+      },
+      "d3": {
+        "subject": "Aanmeldingen lopen door. De early bird van $149 is voor de eerste 100.",
+        "preheader": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen.",
+        "headline": "Na de eerste 100 is de prijs $200.",
+        "sentence1": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen. De early-birdprijs van $149 is er voor de eerste 100.",
+        "sentence2": "Voor je volgende vrijduik: reserveer voor $3 en houd $149, waar je ook in de rij staat.",
+        "eyebrow": "Eerste 100 voor $149",
+        "chip": "Aanmeldingen lopen",
+        "imageAlt": "Een logboek op de telefoon naast het bad, WatchDive om de pols."
+      },
+      "d7": {
+        "subject": "Klaar voor je volgende vrijduik. Zet $149 vast.",
+        "preheader": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen.",
+        "headline": "Klaar voor je volgende vrijduik. Zet $149 vast.",
+        "sentence1": "Aanmeldingen voor de lanceringsmelding blijven binnenkomen. Na de eerste 100 is de prijs $200.",
+        "sentence2": "Reserveer voor $3 en houd $149. Neem diepte, tijd en het oppervlakte-interval mee in je logboek.",
+        "eyebrow": "Volgende vrijduik",
+        "chip": "$3 houdt $149",
+        "imageAlt": "Handen klikken de doorzichtige WatchDive-behuizing op een horloge."
       }
     }
   }

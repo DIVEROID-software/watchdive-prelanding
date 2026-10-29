@@ -77,4 +77,12 @@ export const ERROR_MESSAGES = {
     errorBody: "Deu algo errado do nosso lado. Você pode atualizar ou voltar ao início.",
     tryAgain: "Tentar de novo",
   },
+  nl: {
+    notFoundHeading: "Pagina niet gevonden",
+    notFoundBody: "De pagina die je zoekt bestaat niet of is verplaatst.",
+    goHome: "Naar home",
+    errorTitle: "Deze pagina laadde niet",
+    errorBody: "Er ging iets mis aan onze kant. Ververs de pagina, of ga terug naar home.",
+    tryAgain: "Opnieuw proberen",
+  },
 } as const satisfies Record<Locale, ErrorMessages>;

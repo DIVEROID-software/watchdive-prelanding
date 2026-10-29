@@ -214,6 +214,28 @@ const MAIL_TONE: Record<Locale, MailTone> = {
       },
     },
   },
+  nl: {
+    mail: {
+      welcomeHeading: "Je staat op de lijst!",
+      welcomeOutro: "We mailen je zodra WatchDive op Kickstarter live gaat.",
+      welcomeIntro: "Deel de link of de verwijscode hieronder met buddy’s die je kent.",
+      shareHeading: "Neem je buddy’s mee",
+      noticeHeading: "Een buddy deed mee via jouw link!",
+      noticeBody: "Tot nu toe hebben {count} buddy’s via jouw link meegedaan en hun e-mail bevestigd.",
+    },
+    event: {
+      label: "Extra actie!",
+      headline: "Nodig je buddy’s uit en ontgrendel beloningen",
+      subline: "Beloningen groeien naarmate meer vrienden hun e-mail bevestigen.",
+      benefits: {
+        first: "Ontvang de lanceermail {hoursFirst} uur eerder",
+        buddy: "Ontvang de lanceermail {hoursBuddy} uur eerder",
+        team: "Steun voor de early-birdprijs van {price}",
+        leader: "Krijg een onderwaterlamp · de eerste {stock}",
+        top: "Krijg een WatchDive",
+      },
+    },
+  },
 };
 
 export function buddyMailCopy(locale: Locale) {

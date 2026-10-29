@@ -899,6 +899,102 @@ export const SEGMENT_COPY: Record<Locale, Record<DiveSegment, SegmentCopy>> = {
       "depthAnswer": "A profundidade de uso recomendada é de 40 m. A caixa concluiu um teste de resistência à água a 60 m; isso não é uma certificação independente nem uma garantia para todos os ambientes. Mergulhe dentro dos limites do seu treinamento e das condições do dia.",
       "logImageAlt": "Diário de mergulho autônomo no app DIVEROID"
     }
+  },
+  "nl": {
+    "freediving": {
+      "modes": {
+        "freediving": "Freediven",
+        "scuba": "Scubaduiken"
+      },
+      "discover": "Bekijk hoe het werkt",
+      "howTitle": "Houd je horloge. Voeg {logo} toe.",
+      "howIntro": "De behuizing meet diepte en watertemperatuur. Je smartwatch toont de metingen.",
+      "signupTitle": "Krijg het lanceringsbericht van WatchDive.",
+      "signupBody": "Ontvang de link wanneer WatchDive op Kickstarter lanceert.",
+      "signupCta": "Seintje bij de lancering",
+      "signupNote": "Bevestig je e-mail om de aanmelding af te ronden.",
+      "priceNote": "Early bird · eerste 100 Kickstarter-backers",
+      "priceNoteHighlight": "eerste 100",
+      "discountLabel": "KORTING",
+      "includeNote": "Behuizing + app. Smartwatch los verkrijgbaar.",
+      "compatibility": "Bekijk compatibele horloges",
+      "logTitle": "Je freedives, in je logboek.",
+      "logBody": "Synchroniseer na de duik je freediveprofielen met de DIVEROID-app en bekijk ze daar.",
+      "cameraTitle": "Je beelden, naast je duik.",
+      "cameraBody": "Zet beelden van GoPro, Insta360, Canon en meer samen met je duiklog in de DIVEROID-app.",
+      "finalTitle": "Wees erbij wanneer WatchDive lanceert.",
+      "finalBody": "Krijg de Kickstarter-lanceringslink per e-mail.",
+      "questionTitle": "Een paar dingen om te weten.",
+      "noPayment": "Gratis lanceringsbericht. Geen betaling nodig.",
+      "switchPrompt": "Bekijk de andere duikmodus",
+      "title": "Je smartwatch.\nJe freedivecomputer.",
+      "intro": "Maak van de Apple Watch of Galaxy Watch die je al hebt een duikcomputer. Het hoeft geen Ultra te zijn.",
+      "heroCaption": "Freediven met WatchDive",
+      "benefitTitle": "Het belangrijkste voor je freedive.",
+      "benefits": [
+        {
+          "title": "Zie diepte, tijd en temperatuur.",
+          "body": "Check je duikmetingen op de smartwatch die je al kent."
+        },
+        {
+          "title": "Bewaar je duikprofiel.",
+          "body": "Synchroniseer na de duik met de DIVEROID-app en bekijk je registratie."
+        },
+        {
+          "title": "Blijf je smartwatch gebruiken.",
+          "body": "Voeg de WatchDive-behuizing toe om te duiken. Je horloge blijft bij je aan land."
+        }
+      ],
+      "depthAnswer": "De aanbevolen gebruiksdiepte is 40 m. De behuizing heeft een waterdichtheidstest op 60 m voltooid; dit is geen onafhankelijke certificering en geen garantie voor elke omgeving. Duik binnen je opleiding en de omstandigheden.",
+      "logImageAlt": "Freediveprofielen in de DIVEROID-app"
+    },
+    "scuba": {
+      "modes": {
+        "freediving": "Freediven",
+        "scuba": "Scubaduiken"
+      },
+      "discover": "Bekijk hoe het werkt",
+      "howTitle": "Houd je horloge. Voeg {logo} toe.",
+      "howIntro": "De behuizing meet diepte en watertemperatuur. Je smartwatch toont de metingen.",
+      "signupTitle": "Krijg het lanceringsbericht van WatchDive.",
+      "signupBody": "Ontvang de link wanneer WatchDive op Kickstarter lanceert.",
+      "signupCta": "Seintje bij de lancering",
+      "signupNote": "Bevestig je e-mail om de aanmelding af te ronden.",
+      "priceNote": "Early bird · eerste 100 Kickstarter-backers",
+      "priceNoteHighlight": "eerste 100",
+      "discountLabel": "KORTING",
+      "includeNote": "Behuizing + app. Smartwatch los verkrijgbaar.",
+      "compatibility": "Bekijk compatibele horloges",
+      "logTitle": "Weer aan de oppervlakte. In je logboek.",
+      "logBody": "Synchroniseer je duikprofiel na de duik met de DIVEROID-app. Bekijk je duiken op één plek.",
+      "cameraTitle": "Je beelden, naast je duik.",
+      "cameraBody": "Zet beelden van GoPro, Insta360, Canon en meer samen met je duiklog in de DIVEROID-app.",
+      "finalTitle": "Wees erbij wanneer WatchDive lanceert.",
+      "finalBody": "Krijg de Kickstarter-lanceringslink per e-mail.",
+      "questionTitle": "Een paar dingen om te weten.",
+      "noPayment": "Gratis lanceringsbericht. Geen betaling nodig.",
+      "switchPrompt": "Bekijk de andere duikmodus",
+      "title": "Je smartwatch.\nJe duikcomputer.",
+      "intro": "Maak van de Apple Watch of Galaxy Watch die je al hebt een duikcomputer. Het hoeft geen Ultra te zijn.",
+      "heroCaption": "WatchDive in actie onder water",
+      "benefitTitle": "Je duikinformatie, om je pols.",
+      "benefits": [
+        {
+          "title": "Check je no-deco-tijd.",
+          "body": "Bekijk de no-decompressietijd op de smartwatch die je al kent."
+        },
+        {
+          "title": "Vind je richting.",
+          "body": "Een kompas, diepte, duiktijd en watertemperatuur op je smartwatch."
+        },
+        {
+          "title": "Bekijk je duik daarna.",
+          "body": "Synchroniseer je duikprofiel met de DIVEROID-app wanneer je weer aan de oppervlakte bent."
+        }
+      ],
+      "depthAnswer": "De aanbevolen gebruiksdiepte is 40 m. De behuizing heeft een waterdichtheidstest op 60 m voltooid; dit is geen onafhankelijke certificering en geen garantie voor elke omgeving. Duik binnen je opleiding en de omstandigheden.",
+      "logImageAlt": "Scubalogboek in de DIVEROID-app"
+    }
   }
 };
 

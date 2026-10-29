@@ -43,6 +43,7 @@ const COUNTRY_LOCALE = new Map<string, Locale>([
   ["DE", "de"],
   ["AT", "de"],
   ["BR", "pt-BR"],
+  ["NL", "nl"],
 ]);
 
 const CRAWLER_USER_AGENT =

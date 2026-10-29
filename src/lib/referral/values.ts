@@ -67,7 +67,8 @@ export type CopyValues = {
 /**
  * The early-bird price exactly as the landing already writes it in each
  * locale's offer line (`conversionCopy[locale].benefit`): `$149` for en, ko,
- * zh-CN, zh-TW, ja and es; `149 $` for fr and de; `US$ 149` for pt-BR. USD
+ * zh-CN, zh-TW, ja and es; `149 $` for fr and de; `US$ 149` for pt-BR;
+ * `$149` for nl. USD
  * everywhere — the reward is the Kickstarter USD price, never a local estimate.
  */
 export function formatOfferPrice(
@@ -83,6 +84,8 @@ export function formatOfferPrice(
       return `${amount} $`;
     case "pt-BR":
       return `US$ ${amount}`;
+    case "nl":
+      return `$${amount}`;
     default:
       return `$${amount}`;
   }
@@ -99,6 +102,7 @@ const KST_LABEL: Record<Locale, string> = {
   fr: "heure normale de Corée",
   de: "koreanische Standardzeit",
   "pt-BR": "horário padrão da Coreia",
+  nl: "Koreaanse standaardtijd",
 };
 
 /** Unpadded year, month, day and 24-hour hour; two-digit minute. */
@@ -179,6 +183,8 @@ export function formatKstDateTime(locale: Locale, iso: string): string {
       return `${p.day}. ${p.monthName} ${p.year}, ${p.hour}:${p.minute} Uhr (${label})`;
     case "pt-BR":
       return `${p.day} de ${p.monthName} de ${p.year}, ${h === 1 ? "à" : "às"} ${p.hour}h${p.minute} (${label})`;
+    case "nl":
+      return `${p.day} ${p.monthName} ${p.year}, ${p.hour.padStart(2, "0")}:${p.minute} ${label}`;
     default:
       return `${p.day} ${p.monthName} ${p.year}, ${p.hour.padStart(2, "0")}:${p.minute} ${label}`;
   }
@@ -200,6 +206,8 @@ export function formatKstMonth(locale: Locale, yearMonth: string): string {
     case "es":
     case "pt-BR":
       return `${p.monthName} de ${p.year}`;
+    case "nl":
+      return `${p.monthName} ${p.year}`;
     default:
       return `${p.monthName} ${p.year}`;
   }

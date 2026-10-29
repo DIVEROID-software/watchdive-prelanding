@@ -103,6 +103,7 @@ test("badges express invitations with localized units, singulars and ranking cap
     fr: ["", "ami invité", "amis invités", "Classement des invitations"],
     de: ["", "Buddy eingeladen", "Buddys eingeladen", "Einladungsrang"],
     "pt-BR": ["", "amigo convidado", "amigos convidados", "Ranking de convites"],
+    nl: ["", "buddy uitgenodigd", "buddies uitgenodigd", "Uitnodigingsrang"],
   };
   for (const locale of SUPPORTED_LOCALES) {
     const model = referralEvent(locale);

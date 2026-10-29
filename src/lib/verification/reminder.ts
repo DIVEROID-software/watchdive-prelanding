@@ -39,6 +39,7 @@ import {
   type TokenEnvironment,
 } from "./token.ts";
 import { DEFAULT_LOCALE, isLocale, localeFromPathname, type Locale } from "../i18n/locale.ts";
+import { nativeOneMailExcluded } from "../instantForm/reminderExclusion.ts";
 
 /** How long after the confirmation mail went out before the one reminder. */
 export const VERIFICATION_REMINDER_DELAY_MS = 24 * 60 * 60 * 1000;
@@ -135,7 +136,8 @@ export type ReminderSkipReason =
   | "too_soon"
   | "too_old"
   | "send_cap"
-  | "no_attempt";
+  | "no_attempt"
+  | "native_one_mail";
 
 export type ReminderRunResult = {
   /** Set when the run stopped before mailing anyone, e.g. the property is missing. */
@@ -164,6 +166,10 @@ export function reminderSkipReason(
   record: LeadRecord,
   nowMs: number,
 ): ReminderSkipReason | undefined {
+  // One native confirmation is not a website signup. Checked in memory so the
+  // query does not name an unprovisioned Source option and abort the website job.
+  // Source is enough: the page reader does not return Acquisition path.
+  if (nativeOneMailExcluded(record)) return "native_one_mail";
   // Only `pending` is mailable. Verified, unsubscribed, a withdrawn/suppressed
   // row, and legacy single opt-in rows (no status) are all excluded.
   if (record.status !== "pending") return "not_pending";

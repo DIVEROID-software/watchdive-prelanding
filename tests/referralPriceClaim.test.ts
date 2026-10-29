@@ -77,6 +77,11 @@ test("off: rendered copy stays frozen with owner-approved hero, brand and footer
   // The landing catalog hash also includes the owner-approved Korean brand
   // spelling in Korean metadata and H1 (2026-10-26), and removal of the backup
   // computer clause from all nine website footers (2026-10-28).
+  // 2026-10-30: each digest includes nl. The same values without nl still match
+  // frozen 8592d820…, conversion ef82f627…, race b0f177d6…, phone 5da27009…,
+  // and mails e17e8f1e….
+  // Dutch terms now require a separate optional SMS checkbox; entering a
+  // number alone is not consent. All other reviewed catalog text is unchanged.
   const race = SUPPORTED_LOCALES.map((l) =>
     earlyBirdRace(l, FROZEN_LANDING_MESSAGES[l].hero.nowPrice),
   );
@@ -97,21 +102,20 @@ test("off: rendered copy stays frozen with owner-approved hero, brand and footer
   );
   assert.equal(
     sha256(FROZEN_LANDING_MESSAGES),
-    "8592d8203b0d3d83035ea4996f3e81996b8330c4e14bd8135a7f3059d94bd6f9",
+    "7e26cd9e1514f3c64a7ae509bd98b205e7cc6f21273774917d02c9b8498901e5",
   );
   assert.equal(
     sha256(conversionCopy),
-    "ef82f6279363e7d9d6c82449d6ed87c9f7f28991f4b21862e9cbb04ea89423f1",
+    "4a79df02526ef630f614f60d58af25f83f7a00353a0b87f93b05c0525f918c31",
   );
-  assert.equal(sha256(race), "b0f177d6d023f483e8bde41d6f4b406fa220db057f4d2b42add09f8cea451a7c");
+  assert.equal(sha256(race), "3b8b99ab021af6f591a6a77cecb5e45574ce7ec66fd69e48b355fa8b99f138ea");
   assert.equal(
     sha256(phoneOptInCopy),
-    "5da27009d4661df3099eaaab47e64fa7c039f1c864613b44cbf16ba462d83d0d",
+    "b7bdca85fb03d8ebc7ba7a8e039e5b02323e123371967e45f2d37d4430da72ad",
   );
   // 2026-10-26 brutalism replaced the launch-mail HTML shell. The digest is the
-  // rendered mail (subject, text and HTML) with launch times masked. The four
-  // copy digests above stay the pre-change pins.
-  assert.equal(sha256(mails), "e17e8f1e7c665b4e6dbd3d01b26cc0d802d0e6cee3f36bd651ace546d04bb377");
+  // rendered mail (subject, text and HTML) with launch times masked.
+  assert.equal(sha256(mails), "244063c45bcf761bafeaf493567bea6a640677651e897a62674ebb8fd55692ea");
   // `referralProgram: false` is the same mail as no flag at all.
   for (const locale of SUPPORTED_LOCALES) {
     for (const wave of WAVES) {
@@ -161,6 +165,7 @@ const FIRST_HUNDRED: Record<Locale, RegExp> = {
   fr: /100 premiers/i,
   de: /ersten 100/i,
   "pt-BR": /(?:100 primeiros|primeiros 100)/i,
+  nl: /(?:eerste 100|100 eerste)/i,
 };
 const RESERVATION: Record<Locale, RegExp> = {
   en: /price.reservation/i,
@@ -172,6 +177,7 @@ const RESERVATION: Record<Locale, RegExp> = {
   fr: /réservations? de prix/,
   de: /Preisreservierung/,
   "pt-BR": /reservas? de preço/,
+  nl: /prijsreservering/,
 };
 const EARLY_BIRD: Record<Locale, RegExp> = {
   en: /early.bird/i,
@@ -183,6 +189,7 @@ const EARLY_BIRD: Record<Locale, RegExp> = {
   fr: /early bird/i,
   de: /Early.Bird/i,
   "pt-BR": /early bird/i,
+  nl: /early.bird/i,
 };
 // Words that would make the price sound exclusive to 100 people, or urgent.
 const EXCLUSIVE =
@@ -197,6 +204,7 @@ const LOCAL_CURRENCY: Record<Locale, RegExp> = {
   fr: /€/,
   de: /€/,
   "pt-BR": /R\$/,
+  nl: /\$(?:149|299)/,
 };
 const ESTIMATE_NOTICE: Record<Exclude<Locale, "en">, RegExp> = {
   ko: /기준/,
@@ -207,6 +215,7 @@ const ESTIMATE_NOTICE: Record<Exclude<Locale, "en">, RegExp> = {
   fr: /indicatifs|fera foi/iu,
   de: /Richtwerte|Maßgeblich/iu,
   "pt-BR": /estimativas|vale o valor/iu,
+  nl: /leidend/,
 };
 
 function diveTeam(locale: Locale): string {
@@ -314,7 +323,7 @@ test("on: prices stay in each page's own currency, with its estimate notice", ()
     for (const [path, copy] of Object.entries(priced)) {
       assert.ok(amount && copy.includes(amount), `${locale}.${path}: price moved`);
       assert.match(copy, LOCAL_CURRENCY[locale], `${locale}.${path}: local currency missing`);
-      if (locale !== "en" && locale !== "ko") {
+      if (locale !== "en" && locale !== "ko" && locale !== "nl") {
         assert.doesNotMatch(copy, /\$(?:149|299)/, `${locale}.${path}: USD leaked`);
       }
     }
@@ -349,7 +358,7 @@ test("both switches: owner-approved hero line keeps localized price and adds USD
     const line = earlyBirdRace(locale, price, template);
     assert.ok(line.toLowerCase().includes(price.toLowerCase()), `${locale}: ${line}`);
     assert.equal(line.charAt(0), line.charAt(0).toLocaleUpperCase(locale), `${locale}: ${line}`);
-    if (locale !== "en" && locale !== "ko") assert.doesNotMatch(line, /(?<![A-Z])\$\s?\d/);
+    if (locale !== "en" && locale !== "ko" && locale !== "nl") assert.doesNotMatch(line, /(?<![A-Z])\$\s?\d/);
     assert.equal(line, earlyBirdRace(locale, price), `${locale}: ON/OFF must match`);
     assert.match(line, /200/, locale);
     assert.doesNotMatch(line, RESERVATION[locale], locale);

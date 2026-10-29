@@ -246,7 +246,9 @@ test("language comes from the landing path prefix, then browser language, then E
   assert.equal(launchLocale({ landingPath: "/pt-br/", browserLanguage: "de-DE" }), "pt-BR");
   assert.equal(launchLocale({ landingPath: "/", browserLanguage: "ja-JP" }), "ja");
   assert.equal(launchLocale({ browserLanguage: "zh-Hant-HK" }), "zh-TW");
-  assert.equal(launchLocale({ landingPath: "/", browserLanguage: "nl-NL" }), "en");
+  assert.equal(launchLocale({ landingPath: "/", browserLanguage: "nl-NL" }), "nl");
+  assert.equal(launchLocale({ landingPath: "/nl" }), "nl");
+  assert.equal(launchLocale({ landingPath: "/", browserLanguage: "sv-SE" }), "en");
   assert.equal(launchLocale({ landingPath: "https://evil.example/ko" }), "en");
   assert.equal(launchLocale({}), "en");
 });
@@ -327,9 +329,9 @@ test("GET only asks; POST records the opt-out once; bad tokens and a missing pro
 
 // --- the page while Buddy Invite is on --------------------------------------
 
-/** Every OFF page (4 states x 9 locales), pinned to the pre-program bytes. */
+/** Every OFF page (4 states x 10 locales), pinned after the Dutch pages were added. */
 const LEGACY_UNSUBSCRIBE_PAGES_SHA256 =
-  "57e1f5d8b69f97cda8fe9eca87994ea46e177b2e1a5ece0bb44b6855790879c1";
+  "70ccb552d221f00758e8dad6e0cc38409bd7e00709410d6f3fe41a40945a4874";
 
 test("switch off: the unsubscribe pages are byte-identical to the pre-program pages", () => {
   const hash = createHash("sha256");

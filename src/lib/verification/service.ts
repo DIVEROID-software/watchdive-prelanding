@@ -190,6 +190,11 @@ export type RequestVerificationInput = {
   requireProviderSubject?: boolean;
   /** Well-formed press link reference (`?press_ref=`), kept on a new row only. */
   pressRef?: string;
+  /**
+   * Native Instant Form confirmation only. Website callers omit it.
+   * The mailer uses it only when it matches the stable ingester key.
+   */
+  nativeConfirmationKey?: string;
 };
 
 export type ServiceDependencies = {
@@ -647,6 +652,7 @@ export async function requestVerificationService(
         publicOrigin,
         locale: mailLocale,
         ...(compatibility ? { compatibility } : {}),
+        ...(input.nativeConfirmationKey ? { idempotencyKey: input.nativeConfirmationKey } : {}),
       },
       now: clock,
       onDeliveryFailure: dependencies.onDeliveryFailure,

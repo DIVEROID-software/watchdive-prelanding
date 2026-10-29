@@ -97,6 +97,7 @@ test("the long-stop close and delivery month are program.ts constants, written p
     fr: ["31 janvier 2027 à 23 h 59 (heure normale de Corée)", "mars 2027"],
     de: ["31. Januar 2027, 23:59 Uhr (koreanische Standardzeit)", "März 2027"],
     "pt-BR": ["31 de janeiro de 2027, às 23h59 (horário padrão da Coreia)", "março de 2027"],
+    nl: ["31 januari 2027, 23:59 Koreaanse standaardtijd", "maart 2027"],
   };
   for (const locale of SUPPORTED_LOCALES) {
     const values = copyValues(locale);

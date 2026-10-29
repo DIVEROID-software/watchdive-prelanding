@@ -104,6 +104,7 @@ const CHANGE_DISCLAIMERS = [
   "peuvent changer",
   "können sich vor oder während der Kickstarter-Kampagne ändern",
   "podem mudar",
+  "kunnen veranderen",
 ] as const;
 
 function splitChangeDisclaimer(value: string): readonly [string, string, string] {

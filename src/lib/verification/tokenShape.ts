@@ -8,7 +8,7 @@ const UUID =
   "[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[1-5][0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}";
 const EXPIRY = "\\d{1,11}";
 const CONSENT = "[01]";
-const LOCALE = "(?:en|ko|zh-CN|zh-TW|ja|es|fr|de|pt-BR)";
+const LOCALE = "(?:en|ko|zh-CN|zh-TW|ja|es|fr|de|pt-BR|nl)";
 const MAC = "[A-Za-z0-9_-]{43}";
 
 /** Links sent before localization. They remain valid and resolve to English. */

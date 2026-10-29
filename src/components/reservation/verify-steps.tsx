@@ -12,6 +12,7 @@ export const VERIFY_STEP_TITLES: Record<Locale, readonly [string, string, string
   fr: ["Recevez une alerte par SMS", "Garantissez le prix le plus bas pour 3 $", "Invitez vos partenaires de plongée"],
   de: ["SMS-Benachrichtigung erhalten", "Tiefstpreis für $3 sichern", "Lade deine Tauchfreunde ein"],
   "pt-BR": ["Receba um aviso por SMS", "Garanta o menor preço por $3", "Convide seus amigos de mergulho"],
+  nl: ["Ontvang een sms-alert", "Zet de laagste lanceringsprijs vast voor $3", "Nodig je duikbuddy's uit"],
 };
 
 /** Presentation only: the existing cards retain their consent and payment logic. */

@@ -18,6 +18,7 @@ import { COMPATIBILITY_NOTION_PROPERTY, prepareCompatibilityRequest, compatibili
 // retried without them so the signup itself is not lost.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
+import { nativeCrmProperties, nativeCrmRejected } from "../instantForm/nativeCrm.ts";
 import { coerceSignupCountryObservation, persistableSignupCountry } from "../attribution.ts";
 import {
   canonicalEmailFilters,
@@ -544,6 +545,7 @@ async function createLeadPage(
       error.code === "validation_error"
         ? new Set(error.rejectedOptionalColumns)
         : new Set<string>();
+    if (nativeCrmRejected(named)) throw new Error("native_schema_missing");
     if (
       options.subject &&
       columns.requireProviderSubject &&
@@ -837,6 +839,7 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
                     [FIELD_PRESS_SYNC]: textProp(input.pressSync ?? PRESS_SYNC_HELD),
                   }
                 : {}),
+              ...(input.nativeCrm ? nativeCrmProperties(input.nativeCrm) : {}),
             },
           }),
         );

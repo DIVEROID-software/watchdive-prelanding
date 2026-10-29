@@ -128,10 +128,10 @@ for (const segment of ["freediving", "scuba"] as const) {
 }
 
 
-test("public sitemap includes all 18 canonical audience destinations without query aliases", () => {
+test("public sitemap includes every canonical audience destination without query aliases", () => {
   const locations = [...sitemapXml().matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
-  assert.equal(locations.length,45);
-  assert.equal(new Set(locations).size,45);
+  assert.equal(locations.length, SUPPORTED_LOCALES.length * 5);
+  assert.equal(new Set(locations).size, locations.length);
   for (const segment of ["freediving","scuba"]) for (const locale of SUPPORTED_LOCALES) {
     assert.ok(locations.includes(publicOrigin + localizePath(`/${segment}`,locale)));
   }

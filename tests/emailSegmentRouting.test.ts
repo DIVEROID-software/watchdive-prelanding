@@ -161,7 +161,7 @@ async function lines(dir: string): Promise<Record<string, unknown>[]> {
 
 test("supported localized scuba and freediving paths resolve, and lookalikes do not", () => {
   const prefixes = ["", ...SUPPORTED_LOCALES.map((locale) => `/${LOCALE_PATH_SEGMENTS[locale]}`)];
-  assert.equal(prefixes.length, 10);
+  assert.equal(prefixes.length, 1 + SUPPORTED_LOCALES.length);
   for (const prefix of prefixes) {
     for (const page of ["scuba", "freediving"] as const) {
       assert.equal(resolveReservationEmailSegment(`${prefix}/${page}`), page);

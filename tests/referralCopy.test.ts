@@ -224,6 +224,7 @@ test("share wording names people you know, and the rules define the general list
     fr: "La liste générale",
     de: "Die allgemeine Liste sind",
     "pt-BR": "A lista geral é",
+    nl: "De algemene lijst is",
   };
   for (const [locale, copy] of Object.entries(REFERRAL_COPY)) {
     assert.doesNotMatch(copy.card.body, /\bSend your link\b|내 링크를 보내/, locale);

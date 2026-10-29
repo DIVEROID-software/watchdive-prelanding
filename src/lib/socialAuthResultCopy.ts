@@ -67,6 +67,13 @@ const RESULT: Record<Locale, Record<SocialAuthResultKind, string>> = {
     error: "Esse login não terminou. Você pode usar o formulário de e-mail desta página.",
     "open-browser": "O login do Google não funciona neste navegador. Abra esta página você mesmo no Safari ou no Chrome. Você também pode continuar com o e-mail.",
   },
+  nl: {
+    confirmed: "Je bent aangemeld voor lanceringsupdates van WatchDive.",
+    "check-email": "Als dit adres e-mail kan ontvangen, is er een bevestigingslink onderweg.",
+    pending: "Apple heeft een verborgen adres bewaard en we hebben het niet bevestigd. Er is geen bevestigingsbericht gestuurd. Gebruik het e-mailformulier op deze pagina.",
+    error: "Die aanmelding is niet afgerond. Je kunt het e-mailformulier op deze pagina gebruiken.",
+    "open-browser": "Inloggen met Google werkt niet in deze browser. Open deze pagina zelf in Safari of Chrome. Je kunt op deze pagina doorgaan met e-mail.",
+  },
 };
 
 export function socialAuthResultCopy(locale: Locale): Record<SocialAuthResultKind, string> {

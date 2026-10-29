@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import test, { after, before } from "node:test";
 
 import { SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
+import { nativeFormPrivacyParagraph } from "../src/lib/instantForm/privacy.ts";
 import { referralCopy } from "../src/lib/referral/copy.ts";
 import { TOP_PRIZE_WINNERS } from "../src/lib/referral/program.ts";
 import {
@@ -26,6 +27,7 @@ const OFF_RENDER_SHA256: Record<Locale, string> = {
   fr: "5ea3653f24eaa79ecaf3f58cb79076f688b59e03dec36ea01035870ab7d097bd",
   de: "9c41abe2290f7ad361ed91ff9910ee0f823dcef94cabca447abe31bb88b11a29",
   "pt-BR": "9e0fc38da5013640b63a9062466a540c4e06b3010f755314ff06a308831bbad7",
+  nl: "e62aeae19a6a906f09cff049e1acaf45918e0f95a3a422052dd6fc2f78a240c2",
 };
 
 // Same banned-claim pattern as tests/referralCopy.test.ts.
@@ -58,15 +60,18 @@ before(async () => {
 });
 after(() => harness?.dispose());
 
-test("switch off: the loader returns nothing and every locale renders byte-identical to before", async () => {
+test("Buddy off: the base policy stays fixed while native processing disclosure remains visible", async () => {
   for (const state of [false, "throw"] as const) {
     harness.setProgram(state);
     const data = await harness.module.loadPrivacyPageData!();
-    assert.equal(data, undefined, `loader with program ${state}`);
+    assert.deepEqual(data, { nativeFormPrivacy: true }, `loader with program ${state}`);
     for (const locale of SUPPORTED_LOCALES) {
       const html = harness.render(locale, data);
-      assert.equal(sha256(html), OFF_RENDER_SHA256[locale], `${locale} off render changed`);
+      assert.equal(sha256(harness.render(locale, undefined)), OFF_RENDER_SHA256[locale], `${locale} base render changed`);
       assert.equal(html.includes("buddy-invite"), false);
+      const native = nativeFormPrivacyParagraph(locale);
+      if (native) assert.ok(decode(html).includes(native), `${locale}: native processing text missing`);
+      else assert.equal(html, harness.render(locale, undefined), `${locale}: unexpected fallback disclosure`);
     }
   }
 });
@@ -74,7 +79,7 @@ test("switch off: the loader returns nothing and every locale renders byte-ident
 test("switch on: every locale shows the section after Contact, filled and linked", async () => {
   harness.setProgram(true);
   const data = await harness.module.loadPrivacyPageData!();
-  assert.deepEqual(data, { buddyInvite: true });
+  assert.deepEqual(data, { buddyInvite: true, nativeFormPrivacy: true });
   for (const locale of SUPPORTED_LOCALES) {
     const html = harness.render(locale, data);
     const section = sectionOf(html);
@@ -99,7 +104,7 @@ test("switch on: every locale shows the section after Contact, filled and linked
     // The rest of the page is unchanged: removing the section gives the off render.
     assert.equal(
       sha256(html.replace(section, "")),
-      OFF_RENDER_SHA256[locale],
+      sha256(harness.render(locale, { nativeFormPrivacy: true })),
       `${locale}: rest of page changed`,
     );
   }

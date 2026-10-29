@@ -30,6 +30,7 @@ const EFFECTIVE: Record<FrozenLandingLocale, string> = {
   fr: "18 octobre 2026",
   de: "18. Oktober 2026",
   "pt-BR": "18 de outubro de 2026",
+  nl: "18 oktober 2026",
 };
 
 const GOVERNING: Record<FrozenLandingLocale, string> = {
@@ -42,6 +43,7 @@ const GOVERNING: Record<FrozenLandingLocale, string> = {
   fr: "Les présentes conditions sont régies par le droit de la République de Corée.",
   de: "Diese Bedingungen unterliegen dem Recht der Republik Korea.",
   "pt-BR": "Estes termos são regidos pelas leis da República da Coreia.",
+  nl: "Op deze voorwaarden is het recht van de Republiek Korea van toepassing.",
 };
 
 const FREE_SIGNUP_STILL_DOES_NOT_RESERVE: Record<FrozenLandingLocale, RegExp> = {
@@ -54,6 +56,7 @@ const FREE_SIGNUP_STILL_DOES_NOT_RESERVE: Record<FrozenLandingLocale, RegExp> = 
   fr: /ne réserve/i,
   de: /reserviert kein/,
   "pt-BR": /não reserva/i,
+  nl: /reserveert geen exemplaar/,
 };
 
 const ANCHORS: Record<FrozenLandingLocale, Record<string, string>> = {
@@ -218,6 +221,24 @@ const ANCHORS: Record<FrozenLandingLocale, Record<string, string>> = {
     retention: "somente para administrar a reserva e para cumprir exigências legais e contábeis aplicáveis",
     freeNoPay: "Um cadastro gratuito por e-mail não coleta dados de pagamento",
     noCard: "Não guardamos o número completo do cartão, o código de segurança nem os demais dados completos do cartão",
+  },
+  nl: {
+    exactly: "nu precies USD $3",
+    notDeducted: "wordt er niet van afgetrokken",
+    guarantee: "garandeert dat je het product bij de lancering voor USD $149 kunt kopen",
+    independent: "of je nu wel of niet bij de openbare eerste 100 hoort",
+    manual: "alleen wanneer jij ervoor kiest te kopen",
+    noAuto: "rekenen het niet automatisch, plannen het niet in en geven er geen automatische machtiging voor",
+    sum: "USD $152, vóór eventuele verzending of belasting op het product",
+    disclose: "Als verzending of belasting op het product geldt, zeggen we dat voordat je het product koopt.",
+    refund: "niet terugbetaald, behalve als wij de productlancering annuleren",
+    rights: "vragen niet dat je zo'n recht opgeeft",
+    country: "los van de optionele paginameting",
+    unknown: "het land als onbekend opgeslagen",
+    noRaw: "We bewaren het ruwe IP-adres niet bij die landcode",
+    retention: "alleen om de reservering te beheren en om aan toepasselijke juridische en boekhoudkundige eisen te voldoen",
+    freeNoPay: "Een gratis e-mailaanmelding verzamelt geen betaalgegevens.",
+    noCard: "bewaren niet het volledige kaartnummer, de kaartbeveiligingscode of andere volledige kaartgegevens",
   },
 };
 
@@ -420,6 +441,7 @@ const LOWEST_LAUNCH_PRICE: Record<FrozenLandingLocale, string> = {
   fr: "USD $149 est le prix de lancement le plus bas.",
   de: "USD $149 ist der niedrigste Startpreis.",
   "pt-BR": "USD $149 é o menor preço de lançamento.",
+  nl: "Die prijs van USD $149 is de laagste lanceringsprijs.",
 };
 
 test("every locale says the guaranteed USD $149 price is the lowest launch price", () => {

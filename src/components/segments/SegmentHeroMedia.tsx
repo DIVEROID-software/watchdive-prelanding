@@ -13,7 +13,7 @@ import scubaLoop from '@/assets/live/segment-heroes/scuba-underwater-steady.mp4'
 const pauseLabels: Record<Locale, string> = {
   en: 'Pause video', ko: '영상 일시 정지', 'zh-CN': '暂停视频', 'zh-TW': '暫停影片',
   ja: '動画を一時停止', es: 'Pausar vídeo', fr: 'Mettre la vidéo en pause',
-  de: 'Video pausieren', 'pt-BR': 'Pausar vídeo',
+  de: 'Video pausieren', 'pt-BR': 'Pausar vídeo', nl: 'Video pauzeren',
 };
 
 /** Real footage, silent and short. The poster renders first without waiting for JS.

@@ -61,8 +61,8 @@ function eligible(overrides: Partial<LaunchSmsRecipient> = {}): LaunchSmsRecipie
 
 test("catalog previews nine locales and both variants with tokens intact", () => {
   const items = launchSmsCatalog();
-  assert.equal(items.length, 18);
-  assert.equal(SUPPORTED_LOCALES.length, 9);
+  assert.equal(items.length, 20);
+  assert.equal(SUPPORTED_LOCALES.length, 10);
   assert.equal(LAUNCH_SMS_PROVIDER_INSTALLED, false);
   for (const locale of SUPPORTED_LOCALES) {
     const launch = items.find((item) => item.locale === locale && item.variant === "launch");

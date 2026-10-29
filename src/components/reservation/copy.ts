@@ -764,6 +764,84 @@ const portuguese: ReservationCopy = {
   returnUnavailable: "Não foi possível enviar o link agora. Tente de novo mais tarde.",
 };
 
+const dutch: ReservationCopy = {
+  metaTitle: "Reserveer de laagste lanceringsprijs van $149 voor $3",
+  metaDescription: `De reserveringskosten van ${fee} staan apart van de productprijs van ${product}. Samen zijn ze ${total} vóór verzending en belasting.`,
+  languageLabel: "Taal",
+  english: "English",
+  korean: "한국어",
+  home: "WatchDive-startpagina",
+  title: "Reserveer nu de laagste lanceringsprijs van $149 voor $3.",
+  intro:
+    "De reserveringskosten van $3 staan apart. Ze worden niet afgetrokken van de productprijs van $149 bij de lancering.",
+  priceHeading: "Prijzen",
+  priceRows: [
+    {
+      id: "fee",
+      label: "Nu verschuldigd",
+      amount: fee,
+      detail: "Reserveringskosten. Apart, en niet verrekend met de productprijs.",
+    },
+    {
+      id: "product",
+      label: "Bij de lancering",
+      amount: product,
+      detail: "Productprijs. Die betaal je zelf. Hij wordt niet automatisch afgeschreven.",
+    },
+    {
+      id: "total",
+      label: "Kosten plus productprijs",
+      amount: total,
+      detail: "Vóór verzending en belasting, als die gelden.",
+    },
+  ],
+  termsHeading: "Voordat je betaalt",
+  terms: [
+    `Je betaalt nu ${fee}. Deze kosten staan apart. Ze worden niet verrekend met de productprijs van ${product}, en ze verlagen die prijs niet.`,
+    `Een betaalde reservering geeft je 100% de laagste lanceringsprijs, ${product}, ook als je niet bij de eerste 100 hoort. Die prijs betaal je zelf bij de lancering. WatchDive schrijft hem niet automatisch af.`,
+    `${total} is de som van de kosten en de productprijs, vóór verzending en belasting als die gelden.`,
+    `De kosten van ${fee} worden alleen terugbetaald als wij de lancering annuleren. Rechten die de wet vereist, blijven gelden.`,
+  ],
+  markRead: "Ik heb dit gelezen",
+  markReadDone: "Gemarkeerd als gelezen",
+  acceptLabel: "Ik ga akkoord, en ik wil de reserveringskosten betalen.",
+  checkout: `Doorgaan om ${fee} te betalen`,
+  checkingOut: "Betaling wordt geopend",
+  checkAgain: "Opnieuw controleren",
+  checkingStatus: "De betaling wordt gecontroleerd.",
+  checkoutHintUnread: "Lees de voorwaarden en ga akkoord voordat je betaalt.",
+  checkoutHintUnaccepted: "Ga akkoord met de voorwaarden voordat je betaalt.",
+  checkoutHintPending: "De betaling is nog niet bevestigd.",
+  checkoutHintUnavailable: "Betalen blijft dicht tot WatchDive de status kan bevestigen.",
+  checkoutFailed: "De betaling kon niet worden geopend. Er is niets bevestigd.",
+  needsInvitation: "Open de reserveringslink uit je e-mail.",
+  invalidInvitation: "Deze reserveringslink kan niet worden gebruikt. Open de link uit je e-mail opnieuw.",
+  offerStatus: "De reserveringskosten zijn nog niet betaald.",
+  pendingStatus: "We bevestigen de betaling nog.",
+  paidStatus: `De reserveringskosten van ${fee} zijn betaald. Ze staan apart van de productprijs van ${product} en worden er niet mee verrekend.`,
+  canceledStatus: "De betaling is geannuleerd.",
+  canceledRetry: "Je kunt akkoord gaan met de voorwaarden en doorgaan wanneer je zover bent.",
+  openStatus: "Er staat al een betaling open. Die is niet afgerond.",
+  refundedStatus: "De reserveringskosten zijn terugbetaald.",
+  partialRefundStatus: "Een deel van de reserveringskosten is terugbetaald.",
+  refundPendingStatus: "Een terugbetaling loopt nog.",
+  disputedStatus: "Deze betaling is betwist. Afrekenen blijft gesloten.",
+  invalidStatus: "We konden deze betaling niet bevestigen.",
+  checkoutConflict: "We zijn geen tweede betaling gestart. We controleren de betaling opnieuw.",
+  unavailableStatus: "We konden de betaling nog niet bevestigen.",
+  privacy: "Privacy",
+  siteTerms: "Voorwaarden",
+  contact: "Vragen: help@diveroid.com",
+  returnLead: "Stuur de reserveringslink naar het e-mailadres dat ik al heb gebruikt.",
+  returnEmailLabel: "E-mail",
+  returnSubmit: "Stuur mijn link",
+  returnSending: "Bezig met verzenden",
+  returnAccepted:
+    "Als dit adres een bevestigde, onbetaalde WatchDive-aanmelding heeft, sturen we de reserveringslink daarheen. Is die nog niet bevestigd, kijk dan in de bevestigingsmail die je al hebt gekregen.",
+  returnInvalid: "Vul een geldig e-mailadres in.",
+  returnUnavailable: "De link kon nu niet worden verstuurd. Probeer het later opnieuw.",
+};
+
 const COPY: Record<ReservationLocale, ReservationCopy> = {
   en: english,
   ko: korean,
@@ -774,6 +852,7 @@ const COPY: Record<ReservationLocale, ReservationCopy> = {
   fr: french,
   de: german,
   "pt-BR": portuguese,
+  nl: dutch,
 };
 
 export function reservationCopy(locale: ReservationLocale): ReservationCopy {

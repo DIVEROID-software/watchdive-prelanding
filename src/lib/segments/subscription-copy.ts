@@ -231,6 +231,28 @@ export const SUBSCRIPTION_COPY: Record<Locale, SubscriptionCopy> = {
       "Preços de tabela em USD na App Store dos EUA, conferidos em 2026-10-25. São as taxas de assinatura do app Oceanic+ para o Apple Watch Ultra. A conta supõe dois anos contínuos e preço sem mudança. Mergulho autônomo: plano anual individual, que também inclui o mergulho livre, dois pagamentos, $79.99 × 2 = $159.98. Região e preço podem mudar. Uso por dia ou por temporada não entra na conta.",
     sourceLabel: "Oceanic+ · App Store dos EUA",
   },
+  nl: {
+    usp: "Duikcomputerfuncties, zonder extra abonnement.",
+    uspShort: "Duikcomputerfuncties · Geen extra abonnement",
+    benefitTitle: "Geen apart abonnement.",
+    benefitBody: "De duikcomputerfuncties van WatchDive hebben geen apart abonnement nodig.",
+    faqQuestion: "Hebben de duikcomputerfuncties een abonnement nodig?",
+    faqAnswer: "Nee. De duikcomputerfuncties van WatchDive hebben geen apart abonnement nodig.",
+    kicker: "Kosten over twee jaar",
+    title: "Twee jaar abonnement, of één aankoop.",
+    lead: "Wat kosten twee jaar gebruik van duikcomputerfuncties?",
+    competitorPlan: "Oceanic+ · Jaarabonnement voor scuba",
+    calculation: "$79.99/jaar × 2 jaar",
+    twoYearLabel: "Abonnementstotaal over 2 jaar",
+    oneTimeLabel: "Eenmalige aankoop",
+    watchIncludes: "Behuizing + duikcomputerfuncties",
+    watchOffer: "Kickstarter-prijs voor de eerste 100",
+    caveat: "Smartwatchprijzen, verzending en belastingen horen niet bij deze vergelijking.",
+    basisLabel: "Prijsbasis",
+    basis:
+      "USD-adviesprijzen in de Amerikaanse App Store, gecontroleerd op 2026-10-25. Dit zijn abonnementskosten van de Oceanic+-app voor de Apple Watch Ultra. Uitgangspunt: twee aaneengesloten jaren tegen een ongewijzigde prijs. Scuba is het individuele jaarplan, dat ook freediven bevat: twee betalingen, $79.99 × 2 = $159.98. Regio's en prijzen kunnen verschillen. Gebruik per dag of per seizoen telt niet mee.",
+    sourceLabel: "Oceanic+ · Amerikaanse App Store",
+  },
 };
 
 export function subscriptionCopy(locale: Locale): SubscriptionCopy {

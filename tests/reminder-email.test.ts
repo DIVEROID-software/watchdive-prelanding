@@ -60,7 +60,7 @@ function sliceBetween(source: string, start: string, end: string): string {
 test("every signup locale has reminder copy, plaintext, and one verify button", () => {
   assert.deepEqual(
     [...SUPPORTED_LOCALES],
-    ["en", "ko", "zh-CN", "zh-TW", "ja", "es", "fr", "de", "pt-BR"],
+    ["en", "ko", "zh-CN", "zh-TW", "ja", "es", "fr", "de", "pt-BR", "nl"],
   );
   for (const locale of SUPPORTED_LOCALES) {
     const url = verificationUrl(ORIGIN, tokenFor(locale));
@@ -221,7 +221,7 @@ test("reviewed copy, welcome markup and reminder routing in resend.ts stay fixed
         ),
       )
       .digest("hex"),
-    "a68c60a7c570a10b367e9faa4d991228e738b84b3665e1789ee7a5fe19150c53",
+    "9e1da13461230cb058a665fc2d97c8c04a2dc339165bfca5256dc3d7519f9ba0",
   );
   // 2026-10-26 brutalism pass replaced the program-off welcome markup.
   // EMAIL_COPY above stays frozen. This hash is the new welcomeBody source.
@@ -239,7 +239,7 @@ test("reviewed copy, welcome markup and reminder routing in resend.ts stay fixed
   );
   assert.match(
     copy,
-    /reminder\s*\?\s*`watchdive-verification-reminder-\$\{leadId\}`\s*:\s*`watchdive-verification-\$\{leadId\}`/,
+    /reminder\s*\?\s*`watchdive-verification-reminder-\$\{leadId\}`\s*:\s*nativeConfirmationIdempotencyKey\(idempotencyOverride, leadId\)/,
   );
   assert.match(copy, /reminder \? "verification_reminder" : "verification"/);
   assert.equal(copy.includes("console.log"), false);

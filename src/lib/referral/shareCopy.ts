@@ -5,7 +5,7 @@
 // sends must not read as our advertising sent on their behalf. So the button
 // says "Share" (the person chooses where and to whom), and the prefilled text
 // is a neutral product description with no reward, price or scarcity claim.
-// en and ko are the reviewed strings handed down verbatim; the other seven are
+// en and ko are the reviewed strings handed down verbatim; the other locales are
 // translations in the register each locale's landing already uses.
 //
 // With the switch OFF the landing keeps its frozen `m.referral.shareButton` /
@@ -52,6 +52,10 @@ export const REFERRAL_SHARE_COPY: Record<Locale, ReferralShareCopy> = {
   "pt-BR": {
     button: "Compartilhar meu link",
     text: "O WatchDive transforma o Apple Watch ou Galaxy Watch que eu já uso em um computador de mergulho. Entra na lista de espera pelo meu link.",
+  },
+  nl: {
+    button: "Deel mijn link",
+    text: "WatchDive maakt van de Apple Watch of Galaxy Watch die ik al draag een duikcomputer. Schrijf je via mijn link in op de wachtlijst.",
   },
 };
 

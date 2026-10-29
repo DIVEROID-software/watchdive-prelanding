@@ -45,7 +45,7 @@ WITH facts AS (
   SELECT
     person_key,
     CASE
-      WHEN signup_locale IN ('en','ko','zh-CN','zh-TW','ja','es','fr','de','pt-BR') THEN signup_locale
+      WHEN signup_locale IN ('en','ko','zh-CN','zh-TW','ja','es','fr','de','pt-BR','nl') THEN signup_locale
       ELSE NULL
     END AS signup_locale,
     CASE

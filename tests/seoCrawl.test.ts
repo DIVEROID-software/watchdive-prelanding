@@ -44,7 +44,7 @@ test("robots.txt allows public pages, blocks only API fetches, and publishes the
   assert.doesNotMatch(body, /Disallow: \/(?:privacy|ko|verify|reservation)/);
 });
 
-test("the sitemap lists the 45 canonical public URLs and repeats the HTML hreflang cluster", () => {
+test("the sitemap lists five public URLs per locale and repeats the HTML hreflang cluster", () => {
   const xml = sitemapXml();
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
   assert.equal(locs.length, SUPPORTED_LOCALES.length * 5);

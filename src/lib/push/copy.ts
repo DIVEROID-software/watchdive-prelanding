@@ -114,4 +114,15 @@ export const PUSH_COPY: Record<Locale, PushCopy> = {
     off: "As notificações estão desativadas neste navegador.",
     busy: "Salvando…",
   },
+  nl: {
+    title: "Lanceermeldingen op dit apparaat",
+    body: "Optionele browsermeldingen voor de lancering van WatchDive. Je kunt ze hier of in de browserinstellingen uitzetten. Dit meldt je niet aan via e-mail.",
+    enable: "Lanceermeldingen toestaan",
+    disable: "Meldingen uitzetten",
+    enabled: "Meldingen staan aan in deze browser.",
+    denied: "Meldingen zijn niet toegestaan. Je kunt dit wijzigen in de browserinstellingen.",
+    failed: "Meldingen konden niet worden opgeslagen. Probeer het opnieuw.",
+    off: "Meldingen staan uit in deze browser.",
+    busy: "Opslaan…",
+  },
 };

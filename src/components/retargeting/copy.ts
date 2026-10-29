@@ -214,4 +214,27 @@ export const RETARGETING_COPY: Record<Locale, Copy> = {
     verify: "Seu e-mail ainda não foi verificado. Use o link de confirmação nesta mensagem.",
     sizes: "Selecione seu modelo de relógio para verificar o suporte.",
   },
+  nl: {
+    exitCta: "Lanceerupdates ontvangen",
+    exitTitle: "Houd WatchDive in de gaten.",
+    exitBody: "Ontvang de lanceermail. Bevestig je adres via de link die we sturen.",
+    decline: "Nee, bedankt",
+    close: "Sluiten",
+    checkerTitle: "Werkt WatchDive met jouw horloge?",
+    checkerBody:
+      "Kies je model en vraag het huidige compatibiliteitsresultaat per e-mail aan. Met dezelfde e-mail bevestig je je aanmelding voor de lancering.",
+    model: "Horlogemodel",
+    choose: "Kies je model",
+    otherApple: "Apple Watch (behalve Ultra, Ultra 2 en Ultra 3)",
+    other: "Mijn model staat er niet bij",
+    request: "Mail mij het resultaat",
+    listed:
+      "Staat op de lijst voor de lancering van behuizing + app. De definitieve compatibiliteit blijft afhankelijk van de lanceringslijst.",
+    planned:
+      "Ondersteuning alleen via de app is gepland. Dit model staat niet op de lanceringslijst voor behuizing + app.",
+    unconfirmed: "We kunnen ondersteuning voor dit model nog niet bevestigen.",
+    verify:
+      "Je e-mailadres is nog niet bevestigd. Gebruik de bevestigingslink in deze e-mail om de verificatie af te ronden.",
+    sizes: "Selecteer je horlogemodel om de ondersteuning te controleren.",
+  },
 };

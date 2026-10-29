@@ -10,4 +10,5 @@ export const alreadyVerifiedCopy: Record<Locale, { title: string; body: string; 
   fr: { title: "Cette adresse e-mail est déjà vérifiée", body: "Vous êtes déjà inscrit aux actualités du lancement. Aucun nouvel e-mail de vérification ne sera envoyé.", other: "Utiliser une autre adresse" },
   de: { title: "Diese E-Mail-Adresse ist bereits bestätigt", body: "Du bist bereits für Neuigkeiten zum Start angemeldet. Wir senden keine weitere Bestätigungs-E-Mail.", other: "Andere E-Mail-Adresse verwenden" },
   "pt-BR": { title: "Este e-mail já foi verificado", body: "Você já está inscrito para receber novidades do lançamento. Não enviaremos outro e-mail de verificação.", other: "Usar outro e-mail" },
+  nl: { title: "Dit e-mailadres is al bevestigd", body: "Je bent al aangemeld voor lanceringsnieuws. We sturen geen nieuwe bevestigingsmail.", other: "Ander e-mailadres gebruiken" },
 };

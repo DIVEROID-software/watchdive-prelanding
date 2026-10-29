@@ -23,7 +23,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env,
     } }));
   } catch { print("Invalid arguments. Use --help."); return 1; }
   if (values.help) {
-    print("Default/--preview: offline 4-stage × 3-segment × 9-language draft previews (108), plus general filename aliases. --dry-run: read-only Notion readiness, no Stripe or messages. --send --confirm-campaign wd-reservation-drip-v1: requires approved copy hash, prospective cutoff, existing D0 ledger, new stage ledger directory, verified legacy scheduler cutover and all live-account guards. Never run send before review. Optional --limit caps each stage. All amounts USD."); return 0;
+    print("Default/--preview: offline 4-stage × 3-segment × 10-language draft previews (120), plus general filename aliases. --dry-run: read-only Notion readiness, no Stripe or messages. --send --confirm-campaign wd-reservation-drip-v1: requires approved copy hash, prospective cutoff, existing D0 ledger, new stage ledger directory, verified legacy scheduler cutover and all live-account guards. Never run send before review. Optional --limit caps each stage. All amounts USD."); return 0;
   }
   if (values.send && (values.preview || values["dry-run"] || values["confirm-campaign"] !== DRIP_CAMPAIGN)) { print("Contradictory mode or missing exact campaign confirmation."); return 1; }
   if (!values.send && !values["dry-run"]) {
@@ -55,9 +55,10 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv = process.env,
       }
       links.push("</ul>");
     }
-    await writeFile(join(dir, "index.html"), `<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WatchDive 메일 초안</title><style>body{font:18px system-ui;background:#201748;color:white;max-width:920px;margin:40px auto;padding:24px}a{color:#65ceee}ul{columns:3;line-height:2}@media(max-width:600px){ul{columns:2}}</style><h1>$3 예약 메일 · 로컬 초안 108통</h1><p>실제 발송 없음. 가입 화면이 프리다이빙·스쿠버·일반이면 문장과 이미지가 달라집니다. D0는 예약 안내와 GIF, D1은 사용 장면, D3는 선착순 100명 $149와 다음 $200, D7은 다음 다이빙과 $149 가격 안내입니다. 사전 알림 신청이 계속 늘고 있어요. 인원 수, 매일 증가, 마감, 급증은 쓰지 않습니다. 선착순 100명은 $149, 그다음은 $200. 버튼은 $3 하나. $3가 $149에서 빠지지 않는 설명은 결제 화면에 있습니다. 이미지는 이 컴퓨터의 127.0.0.1:5195에서만 열고, 결제 링크는 그대로입니다. 발송·배포·최종 문구 승인은 아닙니다.</p>${links.join("")}</html>`);
-    await writeFile(join(dir, "manifest.json"), JSON.stringify({ draft: true, sendApproved: false, copyHash: DRIP_COPY_HASH, samples: 108, priceUsdAfterFirst100: 200, schemaPlan: DRIP_SCHEMA_PLAN, items }, null, 2));
-    print(JSON.stringify({ mode: "preview", samples: 108, copyHash: DRIP_COPY_HASH, output: dir, sent: 0 })); return 0;
+    const samples = items.length;
+    await writeFile(join(dir, "index.html"), `<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WatchDive 메일 초안</title><style>body{font:18px system-ui;background:#201748;color:white;max-width:920px;margin:40px auto;padding:24px}a{color:#65ceee}ul{columns:3;line-height:2}@media(max-width:600px){ul{columns:2}}</style><h1>$3 예약 메일 · 로컬 초안 ${samples}통</h1><p>실제 발송 없음. 가입 화면이 프리다이빙·스쿠버·일반이면 문장과 이미지가 달라집니다. D0는 예약 안내와 GIF, D1은 사용 장면, D3는 선착순 100명 $149와 다음 $200, D7은 다음 다이빙과 $149 가격 안내입니다. 사전 알림 신청이 계속 늘고 있어요. 인원 수, 매일 증가, 마감, 급증은 쓰지 않습니다. 선착순 100명은 $149, 그다음은 $200. 버튼은 $3 하나. $3가 $149에서 빠지지 않는 설명은 결제 화면에 있습니다. 이미지는 이 컴퓨터의 127.0.0.1:5195에서만 열고, 결제 링크는 그대로입니다. 발송·배포·최종 문구 승인은 아닙니다.</p>${links.join("")}</html>`);
+    await writeFile(join(dir, "manifest.json"), JSON.stringify({ draft: true, sendApproved: false, copyHash: DRIP_COPY_HASH, samples, priceUsdAfterFirst100: 200, schemaPlan: DRIP_SCHEMA_PLAN, items }, null, 2));
+    print(JSON.stringify({ mode: "preview", samples, copyHash: DRIP_COPY_HASH, output: dir, sent: 0 })); return 0;
   }
   if (values.send && !dripEnabled(env, DRIP_COPY_HASH)) { print("Send refused: feature, approved copy hash or legacy-job cutover is not confirmed."); return 2; }
   const legacyReceiptDir = values["legacy-receipt-dir"] ?? env.WATCHDIVE_RESERVATION_DRIP_LEGACY_RECEIPT_DIR;

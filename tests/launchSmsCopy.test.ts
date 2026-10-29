@@ -21,7 +21,7 @@ const BANNED =
 test("launch SMS covers nine locales, two variants, and no live link", () => {
   assert.equal(LAUNCH_SMS_PROVIDER_INSTALLED, false);
   assert.equal(LAUNCH_SMS_SEGMENT_POLICY, "shared");
-  assert.equal(SUPPORTED_LOCALES.length, 9);
+  assert.equal(SUPPORTED_LOCALES.length, 10);
   assert.notEqual(LAUNCH_SMS_LAUNCH_URL_TOKEN, LAUNCH_SMS_RESERVATION_URL_TOKEN);
   assert.equal(LAUNCH_SMS_KO_MARKETING_PREFIX, KR_AD_SUBJECT_PREFIX);
   for (const locale of SUPPORTED_LOCALES) {

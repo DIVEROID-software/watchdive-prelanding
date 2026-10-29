@@ -76,6 +76,7 @@ export const LAUNCH_TIME_ZONE: Record<Locale, { zone: string; label: string }> =
   fr: { zone: "Europe/Paris", label: "heure de Paris" },
   de: { zone: "Europe/Berlin", label: "deutsche Zeit" },
   "pt-BR": { zone: "America/Sao_Paulo", label: "horário de Brasília" },
+  nl: { zone: "Europe/Amsterdam", label: "Nederlandse tijd" },
 };
 
 /** The separator after a label in the plain-text part ("Launch time: …"). */
@@ -89,6 +90,7 @@ export const LABEL_SEPARATOR: Record<Locale, string> = {
   fr: " : ",
   de: ": ",
   "pt-BR": ": ",
+  nl: ": ",
 };
 
 export const LAUNCH_COPY = {
@@ -581,6 +583,59 @@ export const LAUNCH_COPY = {
         "Não vamos mais mandar e-mails do WatchDive para este endereço (avisos de lançamento e {program}).",
     },
   },
+  nl: {
+    waves: {
+      "t-1d": {
+        subject: "WatchDive opent morgen op Kickstarter",
+        preheader: "Nog één bericht een uur van tevoren, en de link op het moment dat het opent.",
+        heading: "Morgen opent WatchDive op Kickstarter",
+        body: "De campagne gaat live op {time}. We schrijven nog één keer een uur van tevoren, en sturen de link op het moment dat het opent.",
+        price: "De eerste 100 backers krijgen WatchDive voor US$149. Na de eerste 100 begint de volgende prijs bij US$200.",
+        button: "Bekijk de Kickstarter-pagina",
+      },
+      "t-1h": {
+        subject: "Nog één uur tot WatchDive opent op Kickstarter",
+        preheader: "US$149 is alleen voor de eerste 100 backers.",
+        heading: "Nog één uur",
+        body: "WatchDive opent op Kickstarter om {time}. De link komt op het moment dat de campagne live is.",
+        price: "US$149 is alleen voor de eerste 100 backers. Na de eerste 100 begint de volgende prijs bij US$200.",
+        button: "Bekijk de Kickstarter-pagina",
+      },
+      "t-0": {
+        subject: "WatchDive is live op Kickstarter",
+        preheader: "De eerste 100 backers krijgen US$149.",
+        heading: "WatchDive is live op Kickstarter",
+        body: "De campagne is net geopend. Steun nu voor een kans om bij de eerste 100 backers te horen.",
+        price: "De eerste 100 backers krijgen WatchDive voor US$149. Na de eerste 100 begint de volgende prijs bij US$200.",
+        button: "Steun WatchDive op Kickstarter",
+      },
+    },
+    timeLabel: "Starttijd",
+    reason: "Je krijgt dit omdat je je e-mail voor de WatchDive-wachtlijst hebt bevestigd.",
+    unsubscribe: "Afmelden voor lanceringsmails",
+    help: "Vragen? help@diveroid.com",
+    page: {
+      title: "Lanceringsmails — WatchDive",
+      confirmHeading: "WatchDive-lanceringsmails stoppen?",
+      confirmBody: "Je krijgt de resterende lanceringsberichten niet meer op dit adres.",
+      confirmButton: "Afmelden",
+      doneHeading: "Je bent afgemeld",
+      doneBody: "We sturen geen WatchDive-lanceringsmails meer naar dit adres.",
+      invalidHeading: "Deze link werkt niet",
+      invalidBody: "Mail help@diveroid.com, dan halen we je met de hand van de lijst.",
+      unavailableHeading: "We konden dat nu niet opslaan",
+      unavailableBody: "Probeer het over een minuut opnieuw, of mail help@diveroid.com.",
+    },
+    programPage: {
+      title: "WatchDive-mails — WatchDive",
+      confirmHeading: "WatchDive-mails stoppen?",
+      confirmBody:
+        "Dit adres krijgt geen WatchDive-mails meer (lanceringsupdates en {program}).",
+      doneHeading: "Je bent afgemeld",
+      doneBody:
+        "We sturen geen WatchDive-mails meer naar dit adres (lanceringsupdates en {program}).",
+    },
+  },
 } as const satisfies Record<Locale, LaunchCopy>;
 
 /**
@@ -641,6 +696,11 @@ export const LAUNCH_REFERRAL_PRICE: Record<Locale, { price: string; preheader: s
     price:
       "O early bird de US$ 149 vale para os 100 primeiros apoiadores e para quem está na lista com reserva de preço ou nível Equipe de mergulho. Após os 100 primeiros, o próximo preço começa em US$ 200.",
     preheader: "US$ 149: os 100 primeiros apoiadores, reservas de preço e Equipe de mergulho.",
+  },
+  nl: {
+    price:
+      "Early bird US$149: de eerste 100 Kickstarter-backers, plus wachtlijstleden met een prijsreservering of Duikteam-status. Na de eerste 100 begint de volgende prijs bij US$200.",
+    preheader: "Early bird US$149: de eerste 100 backers, prijsreserveringen en Duikteam.",
   },
 };
 

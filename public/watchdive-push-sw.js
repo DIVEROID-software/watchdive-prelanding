@@ -11,6 +11,7 @@ const launchCopy = {
   fr: "Des nouvelles du lancement de WatchDive sont disponibles. Consultez le site.",
   de: "Es gibt Neuigkeiten zum Start von WatchDive. Öffne die Website für Details.",
   "pt-BR": "Há novidades sobre o lançamento do WatchDive. Abra o site para saber mais.",
+  nl: "Er is nieuws over de lancering van WatchDive. Open de site voor de details.",
 };
 const paths = {
   en: "/",
@@ -22,6 +23,7 @@ const paths = {
   fr: "/fr",
   de: "/de",
   "pt-BR": "/pt-br",
+  nl: "/nl",
 };
 self.addEventListener("push", (event) => {
   let payload;

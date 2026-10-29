@@ -153,6 +153,20 @@ const COPY: Record<Locale, AskCopy> = {
     grantRetry: "Neste navegador a medição está ligada. A permissão ainda não está no cadastro.",
     grantRetryButton: "Tentar de novo",
   },
+  nl: {
+    title: "Een optioneel verzoek",
+    body: "We zijn een klein duikteam. Als je het toestaat, laten cookies en vergelijkbare tools van Meta, Google en Microsoft Clarity, plus onze eigen meting van klikken en scrollen, zien welke advertentie je hier bracht en hoe de pagina wordt gebruikt, zodat we minder uitgeven om de volgende duiker te bereiken. Je aanmelding werkt hoe dan ook.",
+    allow: "Meting toestaan",
+    decline: "Nee, bedankt",
+    privacy: "Privacy",
+    thanks: "Dank je. Dat helpt echt.",
+    withdrawRetry:
+      "Meting staat uit in deze browser. We konden niet bevestigen dat je keuze is opgeslagen. Probeer het opnieuw.",
+    withdrawRetryButton: "Opnieuw proberen",
+    grantRetry:
+      "Je browserkeuze is opgeslagen. We konden het voor deze aanmelding niet bevestigen. Probeer het opnieuw.",
+    grantRetryButton: "Opnieuw proberen",
+  },
 };
 
 /**
