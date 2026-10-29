@@ -2,12 +2,49 @@ import type { FrozenLandingMessages } from "@/lib/i18n/frozen-landing-en";
 
 type Compat = FrozenLandingMessages["compat"];
 
-/** Public `router.navigate` slice. `href` keeps the raw pathname and query. */
+/** Public router commit. `href` is the raw pathname, query, and hash. */
 export type MiddleSignupNavigate = (options: {
   href: string;
   resetScroll: false;
   hashScrollIntoView: false;
 }) => Promise<void>;
+
+type MiddleSignupLocation = { href: string };
+
+/**
+ * The installed router parses an `href` search with JSON.parse. An 18-digit
+ * Meta id is a JavaScript number, so `router.navigate({ href })` rewrites
+ * `utm_campaign=120251732986720215` to `...210` and `%20` to `+`.
+ * `commitLocation` still honors `resetScroll` and `hashScrollIntoView`, and
+ * the history entry uses the raw href. The same browser URL then reuses the
+ * router's current href so a second click does not push another entry.
+ */
+export function commitMiddleSignup<T extends MiddleSignupLocation>(
+  router: {
+    state: { location: T };
+    commitLocation: (options: T & {
+      href: string;
+      publicHref: string;
+      hash: string;
+      maskedLocation?: undefined;
+      resetScroll: false;
+      hashScrollIntoView: false;
+    }) => Promise<void>;
+  },
+  options: { href: string; resetScroll: false; hashScrollIntoView: false },
+) {
+  const current = router.state.location;
+  const browserHref = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  return router.commitLocation({
+    ...current,
+    href: browserHref === options.href ? current.href : options.href,
+    publicHref: options.href,
+    hash: "signup-middle",
+    maskedLocation: undefined,
+    resetScroll: false,
+    hashScrollIntoView: false,
+  });
+}
 
 type SignupJumpEvent = {
   preventDefault(): void;
