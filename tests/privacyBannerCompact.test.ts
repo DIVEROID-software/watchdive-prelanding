@@ -21,7 +21,7 @@ function copyBlocks(): Array<{ locale: string; body: string; bodyShort: string }
 
 test("every locale has a phone body that is shorter and names the same vendors", () => {
   const blocks = copyBlocks();
-  assert.equal(blocks.length, 9);
+  assert.equal(blocks.length, 10);
   for (const { locale, body, bodyShort } of blocks) {
     assert.ok(bodyShort.length < body.length, locale);
     for (const vendor of ["Meta", "Google", "Microsoft Clarity"]) {
@@ -43,6 +43,7 @@ const PURPOSES: Record<string, string[]> = {
   fr: ["outils similaires", "quelles annonces", "comment la page est utilisée"],
   de: ["ähnliche Tools", "welche Anzeigen", "wie die Seite genutzt wird"],
   "pt-BR": ["ferramentas semelhantes", "quais anúncios", "como a página é usada"],
+  nl: ["vergelijkbare tools", "welke advertenties", "hoe deze pagina wordt gebruikt"],
 };
 
 test("the phone text names both purposes and the similar-tools category, like the full text", () => {

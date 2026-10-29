@@ -122,6 +122,7 @@ test("every locale names the lowest launch price and a closed dispute", () => {
     fr: /prix de lancement le plus bas/,
     de: /niedrigsten Startpreis/i,
     "pt-BR": /menor preço de lançamento/,
+    nl: /laagste lanceringsprijs/,
   };
   for (const locale of SUPPORTED_LOCALES) {
     const copy = reservationCopy(locale);

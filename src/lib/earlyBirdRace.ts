@@ -17,6 +17,7 @@ export const earlyBirdRaceCopy: Record<Locale, string> = {
   fr: "{price} en offre de lancement : les {seats} premiers contributeurs sur Kickstarter. Ensuite, le prix passe à 200 USD.",
   de: "{price} zum Early-Bird-Preis: die ersten {seats} Unterstützer auf Kickstarter. Danach steigt der Preis auf 200 USD.",
   "pt-BR": "{price} na oferta de lançamento: os {seats} primeiros apoiadores no Kickstarter. Depois, o preço sobe para US$ 200.",
+  nl: "{price} early bird: de eerste {seats} Kickstarter-backers. Daarna stijgt de prijs naar 200 USD.",
 };
 
 /** Only this phrase gets a marker; its text never fades with the background. */
@@ -30,6 +31,7 @@ export const earlyBirdRaceHighlight: Record<Locale, string> = {
   fr: `les ${EARLY_BIRD_SEATS} premiers`,
   de: `die ersten ${EARLY_BIRD_SEATS}`,
   "pt-BR": `os ${EARLY_BIRD_SEATS} primeiros`,
+  nl: `de eerste ${EARLY_BIRD_SEATS}`,
 };
 
 export function earlyBirdRace(locale: Locale, price: string, template?: string): string {

@@ -1115,6 +1115,7 @@ const LOWEST_WORD: Record<(typeof SUPPORTED_LOCALES)[number], string> = {
   fr: "plus bas",
   de: "niedrigst",
   "pt-BR": "menor",
+  nl: "laagste",
 };
 
 function claimsEmail(html: string): string | undefined {

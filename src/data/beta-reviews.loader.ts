@@ -33,13 +33,15 @@ export function betaReviewBody(
  *
  * The English rendering remains in `beta-reviews.ts`. Keeping every other
  * locale behind its own import boundary prevents one translated page from
- * downloading the complete nine-language testimonial set.
+ * downloading the complete testimonial set. Dutch uses the English
+ * impressions, so it does not load a separate module.
  */
 export async function loadLocalizedBetaReviewBodies(
   locale: Locale,
 ): Promise<LocalizedBetaReviewBodies | undefined> {
   switch (locale) {
     case "en":
+    case "nl":
       return undefined;
     case "ko":
       return validateLocalizedBodies(

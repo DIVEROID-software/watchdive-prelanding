@@ -19,6 +19,7 @@ const INTRO = {
   fr: "Transformez l’Apple Watch ou la Galaxy Watch que vous avez déjà en ordinateur de plongée. Ce n’est pas forcément une Ultra.",
   de: "Machen Sie die Apple Watch oder Galaxy Watch, die Sie schon haben, zum Tauchcomputer. Es muss kein Ultra sein.",
   "pt-BR": "Transforme o Apple Watch ou Galaxy Watch que você já tem em um computador de mergulho. Não precisa ser um Ultra.",
+  nl: "Maak van de Apple Watch of Galaxy Watch die je al hebt een duikcomputer. Het hoeft geen Ultra te zijn.",
 } as const;
 
 test("both segments share the new intro and a logo token in the how title", () => {

@@ -166,6 +166,18 @@ export const REMINDER_EMAIL_COPY = {
     ignore: "Se você não pediu isso, pode ignorar este e-mail.",
     imageAlt: "Uma pessoa mergulhando com o WatchDive no pulso, debaixo d’água",
   },
+  nl: {
+    subject: "WatchDive: vergeten je e-mail te bevestigen?",
+    preheader: "Bevestig je e-mail om je aanmelding voor WatchDive-lanceringsupdates af te ronden.",
+    headline: "Vergeten je e-mail\nte bevestigen?",
+    received: "Bevestig je e-mail om je aanmelding voor WatchDive-lanceringsupdates af te ronden.",
+    instruction: "Klik op de knop hieronder om je aanmelding af te ronden.",
+    button: "Bevestig mijn e-mail",
+    fallback: "Als de knop niet opent, plak dit adres in je browser:",
+    once: "Dit is de enige herinnering die we sturen.",
+    ignore: "Heb je dit niet gevraagd, dan kun je deze e-mail negeren.",
+    imageAlt: "Een duiker met WatchDive om de pols, onder water",
+  },
 } as const satisfies Record<Locale, ReminderEmailCopy>;
 
 function escapeHtml(value: string): string {

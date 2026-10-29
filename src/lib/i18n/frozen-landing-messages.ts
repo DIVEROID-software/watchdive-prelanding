@@ -1,5 +1,5 @@
 /**
- * Frozen-landing message catalog — nine locales.
+ * Frozen-landing message catalog — ten locales, including Dutch.
  *
  * Structural source of truth: the immutable production-design baseline at
  * commit 92e3855 ("Lead the compatibility section with the housing, not the
@@ -53,9 +53,10 @@
  * - English preserves the source's punctuation conventions: em dash (—), en
  *   dash (–), right single quote (’) in reviews.sub, curly quotes (“”) in
  *   inbox.noteSubject, and non-breaking hyphen (‑) in the safety section.
- * - English keeps the source USD anchors ($149, $299, $1,000+). The other
- *   locale catalogs use contextual, non-binding local-currency estimates;
- *   the amount shown on Kickstarter remains authoritative. Depth units use
+ * - English keeps the source USD anchors ($149, $299, $1,000+). Dutch keeps
+ *   those same USD amounts. The other locale catalogs use contextual,
+ *   non-binding local-currency estimates; the amount shown on Kickstarter
+ *   remains authoritative. Depth units use
  *   each audience's familiar notation. Brand names
  *   (WatchDive, DIVEROID, Kickstarter, Apple Watch, Galaxy Watch, GoPro,
  *   Insta360, Canon, NVIDIA, AWS, Samsung) and dates remain unchanged. No
@@ -64,8 +65,9 @@
  * Deliberately NOT in this catalog (runtime or data-driven):
  * - The 122 beta-review bodies and reviewer names/cities in
  *   src/data/beta-reviews.ts. The user approved localized renderings on
- *   2026-08-01; each locale now lives in its own beta-reviews.<locale>.ts module
- *   and is joined by immutable review id. The original rendering, attribution
+ *   2026-08-01; each translated locale lives in its own beta-reviews.<locale>.ts
+ *   module and is joined by immutable review id. Dutch shows the English
+ *   impressions and does not add fabricated quotes or cities. The original rendering, attribution
  *   and rating remain unchanged; the Product Truth publication allowlist is
  *   authoritative. A visible translation notice explains that minor
  *   differences in nuance may remain.
@@ -111,12 +113,14 @@
  * - Operator: Privacy/Terms name "DIVEROID LTD" (England, company no. 16343651),
  *   matching the landing footer, in every locale (2026-09-26).
  *
- * Legal pages (privacy/terms): the eight non-English versions are faithful,
- * native-quality renderings for information only — they must be reviewed by
- * counsel before any of them is published as a binding text.
+ * Legal pages (privacy/terms): the nine non-English versions, including Dutch,
+ * are faithful, native-quality renderings for information only — they must be
+ * reviewed by counsel before any of them is published as a binding text. The
+ * Dutch legal text is informational until counsel reviews it.
  */
 
 import { EN_FROZEN_LANDING_MESSAGES, type FrozenLandingMessages } from "./frozen-landing-en.ts";
+import { NL_FROZEN_LANDING_MESSAGES } from "./frozen-landing-nl.ts";
 
 export const FROZEN_LANDING_LOCALES = [
   "en",
@@ -128,6 +132,7 @@ export const FROZEN_LANDING_LOCALES = [
   "fr",
   "de",
   "pt-BR",
+  "nl",
 ] as const;
 
 export type FrozenLandingLocale = (typeof FROZEN_LANDING_LOCALES)[number];
@@ -3923,6 +3928,10 @@ const LOWEST_LAUNCH_PRICE: Record<FrozenLandingLocale, { after: string; sentence
     after: "esteja você ou não entre os 100 primeiros anunciados publicamente.",
     sentence: "USD $149 é o menor preço de lançamento.",
   },
+  nl: {
+    after: "of je nu wel of niet bij de openbare eerste 100 hoort.",
+    sentence: "Die prijs van USD $149 is de laagste lanceringsprijs.",
+  },
 };
 
 function insertAfter(text: string, after: string, sentence: string): string {
@@ -3960,4 +3969,5 @@ export const FROZEN_LANDING_MESSAGES: Record<FrozenLandingLocale, FrozenLandingM
   fr: withLowestLaunchPrice(fr, "fr"),
   de: withLowestLaunchPrice(de, "de"),
   "pt-BR": withLowestLaunchPrice(ptBR, "pt-BR"),
+  nl: withLowestLaunchPrice(NL_FROZEN_LANDING_MESSAGES, "nl"),
 };

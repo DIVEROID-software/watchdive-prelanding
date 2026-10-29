@@ -124,6 +124,20 @@ export const RESERVATION_PRESENTATION = {
     imageAlt:
       "Com WatchDive, transforme um smartwatch compatível em computador de mergulho. Profundidade, temperatura e tempo sem descompressão no seu pulso.",
   },
+  nl: {
+    eyebrow: "Jouw laagste lanceringsprijs, vastgezet",
+    feeLabel: "Eenmalige reservering · USD",
+    reassurance: "Geen automatische latere afschrijvingen.",
+    testMode: "Testmodus — geen echte afschrijving",
+    consent: "Ik ga akkoord met de voorwaarden en zet mijn prijs vast voor $3.",
+    headline: "Je alledaagse smartwatch.\nNu ook je duikmaat.",
+    benefit: "Mis de eerste 100. Houd de laagste prijs.",
+    description:
+      "Bang dat je de eerste 100 mist? Betaal nu de reserveringskosten van $3 en houd de laagste lanceringsprijs van $149, 100%, waar je ook in de rij staat.",
+    cta: "Zet mijn prijs vast voor $3",
+    imageAlt:
+      "Maak van een compatibele smartwatch een duikcomputer met WatchDive. Diepte, temperatuur en tijd zonder decompressie, op je pols.",
+  },
 } as const satisfies Record<
   ReservationLocale,
   {

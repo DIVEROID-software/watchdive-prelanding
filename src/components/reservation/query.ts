@@ -183,7 +183,7 @@ export function reservationLangBootstrapScript(): string {
       if(normalized==="zh-tw"||normalized==="zh-hk"||normalized==="zh-mo"||normalized.indexOf("zh-hant")===0)return "zh-TW";
       if(normalized==="pt"||normalized.indexOf("pt-br")===0)return "pt-BR";
       var language=normalized.split("-")[0];
-      if(language==="en"||language==="ko"||language==="ja"||language==="es"||language==="fr"||language==="de")return language;
+      if(language==="en"||language==="ko"||language==="ja"||language==="es"||language==="fr"||language==="de"||language==="nl")return language;
       return null;
     }
     var params=new URLSearchParams(location.search);

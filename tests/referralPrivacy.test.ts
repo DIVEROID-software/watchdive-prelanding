@@ -26,6 +26,7 @@ const OFF_RENDER_SHA256: Record<Locale, string> = {
   fr: "5ea3653f24eaa79ecaf3f58cb79076f688b59e03dec36ea01035870ab7d097bd",
   de: "9c41abe2290f7ad361ed91ff9910ee0f823dcef94cabca447abe31bb88b11a29",
   "pt-BR": "9e0fc38da5013640b63a9062466a540c4e06b3010f755314ff06a308831bbad7",
+  nl: "e62aeae19a6a906f09cff049e1acaf45918e0f95a3a422052dd6fc2f78a240c2",
 };
 
 // Same banned-claim pattern as tests/referralCopy.test.ts.

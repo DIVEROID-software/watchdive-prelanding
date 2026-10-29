@@ -281,6 +281,32 @@ export const RESERVATION_COPY: Record<Locale, ReservationCopy> = {
       "cancellation": "somente se o lançamento for cancelado",
       "mandatory": "não ficam limitados"
     }
+  },
+  "nl": {
+    "subject": "Sla de drukte over. Houd $149 voor $3.",
+    "preheader": "Na de eerste 100 is het $200. Jouw lanceringsprijs kan $149 blijven.",
+    "heading": "Sla de drukte over. Houd $149.",
+    "intro": "De eerste 100 op Kickstarter krijgen WatchDive voor $149. Daarna is het $200.",
+    "detail": "Reserveer voor $3 en houd de laagste lanceringsprijs vast, waar je ook in de rij staat.",
+    "feeNote": "De $3 staat apart en wordt niet van de $149 afgetrokken.",
+    "disclosure": "Als je de reserveringskosten van US$3 betaalt, houd je 100% de laagste lanceringsprijs van US$149. Dat geldt apart van het voordeel voor de eerste 100. De kosten komen bovenop de productprijs en worden niet afgetrokken van de productprijs. Als je het product koopt, betaal je US$149 apart. Het totaal is US$152, vóór verzending en belasting van het product. De productprijs wordt niet automatisch afgeschreven. De reserveringskosten worden alleen terugbetaald als de lancering wordt geannuleerd. Rechten die de wet je geeft, worden niet beperkt.",
+    "button": "Houd $149 voor $3",
+    "fallback": "Of open deze link",
+    "reason": "Je krijgt dit omdat je je WatchDive-aanmelding hebt bevestigd.",
+    "unsubscribe": "Afmelden voor deze e-mails",
+    "privacy": "Privacy",
+    "terms": "Voorwaarden",
+    "help": "Hulp",
+    "anchors": {
+      "thanks": "je WatchDive-aanmelding hebt bevestigd",
+      "pay": "de reserveringskosten van US$3 betaalt",
+      "notDeducted": "niet afgetrokken van de productprijs",
+      "laterManual": "niet automatisch afgeschreven",
+      "total": "US$152",
+      "independence": "apart van het voordeel voor de eerste 100",
+      "cancellation": "alleen terugbetaald als de lancering wordt geannuleerd",
+      "mandatory": "worden niet beperkt"
+    }
   }
 };
 
@@ -295,6 +321,7 @@ export const RESERVATION_TAGLINE: Record<Locale, string> = {
   fr: "Chaque plongée dessine l'océan.",
   de: "Jeder Tauchgang zeichnet den Ozean.",
   "pt-BR": "Cada mergulho mapeia o oceano.",
+  nl: "Elke duik brengt de oceaan in kaart.",
 };
 
 export function copyParagraphs(copy: ReservationCopy): string[] {

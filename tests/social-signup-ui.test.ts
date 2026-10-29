@@ -37,6 +37,7 @@ const OFFICIAL_CONTINUE: Record<Locale, { google: string; apple: string }> = {
   fr: { google: "Continuer avec Google", apple: "Continuer avec Apple" },
   de: { google: "Weiter mit Google", apple: "Mit Apple fortfahren" },
   "pt-BR": { google: "Continuar com o Google", apple: "Continuar com a Apple" },
+  nl: { google: "Doorgaan met Google", apple: "Ga door met Apple" },
 };
 
 const CLAIM_DENYLIST = [
@@ -77,6 +78,7 @@ const HONEST_FALLBACK: Record<Locale, { email: string; selfOpen: string; noAutoO
   fr: { email: "e-mail", selfOpen: "vous-même", noAutoOpen: "n’ouvre pas ce navigateur" },
   de: { email: "E-Mail", selfOpen: "selbst", noAutoOpen: "nicht für dich" },
   "pt-BR": { email: "e-mail", selfOpen: "você mesmo", noAutoOpen: "não abre esse navegador" },
+  nl: { email: "e-mail", selfOpen: "zelf", noAutoOpen: "opent die browser niet voor je" },
 };
 
 const CHROME =

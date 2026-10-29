@@ -1,7 +1,7 @@
 import { SUPPORTED_LOCALES, type Locale } from "./i18n/locale.ts";
 
 /**
- * Google and Apple continue-button copy for the nine WatchDive locales.
+ * Google and Apple continue-button copy for the ten WatchDive locales.
  *
  * Button labels are the strings each vendor rendered on 2026-10-19:
  * - Google `continue_with` (case 4) from https://accounts.google.com/gsi/client?hl=<locale>
@@ -25,7 +25,7 @@ export type SocialProvider = (typeof SOCIAL_PROVIDERS)[number];
 export type EnabledProviders = Record<SocialProvider, boolean>;
 
 export type SocialSignupButtonsProps = {
-  /** Existing WatchDive locale. English is `en`; the other eight use their BCP 47 tags. */
+  /** Existing WatchDive locale. English is `en`; the other nine use their BCP 47 tags. */
   locale: Locale;
   /** Fail closed: a provider button renders only when its flag is exactly true. */
   enabledProviders: EnabledProviders;
@@ -189,6 +189,19 @@ export const socialSignupCopy: Record<Locale, SocialSignupCopy> = {
       instagramTitle: "Continuar com o Google não está disponível no navegador do Instagram.",
       inAppTitle: "Continuar com o Google não está disponível neste navegador do aplicativo.",
       body: "O login do Google não funciona neste navegador. Abra esta página você mesmo no Safari ou no Chrome e depois use Continuar com o Google. Esta página não abre esse navegador para você. Você também pode continuar com o e-mail nesta página.",
+    },
+  },
+  nl: {
+    google: "Doorgaan met Google",
+    apple: "Ga door met Apple",
+    loading: "Bezig…",
+    groupBoth: "Doorgaan met Google of ga door met Apple",
+    groupGoogle: "Doorgaan met Google",
+    groupApple: "Ga door met Apple",
+    embedded: {
+      instagramTitle: "Doorgaan met Google is niet beschikbaar in de browser van Instagram.",
+      inAppTitle: "Doorgaan met Google is niet beschikbaar in deze in-appbrowser.",
+      body: "Inloggen met Google werkt niet in deze browser. Open deze pagina zelf in Safari of Chrome en gebruik daarna Doorgaan met Google. Deze pagina opent die browser niet voor je. Je kunt op deze pagina doorgaan met e-mail.",
     },
   },
 };

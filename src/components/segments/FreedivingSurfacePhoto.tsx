@@ -12,6 +12,7 @@ const descriptions: Record<Locale, string> = {
   fr: 'Des apnéistes consultent leur WatchDive au poignet à la surface',
   de: 'Freitaucher prüfen ihre WatchDive am Handgelenk an der Oberfläche',
   'pt-BR': 'Mergulhadores de apneia conferem o WatchDive no pulso na superfície',
+  nl: 'Freedivers controleren WatchDive om hun pols aan de oppervlakte',
 };
 
 /** Owner-selected real photo; the hero remains the underwater video. */

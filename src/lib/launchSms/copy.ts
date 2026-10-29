@@ -32,6 +32,7 @@ const OPT_OUT_LABEL: Record<Locale, string> = {
   fr: "Désinscription :",
   de: "Abmelden:",
   "pt-BR": "Cancelar:",
+  nl: "Afmelden:",
 };
 
 const KO_FREE_OPT_OUT = "무료수신거부";
@@ -72,6 +73,10 @@ const BODY: Record<Locale, Record<LaunchSmsVariant, string>> = {
   "pt-BR": {
     "launch": "WatchDive chegou ao Kickstarter! US$ 149 para os primeiros 100 apoiadores, depois US$ 200. Confira: {launchUrl}",
     "paid-reserver": "WatchDive chegou ao Kickstarter! Seu menor preço de lançamento, US$ 149, está garantido. Seu link exclusivo de compra: {reservationUrl}"
+  },
+  nl: {
+    "launch": "WatchDive staat live op Kickstarter! 149 USD voor de eerste 100 backers, daarna 200 USD. Bekijk het hier: {launchUrl}",
+    "paid-reserver": "WatchDive staat live op Kickstarter! Je gereserveerde lanceerprijs van 149 USD staat klaar. Je persoonlijke kooplink: {reservationUrl}"
   }
 };
 
@@ -79,7 +84,7 @@ export type LaunchSmsDraft = {
   version: typeof LAUNCH_SMS_COPY_VERSION;
   locale: Locale;
   variant: LaunchSmsVariant;
-  /** Saved signup locale was missing or not one of the nine site languages. */
+  /** Saved signup locale was missing or not one of the supported site languages. */
   usedEnglishFallback: boolean;
   koreanMarketingPrefix: boolean;
   segmentPolicy: typeof LAUNCH_SMS_SEGMENT_POLICY;

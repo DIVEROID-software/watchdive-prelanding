@@ -164,6 +164,19 @@ const COPY: Record<Locale, ChoiceCopy> = {
     retry: "Tentar de novo",
     retryBody: "Neste navegador a medição está desligada. A recusa ainda não está no cadastro.",
   },
+  nl: {
+    title: "Je privacykeuzes",
+    body: "We willen cookies en vergelijkbare tools van Meta, Google en Microsoft Clarity gebruiken, plus onze eigen meting van klikken en scrollen, om te zien welke advertenties duikers hier brengen en hoe deze pagina wordt gebruikt. Optioneel: je aanmelding werkt hoe dan ook.",
+    bodyShort:
+      "Cookies en vergelijkbare tools van Meta, Google en Microsoft Clarity, plus onze meting van klikken en scrollen, laten zien welke advertenties duikers hier brengen en hoe deze pagina wordt gebruikt. Optioneel: je aanmelding werkt hoe dan ook.",
+    allow: "Alles accepteren",
+    decline: "Alles weigeren",
+    privacy: "Privacybeleid",
+    settings: "Cookie-instellingen",
+    retry: "Opnieuw proberen",
+    retryBody:
+      "Meting staat uit in deze browser. We konden niet bevestigen dat je keuze is opgeslagen. Probeer het opnieuw.",
+  },
 };
 
 const OPEN_EVENT = "watchdive:open-cookie-choice";

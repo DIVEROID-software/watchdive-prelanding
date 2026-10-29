@@ -520,6 +520,27 @@ const EMAIL_COPY = {
       outro: "Vamos avisar por e-mail quando o WatchDive entrar no ar no Kickstarter.",
     },
   },
+  nl: {
+    verification: {
+      subject: "Bevestig je e-mail voor de WatchDive-wachtlijst",
+      heading: "Bevestig je e-mailadres",
+      intro:
+        "Er is één bevestigingslink. Je aanmelding is pas afgerond als je die link opent, voor nieuws over WatchDive vóór de lancering.",
+      button: "Bevestig mijn e-mail",
+      fallback: "Als de knop niet werkt, plak deze link in je browser:",
+      expires: "De link werkt 24 uur.",
+      ignore: "Heb je dit niet gevraagd, negeer dan deze mail. Er gebeurt niets.",
+    },
+    welcome: {
+      subject: "Je staat op de WatchDive-wachtlijst",
+      heading: "Je staat op de WatchDive-wachtlijst",
+      intro:
+        "Je e-mail is bevestigd. Dit is je persoonlijke uitnodigingslink. Deel hem met andere duikers.",
+      button: "Open mijn uitnodigingslink",
+      fallback: "Of kopieer deze link:",
+      outro: "We mailen je wanneer WatchDive op Kickstarter opent.",
+    },
+  },
 } as const satisfies Record<Locale, EmailCopy>;
 
 /** Safe page/email alignment contract: no address, token, provider key or body. */

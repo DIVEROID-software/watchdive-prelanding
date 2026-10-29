@@ -1,4 +1,4 @@
-// Privacy-policy section for the Buddy Invite referral program, nine locales.
+// Privacy-policy section for the Buddy Invite referral program, every locale.
 //
 // Rendered by src/routes/privacy.tsx only while the owner's switch
 // (`referralProgramEnabled`, read on the server) is on. With the switch off the
@@ -565,6 +565,66 @@ const TEXT: Record<Locale, BuddyInvitePrivacyCopy> = {
     rights: [
       "Suas escolhas e direitos",
       " — você pode mudar seu apelido, sua escolha sobre o ranking e os e-mails de amigos que entram a qualquer momento na sua página de status. Os direitos da Seção 7 também valem para os dados do {program}. Para exercê-los, ou para tirar dúvidas sobre o programa, escreva para help@diveroid.com.",
+    ],
+  },
+  nl: {
+    title: "11. {program}",
+    intro:
+      "{program} is ons programma om vrienden uit te nodigen. Elk wachtlijstrecord krijgt bij het aanmaken een uitnodigingscode. Zolang het programma loopt, mailen we je uitnodigingslink en statuspagina zodra je je e-mail bevestigt, en tellen we de vrienden die via jouw link meedoen. DIVEROID LTD (sectie 1) is de verwerkingsverantwoordelijke. Deze sectie komt bij de secties hierboven zolang het programma loopt.",
+    storedIntro: "Wat we voor het programma bij je wachtlijstrecord bewaren:",
+    stored: [
+      [
+        "Jouw uitnodigingscode",
+        " — een code van 8 tekens die met je wachtlijstrecord wordt gemaakt en in je uitnodigingslink staat.",
+      ],
+      [
+        "Wie jou heeft uitgenodigd",
+        " — als je via de link van een vriend bent meegekomen, de uitnodigingscode van die vriend, niet diens naam of e-mailadres. De code uit de link blijft ook in de lokale opslag van je browser staan, zodat die bij je aanmelding kan worden toegevoegd.",
+      ],
+      ["Bijnaam", " — alleen als je er een instelt op je statuspagina van {program}."],
+      [
+        "Jouw keuzes",
+        " — of je bijnaam op de ranglijst staat en of we je mailen wanneer een vriend meedoet.",
+      ],
+      [
+        "Tellingen en controlestatus",
+        " — hoeveel bevestigde vrienden voor jou meetellen, de laatste telling die we je hebben gemaild en wanneer, of ons team je bijnaam heeft verborgen, en de status van een handmatige controle van een beloning.",
+      ],
+    ],
+    friends: [
+      "Records van uitgenodigde vrienden",
+      " — om uitnodigingen te tellen en beloningen te controleren, gebruiken we ook gegevens die al in de wachtlijstrecords staan van mensen die via jouw link zijn meegekomen: of en wanneer ze hun e-mail hebben bevestigd, hun e-mailadres en het domein ervan, het aanmeldmoment, de paginataal, de landingspagina, campagnetags en misbruikmarkeringen. E-mailadressen worden alleen op onze server vergeleken, om zelfuitnodigingen, herhaalde aanmeldingen en wegwerpadressen te herkennen.",
+    ],
+    purposesIntro: "We gebruiken deze gegevens om:",
+    purposes: [
+      "bevestigde vrienden te tellen en de programmaregels toe te passen, inclusief de daglimiet en het sluitmoment;",
+      "de beloningen te geven die je bereikt: de eerdere lanceermail, de link voor de early-birdprijs en prijzen;",
+      "beloningen op fraude te controleren, zoals zelfuitnodigingen, herhaalde of wegwerpadressen en geautomatiseerde aanmeldingen — controlesignalen markeren een record alleen, en een persoon beslist voordat een beloning wordt geweigerd;",
+      "programma-e-mails te sturen: de uitnodigingsgids en, tenzij je ze uitzet, een e-mail wanneer een vriend meedoet.",
+    ],
+    visibility: [
+      "Wie wat ziet",
+      " — je tellingen zie alleen jij: op je statuspagina, geopend via de ondertekende link in onze e-mails, en in programma-e-mails. Die tonen hoeveel vrienden meetellen, nooit wie ze zijn. De openbare top-{winners}-ranglijst toont van elke plaats de rang en het aantal vrienden, met een bijnaam alleen als die persoon er een heeft ingesteld, heeft gekozen om die te tonen en ons team die niet heeft verborgen; anders staat er „{privateDiver}”. E-mailadressen worden nooit getoond.",
+    ],
+    prizes: [
+      "Prijswinnaars",
+      " — win je een prijs die verzonden moet worden (een onderwaterlamp of een WatchDive), dan vragen we je per e-mail om de gegevens die nodig zijn voor de levering: je naam, verzendadres en telefoonnummer. Waar Koreaanse bronbelasting op een prijs van toepassing is, verzamelen we ook de identificatiegegevens die de wet voor die belasting vereist en gebruiken we die alleen om de belasting in te houden en te melden. Verzendgegevens geven we alleen aan de bezorgdienst die de prijs verstuurt, en belastinggegevens alleen aan de belastingautoriteit waar de wet dat vereist.",
+    ],
+    legalBasis: [
+      "Rechtsgrond",
+      " — onder de AVG (GDPR) en de UK GDPR tellen we uitnodigingen, geven we beloningen en sturen we programma-e-mails om de regels uit te voeren van het programma waaraan je meedoet (overeenkomst). Vastleggen wie jou heeft uitgenodigd en uitnodigingen en beloningen op fraude controleren, steunt op ons gerechtvaardigd belang bij een eerlijk programma. Je bijnaam wordt alleen getoond als je daarvoor kiest (toestemming), en je kunt die keuze op elk moment intrekken op je statuspagina. Belastingidentificatiegegevens verwerken we om aan een wettelijke verplichting te voldoen. Onder de Koreaanse Personal Information Protection Act (PIPA) verwerken we programmagegevens en verzendgegevens voor prijzen voor zover dat nodig is om het programma uit te voeren en de prijs te leveren die je claimt, en belastingidentificatiegegevens alleen waar een wet dat vereist.",
+    ],
+    sharing: [
+      "Waar het staat",
+      " — gegevens van {program} staan bij je wachtlijstrecord in Notion, programma-e-mails gaan via Resend, en de pagina’s draaien op Vercel: de verwerkers die in sectie 5 worden genoemd. We verkopen ze nooit.",
+    ],
+    retention: [
+      "Hoe lang we het bewaren",
+      " — we bewaren gegevens van {program} tot het programma is gesloten en elke beloning is geleverd, en verwijderen of anonimiseren ze daarna. Verzendgegevens van een prijs bewaren we alleen voor die levering. Belastingrecords bewaren we alleen zo lang als de wet het vereist, en verwijderen ze daarna. Vraag je ons eerder om je wachtlijstrecord te verwijderen, dan worden je gegevens van {program} daarmee verwijderd.",
+    ],
+    rights: [
+      "Jouw keuzes en rechten",
+      " — je kunt je bijnaam, je keuze voor de ranglijst en de e-mails als een vriend meedoet op elk moment wijzigen op je statuspagina. De rechten in sectie 7 gelden ook voor gegevens van {program}. Om ze te gebruiken, of bij vragen over het programma, mail help@diveroid.com.",
     ],
   },
 };

@@ -126,6 +126,7 @@ test("every public launch-date surface says December, never a specific day", () 
     fr: { launch: "Lancement sur Kickstarter en décembre", month: "décembre" },
     de: { launch: "Start auf Kickstarter im Dezember", month: "Dezember" },
     "pt-BR": { launch: "Lançamento no Kickstarter em dezembro", month: "dezembro" },
+    nl: { launch: "Lancering op Kickstarter in december", month: "december" },
   } as const satisfies Record<Locale, { launch: string; month: string }>;
 
   for (const locale of SUPPORTED_LOCALES) {
@@ -281,9 +282,9 @@ test("native-reviewed landing copy does not regress to known literal translation
 });
 
 test("the reorganized story explains the same bounded product mechanism in every locale", () => {
-  const pressure = /pressure|수압|压力|壓力|水圧|presión|pression|Druck|pressão/iu;
+  const pressure = /pressure|수압|压力|壓力|水圧|presión|pression|Druck|pressão|druk/iu;
   const waterTemperature =
-    /water-temperature|water temperature|수온|水温|水溫|temperatura del agua|température de l’eau|Wassertemperatur|temperatura da água/iu;
+    /water-temperature|water temperature|수온|水温|水溫|temperatura del agua|température de l’eau|Wassertemperatur|temperatura da água|watertemperatuur/iu;
   const bluetooth = /Bluetooth|蓝牙|藍牙/iu;
   const unsupportedEquivalence =
     /Bühlmann|Gradient Factors?|same (?:calculation|as)|전용 다이브 컴퓨터.{0,20}(?:같|동일)|专用潜水电脑|專用潛水電腦|専用ダイブコンピューター|ordenador de buceo dedicado|ordinateur de plongée dédié|dedizierter Tauchcomputer|computador de mergulho dedicado/iu;
@@ -341,6 +342,7 @@ test("each locale uses its own contextual currency across every price-bearing su
     fr: /€|euros?/iu,
     de: /€|Euro/iu,
     "pt-BR": /R\$|reais/iu,
+    nl: /\$(?:149|299|1,000)/,
   };
   const localEstimateNotice: Record<Exclude<Locale, "en">, RegExp> = {
     ko: /예상 범위|기준/,
@@ -351,6 +353,7 @@ test("each locale uses its own contextual currency across every price-bearing su
     fr: /indicatifs|fera foi/iu,
     de: /Richtwerte|Maßgeblich/iu,
     "pt-BR": /estimativas|vale o valor/iu,
+    nl: /leidend/,
   };
 
   for (const locale of SUPPORTED_LOCALES) {
@@ -380,7 +383,7 @@ test("each locale uses its own contextual currency across every price-bearing su
     );
     for (const [path, copy] of Object.entries(priceBearingSurfaces)) {
       assert.match(copy, localCurrency[locale], `${locale}.${path}: local currency is missing`);
-      if (locale !== "en" && locale !== "ko") {
+      if (locale !== "en" && locale !== "ko" && locale !== "nl") {
         assert.doesNotMatch(
           copy,
           /\$(?:149|299|1,000)/,
@@ -425,6 +428,7 @@ test("every early-bird price mention says it is for the first 100 backers", () =
     fr: /100 premiers/i,
     de: /ersten? 100/i,
     "pt-BR": /100 primeiros/i,
+    nl: /eerste 100/i,
   };
 
   for (const locale of SUPPORTED_LOCALES) {
@@ -479,6 +483,7 @@ test("the hero proof strip states the early-bird price only with its first-100 c
     fr: /100 premiers/i,
     de: /ersten 100/i,
     "pt-BR": /100 primeiros/i,
+    nl: /eerste 100/i,
   };
   for (const locale of SUPPORTED_LOCALES) {
     const { usp, hero } = FROZEN_LANDING_MESSAGES[locale];
@@ -521,6 +526,7 @@ test("depth proof uses audience-familiar units without inventing a rating or thr
     fr: "60 m",
     de: "60 m",
     "pt-BR": "60 m",
+    nl: "60 m",
   };
 
   for (const locale of SUPPORTED_LOCALES) {
@@ -595,6 +601,7 @@ test("owner-confirmed proof cards state bounded completion in every locale", () 
     fr: /terminé(?:e|s|es)?/,
     de: /abgeschlossen/,
     "pt-BR": /concluíd[ao]s?/,
+    nl: /voltooid/,
   };
   const oldProgressLanguage: Record<Locale, RegExp> = {
     en: /under verification|under review/,
@@ -606,6 +613,7 @@ test("owner-confirmed proof cards state bounded completion in every locale", () 
     fr: /en cours de vérification|en cours d['’]examen/,
     de: /wird geprüft|in Prüfung/,
     "pt-BR": /em verificação|em análise/,
+    nl: /in verificatie|wordt gecontroleerd/,
   };
   const unapprovedClaimLanguage =
     /\b(?:certified|certification|passed)\b|인증|공인|통과|认证|認證|認証|certificación|certifié|certification|zertifiziert|Zertifizierung|certifica(?:ção|do)/iu;
@@ -680,6 +688,7 @@ test("the approved product FAQs are complete in every locale", () => {
     fr: /tous les autres modèles d['’]Apple Watch/,
     de: /alle anderen Apple Watch-Modelle/,
     "pt-BR": /todos os outros modelos de Apple Watch/,
+    nl: /alle andere Apple Watch-modellen/,
   };
   const twoYearTerm: Record<Locale, RegExp> = {
     en: /two years/,
@@ -691,14 +700,15 @@ test("the approved product FAQs are complete in every locale", () => {
     fr: /deux ans/,
     de: /zwei Jahre/,
     "pt-BR": /dois anos/,
+    nl: /twee jaar/,
   };
-  const pressure = /pressure|수압|水压|水壓|水圧|presión|pression|Druck|pressão/iu;
+  const pressure = /pressure|수압|水压|水壓|水圧|presión|pression|Druck|pressão|druk/iu;
   const waterTemperature =
-    /water-temperature|water temperature|수온|水温|水溫|temperatura del agua|température de l['’]eau|Wassertemperatur|temperatura da água/iu;
+    /water-temperature|water temperature|수온|水温|水溫|temperatura del agua|température de l['’]eau|Wassertemperatur|temperatura da água|watertemperatuur/iu;
   const serviceCenter =
-    /service center|서비스 센터|服务中心|服務中心|サービスセンター|centro de servicio|centre de service|Servicecenter|centro de serviço/iu;
+    /service center|servicecentrum|서비스 센터|服务中心|服務中心|サービスセンター|centro de servicio|centre de service|Servicecenter|centro de serviço/iu;
   const paid =
-    /for a fee|유상|付费|付費|有償|coste adicional|moyennant des frais|gegen Gebühr|mediante taxa/iu;
+    /for a fee|유상|付费|付費|有償|coste adicional|moyennant des frais|gegen Gebühr|mediante taxa|tegen betaling/iu;
 
   for (const locale of SUPPORTED_LOCALES) {
     const faq = FROZEN_LANDING_MESSAGES[locale].faq;
@@ -910,6 +920,17 @@ const LEGAL_ESSENTIALS = {
     required: /obrigatório/i,
     phone: /telefone/i,
     optional: /opcional/i,
+  },
+  nl: {
+    store: /geen winkel/i,
+    changeable: /kunnen veranderen/i,
+    noReservation: /reserveert geen/i,
+    training: /opleiding/i,
+    backup: /back-up/i,
+    email: /e-mailadres/i,
+    required: /verplicht/i,
+    phone: /telefoonnummer/i,
+    optional: /optioneel/i,
   },
 } as const satisfies Record<Locale, Record<string, RegExp>>;
 

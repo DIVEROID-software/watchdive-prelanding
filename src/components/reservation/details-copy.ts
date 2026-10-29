@@ -132,4 +132,17 @@ export const RESERVATION_DETAILS_COPY: Record<Locale, ReservationDetailsCopy> = 
     inboxCta: "Ver as instruções do e-mail",
     phoneOptional: "O telefone é opcional e não é necessário para esta reserva.",
   },
+  nl: {
+    closeLabel: "Sluiten",
+    statusChip: "Niet betaald · E-mail niet bevestigd",
+    lead: "Als je de reserveringskosten van $3 betaalt, houd je de laagste lanceringsprijs van $149, waar je ook in de rij staat. Hier is nog niets betaald, dus de prijs staat nog niet vast.",
+    emailPending: "Je e-mail is niet bevestigd.",
+    notGuaranteed: "De laagste lanceringsprijs geldt pas nadat de betaling van $3 rond is.",
+    noticePending: "Lanceringsmails zijn pas afgerond als je de bevestigingslink opent die we hebben gestuurd.",
+    stepReview: "1. Lees de reserveringsvoorwaarden",
+    stepVerify: "1. Open de bevestigingslink in je e-mail",
+    stepPay: "2. De betaling van $3 opent nadat die link je e-mail bevestigt",
+    inboxCta: "Bekijk de e-mailinstructies",
+    phoneOptional: "Een telefoonnummer is optioneel en is niet nodig voor deze reservering.",
+  },
 };

@@ -60,7 +60,7 @@ overrides --receipt-dir. Values are never printed.
 
 A send mints each invite with issueReservationInvite in
 src/lib/reservation/invite.ts, passing the verified row email. The only query
-parameter is lang, using the signup locale (en, ko, zh-CN, zh-TW, ja, es, fr, de, or pt-BR). The invite is
+parameter is lang, using the signup locale (en, ko, zh-CN, zh-TW, ja, es, fr, de, pt-BR, or nl). The invite is
 the URL fragment, never a query parameter, so it is not written to access
 logs. This command never prints an address or a token. The office Mac mini
 tick keeps one private ledger under

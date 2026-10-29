@@ -26,6 +26,7 @@ const OG_LOCALE: Record<Locale, string> = {
   fr: "fr_FR",
   de: "de_DE",
   "pt-BR": "pt_BR",
+  nl: "nl_NL",
 };
 
 function hreflangLinks(pathFor: (locale: Locale) => string) {

@@ -58,6 +58,7 @@ test("the access country picks the locale, and a missing or unmapped country sta
     ["ES", "es", "/es/scuba"],
     ["MX", "es", "/es/scuba"],
     ["BR", "pt-BR", "/pt-br/scuba"],
+    ["NL", "nl", "/nl/scuba"],
   ];
   for (const [country, locale, path] of mapped) {
     expectRedirect(
@@ -73,7 +74,7 @@ test("the access country picks the locale, and a missing or unmapped country sta
       path === "/ko/scuba" ? "/ko/scuba?utm_source=ig" : path,
     );
   }
-  for (const country of ["US", "GB", "SG", "CA", "CH"]) {
+  for (const country of ["US", "GB", "SG", "CA", "CH", "BE"]) {
     assert.equal(
       autoLocaleRedirect(
         request("/", {

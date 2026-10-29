@@ -70,6 +70,7 @@ export function defaultPhoneCountry(locale: string, geo?: string | null): Countr
         fr: "FR",
         de: "DE",
         "pt-BR": "BR",
+        nl: "NL",
       } as Record<string, CountryCode>
     )[locale] || "US"
   );

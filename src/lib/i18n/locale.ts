@@ -15,6 +15,7 @@ export const SUPPORTED_LOCALES = [
   "fr",
   "de",
   "pt-BR",
+  "nl",
 ] as const;
 
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
@@ -31,6 +32,7 @@ export const LOCALE_PATH_SEGMENTS = {
   fr: "fr",
   de: "de",
   "pt-BR": "pt-br",
+  nl: "nl",
 } as const satisfies Record<Locale, string>;
 
 export type LanguageOption = {
@@ -51,6 +53,7 @@ export const LANGUAGE_OPTIONS: readonly LanguageOption[] = [
   { locale: "fr", label: "Français", dir: "ltr" },
   { locale: "de", label: "Deutsch", dir: "ltr" },
   { locale: "pt-BR", label: "Português (Brasil)", dir: "ltr" },
+  { locale: "nl", label: "Nederlands", dir: "ltr" },
 ] as const;
 
 /** Short code for the closed segment picker. The open menu still uses native names. */
@@ -64,6 +67,7 @@ export const LOCALE_SWITCH_CODE: Record<Locale, string> = {
   fr: "FR",
   de: "DE",
   "pt-BR": "BR",
+  nl: "NL",
 };
 
 const LOCALE_SET = new Set<string>(SUPPORTED_LOCALES);
@@ -110,6 +114,7 @@ export function matchLocale(value: unknown): Locale | undefined {
     case "es":
     case "fr":
     case "de":
+    case "nl":
       return language;
     default:
       return undefined;

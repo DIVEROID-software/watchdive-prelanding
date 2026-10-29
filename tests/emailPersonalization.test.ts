@@ -32,6 +32,7 @@ const CONTINUING: Record<Locale, RegExp> = {
   fr: /Les inscriptions à l'alerte de lancement continuent d'augmenter/,
   de: /Die Anmeldungen zur Startmitteilung nehmen weiter zu/,
   "pt-BR": /As inscrições do aviso de lançamento continuam aumentando/,
+  nl: /Aanmeldingen voor de lanceringsmelding blijven binnenkomen/,
 };
 const RATE = /every day|grows every|매일|毎日|每天|cada día|chaque jour|jeden Tag|todos os dias|todo dia|늘어납|쌓입니다|증가|급증|폭증|매진/i;
 const SURFACE: Record<Locale, string> = {
@@ -44,6 +45,7 @@ const SURFACE: Record<Locale, string> = {
   fr: "intervalle de surface",
   de: "Oberflächenpause",
   "pt-BR": "intervalo de superfície",
+  nl: "oppervlakte-interval",
 };
 const DEPTH: Record<Locale, string> = {
   en: "depth",
@@ -55,6 +57,7 @@ const DEPTH: Record<Locale, string> = {
   fr: "profondeur",
   de: "Tiefe",
   "pt-BR": "profundidade",
+  nl: "diepte",
 };
 const DIVE_TIME: Record<Locale, RegExp> = {
   en: /time/i,
@@ -66,6 +69,7 @@ const DIVE_TIME: Record<Locale, RegExp> = {
   fr: /temps/,
   de: /Zeit/,
   "pt-BR": /tempo/,
+  nl: /tijd/,
 };
 const LOGBOOK: Record<Locale, string> = {
   en: "logbook",
@@ -77,6 +81,7 @@ const LOGBOOK: Record<Locale, string> = {
   fr: "carnet",
   de: "Logbuch",
   "pt-BR": "diário",
+  nl: "logboek",
 };
 const COMPASS: Record<Locale, string> = {
   en: "compass",
@@ -88,6 +93,7 @@ const COMPASS: Record<Locale, string> = {
   fr: "compas",
   de: "Kompass",
   "pt-BR": "bússola",
+  nl: "kompas",
 };
 const COMPUTER: Record<Locale, string> = {
   en: "dive computer",
@@ -99,6 +105,7 @@ const COMPUTER: Record<Locale, string> = {
   fr: "ordinateur de plongée",
   de: "Tauchcomputer",
   "pt-BR": "computador de mergulho",
+  nl: "duikcomputer",
 };
 const NOSUB: Record<Locale, RegExp> = {
   en: /no extra subscription/i,
@@ -110,6 +117,7 @@ const NOSUB: Record<Locale, RegExp> = {
   fr: /abonnement supplémentaire/,
   de: /zusätzliches Abo/,
   "pt-BR": /assinatura extra/,
+  nl: /geen extra abonnement/i,
 };
 
 function mailInput(locale: Locale, segment?: ReservationEmailSegment) {
@@ -138,7 +146,7 @@ test("omitted segment stays on the legacy underwater invite", () => {
   }
 });
 
-test("108 segmented mails vary by stage and signup segment", () => {
+test("120 segmented mails vary by stage and signup segment", () => {
   const seen = new Set<string>();
   for (const segment of RESERVATION_EMAIL_SEGMENTS) {
     for (const locale of SUPPORTED_LOCALES) {
@@ -265,7 +273,7 @@ test("108 segmented mails vary by stage and signup segment", () => {
       );
     }
   }
-  assert.equal(seen.size, 108);
+  assert.equal(seen.size, 120);
   assert.match(DRIP_COPY_HASH, /^[a-f0-9]{64}$/);
   assert.equal(DRIP_COPY_HASH, DRIP_COPY_HASH);
 });
@@ -277,23 +285,23 @@ test("segments do not share a body, and a bad segment is refused", () => {
   assert.throws(() => renderReservationMail({ ...mailInput("en"), segment: "pool" as ReservationEmailSegment }));
 });
 
-test("preview writes 108 mails, general aliases, and local image urls only", async () => {
+test("preview writes 120 mails, general aliases, and local image urls only", async () => {
   const dir = await mkdtemp(join(tmpdir(), "wd-email-personalization-"));
   const lines: string[] = [];
   const code = await main(["--preview", "--out-dir", dir], {}, (line) => lines.push(line));
   assert.equal(code, 0);
   const summary = JSON.parse(lines[0]!);
-  assert.equal(summary.samples, 108);
+  assert.equal(summary.samples, 120);
   assert.equal(summary.sent, 0);
   assert.equal(summary.copyHash, DRIP_COPY_HASH);
   const manifest = JSON.parse(await readFile(join(dir, "manifest.json"), "utf8"));
-  assert.equal(manifest.samples, 108);
+  assert.equal(manifest.samples, 120);
   assert.equal(manifest.sendApproved, false);
   assert.equal(manifest.draft, true);
   assert.equal(manifest.priceUsdAfterFirst100, 200);
-  assert.equal(manifest.items.length, 108);
+  assert.equal(manifest.items.length, 120);
   const names = new Set(manifest.items.map((item: { file: string }) => item.file));
-  assert.equal(names.size, 108);
+  assert.equal(names.size, 120);
   for (const segment of RESERVATION_EMAIL_SEGMENTS) {
     for (const locale of SUPPORTED_LOCALES) {
       for (const stage of DRIP_STAGES) {
@@ -311,7 +319,7 @@ test("preview writes 108 mails, general aliases, and local image urls only", asy
     }
   }
   const files = await readdir(dir);
-  assert.equal(files.filter((name) => name.endsWith(".html") && name.split(".").length === 4).length, 108);
+  assert.equal(files.filter((name) => name.endsWith(".html") && name.split(".").length === 4).length, 120);
   assert.equal(names.has("d0.en.html"), false);
   const sample = await readFile(join(dir, "d0.freediving.ko.html"), "utf8");
   assert.equal(rewritePreviewAssetUrls(sample), sample);

@@ -10,13 +10,13 @@
 // written in the locale's own date form (values.ts), so each sentence around
 // them is phrased for that form.
 //
-// ko and en are the reviewed source; the other seven locales are native edits
+// ko and en are the reviewed source; the other locales are native edits
 // of them (tests/referralCopy.test.ts checks keys, placeholders and claim words).
 //
 // Editing rules every locale follows (2026-10-22 copy review):
 //   - Same words as the frozen landing (src/lib/i18n/frozen-landing-messages.ts)
 //     for waitlist, Kickstarter, early bird, backer, confirm and buddy, and the
-//     same form of address (du / tú / vous / você / 你).
+//     same form of address (du / tú / vous / você / je / 你).
 //   - Tier names keep " · " before the friend count: the landing card shows
 //     only the part before it (src/routes/index.tsx).
 //   - A string that takes {count} or {remaining} must read correctly for 1 as
@@ -2506,6 +2506,265 @@ const ptBR: ReferralCopy = {
   },
 };
 
+const nl: ReferralCopy = {
+  event: {
+    label: "EVENT",
+    headline: "Neem je buddy's mee. Ontgrendel beloningen die je niet wilt missen.",
+    subline: "Begin met {count}. Beloningen groeien met elke vriend die zijn e-mail bevestigt.",
+    badges: { unit: "", one: "buddy uitgenodigd", other: "buddies uitgenodigd", top: "Uitnodigingsrang" },
+    reached: "Bereikt",
+    next: "Hierna",
+    conditionsTitle: "Goed om te weten",
+    earlyQualifier: "Vóór de algemene lijst",
+    conditions: {
+      team: "Gebruik je privélink voor {price} van het Duikteam op de Kickstarter-website tijdens de live campagne, ook nadat de openbare {seats} plekken vol zijn. Eén bijdrage per lid; deel de link niet.",
+      leader:
+        "Onderwaterlamp van ongeveer {lightValue}; {stock} stuks, in de volgorde waarin het niveau wordt bereikt. Verzending en belastingen betaalt de ontvanger.",
+      top: "De top {winners} bij het sluiten krijgen elk een WatchDive, ook als de campagne later is of niet doorgaat. Verzending en belastingen betaalt de ontvanger.",
+    },
+    benefits: {
+      first: "Lanceermail {hoursFirst} uur eerder",
+      buddy: "Lanceermail {hoursBuddy} uur eerder",
+      team: "Houd de early-birdprijs van {price}",
+      leader: "Onderwaterlamp · de eerste {stock}",
+      top: "Ontvang een WatchDive",
+    },
+  },
+  programName: "Buddy-uitnodiging",
+  tiers: {
+    first: {
+      name: "Eerste uitnodiging · 1 vriend",
+      reward: "Krijg de Kickstarter-lanceermail {hours} uur vóór de algemene lijst.",
+    },
+    buddy: {
+      name: "Buddy · 3 vrienden",
+      reward: "Krijg de Kickstarter-lanceermail {hours} uur vóór de algemene lijst.",
+    },
+    team: {
+      name: "Duikteam · 5 vrienden",
+      reward:
+        "Krijg een privélink voor een Kickstarter-beloning tegen de early-birdprijs van {price}. Die werkt tijdens de live campagne op de Kickstarter-website, ook nadat de early-birdplekken voor de eerste {seats} backers op zijn. Eén bijdrage per Duikteamlid. Deel de link niet.",
+    },
+    leader: {
+      name: "Duikleider · 10 vrienden",
+      reward:
+        "Krijg een onderwaterlamp van ongeveer {lightValue}. {stock} op voorraad, toegekend in de volgorde waarin mensen 10 bereiken. Verzending en belastingen betaalt de ontvanger.",
+    },
+  },
+  top: {
+    name: "Top {winners} uitnodigers",
+    reward:
+      "De {winners} mensen met de meeste bevestigde vrienden op het sluitmoment krijgen elk één WatchDive, ook als de campagne later is of niet doorgaat. Verzending en belastingen betaalt de ontvanger.",
+  },
+  countingNote: "Alleen vrienden die hun e-mail bevestigen, tellen mee.",
+  card: {
+    title: "Nodig je duikbuddy's uit",
+    body: "Deel je link met duikers die je kent. Beloningen groeien met elke vriend die zijn e-mail bevestigt.",
+    progress: "{count} meegedaan · nog {remaining} tot {tier}",
+    progressNone: "Nog geen vrienden · nog {remaining} tot {tier}",
+    progressMax: "{count} meegedaan · elk niveau bereikt. Ga voor de top {winners}.",
+    statusLink: "Bekijk mijn uitnodigingen",
+    rulesLink: "Officiële regels",
+    invitedNote:
+      "Je bent uitgenodigd door een vriend. Als je je e-mail bevestigt, telt dat voor die persoon als één vriend. Die ziet alleen het aantal, nooit je e-mail.",
+  },
+  leaderboard: {
+    title: "Buddy-uitnodiging top {winners}",
+    subtitle: "Alleen bevestigde vrienden · stand {time} · onder voorbehoud van controle",
+    entry: "Meegedaan: {count}",
+    privateDiver: "Privéduiker",
+    empty: "Er staat nog niemand op het bord. Je eerste uitnodiging kan je hier zetten.",
+    closed: "De Buddy-uitnodiging is gesloten. Winnaars worden gecontroleerd.",
+    rulesLink: "Officiële regels",
+  },
+  status: {
+    title: "Mijn Buddy-uitnodiging",
+    countLabel: "Vrienden die meededen",
+    tierLabel: "Huidig niveau",
+    tierNone: "Nog geen",
+    rankLabel: "Plek op de ranglijst",
+    rankNone: "Nog niet gerangschikt",
+    earlyNotice: "Je krijgt de Kickstarter-lanceermail {hours} u vóór de algemene lijst.",
+    lightEligible:
+      "Je zit voorlopig bij de eerste {stock} Duikleiders. Na onze controle mailen we je over je onderwaterlamp.",
+    lightGone: "Alle {stock} onderwaterlampen zijn toegekend.",
+    shareTitle: "Jouw uitnodigingslink",
+    nicknameLabel: "Bijnaam voor de ranglijst",
+    nicknameHelp:
+      "{min}–{max} tekens: letters, cijfers, spaties, punten, koppeltekens of onderstrepingen. Geen e-mailadressen, telefoonnummers, links of namen die voor medewerkers van WatchDive kunnen doorgaan.",
+    nicknameHiddenNote: "Deze bijnaam is door ons team verborgen. Kies een andere.",
+    leaderboardToggle: "Toon mijn bijnaam op de top-{winners}-ranglijst",
+    noticesToggle: "Mail me wanneer een vriend meedoet",
+    save: "Opslaan",
+    saving: "Opslaan…",
+    saved: "Opgeslagen",
+    invalidLink: "Deze link is niet geldig. Open de nieuwste link uit je WatchDive-e-mail.",
+    errors: {
+      too_short: "Gebruik minstens {min} tekens.",
+      too_long: "Gebruik hoogstens {max} tekens.",
+      contact_info: "Een bijnaam mag geen e-mailadres of telefoonnummer bevatten.",
+      link: "Een bijnaam mag geen link bevatten.",
+      reserved: "Kies een andere bijnaam.",
+      invalid_chars:
+        "Gebruik alleen letters, cijfers, spaties, punten, koppeltekens of onderstrepingen, en meng geen Latijnse letters met Cyrillische of Griekse letters.",
+      failed: "Opslaan lukte niet. Probeer het opnieuw.",
+    },
+  },
+  shareCode: {
+    mine: "Jouw verwijscode",
+    copy: "Code kopiëren",
+    copied: "Code gekopieerd",
+    claimSummary: "Kies je eigen code",
+    claimHelp:
+      "{codeMin}–{codeMax} letters of cijfers. Je kunt dit één keer instellen. Geen e-mail, telefoonnummer, link of een naam die voor medewerkers van WatchDive kan doorgaan.",
+    claimPlaceholder: "NOORDZEE",
+    claimButton: "Code opslaan",
+    claimSaving: "Opslaan…",
+    claimSaved: "Code opgeslagen",
+    lockedNote: "Er zijn al vrienden meegekomen met deze code, dus die blijft zo.",
+    onceNote: "Dit is de code die je hebt gekozen. Die blijft zo.",
+    signupAsk: "Heb je een verwijscode?",
+    signupPlaceholder: "Verwijscode",
+    signupUnknown:
+      "We konden die code niet vinden, dus deze aanmelding is niet aan een vriend gekoppeld. Je staat wel op de lijst.",
+    errors: {
+      too_short: "Gebruik minstens {codeMin} tekens.",
+      too_long: "Gebruik hoogstens {codeMax} tekens.",
+      invalid_chars: "Gebruik alleen letters en cijfers.",
+      contact_info: "Een code mag geen e-mailadres of telefoonnummer bevatten.",
+      link: "Een code mag geen link bevatten.",
+      reserved: "Kies een andere code.",
+      profanity: "Kies een andere code.",
+      taken: "Die code is al in gebruik. Kies een andere.",
+      locked: "Er zijn al vrienden meegekomen met deze code, dus die blijft zo.",
+      already_claimed: "Je hebt al een code gekozen, en die blijft zo.",
+      failed: "De code kon niet worden opgeslagen. Probeer het opnieuw.",
+    },
+  },
+  mail: {
+    eventHeading: "Overzicht van de actie",
+    shareHeading: "Deellink · verwijscode",
+    conditions: [
+      "Alleen vrienden die hun e-mail bevestigen, tellen mee. Geen aankoop nodig.",
+      "Duikteam: de privélink voor {price} werkt tijdens de live campagne op de Kickstarter-website; één bijdrage per lid; deel hem niet.",
+      "Onderwaterlamp van ongeveer {lightValue}, {stock} stuks, in de volgorde waarin mensen {count} bereiken.",
+      "De top {winners} bij het sluiten krijgen elk één WatchDive, ook als de campagne later is of niet doorgaat.",
+      "Ontvangers betalen verzending en belastingen.",
+    ],
+    welcomeSubject: "Je staat op de WatchDive-wachtlijst — nodig je buddy's uit",
+    welcomeHeading: "Je staat op de WatchDive-wachtlijst",
+    welcomeIntro:
+      "Je e-mail is bevestigd. Deel je persoonlijke uitnodigingslink met duikers die je kent. Beloningen groeien met elke vriend die zijn e-mail bevestigt.",
+    welcomeCode: "Jouw verwijscode:",
+    welcomeTiersHeading: "Beloningen van de Buddy-uitnodiging",
+    welcomeButton: "Deel mijn uitnodigingslink",
+    welcomeFallback: "Of kopieer deze link:",
+    welcomeStatus: "Bekijk je uitnodigingen en stel een bijnaam voor de ranglijst in:",
+    welcomeRules: "Deelname, sluitmoment, belastingen en alle andere voorwaarden staan in de officiële regels.",
+    welcomeOutro: "We mailen je wanneer WatchDive live gaat op Kickstarter.",
+    noticeSubject: "Een buddy deed mee via jouw link (tot nu toe {count})",
+    noticeHeading: "Een buddy deed mee via jouw link",
+    noticeBody: "Vrienden via jouw link die hun e-mail hebben bevestigd: {count}.",
+    noticeTierReached: "Je bereikte {tier}: {reward}",
+    noticeNext: "Nog {remaining} tot {tier}.",
+    noticeMax: "Elk niveau bereikt. Ga door voor de top {winners}.",
+    noticeButton: "Bekijk mijn uitnodigingen",
+    noticeFooter: "Je kunt deze e-mails uitzetten op je uitnodigingspagina.",
+  },
+  rules: {
+    title: "Officiële regels van de Buddy-uitnodiging",
+    updated: "Laatst bijgewerkt: 22 oktober 2026",
+    privacyLink: "privacyverklaring",
+    sections: [
+      {
+        heading: "Organisator",
+        paragraphs: [
+          "De Buddy-uitnodiging wordt uitgevoerd door DIVEROID LTD, de maker van WatchDive (company no. 16343651, Office 12146, 182-184 High Street North, East Ham, London E6 2JA, Verenigd Koninkrijk). Vragen: help@diveroid.com.",
+        ],
+      },
+      {
+        heading: "Wie kan meedoen",
+        paragraphs: [
+          "Je moet {ageOther} of ouder zijn, of {ageKr} of ouder als je in Zuid-Korea woont, en minstens meerderjarig zijn waar je woont. Medewerkers en opdrachtnemers van DIVEROID LTD en de groepsmaatschappijen, mensen die dit programma helpen uitvoeren, en hun huisgenoten kunnen geen fysieke prijzen ontvangen. Je kunt van overal meedoen, maar onderwaterlampen en WatchDive-prijzen kunnen we alleen sturen naar een land waar de WatchDive-campagne op Kickstarter naartoe verzendt. Die lijst publiceren we op deze pagina vóór het sluitmoment. Woon je ergens anders, dan krijg je nog steeds de vroege lanceermail en de Duikteamlink, maar een fysieke prijs gaat naar de volgende persoon in de volgorde. Het programma is ongeldig waar de wet het verbiedt.",
+        ],
+      },
+      {
+        heading: "Periode",
+        paragraphs: [
+          "Het programma start op 22 oktober 2026 en sluit direct voordat de WatchDive-campagne op Kickstarter live gaat, en niet later dan {longStop}. De campagne is gepland voor december 2026. Het precieze sluitmoment kondigen we minstens {noticeDays} dagen van tevoren aan op deze pagina en per e-mail.",
+        ],
+      },
+      {
+        heading: "Hoe je meedoet",
+        paragraphs: [
+          "Meld je aan voor de WatchDive-wachtlijst en bevestig je e-mail. Daarna krijg je een persoonlijke uitnodigingslink en een verwijscode. Een vriend telt voor je mee wanneer die via jouw link meedoet of jouw code invult, en daarna de e-mail bevestigt.",
+          "Er is geen aankoop of Kickstarter-bijdrage nodig om mee te doen of te winnen. De link voor de early-birdprijs gebruik je alleen als je ervoor kiest de campagne te steunen.",
+        ],
+      },
+      {
+        heading: "Wat telt",
+        paragraphs: [
+          "Alleen vrienden die hun e-mail bevestigen tellen mee, en elke persoon telt één keer. Een herhaalde aanmelding van dezelfde persoon telt niet opnieuw, ook niet als dezelfde mailbox anders is geschreven (bijvoorbeeld een Gmail-adres met punten of een +label, of dezelfde naam bij icloud.com, me.com en mac.com). Je eigen adres telt nooit voor jezelf, en jezelf uitnodigen met een ander adres is in strijd met de regels voor eerlijk spel. Adressen van bekende diensten voor wegwerp-e-mail en aanmeldingen die als misbruik zijn gemarkeerd, tellen ook niet.",
+          "Een vriend telt voor de uitnodigingslink of de verwijscode waarmee die zich voor het eerst op de wachtlijst heeft aangemeld. Opnieuw meedoen via een andere link of code verplaatst die vriend niet naar een andere uitnodiger en telt niet dubbel. Vrienden die vóór de start van het programma op 22 oktober 2026 via jouw link zijn meegekomen en hun e-mail hebben bevestigd, tellen ook mee.",
+          "Per persoon tellen hoogstens {cap} vrienden per dag mee, op de dag waarop elke vriend bevestigt (Koreaanse standaardtijd). Vrienden boven die limiet tellen niet mee, en ze schuiven niet door naar een latere dag. Vrienden die na het sluitmoment bevestigen, tellen niet mee.",
+          "De tellingen worden bevroren op het sluitmoment. Een getelde vriend die zich later afmeldt voor WatchDive-e-mails, telt nog steeds mee. Een vriend die ons vraagt de gegevens te verwijderen, of die we bij de controle verwijderen, telt niet meer mee.",
+          "Heb je een niveau bereikt en hebben we je dat verteld, dan houd je het, tenzij onze controle vindt dat de vrienden waarmee je het bereikte deze regels hebben overtreden. Meld je jezelf af voor WatchDive-e-mails, dan houd je de beloningen die je hebt bereikt, maar we kunnen je de vroege lanceermail of berichten niet meer sturen.",
+        ],
+      },
+      {
+        heading: "Eerlijk spel",
+        paragraphs: [
+          "Eén deelname per persoon. Deel je link alleen met mensen die je kent en die over WatchDive willen horen. Je mag andere mensen niet aanmelden zonder hun toestemming, niemand betalen of belonen om zich aan te melden, geen bulk- of ongevraagde berichten sturen, geen sites gebruiken waar verwijzingen worden geruild, je link niet plaatsen waar promotie niet is toegestaan (inclusief reacties of opmerkingen onder de eigen advertenties van WatchDive) en geen advertenties kopen die jouw link gebruiken. Vrienden die zo binnenkomen, tellen niet mee. Plaats je je link in het openbaar, zeg er dan bij dat je een beloning krijgt wanneer mensen meedoen.",
+          "Elke persoon en elk huishouden kan hoogstens één onderwaterlamp en één WatchDive-prijs ontvangen; één persoon kan beide winnen. Dat controleren we bij de verzending aan de hand van naam, adres en telefoonnummer.",
+        ],
+      },
+      {
+        heading: "Beloningen",
+        paragraphs: [
+          "1 vriend: de Kickstarter-lanceermail {hoursFirst} uur vóór de algemene lijst. De algemene lijst is iedereen op de wachtlijst die nog geen niveau van de Buddy-uitnodiging heeft bereikt.",
+          "3 vrienden (Buddy): de lanceermail {hoursBuddy} uur vóór de algemene lijst.",
+          "5 vrienden (Duikteam): vóór de campagne live gaat, mailen we je een privélink voor een Kickstarter-beloning tegen de early-birdprijs van {price}. Je kunt die gebruiken zolang de campagne live is, op de Kickstarter-website (browser op computer of telefoon, ingelogd), ook nadat de early-birdplekken voor de eerste {seats} backers op zijn. Hij werkt niet in de Kickstarter-app, niet voor Late Pledges en niet in de Pledge Manager. Eén bijdrage per Duikteamlid; deel de link niet. Verzending en eventuele belastingen worden berekend zoals bij andere backers.",
+          "10 vrienden (Duikleider): één onderwaterlamp van ongeveer {lightValue}. We hebben er {stock}. Ze gaan naar de eerste {stock} mensen die 10 vrienden bereiken, in de volgorde waarin ze dat halen. Zijn ze op, dan zeggen we dat op deze pagina.",
+          "Top {winners}: de {winners} mensen met de meeste getelde vrienden op het sluitmoment krijgen elk één WatchDive. Hebben twee mensen dezelfde telling, dan staat degene die die telling het eerst bereikte hoger.",
+          "Een WatchDive-prijs is één WatchDive-sensorbehuizing, in de Apple Watch- of Galaxy Watch-versie naar keuze van de winnaar, ter waarde van {prizeValue} (de geplande openbare prijs). Het horloge is niet inbegrepen, en WatchDive werkt alleen met de ondersteunde horlogemodellen die op onze site staan. Prijzen zijn niet inwisselbaar voor geld.",
+        ],
+      },
+      {
+        heading: "Als de campagne later is of niet doorgaat",
+        paragraphs: [
+          "Is de Kickstarter-campagne op {longStop} nog niet live, dan sluit het programma op dat moment toch. Hebben we het sluitmoment aangekondigd, dan verplaatsen we het hoogstens één keer, en alleen met een e-mail minstens 48 uur vóór het oorspronkelijke moment. Ook als de campagne het doel niet haalt, wordt geannuleerd of vertraagd, ontvangt de top {winners} nog steeds elk een WatchDive. Stoppen we het programma eerder, dan rangschikken we mensen op hun telling op dat moment en kennen we de prijzen van de top {winners} op die basis toe.",
+        ],
+      },
+      {
+        heading: "Controle en uitsluiting",
+        paragraphs: [
+          "De volgorde van de onderwaterlampen en de ranglijst zijn voorlopig tot de controle. Voordat een lamp of een WatchDive wordt verstuurd, controleren we de getelde vrienden. We kunnen vrienden schrappen die deze regels overtreden en iedereen uitsluiten die nepaanmeldingen of geautomatiseerde aanmeldingen gebruikt of de regels voor eerlijk spel overtreedt. We mailen winnaars binnen 14 dagen na het sluitmoment (lampen: binnen 14 dagen na de controle). Antwoordt een winnaar niet binnen 14 dagen, of kan die de beloning onder deze regels niet ontvangen, dan gaat de lamp naar de volgende Duikleider in de volgorde waarin 10 vrienden werden bereikt, en een WatchDive-prijs naar de volgende persoon op de ranglijst.",
+        ],
+      },
+      {
+        heading: "Levering, verzending en belastingen",
+        paragraphs: [
+          "Ontvangers betalen de verzending en eventuele invoerrechten of belastingen. We verzenden alleen naar landen waar de WatchDive-campagne op Kickstarter naartoe verzendt. Lampen gaan de deur uit na de controle, en alle fysieke prijzen worden verstuurd vóór {deliveryBy}.",
+          "Voor winnaars die in Zuid-Korea wonen, vereist de Koreaanse wet dat de betaler {taxRate}% inkomstenbelasting inhoudt (belasting op overige inkomsten plus lokale inkomstenbelasting) op een prijs waarvan de belastbare waarde hoger is dan {taxFree}. Dit geldt voor zowel de onderwaterlamp (ongeveer {lightValue} waard) als de WatchDive. Vóór verzending noemen we je het bedrag en vragen we je het aan ons te betalen; we melden het en betalen het aan de belastingdienst. Daarvoor vragen we Koreaanse winnaars om hun officiële naam, hun Koreaanse registratienummer van de ingezetene en hun adres, alleen gebruikt voor de belastingmelding en alleen bewaard zo lang als de belastingwet het vereist.",
+        ],
+      },
+      {
+        heading: "Ranglijst en privacy",
+        paragraphs: [
+          "De ranglijst toont alleen een bijnaam die je zelf instelt en kiest om te tonen. Je e-mailadres wordt nooit getoond. Mensen die geen bijnaam kiezen om te tonen, verschijnen als „Privéduiker”. Een bijnaam heeft {min} tot {max} tekens: letters, cijfers, spaties, punten, koppeltekens en onderstrepingen, zonder Latijnse letters te mengen met Cyrillische of Griekse letters. Hij mag geen e-mailadres, telefoonnummer of link bevatten en niet lijken op een naam van WatchDive, Kickstarter of hun medewerkers (zoals „admin” of „staff”). We kunnen een bijnaam verbergen die beledigend is of waarin iemand zich als een ander voordoet. De ranglijst en de tellingen op je uitnodigingspagina worden om de paar minuten bijgewerkt, dus een nieuwe vriend kan een paar minuten nodig hebben om te verschijnen.",
+          "We vertellen je nooit welke vrienden zijn meegekomen, alleen hoeveel. Zie onze privacyverklaring voor hoe we met wachtlijstgegevens omgaan.",
+        ],
+      },
+      {
+        heading: "Wijzigingen",
+        paragraphs: [
+          "Moeten we het programma wijzigen of stoppen, dan kondigen we dat eerst hier en per e-mail aan. Een wijziging neemt nooit een beloning weg die je al hebt bereikt en verlaagt nooit de prijzen voor de top {winners}.",
+        ],
+      },
+    ],
+  },
+};
+
 export const REFERRAL_COPY: Record<Locale, ReferralCopy> = {
   en,
   ko,
@@ -2516,6 +2775,7 @@ export const REFERRAL_COPY: Record<Locale, ReferralCopy> = {
   fr,
   de,
   "pt-BR": ptBR,
+  nl,
 };
 
 export function referralCopy(locale: Locale): ReferralCopy {

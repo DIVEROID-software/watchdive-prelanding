@@ -32,7 +32,7 @@ const localizedBodies = {
   fr: BETA_REVIEWS_FR,
   de: BETA_REVIEWS_DE,
   "pt-BR": BETA_REVIEWS_PT_BR,
-} as const satisfies Record<Exclude<Locale, "en">, LocalizedBetaReviewBodies>;
+} as const satisfies Record<Exclude<Locale, "en" | "nl">, LocalizedBetaReviewBodies>;
 
 const expectedIds = PUBLISHABLE_REVIEWS.map(({ id }) => id).sort((left, right) => left - right);
 
@@ -64,7 +64,7 @@ test("every localized review module joins exactly once to every immutable review
 });
 
 test("review 100 stays explicitly framed as the reviewer's opinion", () => {
-  const opinionMarkers: Record<Exclude<Locale, "en">, RegExp> = {
+  const opinionMarkers: Record<Exclude<Locale, "en" | "nl">, RegExp> = {
     ko: /제 생각에는/,
     "zh-CN": /我觉得/,
     "zh-TW": /我認為/,
@@ -76,7 +76,7 @@ test("review 100 stays explicitly framed as the reviewer's opinion", () => {
   };
   for (const [locale, pattern] of Object.entries(opinionMarkers)) {
     assert.match(
-      localizedBodies[locale as Exclude<Locale, "en">][100] ?? "",
+      localizedBodies[locale as Exclude<Locale, "en" | "nl">][100] ?? "",
       pattern,
       `${locale}: an opinion was strengthened into a factual market claim`,
     );
@@ -85,6 +85,7 @@ test("review 100 stays explicitly framed as the reviewer's opinion", () => {
 
 test("the route loader returns only the requested review language", async () => {
   assert.equal(await loadLocalizedBetaReviewBodies("en"), undefined);
+  assert.equal(await loadLocalizedBetaReviewBodies("nl"), undefined);
   for (const [locale, expected] of Object.entries(localizedBodies)) {
     assert.strictEqual(
       await loadLocalizedBetaReviewBodies(locale as Exclude<Locale, "en">),
@@ -114,6 +115,7 @@ test("every language displays an explicit translation notice", () => {
     fr: /note de traduction/i,
     de: /übersetzungshinweis/i,
     "pt-BR": /aviso de tradução/i,
+    nl: /vertaalnotitie/i,
   };
   const nuancePatterns: Record<Locale, RegExp> = {
     en: /tone or nuance/i,
@@ -125,6 +127,7 @@ test("every language displays an explicit translation notice", () => {
     fr: /ton ou certaines nuances/i,
     de: /Ton und Nuancen/,
     "pt-BR": /tom ou algumas nuances/i,
+    nl: /toon of nuance/i,
   };
   const heroMarkers: Record<Locale, RegExp> = {
     en: /translated/i,
@@ -136,6 +139,7 @@ test("every language displays an explicit translation notice", () => {
     fr: /traduits/i,
     de: /übersetzt/i,
     "pt-BR": /traduzidas/i,
+    nl: /Engels/i,
   };
 
   for (const [locale, pattern] of Object.entries(noticePatterns)) {

@@ -226,4 +226,27 @@ export const phoneOptInCopy: Record<Locale, Copy> = {
     emailHint:
       "Após confirmar seu e-mail, você pode adicionar um SMS no dia do lançamento para agir rápido por uma das primeiras 100 vagas early bird no Kickstarter. O número não reserva nem garante uma vaga.",
   },
+  nl: {
+    eyebrow: "OPTIONEEL · SMS BIJ DE START",
+    title: "Wees er klaar voor de eerste 100.",
+    body: "Voeg naast e-mail een sms-herinnering op de lanceringsdag toe, zodat je de alert ziet en snel kunt handelen wanneer WatchDive op Kickstarter opent.",
+    terms:
+      "De early-birdaanbieding is voor de eerste 100 backers op Kickstarter. Een nummer toevoegen legt geen plek vast en maakt de aanbieding niet zeker.",
+    country: "Land / landcode",
+    search: "Zoek land of code (bijv. NL, +31)",
+    empty: "Geen land gevonden. Probeer de naam of de landcode.",
+    number: "Mobiel nummer",
+    consent:
+      "Stuur me een WatchDive Kickstarter-startalert per sms. Optioneel; ik kan me altijd afmelden. Bericht- en datakosten kunnen gelden.",
+    button: "Voeg mijn sms-herinnering toe",
+    busy: "Opslaan…",
+    invalid: "Controleer je landcode en vul een volledig mobiel nummer in.",
+    consentRequired: "Ga akkoord met de optionele sms-alert om je nummer toe te voegen.",
+    error: "We konden je nummer niet opslaan. Probeer opnieuw, of open je e-mailbevestigingslink opnieuw.",
+    accepted:
+      "Aanvraag ontvangen. Bevestig je e-mail om de registratie af te ronden. Een sms-herinnering legt geen early-birdplek vast.",
+    saved: "Je nummer en sms-voorkeur zijn opgeslagen. Je kunt nog steeds e-mailupdates ontvangen.",
+    emailHint:
+      "Na het bevestigen van je e-mail kun je een optionele sms-herinnering op de lanceringsdag toevoegen, zodat je snel kunt handelen voor de eerste 100 early-birdplekken op Kickstarter. Een telefoonnummer legt geen plek vast.",
+  },
 };

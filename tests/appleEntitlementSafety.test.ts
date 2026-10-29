@@ -39,6 +39,7 @@ const PRIMARY_TERMS = {
   fr: { housing: /caisson/iu, sensor: /capteur/iu },
   de: { housing: /Gehäuse/iu, sensor: /Sensor/iu },
   "pt-BR": { housing: /caixa/iu, sensor: /sensor/iu },
+  nl: { housing: /behuizing/iu, sensor: /sensor/iu },
 } as const satisfies Record<Locale, { housing: RegExp; sensor: RegExp }>;
 
 const CARD_STATE = {
@@ -87,6 +88,11 @@ const CARD_STATE = {
     comingSoon: /Mais adiante/u,
     unavailable: /não entra neste lançamento/iu,
   },
+  nl: {
+    available: "Deze lancering",
+    comingSoon: /Later/u,
+    unavailable: /niet in deze lancering/iu,
+  },
 } as const satisfies Record<Locale, { available: string; comingSoon: RegExp; unavailable: RegExp }>;
 
 const WATER_RESISTANCE_TEST = {
@@ -99,6 +105,7 @@ const WATER_RESISTANCE_TEST = {
   fr: /test d[’']étanchéité/iu,
   de: /Dichtigkeitstest/iu,
   "pt-BR": /teste de resistência à água/iu,
+  nl: /waterdichtheidstest/iu,
 } as const satisfies Record<Locale, RegExp>;
 
 const DEPTH_VALUE = /197\s*ft|60\s*(?:m\b|米|公尺)/iu;

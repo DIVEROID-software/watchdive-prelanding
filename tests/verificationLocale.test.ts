@@ -172,7 +172,7 @@ test("welcome email copy and referral links preserve the signed locale", async (
   }
 });
 
-test("locale type remains the exact nine-language contract", () => {
+test("locale type remains the exact ten-language contract", () => {
   const expected: readonly Locale[] = [
     "en",
     "ko",
@@ -183,6 +183,7 @@ test("locale type remains the exact nine-language contract", () => {
     "fr",
     "de",
     "pt-BR",
+    "nl",
   ];
   assert.deepEqual(SUPPORTED_LOCALES, expected);
 });

@@ -38,6 +38,7 @@ test("the locale registry is complete, unique and uses native picker labels", ()
     "fr",
     "de",
     "pt-BR",
+    "nl",
   ]);
   assert.equal(new Set(SUPPORTED_LOCALES).size, SUPPORTED_LOCALES.length);
   assert.equal(new Set(Object.values(LOCALE_PATH_SEGMENTS)).size, SUPPORTED_LOCALES.length);
@@ -53,6 +54,7 @@ test("the locale registry is complete, unique and uses native picker labels", ()
       ["fr", "Français"],
       ["de", "Deutsch"],
       ["pt-BR", "Português (Brasil)"],
+      ["nl", "Nederlands"],
     ],
   );
 });
@@ -64,6 +66,8 @@ test("language tags resolve without confusing Simplified and Traditional Chinese
   assert.equal(matchLocale("en-US"), "en");
   assert.equal(matchLocale("ko-KR"), "ko");
   assert.equal(matchLocale("pt_BR"), "pt-BR");
+  assert.equal(matchLocale("nl-NL"), "nl");
+  assert.equal(matchLocale("nl"), "nl");
   assert.equal(matchLocale("pt-PT"), undefined);
   assert.equal(matchLocale("ar"), undefined);
   assert.equal(matchLocale(null), undefined);
@@ -108,6 +112,9 @@ test("locale prefixes are stable and English stays on the canonical unprefixed U
   assert.equal(localePathPrefix("pt-BR"), "/pt-br");
   assert.equal(homePath("en"), "/");
   assert.equal(homePath("de"), "/de");
+  assert.equal(localePathPrefix("nl"), "/nl");
+  assert.equal(privacyPath("nl"), "/nl/privacy");
+  assert.equal(termsPath("nl"), "/nl/terms");
 });
 
 test("switching locale replaces the prefix while preserving campaign state", () => {
@@ -144,6 +151,7 @@ test("URL helpers reject absolute and protocol-relative destinations", () => {
 test("Intl helpers format values with the selected locale", () => {
   assert.equal(formatNumber(1234.5, "en"), "1,234.5");
   assert.equal(formatNumber(1234.5, "de"), "1.234,5");
+  assert.equal(formatNumber(1234.5, "nl"), "1.234,5");
   assert.equal(
     formatDate(Date.UTC(2026, 6, 31), "en", {
       year: "numeric",

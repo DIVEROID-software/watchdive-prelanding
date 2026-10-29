@@ -54,7 +54,7 @@ test("worker accepts only approved localized launch notifications and cannot ope
       waitUntil: (promise: Promise<unknown>) => pending.push(promise),
     });
   await Promise.all(pending);
-  assert.equal(shown.length, 9);
+  assert.equal(shown.length, 10);
   for (const notification of shown) {
     assert.equal(notification[0], "WatchDive");
     assert.equal(notification[1].body.includes("Injected"), false);

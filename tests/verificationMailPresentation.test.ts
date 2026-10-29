@@ -17,6 +17,7 @@ const TEXT_HASH: Record<Locale, string> = {
   fr: "e236826c13ed1d7124068781e8377a72f20db0f1f5a19b098b75699a3d3f3cf2",
   de: "a292b9618ce8b40dfb938a68177457bfd8c0d6b47ef85d71190e61219562b430",
   "pt-BR": "8d70454f04b70417800cae7bb6101edb2ab7ba850f7a67c83ca6c811dbd9f065",
+  nl: "4a4c83a2dbdf84ca92b04dcadbb4d6f91728bdccc36205a439d597fe5870427a",
 };
 const NORMALIZED_URL = "https://watchdive.example/verify#QA_ONLY_NOT_A_LIVE_TOKEN";
 const SECRET = "qa-only-verification-mail-secret-never-use-in-production";

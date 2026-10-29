@@ -292,6 +292,35 @@ export const REFERRAL_PRICE_CLAIM_COPY: Record<Locale, PriceClaim> = {
     phoneTerms:
       "A oferta early bird é para os primeiros {seats} apoiadores no Kickstarter e para quem está na lista com reserva de preço ou nível Equipe de mergulho. Informar o número não reserva uma vaga nem garante a oferta.",
   },
+  nl: {
+    landing: {
+      meta: {
+        description:
+          "Een DIVEROID-sensorbehuizing maakt van een ondersteunde Apple Watch of Galaxy Watch een duikcomputer. Diepte, tijd, watertemperatuur, no-deco. Early bird $149: de eerste {seats} Kickstarter-backers, plus wachtlijstleden met een prijsreservering of de status Duikteam.",
+        ogDescription:
+          "Een DIVEROID-sensorbehuizing maakt van een ondersteunde Apple Watch of Galaxy Watch een duikcomputer. Diepte, tijd, watertemperatuur, no-deco. Early bird $149: de eerste {seats} Kickstarter-backers, plus wachtlijstleden met een prijsreservering of de status Duikteam.",
+        twitterDescription:
+          "Een DIVEROID-sensorbehuizing voor de Apple Watch of Galaxy Watch die je al draagt. Early bird $149: de eerste {seats} Kickstarter-backers, plus wachtlijstleden met een prijsreservering of de status Duikteam.",
+      },
+      cta: { label: "Meld je · $149 early bird" },
+      referral: {
+        shareText:
+          "WatchDive maakt van de Apple Watch of Galaxy Watch die ik al draag een duikcomputer. De lancering op Kickstarter is in december. Schrijf je via mijn link in op de wachtlijst.",
+      },
+      usp: { priceTitle: "Early bird: {price}" },
+      hero: { offNote: "early bird-prijs op Kickstarter" },
+      value: { h2: "$149 early bird op Kickstarter." },
+      offer: {
+        kicker: "Early bird · 50% korting",
+        lead: "Hoor het als eerste wanneer WatchDive op Kickstarter opent. Early bird $149: de eerste {seats} Kickstarter-backers, plus wachtlijstleden met een prijsreservering of de status Duikteam. Openbare prijs $299. Het bedrag op Kickstarter is leidend.",
+      },
+    },
+    conversionTerms:
+      "Voor de eerste {seats} Kickstarter-backers, plus wachtlijstleden met een prijsreservering of de status Duikteam. Aanmelden reserveert de aanbieding niet.",
+    earlyBirdRace: earlyBirdRaceCopy["nl"],
+    phoneTerms:
+      "De early bird-aanbieding geldt voor de eerste {seats} backers op Kickstarter, plus wachtlijstleden met een prijsreservering of de status Duikteam. Een nummer toevoegen reserveert geen plek en legt de aanbieding niet vast.",
+  },
 };
 
 function fillSeats(value: string): string {

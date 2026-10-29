@@ -226,7 +226,7 @@ test("every locale states the price, first 100, Kickstarter and next USD 200 tie
     assert.ok(copy.toLocaleLowerCase(locale).includes(price.toLocaleLowerCase(locale)), locale);
     assert.doesNotMatch(copy, /\{[^}]+\}/, locale);
     // Explicit USD next-tier wording is owner-approved; no invented FX rate.
-    if (locale !== "en" && locale !== "ko") {
+    if (locale !== "en" && locale !== "ko" && locale !== "nl") {
       assert.doesNotMatch(copy, /(?<![A-Z])\$\s?\d/, locale);
     }
   }
