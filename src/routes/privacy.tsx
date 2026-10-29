@@ -3,6 +3,7 @@ import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { getReferralProgramState } from "@/lib/api/referral.functions";
 import { SOCIAL_SIGNUP_PRIVACY } from "@/lib/socialSignupPrivacy";
 import { buddyInvitePrivacy, type PrivacyLead } from "@/lib/referralPrivacy";
+import { mergePrivacyLoader, nativeFormPrivacyParagraph } from "@/lib/instantForm/privacy.ts";
 import { homePath, type Locale } from "@/lib/i18n/locale";
 import { legalHead } from "@/lib/i18n/seo";
 import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/privacy")({
 });
 
 /** Loader data of /privacy and /$locale/privacy. */
-export type PrivacyPageData = { buddyInvite: true };
+export type PrivacyPageData = { buddyInvite?: true; nativeFormPrivacy?: true };
 
 const PRIVACY_ROUTE_IDS = new Set(["/privacy", "/$locale/privacy"]);
 
@@ -26,7 +27,20 @@ const PRIVACY_ROUTE_IDS = new Set(["/privacy", "/$locale/privacy"]);
  */
 export async function loadPrivacyPageData(): Promise<PrivacyPageData | undefined> {
   const state = await getReferralProgramState().catch(() => ({ enabled: false }));
-  return state.enabled ? { buddyInvite: true } : undefined;
+  // Native copy is shown unless WATCHDIVE_NATIVE_FORM_PRIVACY is exactly "0".
+  // Buddy off and native off returns undefined.
+  return mergePrivacyLoader(state.enabled, process.env);
+}
+
+function useNativeFormSection(): boolean {
+  return useRouterState({
+    select: (state) =>
+      state.matches.some(
+        (match) =>
+          PRIVACY_ROUTE_IDS.has(match.routeId) &&
+          (match.loaderData as PrivacyPageData | undefined)?.nativeFormPrivacy === true,
+      ),
+  });
 }
 
 function useBuddyInviteSection(): boolean {
@@ -44,6 +58,8 @@ export function PrivacyPage() {
   const locale = useCurrentLocale();
   const copy = useFrozenLandingMessages().privacy;
   const showBuddyInvite = useBuddyInviteSection();
+  const showNativeForm = useNativeFormSection();
+  const nativeParagraph = showNativeForm ? nativeFormPrivacyParagraph(locale) : undefined;
   const company = splitLabel(copy.s1Company);
   const representative = splitLabel(copy.s1Rep);
   const address = splitLabel(copy.s1Addr);
@@ -119,6 +135,7 @@ export function PrivacyPage() {
               </li>
             </ul>
             <p>{SOCIAL_SIGNUP_PRIVACY[locale]}</p>
+            {nativeParagraph ? <p>{nativeParagraph}</p> : null}
             <p>{copy.s2NoPayment}</p>
           </Section>
 

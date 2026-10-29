@@ -150,6 +150,13 @@ export type VerificationMail = {
   reminder?: boolean;
   /** Explicit user-authorized one-off; signing secret remains server-side. */
   manualCampaign?: "wd-manual-verify-20261019";
+  /**
+   * Native Instant Form confirmation only. When this is
+   * `watchdive-instant-form-` plus 64 hex digits, Resend uses it instead of
+   * `watchdive-verification-${leadId}`. Website sends omit it and keep the
+   * existing lead-id key. The signed token format does not change.
+   */
+  idempotencyKey?: string;
 };
 
 export type WelcomeMail = {
@@ -1306,6 +1313,14 @@ export async function deliver(
   }
 }
 
+const NATIVE_CONFIRMATION_KEY = /^watchdive-instant-form-[a-f0-9]{64}$/;
+
+/** Native confirmation uses the ingester key. Every other send keeps the lead id. */
+export function nativeConfirmationIdempotencyKey(override: string | undefined, leadId: string): string {
+  if (override && NATIVE_CONFIRMATION_KEY.test(override)) return override;
+  return `watchdive-verification-${leadId}`;
+}
+
 export function createResendMailer(
   env: ResendEnvironment = process.env,
   fetchImpl: typeof fetch = fetch,
@@ -1318,7 +1333,7 @@ export function createResendMailer(
   const programOn = referralProgramEnabled(env);
 
   return {
-    async send({ to, token, leadId, publicOrigin, locale, reminder, manualCampaign, compatibility }) {
+    async send({ to, token, leadId, publicOrigin, locale, reminder, manualCampaign, compatibility, idempotencyKey: idempotencyOverride }) {
       const signedLocale = verificationTokenLocale(token);
       if (!signedLocale || signedLocale !== locale) {
         throw new Error("Verification token locale mismatch");
@@ -1333,7 +1348,7 @@ export function createResendMailer(
         ? `${manualCampaign}-${leadId}`
         : reminder
         ? `watchdive-verification-reminder-${leadId}`
-        : `watchdive-verification-${leadId}`;
+        : nativeConfirmationIdempotencyKey(idempotencyOverride, leadId);
       await deliver(
         config,
         fetchImpl,

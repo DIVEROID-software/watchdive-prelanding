@@ -155,6 +155,12 @@ export const FIELD_SOURCE_SCHEMA_VERSION = "Source schema version";
 export const FIELD_META_CAMPAIGN_ID = "Meta Campaign ID";
 export const FIELD_META_ADSET_ID = "Meta Ad Set ID";
 export const FIELD_META_AD_ID = "Meta Ad ID";
+/**
+ * Meta Instant Form lead id. Rich text. Distinct from verification `Lead ID`,
+ * which stays the signed-token UUID. Absent on the live database until root
+ * adds it. A native create names it and does not retry without it.
+ */
+export const FIELD_LEADGEN_ID = "Leadgen ID";
 
 // Attribution columns, already provisioned on the live database as text.
 export const FIELD_UTM_SOURCE = "UTM Source";
@@ -401,6 +407,16 @@ export type CreatePendingInput = {
    */
   pressOutbox?: string;
   pressSync?: string;
+  /**
+   * Native Instant Form only. Written on the create request together with
+   * Source. Website callers omit it. A missing column fails the create.
+   */
+  nativeCrm?: {
+    leadgenId: string;
+    adId?: string;
+    adsetId?: string;
+    campaignId?: string;
+  };
 };
 
 /** Written when a new attempt is minted — this is what kills the previous link. */
