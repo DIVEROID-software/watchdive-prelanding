@@ -15,7 +15,7 @@ import {
   segmentedHeroPath,
   type ReservationEmailSegment,
 } from "../src/lib/reservation-drip/media.ts";
-import { PERSONALIZED_COPY } from "../src/lib/reservation-drip/personalized-copy.ts";
+import { D1_DEMAND_COPY, PERSONALIZED_COPY } from "../src/lib/reservation-drip/personalized-copy.ts";
 import { main } from "../scripts/reservation-drip.ts";
 
 const DECO = /decompression|no-deco|\bNDL\b|무감압|감압|免减压|免減壓|無減圧|減圧|décompression|descompres|Dekompression|descompress/i;
@@ -174,10 +174,26 @@ test("108 segmented mails vary by stage and signup segment", () => {
         assert.equal(mail.html.split(copy.button).length - 1, 1, `${segment} ${locale} ${stage} cta`);
         assert.match(mail.html, new RegExp(`src="https://watchdive\\.diveroid\\.com${hero.replaceAll(".", "\\.")}"`));
         assert.equal(mail.html.includes("127.0.0.1"), false);
-        assert.doesNotMatch(blob, DEADLINE);
+        const draft = PERSONALIZED_COPY[segment][locale][stage];
+        const demandLocales = locale === "ko" || locale === "en";
+        if (stage === "d1" && demandLocales) {
+          assert.equal(draft.demand, D1_DEMAND_COPY[locale]);
+          assert.ok(mail.html.indexOf(draft.sentence2) < mail.html.indexOf(draft.demand!));
+          assert.ok(mail.html.indexOf(draft.demand!) < mail.html.indexOf(copy.button));
+          assert.ok(mail.text.indexOf(draft.sentence2) < mail.text.indexOf(draft.demand!));
+          assert.ok(mail.text.indexOf(draft.demand!) < mail.text.indexOf(copy.button));
+          assert.equal(mail.html.split(draft.demand!).length - 1, 1);
+          assert.equal(mail.text.split(draft.demand!).length - 1, 1);
+          assert.doesNotMatch(blob.replaceAll(draft.demand!, ""), DEADLINE);
+          assert.doesNotMatch(blob, /\$299|December|12월|마감|today|오늘만/);
+        } else {
+          assert.equal(draft.demand, undefined);
+          assert.equal(blob.includes(D1_DEMAND_COPY.ko), false);
+          assert.equal(blob.includes(D1_DEMAND_COPY.en), false);
+          assert.doesNotMatch(blob, DEADLINE);
+        }
         assert.doesNotMatch(blob, SERIES);
         assert.doesNotMatch(blob, /\$299|\$179|free shipping|체크아웃|영수증/);
-        const draft = PERSONALIZED_COPY[segment][locale][stage];
         assert.ok(draft.eyebrow.length <= 22, `${segment} ${locale} ${stage} eyebrow ${draft.eyebrow}`);
         for (const value of Object.values(draft)) {
           const stripped = value.replace(/\$?(?:100|149|200|3)\b/g, "").replace(/\b(?:100|149|200|3)\s*\$/g, "");

@@ -14,7 +14,18 @@ export type PersonalizedStageCopy = {
   eyebrow: string;
   chip: string;
   imageAlt: string;
+  /**
+   * One approved paragraph, D1 Korean and English only.
+   * It sits under the last body paragraph and above the shared $3 button.
+   */
+  demand?: string;
 };
+
+/** Exact owner-approved D1 paragraph. No deadline and no other language. */
+export const D1_DEMAND_COPY = {
+  ko: "초기 물량은 경쟁이 치열할 것으로 예상됩니다. 킥스타터 선착순 100명 이후에는 $200부터입니다.",
+  en: "We expect strong demand for early units. After the first 100 backers, the price starts at $200.",
+} as const;
 
 type Stages = Record<DripStage, PersonalizedStageCopy>;
 type ByLocale = Record<Locale, Stages>;
@@ -38,6 +49,7 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
         "headline": "A dive computer, on the watch you already own.",
         "sentence1": "The housing reads depth and water temperature, and your smartwatch shows them.",
         "sentence2": "After the dive, review the logbook in the DIVEROID app. No extra subscription for the dive-computer features.",
+        "demand": D1_DEMAND_COPY.en,
         "eyebrow": "On your wrist",
         "chip": "Logbook included",
         "imageAlt": "WatchDive resting on pink fins beside a diving mask."
@@ -80,6 +92,7 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
         "headline": "추가 구독 없이 쓰는 다이브 컴퓨터.",
         "sentence1": "하우징이 수심과 수온을 측정하고, 스마트워치가 그 값을 보여 줍니다.",
         "sentence2": "다이빙이 끝나면 DIVEROID 앱 로그북에서 기록을 돌아봅니다. 다이브 컴퓨터 기능에 추가 구독은 없습니다.",
+        "demand": D1_DEMAND_COPY.ko,
         "eyebrow": "손목에서",
         "chip": "로그북까지, 구독 없이",
         "imageAlt": "핑크 핀 위에 놓인 WatchDive와 마스크."
@@ -418,6 +431,7 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
         "headline": "Your dive computer, compass and logbook.",
         "sentence1": "On a scuba dive, the watch shows the compass, depth, dive time and water temperature.",
         "sentence2": "Back on the surface, the logbook syncs to the DIVEROID app. No extra subscription for these dive-computer features.",
+        "demand": D1_DEMAND_COPY.en,
         "eyebrow": "For scuba",
         "chip": "Compass and logbook",
         "imageAlt": "WatchDive on a wrist during a scuba dive, another diver behind."
@@ -460,6 +474,7 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
         "headline": "다이브 컴퓨터, 나침반, 그리고 로그북.",
         "sentence1": "스쿠버다이빙 중에는 나침반, 수심, 다이빙 시간, 수온을 스마트워치에서 봅니다.",
         "sentence2": "수면으로 돌아오면 로그북이 DIVEROID 앱에 동기화됩니다. 이 다이브 컴퓨터 기능에 추가 구독은 없습니다.",
+        "demand": D1_DEMAND_COPY.ko,
         "eyebrow": "스쿠버다이빙",
         "chip": "나침반과 로그북",
         "imageAlt": "스쿠버다이빙 중 손목의 WatchDive, 뒤에 다른 다이버."
@@ -798,6 +813,7 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
         "headline": "Depth, time and the surface interval.",
         "sentence1": "During the freedive, your watch shows depth and dive time.",
         "sentence2": "Between dives, check the surface interval, then review the profile in your DIVEROID logbook.",
+        "demand": D1_DEMAND_COPY.en,
         "eyebrow": "For freediving",
         "chip": "Surface interval, then the logbook",
         "imageAlt": "At the surface between dives, WatchDive on a wrist."
@@ -840,6 +856,7 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
         "headline": "수심과 시간, 그리고 수면 휴식.",
         "sentence1": "프리다이빙 중에는 스마트워치에서 수심과 다이빙 시간을 봅니다.",
         "sentence2": "다이빙 사이에는 수면 휴식을 확인하고, 프로필은 DIVEROID 로그북에서 돌아봅니다.",
+        "demand": D1_DEMAND_COPY.ko,
         "eyebrow": "프리다이빙",
         "chip": "수면 휴식과 로그북",
         "imageAlt": "다이빙 사이 수면에서 손목의 WatchDive."

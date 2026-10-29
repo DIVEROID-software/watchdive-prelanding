@@ -35,7 +35,7 @@ import {
   type ReservationEmailSegment,
   type StageLayout,
 } from "../reservation-drip/media.ts";
-import { personalizedStageCopy } from "../reservation-drip/personalized-copy.ts";
+import { D1_DEMAND_COPY, personalizedStageCopy } from "../reservation-drip/personalized-copy.ts";
 
 export type ReservationMailInput = {
   locale: Locale;
@@ -153,6 +153,8 @@ export type MarketingMailLines = {
   sentence2: string;
   feeNote: string;
   cta: string;
+  /** Optional last body paragraph, rendered once above the button. */
+  demand?: string;
 };
 
 export type MarketingMailChrome = {
@@ -220,6 +222,7 @@ export function assertMarketingMailSafe(
     lines.headline,
     lines.sentence1,
     lines.sentence2,
+    ...(lines.demand ? [lines.demand] : []),
     lines.cta,
     copy.fallback,
     copy.reason,
@@ -239,8 +242,12 @@ export function assertMarketingMailSafe(
   }
   // Signed links are removed first. A token can spell a forbidden word by chance,
   // and that must not block the send or hide a real claim in the prose.
+  // The owner-approved D1 paragraph names "100 backers" on purpose. Only that
+  // exact sentence is removed before the scan, so any other wording still fails.
+  let claimProse = prose;
+  for (const line of Object.values(D1_DEMAND_COPY)) claimProse = claimProse.replaceAll(line, "");
   for (const pattern of FORBIDDEN) {
-    if (pattern.test(prose)) throw new Error("Reservation mail contains a forbidden claim");
+    if (pattern.test(claimProse)) throw new Error("Reservation mail contains a forbidden claim");
   }
 }
 
@@ -390,6 +397,7 @@ export function renderSegmentedReservationMail(
       headline: draft.headline,
       sentence1: draft.sentence1,
       sentence2: draft.sentence2,
+      ...(draft.demand ? { demand: draft.demand } : {}),
       feeNote: base.feeNote,
       cta: base.button,
     },
@@ -440,7 +448,13 @@ function renderVariedMarketingMail(
   const title = `<h1 class="wd-title" style="margin:0 0 16px;color:${DEEP};font-family:${FONT};font-size:28px;font-weight:700;line-height:1.3;letter-spacing:${tracking};word-break:${wordBreak};overflow-wrap:break-word;">${headline}</h1>`;
   const sentences = [
     p(`margin:0 0 10px;color:${INK};font-size:16px;line-height:1.6;`, escapeHtml(lines.sentence1)),
-    p(`margin:0 0 18px;color:${INK};font-size:16px;line-height:1.6;`, escapeHtml(lines.sentence2)),
+    p(
+      `margin:0 0 ${lines.demand ? "10" : "18"}px;color:${INK};font-size:16px;line-height:1.6;`,
+      escapeHtml(lines.sentence2),
+    ),
+    ...(lines.demand
+      ? [p(`margin:0 0 18px;color:${INK};font-size:16px;line-height:1.6;`, escapeHtml(lines.demand))]
+      : []),
   ].join("");
   const copyCell = (inner: string) =>
     `<tr><td class="wd-pad" bgcolor="${PAPER}" style="padding:22px 22px 28px;background-color:${PAPER};">${inner}</td></tr>`;
@@ -534,6 +548,7 @@ function renderVariedMarketingMail(
     "",
     lines.sentence1,
     lines.sentence2,
+    ...(lines.demand ? [lines.demand] : []),
     "",
     `${lines.cta}${sep}${inviteUrl}`,
     copy.fallback,

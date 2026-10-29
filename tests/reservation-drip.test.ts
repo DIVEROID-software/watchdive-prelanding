@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { DRIP_STAGES, DRIP_FIELD, DAY, dripHold, dripEnabled } from "../src/lib/reservation-drip/policy.ts";
 import { DRIP_COPY_HASH, renderDripMail } from "../src/lib/reservation-drip/render.ts";
+import { D1_DEMAND_COPY } from "../src/lib/reservation-drip/personalized-copy.ts";
 import { createDripStore } from "../src/lib/reservation-drip/store.ts";
 import { stripeAllowsDrip } from "../src/lib/reservation-drip/payment.ts";
 import { runReservationDrip } from "../src/lib/reservation-drip/run.ts";
@@ -52,6 +53,31 @@ function fixture() {
   return { page, request, writes };
 }
 
+test("approved demand is the segmented D1 paragraph, not the generic D1", () => {
+  const urls = {
+    inviteUrl: "https://watchdive.diveroid.com/reservation?lang=ko#invite=preview",
+    unsubscribeUrl: "https://watchdive.diveroid.com/unsubscribe",
+    privacyUrl: "https://watchdive.diveroid.com/privacy",
+    termsUrl: "https://watchdive.diveroid.com/terms",
+  };
+  const source = renderDripMail("d1", { locale: "ko", segment: "general", ...urls, inviteUrl: "https://watchdive.diveroid.com/reservation?lang=ko#invite=preview" });
+  assert.equal(source.subject, "쓰던 시계가 다이브 컴퓨터가 됩니다");
+  assert.match(source.text, /추가 구독은 없습니다\.\n초기 물량은 경쟁이 치열할 것으로 예상됩니다\. 킥스타터 선착순 100명 이후에는 \$200부터입니다\.\n\n\$3로 \$149 보장받기/);
+  assert.match(source.html, /추가 구독은 없습니다\.<\/p><p[^>]*>초기 물량은 경쟁이 치열할 것으로 예상됩니다\. 킥스타터 선착순 100명 이후에는 \$200부터입니다\.<\/p><table/);
+  const generic = renderDripMail("d1", { locale: "ko", ...urls });
+  assert.equal(generic.subject, "매일 차는 시계로, 다음 다이빙까지");
+  assert.equal(generic.text.includes(D1_DEMAND_COPY.ko), false);
+  assert.equal(generic.html.includes(D1_DEMAND_COPY.ko), false);
+  const english = renderDripMail("d1", {
+    locale: "en",
+    segment: "general",
+    ...urls,
+    inviteUrl: "https://watchdive.diveroid.com/reservation?lang=en#invite=preview",
+  });
+  assert.equal(english.subject, "Your watch can be the dive computer.");
+  assert.match(english.text, /No extra subscription for the dive-computer features\.\nWe expect strong demand for early units\. After the first 100 backers, the price starts at \$200\.\n\nKeep \$149 for \$3/);
+});
+
 test("drip preserves sequence, 24-hour gap and global opt-out", () => {
   assert.equal(dripHold("d0", {}, NOW), null);
   assert.equal(dripHold("d1", {}, NOW), "previous_not_sent");
@@ -86,6 +112,8 @@ test("36 localized drafts retain terms and D0 is byte-identical to legacy", () =
       assert.equal(/[\r\n]/.test(mail.subject), false);
       assert.equal(/\$179\b|179 \$/.test(blob), false, `${locale} ${stage}`);
       assert.doesNotMatch(blob, /regardless of your place|순서에 관계없이|not a product|제품이 아닙니다|100 backers|last chance|ends tonight|only today/i);
+      assert.equal(blob.includes(D1_DEMAND_COPY.ko), false);
+      assert.equal(blob.includes(D1_DEMAND_COPY.en), false);
       if (stage === "d3") assert.match(`${mail.subject}\n${mail.text}`, locale === "fr" ? /200 \$/ : /\$200/);
       if (stage === "d7") assert.doesNotMatch(mail.subject, /마감|最后机会|最後機會|最後のチャンス|dernière chance|última oportunidad|letzte Chance|última chance/i);
       if (stage === "d0") assert.deepEqual(mail, renderReservationMail(input));
