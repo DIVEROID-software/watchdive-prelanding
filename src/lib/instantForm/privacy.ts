@@ -1,6 +1,6 @@
 import type { Locale } from "../i18n/locale.ts";
 
-export type NativePrivacyLocale = "en" | "ko" | "ja" | "zh-TW";
+export type NativePrivacyLocale = "en" | "ko" | "ja" | "zh-TW" | "nl";
 
 /**
  * Operational sentences for the locales this deploy can show. Other locales
@@ -14,6 +14,7 @@ export const NATIVE_FORM_PRIVACY: Record<NativePrivacyLocale, string> = {
   ja: "FacebookまたはInstagram内のWatchDiveフォームを送信すると、そのとき送信されたメールアドレスを受け取ります。Metaがプロフィールのアドレスを自動入力することがあります。送信は確認メール1通の依頼です。公開通知の登録は、そのメールのリンクを開いたときに完了します。電話番号は任意です。別のSMS項目をチェックしない限りSMSは送られず、その項目は最初はチェックされていません。Metaは送信されたリードを最長90日、ダウンロードできる状態で保持することがあります。これは購入ではなく、別の3米ドル予約決済を始めるものでもありません。",
   "zh-TW":
     "若你在 Facebook 或 Instagram 內送出 WatchDive 表單，我們會收到當時提交的電子郵件地址。Meta 可能以個人檔案中的地址預先填入。送出是請求一封確認信。上線通知登記要等你打開該信中的連結才完成。電話號碼為選填。除非你勾選另一個簡訊選項，否則我們不發送簡訊，而該選項一開始是未勾選的。Meta 可能將這筆名單保留最多 90 天供我們下載。這不是購買，也不會開始另外的 3 美元預留結帳。",
+  nl: "Als je een WatchDive-formulier in Facebook of Instagram verstuurt, ontvangen wij het e-mailadres dat daar is ingevuld. Meta kan dat adres uit je profiel invullen. Versturen vraagt ons om één bevestigingsmail te sturen. De registratie voor de lanceringsmelding is pas afgerond wanneer je de link in die mail opent. Een telefoonnummer is optioneel. We sturen geen sms, tenzij je een aparte sms-keuze aanvinkt, en die keuze staat standaard uit. Meta kan de ingestuurde lead maximaal 90 dagen beschikbaar houden om te downloaden. Dit is geen aankoop en start niet de aparte reserveringsbetaling van USD $3.",
 };
 
 export function nativeFormPrivacyEnabled(
@@ -23,7 +24,7 @@ export function nativeFormPrivacyEnabled(
 }
 
 export function nativeFormPrivacyParagraph(locale: Locale): string | undefined {
-  if (locale === "en" || locale === "ko" || locale === "ja" || locale === "zh-TW") {
+  if (locale === "en" || locale === "ko" || locale === "ja" || locale === "zh-TW" || locale === "nl") {
     return NATIVE_FORM_PRIVACY[locale];
   }
   return undefined;
