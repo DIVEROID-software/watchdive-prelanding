@@ -11,7 +11,7 @@ import { segmentCopy, type DiveSegment } from '@/lib/segments/copy';
 import { legacyHomeAnchor } from '@/lib/segments/canonical-entry';
 import { ONSITE_OFFER_COPY } from '../reservation/onsite-copy';
 import { SegmentHeroMedia } from './SegmentHeroMedia';
-import { SegmentHeroJump, focusMiddleSignup } from './SegmentHeroJump';
+import { SegmentHeroJump, commitMiddleSignup, focusMiddleSignup } from './SegmentHeroJump';
 import { SegmentHowInsert } from './SegmentHowInsert';
 import { SegmentHowCompat } from './SegmentHowCompat';
 import { WatchDiveLogo } from './WatchDiveLogo';
@@ -106,7 +106,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   ];
 
   function jumpToMiddleSignup(event: { preventDefault(): void; metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean; button?: number }) {
-    void focusMiddleSignup(event, (options) => router.navigate(options));
+    void focusMiddleSignup(event, (options) => commitMiddleSignup(router, options));
   }
 
   function signup(position: 'middle' | 'bottom') {

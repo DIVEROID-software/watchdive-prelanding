@@ -102,8 +102,12 @@ function commitLikeInstalledRouter(options: { href: string; resetScroll?: boolea
 }
 
 const pathname = "/en/scuba";
-const search = "?utm_source=ig&utm_medium=paid&utm_campaign=120251732986720215";
+const search = "?utm_source=ig&utm_medium=paid&utm_campaign=120251732986720215&utm_term=dive%20computer";
 let focusMiddleSignup: JumpFn;
+let commitMiddleSignup: (router: {
+  state: { location: { href: string } & Record<string, unknown> };
+  commitLocation: (options: { publicHref: string; href: string; hash: string; resetScroll: false; hashScrollIntoView: false }) => Promise<void>;
+}, options: JumpOptions) => Promise<void>;
 
 before(async () => {
   const source = readFileSync(new URL("../src/components/segments/SegmentHeroJump.tsx", import.meta.url), "utf8");
@@ -120,12 +124,14 @@ before(async () => {
   try {
     const loaded = await import(pathToFileURL(file).href);
     focusMiddleSignup = loaded.focusMiddleSignup;
+    commitMiddleSignup = loaded.commitMiddleSignup;
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
   const landing = readFileSync(new URL("../src/components/segments/SegmentLanding.tsx", import.meta.url), "utf8");
   assert.match(landing, /useRouter\(\)/);
-  assert.match(landing, /router\.navigate\(options\)/);
+  assert.match(landing, /commitMiddleSignup\(router, options\)/);
+  assert.equal(landing.includes("router.navigate"), false);
   assert.equal(landing.includes("history.pushState"), false);
   assert.equal(landing.includes("onClick={focusMiddleSignup}"), false);
 });
@@ -236,4 +242,64 @@ test("a rejected navigation still reveals the form after the attempt", async () 
   });
   inside("middle-submit");
   assert.equal(state.focusCalls[0]?.preventScroll, true);
+});
+
+test("the real router keeps the raw campaign id and still centers the form", async () => {
+  const previousNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = "test";
+  installDocument();
+  const view = globalThis as typeof globalThis & {
+    window: { origin?: string; document?: unknown; location: { pathname: string; search: string; hash: string } };
+    self?: unknown;
+    document: unknown;
+  };
+  view.window.origin = "https://watchdive.diveroid.com";
+  view.window.document = view.document;
+  view.self = globalThis;
+  const raw = `${pathname}${search}#signup-middle`;
+  try {
+    const { createMemoryHistory, createRootRoute, createRoute, createRouter } = await import("@tanstack/react-router");
+    const root = createRootRoute();
+    const scuba = createRoute({ getParentRoute: () => root, path: "/en/scuba" });
+    const tree = root.addChildren([scuba]);
+    async function boot() {
+      const history = createMemoryHistory({ initialEntries: [`${pathname}${search}`] });
+      const router = createRouter({ routeTree: tree, history, isServer: false, scrollRestoration: false });
+      await router.load();
+      return { history, router };
+    }
+    const navigated = await boot();
+    await navigated.router.navigate({ href: raw, resetScroll: false, hashScrollIntoView: false });
+    assert.equal(navigated.history.location.href.includes("120251732986720210"), true);
+    assert.notEqual(navigated.history.location.href, raw);
+
+    view.window.location.hash = "";
+    const preserved = await boot();
+    let pushes = 0;
+    const originalPush = preserved.history.push.bind(preserved.history);
+    preserved.history.push = (href: string, historyState?: unknown) => {
+      pushes += 1;
+      return originalPush(href, historyState);
+    };
+    await focusMiddleSignup({ preventDefault() {} }, (options) => commitMiddleSignup(preserved.router, options));
+    assert.equal(preserved.history.location.href, raw);
+    assert.equal(preserved.history.location.state.__hashScrollIntoViewOptions, false);
+    assert.equal(preserved.router._scroll.n, false);
+    assert.equal(pushes, 1);
+    inside("hero-email");
+    inside("middle-submit");
+    assert.equal(state.active?.id, "signup-title-middle");
+    view.window.location.hash = "#signup-middle";
+    state.scrollY = 80;
+    state.scrolls = [];
+    state.committed = false;
+    await focusMiddleSignup({ preventDefault() {} }, (options) => commitMiddleSignup(preserved.router, options));
+    assert.equal(pushes, 1);
+    assert.equal(preserved.history.location.href, raw);
+    inside("hero-email");
+    inside("middle-submit");
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+  }
 });
