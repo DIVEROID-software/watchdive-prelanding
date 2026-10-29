@@ -2,14 +2,18 @@ import type { FrozenLandingMessages } from "@/lib/i18n/frozen-landing-en";
 
 type Compat = FrozenLandingMessages["compat"];
 
-/** Move to the middle signup heading. Focusing the heading keeps the email field from opening the keyboard. */
+/** Show the signup controls without opening the mobile keyboard. */
 export function focusMiddleSignup(event: { preventDefault(): void }) {
   const heading = document.getElementById("signup-title-middle");
   const panel = document.getElementById("signup-middle");
   if (!(heading instanceof HTMLElement) || !(panel instanceof HTMLElement)) return;
+  const form = panel.querySelector("form[data-wd-signup]");
   event.preventDefault();
   heading.focus({ preventScroll: true });
-  panel.scrollIntoView({ block: "start" });
+  // The offer above the form can exceed a short mobile viewport. Landing at
+  // the panel heading leaves the email field and submit button out of sight.
+  if (form instanceof HTMLElement) form.scrollIntoView({ block: "center" });
+  else panel.scrollIntoView({ block: "start" });
   const next = `${window.location.pathname}${window.location.search}#signup-middle`;
   if (window.location.hash !== "#signup-middle") history.pushState(null, "", next);
   requestAnimationFrame(() => {
