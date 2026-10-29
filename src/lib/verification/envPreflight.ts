@@ -1,10 +1,13 @@
 // Build-time validation of everything the verification flow needs at runtime.
 //
-// Every one of these values is read on the request path. A missing signing
-// secret, a Host-shaped origin, an unset Resend key: each one turns the Claim
-// form into a 500 for real traffic, and each one is invisible until somebody
-// submits. Checking at build time moves that discovery before the deployment
-// exists rather than after it is serving.
+// A missing signing secret, a Host-shaped origin, an unset Resend key: each one
+// turns the Claim form into a 500 for real traffic, and each one is invisible
+// until somebody submits. Checking at build time moves that discovery before
+// the deployment exists rather than after it is serving.
+//
+// The From mailbox is help@diveroid.com inside resend.ts. This check does not
+// select a sender from WATCHDIVE_EMAIL_FROM. A value that names another
+// mailbox fails the build so the variable cannot look valid.
 //
 // Deliberately dependency-free. This module is loaded by the Vite config, so it
 // must not drag the app's module graph — or a secret — into the build tooling.
@@ -17,6 +20,22 @@ export type EnvProblem = { name: string; problem: string };
 
 const MIN_SECRET_BYTES = 32;
 
+/**
+ * Same mailbox as `FIXED_SENDER_MAILBOX` in resend.ts. This module stays
+ * dependency-free, so the equality is locked by a test rather than an import.
+ */
+export const FIXED_SENDER_MAILBOX = "help@diveroid.com";
+
+/** A set From env may only repeat the fixed mailbox. Blank is ready. */
+function fixedFromEnv(value: string): boolean {
+  if (value === FIXED_SENDER_MAILBOX) return true;
+  const match = /^([^<>]*)<\s*([^<>\s]+)\s*>$/.exec(value);
+  if (!match) return false;
+  const name = match[1].trim();
+  if (match[2] !== FIXED_SENDER_MAILBOX) return false;
+  return name.length === 0 || !/["\r\n@,;\\]/.test(name);
+}
+
 function present(env: VerificationEnv, name: string): string {
   return (env[name] ?? "").trim();
 }
@@ -28,25 +47,25 @@ function present(env: VerificationEnv, name: string): string {
 export function checkVerificationEnv(env: VerificationEnv): EnvProblem[] {
   const problems: EnvProblem[] = [];
 
-  for (const name of [
-    "NOTION_API_KEY",
-    "NOTION_WAITLIST_DB_ID",
-    "RESEND_API_KEY",
-    "WATCHDIVE_EMAIL_FROM",
-  ]) {
+  for (const name of ["NOTION_API_KEY", "NOTION_WAITLIST_DB_ID", "RESEND_API_KEY"]) {
     if (!present(env, name)) problems.push({ name, problem: "is not set" });
   }
 
-  // A sender Resend will reject is worth catching here rather than on the first
-  // real signup. Both "a@b.co" and "Name <a@b.co>" are valid.
+  // The send path ignores this variable. A contradictory value still fails the
+  // build so an old mailbox cannot be mistaken for the From address.
   const from = present(env, "WATCHDIVE_EMAIL_FROM");
-  if (
-    from &&
-    !/^[^<>]*<[^@<>\s]+@[^@<>\s]+\.[^@<>\s]+>$|^[^@<>\s]+@[^@<>\s]+\.[^@<>\s]+$/.test(from)
-  ) {
+  if (from && !fixedFromEnv(from)) {
     problems.push({
       name: "WATCHDIVE_EMAIL_FROM",
-      problem: "is not an email address or Name <address>",
+      problem: `must be unset or ${FIXED_SENDER_MAILBOX}; the mailbox is fixed in code`,
+    });
+  }
+
+  const fromName = present(env, "WATCHDIVE_EMAIL_FROM_NAME");
+  if (fromName && /["<>\r\n@,;\\\u0000-\u001f\u007f\uFF20\uFE6B]/.test(fromName)) {
+    problems.push({
+      name: "WATCHDIVE_EMAIL_FROM_NAME",
+      problem: "cannot contain another address; blank means WatchDive",
     });
   }
 

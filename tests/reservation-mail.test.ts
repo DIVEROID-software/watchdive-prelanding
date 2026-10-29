@@ -942,6 +942,7 @@ test("send refuses when the reservation token secret is missing", async () => {
 
 test("provider send goes through Resend with the stable idempotency key", async () => {
   let idempotency = "";
+  let sentFrom = "";
   let operationLogged = false;
   const original = console.error;
   console.error = (...args: unknown[]) => {
@@ -951,10 +952,15 @@ test("provider send goes through Resend with the stable idempotency key", async 
     const fetchImpl = (async (_url: string, init?: RequestInit) => {
       const headers = init?.headers as Record<string, string>;
       idempotency = headers["Idempotency-Key"] ?? "";
+      sentFrom = JSON.parse(String(init?.body)).from;
       return new Response(JSON.stringify({ id: "msg_test_1" }), { status: 200 });
     }) as typeof fetch;
     await deliverReservationMessage(
-      { RESEND_API_KEY: "re_test_key", WATCHDIVE_EMAIL_FROM: "verify@mail.oceanwick.ai" },
+      {
+        RESEND_API_KEY: "re_test_key",
+        WATCHDIVE_EMAIL_FROM: "verify@mail.oceanwick.ai",
+        WATCHDIVE_EMAIL_FROM_NAME: "DIVEROID",
+      },
       {
         to: "person@example.com",
         subject: "Reserve WatchDive — USD $3, then USD $149",
@@ -971,6 +977,8 @@ test("provider send goes through Resend with the stable idempotency key", async 
     console.error = original;
   }
   assert.equal(idempotency, reservationIdempotencyKey(PREVIEW_LEAD_ID));
+  assert.equal(sentFrom, "DIVEROID <help@diveroid.com>");
+  assert.equal(sentFrom.includes("oceanwick"), false);
   assert.equal(operationLogged, false);
 });
 

@@ -36,7 +36,10 @@ export const USAGE = `Usage:
     [--rate <per second>]           Resend request rate (default 2, the Resend default limit)
 
 Reads NOTION_API_KEY, NOTION_WAITLIST_DB_ID, WATCHDIVE_VERIFICATION_SECRET,
-WATCHDIVE_PUBLIC_ORIGIN, and (send only) RESEND_API_KEY, WATCHDIVE_EMAIL_FROM.`;
+WATCHDIVE_PUBLIC_ORIGIN, and (send only) RESEND_API_KEY. From is always
+WatchDive <help@diveroid.com>. Optional WATCHDIVE_EMAIL_FROM_NAME replaces
+the WatchDive display name. Optional WATCHDIVE_EMAIL_REPLY_TO sets reply-to.
+WATCHDIVE_EMAIL_FROM is ignored.`;
 
 export type ParsedCli =
   { ok: true; options: LaunchRunOptions; outDir: string } | { ok: false; error: string };

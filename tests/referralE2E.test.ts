@@ -105,9 +105,10 @@ const SENDER_PHONE = "+82 10-6517-6232";
 // sha256 of the request body createResendMailer().sendWelcome produces for
 // exactly A's welcome while the program switch is off: en, diver@example.com,
 // code abc12345, lead A_LEAD, origin ORIGIN, scheduled 2026-08-02T00:00:00.000Z.
-// The 2026-10-26 brutalism pass replaced the visual HTML. Subject, plain text,
-// the single share link and the idempotency key stay.
-const LEGACY_A_WELCOME_SHA256 = "8acea47b86b2a6daec63621d41ecc5cebb5e95ff2a69e62c0c85ed3dfb3be103";
+// The 2026-10-26 brutalism pass replaced the visual HTML. The 2026-10-30
+// sender fix put WatchDive <help@diveroid.com> in From, so this digest moved.
+// Subject, plain text, the single share link and the idempotency key stay.
+const LEGACY_A_WELCOME_SHA256 = "b88cc2fd807adc0a9b007304870baefce7e4f52f275367aa6473d07af9018b52";
 
 const BASE_ENV = {
   NOTION_API_KEY: "secret_fake_notion_key",

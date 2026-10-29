@@ -112,8 +112,12 @@ const RETRYABLE_CONFLICT = "concurrent_idempotent_requests";
 
 export type ResendEnvironment = {
   RESEND_API_KEY?: string;
+  /**
+   * Ignored when choosing the mailbox. Callers and the build preflight may
+   * still set it. The From address is always `FIXED_SENDER_MAILBOX`.
+   */
   WATCHDIVE_EMAIL_FROM?: string;
-  /** Display name shown in the inbox. Defaults to "DIVEROID". */
+  /** Display name shown in the inbox. Defaults to "WatchDive". */
   WATCHDIVE_EMAIL_FROM_NAME?: string;
   WATCHDIVE_EMAIL_REPLY_TO?: string;
   /** Buddy Invite master switch (program.ts `referralProgramEnabled`). */
@@ -191,27 +195,50 @@ export function referralUrl(
   return new URL(referralPath(locale, refCode), publicOrigin).toString();
 }
 
-export const DEFAULT_SENDER_NAME = "DIVEROID";
+/** Production From mailbox. Not read from the environment. */
+export const FIXED_SENDER_MAILBOX = "help@diveroid.com";
+
+/** Inbox display name when `WATCHDIVE_EMAIL_FROM_NAME` is blank. */
+export const DEFAULT_SENDER_NAME = "WatchDive";
+
+/** Characters that can split a From header or hide a second mailbox. */
+const DISPLAY_NAME_STRIP = /["<>\r\n@,;\\\u0000-\u001f\u007f\uFF20\uFE6B]/g;
 
 /**
- * The inbox shows the brand, whatever display name the env value carries:
- * `Name <addr>` or a bare `addr` becomes `DIVEROID <addr>`. Only the display
- * name changes; the sending address (and so the verified Resend domain) stays
- * exactly what `WATCHDIVE_EMAIL_FROM` says.
+ * Always `Name <help@diveroid.com>`.
+ *
+ * `from` is accepted so existing callers keep the same signature, and then
+ * discarded. `WATCHDIVE_EMAIL_FROM` used to choose the mailbox. A stale value
+ * such as `verify@mail.oceanwick.ai` must not be able to put that address
+ * back, and there is no second mailbox to fall back to.
+ *
+ * The display name is the sanitized `WATCHDIVE_EMAIL_FROM_NAME`, or WatchDive.
+ * An explicit name, including `DIVEROID`, is kept. Quotes, brackets, newlines,
+ * commas, `@` and the fullwidth at-sign are removed so the header cannot
+ * carry another address.
  */
 export function senderWithDisplayName(from: string, name?: string): string {
-  const match = /<\s*([^<>\s]+@[^<>\s]+)\s*>\s*$/.exec(from);
-  const address = (match ? match[1] : from).trim();
-  const display = (name ?? "").replace(/["<>\r\n]/g, "").trim() || DEFAULT_SENDER_NAME;
-  return `${display} <${address}>`;
+  void from;
+  const display = (name ?? "").replace(DISPLAY_NAME_STRIP, "").replace(/[ \t]+/g, " ").trim();
+  return `${display || DEFAULT_SENDER_NAME} <${FIXED_SENDER_MAILBOX}>`;
+}
+
+/**
+ * The provider body is built only after this accepts the header. One `@`,
+ * and it belongs to the fixed mailbox. A hand-built config cannot substitute
+ * another sender when `readResendConfig` was bypassed.
+ */
+export function assertFixedSender(from: string): void {
+  const mailbox = `<${FIXED_SENDER_MAILBOX}>`;
+  if (from.split("@").length !== 2 || !from.endsWith(mailbox) || /[\r\n]/.test(from)) {
+    throw new Error("Refusing to send from any mailbox other than the fixed WatchDive sender");
+  }
 }
 
 export function readResendConfig(env: ResendEnvironment = process.env): ResendConfig {
   const apiKey = (env.RESEND_API_KEY ?? "").trim();
   if (!apiKey) throw new Error("RESEND_API_KEY is not set");
-  const rawFrom = (env.WATCHDIVE_EMAIL_FROM ?? "").trim();
-  if (!rawFrom) throw new Error("WATCHDIVE_EMAIL_FROM is not set");
-  const from = senderWithDisplayName(rawFrom, env.WATCHDIVE_EMAIL_FROM_NAME);
+  const from = senderWithDisplayName(FIXED_SENDER_MAILBOX, env.WATCHDIVE_EMAIL_FROM_NAME);
   const replyTo = (env.WATCHDIVE_EMAIL_REPLY_TO ?? "").trim();
   return { apiKey, from, ...(replyTo ? { replyTo } : {}) };
 }
@@ -637,10 +664,16 @@ async function deliverWithRetries(
   operation: string,
   policy: DeliveryPolicy = {},
 ): Promise<void> {
+  // Payload used to be spread last, so a `from` or `reply_to` on the message
+  // replaced the config. Strip both, then put the fixed mailbox first.
+  assertFixedSender(config.from);
+  const rest: Record<string, unknown> = { ...payload };
+  delete rest.from;
+  delete rest.reply_to;
   const serialized = JSON.stringify({
     from: config.from,
     ...(config.replyTo ? { reply_to: config.replyTo } : {}),
-    ...payload,
+    ...rest,
   });
   const timeoutMs = policy.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
   const random = policy.random ?? Math.random;
@@ -768,7 +801,7 @@ export const KR_SENDER_ADDRESS =
 export const KR_OPT_OUT_LINE =
   "수신을 원하지 않으시면 수신거부를 눌러 주세요. If you do not wish to receive these emails, click Unsubscribe.";
 const KR_OPT_OUT_LABEL = "수신거부 / Unsubscribe";
-const SENDER_EMAIL = "help@diveroid.com";
+const SENDER_EMAIL = FIXED_SENDER_MAILBOX;
 
 /** The Korean advertising rules apply to a Korean-language mail or a KR signup. */
 export function koreanAdRulesApply(locale: Locale, signupCountry?: string): boolean {
@@ -1377,7 +1410,7 @@ export function createResendMailer(
 }
 
 function mailtoAddress(config: ResendConfig): string {
-  return config.replyTo || "help@diveroid.com";
+  return config.replyTo || FIXED_SENDER_MAILBOX;
 }
 
 /** A Resend header value only ever carries this fixed opt-out address shape. */
