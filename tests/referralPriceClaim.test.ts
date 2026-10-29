@@ -80,6 +80,8 @@ test("off: rendered copy stays frozen with owner-approved hero, brand and footer
   // 2026-10-30: each digest includes nl. The same values without nl still match
   // frozen 8592d820…, conversion ef82f627…, race b0f177d6…, phone 5da27009…,
   // and mails e17e8f1e….
+  // Dutch terms now require a separate optional SMS checkbox; entering a
+  // number alone is not consent. All other reviewed catalog text is unchanged.
   const race = SUPPORTED_LOCALES.map((l) =>
     earlyBirdRace(l, FROZEN_LANDING_MESSAGES[l].hero.nowPrice),
   );
@@ -100,7 +102,7 @@ test("off: rendered copy stays frozen with owner-approved hero, brand and footer
   );
   assert.equal(
     sha256(FROZEN_LANDING_MESSAGES),
-    "61444390e9801994368cdf9edd9dc6838cffce092471b763958a0a60d88405ed",
+    "7e26cd9e1514f3c64a7ae509bd98b205e7cc6f21273774917d02c9b8498901e5",
   );
   assert.equal(
     sha256(conversionCopy),

@@ -239,7 +239,7 @@ test("reviewed copy, welcome markup and reminder routing in resend.ts stay fixed
   );
   assert.match(
     copy,
-    /reminder\s*\?\s*`watchdive-verification-reminder-\$\{leadId\}`\s*:\s*`watchdive-verification-\$\{leadId\}`/,
+    /reminder\s*\?\s*`watchdive-verification-reminder-\$\{leadId\}`\s*:\s*nativeConfirmationIdempotencyKey\(idempotencyOverride, leadId\)/,
   );
   assert.match(copy, /reminder \? "verification_reminder" : "verification"/);
   assert.equal(copy.includes("console.log"), false);
