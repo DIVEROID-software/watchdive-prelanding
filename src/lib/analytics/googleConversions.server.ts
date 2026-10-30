@@ -81,14 +81,17 @@ export function readConversionConfig(env: Env) {
   return { measurementId, secret, ...store };
 }
 
-const MP_ENGAGEMENT_TIME_MSEC = 100;
 const MP_DROPPED_PARAM_KEYS = new Set(["session_id", "email", "phone", "user_id"]);
 
 /**
- * Realtime and advertising export need a fixed engagement time. This is not a
- * measured dwell. session_id is omitted because verification is often later
- * than the original session, and email, phone, and user_id never belong in
- * Measurement Protocol params.
+ * Advertising export and web audience creation do not require session_id.
+ * Session attribution does, and only when the request arrives within 24 hours
+ * of the online session start. A verification is often later, so a stored
+ * session id is dropped instead of attached after that window.
+ * Email, phone, and user_id never belong in these params.
+ * engagement_time_msec is kept only when the caller measured elapsed time.
+ * A fixed placeholder is not a duration, and this sender does not claim
+ * Realtime engagement or session attribution.
  */
 export function measurementProtocolParams(params: Record<string, unknown>): Record<string, unknown> {
   const next: Record<string, unknown> = {};
@@ -96,7 +99,6 @@ export function measurementProtocolParams(params: Record<string, unknown>): Reco
     if (MP_DROPPED_PARAM_KEYS.has(key)) continue;
     next[key] = value;
   }
-  next.engagement_time_msec = MP_ENGAGEMENT_TIME_MSEC;
   return next;
 }
 

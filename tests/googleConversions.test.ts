@@ -220,7 +220,7 @@ test("pending and invalid confirmation do not emit; completed email does without
   await confirmVerificationService(h.mailer.sent[0].token, h.dependencies);
   assert.equal(h.payloads.length, 1);
   assert.deepEqual(h.payloads[0].events, [
-    { name: "sign_up", params: { method: "email", engagement_time_msec: 100 } },
+    { name: "sign_up", params: { method: "email" } },
   ]);
 });
 test("mail failure and expired verification produce no completion", async () => {
@@ -294,7 +294,7 @@ test("purchase is exactly USD 3 and stable per session; no event for failed/refu
   const purchaseParams = (h.payloads[0].events as { params: Record<string, unknown> }[])[0].params;
   assert.equal(purchaseParams.value, 3);
   assert.equal(purchaseParams.currency, "USD");
-  assert.equal(purchaseParams.engagement_time_msec, 100);
+  assert.equal("engagement_time_msec" in purchaseParams, false);
   assert.equal(purchaseParams.transaction_id, paid.sessionId);
   assert.equal("session_id" in purchaseParams, false);
   for (const changes of [
@@ -311,7 +311,7 @@ test("purchase is exactly USD 3 and stable per session; no event for failed/refu
     assert.equal(purchaseEvent({ ...paid, ...changes } as ReservationSnapshot), null);
 });
 
-test("measurement protocol drops identifiers and keeps the USD 3 purchase", () => {
+test("measurement protocol drops identifiers and keeps a measured duration", () => {
   const params = measurementProtocolParams({
     transaction_id: "cs_test_verified",
     value: 3,
@@ -320,16 +320,19 @@ test("measurement protocol drops identifiers and keeps the USD 3 purchase", () =
     email: "diver@example.test",
     phone: "+15550001111",
     user_id: "lead_secret",
+    engagement_time_msec: 250,
   });
   assert.equal(params.value, 3);
   assert.equal(params.currency, "USD");
-  assert.equal(params.engagement_time_msec, 100);
+  assert.equal(params.engagement_time_msec, 250);
   assert.equal(params.transaction_id, "cs_test_verified");
   assert.equal("session_id" in params, false);
   assert.equal("email" in params, false);
   assert.equal("phone" in params, false);
   assert.equal("user_id" in params, false);
   assert.equal(params.value === 149, false);
+  const omitted = measurementProtocolParams({ value: 3, currency: "USD" });
+  assert.equal("engagement_time_msec" in omitted, false);
 });
 
 test("confirmation keeps the signup client id and still sends one sign_up", async () => {
