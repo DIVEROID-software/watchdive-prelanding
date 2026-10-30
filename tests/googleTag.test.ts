@@ -130,7 +130,7 @@ test("signup and purchase labels stay off the confirmed-email conversion", () =>
     const purchase = trackGoogleReservationPurchase(eventId, config);
     assert.deepEqual(purchase, { ads: true, ga4: true });
     const names = calls.map((call) => call[1]);
-    assert.deepEqual(names, ["form_start", "signup_pending", "generate_lead", "conversion", "conversion", "purchase", "conversion"]);
+    assert.deepEqual(names, ["form_start", "signup_pending", "generate_lead", "sign_up", "conversion", "conversion", "purchase", "conversion"]);
     const encoded = JSON.stringify(calls);
     assert.match(encoded, /"form_id":"hero"/);
     assert.match(encoded, /"send_to":"AW-123456789\/EmailLab1"/);
@@ -138,7 +138,7 @@ test("signup and purchase labels stay off the confirmed-email conversion", () =>
     assert.match(encoded, /"send_to":"AW-123456789\/PurchLab01"/);
     assert.match(encoded, /"transaction_id":"a{64}"/);
     assert.equal(encoded.includes("@"), false);
-    const confirmed = calls[3];
+    const confirmed = calls[4];
     assert.equal(confirmed?.[1], "conversion");
     assert.equal((confirmed?.[2] as { send_to: string }).send_to, "AW-123456789/EmailLab1");
 
@@ -182,7 +182,7 @@ test("signup and purchase labels stay off the confirmed-email conversion", () =>
     const verifiedId = `c${"a".repeat(63)}`;
     trackGoogleLead(verifiedId, "hero", config);
     trackGoogleLead(verifiedId, "hero", config);
-    assert.deepEqual(calls.map((call) => call[1]), ["generate_lead", "conversion", "conversion"]);
+    assert.deepEqual(calls.map((call) => call[1]), ["generate_lead", "sign_up", "conversion", "conversion"]);
 
     calls.length = 0;
     const serverId = `d${"a".repeat(63)}`;

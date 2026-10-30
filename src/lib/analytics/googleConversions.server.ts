@@ -81,6 +81,25 @@ export function readConversionConfig(env: Env) {
   return { measurementId, secret, ...store };
 }
 
+const MP_ENGAGEMENT_TIME_MSEC = 100;
+const MP_DROPPED_PARAM_KEYS = new Set(["session_id", "email", "phone", "user_id"]);
+
+/**
+ * Realtime and advertising export need a fixed engagement time. This is not a
+ * measured dwell. session_id is omitted because verification is often later
+ * than the original session, and email, phone, and user_id never belong in
+ * Measurement Protocol params.
+ */
+export function measurementProtocolParams(params: Record<string, unknown>): Record<string, unknown> {
+  const next: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (MP_DROPPED_PARAM_KEYS.has(key)) continue;
+    next[key] = value;
+  }
+  next.engagement_time_msec = MP_ENGAGEMENT_TIME_MSEC;
+  return next;
+}
+
 // Redis-compatible REST transport. SET NX is atomic across concurrent webhook
 // requests and serverless instances. Nothing is provisioned by this module.
 export function redisConversionStore(
@@ -155,11 +174,29 @@ export function createGoogleConversions(
   const subject = (email: string) => key("subject", email.trim().toLowerCase());
   return {
     enabled: Boolean(config),
-    async capture(email: string, clientId: unknown, allowed: boolean): Promise<void> {
+    async capture(
+      email: string,
+      clientId: unknown,
+      allowed: boolean,
+      options?: { keepExisting?: boolean },
+    ): Promise<void> {
       if (!store) return;
       if (!allowed || !validGoogleClientId(clientId)) {
         await store.forget(subject(email));
         return;
+      }
+      // A confirmation opened on another device must not replace the client id
+      // captured with the landing visit. That id is the one in the visitor audience.
+      if (options?.keepExisting) {
+        const existing = await store.context(subject(email));
+        if (
+          existing &&
+          validGoogleClientId(existing.clientId) &&
+          now() >= existing.capturedAt &&
+          now() - existing.capturedAt <= CONTEXT_SECONDS * 1000
+        ) {
+          return;
+        }
       }
       await store.capture(subject(email), { clientId, capturedAt: now() });
     },
@@ -226,7 +263,7 @@ export function createGoogleConversions(
           body: JSON.stringify({
             client_id: context.clientId,
             consent: { ad_user_data: "GRANTED", ad_personalization: "GRANTED" },
-            events: [{ name: event.name, params: event.params }],
+            events: [{ name: event.name, params: measurementProtocolParams(event.params) }],
           }),
         });
         // MP HTTP success is transport acceptance, not proof it appeared in GA.

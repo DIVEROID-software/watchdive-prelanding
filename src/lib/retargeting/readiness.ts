@@ -62,7 +62,7 @@ export function buildRetargetingReadiness(
     "Current account verification and conversion-goal status require platform readback; the older account's paused state does not describe the new account.",
     "Integrated candidate is local only. Production conversion receipt and audience exclusions remain unverified.",
     "Grok reported a manual customer-list upload at 2026-10-26 17:53 KST; automatic refresh and current paid exclusions remain unverified.",
-    "Raw form submit is signup_pending. Verified GA4 sign_up belongs to the enabled server sender; direct signup labels represent CompleteRegistration.",
+    "Raw form submit is signup_pending and is not an Ads conversion. While the public server flag is off, the landing poll sends one generate_lead and one sign_up. When both flags are on, the server owns sign_up. Direct labels are a separate route from the GA4 imports.",
   ];
   if (!googleAds.globalIdConfigured) blockedReasons.push("VITE_GOOGLE_ADS_ID is unset or invalid.");
   if (!googleAds.signupLabelConfigured) blockedReasons.push("VITE_GOOGLE_ADS_SIGNUP_LABEL is unset or invalid.");

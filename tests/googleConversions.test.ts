@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   createGoogleConversions,
+  measurementProtocolParams,
   redisConversionStore,
   type ConversionStore,
   type Context,
@@ -218,7 +219,9 @@ test("pending and invalid confirmation do not emit; completed email does without
   await confirmVerificationService(h.mailer.sent[0].token, h.dependencies);
   await confirmVerificationService(h.mailer.sent[0].token, h.dependencies);
   assert.equal(h.payloads.length, 1);
-  assert.deepEqual(h.payloads[0].events, [{ name: "sign_up", params: { method: "email" } }]);
+  assert.deepEqual(h.payloads[0].events, [
+    { name: "sign_up", params: { method: "email", engagement_time_msec: 100 } },
+  ]);
 });
 test("mail failure and expired verification produce no completion", async () => {
   const h = verification();
@@ -288,6 +291,12 @@ test("purchase is exactly USD 3 and stable per session; no event for failed/refu
   await h.google.send(EMAIL, event, async () => true);
   await h.google.send(EMAIL, event, async () => true);
   assert.equal(h.payloads.length, 1);
+  const purchaseParams = (h.payloads[0].events as { params: Record<string, unknown> }[])[0].params;
+  assert.equal(purchaseParams.value, 3);
+  assert.equal(purchaseParams.currency, "USD");
+  assert.equal(purchaseParams.engagement_time_msec, 100);
+  assert.equal(purchaseParams.transaction_id, paid.sessionId);
+  assert.equal("session_id" in purchaseParams, false);
   for (const changes of [
     { status: "unpaid" },
     { paid: false },
@@ -300,6 +309,60 @@ test("purchase is exactly USD 3 and stable per session; no event for failed/refu
     { duplicatePaid: true },
   ])
     assert.equal(purchaseEvent({ ...paid, ...changes } as ReservationSnapshot), null);
+});
+
+test("measurement protocol drops identifiers and keeps the USD 3 purchase", () => {
+  const params = measurementProtocolParams({
+    transaction_id: "cs_test_verified",
+    value: 3,
+    currency: "USD",
+    session_id: "cs_test_verified",
+    email: "diver@example.test",
+    phone: "+15550001111",
+    user_id: "lead_secret",
+  });
+  assert.equal(params.value, 3);
+  assert.equal(params.currency, "USD");
+  assert.equal(params.engagement_time_msec, 100);
+  assert.equal(params.transaction_id, "cs_test_verified");
+  assert.equal("session_id" in params, false);
+  assert.equal("email" in params, false);
+  assert.equal("phone" in params, false);
+  assert.equal("user_id" in params, false);
+  assert.equal(params.value === 149, false);
+});
+
+test("confirmation keeps the signup client id and still sends one sign_up", async () => {
+  const h = verification();
+  await requestVerificationService(h.submit, h.dependencies);
+  await confirmVerificationService(h.mailer.sent[0].token, h.dependencies, {
+    googleClientId: "999.999",
+  });
+  await confirmVerificationService(h.mailer.sent[0].token, h.dependencies, {
+    googleClientId: "999.999",
+  });
+  assert.equal(h.payloads.length, 1);
+  assert.equal(h.payloads[0].client_id, "123.456");
+});
+
+test("confirmation stores a client id when signup had none", async () => {
+  const h = verification();
+  await requestVerificationService({ ...h.submit, googleClientId: undefined }, h.dependencies);
+  assert.equal(h.payloads.length, 0);
+  await confirmVerificationService(h.mailer.sent[0].token, h.dependencies, {
+    googleClientId: "888.777",
+  });
+  assert.equal(h.payloads.length, 1);
+  assert.equal(h.payloads[0].client_id, "888.777");
+});
+
+test("an unverified submit does not emit sign_up or purchase", async () => {
+  const h = verification();
+  const pending = await requestVerificationService(h.submit, h.dependencies);
+  assert.equal(pending.status, "pending");
+  assert.equal(h.payloads.length, 0);
+  const purchase = purchaseEvent({ ...paid, paid: false, status: "unpaid" });
+  assert.equal(purchase, null);
 });
 
 test("latest allowed browser context replaces the old one; missing and stale contexts are skipped", async () => {

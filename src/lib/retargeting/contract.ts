@@ -38,10 +38,12 @@ export const EVENT_CONTRACT_MATRIX: EventContractRow[] = [
     event: "sign_up",
     surface: "GA4",
     phase: "consented-conversions-20261027",
-    definition: "Server-confirmed email or social verification with current permitted measurement and valid stored GA context. Default off; requires both public and server flags.",
-    dedup: "Atomic durable HMAC claim per GA4 stream and CRM page id; ambiguous delivery is held, not blindly resent.",
-    firesFrom: "dispatchGoogleVerified after authoritative verification or permitted late grant",
-    doesNotFireFrom: "Raw form submission, browser URL flags, or an unverified record.",
+    definition:
+      "Authoritative server sign_up after email or social verification when measurement is permitted and a stored GA client id is still valid. Both rollout flags default off and must be enabled together. While the public flag is off, the landing poll sends one browser sign_up beside generate_lead.",
+    dedup: "Atomic durable HMAC claim per GA4 stream and CRM page id; ambiguous delivery is held, not blindly resent. The browser fallback claims the verification event id once per browser.",
+    firesFrom:
+      "dispatchGoogleVerified after authoritative verification or permitted late grant; trackGoogleLead only while the public server flag is off",
+    doesNotFireFrom: "Raw form submission, the /verify page, browser URL flags, or an unverified record.",
     wired: true,
   },
   {

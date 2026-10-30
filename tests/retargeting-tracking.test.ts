@@ -589,7 +589,11 @@ test("the new score observer and historical pixel Lead stay untouched by this mo
   const google = readFileSync(new URL("../src/lib/googleTag.ts", import.meta.url), "utf8");
   assert.match(google, /event", "form_start"/);
   assert.match(google, /event", "signup_pending"/);
-  assert.equal(google.includes('event", "sign_up"'), false);
+  assert.equal(google.includes('event", "sign_up"'), true);
+  assert.match(google, /serverSignupMeasurementEnabled/);
+  const verify = readFileSync(new URL("../src/routes/verify.tsx", import.meta.url), "utf8");
+  assert.equal(verify.includes("trackGoogleLead"), false);
+  assert.equal(verify.includes("await attachVerifiedGoogleClient"), false);
   const sql = retargetingExportSql();
   assert.equal(/\bemail\b/i.test(sql), false);
   assert.match(sql, /DO NOT UPLOAD/);

@@ -1,4 +1,5 @@
 import { googleClientId } from "@/lib/analytics/browserContext";
+import { attachVerifiedGoogleClient } from "@/lib/googleTag";
 import { SignupReservationOffer } from "@/components/reservation/SignupReservationOffer";
 import { VerifyStep } from "@/components/reservation/verify-steps";
 import { VerifiedBuddyCard } from "@/components/referral/VerifiedBuddyCard";
@@ -169,6 +170,8 @@ export function VerifyPage() {
   const grantMeasurement = async (): Promise<boolean> => {
     // Global Privacy Control (or a refusal) wins over a click here.
     if (!token.current || !measurementPermitted()) return false;
+    // Synchronous. A late Allow can mint a client id without waiting for gtag.js.
+    attachVerifiedGoogleClient();
     const cookies = getMetaCookies();
     const payload = {
       data: {
@@ -227,6 +230,9 @@ export function VerifyPage() {
       // This browser's Meta cookies, only when it already allows measurement,
       // so the server's confirmation names the click that brought them here.
       await resolveGeoCountry();
+      // Synchronous, and only after the fragment is gone. Does not wait for
+      // the tag or the cookie, so confirmation is not held for analytics.
+      if (measurementPermitted()) attachVerifiedGoogleClient();
       const cookies = measurementPermitted() ? getMetaCookies() : {};
       const refused = getMetaMeasurementConsent() === "denied";
       const result = await confirmVerification({
