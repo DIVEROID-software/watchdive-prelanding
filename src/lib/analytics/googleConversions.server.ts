@@ -75,11 +75,11 @@ export async function requireStoreEpoch(store: ConversionStore, expected: string
   if (actual !== expected) throw new LedgerEpochRejected("mismatch");
 }
 
-export function readDeliveryStoreConfig(env: Env) {
-  const signingSecret = env.WATCHDIVE_VERIFICATION_SECRET ?? "";
+/** Transport-only operations must not require exporting the website HMAC key. */
+export function readConversionRestConfig(env: Env) {
   const redisUrl = (env.WATCHDIVE_CONVERSION_REDIS_REST_URL ?? "").trim();
   const redisToken = env.WATCHDIVE_CONVERSION_REDIS_REST_TOKEN ?? "";
-  if (Buffer.byteLength(signingSecret, "utf8") < 32 || !redisToken) return null;
+  if (!redisToken) return null;
   try {
     const url = new URL(redisUrl);
     if (
@@ -94,7 +94,14 @@ export function readDeliveryStoreConfig(env: Env) {
   } catch {
     return null;
   }
-  return { signingSecret, redisUrl: redisUrl.replace(/\/$/, ""), redisToken };
+  return { redisUrl: redisUrl.replace(/\/$/, ""), redisToken };
+}
+
+export function readDeliveryStoreConfig(env: Env) {
+  const signingSecret = env.WATCHDIVE_VERIFICATION_SECRET ?? "";
+  const transport = readConversionRestConfig(env);
+  if (Buffer.byteLength(signingSecret, "utf8") < 32 || !transport) return null;
+  return { signingSecret, ...transport };
 }
 
 export function readConversionConfig(env: Env) {

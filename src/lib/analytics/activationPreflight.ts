@@ -7,6 +7,7 @@ import {
   LEDGER_EPOCH_KEY,
   LEDGER_SCRIPTS,
   readConversionConfig,
+  readConversionRestConfig,
   readDeliveryStoreConfig,
   readLedgerEpoch,
 } from "./googleConversions.server.ts";
@@ -156,7 +157,7 @@ export async function readLedgerMarker(options: {
 }): Promise<LedgerMarker> {
   const env = operatorEnvironment(options.env);
   const epoch = readLedgerEpoch(env);
-  const config = readDeliveryStoreConfig(env);
+  const config = readConversionRestConfig(env);
   if (!epoch || !config) return "unconfigured";
   try {
     const raw = await redisCommand(config.redisUrl, config.redisToken, options.fetchImpl ?? fetch, [
@@ -190,7 +191,7 @@ export async function initializeLedgerEpoch(options: {
 }): Promise<{ wrote: boolean; result: LedgerInitResult }> {
   const env = operatorEnvironment(options.env);
   const epoch = readLedgerEpoch(env);
-  const config = readDeliveryStoreConfig(env);
+  const config = readConversionRestConfig(env);
   if (!epoch || !config) return { wrote: false, result: "unconfigured" };
   try {
     const result = await redisCommand(

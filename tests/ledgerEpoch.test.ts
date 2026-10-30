@@ -11,6 +11,7 @@ import {
 } from "../src/lib/analytics/activationPreflight.ts";
 import {
   createGoogleConversions,
+  readConversionConfig,
   LEDGER_EPOCH_KEY,
   LEDGER_SCRIPTS,
   LedgerEpochRejected,
@@ -339,6 +340,27 @@ test("init writes only an empty ledger and refuses a different or nonempty one",
     await readLedgerMarker({ env: base, fetchImpl: async () => Response.json({ result: null }) }),
   );
   assert.equal(markerText.includes(EPOCH), false);
+});
+
+test("marker initialization does not require exporting the website HMAC or analytics secret", async () => {
+  const env = {
+    WATCHDIVE_CONVERSION_REDIS_REST_URL: ENV.WATCHDIVE_CONVERSION_REDIS_REST_URL,
+    WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: ENV.WATCHDIVE_CONVERSION_REDIS_REST_TOKEN,
+    WATCHDIVE_CONVERSION_LEDGER_EPOCH: EPOCH,
+  };
+  let marker: string | null = null;
+  const fetchImpl: typeof fetch = async (_url, init) => {
+    const args = JSON.parse(String(init?.body));
+    if (args[0] === "GET") return Response.json({ result: marker });
+    assert.equal(args[0], "EVAL");
+    assert.equal(args[1], LEDGER_SCRIPTS.init);
+    marker = args[4];
+    return Response.json({ result: "initialized" });
+  };
+  assert.equal(await readLedgerMarker({ env, fetchImpl }), "missing");
+  assert.deepEqual(await initializeLedgerEpoch({ env, fetchImpl }), { wrote: true, result: "initialized" });
+  assert.equal(await readLedgerMarker({ env, fetchImpl }), "matched");
+  assert.equal(readConversionConfig({ ...env, WATCHDIVE_GA4_CONVERSIONS_ENABLED: "true", VITE_GA4_SERVER_CONVERSIONS_ENABLED: "true" }), null);
 });
 
 test("the init CLI rejects repair flags before reading a planted secret", () => {
