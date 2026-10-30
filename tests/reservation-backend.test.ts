@@ -1574,9 +1574,11 @@ test("verified payment measurement receives fetched state and retries without a 
         WATCHDIVE_VERIFICATION_SECRET: SECRET,
         WATCHDIVE_CONVERSION_REDIS_REST_URL: "https://store.example.test",
         WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: "fixture",
+        WATCHDIVE_CONVERSION_LEDGER_EPOCH: "watchdive-ledger-20261030",
       },
       now: () => NOW,
       store: {
+        epoch: async () => "watchdive-ledger-20261030",
         context: async () => ({ clientId: "123.456", capturedAt: NOW }),
         capture: async () => {},
         forget: async () => {},
@@ -1698,6 +1700,29 @@ test("checkout uses separate measurement choice, honors GPC and fails closed if 
   assert.equal(fake.calls.length, before);
 });
 
+test("a ledger epoch rejection returns checkout 503 and does not call Stripe", async () => {
+  const { LedgerEpochRejected } = await import("../src/lib/analytics/googleConversions.server.ts");
+  const fake = new MemoryStripe();
+  const before = fake.calls.length;
+  const error = new LedgerEpochRejected("missing");
+  assert.equal(error.message, "conversion_ledger_epoch");
+  const response = await handleReservationCheckout(
+    post(invite(), { measurementConsent: true }),
+    {
+      ...deps(fake),
+      measurement: {
+        capture: async () => {
+          throw error;
+        },
+        completed: async () => "skipped" as const,
+      },
+    },
+  );
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error, "measurement_unavailable");
+  assert.equal(fake.calls.length, before);
+});
+
 test("enabled durable Purchase posts once, shares the browser id, and skips the legacy post", async () => {
   const verifySecret = "test-verification-secret-at-least-32b";
   const pixel = "123456789012345";
@@ -1712,6 +1737,7 @@ test("enabled durable Purchase posts once, shares the browser id, and skips the 
     WATCHDIVE_VERIFICATION_SECRET: verifySecret,
     WATCHDIVE_CONVERSION_REDIS_REST_URL: "https://store.example.test",
     WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: "fixture-only",
+    WATCHDIVE_CONVERSION_LEDGER_EPOCH: "watchdive-ledger-20261030",
   };
   const previous = {
     META_CAPI_ENABLED: process.env.META_CAPI_ENABLED,
@@ -1743,6 +1769,9 @@ test("enabled durable Purchase posts once, shares the browser id, and skips the 
     const contexts = new Map<string, { capturedAt: number; clientId?: string }>();
     const states = new Map<string, "accepted" | "uncertain">();
     const store = {
+      async epoch() {
+        return "watchdive-ledger-20261030";
+      },
       async context(key: string) {
         return contexts.get(key) ?? null;
       },
@@ -1902,6 +1931,7 @@ test("durable measurement retry, uncertain, and storage failure keep a single Pu
     WATCHDIVE_VERIFICATION_SECRET: verifySecret,
     WATCHDIVE_CONVERSION_REDIS_REST_URL: "https://store.example.test",
     WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: "fixture-only",
+    WATCHDIVE_CONVERSION_LEDGER_EPOCH: "watchdive-ledger-20261030",
   };
   const { createMetaPurchases } = await import("../src/lib/analytics/metaPurchases.server.ts");
   const { createGoogleConversions } = await import("../src/lib/analytics/googleConversions.server.ts");
@@ -1912,6 +1942,9 @@ test("durable measurement retry, uncertain, and storage failure keep a single Pu
   let contextDown = false;
   let mode: "retry" | "uncertain" | "ok" = "retry";
   const store = {
+    async epoch() {
+      return "watchdive-ledger-20261030";
+    },
     async context(key: string) {
       if (contextDown) throw new Error("store down");
       return contexts.get(key) ?? null;

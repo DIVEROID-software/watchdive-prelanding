@@ -4,6 +4,7 @@ import { checkCronAuthorization } from "../verification/cronAuth.ts";
 import {
   conversionCapability,
   probeConversionRest,
+  readLedgerMarker,
   syntheticNamespace,
 } from "./activationPreflight.ts";
 
@@ -32,7 +33,11 @@ export async function handleConversionHealth(
     VITE_GA4_SERVER_CONVERSIONS_ENABLED: runtime.VITE_GA4_SERVER_CONVERSIONS_ENABLED ?? publicEnv.VITE_GA4_SERVER_CONVERSIONS_ENABLED,
   };
   const capability = conversionCapability(env);
-  // A GET is strictly read-only. Only explicit authenticated POST runs a
+  // Read-only epoch comparison. The value is not copied into the response.
+  // GET and POST both do this. Neither creates the marker.
+  const ledgerMarker = await readLedgerMarker({ env, fetchImpl: options.fetchImpl });
+  const epochMatches = ledgerMarker === "matched";
+  // A GET is otherwise strictly read-only. Only explicit authenticated POST runs a
   // bounded temporary-key probe with cleanup; it cannot enable the sender.
   const storeProbe = request.method === "POST"
     ? await probeConversionRest({ env, namespace: syntheticNamespace(), fetchImpl: options.fetchImpl })
@@ -46,10 +51,14 @@ export async function handleConversionHealth(
     checkedAt: new Date().toISOString(),
     sendsAnalytics: false,
     capability,
+    epochPresent: capability.store.epochPresent,
+    epochMatches,
+    ledgerMarker,
     storeProbe,
     probePassed,
     ga4ActivationReady: capability.flags.ga4FlagsPaired && capability.ga4.apiSecretPresent &&
-      capability.ga4.measurementIdShapeValid && capability.store.configured && probePassed,
+      capability.ga4.measurementIdShapeValid && capability.store.configured &&
+      epochMatches && probePassed,
     // Neither a successful store probe nor MP HTTP acceptance proves receipt.
     actualConversionReceiptVerified: false,
   });

@@ -27,12 +27,17 @@ const ENV = {
   GA4_API_SECRET: "fixture-only",
   WATCHDIVE_CONVERSION_REDIS_REST_URL: "https://store.example.test",
   WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: "fixture-only",
+  WATCHDIVE_CONVERSION_LEDGER_EPOCH: "watchdive-ledger-20261030",
 };
 const NOW = Date.parse("2026-10-26T10:00:00Z");
 const EMAIL = "diver@example.test";
 class MemoryStore implements ConversionStore {
   contexts = new Map<string, Context>();
   claims = new Map<string, string>();
+  epochValue: string | null = "watchdive-ledger-20261030";
+  async epoch() {
+    return this.epochValue;
+  }
   async context(key: string) {
     return this.contexts.get(key) ?? null;
   }
@@ -79,6 +84,8 @@ test("disabled or incomplete config is inert, never contacts an endpoint", async
     {},
     { ...ENV, GA4_API_SECRET: "" },
     { ...ENV, WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: "" },
+    { ...ENV, WATCHDIVE_CONVERSION_LEDGER_EPOCH: "" },
+    { ...ENV, WATCHDIVE_CONVERSION_LEDGER_EPOCH: "short" },
   ]) {
     const h = harness({ env });
     await h.google.capture(EMAIL, "123.456", true);
@@ -163,21 +170,38 @@ test("a missing claim acknowledgement never deletes another worker's claim", asy
   assert.equal(h.store.claims.size, 1);
   assert.equal(h.payloads.length, 0);
 });
-test("Redis uses atomic NX and does not expire event claims; context expires in 7 days", async () => {
+test("Redis claims under one epoch script and expires context only", async () => {
   const commands: unknown[][] = [];
   const store = redisConversionStore(
     "https://store.example.test",
     "fixture",
     async (_url, init) => {
       commands.push(JSON.parse(String(init?.body)));
+      const body = JSON.parse(String(init?.body)) as unknown[];
+      const script = String(body[1] ?? "");
+      if (script.includes("wdconv-op:claim")) return Response.json({ result: "claimed" });
+      if (script.includes("wdconv-op:capture")) return Response.json({ result: "ok" });
       return Response.json({ result: "OK" });
     },
+    "watchdive-ledger-20261030",
   );
   await store.claim("event");
   await store.capture("subject", { clientId: "123.456", capturedAt: NOW });
-  assert.deepEqual(commands[0], ["SET", "wdconv:event:event", "uncertain", "NX"]);
-  assert.deepEqual(commands[1].slice(-2), ["EX", 604800]);
-  assert.equal(commands[1].includes("NX"), false);
+  await store.forget("subject");
+  const claim = commands[0] as unknown[];
+  assert.equal(claim[0], "EVAL");
+  assert.equal(claim[2], 2);
+  assert.equal(claim[3], "wdconv:ledger:epoch");
+  assert.equal(claim[4], "wdconv:event:event");
+  assert.match(String(claim[1]), /SET", KEYS\[2\], ARGV\[2\], "NX"/);
+  assert.doesNotMatch(String(claim[1]), /EX/);
+  assert.doesNotMatch(String(claim[1]), /SET", KEYS\[1\]/);
+  const capture = commands[1] as unknown[];
+  assert.equal(capture[0], "EVAL");
+  assert.match(String(capture[1]), /"EX", ARGV\[3\]/);
+  assert.equal(capture.at(-1), "604800");
+  assert.deepEqual(commands[2], ["DEL", "wdconv:context:subject"]);
+  assert.equal(commands.some((args) => args[0] === "SET" && args[1] === "wdconv:ledger:epoch"), false);
 });
 function verification() {
   const h = harness();

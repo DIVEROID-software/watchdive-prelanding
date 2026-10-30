@@ -171,6 +171,13 @@ export function checkConversionRolloutEnv(env: VerificationEnv): EnvProblem[] {
       });
   }
   if (publicGa || serverGa || meta) {
+    // Same shape as readLedgerEpoch. This file cannot import the sender.
+    const epoch = present(env, "WATCHDIVE_CONVERSION_LEDGER_EPOCH");
+    if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{15,79}$/.test(epoch))
+      problems.push({
+        name: "WATCHDIVE_CONVERSION_LEDGER_EPOCH",
+        problem: "must be a public 16-80 character ledger epoch",
+      });
     if (!present(env, "WATCHDIVE_CONVERSION_REDIS_REST_TOKEN"))
       problems.push({ name: "WATCHDIVE_CONVERSION_REDIS_REST_TOKEN", problem: "is not set" });
     try {

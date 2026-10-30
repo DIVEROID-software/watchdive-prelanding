@@ -32,10 +32,14 @@ const ENV = {
   WATCHDIVE_VERIFICATION_SECRET: "fixture-verification-secret-with-more-than-32-chars",
   WATCHDIVE_CONVERSION_REDIS_REST_URL: "https://store.example.test",
   WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: "fixture-only",
+  WATCHDIVE_CONVERSION_LEDGER_EPOCH: "watchdive-ledger-20261030",
 };
 class Store implements ConversionStore {
   contexts = new Map<string, Context>();
   states = new Map<string, "accepted" | "uncertain">();
+  async epoch() {
+    return "watchdive-ledger-20261030";
+  }
   async context(key: string) {
     return this.contexts.get(key) ?? null;
   }

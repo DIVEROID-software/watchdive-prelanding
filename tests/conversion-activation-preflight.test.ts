@@ -112,7 +112,19 @@ test("capability is booleans and stays off until both GA4 switches and the ledge
     WATCHDIVE_GA4_CONVERSIONS_ENABLED: "true",
     VITE_GA4_SERVER_CONVERSIONS_ENABLED: "true",
   });
-  assert.equal(armed.senderWouldEmit, true);
+  assert.equal(armed.senderWouldEmit, false);
+  assert.equal(armed.store.epochPresent, false);
+  assert.equal(armed.flags.ga4FlagsPaired, true);
+  const epoch = "wdledger-planted-9f3a7c2e";
+  const withEpoch = conversionCapability({
+    ...READY,
+    WATCHDIVE_GA4_CONVERSIONS_ENABLED: "true",
+    VITE_GA4_SERVER_CONVERSIONS_ENABLED: "true",
+    WATCHDIVE_CONVERSION_LEDGER_EPOCH: epoch,
+  });
+  assert.equal(withEpoch.senderWouldEmit, true);
+  assert.equal(withEpoch.store.epochPresent, true);
+  assert.equal(JSON.stringify(withEpoch).includes(epoch), false);
   assert.equal(JSON.stringify(armed).includes(PLANTED_GA), false);
   assert.equal(JSON.stringify(armed).includes(PLANTED_REDIS), false);
   assert.equal(JSON.stringify(armed).includes(SECRET), false);
