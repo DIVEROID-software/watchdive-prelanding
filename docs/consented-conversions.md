@@ -56,6 +56,7 @@ The VITE settings are public build-time settings; all other settings below are s
 - `WATCHDIVE_VERIFICATION_SECRET` (existing signing secret, at least 32 UTF-8 bytes)
 - `WATCHDIVE_CONVERSION_REDIS_REST_URL` (HTTPS Redis-compatible REST endpoint)
 - `WATCHDIVE_CONVERSION_REDIS_REST_TOKEN` (existing authorized write access)
+- `WATCHDIVE_CONVERSION_LEDGER_EPOCH` (public 16–80 character ledger generation; not a secret)
 - Existing `NOTION_API_KEY` and `NOTION_WAITLIST_DB_ID` for payment consent reads
 
 Meta Purchase can be enabled independently of GA4 with
@@ -68,7 +69,14 @@ No credentials, datastore, schema, access grant, scheduler or paid service was
 created. No production configuration was inspected or changed. Missing/invalid
 configuration makes the new sender inert. Do not deploy the event-name migration
 until these dependencies and the analytics report/audience migration are reviewed.
-The Redis-compatible REST adapter uses GET, SET, DEL, SET NX and EX. An approved
+The Redis-compatible REST adapter uses GET, SET, DEL, SET NX, EX, and EVAL.
+Upstash REST does not support WATCH, and its pipeline is not atomic, so the
+epoch check and the claim write share one EVAL. The epoch key is
+`wdconv:ledger:epoch`. Application code, health, and the synthetic probe never
+SET it. Root creates it once with `scripts/conversion-ledger-init.ts` on an
+empty event/context keyspace. A different existing marker, or any
+`wdconv:event:*` / `wdconv:context:*` key while the marker is absent, is
+refused. There is no repair or reset flag. An approved
 existing durable store with atomic SET NX is required; process memory is not a
 production replacement. Repository code already uses durable Notion records,
 but Notion provides no atomic compare-and-set for this delivery claim. No Redis
@@ -109,8 +117,13 @@ and duplicate protection and needs a migration plan.
 The checkout captures a separate current browser permission value only after
 validating the signed invite. When tracking is configured, an unavailable consent
 context write returns a recoverable 503 before creating/reusing Stripe checkout;
-it must not silently retain an old allowed context after a refusal. Disabled
-tracking has no checkout dependency. Review this availability tradeoff.
+it must not silently retain an old allowed context after a refusal. A configured
+epoch whose Redis marker is missing or different throws `conversion_ledger_epoch`
+from capture. The existing checkout catch returns HTTP 503 `measurement_unavailable`
+and does not call Stripe. That product behavior is unchanged. An absent epoch
+environment value disables the sender, so checkout is not coupled to Redis until
+the epoch is configured. Disabled tracking has no checkout dependency. Review this
+availability tradeoff.
 
 `wd_attr` and every `wd_competition_attr_v1:*` envelope have click IDs and their
 capture time removed on refusal. Future reads/writes in disallowed/GPC/unknown
@@ -132,7 +145,14 @@ uncertain delivery outcome. Its claim is retained and never blindly retried.
 Repeated requests report that state as `uncertain`, not a successful duplicate.
 Only an acknowledged claim reports `duplicate`. A crash between claim and send
 may therefore miss an event; this is an explicit
-at-most-once tradeoff, not a promise of exactly-once delivery. An operator must
+at-most-once tradeoff, not a promise of exactly-once delivery. The epoch check
+cannot extend past the analytics HTTP call. A crash after a successful POST
+leaves the pre-send `uncertain` tombstone and is not retried. A finish that
+finds that tombstone already gone does not recreate it. A total database wipe
+followed by a fresh init looks like the first birth and can accept the same
+event again; root must not re-initialize after a suspected total loss. Losing
+some tombstones while the epoch key remains can also duplicate. An epoch
+rejection after a claim is written does not release that tombstone. An operator must
 reconcile an uncertain record with downstream evidence before any approved reset. No
 automatic queue/cron retry worker is introduced. Email retries occur through an
 existing confirmation/grant path; no later browser polling fallback duplicates

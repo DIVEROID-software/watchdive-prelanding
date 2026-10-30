@@ -47,12 +47,16 @@ const ENV = {
   VITE_GA4_SERVER_CONVERSIONS_ENABLED: "true",
   VITE_GA_MEASUREMENT_ID: "G-TEST1234",
   GA4_API_SECRET: "fixture",
+  WATCHDIVE_CONVERSION_LEDGER_EPOCH: "watchdive-ledger-20261030",
 };
 
 class Store implements ConversionStore {
   contexts = new Map<string, Context>();
   states = new Map<string, "accepted" | "uncertain">();
   failContext = false;
+  async epoch() {
+    return "watchdive-ledger-20261030";
+  }
   async context(key: string) {
     if (this.failContext) throw new Error("store down");
     return this.contexts.get(key) ?? null;

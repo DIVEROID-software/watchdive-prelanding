@@ -1504,9 +1504,10 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
           trackMetaCustom("SignupPending", { source: id });
           // Pending GA4 is signup_pending. It does not prove mail delivery or a
           // unique subscriber. Verified GA4 sign_up belongs to the server sender
-          // when both rollout switches are on; the poll otherwise keeps
-          // generate_lead. The durable Meta Lead stays server-only. Clarity
-          // keeps its historical sign_up name.
+          // when both rollout switches are on. While the public switch is off,
+          // the verification poll sends one generate_lead and one sign_up.
+          // /verify does not send sign_up. The durable Meta Lead stays
+          // server-only. Clarity keeps its historical sign_up name.
           if (res.status === "pending" && !hp.trim() && measurementPermitted()) {
             trackGoogleSubmit(submitEventId, id);
             trackClarity("sign_up", id);

@@ -28,6 +28,7 @@ import { Route as LocaleScubaRouteImport } from './routes/$locale.scuba'
 import { Route as LocaleTermsRouteImport } from './routes/$locale.terms'
 import { Route as LocaleVerifyRouteImport } from './routes/$locale.verify'
 import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
+import { Route as ApiConversionHealthRouteImport } from './routes/api.conversion-health'
 import { Route as ApiExperimentReportRouteImport } from './routes/api.experiment-report'
 import { Route as ApiMayaReportRouteImport } from './routes/api.maya-report'
 import { Route as RCodeRouteImport } from './routes/r.$code'
@@ -144,6 +145,11 @@ const LocaleVerifyRoute = LocaleVerifyRouteImport.update({
 const AdminBehaviorRoute = AdminBehaviorRouteImport.update({
   id: '/admin/behavior',
   path: '/admin/behavior',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConversionHealthRoute = ApiConversionHealthRouteImport.update({
+  id: '/api/conversion-health',
+  path: '/api/conversion-health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiExperimentReportRoute = ApiExperimentReportRouteImport.update({
@@ -280,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
+  '/api/conversion-health': typeof ApiConversionHealthRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
   '/r/$code': typeof RCodeRoute
@@ -322,6 +329,7 @@ export interface FileRoutesByTo {
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
+  '/api/conversion-health': typeof ApiConversionHealthRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
   '/r/$code': typeof RCodeRoute
@@ -366,6 +374,7 @@ export interface FileRoutesById {
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify': typeof LocaleVerifyRoute
   '/admin/behavior': typeof AdminBehaviorRoute
+  '/api/conversion-health': typeof ApiConversionHealthRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
   '/r/$code': typeof RCodeRoute
@@ -411,6 +420,7 @@ export interface FileRouteTypes {
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
+    | '/api/conversion-health'
     | '/api/experiment-report'
     | '/api/maya-report'
     | '/r/$code'
@@ -453,6 +463,7 @@ export interface FileRouteTypes {
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
+    | '/api/conversion-health'
     | '/api/experiment-report'
     | '/api/maya-report'
     | '/r/$code'
@@ -496,6 +507,7 @@ export interface FileRouteTypes {
     | '/$locale/terms'
     | '/$locale/verify'
     | '/admin/behavior'
+    | '/api/conversion-health'
     | '/api/experiment-report'
     | '/api/maya-report'
     | '/r/$code'
@@ -533,6 +545,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   VerifyRoute: typeof VerifyRoute
   AdminBehaviorRoute: typeof AdminBehaviorRoute
+  ApiConversionHealthRoute: typeof ApiConversionHealthRoute
   ApiExperimentReportRoute: typeof ApiExperimentReportRoute
   ApiMayaReportRoute: typeof ApiMayaReportRoute
   RCodeRoute: typeof RCodeRoute
@@ -689,6 +702,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/behavior'
       fullPath: '/admin/behavior'
       preLoaderRoute: typeof AdminBehaviorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/conversion-health': {
+      id: '/api/conversion-health'
+      path: '/api/conversion-health'
+      fullPath: '/api/conversion-health'
+      preLoaderRoute: typeof ApiConversionHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/experiment-report': {
@@ -887,6 +907,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   VerifyRoute: VerifyRoute,
   AdminBehaviorRoute: AdminBehaviorRoute,
+  ApiConversionHealthRoute: ApiConversionHealthRoute,
   ApiExperimentReportRoute: ApiExperimentReportRoute,
   ApiMayaReportRoute: ApiMayaReportRoute,
   RCodeRoute: RCodeRoute,

@@ -569,6 +569,19 @@ test("readiness stays disabled and does not echo ids, labels, or tokens", () => 
   assert.equal(readiness.googleAds.signupLabelConfigured, true);
   assert.equal(readiness.googleAds.purchaseLabelConfigured, false);
   assert.equal(readiness.googleAds.confirmedEmailLabelConfigured, true);
+  assert.equal(readiness.blockedReasons.some((reason) => reason.includes("VITE_GOOGLE_ADS")), false);
+  const blank = buildRetargetingReadiness({
+    VITE_GOOGLE_ADS_ID: "",
+    VITE_GOOGLE_ADS_CONVERSION_LABEL: "",
+    VITE_GOOGLE_ADS_SIGNUP_LABEL: "",
+    VITE_GOOGLE_ADS_PURCHASE_LABEL: "",
+  });
+  assert.equal(blank.googleAds.globalIdConfigured, false);
+  assert.equal(blank.googleAds.signupLabelConfigured, false);
+  assert.equal(blank.googleAds.purchaseLabelConfigured, false);
+  assert.equal(blank.readyForLive, false);
+  assert.equal(blank.blockedReasons.some((reason) => reason.includes("VITE_GOOGLE_ADS")), false);
+  assert.match(blank.googleAds.note, /does not gate/);
   delete process.env.META_CAPI_ACCESS_TOKEN;
   delete process.env.VITE_GOOGLE_ADS_ID;
   delete process.env.VITE_GOOGLE_ADS_SIGNUP_LABEL;
@@ -589,7 +602,11 @@ test("the new score observer and historical pixel Lead stay untouched by this mo
   const google = readFileSync(new URL("../src/lib/googleTag.ts", import.meta.url), "utf8");
   assert.match(google, /event", "form_start"/);
   assert.match(google, /event", "signup_pending"/);
-  assert.equal(google.includes('event", "sign_up"'), false);
+  assert.equal(google.includes('event", "sign_up"'), true);
+  assert.match(google, /serverSignupMeasurementEnabled/);
+  const verify = readFileSync(new URL("../src/routes/verify.tsx", import.meta.url), "utf8");
+  assert.equal(verify.includes("trackGoogleLead"), false);
+  assert.equal(verify.includes("await attachVerifiedGoogleClient"), false);
   const sql = retargetingExportSql();
   assert.equal(/\bemail\b/i.test(sql), false);
   assert.match(sql, /DO NOT UPLOAD/);

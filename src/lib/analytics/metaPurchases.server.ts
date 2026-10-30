@@ -2,8 +2,11 @@ import { createHmac } from "node:crypto";
 import { createMetaPurchaseSender } from "../api/metaCapi.ts";
 import { retargetingEventId } from "../retargeting/eventId.ts";
 import {
+  LedgerEpochRejected,
   readDeliveryStoreConfig,
+  readLedgerEpoch,
   redisConversionStore,
+  requireStoreEpoch,
   type ConversionStore,
   type Delivery,
 } from "./googleConversions.server.ts";
@@ -19,11 +22,15 @@ export function createMetaPurchases(
 ) {
   const env = options.env ?? process.env;
   const config = readDeliveryStoreConfig(env);
+  const epoch = readLedgerEpoch(env);
   const sender = createMetaPurchaseSender(env, options.fetchImpl);
+  // The purchase flag stays an independent switch. Without the configured
+  // epoch the sender is off, so a wiped ledger cannot replay Purchase.
+  // Existing lead/email CAPI is a different module and is not changed here.
   const store =
-    config && sender
+    config && sender && epoch
       ? (options.store ??
-        redisConversionStore(config.redisUrl, config.redisToken, options.fetchImpl))
+        redisConversionStore(config.redisUrl, config.redisToken, options.fetchImpl, epoch))
       : null;
   const now = options.now ?? Date.now;
   const key = (kind: string, value: string) =>
@@ -34,11 +41,12 @@ export function createMetaPurchases(
   return {
     enabled: Boolean(store),
     async capture(email: string, allowed: boolean) {
-      if (!store) return;
+      if (!store || !epoch) return;
       if (!allowed) {
         await store.forget(subject(email));
         return;
       }
+      await requireStoreEpoch(store, epoch);
       // Permission snapshot only; no raw address or GA ID is stored for Meta.
       await store.capture(subject(email), { capturedAt: now() });
     },
@@ -51,7 +59,7 @@ export function createMetaPurchases(
       occurredAt: number | null,
       allowed: () => Promise<boolean>,
     ): Promise<Delivery> {
-      if (!store || !sender) return "disabled";
+      if (!store || !sender || !epoch) return "disabled";
       if (
         occurredAt === null ||
         !Number.isSafeInteger(occurredAt) ||
@@ -79,12 +87,20 @@ export function createMetaPurchases(
           await store.forget(subject(email));
           return "skipped";
         }
+        await requireStoreEpoch(store, epoch);
         const context = await store.context(subject(email));
         if (!context || context.capturedAt > now() || now() - context.capturedAt > 7 * 86400000)
           return "skipped";
         eventKey = key("Purchase", sessionId);
         claimAttempted = true;
-        if (!(await store.claim(eventKey)))
+        let claimedNow = false;
+        try {
+          claimedNow = await store.claim(eventKey);
+        } catch (error) {
+          if (error instanceof LedgerEpochRejected) claimAttempted = false;
+          throw error;
+        }
+        if (!claimedNow)
           return (await store.status(eventKey)) === "accepted" ? "duplicate" : "uncertain";
         claimed = true;
         if (!(await allowed())) {
@@ -96,6 +112,7 @@ export function createMetaPurchases(
           await store.release(eventKey);
           return "skipped";
         }
+        await requireStoreEpoch(store, epoch);
         posted = true;
         const receipt = await sender.send({
           email,
@@ -109,7 +126,8 @@ export function createMetaPurchases(
         }
         await store.finish(eventKey, receipt);
         return receipt;
-      } catch {
+      } catch (error) {
+        if (error instanceof LedgerEpochRejected) return claimed ? "uncertain" : "retry";
         if (!posted && claimed && eventKey) await store.release(eventKey).catch(() => {});
         return posted || (claimAttempted && !claimed) ? "uncertain" : "retry";
       }

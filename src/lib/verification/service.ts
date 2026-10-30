@@ -209,7 +209,12 @@ export type ServiceDependencies = {
   leadId?: () => string;
   refCode?: () => string;
   dispatchVerifiedLead?: VerifiedLeadDispatch;
-  captureGoogleContext?: (email: string, clientId: unknown, allowed: boolean) => Promise<void>;
+  captureGoogleContext?: (
+    email: string,
+    clientId: unknown,
+    allowed: boolean,
+    options?: { keepExisting?: boolean },
+  ) => Promise<void>;
   forgetGoogleContext?: (email: string) => Promise<void>;
   /** Canonical verified GA4 sign_up. Repeats collapse inside that sender. */
   dispatchGoogleVerified?: (row: LeadRecord, allowed: () => Promise<boolean>) => Promise<void>;
@@ -1481,10 +1486,14 @@ async function sendConversions(
   if (context.googleClientId && dependencies.captureGoogleContext) {
     try {
       const fresh = dependencies.gpc ? undefined : await dependencies.store.reread(record.pageId);
+      // Keep the client id from the signup browser. Another device opening the
+      // confirmation must not replace it. A row with no stored id still takes
+      // this browser's id.
       await dependencies.captureGoogleContext(
         record.email,
         context.googleClientId,
         Boolean(fresh && measurementAllows(fresh, signedConsent)),
+        { keepExisting: true },
       );
     } catch {
       /* Preserve context on transient CRM failure; send fails closed below. */

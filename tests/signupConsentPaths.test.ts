@@ -16,6 +16,7 @@ const ENV = {
   WATCHDIVE_VERIFICATION_SECRET: "x".repeat(32),
   WATCHDIVE_CONVERSION_REDIS_REST_URL: "https://store.example.test",
   WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: "fixture-only",
+  WATCHDIVE_CONVERSION_LEDGER_EPOCH: "watchdive-ledger-20261030",
 };
 const NOW = Date.parse("2026-10-26T10:00:00Z");
 const EMAIL = "diver@example.test";
@@ -24,6 +25,9 @@ const event = { name: "sign_up" as const, key: "record-one", params: { method: "
 class MemoryStore implements ConversionStore {
   contexts = new Map<string, Context>();
   claims = new Map<string, string>();
+  async epoch() {
+    return "watchdive-ledger-20261030";
+  }
   async context(key: string) {
     return this.contexts.get(key) ?? null;
   }
@@ -73,6 +77,7 @@ test("disabled and half-configured GA4 signup never calls the network", async ()
     { ...ENV, VITE_GA4_SERVER_CONVERSIONS_ENABLED: "false" },
     { ...ENV, GA4_API_SECRET: "" },
     { ...ENV, WATCHDIVE_CONVERSION_REDIS_REST_TOKEN: "" },
+    { ...ENV, WATCHDIVE_CONVERSION_LEDGER_EPOCH: "" },
   ]) {
     const h = harness(env);
     await h.google.capture(EMAIL, "123.456", true);
@@ -84,6 +89,18 @@ test("disabled and half-configured GA4 signup never calls the network", async ()
   assert.equal(checkConversionRolloutEnv({}).length, 0);
   assert.ok(checkConversionRolloutEnv({ VITE_GA4_SERVER_CONVERSIONS_ENABLED: "true" }).length > 0);
   assert.equal(checkConversionRolloutEnv(ENV).length, 0);
+  const missingEpoch = checkConversionRolloutEnv({
+    ...ENV,
+    WATCHDIVE_CONVERSION_LEDGER_EPOCH: "",
+  });
+  assert.ok(missingEpoch.some((problem) => problem.name === "WATCHDIVE_CONVERSION_LEDGER_EPOCH"));
+  assert.equal(
+    checkConversionRolloutEnv({
+      WATCHDIVE_GA4_CONVERSIONS_ENABLED: "false",
+      VITE_GA4_SERVER_CONVERSIONS_ENABLED: "false",
+    }).length,
+    0,
+  );
 });
 
 test("denial, a bad client id, and a refusal during claim send no signup", async () => {

@@ -19,9 +19,11 @@ import {
   readGeoCountry,
   readStoredMeasurementChoice,
 } from "./consentRegion.ts";
+import { stripLocalePrefix } from "./i18n/locale.ts";
 import { RESERVATION_CURRENCY, RESERVATION_FEE_CENTS } from "./reservation/constants.ts";
+import { googleClientId } from "./analytics/browserContext.ts";
 
-export { googleClientId } from "./analytics/browserContext.ts";
+export { googleClientId };
 
 const GA_ID_PATTERN = /^G-[A-Z0-9]{4,20}$/;
 const ADS_ID_PATTERN = /^AW-\d{6,20}$/;
@@ -148,16 +150,73 @@ function loaderId(config: GoogleTagConfig): string | undefined {
   return config.gaId ?? config.adsId;
 }
 
-export function initGoogleTag() {
+type MeasurementLocation = {
+  pathname?: string;
+  search?: string;
+  hash?: string;
+  origin?: string;
+  protocol?: string;
+};
+
+/** Reservation, a still-present verify token, or a Stripe session id. */
+export function tagLoadBlocked(locationLike: MeasurementLocation): boolean {
+  const pathname = locationLike.pathname || "/";
+  let path = "/";
+  try {
+    path = stripLocalePrefix(pathname).replace(/\/+$/, "") || "/";
+  } catch {
+    return true;
+  }
+  if (path === "/reservation" || path === "/admin/behavior" || path === "/buddy" || path.startsWith("/buddy/")) {
+    return true;
+  }
+  if (path === "/verify" && (locationLike.hash ?? "").length > 1) return true;
+  const raw = locationLike.search ?? "";
+  const params = new URLSearchParams(raw.startsWith("?") ? raw.slice(1) : raw);
+  return params.has("session_id") || params.has("token");
+}
+
+/** True only after the confirmation token and any Stripe session id are gone. */
+export function verifyMeasurementUrlSafe(locationLike: MeasurementLocation): boolean {
+  if ((locationLike.hash ?? "").length > 1) return false;
+  return !tagLoadBlocked(locationLike);
+}
+
+function mintGoogleClientId(): string {
+  const part = () => {
+    if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+      const bytes = new Uint32Array(1);
+      crypto.getRandomValues(bytes);
+      return String(1000000000 + (bytes[0] % 9000000000));
+    }
+    return String(1000000000 + Math.floor(Math.random() * 9000000000));
+  };
+  return `${part()}.${part()}`;
+}
+
+export type GoogleTagInitOptions = {
+  clientId?: string;
+  pageLocation?: string;
+  config?: GoogleTagConfig;
+};
+
+export function initGoogleTag(options?: GoogleTagInitOptions) {
   if (typeof window === "undefined") return;
-  const config = readGoogleTagConfig();
+  if (tagLoadBlocked(window.location)) return;
+  const config = options?.config ?? readGoogleTagConfig();
   if (!isGoogleTagConfigured(config) || readBrowserConsent() === "denied") return;
 
   const gtag = ensureGtag();
   if (!gtag) return;
   grantConsent(gtag);
   gtag("js", new Date());
-  if (config.gaId) gtag("config", config.gaId, { send_page_view: false });
+  if (config.gaId) {
+    gtag("config", config.gaId, {
+      send_page_view: false,
+      ...(options?.clientId ? { client_id: options.clientId } : {}),
+      ...(options?.pageLocation ? { page_location: options.pageLocation } : {}),
+    });
+  }
   if (config.adsId) gtag("config", config.adsId);
 
   const srcId = loaderId(config);
@@ -170,14 +229,50 @@ export function initGoogleTag() {
   }
 
   if (config.gaId && !window.__watchDiveGooglePageViewSent) {
-    gtag("event", "page_view", { page_path: window.location.pathname });
+    gtag("event", "page_view", {
+      page_path: window.location.pathname,
+      ...(options?.pageLocation ? { page_location: options.pageLocation } : {}),
+    });
     window.__watchDiveGooglePageViewSent = true;
   }
+}
+
+/**
+ * Synchronous. Does not wait for gtag.js.
+ * Used on /verify only after the token hash is gone, and only when the server
+ * rollout is on and this browser has no client id yet. An existing landing
+ * cookie is left alone so this page does not load a third party or mint a
+ * second identity. Reservation and session_id URLs are refused.
+ */
+export function attachVerifiedGoogleClient(
+  locationLike: MeasurementLocation = typeof window === "undefined"
+    ? { hash: "#", search: "", pathname: "/verify" }
+    : window.location,
+  env?: Record<string, string | undefined>,
+  config?: GoogleTagConfig,
+): boolean {
+  if (typeof window === "undefined" || typeof document === "undefined") return false;
+  if (!verifyMeasurementUrlSafe(locationLike)) return false;
+  if (readBrowserConsent() !== "granted") return false;
+  if (!serverSignupMeasurementEnabled(env)) return false;
+  if (googleClientId()) return false;
+  const clientId = mintGoogleClientId();
+  const protocol = locationLike.protocol ?? window.location.protocol;
+  const secure = protocol === "https:" ? "; Secure" : "";
+  document.cookie = `_ga=GA1.1.${clientId}; Path=/; Max-Age=63072000; SameSite=Lax${secure}`;
+  const origin = locationLike.origin ?? window.location.origin;
+  initGoogleTag({
+    clientId,
+    pageLocation: `${origin}${locationLike.pathname ?? ""}`,
+    ...(config ? { config } : {}),
+  });
+  return googleClientId() === clientId;
 }
 
 function canTrack(config: GoogleTagConfig = readGoogleTagConfig()): boolean {
   return (
     typeof window !== "undefined" &&
+    !tagLoadBlocked(window.location) &&
     isGoogleTagConfigured(config) &&
     readBrowserConsent() === "granted" &&
     Boolean(window.gtag)
@@ -213,9 +308,19 @@ export function serverSignupMeasurementEnabled(
   return env.VITE_GA4_SERVER_CONVERSIONS_ENABLED === "true";
 }
 
-/** First call for an event id wins. The poll and a late Allow share this sender. */
+/** First call for an event id wins, including a later reload of the same browser. */
 function claimBrowserVerifiedLead(eventId: string): boolean {
   if (browserVerifiedLeadIds.has(eventId)) return false;
+  const storageKey = `wd.ga4.verified-signup.${eventId}`;
+  try {
+    if (window.localStorage.getItem(storageKey) === "1") {
+      browserVerifiedLeadIds.add(eventId);
+      return false;
+    }
+    window.localStorage.setItem(storageKey, "1");
+  } catch {
+    // Private mode and test doubles keep the in-memory claim below.
+  }
   if (browserVerifiedLeadIds.size > 1000) browserVerifiedLeadIds.clear();
   browserVerifiedLeadIds.add(eventId);
   return true;
@@ -228,11 +333,17 @@ export function trackGoogleLead(
   env?: Record<string, string | undefined>,
 ) {
   if (!canTrack(config) || !isGoogleEventId(eventId)) return;
-  // Verified GA4 completion. Once the public rollout switch is on, the server
-  // sender owns sign_up and this fallback stays quiet. The server itself also
-  // requires the private switch, so a half-enabled flag cannot emit both.
+  // Landing poll only. /verify does not call this. While the public server
+  // switch is off, one claim sends generate_lead and the imported sign_up.
+  // When that switch is on, the server Measurement Protocol owns sign_up and
+  // both browser events stay quiet. signup_pending is a different function.
   if (config.gaId && !serverSignupMeasurementEnabled(env) && claimBrowserVerifiedLead(eventId)) {
     window.gtag!("event", "generate_lead", {
+      form_id: placement,
+      event_id: eventId,
+    });
+    window.gtag!("event", "sign_up", {
+      method: "email",
       form_id: placement,
       event_id: eventId,
     });

@@ -4,8 +4,12 @@
 import { randomBytes } from "node:crypto";
 import {
   forbiddenConversionStoreHost,
+  LEDGER_EPOCH_KEY,
+  LEDGER_SCRIPTS,
   readConversionConfig,
+  readConversionRestConfig,
   readDeliveryStoreConfig,
+  readLedgerEpoch,
 } from "./googleConversions.server.ts";
 
 type Env = Record<string, string | undefined>;
@@ -61,6 +65,8 @@ export type ConversionCapability = {
     redisUrlShapeValid: boolean;
     redisTokenPresent: boolean;
     configured: boolean;
+    /** Valid public epoch is present in config. This is not the Redis value. */
+    epochPresent: boolean;
   };
   readyToProbe: boolean;
   /** True only when the current env would emit. Both flags still default off. */
@@ -120,6 +126,7 @@ export function conversionCapability(env: Env): ConversionCapability {
     redisUrlShapeValid: redisUrlShapeValid(env),
     redisTokenPresent: present(env, "WATCHDIVE_CONVERSION_REDIS_REST_TOKEN"),
     configured: readDeliveryStoreConfig(env) !== null,
+    epochPresent: readLedgerEpoch(env) !== null,
   };
   const ga4 = {
     measurementIdShapeValid: MEASUREMENT_ID.test(measurementId),
@@ -137,8 +144,75 @@ export function conversionCapability(env: Env): ConversionCapability {
     store,
     readyToProbe,
     senderWouldEmit: readConversionConfig(env) !== null,
-    metaSenderWouldEmit: metaPurchaseEnabled && store.configured,
+    metaSenderWouldEmit: metaPurchaseEnabled && store.configured && store.epochPresent,
   };
+}
+
+export type LedgerMarker = "unconfigured" | "matched" | "missing" | "mismatched" | "unavailable";
+
+/** One read of the epoch key. Does not SET, DEL, or scan event keys. */
+export async function readLedgerMarker(options: {
+  env: Env;
+  fetchImpl?: typeof fetch;
+}): Promise<LedgerMarker> {
+  const env = operatorEnvironment(options.env);
+  const epoch = readLedgerEpoch(env);
+  const config = readConversionRestConfig(env);
+  if (!epoch || !config) return "unconfigured";
+  try {
+    const raw = await redisCommand(config.redisUrl, config.redisToken, options.fetchImpl ?? fetch, [
+      "GET",
+      LEDGER_EPOCH_KEY,
+    ]);
+    if (raw === null || raw === undefined) return "missing";
+    if (typeof raw !== "string") return "unavailable";
+    return raw === epoch ? "matched" : "mismatched";
+  } catch {
+    return "unavailable";
+  }
+}
+
+export type LedgerInitResult =
+  | "unconfigured"
+  | "already"
+  | "initialized"
+  | "mismatch"
+  | "nonempty"
+  | "conflict"
+  | "unavailable";
+
+/**
+ * Operator birth of an empty ledger. One EVAL. Refuses a different marker and
+ * any existing event or context key. There is no repair or reset argument.
+ */
+export async function initializeLedgerEpoch(options: {
+  env: Env;
+  fetchImpl?: typeof fetch;
+}): Promise<{ wrote: boolean; result: LedgerInitResult }> {
+  const env = operatorEnvironment(options.env);
+  const epoch = readLedgerEpoch(env);
+  const config = readConversionRestConfig(env);
+  if (!epoch || !config) return { wrote: false, result: "unconfigured" };
+  try {
+    const result = await redisCommand(
+      config.redisUrl,
+      config.redisToken,
+      options.fetchImpl ?? fetch,
+      ["EVAL", LEDGER_SCRIPTS.init, 1, LEDGER_EPOCH_KEY, epoch],
+    );
+    if (result === "initialized") return { wrote: true, result: "initialized" };
+    if (
+      result === "already" ||
+      result === "mismatch" ||
+      result === "nonempty" ||
+      result === "conflict"
+    ) {
+      return { wrote: false, result };
+    }
+    return { wrote: false, result: "unavailable" };
+  } catch {
+    return { wrote: false, result: "unavailable" };
+  }
 }
 
 export function syntheticNamespace(): string {
@@ -151,7 +225,7 @@ async function redisCommand(
   url: string,
   token: string,
   fetchImpl: typeof fetch,
-  args: string[],
+  args: (string | number)[],
 ): Promise<unknown> {
   let target: URL;
   try {
