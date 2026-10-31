@@ -795,20 +795,21 @@ export async function completeSocialVerification(
   context: ConversionContext,
   now: Date,
 ): Promise<"verified" | "already" | "unavailable"> {
+  if (record.duplicate || record.status === "unsubscribed") return "unavailable";
   if (socialRowVerified(record)) {
     await recordStageVerified(record.email, now.toISOString(), "oauth");
     return "already";
   }
-  if (record.duplicate || record.status === "unsubscribed" || !isLeadId(record.leadId)) {
+  if (!isLeadId(record.leadId)) {
     return "unavailable";
   }
   const fresh = await dependencies.store.reread(record.pageId).catch(() => undefined);
-  if (!fresh) return "unavailable";
+  if (!fresh || fresh.duplicate || fresh.status === "unsubscribed") return "unavailable";
   if (socialRowVerified(fresh)) {
     await recordStageVerified(fresh.email, now.toISOString(), "oauth");
     return "already";
   }
-  if (fresh.duplicate || fresh.status === "unsubscribed" || !isLeadId(fresh.leadId)) {
+  if (!isLeadId(fresh.leadId)) {
     return "unavailable";
   }
   const secret = requireSecret(dependencies.env ?? process.env);

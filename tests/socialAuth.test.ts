@@ -584,7 +584,7 @@ test("a relay verifies only when the ready flag is exactly true", async () => {
   assert.ok(row.verifiedAt);
 });
 
-for (const failure of ["missing", "timeout"] as const) {
+for (const failure of ["missing", "timeout", "unsubscribed", "duplicate"] as const) {
   test(`Apple callback does not confirm a pending row when final verification reread is ${failure}`, async () => {
     resetSocialStateForTests();
     const store = new FakeLeadStore();
@@ -596,6 +596,19 @@ for (const failure of ["missing", "timeout"] as const) {
       // verification read fails. No verified state has ever been observed.
       if (rereads === 2) {
         if (failure === "timeout") throw new Error("simulated Notion timeout");
+        if (failure === "unsubscribed" || failure === "duplicate") {
+          const row = await originalReread(pageId);
+          assert.ok(row);
+          const changed = {
+            ...row,
+            emailVerified: true,
+            verifiedAt: NOW.toISOString(),
+            status: failure === "unsubscribed" ? "unsubscribed" as const : "verified" as const,
+            duplicate: failure === "duplicate",
+          };
+          store.rows.set(pageId, changed);
+          return changed;
+        }
         return undefined;
       }
       return originalReread(pageId);
@@ -616,9 +629,14 @@ for (const failure of ["missing", "timeout"] as const) {
     const destination = new URL(response.headers.get("location")!);
     assert.equal(destination.searchParams.get("auth"), "error");
     const row = [...store.rows.values()][0];
-    assert.equal(row.status, "pending");
-    assert.equal(row.emailVerified, false);
-    assert.equal(row.verifiedAt, undefined);
+    if (failure === "missing" || failure === "timeout") {
+      assert.equal(row.status, "pending");
+      assert.equal(row.emailVerified, false);
+      assert.equal(row.verifiedAt, undefined);
+    } else {
+      assert.equal(row.status, failure === "unsubscribed" ? "unsubscribed" : "verified");
+      assert.equal(row.duplicate, failure === "duplicate");
+    }
     assert.equal(store.markVerifiedCalls, 0);
     assert.equal(harness.verified, 0);
     assert.equal(harness.mailer.sent.length, 0);
