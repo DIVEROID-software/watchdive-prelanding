@@ -6,6 +6,8 @@ import { test } from "node:test";
 
 import { VERIFICATION_MAX_SENDS, type LeadRecord } from "../src/lib/verification/contracts.ts";
 import {
+  HISTORICAL_RECOVERY_CAMPAIGN,
+  HISTORICAL_RECOVERY_CASES,
   RECOVERY_CAMPAIGN,
   RECOVERY_CASES,
   RECOVERY_CLOSE_AT,
@@ -171,6 +173,7 @@ async function recover(
     store?: Store;
     mailer?: Mailer;
     listRows?: () => Promise<LeadRecord[]>;
+    campaign?: typeof RECOVERY_CAMPAIGN | typeof HISTORICAL_RECOVERY_CAMPAIGN;
   } = {},
 ) {
   const store = options.store ?? new Store(rows);
@@ -183,6 +186,7 @@ async function recover(
     listRows: options.listRows ?? (async () => [...store.rows.values()].map(clone)),
     send: options.send ?? false,
     now: options.now ?? (() => OPEN),
+    campaign: options.campaign,
   });
   return { result, store, mailer };
 }
@@ -945,6 +949,46 @@ test("the route is POST-only and the helper never verifies or sends a welcome", 
   assert.match(route, /handleVerificationRecovery/);
   assert.doesNotMatch(source, /markVerified/);
   assert.doesNotMatch(source, /sendWelcome/);
-  assert.match(source, /manualCampaign: RECOVERY_CAMPAIGN/);
+  assert.doesNotMatch(source, /markWelcomeScheduled/);
+  assert.doesNotMatch(source, /recordMeasurement/);
+  assert.match(source, /manualCampaign: campaign/);
+  assert.match(source, /input\.campaign \?\? RECOVERY_CAMPAIGN/);
   assert.match(source, /createVerificationToken\(fresh\.leadId, expiry, false,/);
+});
+
+test("the historical batch leaves the original four incidents unsent", async () => {
+  const rows = fourRows();
+  const { result, store, mailer } = await recover(rows, {
+    send: true,
+    campaign: HISTORICAL_RECOVERY_CAMPAIGN,
+  });
+  assert.equal(result.campaign, HISTORICAL_RECOVERY_CAMPAIGN);
+  assert.deepEqual(
+    result.cases.map((item) => item.case),
+    [
+      "historical-fr-offer",
+      "historical-fr-hero",
+      "historical-en-jp",
+      "historical-ko-se",
+      "historical-en-sg",
+    ],
+  );
+  assert.deepEqual(
+    result.cases.map((item) => item.status),
+    ["missing", "missing", "missing", "missing", "missing"],
+  );
+  assert.equal(result.eligible, 0);
+  assert.equal(result.accepted, 0);
+  assert.equal(mailer.sent.length, 0);
+  assert.equal(mailer.welcomes, 0);
+  assert.equal(store.claims.length, 0);
+  assert.equal(store.outcomes.length, 0);
+  assert.equal(store.marked.length, 0);
+  for (const row of rows) {
+    const saved = store.rows.get(row.pageId);
+    assert.equal(saved?.emailVerified, false);
+    assert.equal(saved?.status, "pending");
+    assert.equal(saved?.sentAt, undefined);
+    assert.equal(saved?.reminder, undefined);
+  }
 });
