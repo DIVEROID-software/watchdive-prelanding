@@ -168,6 +168,16 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // one entry capture instead of exit capture (false restores exit). Both reuse
   // EmailForm; the entry instance does not report legacy middle/bottom funnel
   // milestones. Existing sections, initial forms and stylesheet stay pinned.
+  // 2026-10-31: owner-requested referral price path on the post-verification
+  // card only. The program-on next-tier sentence becomes the confirmed-email
+  // goal, the share button gains data attributes, and the prize ladder sits
+  // in a labelled disclosure. The goal receives countState so a check in
+  // progress is not shown as an unknown or zero count. Program-off count,
+  // titles, share copy, both forms, section order and the stylesheet pin stay.
+  // 2026-10-31 later: the signup share hook is omitted while the program is
+  // off, and a presentation inbox no longer receives the phone slot. Restoring
+  // those two attribute texts reproduces 79fe9710…; presentation element order
+  // stays stripped below. No other skeleton line moved.
   const legacySource = source
     .replace(/    if \(presentation\) return <>[^\n]+<\/>;\n/, "")
     .replace(/\{!presentation && (<SignupReservationOffer[^\n]+autoFocus \/>)\}/, "$1")
@@ -176,7 +186,7 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
     .replace('message={presentation ? "" : pending}', 'message={pending}')
     .replace('className={presentation ? "wd-segment-confirm-note" : "wd-control-copy text-sm leading-relaxed text-white/90"}', 'className="wd-control-copy text-sm leading-relaxed text-white/90"');
   const digest = sha256(jsxStructure(legacySource));
-  assert.equal(digest, "c6fe0f6bcab147535491e416f719e808539634c62e6cf30f4fa0f1bb54d68b57");
+  assert.equal(digest, "efa6639dbe4b219405e6cf77cce8869ff152ccdc92a01dba909cdf9149564fe5");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

@@ -151,19 +151,21 @@ async function renderVerify(on = false) {
   return renderToStaticMarkup(createElement(module.VerifyPage));
 }
 
-test("OFF confirmation keeps the intro and shows only SMS and reservation steps", async () => {
+test("OFF confirmation keeps the intro and shows reservation before the optional phone", async () => {
   const original = readFileSync(join(root, "tests/fixtures/verifiedBuddyOff.html"), "utf8");
   const html = await renderVerify(false);
   assert.ok(html.includes(original.match(/<h1[\s\S]*?<\/h1>/)![0]));
-  assert.deepEqual([...html.matchAll(/data-verify-step="(\d)"/g)].map(m => m[1]), ["1", "2"]);
-  assert.match(html, /Existing SMS consent card/);
-  assert.match(html, /Existing reservation offer/);
-  assert.doesNotMatch(html, /Buddy Invite enabled|private-confirmation-token|private-status-credential/);
+  assert.deepEqual([...html.matchAll(/data-verify-choice="([^"]+)"/g)].map(m => m[1]), ["reservation", "phone"]);
+  assert.ok(html.indexOf("Existing reservation offer") < html.indexOf("Existing SMS consent card"));
+  assert.match(html, /Optional/);
+  assert.doesNotMatch(html, /data-verify-choice="buddy"|Buddy Invite enabled|private-confirmation-token|private-status-credential/);
 });
 
-test("ON confirmation shows all three ordered steps without serializing credentials", async () => {
+test("ON confirmation offers buddy, then reservation, then phone, without serializing credentials", async () => {
   const html = await renderVerify(true);
-  assert.deepEqual([...html.matchAll(/data-verify-step="(\d)"/g)].map(m => m[1]), ["1", "2", "3"]);
-  assert.match(html, /Buddy Invite enabled/);
+  assert.deepEqual([...html.matchAll(/data-verify-choice="([^"]+)"/g)].map(m => m[1]), ["buddy", "reservation", "phone"]);
+  assert.ok(html.indexOf("Buddy Invite enabled") < html.indexOf("Existing reservation offer"));
+  assert.ok(html.indexOf("Existing reservation offer") < html.indexOf("Existing SMS consent card"));
+  assert.match(html, /Existing SMS consent card/);
   assert.doesNotMatch(html, /private-status-credential|private-confirmation-token/);
 });

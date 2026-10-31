@@ -265,5 +265,5 @@ test("shared placements are mounted, compact source hooks and unique DOM IDs rem
   assert.ok(index.includes("trackGoogleFormStart(id)"));
   assert.ok(index.includes('trackClarity("sign_up", id)'));
   assert.ok(index.includes("!compact && <SocialAuthEntry"));
-  assert.ok(index.includes("phoneOptIn={compact ? undefined"));
+  assert.ok(index.includes('phoneOptIn={compact || presentation ? undefined : phoneCard("pending")}'));
 });

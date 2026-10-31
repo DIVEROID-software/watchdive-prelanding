@@ -2,8 +2,10 @@ import { useEffect, useId, useState } from "react";
 
 import { StatusPage } from "@/components/referral/StatusPage";
 import { TierList } from "@/components/referral/TierList";
+import { keptTierParagraph, PriceGoal, teamGoalFriends } from "@/components/referral/PriceGoal";
+import { recordReferralCopy } from "@/lib/referral/measurement";
 import { getReferralStatus, updateReferralSettings } from "@/lib/api/referral.functions";
-import { localizePath, type Locale } from "@/lib/i18n/locale";
+import { localizePath, referralPath, type Locale } from "@/lib/i18n/locale";
 import { useFrozenLandingMessages } from "@/lib/i18n/use-current-locale";
 import type { ReferralStatus } from "@/lib/referral/contract";
 import { fill, referralCopy } from "@/lib/referral/copy";
@@ -39,9 +41,9 @@ export function VerifiedBuddyCard({
   const [loadError, setLoadError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const shareUrl =
-    typeof window === "undefined"
+    typeof window === "undefined" || !refCode
       ? ""
-      : `${window.location.origin}/r/${encodeURIComponent(refCode)}`;
+      : `${window.location.origin}${referralPath(locale, refCode)}`;
 
   useEffect(() => {
     let alive = true;
@@ -72,6 +74,7 @@ export function VerifiedBuddyCard({
       else {
         await navigator.clipboard.writeText(shareUrl);
         setCopied(true);
+        void recordReferralCopy("verify_card", locale);
       }
     } catch {
       /* Dismissed share sheet: leave the link available to select. */
@@ -114,6 +117,15 @@ export function VerifiedBuddyCard({
         REFERRAL_TIERS.find((tier) => tier.id === status.highestTier)?.minFriends ?? 0,
       )
     : null;
+  const confirmed = status ? status.credited : null;
+  const goal = teamGoalFriends();
+  // The team price already prints the kept-tier sentence. A lower or higher
+  // held floor still needs that same sentence, once, beside the live count.
+  const showSeparateKept =
+    held !== null &&
+    confirmed !== null &&
+    held > confirmed &&
+    !(held >= goal && confirmed < goal);
   return (
     <section
       aria-labelledby={id + "-title"}
@@ -134,10 +146,20 @@ export function VerifiedBuddyCard({
         <button
           type="button"
           onClick={share}
+          data-analytics-hook="referral_share"
+          data-share-placement="verify_card"
+          data-referral-program="on"
           className="mt-2 min-h-11 w-full rounded-lg border border-white/45 bg-[#3D2683] px-4 py-2 text-body font-semibold text-white"
         >
           {copied ? frozen.referral.copied : shareCopy.button}
         </button>
+        <PriceGoal
+          locale={locale}
+          credited={confirmed}
+          held={held}
+          countState={loadError ? "error" : status ? "ready" : "loading"}
+          placement="verify_card"
+        />
       </div>
       {status?.shareCode && (
         <div className="flex flex-wrap items-center gap-2">
@@ -160,7 +182,17 @@ export function VerifiedBuddyCard({
           </button>
         </div>
       )}
-      <TierList locale={locale} credited={held} />
+      {showSeparateKept && (
+        <p className="text-xs leading-relaxed text-white/80" data-held-tier="kept">
+          {fill(keptTierParagraph(copy), values)}
+        </p>
+      )}
+      <details className="border-t border-white/15 pt-2" data-buddy-panel="ladder">
+        <summary className="flex min-h-11 cursor-pointer items-center text-body font-semibold">
+          {copy.mail.welcomeTiersHeading}
+        </summary>
+        <TierList locale={locale} credited={confirmed} />
+      </details>
       {loadError && (
         <div role="alert">
           <p>{frozen.errors.errorBody}</p>
@@ -173,6 +205,10 @@ export function VerifiedBuddyCard({
           </button>
         </div>
       )}
+      <details className="border-t border-white/15 pt-2" data-buddy-panel="settings">
+        <summary className="flex min-h-11 cursor-pointer items-center text-body font-semibold">
+          {copy.status.nicknameLabel}
+        </summary>
       <form onSubmit={submit} noValidate className="space-y-3">
         <label htmlFor={id + "-nickname"} className="block text-body font-semibold">
           {copy.status.nicknameLabel}
@@ -229,6 +265,7 @@ export function VerifiedBuddyCard({
           {save === "saved" ? copy.status.saved : ""}
         </p>
       </form>
+      </details>
       <nav className="flex flex-wrap gap-x-5 text-body">
         <a
           href={localizePath("/buddy-rules", locale)}

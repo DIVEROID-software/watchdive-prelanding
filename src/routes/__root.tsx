@@ -26,6 +26,7 @@ import { experimentBootstrap, EXPERIMENT_ENABLED } from "@/lib/conversionExperim
 import { allowsThirdPartyScripts, SUPPORT_WIDGET_SRC } from "@/lib/thirdPartyScripts";
 import { CookieChoiceBar } from "@/components/cookie-choice-bar";
 import { PRESS_REF_BOOTSTRAP } from "@/lib/pressRef";
+import { ReferralMeasurement } from "@/components/referral/ReferralMeasurement";
 
 function NotFoundComponent() {
   const locale = useCurrentLocale();
@@ -198,6 +199,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <ReferralMeasurement />
       {allowsThirdPartyScripts(pathname) && <CookieChoiceBar />}
       <Toaster />
     </QueryClientProvider>
