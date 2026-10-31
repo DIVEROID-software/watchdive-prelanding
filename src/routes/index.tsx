@@ -41,10 +41,10 @@ import {
 import { EarlyBirdRace } from "@/components/early-bird-race";
 import { getMyShareCode, getReferralProgress } from "@/lib/api/referral.functions";
 import { LeaderboardSection, buddyRulesPath, useReferralProgramEnabled } from "@/components/referral/LeaderboardSection";
+import { PriceGoal } from "@/components/referral/PriceGoal";
+import { recordReferralCopy } from "@/lib/referral/measurement";
 import { TierList } from "@/components/referral/TierList";
-import { fill, referralCopy } from "@/lib/referral/copy";
-import { nextTier } from "@/lib/referral/program";
-import { copyValues } from "@/lib/referral/values";
+import { referralCopy } from "@/lib/referral/copy";
 import { referralShareCopy } from "@/lib/referral/shareCopy";
 import { SocialAuthEntry, SocialAuthResult, SocialSignupResultProvider, useSocialContinuation, useSocialSignupCompleted } from "@/components/social-auth-entry";
 import { HeroPhoto } from "@/components/hero-photo";
@@ -105,7 +105,7 @@ import {
 import { landingHead } from "@/lib/i18n/seo";
 import { readLiteMediaHint, useLiteMedia } from "@/lib/liteMedia";
 import { spamFolderHintFor } from "@/lib/spamFolderHint";
-import { privacyPath, termsPath } from "@/lib/i18n/locale";
+import { privacyPath, referralPath, termsPath } from "@/lib/i18n/locale";
 import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
 import { applyPriceClaim, priceClaimFromLoaderData } from "@/lib/i18n/price-claim";
 import { loadReferralPriceClaim } from "@/lib/i18n/price-claim-loader";
@@ -653,11 +653,16 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
   // null until the server says the program is live. While null or off, this
   // card renders exactly as before Buddy Invite existed.
   const [credited, setCredited] = useState<number | null>(null);
+  const [countState, setCountState] = useState<"loading" | "ready" | "error" | "unknown">("loading");
   const programOn = useReferralProgramEnabled();
   const joinedTemplate = count === 1 ? m.referral.joinedOne : m.referral.joinedOther;
   const [joinedBefore, , joinedAfter] = splitHighlightedCopy(joinedTemplate, "{count}");
+  // Canonical share path. /r/<code> redirects to the locale home with ?ref=,
+  // which is what the landing already reads. A raw ?ref= link is not handed out.
   const shareUrl =
-    typeof window !== "undefined" && refCode ? `${window.location.origin}/?ref=${refCode}` : "";
+    typeof window !== "undefined" && refCode
+      ? `${window.location.origin}${referralPath(locale, refCode)}`
+      : "";
 
   useEffect(() => {
     if (!refCode) return;
@@ -666,12 +671,17 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
       .then((r) => alive && setCount(r.count))
       .catch(() => {});
     // Progress counts credited (verified, eligible) friends, not raw sign-ups.
+    if (programOn) setCountState("loading");
     if (programOn) getReferralProgress({ data: { refCode } })
       .then((r) => {
+        if (alive && !r.enabled) setCountState("unknown");
         if (!alive || !r.enabled) return;
         setCredited(r.credited);
+        setCountState("ready");
       })
-      .catch(() => {});
+      .catch(() => {
+        if (alive) setCountState("error");
+      });
     if (programOn) getMyShareCode({ data: { refCode } })
       .then((r) => {
         if (!alive || !r.enabled) return;
@@ -682,21 +692,6 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
       alive = false;
     };
   }, [refCode, programOn]);
-
-  const progressText = (() => {
-    if (!programOn || credited === null) return null;
-    const values = copyValues(locale);
-    const next = nextTier(credited);
-    if (!next) return fill(card.progressMax, { ...values, count: credited });
-    // Tier names carry "· N friends"; the sentence already states the remaining count.
-    const tierName = referralCopy(locale).tiers[next.id].name.split(" · ")[0];
-    return fill(credited === 0 ? card.progressNone : card.progress, {
-      ...values,
-      count: credited,
-      remaining: next.minFriends - credited,
-      tier: tierName,
-    });
-  })();
 
   return (
     <div className="rounded-2xl bg-white/10 backdrop-blur p-5 text-white">
@@ -710,14 +705,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
           </div>
           <p className="mt-1 text-xs text-white/70">{programOn ? card.body : m.referral.buddyBody}</p>
 
-          {programOn ? (
-            progressText && (
-              <p className="mt-3 text-xs font-medium text-white/85" aria-live="polite">
-                {progressText}
-              </p>
-            )
-          ) : (
-            count !== null && (
+          {!programOn && count !== null && (
               <div className="mt-3">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-white/85">
@@ -727,8 +715,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
                   </span>
                 </div>
               </div>
-            )
-          )}
+            )}
 
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <input
@@ -747,6 +734,9 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
             />
             <button
               type="button"
+              data-analytics-hook={programOn ? "referral_share" : undefined}
+              data-share-placement="signup_success"
+              data-referral-program={programOn ? "on" : "off"}
               onClick={async () => {
                 try {
                   if (navigator.share) {
@@ -759,6 +749,7 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
                   }
                   await navigator.clipboard.writeText(shareUrl);
                   setCopied(true);
+                  if (programOn) void recordReferralCopy("signup_success", locale);
                   setTimeout(() => setCopied(false), 2000);
                 } catch {
                   /* user dismissed share sheet — no-op */
@@ -769,6 +760,8 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
               {copied ? m.referral.copied : programOn ? share.button : m.referral.shareButton}
             </button>
           </div>
+
+          {programOn && <PriceGoal locale={locale} credited={credited} countState={countState} placement="signup_success" />}
 
           {programOn && myCode && (
             <div className="mt-2 flex flex-col gap-2 sm:flex-row">
@@ -797,7 +790,12 @@ function ReferralSuccess({ refCode }: { refCode: string }) {
 
           {programOn && (
             <>
-              <TierList locale={locale} credited={credited} className="mt-4" />
+              <details className="mt-4" data-buddy-panel="ladder">
+                <summary className="flex min-h-11 cursor-pointer items-center text-xs font-semibold">
+                  {referralCopy(locale).mail.welcomeTiersHeading}
+                </summary>
+                <TierList locale={locale} credited={credited} className="mt-2" />
+              </details>
               <p className="mt-1 text-xs">
                 <Link
                   to={buddyRulesPath(locale)}
@@ -1242,7 +1240,7 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
 
   if (verified) {
     if (compact) return <div role="status" aria-live="polite"><strong>{socialAuthResultCopy(locale).confirmed}</strong><p>{m.referral.successBody}</p></div>;
-    if (presentation) return <><ReferralSuccess refCode={refCode} />{phoneCard("verified")}<SignupReservationOffer locale={locale} verified credential={{ kind: "attempt", value: handle }} /></>;
+    if (presentation) return <><ReferralSuccess refCode={refCode} /><SignupReservationOffer locale={locale} verified credential={{ kind: "attempt", value: handle }} />{phoneCard("verified")}</>;
     return <><SignupReservationOffer locale={locale} verified credential={{ kind: "attempt", value: handle }} /><ReferralSuccess refCode={refCode} />{phoneCard("verified")}</>;
   }
 
@@ -1407,7 +1405,7 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
     );
     if (compact) return message;
     // Same order as the email-verified branch. Both placements share one grant.
-    if (presentation) return <>{message}{phone}{offer}</>;
+    if (presentation) return <>{message}{offer}{phone}</>;
     return <>{offer}{message}{phone}</>;
   }
 
@@ -1432,7 +1430,7 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
         autoFocus={Boolean(presentation)}
         message={presentation ? "" : pending}
         shareNote={shareNote || undefined}
-        phoneOptIn={compact ? undefined : phoneCard("pending")}
+        phoneOptIn={compact || presentation ? undefined : phoneCard("pending")}
         email={email}
         resending={loading}
         onResend={async () => {
@@ -1463,6 +1461,7 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
         }}
       />
       {!compact && presentation && <SignupReservationOffer locale={locale} inboxId={`${inputId}-verify-inbox`} />}
+      {!compact && presentation && phoneCard("pending")}
     </>);
   }
 

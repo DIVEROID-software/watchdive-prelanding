@@ -10,6 +10,8 @@ import { getAttribution } from '@/lib/attribution';
 import { segmentCopy, type DiveSegment } from '@/lib/segments/copy';
 import { legacyHomeAnchor } from '@/lib/segments/canonical-entry';
 import { ONSITE_OFFER_COPY } from '../reservation/onsite-copy';
+import { useReferralProgramEnabled } from '../referral/LeaderboardSection';
+import { PricePaths } from './PricePaths';
 import { SegmentHeroMedia } from './SegmentHeroMedia';
 import { SegmentHeroJump, commitMiddleSignup, focusMiddleSignup } from './SegmentHeroJump';
 import { SegmentHowInsert } from './SegmentHowInsert';
@@ -48,6 +50,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const c = segmentCopy(locale, segment);
+  const referralOn = useReferralProgramEnabled();
   const subscription = subscriptionCopy(locale);
   const benefits = [{ title: subscription.benefitTitle, body: subscription.benefitBody }, ...c.benefits.slice(0, 2)];
   const [priceNoteBefore, priceNoteAfter] = c.priceNote.split(c.priceNoteHighlight);
@@ -126,6 +129,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         <EmailForm id={position === 'middle' ? 'hero' : 'offer'} presentation={{ cta: c.signupCta, note: c.signupNote }} />
         <p className="wd-segment-free-note">{c.noPayment}</p>
       </div>
+      {position === 'middle' && <PricePaths locale={locale} referralOn={referralOn} />}
     </section>;
   }
 

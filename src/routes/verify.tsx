@@ -3,6 +3,7 @@ import { attachVerifiedGoogleClient } from "@/lib/googleTag";
 import { SignupReservationOffer } from "@/components/reservation/SignupReservationOffer";
 import { VerifyStep } from "@/components/reservation/verify-steps";
 import { VerifiedBuddyCard } from "@/components/referral/VerifiedBuddyCard";
+import { PriceGoal } from "@/components/referral/PriceGoal";
 import { PhoneOptInCard } from "@/components/phone-optin-card";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -377,23 +378,15 @@ export function VerifyPage() {
             <h1 className="text-heading">{copy.verifiedTitle}</h1>
             <p className="mt-3 text-body leading-relaxed text-white/75">{copy.verifiedBody}</p>
 
-            {token.current && <>
-              <VerifyStep locale={locale} number={1}>
-                <PhoneOptInCard credential={{ kind: "confirmation", value: token.current }} complete={phoneAdded} onSaved={() => setPhoneAdded(true)} />
-              </VerifyStep>
-              <VerifyStep locale={locale} number={2}>
-                <SignupReservationOffer locale={locale} verified credential={{ kind: "confirmation", value: token.current }} />
-              </VerifyStep>
-            </>}
-
-            {/* Most people confirm on the phone they signed up on, so the tab
-                that was polling is often never seen again. The share link has
-                to be offered here or it is effectively never offered. */}
-            {referralEnabled && (buddyToken || refCode) && <VerifyStep locale={locale} number={3}>
+            {/* Share and the price reservation come before the optional phone.
+                The confirm action and conversion calls above stay in place.
+                Most people confirm on the phone they signed up on, so the tab
+                that was polling is often never seen again. */}
+            {referralEnabled && (buddyToken || refCode) && <VerifyStep locale={locale} choice="buddy">
             {buddyToken ? (
               <VerifiedBuddyCard locale={locale} token={buddyToken} refCode={refCode} />
             ) : refCode && (
-              <div className="mt-5 rounded-xl border border-white/15 bg-white/[0.06] p-4">
+              <div className="rounded-xl border border-white/15 bg-white/[0.06] p-4">
                 <div className="text-lead text-[color:var(--color-cyan-glow)]">
                   {copy.buddyTitle}
                 </div>
@@ -404,10 +397,20 @@ export function VerifyPage() {
                   onFocus={(event) => event.currentTarget.select()}
                   className="mt-3 h-11 w-full rounded-lg bg-white/95 px-3 text-body text-[color:var(--color-deep-2)] outline-none"
                 />
+                <PriceGoal locale={locale} credited={null} countState="unknown" placement="verify_card" />
               </div>
             )}
 
             </VerifyStep>}
+
+            {token.current && <>
+              <VerifyStep locale={locale} choice="reservation">
+                <SignupReservationOffer locale={locale} verified credential={{ kind: "confirmation", value: token.current }} />
+              </VerifyStep>
+              <VerifyStep locale={locale} choice="phone">
+                <PhoneOptInCard credential={{ kind: "confirmation", value: token.current }} complete={phoneAdded} onSaved={() => setPhoneAdded(true)} />
+              </VerifyStep>
+            </>}
 
             {askMeasurement && (
               <MeasurementAsk
