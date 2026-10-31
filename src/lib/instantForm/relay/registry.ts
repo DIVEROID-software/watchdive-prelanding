@@ -156,6 +156,32 @@ export const NATIVE_FORMS: readonly AllowlistForm[] = [
         "segment": "freediving"
       }
     ]
-  }
+  } ,
+{
+  "form_id": "39495373750107348",
+  "market": "MY",
+  "locale": "en",
+  "campaign_id": "120251829043190215",
+  "campaign_name": "WD_MY_NATIVE_INSTANT_20261031_TEST",
+  "utm_campaign": "wd_my_native_instant",
+  "adset_id": "120251829044170215",
+  "adset_name": "WD_MY_NATIVE_20261031_TEST",
+  "landing_path": "/scuba",
+  "test": false,
+  "ads": [
+    {
+      "ad_id": "120251829112510215",
+      "adset_id": "120251829044170215",
+      "campaign_id": "120251829043190215",
+      "segment": "scuba"
+    },
+    {
+      "ad_id": "120251829115450215",
+      "adset_id": "120251829044170215",
+      "campaign_id": "120251829043190215",
+      "segment": "freediving"
+    }
+  ]
+}
 ];
 export const NATIVE_NOT_BEFORE = "2026-10-29T18:44:24.747Z";
