@@ -1520,13 +1520,19 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
       data-wd-capture-form={compact ? "" : undefined}
       className="relative flex flex-col gap-3 w-full"
     >
-      {/* Honeypot: off-screen field. Real users never see or fill it; bots that
-          auto-fill every input trip it and get flagged server-side. */}
+      {/* Honeypot: off-screen field. The name is not a contact token, so a
+          browser that ignores autocomplete=off does not fill an organization. */}
       <input
         type="text"
-        name="company"
+        name="wd_hp"
         tabIndex={-1}
         autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="none"
+        spellCheck={false}
+        data-1p-ignore="true"
+        data-lpignore="true"
+        data-bwignore="true"
         aria-hidden="true"
         value={hp}
         onChange={(e) => setHp(e.target.value)}

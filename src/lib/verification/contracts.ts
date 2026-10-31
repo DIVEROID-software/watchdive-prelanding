@@ -618,6 +618,21 @@ export function conversionBlocked(flags: string[]): boolean {
  */
 export const FLAG_MEASUREMENT_WITHDRAWN = "measurement-withdrawn";
 
+/**
+ * Whether this submit must not receive a verification message.
+ * Disposable and headless still stop the message. A honeypot alone does not:
+ * browsers autofill a hidden organization field, and that false positive was
+ * dropping real confirmation mail. The honeypot flag still blocks a conversion.
+ */
+export function verificationSendBlocked(flags: string[]): boolean {
+  return flags.some(
+    (flag) =>
+      flag !== "ip-repeat" &&
+      flag !== FLAG_MEASUREMENT_WITHDRAWN &&
+      flag !== "honeypot",
+  );
+}
+
 /** Flags that say something about abuse or review, not about measurement. */
 export function reviewFlags(flags: string[]): string[] {
   return flags.filter((flag) => flag !== FLAG_MEASUREMENT_WITHDRAWN);

@@ -178,6 +178,9 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // off, and a presentation inbox no longer receives the phone slot. Restoring
   // those two attribute texts reproduces 79fe9710…; presentation element order
   // stays stripped below. No other skeleton line moved.
+  // 2026-10-31 verification repair: the off-screen honeypot name becomes
+  // wd_hp and receives browser/password-manager autofill opt-outs. This is
+  // the only JSX structure change; visible forms and section order stay fixed.
   const legacySource = source
     .replace(/    if \(presentation\) return <>[^\n]+<\/>;\n/, "")
     .replace(/\{!presentation && (<SignupReservationOffer[^\n]+autoFocus \/>)\}/, "$1")
@@ -186,7 +189,7 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
     .replace('message={presentation ? "" : pending}', 'message={pending}')
     .replace('className={presentation ? "wd-segment-confirm-note" : "wd-control-copy text-sm leading-relaxed text-white/90"}', 'className="wd-control-copy text-sm leading-relaxed text-white/90"');
   const digest = sha256(jsxStructure(legacySource));
-  assert.equal(digest, "efa6639dbe4b219405e6cf77cce8869ff152ccdc92a01dba909cdf9149564fe5");
+  assert.equal(digest, "71cfe2acf7f9cf7675e9593ad011370623e196c497d07ceedf72395458f1e625");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

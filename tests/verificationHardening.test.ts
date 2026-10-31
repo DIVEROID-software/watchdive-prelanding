@@ -424,14 +424,15 @@ test("a suppressed submit never invalidates somebody's live link", async () => {
   assert.ok(first.handle);
 });
 
-test("a suppressed submit for a new address still leaves a reviewable row", async () => {
+test("a honeypot-only submit for a new address is mailed and stays reviewable", async () => {
   await requestVerificationService(submit({ flags: ["honeypot"], suspect: true }), deps());
 
   const row = await store.findByEmail(CANONICAL, EMAIL);
   assert.equal(row?.status, "pending");
+  assert.equal(row?.emailVerified, false);
   assert.equal(row?.suspect, true);
   assert.deepEqual(row?.flags, ["honeypot"]);
-  assert.equal(mailer.sent.length, 0);
+  assert.equal(mailer.sent.length, 1);
 });
 
 // ---------------------------------------------------------------------------

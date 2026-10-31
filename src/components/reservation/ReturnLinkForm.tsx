@@ -45,9 +45,15 @@ export function ReturnLinkForm({ locale }: { locale: ReservationLocale }) {
       />
       <input
         type="text"
-        name="company"
+        name="wd_hp"
         tabIndex={-1}
         autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="none"
+        spellCheck={false}
+        data-1p-ignore="true"
+        data-lpignore="true"
+        data-bwignore="true"
         aria-hidden="true"
         value={honeypot}
         onChange={(event) => setHoneypot(event.currentTarget.value)}

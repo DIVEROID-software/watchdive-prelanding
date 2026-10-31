@@ -57,7 +57,69 @@ function createdMs(row: LeadRecord): number {
 function earlier(left: LeadRecord, right: LeadRecord): LeadRecord {
   const delta = createdMs(left) - createdMs(right);
   if (delta !== 0) return delta < 0 ? left : right;
-  return left.pageId < right.pageId ? left : right;
+  const leftKey = pageKey(left.pageId);
+  const rightKey = pageKey(right.pageId);
+  if (leftKey === rightKey) return left;
+  return leftKey < rightKey ? left : right;
+}
+
+/** Notion page ids are UUIDs. A dashed and an undashed form are one page. */
+function pageKey(pageId: string): string {
+  return pageId.replace(/-/g, "").toLowerCase();
+}
+
+function samePage(left: string, right: string): boolean {
+  return pageKey(left) === pageKey(right);
+}
+
+/**
+ * A subject query that has not indexed the page just written is not evidence
+ * of another signup. The row we created stays in the candidate set. A query
+ * that already contains that page, in either id spelling, is left as it is.
+ */
+function peersIncludingCreated(created: LeadRecord, peers: LeadRecord[]): LeadRecord[] {
+  if (peers.some((peer) => samePage(peer.pageId, created.pageId))) return peers;
+  return [created, ...peers];
+}
+
+function otherSubjectRows(self: LeadRecord, peers: LeadRecord[]): LeadRecord[] {
+  return peers.filter((peer) => !samePage(peer.pageId, self.pageId));
+}
+
+/**
+ * A subject that already opted out must not gain a verified row when that
+ * opt-out was missing from the lookup that decided to create. A query that
+ * contains only duplicate rows is the same kind of gap: filtering those rows
+ * out is not an empty index.
+ */
+async function closedSubject(
+  store: LeadStore,
+  self: LeadRecord,
+  peers: LeadRecord[],
+): Promise<boolean> {
+  const others = otherSubjectRows(self, peers);
+  const optedOut = others.some((peer) => peer.status === "unsubscribed");
+  const onlyDuplicates =
+    others.length > 0 &&
+    others.every((peer) => peer.duplicate) &&
+    !peers.some((peer) => samePage(peer.pageId, self.pageId));
+  if (!optedOut && !onlyDuplicates) return false;
+  await retireDuplicate(store, self.pageId);
+  return true;
+}
+
+/**
+ * A real second row should be marked Duplicate. A database that rejects that
+ * checkbox is a controlled finish: the new row stays unverified, and the
+ * callback must not become an HTTP 500. Any other write failure still throws.
+ */
+async function retireDuplicate(store: LeadStore, pageId: string): Promise<void> {
+  try {
+    await store.markDuplicate?.(pageId);
+  } catch (error) {
+    if (error instanceof SocialAuthSchemaError) return;
+    throw error;
+  }
 }
 
 export function signupLandingPath(locale: Locale, captured: string | undefined): string {
@@ -316,7 +378,7 @@ export async function completeSocialIdentity(
         phonePresent: false,
       });
     }
-    return settleCreated(created, identity.provider, identity.sub, authoritative, input, grant);
+    return await settleCreated(created, identity.provider, identity.sub, authoritative, input, grant);
   } catch (error) {
     if (error instanceof SocialAuthSchemaError) return "error";
     return "error";
@@ -385,13 +447,18 @@ async function settleCreated(
   const store = input.dependencies.store;
   const peers = await listSubject(store, provider, sub);
   if (!peers) {
+    // The query failed. Do not treat the missing list as an empty one, and
+    // do not verify. Marking the new row is best effort.
     await store.markDuplicate?.(created.pageId).catch(() => undefined);
     return "error";
   }
-  const live = peers.filter((peer) => !peer.duplicate && peer.status !== "unsubscribed");
-  const verifiedOther = live.find((peer) => peer.pageId !== created.pageId && alreadyVerified(peer));
+  if (await closedSubject(store, created, peers)) return "error";
+  const live = peersIncludingCreated(created, peers).filter(
+    (peer) => !peer.duplicate && peer.status !== "unsubscribed",
+  );
+  const verifiedOther = live.find((peer) => !samePage(peer.pageId, created.pageId) && alreadyVerified(peer));
   if (verifiedOther) {
-    await store.markDuplicate?.(created.pageId);
+    await retireDuplicate(store, created.pageId);
     await rememberContinuation(store, verifiedOther.pageId, provider, sub, grant);
     return "confirmed";
   }
@@ -399,8 +466,8 @@ async function settleCreated(
     (best, peer) => (best ? earlier(best, peer) : peer),
     undefined,
   );
-  if (!winner || winner.pageId !== created.pageId) {
-    await store.markDuplicate?.(created.pageId);
+  if (!winner || !samePage(winner.pageId, created.pageId)) {
+    await retireDuplicate(store, created.pageId);
     return "error";
   }
   if (!verify) {
@@ -420,10 +487,13 @@ async function settleCreated(
   }
   const again = await listSubject(store, provider, sub);
   if (!again) return "error";
-  const still = again.filter((peer) => !peer.duplicate && peer.status !== "unsubscribed");
-  const verifiedPeer = still.find((peer) => peer.pageId !== fresh.pageId && alreadyVerified(peer));
+  if (await closedSubject(store, fresh, again)) return "error";
+  const still = peersIncludingCreated(fresh, again).filter(
+    (peer) => !peer.duplicate && peer.status !== "unsubscribed",
+  );
+  const verifiedPeer = still.find((peer) => !samePage(peer.pageId, fresh.pageId) && alreadyVerified(peer));
   if (verifiedPeer) {
-    await store.markDuplicate?.(fresh.pageId);
+    await retireDuplicate(store, fresh.pageId);
     await rememberContinuation(store, verifiedPeer.pageId, provider, sub, grant);
     return "confirmed";
   }
@@ -431,8 +501,8 @@ async function settleCreated(
     (best, peer) => (best ? earlier(best, peer) : peer),
     undefined,
   );
-  if (!stillWinner || stillWinner.pageId !== fresh.pageId) {
-    await store.markDuplicate?.(fresh.pageId);
+  if (!stillWinner || !samePage(stillWinner.pageId, fresh.pageId)) {
+    await retireDuplicate(store, fresh.pageId);
     return "error";
   }
   const outcome = await completeSocialVerification(

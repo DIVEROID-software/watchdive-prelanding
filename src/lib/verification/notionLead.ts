@@ -304,6 +304,9 @@ function optOutCells(
 }
 
 export function toLeadRecord(page: Record<string, unknown>): LeadRecord | undefined {
+  // Direct page reads can still return archived pages. Treat them as missing
+  // so an old callback or verification link cannot revive a removed signup.
+  if (page.archived === true || page.in_trash === true) return undefined;
   const pageId = typeof page.id === "string" ? page.id : "";
   if (!pageId) return undefined;
   const properties = (page.properties ?? {}) as Record<string, unknown>;

@@ -151,7 +151,7 @@ test("checkout stays card-free and the return form is the only email field", () 
   assert.match(page, /shouldOfferReturnForm/);
   assert.match(page, /<ReturnLinkForm/);
   assert.equal(form.match(/type="email"/g)?.length, 1);
-  assert.match(form, /name="company"/);
+  assert.match(form, /name="wd_hp"/);
   assert.doesNotMatch(form, /type=["'](?:tel|password|number)["']|sms|cardNumber|markConversion|metaPixel/i);
   assert.doesNotMatch(route, /sms|PhoneOptIn|metaPixel|conversionExperiment/i);
   assert.equal(page.match(/requestReservationCheckout/g)?.length, 2);

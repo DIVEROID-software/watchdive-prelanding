@@ -84,7 +84,7 @@ html:root video { border-radius: 0 !important; }
 /* Controls: thick frames, hard shadows, instant press. */
 html:root input[type="email"],
 html:root input[type="tel"],
-html:root input[type="text"]:not([name="company"]) {
+html:root input[type="text"]:not([name="wd_hp"]) {
   border: var(--wd-b) solid #201748 !important;
   background: #ffffff !important;
   box-shadow: 4px 4px 0 #eef9ff !important;
