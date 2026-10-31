@@ -778,43 +778,39 @@ function welcomeLocale(record: LeadRecord): Locale {
   return DEFAULT_LOCALE;
 }
 
+function socialRowVerified(record: LeadRecord): boolean {
+  return record.emailVerified || record.status === "verified" || Boolean(record.verifiedAt);
+}
+
 /**
- * First verification of a social row. An already-verified, duplicate, or
- * unsubscribed row is left untouched: `markVerified` always rewrites Verified at.
+ * First verification of a social row. `markVerified` always rewrites Verified at,
+ * so this returns before that write unless the reread is still an unverified
+ * lead. `already` means this call observed a verified row. A missing reread, a
+ * duplicate, an unsubscribe, or a lead id that cannot confirm is `unavailable`:
+ * the caller must not present the signup as confirmed.
  */
 export async function completeSocialVerification(
   record: LeadRecord,
   dependencies: ServiceDependencies,
   context: ConversionContext,
   now: Date,
-): Promise<"verified" | "already"> {
-  if (
-    record.duplicate ||
-    record.status === "unsubscribed" ||
-    record.emailVerified ||
-    record.status === "verified" ||
-    record.verifiedAt
-  ) {
-    if (record.emailVerified || record.status === "verified" || record.verifiedAt) {
-      await recordStageVerified(record.email, now.toISOString(), "oauth");
-    }
+): Promise<"verified" | "already" | "unavailable"> {
+  if (record.duplicate || record.status === "unsubscribed") return "unavailable";
+  if (socialRowVerified(record)) {
+    await recordStageVerified(record.email, now.toISOString(), "oauth");
     return "already";
   }
-  if (!isLeadId(record.leadId)) return "already";
+  if (!isLeadId(record.leadId)) {
+    return "unavailable";
+  }
   const fresh = await dependencies.store.reread(record.pageId).catch(() => undefined);
-  if (
-    !fresh ||
-    fresh.duplicate ||
-    fresh.status === "unsubscribed" ||
-    fresh.emailVerified ||
-    fresh.status === "verified" ||
-    fresh.verifiedAt ||
-    !isLeadId(fresh.leadId)
-  ) {
-    if (fresh?.emailVerified || fresh?.status === "verified" || fresh?.verifiedAt) {
-      await recordStageVerified(fresh.email, now.toISOString(), "oauth");
-    }
+  if (!fresh || fresh.duplicate || fresh.status === "unsubscribed") return "unavailable";
+  if (socialRowVerified(fresh)) {
+    await recordStageVerified(fresh.email, now.toISOString(), "oauth");
     return "already";
+  }
+  if (!isLeadId(fresh.leadId)) {
+    return "unavailable";
   }
   const secret = requireSecret(dependencies.env ?? process.env);
   const metaEventId = deterministicMetaEventId(fresh.leadId, secret);

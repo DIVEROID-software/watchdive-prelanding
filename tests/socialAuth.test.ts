@@ -584,6 +584,65 @@ test("a relay verifies only when the ready flag is exactly true", async () => {
   assert.ok(row.verifiedAt);
 });
 
+for (const failure of ["missing", "timeout", "unsubscribed", "duplicate"] as const) {
+  test(`Apple callback does not confirm a pending row when final verification reread is ${failure}`, async () => {
+    resetSocialStateForTests();
+    const store = new FakeLeadStore();
+    const originalReread = store.reread.bind(store);
+    let rereads = 0;
+    store.reread = async (pageId: string) => {
+      rereads += 1;
+      // The created row is present for settlement, then the final pre-write
+      // verification read fails. No verified state has ever been observed.
+      if (rereads === 2) {
+        if (failure === "timeout") throw new Error("simulated Notion timeout");
+        if (failure === "unsubscribed" || failure === "duplicate") {
+          const row = await originalReread(pageId);
+          assert.ok(row);
+          const changed = {
+            ...row,
+            emailVerified: true,
+            verifiedAt: NOW.toISOString(),
+            status: failure === "unsubscribed" ? "unsubscribed" as const : "verified" as const,
+            duplicate: failure === "duplicate",
+          };
+          store.rows.set(pageId, changed);
+          return changed;
+        }
+        return undefined;
+      }
+      return originalReread(pageId);
+    };
+    const harness = deps(store, { env: env({ WATCHDIVE_APPLE_RELAY_MAIL_READY: "true" }) });
+    const started = await begin(harness, { provider: "apple", source: "hero", locale: "zh-TW" });
+    const idToken = await signToken(appleClaims(started.bound.nonce, {
+      email: "pending@privaterelay.appleid.com",
+      is_private_email: true,
+      sub: `relay-reread-${failure}`,
+    }));
+    const response = await handleAppleCallback(new Request("https://watchdive.diveroid.com/api/auth/apple/callback", {
+      method: "POST",
+      headers: { cookie: started.cookie, "user-agent": UA, "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ code: `relay-${failure}`, state: started.bound.state }).toString(),
+    }), { ...harness, fetchImpl: tokenFetch(idToken).fetchImpl });
+    assert.ok(rereads >= 2);
+    const destination = new URL(response.headers.get("location")!);
+    assert.equal(destination.searchParams.get("auth"), "error");
+    const row = [...store.rows.values()][0];
+    if (failure === "missing" || failure === "timeout") {
+      assert.equal(row.status, "pending");
+      assert.equal(row.emailVerified, false);
+      assert.equal(row.verifiedAt, undefined);
+    } else {
+      assert.equal(row.status, failure === "unsubscribed" ? "unsubscribed" : "verified");
+      assert.equal(row.duplicate, failure === "duplicate");
+    }
+    assert.equal(store.markVerifiedCalls, 0);
+    assert.equal(harness.verified, 0);
+    assert.equal(harness.mailer.sent.length, 0);
+  });
+}
+
 test("bare icloud.com is not a relay and a later login without email writes nothing", async () => {
   resetSocialStateForTests();
   const store = new FakeLeadStore();
