@@ -149,7 +149,7 @@ export type VerificationMail = {
    */
   reminder?: boolean;
   /** Explicit user-authorized one-off; signing secret remains server-side. */
-  manualCampaign?: "wd-manual-verify-20261019" | "wd-verification-recovery-20261031";
+  manualCampaign?: "wd-manual-verify-20261019" | "wd-verification-recovery-20261031" | "wd-honeypot-recovery-20261031";
   /**
    * Native Instant Form confirmation only. When this is
    * `watchdive-instant-form-` plus 64 hex digits, Resend uses it instead of
@@ -1365,7 +1365,7 @@ export function createResendMailer(
       // new lead id, so a resend is a genuinely new key. The reminder reuses
       // the attempt's lead id, so it gets its own namespace — one key per
       // attempt, which also makes a duplicated reminder collapse at Resend.
-      const idempotencyKey = manualCampaign === "wd-manual-verify-20261019" || manualCampaign === "wd-verification-recovery-20261031"
+      const idempotencyKey = manualCampaign === "wd-manual-verify-20261019" || manualCampaign === "wd-verification-recovery-20261031" || manualCampaign === "wd-honeypot-recovery-20261031"
         ? `${manualCampaign}-${leadId}`
         : reminder
         ? `watchdive-verification-reminder-${leadId}`
