@@ -460,5 +460,5 @@ test("no probe writes no country, and a withheld experiment still stores country
   );
   assert.equal(suspect.createPendingInputs[0].signupCountry?.country, "JP");
   assert.equal(suspect.createPendingInputs[0].source, "offer");
-  assert.equal(suspectMailer.sent.length, 0);
+  assert.equal(suspectMailer.sent.length, 1);
 });

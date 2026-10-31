@@ -529,13 +529,46 @@ test("a superseded attempt is not mailed and does not stamp the new attempt", as
 });
 
 test("abuse flags suppress the queued send and a shared-network flag does not", async () => {
+  const trap = new FakeLeadStore();
+  const honeypot = await trap.createPending({
+    email: EMAIL,
+    canonical: CANONICAL,
+    source: "hero",
+    refCode: "abcd1234",
+    flags: ["honeypot"],
+    suspect: true,
+    signedUpAt: clock.toISOString(),
+    leadId: LEAD_ID,
+    expiresAt: new Date(clock.getTime() + VERIFICATION_TTL_MS).toISOString(),
+  });
+  const trapMailer = new FakeMailer();
+  const trapOutcome = await deliverQueuedVerificationMail({
+    store: trap,
+    mailer: trapMailer,
+    pageId: honeypot.pageId,
+    leadId: LEAD_ID,
+    mail: {
+      to: EMAIL,
+      token: createVerificationToken(LEAD_ID, clock.getTime() + VERIFICATION_TTL_MS, false, TEST_SECRET, "en"),
+      leadId: LEAD_ID,
+      publicOrigin: TEST_ORIGIN,
+      locale: "en",
+    },
+    now: () => clock,
+    sleep: async () => {},
+    log: () => {},
+  });
+  assert.equal(trapOutcome, "accepted");
+  assert.equal(trapMailer.sent.length, 1);
+  assert.equal(trap.markSentCalls, 1);
+
   const store = new FakeLeadStore();
   const abusive = await store.createPending({
     email: EMAIL,
     canonical: CANONICAL,
     source: "hero",
     refCode: "abcd1234",
-    flags: ["honeypot"],
+    flags: ["disposable"],
     suspect: true,
     signedUpAt: clock.toISOString(),
     leadId: LEAD_ID,

@@ -168,11 +168,12 @@ test("a form submission keeps the reference on the row and reports nothing", asy
   assert.equal(store.createPendingInputs.length, 1);
   assert.equal(reported.length, 0);
 
-  // A suppressed submit keeps a flagged reference and is never mailed or reported.
+  // A honeypot submit keeps a flagged reference. The confirmation can be mailed.
+  // The press report still waits for a real confirmation, which this flag blocks.
   store = new FakeLeadStore();
   mailer = new FakeMailer();
   await requestVerificationService(submit({ flags: ["honeypot"], suspect: true }), deps());
-  assert.equal(mailer.sent.length, 0);
+  assert.equal(mailer.sent.length, 1);
   assert.equal(parsePressOutbox((store.createPendingInputs[0] as CreatePendingInput).pressOutbox)!.flagged, true);
   assert.equal(reported.length, 0);
 

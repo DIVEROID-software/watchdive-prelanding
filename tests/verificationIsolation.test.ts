@@ -379,7 +379,7 @@ test("the Claim form still submits through joinWaitlist with its honeypot", () =
   const form = read("src/routes/index.tsx");
   assert.ok(form.includes("const res = await joinWaitlist({"));
   assert.ok(form.includes("honeypot: hp,"));
-  assert.ok(form.includes('name="company"'));
+  assert.ok(form.includes('name="wd_hp"'));
   assert.ok(form.includes("measurementConsent: measurementPermitted(),"));
   assert.ok(form.includes("locale,"), "the verification email can lose the selected locale");
 });

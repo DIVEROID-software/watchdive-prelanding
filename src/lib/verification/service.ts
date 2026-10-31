@@ -21,6 +21,7 @@ import type {
 } from "./contracts.ts";
 import {
   conversionBlocked,
+  verificationSendBlocked,
   FLAG_MEASUREMENT_WITHDRAWN,
   MEASUREMENT_CONSENT_GRANTED,
   MEASUREMENT_CONSENT_LEAD_PENDING,
@@ -473,17 +474,19 @@ export async function requestVerificationService(
   const ownCompatibilityAttempt = Boolean(compatibilityProof && compatibilityProof.leadId === existing?.leadId);
 
 
-  // A honeypot, a disposable domain or a headless client is somebody using the
-  // form to mail a third party. The row is still written for review, but no
-  // message is produced.
-  const abusive = conversionBlocked(input.flags);
-  const suppressed = abusive || input.networkSendBlocked;
+  // Disposable and headless submits still write a review row and send no
+  // message. A honeypot alone does not: the hidden field was named like an
+  // organization input, so a real browser could fill it. The flag stays, and
+  // it still disqualifies measurement, welcome, and referral credit.
+  const hardBlocked = verificationSendBlocked(input.flags) || input.networkSendBlocked;
+  const trapReplay = input.flags.includes("honeypot") && !hardBlocked;
+  const quiet = hardBlocked || trapReplay;
 
   // Measurement allowed on this submit for an address that already has a row
   // (in any of the paths below, decoys included): one grant, and at most one
   // submit Lead for it — under the browser's id when this request is the one
   // that moved the row from withheld. The response floor covers the time.
-  if (existing && !suppressed && consentRequested) {
+  if (existing && !quiet && consentRequested) {
     await grantFromSubmit(existing, input, dependencies, secret);
   }
 
@@ -491,7 +494,7 @@ export async function requestVerificationService(
   // inbox ownership. Keep the decoy handle and return no checkout credential.
   if (
     existing &&
-    !suppressed &&
+    !quiet &&
     (existing.status === "verified" || existing.emailVerified) &&
     existing.status !== "unsubscribed"
   ) {
@@ -519,14 +522,20 @@ export async function requestVerificationService(
 
   const leadId = mintLeadId();
   const expiresAt = new Date(now.getTime() + VERIFICATION_TTL_MS).toISOString();
-  const handle = signPollHandle(leadId, now.getTime(), consentRequested, secret, input.email);
+  // A honeypot flag still blocks the conversion, so the mailed link does not
+  // carry a measurement grant. A clean submit is unchanged.
+  const measurementOpen =
+    consentRequested && !conversionBlocked(input.flags) && !input.networkSendBlocked;
+  const handle = signPollHandle(leadId, now.getTime(), measurementOpen, secret, input.email);
 
   // A suppressed submit must not touch a row that already exists. Arming a new
   // attempt would replace `Lead ID` and kill a live confirmation link — which
   // would hand anyone who can trip a honeypot a way to cancel somebody else's
-  // pending signup by replaying their address. Only a brand-new address gets a
-  // row here, and it gets one purely so the attempt is reviewable.
-  if (suppressed) {
+  // pending signup by replaying their address. A honeypot on this request
+  // therefore never rewrites an existing row. It does not scan or mail rows
+  // that are already stored. Only a brand-new address is created here, and a
+  // hard block gets that row purely so the attempt is reviewable.
+  if (hardBlocked || (trapReplay && existing)) {
     if (!existing) {
       await store.createPending({
         email: input.email,
@@ -587,9 +596,9 @@ export async function requestVerificationService(
       signedUpAt: now.toISOString(),
       leadId,
       expiresAt,
-      ...(consentRequested && input.metaFbc ? { metaFbc: input.metaFbc } : {}),
-      ...leadExperiment({ ...input, measurementConsent: consentRequested }),
-      measurementState: consentRequested
+      ...(measurementOpen && input.metaFbc ? { metaFbc: input.metaFbc } : {}),
+      ...leadExperiment({ ...input, measurementConsent: measurementOpen }),
+      measurementState: measurementOpen
         ? MEASUREMENT_CONSENT_GRANTED
         : MEASUREMENT_CONSENT_WITHHELD,
       ...newRowIdentity(input),
@@ -601,12 +610,13 @@ export async function requestVerificationService(
     await recordStageSignup(
       input,
       now.toISOString(),
-      consentRequested ? MEASUREMENT_CONSENT_GRANTED : MEASUREMENT_CONSENT_WITHHELD,
+      measurementOpen ? MEASUREMENT_CONSENT_GRANTED : MEASUREMENT_CONSENT_WITHHELD,
       false,
     );
     // Durable Lead for this new row only. The public response stays generic.
     // The historical browser-id Lead stopped in this same edit.
-    if (consentRequested) {
+    // A honeypot flag keeps this closed: the confirmation can still be mailed.
+    if (measurementOpen) {
       await emitDurableSignupLead(
         record.pageId,
         submitContext(input),
@@ -620,7 +630,7 @@ export async function requestVerificationService(
   const mailLocale = compatibility && isLocale(existing?.signupLocale) ? existing.signupLocale : (input.locale ?? DEFAULT_LOCALE);
   if (dependencies.captureGoogleContext) {
     try {
-      const fresh = consentRequested ? await dependencies.store.reread(record.pageId) : undefined;
+      const fresh = measurementOpen ? await dependencies.store.reread(record.pageId) : undefined;
       await dependencies.captureGoogleContext(
         record.email,
         input.googleClientId,
@@ -634,7 +644,7 @@ export async function requestVerificationService(
   const token = createVerificationToken(
     leadId,
     now.getTime() + VERIFICATION_TTL_MS,
-    consentRequested,
+    measurementOpen,
     secret,
     mailLocale,
   );

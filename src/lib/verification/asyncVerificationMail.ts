@@ -8,7 +8,7 @@
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
 import {
-  conversionBlocked,
+  verificationSendBlocked,
   type LeadRecord,
   type LeadStore,
 } from "./contracts.ts";
@@ -79,10 +79,11 @@ function blockSend(
   leadId: string,
 ): "superseded" | "suppressed" | "not_pending" | undefined {
   if (!row || row.leadId !== leadId) return "superseded";
-  // Same gate as requestVerificationService: honeypot, disposable, and
-  // headless flags stop the message. `suspect` is also set for ip-repeat,
-  // and that submit still mails. A network block never reaches this function.
-  if (conversionBlocked(row.flags)) return "suppressed";
+  // Disposable and headless stop the message. A honeypot alone does not:
+  // browsers autofill a hidden organization field, and that flag stays a
+  // review mark. `suspect` is also set for ip-repeat, and that submit still
+  // mails. A network block never reaches this function.
+  if (verificationSendBlocked(row.flags)) return "suppressed";
   if (row.status !== "pending" || row.emailVerified || row.verifiedAt) return "not_pending";
   return undefined;
 }

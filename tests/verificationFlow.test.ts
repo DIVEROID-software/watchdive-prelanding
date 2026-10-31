@@ -612,7 +612,8 @@ test("a tampered or aged handle is refused", async () => {
 // ---------------------------------------------------------------------------
 
 test("an abusive claim is recorded for review but mails nobody", async () => {
-  for (const flag of ["honeypot", "disposable", "headless"]) {
+  // A honeypot alone is mailed. That regression lives in honeypotAutofill.test.ts.
+  for (const flag of ["disposable", "headless"]) {
     store = new FakeLeadStore();
     mailer = new FakeMailer();
     nextLeadId = leadIdFactory();
@@ -688,7 +689,7 @@ test("a resend cannot rewrite the campaign of a lead already attributed", async 
 
 test("a suppressed submit still records where it came from", async () => {
   await requestVerificationService(
-    submit({ flags: ["honeypot"], suspect: true, attribution: META_TOUCH }),
+    submit({ flags: ["disposable"], suspect: true, attribution: META_TOUCH }),
     deps(),
   );
 

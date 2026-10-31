@@ -1312,6 +1312,222 @@ for (const provider of ["google", "apple"] as const) {
   });
 }
 
+async function appleCallback(
+  harness: ReturnType<typeof deps>,
+  cookie: string,
+  state: string,
+  idToken: string,
+) {
+  return handleAppleCallback(
+    new Request("https://watchdive.diveroid.com/api/auth/apple/callback", {
+      method: "POST",
+      headers: { cookie, "user-agent": UA, "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ code: "apple-settle-code", state }).toString(),
+    }),
+    { ...harness, fetchImpl: tokenFetch(idToken).fetchImpl },
+  );
+}
+
+test("an empty Apple subject query still verifies the row just written", async () => {
+  resetSocialStateForTests();
+  const store = new FakeLeadStore();
+  let listed = 0;
+  store.listByProviderSubject = async () => {
+    listed += 1;
+    return [];
+  };
+  let marked = 0;
+  store.markDuplicate = async () => {
+    marked += 1;
+    throw new SocialAuthSchemaError();
+  };
+  const harness = deps(store, { env: env({ WATCHDIVE_APPLE_RELAY_MAIL_READY: "true" }) });
+  const started = await begin(harness, { provider: "apple", source: "hero", locale: "ko" });
+  const idToken = await signToken(
+    appleClaims(started.bound.nonce, {
+      email: "hide@privaterelay.appleid.com",
+      is_private_email: true,
+      sub: "apple.empty.query",
+    }),
+  );
+  const response = await appleCallback(harness, started.cookie, started.bound.state, idToken);
+  assert.equal(response.status, 303);
+  assert.equal(new URL(response.headers.get("location") ?? "").searchParams.get("auth"), "confirmed");
+  assert.ok(listed >= 1);
+  assert.equal(marked, 0);
+  const row = [...store.rows.values()][0];
+  assert.equal(row?.emailVerified, true);
+  assert.equal(row?.duplicate, undefined);
+  assert.equal(row?.status, "verified");
+  assert.equal(store.markVerifiedCalls, 1);
+});
+
+test("a dash-only Apple page id difference is the same row", async () => {
+  resetSocialStateForTests();
+  const store = new FakeLeadStore();
+  const original = store.listByProviderSubject.bind(store);
+  store.listByProviderSubject = async (provider, sub) => {
+    const rows = await original(provider, sub);
+    return rows.map((row) => ({ ...row, pageId: row.pageId.replace(/-/g, "") }));
+  };
+  const harness = deps(store);
+  const started = await begin(harness, { provider: "apple", source: "hero", locale: "en" });
+  const idToken = await signToken(appleClaims(started.bound.nonce, { sub: "apple.dash.id" }));
+  const response = await appleCallback(harness, started.cookie, started.bound.state, idToken);
+  assert.equal(response.status, 303);
+  assert.equal(new URL(response.headers.get("location") ?? "").searchParams.get("auth"), "confirmed");
+  const row = [...store.rows.values()][0];
+  assert.equal(row?.emailVerified, true);
+  assert.equal(row?.duplicate, undefined);
+  assert.equal(store.markVerifiedCalls, 1);
+});
+
+test("a real earlier Apple row still blocks the new row when Duplicate cannot be written", async () => {
+  resetSocialStateForTests();
+  const store = new FakeLeadStore();
+  const older = store.seed({
+    email: "older@icloud.com",
+    canonical: "older@icloud.com",
+    appleSubject: "apple.collision",
+    status: "pending",
+    emailVerified: false,
+    signedUpAt: "2026-10-01T00:00:00.000Z",
+    leadId: "aaaaaaaa-bbbb-4ccc-8ddd-000000000099",
+    pageId: "older-apple-page",
+  });
+  let created = false;
+  const originalCreate = store.createPending.bind(store);
+  store.createPending = async (input) => {
+    const row = await originalCreate(input);
+    created = true;
+    return row;
+  };
+  store.listByProviderSubject = async () => (created ? [older] : []);
+  let marked = 0;
+  store.markDuplicate = async () => {
+    marked += 1;
+    throw new SocialAuthSchemaError();
+  };
+  const harness = deps(store);
+  const started = await begin(harness, { provider: "apple", source: "offer", locale: "en" });
+  const idToken = await signToken(appleClaims(started.bound.nonce, { sub: "apple.collision", email: "new@icloud.com" }));
+  const response = await appleCallback(harness, started.cookie, started.bound.state, idToken);
+  assert.equal(response.status, 303);
+  assert.equal(new URL(response.headers.get("location") ?? "").searchParams.get("auth"), "error");
+  assert.equal(marked, 1);
+  assert.equal(store.markVerifiedCalls, 0);
+  const createdRow = [...store.rows.values()].find((row) => row.pageId !== older.pageId);
+  assert.ok(createdRow);
+  assert.equal(createdRow?.emailVerified, false);
+  assert.equal(createdRow?.duplicate, undefined);
+  assert.equal(older.emailVerified, false);
+});
+
+test("an unsubscribed subject peer that appears after create is not verified", async () => {
+  resetSocialStateForTests();
+  const store = new FakeLeadStore();
+  const optedOut = store.seed({
+    email: "old@icloud.com",
+    canonical: "old@icloud.com",
+    status: "unsubscribed",
+    appleSubject: "apple.late.unsub",
+    signedUpAt: "2026-10-01T00:00:00.000Z",
+    leadId: "aaaaaaaa-bbbb-4ccc-8ddd-000000000071",
+    pageId: "unsub-peer",
+  });
+  let reads = 0;
+  store.listByProviderSubject = async () => {
+    reads += 1;
+    return reads === 1 ? [] : [optedOut];
+  };
+  const harness = deps(store);
+  const started = await begin(harness, { provider: "apple", source: "hero", locale: "en" });
+  const idToken = await signToken(appleClaims(started.bound.nonce, { sub: "apple.late.unsub", email: "new@icloud.com" }));
+  const response = await appleCallback(harness, started.cookie, started.bound.state, idToken);
+  assert.equal(response.status, 303);
+  assert.equal(new URL(response.headers.get("location") ?? "").searchParams.get("auth"), "error");
+  assert.equal(store.markVerifiedCalls, 0);
+  assert.equal(optedOut.status, "unsubscribed");
+  assert.equal(optedOut.emailVerified, false);
+  const createdRow = [...store.rows.values()].find((row) => row.pageId !== optedOut.pageId);
+  assert.ok(createdRow);
+  assert.equal(createdRow?.emailVerified, false);
+  assert.equal(createdRow?.duplicate, true);
+});
+
+test("an unsubscribed subject peer on the second read blocks verification", async () => {
+  resetSocialStateForTests();
+  const store = new FakeLeadStore();
+  const optedOut = store.seed({
+    email: "old@icloud.com",
+    canonical: "old@icloud.com",
+    status: "unsubscribed",
+    appleSubject: "apple.late.unsub.again",
+    signedUpAt: "2026-10-01T00:00:00.000Z",
+    leadId: "aaaaaaaa-bbbb-4ccc-8ddd-000000000072",
+    pageId: "unsub-peer-again",
+  });
+  let reads = 0;
+  store.listByProviderSubject = async () => {
+    reads += 1;
+    return reads < 3 ? [] : [optedOut];
+  };
+  const harness = deps(store);
+  const started = await begin(harness, { provider: "apple", source: "hero", locale: "en" });
+  const idToken = await signToken(appleClaims(started.bound.nonce, { sub: "apple.late.unsub.again", email: "later@icloud.com" }));
+  const response = await appleCallback(harness, started.cookie, started.bound.state, idToken);
+  assert.equal(response.status, 303);
+  assert.equal(new URL(response.headers.get("location") ?? "").searchParams.get("auth"), "error");
+  assert.equal(store.markVerifiedCalls, 0);
+  const createdRow = [...store.rows.values()].find((row) => row.pageId !== optedOut.pageId);
+  assert.ok(createdRow);
+  assert.equal(createdRow?.emailVerified, false);
+  assert.equal(createdRow?.duplicate, true);
+  assert.equal(optedOut.emailVerified, false);
+});
+
+test("a tied Apple page id keeps the same winner when the dash form changes", async () => {
+  resetSocialStateForTests();
+  const store = new FakeLeadStore();
+  const stamp = NOW.toISOString();
+  const other = store.seed({
+    email: "other@icloud.com",
+    canonical: "other@icloud.com",
+    status: "pending",
+    emailVerified: false,
+    appleSubject: "apple.tie.dash",
+    signedUpAt: stamp,
+    leadId: "aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab",
+    pageId: "a-b",
+  });
+  const originalCreate = store.createPending.bind(store);
+  store.createPending = async (input) => {
+    const row = await originalCreate(input);
+    store.rows.delete(row.pageId);
+    row.pageId = "a1";
+    store.rows.set(row.pageId, row);
+    store.byCanonical.set(row.canonical, row.pageId);
+    return row;
+  };
+  let reads = 0;
+  store.listByProviderSubject = async () => {
+    reads += 1;
+    const self = [...store.rows.values()].find((row) => row.pageId === "a1");
+    if (!self) return [];
+    if (reads === 2) return [other, self];
+    return [{ ...other, pageId: other.pageId.replace(/-/g, "") }, self];
+  };
+  const harness = deps(store);
+  const started = await begin(harness, { provider: "apple", source: "hero", locale: "en" });
+  const idToken = await signToken(appleClaims(started.bound.nonce, { sub: "apple.tie.dash", email: "tie@icloud.com" }));
+  const response = await appleCallback(harness, started.cookie, started.bound.state, idToken);
+  assert.equal(response.status, 303);
+  assert.equal(new URL(response.headers.get("location") ?? "").searchParams.get("auth"), "confirmed");
+  assert.equal(store.markVerifiedCalls, 1);
+  assert.equal(store.rows.get("a1")?.emailVerified, true);
+  assert.equal(other.emailVerified, false);
+});
+
 test("malformed audience context is rejected at start and signed-state read", async () => {
   const harness = deps(new FakeLeadStore());
   const started = await begin(harness, { provider: "google", source: "hero", locale: "en" });
