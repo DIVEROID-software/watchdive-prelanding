@@ -172,6 +172,35 @@ export function resolveGeoCountry(): Promise<string | undefined> {
 }
 
 /**
+ * Same lookup as `resolveGeoCountry`, except a hung `/api/geo` resolves to the
+ * cookie value (often `undefined`) when `timeoutMs` elapses. An unknown
+ * country already fails measurement closed, so confirmation must not wait on
+ * the lookup. The in-flight request stays cached for a later caller.
+ */
+export function resolveGeoCountryWithin(timeoutMs: number): Promise<string | undefined> {
+  if (geoResolved() || typeof fetch === "undefined") return resolveGeoCountry();
+  const pending = resolveGeoCountry();
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(readGeoCountry()), timeoutMs);
+    pending.then(
+      (country) => {
+        clearTimeout(timer);
+        resolve(country);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(undefined);
+      },
+    );
+  });
+}
+
+/** Drops a cached lookup. Tests use this so one hung fetch cannot leak into the next case. */
+export function resetGeoLookupForTests(): void {
+  geoRequest = undefined;
+}
+
+/**
  * The same rule as `measurementAllowedFor`, as a JavaScript expression for the
  * inline head bootstraps (which run before the bundle and cannot import).
  */

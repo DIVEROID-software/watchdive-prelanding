@@ -24,7 +24,7 @@ import { trackRetargetingBrowser } from "@/lib/retargeting/browser";
 import { parseBrowserRetargetingEvent } from "@/lib/retargeting/receipt";
 import { withdrawEverySignup } from "@/lib/signupHandleWithdrawal";
 import { rememberSignupHandle } from "@/lib/signupHandles";
-import { resolveGeoCountry } from "@/lib/consentRegion";
+import { resolveGeoCountryWithin } from "@/lib/consentRegion";
 import {
   getMetaCookies,
   getMetaMeasurementConsent,
@@ -34,7 +34,7 @@ import {
   trackMetaPhoneLead,
 } from "@/lib/metaPixel";
 import type { BrowserLead } from "@/lib/verification/contracts";
-import { isVerificationTokenShape } from "@/lib/verification/tokenShape";
+import { verificationTokenFromFragment } from "@/lib/verification/tokenShape";
 import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
 import { homePath, privacyPath, referralPath, termsPath } from "@/lib/i18n/locale";
 import { useCurrentLocale, useFrozenLandingMessages, useLandingPriceClaim } from "@/lib/i18n/use-current-locale";
@@ -83,19 +83,12 @@ function isUserPresent(): boolean {
 }
 
 // The mail puts the bare token in the fragment: a literal `=` is eaten by the
-// quoted-printable transfer encoding mail bodies use. The legacy `token=` form
-// is still accepted so any link already in an inbox keeps working.
+// quoted-printable transfer encoding mail bodies use. Recovery of a wrapped
+// fragment lives in the shared parser. It still only checks shape.
+const CONFIRM_GEO_WAIT_MS = 1_500;
+
 function tokenFromFragment(hash: string): string | undefined {
-  const encoded = hash.replace(/^#/, "");
-  // A hand-mangled fragment can be invalid percent-encoding, which throws.
-  let raw: string;
-  try {
-    raw = decodeURIComponent(encoded);
-  } catch {
-    raw = encoded;
-  }
-  const token = raw.startsWith("token=") ? raw.slice("token=".length) : raw;
-  return isVerificationTokenShape(token) ? token : undefined;
+  return verificationTokenFromFragment(hash);
 }
 
 function Card({
@@ -230,7 +223,9 @@ export function VerifyPage() {
     try {
       // This browser's Meta cookies, only when it already allows measurement,
       // so the server's confirmation names the click that brought them here.
-      await resolveGeoCountry();
+      // A hung country lookup must not keep the page on "confirming", where
+      // Try again is hidden. Unknown country already fails measurement closed.
+      await resolveGeoCountryWithin(CONFIRM_GEO_WAIT_MS);
       // Synchronous, and only after the fragment is gone. Does not wait for
       // the tag or the cookie, so confirmation is not held for analytics.
       if (measurementPermitted()) attachVerifiedGoogleClient();
