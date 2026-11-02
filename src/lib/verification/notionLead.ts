@@ -72,6 +72,7 @@ import {
   FIELD_VERIFIED_AT,
   FLAG_MEASUREMENT_WITHDRAWN,
   MEASUREMENT_CONSENT_WITHDRAWN,
+  SIGNUP_COUNTRY_SOURCE_NATIVE_FORM,
   SIGNUP_COUNTRY_SOURCE_UNKNOWN,
   SIGNUP_COUNTRY_SOURCE_VERCEL,
   STATUS_PENDING,
@@ -487,7 +488,9 @@ function readSignupCountryFields(
   const country = persistableSignupCountry(readText(properties[FIELD_SIGNUP_COUNTRY]));
   const sourceText = readText(properties[FIELD_SIGNUP_COUNTRY_SOURCE]);
   const source =
-    sourceText === SIGNUP_COUNTRY_SOURCE_VERCEL || sourceText === SIGNUP_COUNTRY_SOURCE_UNKNOWN
+    sourceText === SIGNUP_COUNTRY_SOURCE_VERCEL ||
+    sourceText === SIGNUP_COUNTRY_SOURCE_UNKNOWN ||
+    sourceText === SIGNUP_COUNTRY_SOURCE_NATIVE_FORM
       ? sourceText
       : undefined;
   const observed = readDate(properties[FIELD_SIGNUP_COUNTRY_OBSERVED]);
@@ -861,18 +864,29 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
     async startAttempt(pageId: string, input: StartAttemptInput) {
       // Replacing `Lead ID` is the revocation: the previous token names an
       // attempt id that no row carries any more, so its link is dead.
-      await request("PATCH", `pages/${pageId}`, {
-        properties: {
-          [FIELD_LEAD_ID]: textProp(input.leadId),
-          [FIELD_VERIFICATION_EXPIRES]: { date: { start: input.expiresAt } },
-          [FIELD_VERIFICATION_SENDS]: { number: input.sends },
-          [FIELD_VERIFICATION_STATUS]: { select: { name: STATUS_PENDING } },
-          // The previous attempt's send time belongs to a link that no longer
-          // exists. Leaving it would make the cooldown for this attempt run
-          // from a message about a different one.
-          [FIELD_VERIFICATION_SENT]: { date: null },
-        },
-      });
+      const core = {
+        [FIELD_LEAD_ID]: textProp(input.leadId),
+        [FIELD_VERIFICATION_EXPIRES]: { date: { start: input.expiresAt } },
+        [FIELD_VERIFICATION_SENDS]: { number: input.sends },
+        [FIELD_VERIFICATION_STATUS]: { select: { name: STATUS_PENDING } },
+        // The previous attempt's send time belongs to a link that no longer
+        // exists. Leaving it would make the cooldown for this attempt run
+        // from a message about a different one.
+        [FIELD_VERIFICATION_SENT]: { date: null },
+      };
+      const country = input.signupCountry ? signupCountryProperties(input.signupCountry) : undefined;
+      try {
+        await request("PATCH", `pages/${pageId}`, {
+          properties: { ...core, ...(country ?? {}) },
+        });
+      } catch (error) {
+        // A database that still lacks the country columns must not block the
+        // new attempt. The link rotation above is the required write.
+        if (!country || !(error instanceof NotionRequestError)) throw error;
+        const rejected = new Set(error.rejectedOptionalColumns);
+        if (![...SIGNUP_COUNTRY_FIELDS].some((name) => rejected.has(name))) throw error;
+        await request("PATCH", `pages/${pageId}`, { properties: core });
+      }
     },
 
     async markSent(pageId: string, input: MarkSentInput) {

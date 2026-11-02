@@ -433,6 +433,11 @@ export type StartAttemptInput = {
   leadId: string;
   expiresAt: string;
   sends: number;
+  /**
+   * Filled only when the row has no signup country yet. A present country is
+   * not replaced, and this is never inferred from locale.
+   */
+  signupCountry?: SignupCountryObservation;
 };
 
 export type MarkSentInput = {

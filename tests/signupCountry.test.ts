@@ -500,3 +500,148 @@ test("no probe writes no country, and a withheld experiment still stores country
   assert.equal(suspect.createPendingInputs[0].source, "offer");
   assert.equal(suspectMailer.sent.length, 1);
 });
+
+test("a resend fills a blank country and does not replace a stored one", async () => {
+  const clock = new Date("2026-10-18T03:04:05.000Z");
+  const store = new FakeLeadStore();
+  const deps = {
+    store,
+    mailer: new FakeMailer(),
+    env: TEST_ENV,
+    now: () => clock,
+    leadId: leadIdFactory(),
+    refCode: () => "abcd1234",
+    sleep: async () => {},
+  };
+  const base = {
+    email: "diver@example.com",
+    canonical: "diver@example.com",
+    source: "hero" as const,
+    flags: [] as string[],
+    suspect: false,
+    measurementConsent: false,
+    networkSendBlocked: false,
+  };
+  await requestVerificationService(base, deps);
+  assert.equal(store.createPendingInputs[0].signupCountry, undefined);
+
+  clock.setTime(clock.getTime() + 120_000);
+  await requestVerificationService({ ...base, signupCountryProbe: probe(true, "TW") }, deps);
+  const filled = await store.findByEmail("diver@example.com", "diver@example.com");
+  assert.equal(filled?.signupCountry, "TW");
+  assert.equal(filled?.signupCountrySource, SIGNUP_COUNTRY_SOURCE_VERCEL);
+  assert.equal(JSON.stringify(filled).includes("locale"), false);
+
+  clock.setTime(clock.getTime() + 120_000);
+  await requestVerificationService({ ...base, signupCountryProbe: probe(true, "DE") }, deps);
+  const kept = await store.findByEmail("diver@example.com", "diver@example.com");
+  assert.equal(kept?.signupCountry, "TW");
+});
+
+test("startAttempt still rotates the link when the country columns are absent", async () => {
+  const bodies: Record<string, unknown>[] = [];
+  let calls = 0;
+  const request: NotionRequest = async (_method, _path, body) => {
+    calls += 1;
+    const properties = ((body ?? {}) as { properties?: Record<string, unknown> }).properties ?? {};
+    bodies.push(properties);
+    if (calls === 1) {
+      throw new NotionRequestError(
+        400,
+        JSON.stringify({
+          code: "validation_error",
+          message: `${FIELD_SIGNUP_COUNTRY} is not a property that exists.`,
+        }),
+      );
+    }
+    return {
+      id: "page-1",
+      properties: {
+        Email: { title: [{ plain_text: "diver@example.com" }] },
+        "Lead ID": { rich_text: [{ plain_text: "aaaaaaaa-bbbb-4ccc-8ddd-000000000002" }] },
+        "Verification status": { select: { name: "pending" } },
+      },
+    };
+  };
+  await createNotionLeadStore(request, "wait-db").startAttempt("page-1", {
+    leadId: "aaaaaaaa-bbbb-4ccc-8ddd-000000000002",
+    expiresAt: "2026-10-19T03:04:05.000Z",
+    sends: 2,
+    signupCountry: observation("TW"),
+  });
+  assert.equal(calls, 2);
+  assert.equal(FIELD_SIGNUP_COUNTRY in bodies[0], true);
+  assert.equal(FIELD_SIGNUP_COUNTRY in bodies[1], false);
+  assert.equal("Lead ID" in bodies[1], true);
+});
+
+test("a stored native form market is read back and is not a locale", () => {
+  const row = toLeadRecord({
+    id: "page-native",
+    properties: {
+      Email: { title: [{ plain_text: "diver@example.com" }] },
+      [FIELD_SIGNUP_COUNTRY]: { rich_text: [{ plain_text: "JP" }] },
+      [FIELD_SIGNUP_COUNTRY_SOURCE]: {
+        rich_text: [{ plain_text: SIGNUP_COUNTRY_SOURCE_NATIVE_FORM }],
+      },
+      [FIELD_SIGNUP_COUNTRY_OBSERVED]: { date: { start: OBSERVED.toISOString() } },
+    },
+  });
+  assert.equal(SIGNUP_COUNTRY_SOURCE_NATIVE_FORM, "native_form_market");
+  assert.equal(row?.signupCountry, "JP");
+  assert.equal(row?.signupCountrySource, SIGNUP_COUNTRY_SOURCE_NATIVE_FORM);
+  assert.equal(row?.signupCountryObservedAt, OBSERVED.toISOString());
+
+  const locale = toLeadRecord({
+    id: "page-locale",
+    properties: {
+      Email: { title: [{ plain_text: "diver@example.com" }] },
+      [FIELD_SIGNUP_COUNTRY]: { rich_text: [{ plain_text: "ko" }] },
+      [FIELD_SIGNUP_COUNTRY_SOURCE]: {
+        rich_text: [{ plain_text: SIGNUP_COUNTRY_SOURCE_NATIVE_FORM }],
+      },
+    },
+  });
+  assert.equal(locale?.signupCountry, undefined);
+  assert.equal(locale?.signupCountrySource, SIGNUP_COUNTRY_SOURCE_NATIVE_FORM);
+  assert.equal(JSON.stringify(locale).includes("KR"), false);
+});
+
+test("an off-Vercel resend does not stamp unknown over a blank or native country", async () => {
+  const clock = new Date("2026-10-18T03:04:05.000Z");
+  const store = new FakeLeadStore();
+  const deps = {
+    store,
+    mailer: new FakeMailer(),
+    env: TEST_ENV,
+    now: () => clock,
+    leadId: leadIdFactory(),
+    refCode: () => "abcd1234",
+    sleep: async () => {},
+  };
+  const base = {
+    email: "diver@example.com",
+    canonical: "diver@example.com",
+    source: "hero" as const,
+    flags: [] as string[],
+    suspect: false,
+    measurementConsent: false,
+    networkSendBlocked: false,
+  };
+  await requestVerificationService(base, deps);
+  clock.setTime(clock.getTime() + 120_000);
+  await requestVerificationService({ ...base, signupCountryProbe: probe(false, "KR") }, deps);
+  const blank = await store.findByEmail("diver@example.com", "diver@example.com");
+  assert.equal(blank?.signupCountry, undefined);
+  assert.equal(JSON.stringify(blank).includes("KR"), false);
+
+  const native = await store.findByEmail("diver@example.com", "diver@example.com");
+  if (!native) throw new Error("missing row");
+  native.signupCountry = "JP";
+  native.signupCountrySource = SIGNUP_COUNTRY_SOURCE_NATIVE_FORM;
+  clock.setTime(clock.getTime() + 120_000);
+  await requestVerificationService({ ...base, signupCountryProbe: probe(true, "DE") }, deps);
+  const kept = await store.findByEmail("diver@example.com", "diver@example.com");
+  assert.equal(kept?.signupCountry, "JP");
+  assert.equal(kept?.signupCountrySource, SIGNUP_COUNTRY_SOURCE_NATIVE_FORM);
+});

@@ -28,6 +28,7 @@ import {
   MEASUREMENT_CONSENT_WITHDRAWN,
   MEASUREMENT_CONSENT_WITHHELD,
   GENERIC_PENDING_MESSAGE,
+  SIGNUP_COUNTRY_SOURCE_VERCEL,
   MIN_RESPONSE_MS,
   POLL_HANDLE_TTL_MS,
   WITHDRAW_HANDLE_TTL_MS,
@@ -87,6 +88,7 @@ import {
   isVerificationTokenShape,
   newLeadId,
   parseVerificationToken,
+  rejectVerificationToken,
   requirePublicOrigin,
   requireSecret,
   signPollHandle,
@@ -579,7 +581,21 @@ export async function requestVerificationService(
   if (existing) {
     // Count the attempt before it can fail, so a provider stuck at 500 cannot
     // be used to keep re-arming a send.
-    await store.startAttempt(existing.pageId, { leadId, expiresAt, sends: existing.sends + 1 });
+    // A later website submit can fill a blank country from a trusted Vercel
+    // header. An existing country stays, including a native form market.
+    // An off-Vercel call must not stamp `unknown` into the blank cell.
+    // Locale is not a country.
+    const observed = existing.signupCountry
+      ? undefined
+      : newSignupCountry(input, now).signupCountry;
+    const countryFill =
+      observed?.countrySource === SIGNUP_COUNTRY_SOURCE_VERCEL ? observed : undefined;
+    await store.startAttempt(existing.pageId, {
+      leadId,
+      expiresAt,
+      sends: existing.sends + 1,
+      ...(countryFill ? { signupCountry: countryFill } : {}),
+    });
     record = existing;
   } else {
     record = await store.createPending({
@@ -909,9 +925,13 @@ export async function confirmVerificationService(
   const secret = requireSecret(env);
   const now = (dependencies.now ?? (() => new Date()))();
 
-  // Shape and signature are checked before any I/O, so a forged or expired
-  // token costs nothing and reveals nothing.
+  // Shape and signature are checked before any I/O. An authentic token past
+  // its signed instant is expired, so the page can say the 24 hours ran out.
+  // A bad signature stays invalid and still costs no CRM read.
   if (!isVerificationTokenShape(rawToken)) return { ok: true, status: "invalid" };
+  const rejection = rejectVerificationToken(rawToken, secret, now.getTime());
+  if (rejection === "expired") return { ok: true, status: "expired" };
+  if (rejection) return { ok: true, status: "invalid" };
   const parsed = parseVerificationToken(rawToken, secret, now.getTime());
   if (!parsed) return { ok: true, status: "invalid" };
 

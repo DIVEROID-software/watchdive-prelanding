@@ -67,7 +67,7 @@ export const Route = createFileRoute("/verify")({
 });
 
 type ViewState =
-  "reading" | "waiting" | "confirming" | "verified" | "expired" | "invalid" | "error";
+  "reading" | "waiting" | "confirming" | "verified" | "expired" | "invalid" | "missing" | "error";
 
 /**
  * A page being prerendered or opened in a background tab was not opened by a
@@ -223,7 +223,7 @@ export function VerifyPage() {
 
   const confirm = async () => {
     if (!token.current) {
-      setState("invalid");
+      setState("missing");
       return;
     }
     setState("confirming");
@@ -313,7 +313,9 @@ export function VerifyPage() {
     // only in this component's memory and travels only in the POST below.
     window.history.replaceState(null, "", window.location.pathname);
     if (!fragmentToken) {
-      setState("invalid");
+      // No fragment is not a replaced or forged token. This page does not
+      // know whether the link was copied, previewed, or opened incomplete.
+      setState("missing");
       return;
     }
     token.current = fragmentToken;
@@ -433,6 +435,13 @@ export function VerifyPage() {
           <Card role="alert">
             <h1 className="text-heading">{copy.expiredTitle}</h1>
             <p className="mt-3 text-body text-white/75">{copy.expiredBody}</p>
+          </Card>
+        )}
+
+        {state === "missing" && (
+          <Card role="alert">
+            <h1 className="text-heading">{copy.missingTitle}</h1>
+            <p className="mt-3 text-body text-white/75">{copy.missingBody}</p>
           </Card>
         )}
 
