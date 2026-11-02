@@ -162,7 +162,7 @@ function request(patch: Record<string, unknown> = {}, authorization = `Bearer ${
   });
 }
 
-async function run(store: Store, provider: Provider, patch: Record<string, unknown> = {}) {
+async function run(store: Store, provider: Provider, patch: Record<string, unknown> = {}, time = OPEN) {
   const parsed = parseRecoveryRequest(body(patch), digest!);
   assert.equal(parsed.ok, true);
   if (!parsed.ok) throw new Error("parse");
@@ -173,7 +173,7 @@ async function run(store: Store, provider: Provider, patch: Record<string, unkno
     store,
     provider,
     env: env(),
-    now: () => OPEN,
+    now: () => time,
   });
 }
 
@@ -355,6 +355,38 @@ test("send claims before the provider, appends history, and returns only a recei
   assert.equal(encoded.includes(LEAD), false);
   assert.equal(encoded.includes(token), false);
   assert.equal(TEST_ORIGIN, RECOVERY_20261102_ORIGIN);
+});
+
+test("Notion second precision and UTC offset spelling preserve the claimed expiry", async () => {
+  class NotionDateStore extends Store {
+    async claimReminder(pageId: string, claim: { marker: string; sends: number; expiresAt: string }) {
+      await super.claimReminder(pageId, claim);
+      const row = this.rows.find((r) => r.pageId === pageId)!;
+      row.expiresAt = new Date(Math.floor(Date.parse(claim.expiresAt) / 1000) * 1000)
+        .toISOString().replace("Z", "+00:00");
+    }
+  }
+  const store = new NotionDateStore([row()]);
+  const provider = new Provider();
+  const result = await run(store, provider, { mode: "send" }, new Date(OPEN.getTime() + 321));
+  assert.equal(result.status, "provider_accepted");
+  assert.equal(provider.calls.length, 1);
+  assert.equal(Date.parse(store.claims[0].expiresAt) % 1000, 0);
+});
+
+test("a genuinely changed expiry still stops before the provider", async () => {
+  class ChangedDateStore extends Store {
+    async claimReminder(pageId: string, claim: { marker: string; sends: number; expiresAt: string }) {
+      await super.claimReminder(pageId, claim);
+      this.rows.find((r) => r.pageId === pageId)!.expiresAt = new Date(Date.parse(claim.expiresAt) + 1000).toISOString();
+    }
+  }
+  const store = new ChangedDateStore([row()]);
+  const provider = new Provider();
+  const result = await run(store, provider, { mode: "send" });
+  assert.equal(result.status, "expiry_changed");
+  assert.equal(provider.calls.length, 0);
+  assert.equal(store.claims.length, 1);
 });
 
 test("an ambiguous provider is not retried, and a later request does not send", async () => {

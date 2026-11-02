@@ -315,7 +315,8 @@ function heldAfterClaim(
   if (row.reminder !== claim.marker) return "claim_lost";
   if (claim.previous && !row.reminder.startsWith(`${claim.previous}\n`)) return "history_lost";
   if (row.sends !== claim.sends) return "attempts_changed";
-  if (row.expiresAt !== claim.expiresAt) return "expiry_changed";
+  // Notion returns an equivalent +00:00 date, not necessarily our Z spelling.
+  if (Date.parse(row.expiresAt ?? "") !== Date.parse(claim.expiresAt)) return "expiry_changed";
   if (addressKey(row) !== claim.address) return "identity_changed";
   if (row.status !== "pending" || verified(row)) return "verified";
   return undefined;
@@ -538,7 +539,8 @@ export async function runVerificationServiceRecovery(input: {
     return decision(mode, "not_configured");
   }
   if (origin !== RECOVERY_20261102_ORIGIN) return decision(mode, "origin_rejected");
-  const expiryMs = clock().getTime() + VERIFICATION_TTL_MS;
+  // Tokens and Notion dates use whole-second precision. Match both explicitly.
+  const expiryMs = Math.floor((clock().getTime() + VERIFICATION_TTL_MS) / 1000) * 1000;
   const expiresAt = new Date(expiryMs).toISOString();
   let mail: Recovery20261102Mail;
   let href = "";
