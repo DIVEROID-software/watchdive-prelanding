@@ -102,6 +102,91 @@ export function isMetaFbc(value: unknown): value is string {
 
 const NOTION_VERSION = "2022-06-28";
 const NOTION_TIMEOUT_MS = 10_000;
+/** One extra try. A confirm still has a write, mail, and conversion after the read. */
+const NOTION_READ_ATTEMPTS = 2;
+const NOTION_READ_BACKOFF_MS = 250;
+const NOTION_READ_JITTER_MS = 50;
+/** A 429 that asks for longer than this is not retried. */
+const NOTION_RETRY_AFTER_CAP_MS = 2_000;
+const DATABASE_QUERY_PATH = /^databases\/[^/]+\/query$/;
+
+export type NotionOperation =
+  | "read_get"
+  | "read_query"
+  | "write_create"
+  | "write_update"
+  | "write_other";
+
+export type NotionAttemptReason =
+  | "timeout"
+  | "network"
+  | "rate_limit"
+  | "server"
+  | "client"
+  | "caller_abort";
+
+/** Safe to log. No path, id, address, body, or token. */
+export type NotionAttemptEvent = {
+  operation: NotionOperation;
+  attempt: number;
+  status: number;
+  reason: NotionAttemptReason;
+  outcome: "retry" | "terminal";
+  durationMs: number;
+};
+
+export type NotionRequestControl = {
+  /** Stops the call, including a backoff wait. Never retried. */
+  signal?: AbortSignal;
+  sleep?: (ms: number) => Promise<void>;
+  /** Unit interval. Used only after a failed read. */
+  random?: () => number;
+  /** Replaces the 10s per-attempt abort. Tests pass a few milliseconds. */
+  timeoutMs?: number;
+  log?: (event: NotionAttemptEvent) => void;
+};
+
+/**
+ * Delay before the one read retry. Jitter is an integer in
+ * `[0, NOTION_READ_JITTER_MS)`.
+ */
+export function notionReadBackoffMs(randomUnit: number): number {
+  const unit = Number.isFinite(randomUnit) ? Math.min(0.999999, Math.max(0, randomUnit)) : 0;
+  return NOTION_READ_BACKOFF_MS + Math.floor(unit * NOTION_READ_JITTER_MS);
+}
+
+export type NotionRetryDelay = { waitMs: number } | { stop: true };
+
+/**
+ * No header uses the short backoff. A numeric or HTTP-date delay above the cap
+ * stops the retry instead of waiting, or of retrying sooner than Notion asked.
+ */
+export function notionRetryDelay(
+  header: string | null,
+  nowMs: number,
+  randomUnit: number,
+): NotionRetryDelay {
+  if (header === null || header.trim() === "") return { waitMs: notionReadBackoffMs(randomUnit) };
+  const trimmed = header.trim();
+  let delayMs: number;
+  if (/^[0-9]+$/.test(trimmed)) delayMs = Number(trimmed) * 1000;
+  else {
+    const when = Date.parse(trimmed);
+    if (!Number.isFinite(when)) return { stop: true };
+    delayMs = Math.max(0, when - nowMs);
+  }
+  if (!Number.isFinite(delayMs) || delayMs > NOTION_RETRY_AFTER_CAP_MS) return { stop: true };
+  return { waitMs: delayMs };
+}
+
+/** GET, and a database query, are reads. Page creates and every PATCH are not. */
+export function classifyNotionOperation(method: string, path: string): NotionOperation {
+  if (method === "GET") return "read_get";
+  if (method === "POST" && DATABASE_QUERY_PATH.test(path)) return "read_query";
+  if (method === "POST" && path === "pages") return "write_create";
+  if (method === "PATCH") return "write_update";
+  return "write_other";
+}
 
 // The only property names a failure message may ever name. The dual-shape
 // helper recognises its column mismatch by reading the message, so that one
@@ -240,29 +325,299 @@ export type NotionRequest = (
  */
 export const NOTION_DATA_SOURCE_VERSION = "2025-09-03";
 
+const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+function positiveTimeout(value: number | undefined): number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : NOTION_TIMEOUT_MS;
+}
+
+function emitAttempt(log: (event: NotionAttemptEvent) => void, event: NotionAttemptEvent) {
+  try {
+    log(event);
+  } catch {
+    // Diagnostics must not replace the CRM result.
+  }
+}
+
+function defaultAttemptLog(event: NotionAttemptEvent) {
+  console.error("[watchdive] notion_request", event);
+}
+
+function timeoutError(): Error {
+  const error = new Error("Notion request timed out");
+  error.name = "TimeoutError";
+  return error;
+}
+
+function networkError(): Error {
+  const error = new Error("Notion request failed");
+  error.name = "NotionTransportError";
+  return error;
+}
+
+function callerAbortError(): Error {
+  const error = new Error("The operation was aborted");
+  error.name = "AbortError";
+  return error;
+}
+
+function errorName(error: unknown): string {
+  return error instanceof Error ? error.name : "";
+}
+
+function isNetworkError(error: unknown, seen = new Set<unknown>()): boolean {
+  if (!error || typeof error !== "object" || seen.has(error)) return false;
+  seen.add(error);
+  const named = error as { name?: unknown; code?: unknown; cause?: unknown };
+  if (named.name === "AbortError" || named.name === "TimeoutError") return false;
+  if (named.name === "TypeError") return true;
+  if (
+    named.code === "ECONNRESET" ||
+    named.code === "ECONNREFUSED" ||
+    named.code === "ETIMEDOUT" ||
+    named.code === "EAI_AGAIN" ||
+    named.code === "ENOTFOUND" ||
+    named.code === "EPIPE" ||
+    named.code === "ENETUNREACH" ||
+    named.code === "EHOSTUNREACH" ||
+    named.code === "UND_ERR_CONNECT_TIMEOUT" ||
+    named.code === "UND_ERR_SOCKET" ||
+    named.code === "UND_ERR_HEADERS_TIMEOUT" ||
+    named.code === "UND_ERR_BODY_TIMEOUT"
+  ) {
+    return true;
+  }
+  return isNetworkError(named.cause, seen);
+}
+
+/**
+ * Our timer is the only timeout worth another read. An AbortError, or a
+ * TimeoutError whose timer is still live, belongs to the caller (or to a
+ * fetch wrapper that combined the caller's deadline). That must not retry.
+ */
+function transportReason(
+  error: unknown,
+  timeoutSignal: AbortSignal,
+  callerSignal: AbortSignal | undefined,
+): NotionAttemptReason {
+  if (callerSignal?.aborted) return "caller_abort";
+  if (timeoutSignal.aborted) return "timeout";
+  if (errorName(error) === "TimeoutError" || errorName(error) === "AbortError") return "caller_abort";
+  if (isNetworkError(error)) return "network";
+  return "client";
+}
+
+function httpReason(status: number): NotionAttemptReason {
+  if (status === 429) return "rate_limit";
+  if (status >= 500 && status <= 599) return "server";
+  return "client";
+}
+
+async function releaseBody(response: Response) {
+  try {
+    await response.body?.cancel();
+  } catch {
+    // Already consumed or already closed.
+  }
+}
+
+async function pauseForRetry(
+  ms: number,
+  callerSignal: AbortSignal | undefined,
+  sleep: (ms: number) => Promise<void>,
+) {
+  if (callerSignal?.aborted) throw callerAbortError();
+  if (!callerSignal) {
+    await sleep(ms);
+    return;
+  }
+  let onAbort = () => {};
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(callerAbortError());
+    callerSignal.addEventListener("abort", onAbort, { once: true });
+  });
+  try {
+    await Promise.race([sleep(ms), aborted]);
+  } finally {
+    callerSignal.removeEventListener("abort", onAbort);
+  }
+  if (callerSignal.aborted) throw callerAbortError();
+}
+
 export function createNotionRequest(
   fetchImpl: typeof fetch = fetch,
   env: { NOTION_API_KEY?: string } = process.env,
   notionVersion: string = NOTION_VERSION,
+  control: NotionRequestControl = {},
 ): NotionRequest {
+  const callerSignal = control.signal;
+  const sleep = control.sleep ?? defaultSleep;
+  const random = control.random ?? Math.random;
+  const attemptTimeoutMs = positiveTimeout(control.timeoutMs);
+  const log = control.log ?? defaultAttemptLog;
+
   return async (method, path, body) => {
     const key = env.NOTION_API_KEY;
     if (!key) throw new Error("NOTION_API_KEY is not set");
-    const response = await fetchImpl(`https://api.notion.com/v1/${path}`, {
-      method,
-      // A hung CRM must not hold a request open until the platform kills it.
-      signal: AbortSignal.timeout(NOTION_TIMEOUT_MS),
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Notion-Version": notionVersion,
-        "Content-Type": "application/json",
-      },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    });
-    if (!response.ok) {
-      throw new NotionRequestError(response.status, await response.text());
+    const operation = classifyNotionOperation(method, path);
+    const read = operation === "read_get" || operation === "read_query";
+    const attempts = read ? NOTION_READ_ATTEMPTS : 1;
+    const serialized = body === undefined ? undefined : JSON.stringify(body);
+    const waitRetry = async (waitMs: number) => {
+      try {
+        await pauseForRetry(waitMs, callerSignal, sleep);
+      } catch (error) {
+        emitAttempt(log, {
+          operation,
+          attempt: attempts,
+          status: 0,
+          reason: "caller_abort",
+          outcome: "terminal",
+          durationMs: 0,
+        });
+        if (errorName(error) === "AbortError") throw error;
+        throw callerAbortError();
+      }
+    };
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      if (callerSignal?.aborted) {
+        emitAttempt(log, {
+          operation,
+          attempt,
+          status: 0,
+          reason: "caller_abort",
+          outcome: "terminal",
+          durationMs: 0,
+        });
+        throw callerAbortError();
+      }
+      // A new timer every attempt. The previous one is already aborted.
+      const timeoutSignal =
+        attemptTimeoutMs === NOTION_TIMEOUT_MS
+          ? AbortSignal.timeout(NOTION_TIMEOUT_MS)
+          : AbortSignal.timeout(attemptTimeoutMs);
+      const signal = callerSignal ? AbortSignal.any([callerSignal, timeoutSignal]) : timeoutSignal;
+      const startedMs = Date.now();
+      let response: Response;
+      try {
+        response = await fetchImpl(`https://api.notion.com/v1/${path}`, {
+          method,
+          // A hung CRM must not hold a request open until the platform kills it.
+          signal,
+          headers: {
+            Authorization: `Bearer ${key}`,
+            "Notion-Version": notionVersion,
+            "Content-Type": "application/json",
+          },
+          ...(serialized === undefined ? {} : { body: serialized }),
+        });
+      } catch (error) {
+        const reason = transportReason(error, timeoutSignal, callerSignal);
+        const retry = read && (reason === "timeout" || reason === "network") && attempt < attempts;
+        emitAttempt(log, {
+          operation,
+          attempt,
+          status: 0,
+          reason,
+          outcome: retry ? "retry" : "terminal",
+          durationMs: Math.max(0, Date.now() - startedMs),
+        });
+        if (retry) {
+          await waitRetry(notionReadBackoffMs(random()));
+          continue;
+        }
+        if (reason === "timeout") throw timeoutError();
+        if (reason === "caller_abort") throw callerAbortError();
+        throw networkError();
+      }
+
+      // A body read can time out or abort after the headers arrived. That
+      // failure is transport, not the HTTP status, and a caller abort must
+      // not fall through into a 429 retry.
+      const consume = async (): Promise<string> => {
+        try {
+          return (await response.text()).slice(0, 4096);
+        } catch (error) {
+          await releaseBody(response);
+          throw error;
+        }
+      };
+
+      if (!response.ok) {
+        let raw = "";
+        try {
+          raw = await consume();
+        } catch (error) {
+          const reason = transportReason(error, timeoutSignal, callerSignal);
+          const retry = read && (reason === "timeout" || reason === "network") && attempt < attempts;
+          emitAttempt(log, {
+            operation,
+            attempt,
+            status: response.status,
+            reason,
+            outcome: retry ? "retry" : "terminal",
+            durationMs: Math.max(0, Date.now() - startedMs),
+          });
+          if (retry) {
+            await waitRetry(notionReadBackoffMs(random()));
+            continue;
+          }
+          if (reason === "timeout") throw timeoutError();
+          if (reason === "caller_abort") throw callerAbortError();
+          if (reason === "network") throw networkError();
+          throw new Error("Notion request failed");
+        }
+        const reason = httpReason(response.status);
+        let retry = read && (reason === "rate_limit" || reason === "server") && attempt < attempts;
+        let waitMs = 0;
+        if (retry) {
+          const delay = notionRetryDelay(response.headers.get("retry-after"), Date.now(), random());
+          if ("stop" in delay) retry = false;
+          else waitMs = delay.waitMs;
+        }
+        emitAttempt(log, {
+          operation,
+          attempt,
+          status: response.status,
+          reason,
+          outcome: retry ? "retry" : "terminal",
+          durationMs: Math.max(0, Date.now() - startedMs),
+        });
+        if (retry) {
+          await waitRetry(waitMs);
+          continue;
+        }
+        throw new NotionRequestError(response.status, raw);
+      }
+
+      try {
+        return (await response.json()) as Record<string, unknown>;
+      } catch (error) {
+        await releaseBody(response);
+        const reason = transportReason(error, timeoutSignal, callerSignal);
+        const retry = read && (reason === "timeout" || reason === "network") && attempt < attempts;
+        emitAttempt(log, {
+          operation,
+          attempt,
+          status: response.status,
+          reason,
+          outcome: retry ? "retry" : "terminal",
+          durationMs: Math.max(0, Date.now() - startedMs),
+        });
+        if (retry) {
+          await waitRetry(notionReadBackoffMs(random()));
+          continue;
+        }
+        if (reason === "timeout") throw timeoutError();
+        if (reason === "caller_abort") throw callerAbortError();
+        if (reason === "network") throw networkError();
+        // SyntaxError quotes a slice of the body. Addresses stay in that slice.
+        throw new Error("Notion request failed");
+      }
     }
-    return (await response.json()) as Record<string, unknown>;
+
+    throw networkError();
   };
 }
 
