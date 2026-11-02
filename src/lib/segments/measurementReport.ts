@@ -5,6 +5,9 @@ import {
   FIELD_CONVERSION_EXPERIMENT,
   EXPERIMENT_MATURITY_MS,
   unionFunnels,
+  experimentContextIdentity,
+  countPopupSession,
+  emptyPopupCounts,
   type ExperimentFunnel,
 } from "../conversionExperimentContract.ts";
 import {
@@ -73,6 +76,7 @@ function empty() {
       middle: { formVisible: 0, formFocused: 0, submitAttempted: 0 },
       bottom: { formVisible: 0, formFocused: 0, submitAttempted: 0 },
     },
+    popup: emptyPopupCounts(),
   };
 }
 /** Caller must supply a fully paginated, declared source read; old legacy lead query
@@ -111,6 +115,7 @@ export function buildSegmentMeasurementReport(
     excludedLeadGroups: 0,
     unmatchedLeads: 0,
     mismatchedLeads: 0,
+    qaPopupSessions: 0,
     invalidOrLateSignup: 0,
     invalidOrLateVerification: 0,
   };
@@ -223,7 +228,8 @@ export function buildSegmentMeasurementReport(
       quality.unmatchedLeads++;
       continue;
     }
-    if (JSON.stringify(session.context) !== JSON.stringify(ctx)) {
+    // acquisitionPlacement is the popup submit snapshot, not part of the session row.
+    if (experimentContextIdentity(session.context) !== experimentContextIdentity(ctx)) {
       quality.mismatchedLeads++;
       continue;
     }
@@ -264,6 +270,7 @@ export function buildSegmentMeasurementReport(
     }
     if (ctx.qa) {
       quality.qaExcluded++;
+      if (unionFunnels(session.rows).popup) quality.qaPopupSessions++;
       continue;
     }
     if (!unionFunnels(session.rows).exposed) {
@@ -297,6 +304,7 @@ export function buildSegmentMeasurementReport(
       for (const flag of ["formVisible", "formFocused", "submitAttempted"] as const)
         if (f[flag]) b.placements[place][flag]++;
     }
+    countPopupSession(unionFunnels(session.rows), b.popup);
   }
   const bySegment = Object.fromEntries(
     SEGMENT_NAMES.map((segment) => {
@@ -312,6 +320,7 @@ export function buildSegmentMeasurementReport(
           matureVerifiedSessions: leadsOk ? b.matureVerifiedSessions : null,
           crossedSessions: behaviorOk ? b.crossedSessions : null,
           placements: behaviorOk ? b.placements : null,
+          popup: behaviorOk ? b.popup : null,
           matureSignupRate:
             leadsOk && b.matureSessions > 0 ? b.matureSignupSessions / b.matureSessions : null,
           matureVerifiedRate:
@@ -344,6 +353,7 @@ export function buildSegmentMeasurementReport(
       "The caller must supply complete relevant canonical history, including contextless prior/withdrawn rows; an ID-only query cannot establish canonical-history coverage.",
       "Freeze entry segment for disjoint counts; placement counts may overlap. Timestamp skew is not forgiven in this new cohort.",
       "Withdrawal removes conversion context; previously stored exposure remains. Existing customer rows are not new acquisitions.",
+      "Popup counts are separate from middle, bottom, and the four body flags. visible is the panel on screen; formVisible is the email and submit hit-test. accepted pending is a server pending response, not a net-new person. QA popup sessions are excluded from popup counts.",
       "No deployment, paid test, causal winner, purchase intent or 8% guarantee follows from this helper.",
     ],
     quality,

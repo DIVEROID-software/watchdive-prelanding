@@ -2,6 +2,11 @@ import { measurementAllowed } from "./consentRegion.ts";
 import { competitionRegistry } from "./competitionRegistry.ts";
 import type { ExperimentContext, LegacyExperimentContext } from "./conversionExperimentContract.ts";
 
+// Keep in lockstep with POPUP_FUNNEL_VERSION and POPUP_ACQUISITION_PLACEMENT.
+// A value import would pull the server contract into the landing bundle.
+const POPUP_FUNNEL_VERSION = 1 as const;
+const POPUP_ACQUISITION_PLACEMENT = "entry-popup" as const;
+
 import { segmentFromPathname } from "./segments/navigation.ts";
 import { localeFromPathname } from "./i18n/locale.ts";
 import {
@@ -97,6 +102,56 @@ const SESSION_CONTEXT_KEY = "watchdive.form-first.session.20261008";
 const SEGMENT_BASE_SESSION_KEY = `${SEGMENT_MEASUREMENT_STORAGE}.base`;
 let placements = emptySegmentPlacements();
 const funnel = { exposed: false, formVisible: false, formFocused: false, submitAttempted: false };
+type PopupResult = "pending" | "already_verified";
+type PopupFlag =
+  | "visible"
+  | "formVisible"
+  | "focused"
+  | "submitAttempted"
+  | "dismissed"
+  | "accepted"
+  | "failed"
+  | "closed";
+type PopupState = {
+  visible: boolean;
+  formVisible: boolean;
+  focused: boolean;
+  submitAttempted: boolean;
+  dismissed: boolean;
+  accepted: boolean;
+  failed: boolean;
+  closed: boolean;
+  result?: PopupResult;
+  observedAt: Partial<Record<PopupFlag, number>>;
+};
+let popup: PopupState | undefined;
+
+function blankPopup(): PopupState {
+  return {
+    visible: false,
+    formVisible: false,
+    focused: false,
+    submitAttempted: false,
+    dismissed: false,
+    accepted: false,
+    failed: false,
+    closed: false,
+    observedAt: {},
+  };
+}
+
+function documentHidden(): boolean {
+  return typeof document !== "undefined" && document.visibilityState === "hidden";
+}
+
+/** First transition only. A repeat does not move the timestamp. */
+function notePopup(name: PopupFlag): boolean {
+  popup ??= blankPopup();
+  if (popup[name]) return false;
+  popup[name] = true;
+  popup.observedAt[name] = Date.now();
+  return true;
+}
 
 export function currentLandingVariant(): Variant {
   return EXPERIMENT_ENABLED &&
@@ -122,6 +177,7 @@ export function initializeConversionExperiment(enabled = EXPERIMENT_ENABLED): vo
       submitAttempted: false,
     });
     placements = emptySegmentPlacements();
+    popup = undefined;
   }
   if (context) {
     if (
@@ -275,6 +331,54 @@ export function markConversionMilestone(
   window.dispatchEvent(new Event(FUNNEL_CHANGED));
 }
 
+export function markPopupMilestone(
+  name: "visible" | "formVisible" | "focused" | "submitAttempted" | "dismissed",
+): void {
+  // Same gate as the body milestones: denied, GPC, and a withdrawn session
+  // record nothing, and nothing from before permission is replayed.
+  // A hidden tab is not a panel view and not a form view.
+  if (!getConversionExperiment()) return;
+  if ((name === "visible" || name === "formVisible") && documentHidden()) return;
+  if (!notePopup(name)) return;
+  window.dispatchEvent(new Event(FUNNEL_CHANGED));
+}
+
+/** pending is not a new person. already_verified stays if a later response is only pending. */
+export function markPopupServerResult(
+  status: "pending" | "already_verified" | "closed" | "error",
+): void {
+  if (!getConversionExperiment()) return;
+  popup ??= blankPopup();
+  if (status === "error") {
+    if (!notePopup("failed")) return;
+    window.dispatchEvent(new Event(FUNNEL_CHANGED));
+    return;
+  }
+  if (status === "closed") {
+    if (!notePopup("closed")) return;
+    window.dispatchEvent(new Event(FUNNEL_CHANGED));
+    return;
+  }
+  const result: PopupResult =
+    popup.result === "already_verified" || status === "already_verified"
+      ? "already_verified"
+      : "pending";
+  if (popup.accepted && popup.result === result) return;
+  // The first accepted response keeps its timestamp. A later already_verified
+  // does not invent an earlier one and does not move this one.
+  notePopup("accepted");
+  popup.result = result;
+  window.dispatchEvent(new Event(FUNNEL_CHANGED));
+}
+
+/** Popup submit snapshot. Does not write the session context used by later forms. */
+export function withPopupAcquisition<T extends ExperimentContext>(
+  value: T | undefined,
+): (T & { acquisitionPlacement: typeof POPUP_ACQUISITION_PLACEMENT }) | undefined {
+  if (!value) return undefined;
+  return { ...value, acquisitionPlacement: POPUP_ACQUISITION_PLACEMENT };
+}
+
 export function getConversionFunnel() {
   return {
     ...funnel,
@@ -284,6 +388,26 @@ export function getConversionFunnel() {
             middle: { ...placements.middle },
             bottom: { ...placements.bottom },
             crossedSegment: placements.crossedSegment,
+          },
+        }
+      : {}),
+    ...(popup
+      ? {
+          popup: {
+            version: POPUP_FUNNEL_VERSION,
+            placement: POPUP_ACQUISITION_PLACEMENT,
+            visible: popup.visible,
+            formVisible: popup.formVisible,
+            focused: popup.focused,
+            submitAttempted: popup.submitAttempted,
+            dismissed: popup.dismissed,
+            accepted: popup.accepted,
+            failed: popup.failed,
+            closed: popup.closed,
+            ...(popup.result ? { result: popup.result } : {}),
+            ...(Object.keys(popup.observedAt).length > 0
+              ? { observedAt: { ...popup.observedAt } }
+              : {}),
           },
         }
       : {}),

@@ -30,6 +30,9 @@ export const segmentContextSchema = z
         adId: metaId.optional(),
       })
       .strict(),
+    // Present only on the popup submit's CRM copy. The UX session context
+    // leaves it off so a later body submit is not tagged entry-popup.
+    acquisitionPlacement: z.literal("entry-popup").optional(),
   })
   .strict();
 export type SegmentMeasurementContext = z.infer<typeof segmentContextSchema>;

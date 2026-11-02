@@ -91,6 +91,9 @@ import {
   currentLandingVariant,
   getConversionExperiment,
   markConversionMilestone,
+  markPopupMilestone,
+  markPopupServerResult,
+  withPopupAcquisition,
   closeExperimentEnrollmentOnSubmit,
 } from "@/lib/conversionExperimentClient";
 import { signupActionsVisible } from "@/lib/signupVisibility";
@@ -981,9 +984,13 @@ function CheckInboxCard({
 // The two placements the server accepts as a Source. Keeping the union here
 // means a new placement is a type error rather than a rejected submit.
 type FormPlacement = "hero" | "offer";
+const ENTRY_POPUP_DOM_ID = "entry-capture";
 
 export function EmailForm({ id, includePhone = false, presentation, compact = false, domId, compatibility, beforeSubmit, recordFunnel = true }: { id: FormPlacement; includePhone?: boolean; presentation?: { cta: string; note: string }; compact?: boolean; domId?: string; compatibility?: CompatibilityRequest; beforeSubmit?: () => boolean; recordFunnel?: boolean }) {
   const inputId = domId ?? id;
+  // The entry panel keeps source "offer" and recordFunnel false. Its own
+  // block must not become the bottom placement or the four body flags.
+  const popupMeasurement = domId === ENTRY_POPUP_DOM_ID;
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const copy = useConversionCopy(locale);
@@ -1032,7 +1039,8 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
   useEffect(() => {
     const check = () => {
       const form = formRef.current;
-      if (recordFunnel && form && signupActionsVisible(form)) markConversionMilestone("formVisible", id);
+      if (!popupMeasurement && recordFunnel && form && signupActionsVisible(form))
+        markConversionMilestone("formVisible", id);
     };
     const observer = new ResizeObserver(check);
     if (formRef.current) observer.observe(formRef.current);
@@ -1051,7 +1059,7 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
       window.removeEventListener(MEASUREMENT_CHOICE_EVENT, afterChoice);
       window.visualViewport?.removeEventListener("resize", check);
     };
-  }, [pending]);
+  }, [pending, popupMeasurement]);
 
   useEffect(() => {
     const element = formRef.current;
@@ -1251,33 +1259,45 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
   // server mirrors the browser's optimisation event under that id, and one
   // person asking for their mail again is not a second application.
   const submit = async (submitEventId?: string) => {
-    const res = await joinWaitlist({
-      data: {
-        email: email.trim().toLowerCase(),
-        // The email signup never carries a phone. A number is stored only by
-        // savePhoneOptIn, and only after an explicit SMS consent.
-        source: id,
-        referredBy: getRef(),
-        // Omitted while the program is off, and omitted when a link ref is
-        // already stored, so the signup body matches the pre-code payload.
-        ...(programOn && refReady && !getRef() && typedCode.trim()
-          ? { shareCode: typedCode.trim() }
-          : {}),
-        // First touch, not this click: the URL here is whatever the visitor
-        // last navigated to, which for a scrolled page is nothing at all.
-        attribution: getAttribution(),
-        // Opaque press link reference; kept on the row, reported only once the signup completes.
-        pressRef: getPressRef(),
-        honeypot: hp,
-        measurementConsent: measurementPermitted(),
-        googleClientId: googleClientId(),
-        experiment: getConversionExperiment(),
-        locale,
-        ...(compatibility ? { compatibility, ...(handle ? { compatibilityCredential: handle } : {}) } : {}),
-        ...(submitEventId ? { submitEventId } : {}),
-        ...getMetaCookies(),
-      },
-    });
+    let responded = false;
+    try {
+      const res = await joinWaitlist({
+        data: {
+          email: email.trim().toLowerCase(),
+          // The email signup never carries a phone. A number is stored only by
+          // savePhoneOptIn, and only after an explicit SMS consent.
+          source: id,
+          referredBy: getRef(),
+          // Omitted while the program is off, and omitted when a link ref is
+          // already stored, so the signup body matches the pre-code payload.
+          ...(programOn && refReady && !getRef() && typedCode.trim()
+            ? { shareCode: typedCode.trim() }
+            : {}),
+          // First touch, not this click: the URL here is whatever the visitor
+          // last navigated to, which for a scrolled page is nothing at all.
+          attribution: getAttribution(),
+          // Opaque press link reference; kept on the row, reported only once the signup completes.
+          pressRef: getPressRef(),
+          honeypot: hp,
+          measurementConsent: measurementPermitted(),
+          googleClientId: googleClientId(),
+          experiment: popupMeasurement
+            ? withPopupAcquisition(getConversionExperiment())
+            : getConversionExperiment(),
+          locale,
+          ...(compatibility ? { compatibility, ...(handle ? { compatibilityCredential: handle } : {}) } : {}),
+          ...(submitEventId ? { submitEventId } : {}),
+          ...getMetaCookies(),
+        },
+      });
+      responded = true;
+      if (popupMeasurement) {
+        markPopupServerResult(
+          res.status === "pending" || res.status === "already_verified" || res.status === "closed"
+            ? res.status
+            : "error",
+        );
+      }
     if (res.status === "closed") {
       setClosed(res.message);
       return res;
@@ -1318,6 +1338,10 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
     }
     setPending(res.message);
     return res;
+    } catch (error) {
+      if (popupMeasurement && !responded) markPopupServerResult("error");
+      throw error;
+    }
   };
 
   // Allowed after the submit (inbox card, or the banner while the inbox card
@@ -1479,7 +1503,8 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
           return;
         }
         closeExperimentEnrollmentOnSubmit();
-        if (recordFunnel) markConversionMilestone("submitAttempted", id);
+        if (popupMeasurement) markPopupMilestone("submitAttempted");
+        else if (recordFunnel) markConversionMilestone("submitAttempted", id);
         setLoading(true);
         try {
           // Captured here, in the browser that actually chose it, and carried
@@ -1574,7 +1599,8 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onFocus={() => {
-            if (recordFunnel) markConversionMilestone("formFocused", id);
+            if (popupMeasurement) markPopupMilestone("focused");
+            else if (recordFunnel) markConversionMilestone("formFocused", id);
             if (!formStartSent.current) {
               formStartSent.current = true;
               trackMetaCustom("FormStart", { source: id });
