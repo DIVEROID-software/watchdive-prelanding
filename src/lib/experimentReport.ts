@@ -20,8 +20,11 @@ import {
   parseBehaviorSections,
   parseLeadExperiment,
   unionFunnels,
+  countPopupSession,
+  emptyPopupCounts,
   type LegacyExperimentContext,
   type ExperimentFunnel,
+  type PopupFunnelCounts,
 } from "./conversionExperimentContract.ts";
 import {
   conversionBlocked,
@@ -135,7 +138,9 @@ export type ExperimentReport = {
     leadPagesRead: number;
     behaviorTruncated: boolean;
     leadsTruncated: boolean;
+    qaPopupSessions: number;
   };
+  popup: PopupFunnelCounts | null;
   byArm: Record<
     (typeof EXPERIMENT_VARIANTS)[number],
     {
@@ -352,7 +357,9 @@ export function buildExperimentReport(input: ReportPages): ExperimentReport {
     leadPagesRead: leadsReadable ? input.leads.pages.length : 0,
     behaviorTruncated: input.behavior.truncated,
     leadsTruncated: input.leads.truncated,
+    qaPopupSessions: 0,
   };
+  const popup = emptyPopupCounts();
 
   const sessions = new Map<string, Session>();
   if (behaviorOk) {
@@ -389,6 +396,7 @@ export function buildExperimentReport(input: ReportPages): ExperimentReport {
     const funnel = unionFunnels(session.funnels);
     if (session.status === "qa") {
       quality.qaExcludedSessions += 1;
+      if (unionFunnels(session.funnels).popup) quality.qaPopupSessions += 1;
       continue;
     }
     if (!funnel.exposed) {
@@ -420,6 +428,7 @@ export function buildExperimentReport(input: ReportPages): ExperimentReport {
       bucket.formVisible += funnel.formVisible ? 1 : 0;
       bucket.formFocused += funnel.formFocused ? 1 : 0;
       bucket.submitAttempted += funnel.submitAttempted ? 1 : 0;
+      countPopupSession(funnel, popup);
       if (mature) bucket.matureSessions += 1;
     }
   }
@@ -601,6 +610,7 @@ export function buildExperimentReport(input: ReportPages): ExperimentReport {
       conversionExperimentColumn: input.leads.column,
     },
     quality,
+    popup: behaviorOk ? popup : null,
     byArm,
     total: cell(total, behaviorOk, leadsOk),
   };

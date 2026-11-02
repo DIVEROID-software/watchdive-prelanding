@@ -1,5 +1,8 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { privacyPath, type Locale } from "../../lib/i18n/locale";
+import { EXPERIMENT_CHANGED, markPopupMilestone } from "../../lib/conversionExperimentClient";
+import { MEASUREMENT_CHOICE_EVENT } from "../../lib/measurementChoice";
+import { entryPopupFormVisible, entryPopupPanelVisible } from "../../lib/popupSurface";
 import { WatchDiveLogo } from "../segments/WatchDiveLogo";
 import { CAPTURE_SESSION_KEY, hasCaptureInterruption } from "./policy";
 import { ENTRY_DISMISSED_KEY, entryDismissed, entryReturnFlow } from "./entry-policy";
@@ -48,6 +51,7 @@ export function EntryCapture({ locale, getKnownStatus, children }: {
   }, []);
 
   function dismiss() {
+    markPopupMilestone("dismissed");
     const hadFocus = panel.current?.contains(document.activeElement);
     try { localStorage.setItem(ENTRY_DISMISSED_KEY, String(Date.now())); } catch { /* session cap still applies */ }
     setOpen(false);
@@ -56,6 +60,41 @@ export function EntryCapture({ locale, getKnownStatus, children }: {
       document.querySelector<HTMLElement>(".wd-segment-hero-jump,main a,main button")?.focus({ preventScroll: true });
     }
   }
+  useEffect(() => {
+    if (!open || parked) return;
+    const check = () => {
+      // Session storage entry-shown is not a view. A hidden document cannot
+      // mark the panel or the form; coming back rechecks the live geometry.
+      const node = panel.current;
+      if (entryPopupPanelVisible(node, parked)) markPopupMilestone("visible");
+      if (entryPopupFormVisible(node, parked)) markPopupMilestone("formVisible");
+    };
+    const onVisibility = () => {
+      check();
+      requestAnimationFrame(check);
+    };
+    const frame = requestAnimationFrame(check);
+    const observer = new ResizeObserver(check);
+    if (panel.current) observer.observe(panel.current);
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    window.visualViewport?.addEventListener("resize", check);
+    window.addEventListener(EXPERIMENT_CHANGED, check);
+    window.addEventListener(MEASUREMENT_CHOICE_EVENT, check);
+    document.addEventListener("visibilitychange", onVisibility);
+    check();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+      window.visualViewport?.removeEventListener("resize", check);
+      window.removeEventListener(EXPERIMENT_CHANGED, check);
+      window.removeEventListener(MEASUREMENT_CHOICE_EVENT, check);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [open, parked]);
+
   useEffect(() => {
     if (!open) return;
     const checkOverlays = () => {
