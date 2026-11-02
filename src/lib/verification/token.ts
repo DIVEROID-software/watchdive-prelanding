@@ -132,11 +132,16 @@ export function createVerificationToken(
   return `${payload}.${sign(secret, `verify:v2:${payload}`)}`;
 }
 
-export function parseVerificationToken(
-  token: string,
-  secret: string,
-  nowMs: number,
-): ParsedToken | undefined {
+type SplitVerificationToken = {
+  legacy: boolean;
+  leadId: string;
+  expiresAtSeconds: string;
+  consent: string;
+  locale: Locale;
+  mac: string;
+};
+
+function splitVerificationToken(token: string): SplitVerificationToken | undefined {
   if (!isVerificationTokenShape(token)) return undefined;
   const parts = token.split(".");
   const legacy = parts.length === 4;
@@ -144,22 +149,49 @@ export function parseVerificationToken(
     ? [parts[0], parts[1], parts[2], DEFAULT_LOCALE, parts[3]]
     : [parts[1], parts[2], parts[3], parts[4], parts[5]];
   if (!leadId || !expiresAtSeconds || !consent || !isLocale(locale) || !mac) return undefined;
-  const payload = legacy
-    ? `${leadId.toLowerCase()}.${expiresAtSeconds}.${consent}`
-    : `v2.${leadId.toLowerCase()}.${expiresAtSeconds}.${consent}.${locale}`;
-  // Flipping the consent or locale segment changes the signed payload, so a
-  // tampered token cannot upgrade a denial or redirect the experience into a
-  // different language.
-  if (!safeEqual(mac, sign(secret, `verify:${legacy ? "v1" : "v2"}:${payload}`))) {
-    return undefined;
+  return { legacy, leadId, expiresAtSeconds, consent, locale, mac };
+}
+
+export type VerificationTokenRejection = "malformed" | "bad_signature" | "expired";
+
+/**
+ * Why a token cannot be used. An authentic token past its signed instant is
+ * `expired`, which is different from a bad signature or a replaced attempt.
+ * Expiry is decided before any CRM read, so this does not reveal whether a
+ * row exists.
+ */
+export function rejectVerificationToken(
+  token: string,
+  secret: string,
+  nowMs: number,
+): VerificationTokenRejection | undefined {
+  const split = splitVerificationToken(token);
+  if (!split) return "malformed";
+  const payload = split.legacy
+    ? `${split.leadId.toLowerCase()}.${split.expiresAtSeconds}.${split.consent}`
+    : `v2.${split.leadId.toLowerCase()}.${split.expiresAtSeconds}.${split.consent}.${split.locale}`;
+  if (!safeEqual(split.mac, sign(secret, `verify:${split.legacy ? "v1" : "v2"}:${payload}`))) {
+    return "bad_signature";
   }
-  const expiresAtMs = Number(expiresAtSeconds) * 1000;
-  if (!Number.isSafeInteger(expiresAtMs) || expiresAtMs <= nowMs) return undefined;
+  const expiresAtMs = Number(split.expiresAtSeconds) * 1000;
+  if (!Number.isSafeInteger(expiresAtMs) || expiresAtMs <= 0) return "malformed";
+  if (expiresAtMs <= nowMs) return "expired";
+  return undefined;
+}
+
+export function parseVerificationToken(
+  token: string,
+  secret: string,
+  nowMs: number,
+): ParsedToken | undefined {
+  if (rejectVerificationToken(token, secret, nowMs)) return undefined;
+  const split = splitVerificationToken(token);
+  if (!split) return undefined;
   return {
-    leadId: leadId.toLowerCase(),
-    expiresAtMs,
-    measurementConsent: consent === CONSENT_GRANTED,
-    locale,
+    leadId: split.leadId.toLowerCase(),
+    expiresAtMs: Number(split.expiresAtSeconds) * 1000,
+    measurementConsent: split.consent === CONSENT_GRANTED,
+    locale: split.locale,
   };
 }
 

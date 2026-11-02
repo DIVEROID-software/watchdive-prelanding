@@ -70,8 +70,11 @@ export function checkVerificationEnv(env: VerificationEnv): EnvProblem[] {
   }
 
   const replyTo = present(env, "WATCHDIVE_EMAIL_REPLY_TO");
-  if (replyTo && !/^[^@<>\s]+@[^@<>\s]+\.[^@<>\s]+$/.test(replyTo)) {
-    problems.push({ name: "WATCHDIVE_EMAIL_REPLY_TO", problem: "is not an email address" });
+  if (replyTo && replyTo !== FIXED_SENDER_MAILBOX) {
+    problems.push({
+      name: "WATCHDIVE_EMAIL_REPLY_TO",
+      problem: `must be unset or ${FIXED_SENDER_MAILBOX}; replies use that mailbox`,
+    });
   }
 
   const secret = present(env, "WATCHDIVE_VERIFICATION_SECRET");

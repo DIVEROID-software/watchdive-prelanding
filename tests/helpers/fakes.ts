@@ -245,12 +245,21 @@ export class FakeLeadStore implements LeadStore {
     this.startAttemptCalls += 1;
     const row = this.rows.get(pageId);
     if (!row) return;
+    const countryFill =
+      !row.signupCountry && input.signupCountry
+        ? {
+            signupCountry: input.signupCountry.country,
+            signupCountrySource: input.signupCountry.countrySource,
+            signupCountryObservedAt: input.signupCountry.countryObservedAt,
+          }
+        : {};
     this.rows.set(pageId, {
       ...row,
       status: "pending",
       leadId: input.leadId,
       expiresAt: input.expiresAt,
       sends: input.sends,
+      ...countryFill,
     });
   }
 

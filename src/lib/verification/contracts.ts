@@ -192,8 +192,14 @@ export const FIELD_SIGNUP_LOCALE = "Signup locale";
 export const SIGNUP_METHODS = ["email", "google", "apple"] as const;
 export type SignupMethod = (typeof SIGNUP_METHODS)[number];
 export const SIGNUP_COUNTRY_UNKNOWN = "unknown";
-/** The only sensor whose country code may be stored. */
+/** Vercel edge header. A form, a page language, or an email domain is not this. */
 export const SIGNUP_COUNTRY_SOURCE_VERCEL = "x-vercel-ip-country";
+/**
+ * Allowlisted Instant Form market recorded with the new native row.
+ * This is the form registry entry, not the person's residence and not a
+ * country inferred from language, the email domain, or ad targeting.
+ */
+export const SIGNUP_COUNTRY_SOURCE_NATIVE_FORM = "native_form_market";
 /** No trusted sensor ran, or the claim did not come from one. */
 export const SIGNUP_COUNTRY_SOURCE_UNKNOWN = "unknown";
 
@@ -309,17 +315,20 @@ export type LeadAttribution = {
 };
 
 export type SignupCountrySource =
-  typeof SIGNUP_COUNTRY_SOURCE_VERCEL | typeof SIGNUP_COUNTRY_SOURCE_UNKNOWN;
+  | typeof SIGNUP_COUNTRY_SOURCE_VERCEL
+  | typeof SIGNUP_COUNTRY_SOURCE_NATIVE_FORM
+  | typeof SIGNUP_COUNTRY_SOURCE_UNKNOWN;
 
 /**
  * Server-owned observation stored on a new signup. The browser payload cannot
  * produce one: a client country, cookie, or phone calling code is not this.
+ * `native_form_market` is the only non-sensor source that may carry an ISO code.
  */
 export type SignupCountryObservation = {
-  /** ISO 3166-1 alpha-2, or `unknown` when the trusted sensor had no country. */
+  /** ISO 3166-1 alpha-2, or `unknown` when the trusted Vercel sensor had no country. */
   country: string;
   countrySource: SignupCountrySource;
-  /** ISO-8601 UTC time the server read the sensor. */
+  /** ISO-8601 UTC time the server recorded this observation. */
   countryObservedAt: string;
 };
 
@@ -424,6 +433,11 @@ export type StartAttemptInput = {
   leadId: string;
   expiresAt: string;
   sends: number;
+  /**
+   * Filled only when the row has no signup country yet. A present country is
+   * not replaced, and this is never inferred from locale.
+   */
+  signupCountry?: SignupCountryObservation;
 };
 
 export type MarkSentInput = {

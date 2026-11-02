@@ -363,6 +363,9 @@ export const EN_FROZEN_LANDING_MESSAGES = {
     invalidTitle: "This link is not valid",
     invalidBody:
       "A newer confirmation email may have replaced it. Go back to the WatchDive page and submit the form again.",
+    missingTitle: "This page opened without the confirmation code",
+    missingBody:
+      "Open the confirmation email and tap the button again. The code is in that link, and this page does not have it on its own.",
     errorTitle: "We could not confirm just now",
     errorBody: "Your link is still valid. Please try again.",
     tryAgain: "Try again",

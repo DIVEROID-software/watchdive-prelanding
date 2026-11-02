@@ -84,8 +84,12 @@ test("the api key is required and the mailbox is fixed", () => {
   assert.deepEqual(readResendConfig(ENV), {
     apiKey: "re_test_key",
     from: FIXED_FROM,
-    replyTo: ENV.WATCHDIVE_EMAIL_REPLY_TO,
+    replyTo: "help@diveroid.com",
   });
+  assert.equal(
+    readResendConfig({ ...ENV, WATCHDIVE_EMAIL_REPLY_TO: "verify@mail.oceanwick.ai" }).replyTo,
+    "help@diveroid.com",
+  );
 });
 
 test("the inbox display name defaults to WatchDive; the mailbox stays help@diveroid.com", () => {
@@ -121,9 +125,9 @@ test("the inbox display name defaults to WatchDive; the mailbox stays help@diver
   assert.throws(() => assertFixedSender("WatchDive <help@diveroid.com>\nBcc: verify@mail.oceanwick.ai"));
 });
 
-test("reply-to is genuinely optional", () => {
+test("reply-to stays help@diveroid.com when the env is blank", () => {
   const config = readResendConfig({ ...ENV, WATCHDIVE_EMAIL_REPLY_TO: "" });
-  assert.equal(config.replyTo, undefined);
+  assert.equal(config.replyTo, "help@diveroid.com");
 });
 
 test("the public origin must be a fixed bare https origin", () => {
@@ -175,7 +179,7 @@ test("the send carries the key, a fixed user agent, and an attempt-scoped idempo
   assert.equal(headers["Idempotency-Key"], `watchdive-verification-${LEAD_ID}`);
   const body = JSON.parse(String(calls[0].init.body));
   assert.equal(body.from, FIXED_FROM);
-  assert.equal(body.reply_to, ENV.WATCHDIVE_EMAIL_REPLY_TO);
+  assert.equal(body.reply_to, "help@diveroid.com");
   assert.equal(body.from.includes("oceanwick"), false);
   assert.equal(body.from.includes("watchdive.example"), false);
   assert.equal(String(calls[0].init.body).includes("oceanwick"), false);

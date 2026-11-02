@@ -364,6 +364,9 @@ export const NL_FROZEN_LANDING_MESSAGES: FrozenLandingMessages = {
     invalidTitle: "Deze link is niet geldig",
     invalidBody:
       "Een nieuwere bevestigingsmail kan hem hebben vervangen. Ga terug naar de WatchDive-pagina en verstuur het formulier opnieuw.",
+    missingTitle: "Deze pagina opende zonder bevestigingscode",
+    missingBody:
+      "Open de bevestigingsmail opnieuw en tik op de knop. De code zit in die link, niet vanzelf op deze pagina.",
     errorTitle: "We konden het nu niet bevestigen",
     errorBody: "Je link is nog geldig. Probeer het opnieuw.",
     tryAgain: "Opnieuw proberen",

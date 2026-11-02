@@ -11,6 +11,7 @@ import type { RequestVerificationInput, ServiceDependencies } from "../../verifi
 import type { VerificationMailer } from "../../verification/resend.ts";
 import { isLeadId, parseVerificationToken } from "../../verification/token.ts";
 
+import { signupCountryForNativeCreate } from "../nativeCountry.ts";
 import { nativeAttributionProperties, NativeSchemaError, type NativeAttribution } from "./attribution.ts";
 import { authenticateConfirmation, type NonceStore } from "./auth.ts";
 import { SIGNATURE_HEADER } from "./constants.ts";
@@ -433,8 +434,12 @@ function proxiedStore(deps: ConfirmationDeps, intent: NativeIntent): LeadStore {
           }
           if (input.signupLocale !== intent.locale) throw new NativeSchemaError();
           if (!isLeadId(input.leadId) || input.leadId === intent.leadgen_id) throw new NativeSchemaError();
+          // Form market only when this create has no country yet. Locale is not a country.
+          const signupCountry = signupCountryForNativeCreate(input.signupCountry, intent.market, deps.now());
+          if (!signupCountry) throw new NativeSchemaError();
           const record = await target.createPending({
             ...input,
+            signupCountry,
             nativeCrm: {
               leadgenId: intent.leadgen_id,
               adId: intent.ad_id,
@@ -446,6 +451,7 @@ function proxiedStore(deps: ConfirmationDeps, intent: NativeIntent): LeadStore {
             throw new NativeSchemaError();
           }
           if (record.signupLocale !== intent.locale) throw new NativeSchemaError();
+          if (record.signupCountry !== signupCountry.country) throw new NativeSchemaError();
           await deps.writeAttribution(record.pageId, nativeAttributionProperties(attribution));
           return { ...record, source: "instant-form" };
         };

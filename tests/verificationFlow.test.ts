@@ -361,8 +361,11 @@ test("a link past its 24 hours is refused", async () => {
   clock = new Date(clock.getTime() + 86_400_000 + 1000);
   assert.deepEqual(await confirmVerificationService(token, deps()), {
     ok: true,
-    status: "invalid",
+    status: "expired",
   });
+  const row = await store.findByEmail(CANONICAL, EMAIL);
+  assert.equal(row?.emailVerified, false);
+  assert.equal(store.markVerifiedCalls, 0);
 });
 
 test("Notion remains the authority on the attempt window", async () => {

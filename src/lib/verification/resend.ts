@@ -246,8 +246,10 @@ export function readResendConfig(env: ResendEnvironment = process.env): ResendCo
   const apiKey = (env.RESEND_API_KEY ?? "").trim();
   if (!apiKey) throw new Error("RESEND_API_KEY is not set");
   const from = senderWithDisplayName(FIXED_SENDER_MAILBOX, env.WATCHDIVE_EMAIL_FROM_NAME);
-  const replyTo = (env.WATCHDIVE_EMAIL_REPLY_TO ?? "").trim();
-  return { apiKey, from, ...(replyTo ? { replyTo } : {}) };
+  // Reply-To is the same fixed mailbox as From. A stale env value cannot
+  // point replies at another address, and a blank env still sets the header.
+  void env.WATCHDIVE_EMAIL_REPLY_TO;
+  return { apiKey, from, replyTo: FIXED_SENDER_MAILBOX };
 }
 
 export class ResendDeliveryError extends Error {
@@ -700,7 +702,7 @@ async function deliverWithRetries(
   delete rest.reply_to;
   const serialized = JSON.stringify({
     from: config.from,
-    ...(config.replyTo ? { reply_to: config.replyTo } : {}),
+    reply_to: FIXED_SENDER_MAILBOX,
     ...rest,
   });
   const timeoutMs = policy.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;

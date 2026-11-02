@@ -195,7 +195,7 @@ test("the refreshed reminder confirms after the original link expires", async ()
     env: TEST_ENV,
     now: () => clock,
   });
-  assert.equal(viaOriginal.status, "invalid");
+  assert.equal(viaOriginal.status, "expired");
 
   const viaReminder = await confirmVerificationService(reminded, {
     store,

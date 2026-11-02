@@ -306,6 +306,18 @@ test("a too-short signing secret is caught before deployment", () => {
   assert.match(problems[0].problem, /at least 32 bytes/);
 });
 
+test("a Reply-To env must repeat help@diveroid.com or stay unset", () => {
+  for (const bad of ["not-an-email", "verify@mail.oceanwick.ai", "help@watchdive.example"]) {
+    const problems = checkVerificationEnv({ ...COMPLETE_ENV, WATCHDIVE_EMAIL_REPLY_TO: bad });
+    assert.equal(problems.length, 1, `accepted reply-to: ${bad}`);
+    assert.equal(problems[0].name, "WATCHDIVE_EMAIL_REPLY_TO");
+  }
+  assert.deepEqual(
+    checkVerificationEnv({ ...COMPLETE_ENV, WATCHDIVE_EMAIL_REPLY_TO: "help@diveroid.com" }),
+    [],
+  );
+});
+
 test("a From env must repeat the fixed mailbox or stay unset", () => {
   for (const bad of [
     "not-an-email",

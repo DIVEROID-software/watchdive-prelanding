@@ -493,6 +493,9 @@ const ko: FrozenLandingMessages = {
     invalidTitle: "쓸 수 없는 링크입니다",
     invalidBody:
       "새 인증 메일이 왔다면 이전 링크는 쓸 수 없습니다. WatchDive 페이지로 돌아가 다시 신청해 주세요.",
+    missingTitle: "확인 코드 없이 페이지가 열렸습니다",
+    missingBody:
+      "인증 메일을 다시 열고 버튼을 눌러 주세요. 코드는 그 링크에 있고, 이 페이지에는 아직 없습니다.",
     errorTitle: "지금은 인증할 수 없습니다",
     errorBody: "링크는 아직 유효합니다. 다시 시도해 주세요.",
     tryAgain: "다시 시도",
@@ -947,6 +950,9 @@ const zhCN: FrozenLandingMessages = {
     expiredBody: "确认链接 24 小时内有效。回到 WatchDive 页面重新提交，就能拿到新的。",
     invalidTitle: "链接无效",
     invalidBody: "它可能已被更新的确认邮件取代。回到 WatchDive 页面重新提交一次。",
+    missingTitle: "这个页面打开时没有确认码",
+    missingBody:
+      "请重新打开确认邮件并点按钮。确认码在那条链接里，这个页面本身没有。",
     errorTitle: "现在没法确认",
     errorBody: "链接仍然有效，请再试一次。",
     tryAgain: "再试一次",
@@ -1396,6 +1402,9 @@ const zhTW: FrozenLandingMessages = {
     expiredBody: "確認連結 24 小時內有效。回到 WatchDive 頁面重新送出，就能拿到新的。",
     invalidTitle: "連結無效",
     invalidBody: "它可能已被更新的確認信取代。回到 WatchDive 頁面重新送出一次。",
+    missingTitle: "這個頁面開啟時沒有確認碼",
+    missingBody:
+      "請重新打開確認郵件並點按鈕。確認碼在那條連結裡，這個頁面本身沒有。",
     errorTitle: "現在沒辦法確認",
     errorBody: "連結仍然有效，請再試一次。",
     tryAgain: "再試一次",
@@ -1860,6 +1869,9 @@ const ja: FrozenLandingMessages = {
     invalidTitle: "このリンクは使えません",
     invalidBody:
       "新しい確認メールが届いていると、前のリンクは使えなくなります。WatchDive のページに戻ってもう一度送信してください。",
+    missingTitle: "確認コードなしでページが開きました",
+    missingBody:
+      "確認メールを開き直し、ボタンを押してください。コードはそのリンクにあり、このページにはまだありません。",
     errorTitle: "いまは確認できません",
     errorBody: "リンクはまだ有効です。もう一度お試しください。",
     tryAgain: "もう一度",
@@ -2338,6 +2350,9 @@ const es: FrozenLandingMessages = {
     invalidTitle: "Este enlace no es válido",
     invalidBody:
       "Puede que un correo de confirmación más reciente lo haya sustituido. Vuelve a la página de WatchDive y envía el formulario otra vez.",
+    missingTitle: "Esta página se abrió sin el código de confirmación",
+    missingBody:
+      "Vuelve a abrir el correo de confirmación y pulsa el botón. El código va en ese enlace; esta página no lo tiene sola.",
     errorTitle: "Ahora mismo no podemos confirmar",
     errorBody: "Tu enlace sigue siendo válido. Inténtalo de nuevo.",
     tryAgain: "Reintentar",
@@ -2820,6 +2835,9 @@ const fr: FrozenLandingMessages = {
     invalidTitle: "Ce lien n’est pas valide",
     invalidBody:
       "Un e-mail de confirmation plus récent l’a peut-être remplacé. Retournez sur la page WatchDive et renvoyez le formulaire.",
+    missingTitle: "Cette page s’est ouverte sans le code de confirmation",
+    missingBody:
+      "Rouvrez l’e-mail de confirmation et appuyez sur le bouton. Le code est dans ce lien, pas sur cette page seule.",
     errorTitle: "Impossible de confirmer pour le moment",
     errorBody: "Votre lien est toujours valable. Veuillez réessayer.",
     tryAgain: "Réessayer",
@@ -3300,6 +3318,9 @@ const de: FrozenLandingMessages = {
     invalidTitle: "Dieser Link ist ungültig",
     invalidBody:
       "Womöglich hat ihn eine neuere Bestätigungsmail ersetzt. Geh zurück zur WatchDive-Seite und schick das Formular erneut ab.",
+    missingTitle: "Diese Seite wurde ohne Bestätigungscode geöffnet",
+    missingBody:
+      "Öffnen Sie die Bestätigungs-E-Mail erneut und tippen Sie auf die Schaltfläche. Der Code steckt in diesem Link, nicht auf dieser Seite allein.",
     errorTitle: "Bestätigung gerade nicht möglich",
     errorBody: "Dein Link ist weiterhin gültig. Bitte versuch es erneut.",
     tryAgain: "Erneut versuchen",
@@ -3777,6 +3798,9 @@ const ptBR: FrozenLandingMessages = {
     invalidTitle: "Este link não vale",
     invalidBody:
       "Um e-mail de confirmação mais recente pode ter substituído ele. Volte à página do WatchDive e envie o formulário de novo.",
+    missingTitle: "Esta página abriu sem o código de confirmação",
+    missingBody:
+      "Abra de novo o e-mail de confirmação e toque no botão. O código está nesse link; esta página não o tem sozinha.",
     errorTitle: "Não deu para confirmar agora",
     errorBody: "Seu link continua válido. Tente de novo.",
     tryAgain: "Tentar de novo",

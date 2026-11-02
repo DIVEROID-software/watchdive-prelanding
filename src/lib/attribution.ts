@@ -11,6 +11,7 @@
 import { normalizeCountry, measurementAllowed } from "./consentRegion.ts";
 import type { LeadAttribution } from "./verification/contracts.ts";
 import {
+  SIGNUP_COUNTRY_SOURCE_NATIVE_FORM,
   SIGNUP_COUNTRY_SOURCE_UNKNOWN,
   SIGNUP_COUNTRY_SOURCE_VERCEL,
   SIGNUP_COUNTRY_UNKNOWN,
@@ -458,9 +459,10 @@ export function persistableSignupCountry(value: unknown): string | undefined {
 
 /**
  * Last gate before a CRM write. A vercel-sourced code that is not a country
- * becomes `unknown` while keeping that sensor. Any other source cannot carry
- * a country code. An unparseable timestamp drops the whole observation rather
- * than inventing one.
+ * becomes `unknown` while keeping that sensor. The Instant Form registry may
+ * carry one ISO code, and only that code: a bad form market is dropped whole
+ * rather than stored as `unknown`. Any other source cannot carry a country
+ * code. An unparseable timestamp drops the whole observation.
  */
 export function coerceSignupCountryObservation(
   raw: SignupCountryObservation | undefined,
@@ -473,6 +475,15 @@ export function coerceSignupCountryObservation(
     return {
       country: persistableSignupCountry(raw.country) ?? SIGNUP_COUNTRY_UNKNOWN,
       countrySource: SIGNUP_COUNTRY_SOURCE_VERCEL,
+      countryObservedAt,
+    };
+  }
+  if (raw.countrySource === SIGNUP_COUNTRY_SOURCE_NATIVE_FORM) {
+    const country = persistableSignupCountry(raw.country);
+    if (!country || country === SIGNUP_COUNTRY_UNKNOWN) return undefined;
+    return {
+      country,
+      countrySource: SIGNUP_COUNTRY_SOURCE_NATIVE_FORM,
       countryObservedAt,
     };
   }
