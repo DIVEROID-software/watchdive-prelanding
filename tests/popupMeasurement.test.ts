@@ -23,7 +23,7 @@ import {
 } from "../src/lib/conversionExperimentContract.ts";
 import { buildExperimentReport } from "../src/lib/experimentReport.ts";
 import { pageBehaviorSummarySchema } from "../src/lib/pageBehaviorSummary.ts";
-import { behaviorProperties } from "../src/lib/api/behaviorNotion.ts";
+import { behaviorProperties, createBehaviorNotion } from "../src/lib/api/behaviorNotion.ts";
 import { entryPopupFormVisible, entryPopupPanelVisible } from "../src/lib/popupSurface.ts";
 import {
   SEGMENT_MEASUREMENT_ID,
@@ -665,4 +665,451 @@ test("the entry form keeps the legacy source contract and does not add a convers
   assert.match(client, /const POPUP_ACQUISITION_PLACEMENT = "entry-popup"/);
   assert.equal(POPUP_FUNNEL_VERSION, 1);
   assert.equal(POPUP_ACQUISITION_PLACEMENT, "entry-popup");
+});
+
+const OTHER = "9d8b6c3e-1f4a-4e2b-9c7d-0a1b2c3d4e5f";
+const UX_DB = "0123456789abcdef0123456789abcdef";
+const UX_KEY = "ntn_test_secret_key";
+
+function seenPopup(extra: Partial<PopupFunnel> = {}): PopupFunnel {
+  return popup({
+    visible: true,
+    formVisible: true,
+    focused: true,
+    submitAttempted: true,
+    accepted: true,
+    result: "pending",
+    observedAt: {
+      visible: AT + 1,
+      formVisible: AT + 2,
+      focused: AT + 3,
+      submitAttempted: AT + 4,
+      accepted: AT + 5,
+    },
+    ...extra,
+  });
+}
+
+function behaviorSummary(extra: Record<string, unknown> = {}) {
+  const experiment = extra.experiment === undefined ? segmentContext() : extra.experiment;
+  const { experiment: _experiment, ...rest } = extra;
+  return pageBehaviorSummarySchema.parse({
+    sessionId: SID,
+    locale: "zh-TW",
+    device: "desktop",
+    viewportW: 1440,
+    viewportH: 900,
+    timezone: "Asia/Taipei",
+    durationSec: 3,
+    maxScroll: 10,
+    referrerHost: "",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    sections: [{ id: "offer-form", dwellSec: 2 }],
+    clicks: [],
+    experiment,
+    funnel: bodyFunnel(),
+    ...rest,
+  });
+}
+
+type NotionCall = { url: string; method: string; body: Record<string, unknown> | undefined };
+
+function notionHarness(answers: Array<{ status: number; body: unknown } | Error>) {
+  const calls: NotionCall[] = [];
+  const fetchImpl = (async (url: string, init: RequestInit) => {
+    calls.push({
+      url,
+      method: String(init.method),
+      body: init.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : undefined,
+    });
+    const answer = answers.shift() ?? { status: 200, body: { id: "page-default" } };
+    if (answer instanceof Error) throw answer;
+    return new Response(JSON.stringify(answer.body), { status: answer.status });
+  }) as unknown as typeof fetch;
+  const lines: string[] = [];
+  let clock = 1_000_000;
+  const store = createBehaviorNotion({
+    fetchImpl,
+    env: { NOTION_API_KEY: UX_KEY, NOTION_UX_DB_ID: UX_DB },
+    now: () => clock,
+    log: (text) => lines.push(text),
+  });
+  return { calls, lines, store, advance: (ms: number) => (clock += ms) };
+}
+
+function sectionsText(call: NotionCall | undefined): string {
+  const properties = call?.body?.properties as
+    | { Sections?: { rich_text?: { text?: { content?: string } }[] } }
+    | undefined;
+  return properties?.Sections?.rich_text?.[0]?.text?.content ?? "";
+}
+
+function storedPopup(call: NotionCall | undefined) {
+  return parseBehaviorSections(sectionsText(call));
+}
+
+const NOT_FOUND = {
+  status: 404,
+  body: {
+    object: "error",
+    status: 404,
+    code: "object_not_found",
+    message: "Could not find page with ID: 0123456789abcdef0123456789abcdef.",
+  },
+};
+
+test("a later same-session summary keeps the popup this instance already stored", async () => {
+  const notion = read("src/lib/api/behaviorNotion.ts");
+  assert.equal(notion.includes("localStorage"), false);
+  assert.equal(notion.includes("sessionStorage"), false);
+  const { calls, store } = notionHarness([
+    { status: 200, body: { id: "page-1" } },
+    { status: 200, body: { id: "page-1" } },
+    { status: 200, body: { id: "page-1" } },
+  ]);
+  const viewed = await store.write(
+    behaviorSummary({ funnel: bodyFunnel({ popup: seenPopup() }) }),
+    "SG",
+  );
+  assert.deepEqual(viewed, { stored: true });
+  const laterPlacements = emptySegmentPlacements();
+  laterPlacements.bottom.submitAttempted = true;
+  const kept = await store.write(
+    behaviorSummary({
+      durationSec: 40,
+      funnel: bodyFunnel({
+        formVisible: true,
+        placements: laterPlacements,
+      }),
+    }),
+    "SG",
+  );
+  assert.deepEqual(kept, { stored: true });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].method, "PATCH");
+  assert.equal(calls[1].url, "https://api.notion.com/v1/pages/page-1");
+  assert.equal(calls.some((call) => call.url.includes("/query")), false);
+  const patched = storedPopup(calls[1]);
+  assert.equal(patched.funnel?.exposed, true);
+  assert.equal(patched.funnel?.formVisible, true);
+  assert.equal(patched.funnel?.formFocused, false);
+  assert.equal(patched.funnel?.submitAttempted, false);
+  assert.equal(patched.funnel?.placements?.bottom.submitAttempted, true);
+  assert.equal(patched.funnel?.placements?.middle.formVisible, false);
+  assert.equal(patched.funnel?.popup?.visible, true);
+  assert.equal(patched.funnel?.popup?.formVisible, true);
+  assert.equal(patched.funnel?.popup?.focused, true);
+  assert.equal(patched.funnel?.popup?.submitAttempted, true);
+  assert.equal(patched.funnel?.popup?.accepted, true);
+  assert.equal(patched.funnel?.popup?.result, "pending");
+  assert.equal(patched.funnel?.popup?.dismissed, false);
+  assert.equal(patched.funnel?.popup?.failed, false);
+  assert.equal(patched.funnel?.popup?.closed, false);
+  assert.equal(patched.funnel?.popup?.observedAt?.visible, AT + 1);
+  assert.equal(patched.funnel?.popup?.observedAt?.formVisible, AT + 2);
+  assert.equal(patched.funnel?.popup?.observedAt?.focused, AT + 3);
+  assert.equal(patched.funnel?.popup?.observedAt?.submitAttempted, AT + 4);
+  assert.equal(patched.funnel?.popup?.observedAt?.accepted, AT + 5);
+  assert.equal(sectionsText(calls[1]).includes("@"), false);
+  const properties = calls[1].body?.properties as { Duration?: { number?: number } };
+  assert.equal(properties.Duration?.number, 40);
+
+  const upgraded = await store.write(
+    behaviorSummary({
+      funnel: bodyFunnel({
+        formFocused: true,
+        popup: popup({
+          visible: true,
+          accepted: true,
+          result: "already_verified",
+          dismissed: true,
+          observedAt: { visible: AT + 50, accepted: AT + 60, dismissed: AT + 70 },
+        }),
+      }),
+    }),
+    "SG",
+  );
+  assert.deepEqual(upgraded, { stored: true });
+  const unioned = storedPopup(calls[2]);
+  assert.equal(unioned.funnel?.formFocused, true);
+  assert.equal(unioned.funnel?.formVisible, false);
+  assert.equal(unioned.funnel?.submitAttempted, false);
+  assert.equal(unioned.funnel?.popup?.result, "already_verified");
+  assert.equal(unioned.funnel?.popup?.visible, true);
+  assert.equal(unioned.funnel?.popup?.formVisible, true);
+  assert.equal(unioned.funnel?.popup?.accepted, true);
+  assert.equal(unioned.funnel?.popup?.dismissed, true);
+  assert.equal(unioned.funnel?.popup?.observedAt?.visible, AT + 1);
+  assert.equal(unioned.funnel?.popup?.observedAt?.formVisible, AT + 2);
+  assert.equal(unioned.funnel?.popup?.observedAt?.accepted, AT + 5);
+  assert.equal(unioned.funnel?.popup?.observedAt?.dismissed, AT + 70);
+  assert.equal(calls[2].method, "PATCH");
+  assert.equal(calls[2].url, "https://api.notion.com/v1/pages/page-1");
+
+  const legacy = experimentContextSchema.parse({
+    experimentId: EXPERIMENT_ID,
+    variant: "form_first",
+    sessionId: SID,
+    assignedAt: AT,
+    team: "organic",
+    qa: false,
+  });
+  const cold = notionHarness([{ status: 200, body: { id: "legacy-1" } }, { status: 200, body: { id: "legacy-1" } }]);
+  await cold.store.write(
+    behaviorSummary({
+      experiment: legacy,
+      funnel: {
+        exposed: true,
+        formVisible: false,
+        formFocused: false,
+        submitAttempted: false,
+        popup: seenPopup(),
+      },
+    }),
+    "SG",
+  );
+  await cold.store.write(
+    behaviorSummary({
+      durationSec: 9,
+      experiment: legacy,
+      funnel: { exposed: true, formVisible: false, formFocused: false, submitAttempted: false },
+    }),
+    "SG",
+  );
+  assert.equal(cold.calls[1].method, "PATCH");
+  assert.equal(storedPopup(cold.calls[1]).funnel?.popup?.observedAt?.visible, AT + 1);
+  assert.equal(storedPopup(cold.calls[1]).funnel?.popup?.accepted, true);
+  assert.equal(storedPopup(cold.calls[1]).funnel?.submitAttempted, false);
+});
+
+test("another session, QA bit, or experiment context does not inherit a stored popup", async () => {
+  const primed = notionHarness([
+    { status: 200, body: { id: "page-1" } },
+    { status: 200, body: { id: "page-2" } },
+    { status: 200, body: { id: "page-1" } },
+  ]);
+  await primed.store.write(behaviorSummary({ funnel: bodyFunnel({ popup: seenPopup() }) }), "SG");
+  await primed.store.write(
+    behaviorSummary({
+      sessionId: OTHER,
+      experiment: segmentContext({ sessionId: OTHER }),
+      funnel: bodyFunnel(),
+    }),
+    "SG",
+  );
+  assert.equal(primed.calls[1].method, "POST");
+  assert.equal(storedPopup(primed.calls[1]).funnel?.popup, undefined);
+  assert.equal(sectionsText(primed.calls[1]).includes("entry-popup"), false);
+  await primed.store.write(behaviorSummary({ durationSec: 11, funnel: bodyFunnel() }), "SG");
+  assert.equal(primed.calls[2].method, "PATCH");
+  assert.equal(primed.calls[2].url, "https://api.notion.com/v1/pages/page-1");
+  assert.equal(storedPopup(primed.calls[2]).funnel?.popup?.observedAt?.accepted, AT + 5);
+
+  const mismatches = [
+    segmentContext({ qa: true }),
+    segmentContext({ team: "A" }),
+    segmentContext({ assignedAt: AT + 1 }),
+    segmentContext({ entrySegment: "freediving" }),
+    segmentContext({ acquisitionPlacement: "entry-popup" }),
+    segmentContext({ sessionId: OTHER }),
+  ];
+  for (const experiment of mismatches) {
+    const one = notionHarness([
+      { status: 200, body: { id: "page-1" } },
+      { status: 200, body: { id: "page-1" } },
+    ]);
+    await one.store.write(behaviorSummary({ funnel: bodyFunnel({ popup: seenPopup() }) }), "SG");
+    await one.store.write(behaviorSummary({ durationSec: 12, experiment, funnel: bodyFunnel() }), "SG");
+    assert.equal(one.calls[1].method, "PATCH", JSON.stringify(experiment));
+    assert.equal(storedPopup(one.calls[1]).funnel?.popup, undefined, JSON.stringify(experiment));
+    assert.equal(storedPopup(one.calls[1]).context?.qa, experiment.qa);
+  }
+
+  const wiped = notionHarness([
+    { status: 200, body: { id: "page-1" } },
+    { status: 200, body: { id: "page-1" } },
+    { status: 200, body: { id: "page-1" } },
+  ]);
+  await wiped.store.write(behaviorSummary({ funnel: bodyFunnel({ popup: seenPopup() }) }), "SG");
+  await wiped.store.write(
+    behaviorSummary({ experiment: segmentContext({ qa: true }), funnel: bodyFunnel() }),
+    "SG",
+  );
+  await wiped.store.write(behaviorSummary({ durationSec: 13, funnel: bodyFunnel() }), "SG");
+  assert.equal(storedPopup(wiped.calls[2]).funnel?.popup, undefined);
+
+  const fresh = notionHarness([{ status: 200, body: { id: "page-9" } }]);
+  await fresh.store.write(behaviorSummary({ durationSec: 14, funnel: bodyFunnel() }), "SG");
+  assert.equal(fresh.calls.length, 1);
+  assert.equal(fresh.calls[0].method, "POST");
+  assert.equal(fresh.calls[0].url.includes("/query"), false);
+  assert.equal(storedPopup(fresh.calls[0]).funnel?.popup, undefined);
+});
+
+test("a failed write does not invent a popup, and a failed update still carries one already stored", async () => {
+  const missed = notionHarness([
+    new TypeError("fetch failed"),
+    { status: 200, body: { id: "page-1" } },
+  ]);
+  assert.deepEqual(
+    await missed.store.write(behaviorSummary({ funnel: bodyFunnel({ popup: seenPopup() }) }), "SG"),
+    { stored: false, reason: "failed" },
+  );
+  assert.deepEqual(await missed.store.write(behaviorSummary({ funnel: bodyFunnel() }), "SG"), {
+    stored: true,
+  });
+  assert.equal(storedPopup(missed.calls[1]).funnel?.popup, undefined);
+  assert.equal(missed.lines.some((line) => line.includes(SID) || line.includes("@")), false);
+
+  const replaced = notionHarness([
+    { status: 200, body: { id: "page-1" } },
+    NOT_FOUND,
+    { status: 200, body: { id: "page-2" } },
+    { status: 200, body: { id: "page-2" } },
+  ]);
+  await replaced.store.write(behaviorSummary({ funnel: bodyFunnel({ popup: seenPopup() }) }), "SG");
+  assert.deepEqual(
+    await replaced.store.write(behaviorSummary({ durationSec: 20, funnel: bodyFunnel() }), "SG"),
+    { stored: true },
+  );
+  assert.deepEqual(
+    replaced.calls.map((call) => call.method),
+    ["POST", "PATCH", "POST"],
+  );
+  assert.equal(replaced.calls[2].url, "https://api.notion.com/v1/pages");
+  assert.equal(storedPopup(replaced.calls[2]).funnel?.popup?.observedAt?.visible, AT + 1);
+  assert.equal(storedPopup(replaced.calls[2]).funnel?.popup?.accepted, true);
+  await replaced.store.write(behaviorSummary({ durationSec: 21, funnel: bodyFunnel() }), "SG");
+  assert.equal(replaced.calls[3].method, "PATCH");
+  assert.equal(replaced.calls[3].url, "https://api.notion.com/v1/pages/page-2");
+  assert.equal(storedPopup(replaced.calls[3]).funnel?.popup?.observedAt?.formVisible, AT + 2);
+
+  const stalled = notionHarness([
+    { status: 200, body: { id: "page-1" } },
+    new TypeError("patch down"),
+    new TypeError("post down"),
+    { status: 400, body: { object: "error", status: 400, code: "validation_error", message: "nope" } },
+    { status: 200, body: { id: "page-3" } },
+  ]);
+  await stalled.store.write(behaviorSummary({ funnel: bodyFunnel({ popup: seenPopup() }) }), "SG");
+  assert.deepEqual(
+    await stalled.store.write(behaviorSummary({ durationSec: 30, funnel: bodyFunnel() }), "SG"),
+    { stored: false, reason: "failed" },
+  );
+  assert.deepEqual(
+    stalled.calls.slice(0, 3).map((call) => call.method),
+    ["POST", "PATCH", "POST"],
+  );
+  assert.equal(storedPopup(stalled.calls[2]).funnel?.popup?.observedAt?.accepted, AT + 5);
+  assert.deepEqual(
+    await stalled.store.write(behaviorSummary({ durationSec: 31, funnel: bodyFunnel() }), "SG"),
+    { stored: false, reason: "failed" },
+  );
+  assert.equal(stalled.calls[3].method, "POST");
+  assert.equal(storedPopup(stalled.calls[3]).funnel?.popup?.visible, true);
+  stalled.advance(61_000);
+  assert.deepEqual(
+    await stalled.store.write(behaviorSummary({ durationSec: 32, funnel: bodyFunnel() }), "SG"),
+    { stored: true },
+  );
+  assert.equal(stalled.calls[4].method, "POST");
+  assert.equal(storedPopup(stalled.calls[4]).funnel?.popup?.observedAt?.visible, AT + 1);
+  assert.equal(storedPopup(stalled.calls[4]).funnel?.popup?.result, "pending");
+  assert.equal(stalled.lines.some((line) => line.includes("@") || line.includes(UX_KEY)), false);
+});
+
+test("a session dropped from the 500-row map is not backfilled from Notion", async () => {
+  assert.match(read("src/lib/api/behaviorNotion.ts"), /const SESSION_PAGES_MAX = 500/);
+  // SID plus 499 other sessions fills the map. The next new session drops SID.
+  // One update while SID is still resident must keep the popup. After the drop,
+  // the next write is a new row and does not query the old one.
+  const writes = 1 + 499 + 1 + 1 + 1;
+  const { calls, store } = notionHarness(
+    Array.from({ length: writes }, () => ({ status: 200, body: { id: "page-1" } })),
+  );
+  await store.write(behaviorSummary({ funnel: bodyFunnel({ popup: seenPopup() }) }), "SG");
+  for (let i = 0; i < 499; i++) {
+    const sessionId = crypto.randomUUID();
+    await store.write(
+      behaviorSummary({
+        sessionId,
+        experiment: segmentContext({ sessionId }),
+        funnel: bodyFunnel(),
+      }),
+      "SG",
+    );
+  }
+  await store.write(behaviorSummary({ durationSec: 15, funnel: bodyFunnel() }), "SG");
+  assert.equal(calls[500].method, "PATCH");
+  assert.equal(calls[500].url, "https://api.notion.com/v1/pages/page-1");
+  assert.equal(storedPopup(calls[500]).funnel?.popup?.observedAt?.visible, AT + 1);
+  const sessionId = crypto.randomUUID();
+  await store.write(
+    behaviorSummary({
+      sessionId,
+      experiment: segmentContext({ sessionId }),
+      funnel: bodyFunnel(),
+    }),
+    "SG",
+  );
+  const again = calls.length;
+  await store.write(behaviorSummary({ durationSec: 16, funnel: bodyFunnel() }), "SG");
+  assert.equal(calls[again].method, "POST");
+  assert.equal(calls[again].url, "https://api.notion.com/v1/pages");
+  assert.equal(calls[again].url.includes("/query"), false);
+  assert.equal(storedPopup(calls[again]).funnel?.popup, undefined);
+});
+
+test("overlapping writes for one session keep the stored popup on that row", async () => {
+  const calls: NotionCall[] = [];
+  let releaseFirst: () => void = () => {};
+  let started!: () => void;
+  const startedPromise = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  let n = 0;
+  const fetchImpl = (async (url: string, init: RequestInit) => {
+    calls.push({
+      url,
+      method: String(init.method),
+      body: init.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : undefined,
+    });
+    n += 1;
+    if (n === 1) {
+      started();
+      await new Promise<void>((resolve) => {
+        releaseFirst = resolve;
+      });
+    }
+    return new Response(JSON.stringify({ id: "page-1" }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const store = createBehaviorNotion({
+    fetchImpl,
+    env: { NOTION_API_KEY: UX_KEY, NOTION_UX_DB_ID: UX_DB },
+    now: () => 1_000_000,
+    log: () => {},
+  });
+  const first = store.write(behaviorSummary({ funnel: bodyFunnel({ popup: seenPopup() }) }), "SG");
+  await startedPromise;
+  const second = store.write(behaviorSummary({ durationSec: 8, funnel: bodyFunnel({ formVisible: true }) }), "SG");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].method, "POST");
+  releaseFirst();
+  assert.deepEqual(await first, { stored: true });
+  assert.deepEqual(await second, { stored: true });
+  assert.deepEqual(
+    calls.map((call) => call.method),
+    ["POST", "PATCH"],
+  );
+  assert.equal(calls[1].url, "https://api.notion.com/v1/pages/page-1");
+  const patched = storedPopup(calls[1]);
+  assert.equal(patched.funnel?.formVisible, true);
+  assert.equal(patched.funnel?.popup?.visible, true);
+  assert.equal(patched.funnel?.popup?.accepted, true);
+  assert.equal(patched.funnel?.popup?.observedAt?.visible, AT + 1);
+  assert.equal(patched.funnel?.popup?.observedAt?.accepted, AT + 5);
+  assert.equal(patched.funnel?.submitAttempted, false);
 });

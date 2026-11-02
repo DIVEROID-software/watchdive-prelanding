@@ -18,6 +18,8 @@ The entry popup stays `recordFunnel={false}` and `source: "offer"`. `domId="entr
 
 QA stays `experiment.qa`. Ordinary popup counts exclude it and report `qaPopupSessions`. No new GA4 `sign_up`, `purchase`, or Meta Lead. The existing FormStart / pending / Clarity calls are untouched.
 
+The same server instance remembers a popup it has already written on a session row. A later summary for that same session id and the same full experiment context is patched onto the row with that popup unioned in. Body flags and placements still come only from the summary being written. A new process does not query the old row.
+
 A hidden document cannot mark `visible` or `formVisible`. `visibilitychange` rechecks the live panel. `wd:acquisition-capture:v1` is not a view.
 
 ## Checks
@@ -25,15 +27,14 @@ A hidden document cannot mark `visible` or `formVisible`. `visibilitychange` rec
 Node `/usr/local/bin/node` v22.17.0.
 
 ```text
-node --experimental-strip-types --test tests/popupMeasurement.test.ts
-# 8 pass, exit 0
+node --experimental-strip-types --test tests/popupMeasurement.test.ts tests/pageBehavior.test.ts
+# 32 pass, exit 0
 
 npx tsc --noEmit --pretty false --incremental false
 # exit 0
-
-node --experimental-strip-types --test tests/*.test.ts
-# 1746 tests, 1726 pass, 0 fail, 20 skipped, exit 0
 ```
+
+The full-file run above is this follow-up. An earlier run of `tests/*.test.ts` on the measurement commit, before this retention change, was 1746 tests, 1726 pass, 0 fail, 20 skipped. That full set was not re-run here.
 
 Worst-case segment context (zh-TW, 32-digit campaign/adset/ad ids, all body flags, full popup including eight timestamps) keeps a 1123-character `[[wd-exp]]` suffix. The cap that drops the experiment is 1800. The encoded Sections text is 1900, equal to `SECTIONS_TEXT_MAX`, with the legacy head trimmed and the JSON whole.
 
@@ -73,7 +74,11 @@ Korean desktop mocked submit, same session `daed8dd6-0998-40f0-905a-03a8f990df4e
 
 ## Risks
 
-A later page-behavior write from the same session can replace the in-memory popup block when that write's funnel has no popup, the same way body flags already work. There is no sessionStorage replay, so a denial cannot be backfilled.
+A warm instance reattaches a popup only when it stored that popup itself, on a later write whose session id and full experiment context are identical. QA and every other context field count, including `acquisitionPlacement`. Flags stay set. Timestamps stay the earliest. The later write's body flags and placements are stored as sent. The map is process memory: no Notion read, no browser-storage replay, and no historic backfill.
+
+A different session, QA bit, or any other context field does not receive that popup. A write that failed is not treated as stored. If the update fails, the page id is dropped and the replacement create still carries the popup already stored. If that create fails too, the next successful write of the same context still carries it, including after the one-minute pause that follows a 4xx. Two writes for one session on this instance run one after the other, so an empty summary cannot pass the view it overlaps. These paths are covered by the fake Notion client.
+
+A cold instance starts empty, creates a separate row, and leaves the previous row alone. Reporting still unions rows that share a session. After 500 other sessions the map drops one, and that session then behaves like a cold start. A successful write whose context does not match replaces the row and forgets the popup, because the row no longer holds it. A denial that this process never stored still cannot be reconstructed.
 
 The public pending response still does not say whether the address was created or resent. CRM remains the new-person cohort. Client timestamps are the browser clock at first observation.
 

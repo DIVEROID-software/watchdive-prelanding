@@ -22,7 +22,13 @@
 // behaviour database cannot crowd out signups.
 //
 // Kept free of path-alias imports so `npm test` can load it directly.
-import { encodeBehaviorSections } from "../conversionExperimentContract.ts";
+import {
+  encodeBehaviorSections,
+  experimentContextSchema,
+  parseBehaviorSections,
+  unionFunnels,
+  type PopupFunnel,
+} from "../conversionExperimentContract.ts";
 import type { PageBehaviorSummary } from "../pageBehaviorSummary.ts";
 import {
   createNotionRequest,
@@ -120,6 +126,74 @@ function isClientError(error: unknown): boolean {
   return error instanceof NotionRequestError && error.status >= 400 && error.status < 500;
 }
 
+/**
+ * Identity of one stored UX row. QA and every other context field count.
+ * A per-submit `acquisitionPlacement` is a different context, matching the
+ * raw JSON check the segment report uses between behavior rows.
+ * The behavior session id has to be the context's own session id.
+ */
+function storedContextKey(context: unknown, sessionId: string): string | undefined {
+  const parsed = experimentContextSchema.safeParse(context);
+  if (!parsed.success || parsed.data.sessionId !== sessionId) return undefined;
+  return JSON.stringify(parsed.data);
+}
+
+function sectionText(properties: ReturnType<typeof behaviorProperties>): string {
+  return properties.Sections.rich_text[0]?.text.content ?? "";
+}
+
+type RememberedPopup = { context: string; popup: PopupFunnel };
+
+/** Popup actually present in the Sections payload about to be written. */
+function popupWritten(
+  properties: ReturnType<typeof behaviorProperties>,
+  sessionId: string,
+): RememberedPopup | undefined {
+  const parsed = parseBehaviorSections(sectionText(properties));
+  const context = storedContextKey(parsed.context, sessionId);
+  const popup = parsed.funnel?.popup;
+  if (!context || !popup) return undefined;
+  return { context, popup };
+}
+
+/**
+ * Body flags and placements stay on `summary`. Only a popup this instance
+ * already stored for the same session and the same full context is filled back in.
+ * No Notion read and no browser storage.
+ */
+function summaryKeepingPopup(
+  summary: PageBehaviorSummary,
+  remembered: RememberedPopup | undefined,
+): PageBehaviorSummary {
+  if (!remembered) return summary;
+  const key = storedContextKey(summary.experiment, summary.sessionId);
+  if (!key || key !== remembered.context) return summary;
+  const popup = unionFunnels([
+    summary.funnel,
+    {
+      exposed: false,
+      formVisible: false,
+      formFocused: false,
+      submitAttempted: false,
+      popup: remembered.popup,
+    },
+  ]).popup;
+  if (!popup) return summary;
+  if (!summary.funnel) {
+    return {
+      ...summary,
+      funnel: {
+        exposed: false,
+        formVisible: false,
+        formFocused: false,
+        submitAttempted: false,
+        popup,
+      },
+    };
+  }
+  return { ...summary, funnel: { ...summary.funnel, popup } };
+}
+
 export function createBehaviorNotion(
   options: {
     fetchImpl?: typeof fetch;
@@ -138,7 +212,11 @@ export function createBehaviorNotion(
   let unconfiguredLogged = false;
   // sessionId -> Notion page, so a session's later summaries update its row
   // instead of adding one. Per instance only; a cold instance starts a new row.
-  const sessionPages = new Map<string, string>();
+  // `remembered` is the popup this instance has already stored on that row.
+  // It is not read back from Notion and not restored from the browser.
+  const sessionPages = new Map<string, { pageId?: string; remembered?: RememberedPopup }>();
+  // One session's writes share a row, so they run in order on this instance.
+  const writeTails = new Map<string, Promise<void>>();
 
   function config(): { id: string; key: string } | null {
     const id = env.NOTION_UX_DB_ID?.trim() ?? "";
@@ -207,38 +285,80 @@ export function createBehaviorNotion(
       : { ok: true as const, page: outcome.value };
   }
 
+  function noteSuccess(sessionId: string, pageId: string, remembered: RememberedPopup | undefined) {
+    const page = sessionPages.get(sessionId) ?? {};
+    const isNew = !sessionPages.has(sessionId);
+    page.pageId = pageId;
+    page.remembered = remembered;
+    if (isNew && sessionPages.size >= SESSION_PAGES_MAX) {
+      const oldest = sessionPages.keys().next().value;
+      if (oldest !== undefined) sessionPages.delete(oldest);
+    }
+    sessionPages.set(sessionId, page);
+  }
+
+  // The page id is stale. Keep a popup already stored so the replacement row can carry it.
+  function forgetPage(sessionId: string) {
+    const page = sessionPages.get(sessionId);
+    if (!page) return;
+    delete page.pageId;
+    if (!page.remembered) sessionPages.delete(sessionId);
+  }
+
+  async function writeOne(
+    summary: PageBehaviorSummary,
+    country: string,
+  ): Promise<BehaviorWriteResult> {
+    const prepared = summaryKeepingPopup(summary, sessionPages.get(summary.sessionId)?.remembered);
+    const properties = behaviorProperties(prepared, country);
+    // What this payload actually contains. A failed attempt must not replace the previous one.
+    const written = popupWritten(properties, summary.sessionId);
+    const known = sessionPages.get(summary.sessionId)?.pageId;
+    if (known && resolved && now() >= pausedUntil) {
+      try {
+        await requestFor(resolved)("PATCH", `pages/${known}`, { properties });
+        noteSuccess(summary.sessionId, known, written);
+        return { stored: true };
+      } catch {
+        // The row is gone or unreachable: fall through and start a new one.
+        forgetPage(summary.sessionId);
+      }
+    }
+    const outcome = await run("write", (target) =>
+      requestFor(target)("POST", "pages", {
+        parent:
+          target === "database"
+            ? { database_id: config()!.id }
+            : { type: "data_source_id", data_source_id: config()!.id },
+        properties,
+      }),
+    );
+    if ("failure" in outcome) return { stored: false, reason: outcome.failure };
+    const pageId = typeof outcome.value.id === "string" ? outcome.value.id : "";
+    if (pageId) noteSuccess(summary.sessionId, pageId, written);
+    return { stored: true };
+  }
+
   return {
     async write(summary: PageBehaviorSummary, country: string): Promise<BehaviorWriteResult> {
-      const properties = behaviorProperties(summary, country);
-      const known = sessionPages.get(summary.sessionId);
-      if (known && resolved && now() >= pausedUntil) {
-        try {
-          await requestFor(resolved)("PATCH", `pages/${known}`, { properties });
-          return { stored: true };
-        } catch {
-          // The row is gone or unreachable: fall through and start a new one.
-          sessionPages.delete(summary.sessionId);
-        }
-      }
-      const outcome = await run("write", (target) =>
-        requestFor(target)("POST", "pages", {
-          parent:
-            target === "database"
-              ? { database_id: config()!.id }
-              : { type: "data_source_id", data_source_id: config()!.id },
-          properties,
-        }),
+      const previous = writeTails.get(summary.sessionId) ?? Promise.resolve();
+      let release: () => void = () => {};
+      const finished = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      // Wait for our own turn even when the previous write rejected.
+      const tail = previous.then(
+        () => finished,
+        () => finished,
       );
-      if ("failure" in outcome) return { stored: false, reason: outcome.failure };
-      const pageId = typeof outcome.value.id === "string" ? outcome.value.id : "";
-      if (pageId) {
-        if (sessionPages.size >= SESSION_PAGES_MAX) {
-          const oldest = sessionPages.keys().next().value;
-          if (oldest !== undefined) sessionPages.delete(oldest);
-        }
-        sessionPages.set(summary.sessionId, pageId);
+      writeTails.set(summary.sessionId, tail);
+      await previous.catch(() => undefined);
+      try {
+        return await writeOne(summary, country);
+      } finally {
+        release();
+        if (writeTails.get(summary.sessionId) === tail) writeTails.delete(summary.sessionId);
       }
-      return { stored: true };
     },
 
     /**
