@@ -81,7 +81,9 @@ test("off: rendered copy stays frozen with owner-approved hero, brand and footer
   // frozen 8592d820…, conversion ef82f627…, race b0f177d6…, phone 5da27009…,
   // and mails e17e8f1e….
   // Dutch terms now require a separate optional SMS checkbox; entering a
-  // number alone is not consent. All other reviewed catalog text is unchanged.
+  // number alone is not consent.
+  // 2026-11-02: add missing-token verification copy in all ten locales.
+  // Product, price, referral and marketing copy remain unchanged.
   const race = SUPPORTED_LOCALES.map((l) =>
     earlyBirdRace(l, FROZEN_LANDING_MESSAGES[l].hero.nowPrice),
   );
@@ -102,7 +104,7 @@ test("off: rendered copy stays frozen with owner-approved hero, brand and footer
   );
   assert.equal(
     sha256(FROZEN_LANDING_MESSAGES),
-    "7e26cd9e1514f3c64a7ae509bd98b205e7cc6f21273774917d02c9b8498901e5",
+    "9c157b24e3c4eb35bbab22a37635040524d9cd00f3945d16d40d47007d95b5fe",
   );
   assert.equal(
     sha256(conversionCopy),

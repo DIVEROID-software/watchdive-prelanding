@@ -50,9 +50,8 @@ test("the native observation writes the three country cells together", () => {
   assert.equal(text(properties, FIELD_SIGNUP_COUNTRY_SOURCE), SIGNUP_COUNTRY_SOURCE_NATIVE_FORM);
 });
 
-test("the current CRM reader keeps the form country and drops its source", () => {
-  // readSignupCountryFields allows only the Vercel sensor and "unknown".
-  // The email worker owns that reader. This locks the gap until that allowlist grows.
+test("the integrated CRM reader preserves the form country and its source", () => {
+  // Native writes and the generic CRM reader must ship together.
   const record = toLeadRecord({
     id: "page-native",
     properties: {
@@ -64,6 +63,6 @@ test("the current CRM reader keeps the form country and drops its source", () =>
     },
   });
   assert.equal(record?.signupCountry, "TW");
-  assert.equal(record?.signupCountrySource, undefined);
+  assert.equal(record?.signupCountrySource, SIGNUP_COUNTRY_SOURCE_NATIVE_FORM);
   assert.equal(record?.signupCountryObservedAt, AT.toISOString());
 });
