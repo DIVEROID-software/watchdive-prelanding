@@ -531,3 +531,24 @@ test("a timed-out success body is retried and a caller abort during an error bod
   assert.equal(aborted.sleeps.length, 0);
   assert.equal(aborted.events[0].reason, "caller_abort");
 });
+
+test("a broken error body still honors Retry-After", async () => {
+  for (const header of ["1", "30"]) {
+    const check = harness((_call, index) => {
+      if (index > 0) return Response.json({ ok: true });
+      const stream = new ReadableStream({
+        start(controller) { controller.error(new TypeError("connection lost")); },
+      });
+      return new Response(stream, { status: 429, headers: { "retry-after": header } });
+    });
+    if (header === "1") {
+      assert.deepEqual(await check.request("GET", `pages/${PAGE}`), { ok: true });
+      assert.equal(check.calls.length, 2);
+      assert.deepEqual(check.sleeps, [1000]);
+    } else {
+      await assert.rejects(check.request("GET", `pages/${PAGE}`));
+      assert.equal(check.calls.length, 1);
+      assert.deepEqual(check.sleeps, []);
+    }
+  }
+});

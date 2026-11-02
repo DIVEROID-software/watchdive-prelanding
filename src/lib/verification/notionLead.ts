@@ -550,7 +550,15 @@ export function createNotionRequest(
           raw = await consume();
         } catch (error) {
           const reason = transportReason(error, timeoutSignal, callerSignal);
-          const retry = read && (reason === "timeout" || reason === "network") && attempt < attempts;
+          let retry = read && (reason === "timeout" || reason === "network") && attempt < attempts;
+          // Headers still apply when reading the error body fails. Do not
+          // bypass a long Retry-After because the body timed out.
+          let waitMs = 0;
+          if (retry) {
+            const delay = notionRetryDelay(response.headers.get("retry-after"), Date.now(), random());
+            if ("stop" in delay) retry = false;
+            else waitMs = delay.waitMs;
+          }
           emitAttempt(log, {
             operation,
             attempt,
@@ -560,7 +568,7 @@ export function createNotionRequest(
             durationMs: Math.max(0, Date.now() - startedMs),
           });
           if (retry) {
-            await waitRetry(notionReadBackoffMs(random()));
+            await waitRetry(waitMs);
             continue;
           }
           if (reason === "timeout") throw timeoutError();
