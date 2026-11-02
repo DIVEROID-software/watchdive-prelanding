@@ -7,7 +7,7 @@ import ts from "typescript";
 
 import { SUPPORTED_LOCALES } from "../src/lib/i18n/locale.ts";
 import { createVerificationToken, verificationUrl } from "../src/lib/verification/token.ts";
-import { isVerificationTokenShape } from "../src/lib/verification/tokenShape.ts";
+import { verificationTokenFromFragment } from "../src/lib/verification/tokenShape.ts";
 import { TEST_ORIGIN, TEST_SECRET } from "./helpers/fakes.ts";
 
 // Execute the actual page parser, not a second implementation of its rules.
@@ -29,7 +29,7 @@ const code = ts.transpileModule(
   { compilerOptions: { target: ts.ScriptTarget.ES2022 } },
 ).outputText;
 const tokenFromFragment = runInNewContext(`${code}\ntokenFromFragment`, {
-  isVerificationTokenShape,
+  verificationTokenFromFragment,
 }) as (hash: string) => string | undefined;
 
 const ID = "aaaaaaaa-bbbb-4ccc-8ddd-000000000001";
@@ -47,8 +47,12 @@ test("freshly issued verification links pass the /verify page check in every loc
   }
 });
 
-test("the verify page imports its shape check from the browser-safe shared module", () => {
-  assert.match(source, /import\s*\{\s*isVerificationTokenShape\s*\}\s*from\s*["']@\/lib\/verification\/tokenShape["']/);
+test("the verify page parses fragments through the browser-safe shared module", () => {
+  assert.match(
+    source,
+    /import\s*\{\s*verificationTokenFromFragment\s*\}\s*from\s*["']@\/lib\/verification\/tokenShape["']/,
+  );
+  assert.match(parser?.getText(ast) ?? "", /return verificationTokenFromFragment\(hash\)/);
   assert.equal(legacyPattern.length, 0, "do not restore an independent page token regex");
 });
 
@@ -60,9 +64,31 @@ test("legacy four-part email links still pass the page check", () => {
   assert.equal(tokenFromFragment(`#token=${token}`), token);
 });
 
+test("mail-client wrappers around a real fragment still reach the page check", () => {
+  const token = createVerificationToken(ID, expiry, false, TEST_SECRET, "zh-TW");
+  for (const fragment of [
+    `#${token}.extra`,
+    `#${token}&utm_source=ig`,
+    `# ${token} `,
+    `#${token.slice(0, 24)}\u200b${token.slice(24)}`,
+    `#${token.slice(0, 40)}=\n${token.slice(40)}`,
+  ]) {
+    assert.equal(tokenFromFragment(fragment), token, fragment);
+  }
+});
+
 test("malformed fragments are rejected without throwing", () => {
   const token = createVerificationToken(ID, expiry, false, TEST_SECRET, "en");
-  for (const fragment of ["", "#", "#token=", "#%E0%A4%A", `#${token}.extra`, `#${token.replace('.en.', '.xx.')}`, `#${token.slice(0, -1)}`]) {
+  for (const fragment of [
+    "",
+    "#",
+    "#token=",
+    "#%E0%A4%A",
+    token,
+    `?token=${token}`,
+    `#${token.replace(".en.", ".xx.")}`,
+    `#${token.slice(0, -1)}`,
+  ]) {
     assert.equal(tokenFromFragment(fragment), undefined, fragment);
   }
 });
