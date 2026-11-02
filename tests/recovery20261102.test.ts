@@ -357,28 +357,28 @@ test("send claims before the provider, appends history, and returns only a recei
   assert.equal(TEST_ORIGIN, RECOVERY_20261102_ORIGIN);
 });
 
-test("Notion second precision and UTC offset spelling preserve the claimed expiry", async () => {
+test("Notion minute precision and UTC offset spelling preserve the claimed expiry", async () => {
   class NotionDateStore extends Store {
     async claimReminder(pageId: string, claim: { marker: string; sends: number; expiresAt: string }) {
       await super.claimReminder(pageId, claim);
       const row = this.rows.find((r) => r.pageId === pageId)!;
-      row.expiresAt = new Date(Math.floor(Date.parse(claim.expiresAt) / 1000) * 1000)
+      row.expiresAt = new Date(Math.floor(Date.parse(claim.expiresAt) / 60_000) * 60_000)
         .toISOString().replace("Z", "+00:00");
     }
   }
   const store = new NotionDateStore([row()]);
   const provider = new Provider();
-  const result = await run(store, provider, { mode: "send" }, new Date(OPEN.getTime() + 321));
+  const result = await run(store, provider, { mode: "send" }, new Date(OPEN.getTime() + 45_321));
   assert.equal(result.status, "provider_accepted");
   assert.equal(provider.calls.length, 1);
-  assert.equal(Date.parse(store.claims[0].expiresAt) % 1000, 0);
+  assert.equal(Date.parse(store.claims[0].expiresAt) % 60_000, 0);
 });
 
 test("a genuinely changed expiry still stops before the provider", async () => {
   class ChangedDateStore extends Store {
     async claimReminder(pageId: string, claim: { marker: string; sends: number; expiresAt: string }) {
       await super.claimReminder(pageId, claim);
-      this.rows.find((r) => r.pageId === pageId)!.expiresAt = new Date(Date.parse(claim.expiresAt) + 1000).toISOString();
+      this.rows.find((r) => r.pageId === pageId)!.expiresAt = new Date(Date.parse(claim.expiresAt) + 60_000).toISOString();
     }
   }
   const store = new ChangedDateStore([row()]);

@@ -539,8 +539,9 @@ export async function runVerificationServiceRecovery(input: {
     return decision(mode, "not_configured");
   }
   if (origin !== RECOVERY_20261102_ORIGIN) return decision(mode, "origin_rejected");
-  // Tokens and Notion dates use whole-second precision. Match both explicitly.
-  const expiryMs = Math.floor((clock().getTime() + VERIFICATION_TTL_MS) / 1000) * 1000;
+  // A production create/PATCH/read probe confirmed Notion truncates to minutes.
+  // Sign the same instant we can reread, preserving the strict ownership check.
+  const expiryMs = Math.floor((clock().getTime() + VERIFICATION_TTL_MS) / 60_000) * 60_000;
   const expiresAt = new Date(expiryMs).toISOString();
   let mail: Recovery20261102Mail;
   let href = "";
