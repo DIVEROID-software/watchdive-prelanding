@@ -501,7 +501,9 @@ test("an unparseable Notion body contributes nothing", () => {
 
 test("Notion requests are bounded by a timeout", () => {
   const store = read("src/lib/verification/notionLead.ts");
-  assert.ok(store.includes("signal: AbortSignal.timeout(NOTION_TIMEOUT_MS)"));
+  assert.match(store, /const NOTION_TIMEOUT_MS = 10_000/);
+  assert.match(store, /AbortSignal\.timeout\(NOTION_TIMEOUT_MS\)/);
+  assert.match(store, /const NOTION_READ_ATTEMPTS = 2/);
 });
 
 test("the browser lead shape is defined once", () => {
