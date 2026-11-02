@@ -20,7 +20,8 @@ import { useCurrentLocale, useFrozenLandingMessages } from "@/lib/i18n/use-curre
 import { initClarity } from "@/lib/clarity";
 import { googleTagBootstrap, initGoogleTag, readGoogleTagConfig } from "@/lib/googleTag";
 import { initMetaPixel } from "@/lib/metaPixel";
-import { INLINE_MEASUREMENT_ALLOWED_JS, resolveGeoCountry } from "@/lib/consentRegion";
+import { INLINE_MEASUREMENT_ALLOWED_JS, measurementAllowed, resolveGeoCountry } from "@/lib/consentRegion";
+import { startSitePresence } from "@/lib/sitePresenceClient.js";
 import { startPageBehavior } from "@/lib/pageBehavior";
 import { experimentBootstrap, EXPERIMENT_ENABLED } from "@/lib/conversionExperimentClient";
 import { allowsThirdPartyScripts, SUPPORT_WIDGET_SRC } from "@/lib/thirdPartyScripts";
@@ -181,6 +182,7 @@ function RootComponent() {
   useEffect(() => {
     if (!allowsThirdPartyScripts(pathname)) return;
     let alive = true;
+    let stopPresence: (() => void) | undefined;
     // Normally the `wd_geo` cookie is already here from the HTML response; if
     // not, `/api/geo` answers once. Each init re-checks the consent rule.
     void resolveGeoCountry().then(() => {
@@ -189,9 +191,11 @@ function RootComponent() {
       initGoogleTag();
       initClarity();
       startPageBehavior();
+      stopPresence = startSitePresence({ site: "watchdive", allowed: measurementAllowed });
     });
     return () => {
       alive = false;
+      stopPresence?.();
     };
   }, [pathname]);
 
