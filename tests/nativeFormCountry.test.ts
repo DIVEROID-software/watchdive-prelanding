@@ -8,7 +8,9 @@ import {
   FIELD_SIGNUP_COUNTRY_OBSERVED,
   FIELD_SIGNUP_COUNTRY_SOURCE,
   SIGNUP_COUNTRY_SOURCE_NATIVE_FORM,
+  SIGNUP_COUNTRY_SOURCE_UNKNOWN,
   SIGNUP_COUNTRY_SOURCE_VERCEL,
+  SIGNUP_COUNTRY_UNKNOWN,
   type SignupCountryObservation,
 } from "../src/lib/verification/contracts.ts";
 
@@ -30,6 +32,25 @@ test("each form market is stored, and the shared Traditional Chinese locale is n
   assert.equal(signupCountryForNativeCreate(undefined, "zh-TW", AT), undefined);
   assert.equal(signupCountryForNativeCreate(undefined, "ko", AT), undefined);
   assert.equal(signupCountryForNativeCreate(undefined, "gmail.com", AT), undefined);
+});
+
+test("a default unknown observation is replaced by the form market", () => {
+  const unknown: SignupCountryObservation = {
+    country: SIGNUP_COUNTRY_UNKNOWN,
+    countrySource: SIGNUP_COUNTRY_SOURCE_UNKNOWN,
+    countryObservedAt: AT.toISOString(),
+  };
+  const filled = signupCountryForNativeCreate(unknown, "JP", AT);
+  assert.equal(filled?.country, "JP");
+  assert.equal(filled?.countrySource, SIGNUP_COUNTRY_SOURCE_NATIVE_FORM);
+  const sensorMiss: SignupCountryObservation = {
+    country: SIGNUP_COUNTRY_UNKNOWN,
+    countrySource: SIGNUP_COUNTRY_SOURCE_VERCEL,
+    countryObservedAt: AT.toISOString(),
+  };
+  const fromForm = signupCountryForNativeCreate(sensorMiss, "TW", AT);
+  assert.equal(fromForm?.country, "TW");
+  assert.equal(fromForm?.countrySource, SIGNUP_COUNTRY_SOURCE_NATIVE_FORM);
 });
 
 test("a trusted Vercel observation is not replaced by the form market", () => {
