@@ -20,6 +20,7 @@ import {
   FIELD_SIGNUP_COUNTRY,
   FIELD_SIGNUP_COUNTRY_OBSERVED,
   FIELD_SIGNUP_COUNTRY_SOURCE,
+  SIGNUP_COUNTRY_SOURCE_NATIVE_FORM,
   SIGNUP_COUNTRY_SOURCE_UNKNOWN,
   SIGNUP_COUNTRY_SOURCE_VERCEL,
   SIGNUP_COUNTRY_UNKNOWN,
@@ -170,6 +171,43 @@ test("country cells are explicit, and a client-labelled code cannot ride along",
   );
   assert.equal(JSON.stringify(ip).includes(IP), false);
   assert.deepEqual(signupCountryProperties(undefined), {});
+});
+
+test("a native form market is stored as itself, and a locale or foreign label is not", () => {
+  const stored = signupCountryProperties({
+    country: "HK",
+    countrySource: SIGNUP_COUNTRY_SOURCE_NATIVE_FORM,
+    countryObservedAt: OBSERVED.toISOString(),
+  });
+  assert.equal(
+    (stored[FIELD_SIGNUP_COUNTRY] as { rich_text: { text: { content: string } }[] }).rich_text[0]
+      .text.content,
+    "HK",
+  );
+  assert.equal(
+    (stored[FIELD_SIGNUP_COUNTRY_SOURCE] as { rich_text: { text: { content: string } }[] })
+      .rich_text[0].text.content,
+    SIGNUP_COUNTRY_SOURCE_NATIVE_FORM,
+  );
+  assert.deepEqual(
+    signupCountryProperties({
+      country: "zh-TW",
+      countrySource: SIGNUP_COUNTRY_SOURCE_NATIVE_FORM,
+      countryObservedAt: OBSERVED.toISOString(),
+    }),
+    {},
+  );
+  const labelled = signupCountryProperties({
+    country: "KR",
+    countrySource: "email_domain" as SignupCountryObservation["countrySource"],
+    countryObservedAt: OBSERVED.toISOString(),
+  });
+  assert.equal(
+    (labelled[FIELD_SIGNUP_COUNTRY] as { rich_text: { text: { content: string } }[] }).rich_text[0]
+      .text.content,
+    "unknown",
+  );
+  assert.equal(JSON.stringify(labelled).includes("native_form_market"), false);
 });
 
 test("the schema patch adds only the three country properties", () => {
