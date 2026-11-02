@@ -40,6 +40,7 @@ import { Route as ApiAuthStartRouteImport } from './routes/api/auth/start'
 import { Route as ApiCronManualVerification20261019RouteImport } from './routes/api.cron.manual-verification-20261019'
 import { Route as ApiCronReferralAnnounceRouteImport } from './routes/api.cron.referral-announce'
 import { Route as ApiCronVerificationRecovery20261031RouteImport } from './routes/api.cron.verification-recovery-20261031'
+import { Route as ApiCronVerificationRecovery20261102RouteImport } from './routes/api.cron.verification-recovery-20261102'
 import { Route as ApiCronVerificationReminderRouteImport } from './routes/api.cron.verification-reminder'
 import { Route as ApiCronVerificationReminderV2RouteImport } from './routes/api.cron.verification-reminder-v2'
 import { Route as ApiInternalNativeConfirmationRouteImport } from './routes/api.internal.native-confirmation'
@@ -210,6 +211,12 @@ const ApiCronVerificationRecovery20261031Route =
     path: '/api/cron/verification-recovery-20261031',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCronVerificationRecovery20261102Route =
+  ApiCronVerificationRecovery20261102RouteImport.update({
+    id: '/api/cron/verification-recovery-20261102',
+    path: '/api/cron/verification-recovery-20261102',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCronVerificationReminderRoute =
   ApiCronVerificationReminderRouteImport.update({
     id: '/api/cron/verification-reminder',
@@ -306,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-recovery-20261031': typeof ApiCronVerificationRecovery20261031Route
+  '/api/cron/verification-recovery-20261102': typeof ApiCronVerificationRecovery20261102Route
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/internal/native-confirmation': typeof ApiInternalNativeConfirmationRoute
@@ -350,6 +358,7 @@ export interface FileRoutesByTo {
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-recovery-20261031': typeof ApiCronVerificationRecovery20261031Route
+  '/api/cron/verification-recovery-20261102': typeof ApiCronVerificationRecovery20261102Route
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/internal/native-confirmation': typeof ApiInternalNativeConfirmationRoute
@@ -396,6 +405,7 @@ export interface FileRoutesById {
   '/api/cron/manual-verification-20261019': typeof ApiCronManualVerification20261019Route
   '/api/cron/referral-announce': typeof ApiCronReferralAnnounceRoute
   '/api/cron/verification-recovery-20261031': typeof ApiCronVerificationRecovery20261031Route
+  '/api/cron/verification-recovery-20261102': typeof ApiCronVerificationRecovery20261102Route
   '/api/cron/verification-reminder': typeof ApiCronVerificationReminderRoute
   '/api/cron/verification-reminder-v2': typeof ApiCronVerificationReminderV2Route
   '/api/internal/native-confirmation': typeof ApiInternalNativeConfirmationRoute
@@ -443,6 +453,7 @@ export interface FileRouteTypes {
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/referral-announce'
     | '/api/cron/verification-recovery-20261031'
+    | '/api/cron/verification-recovery-20261102'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
     | '/api/internal/native-confirmation'
@@ -487,6 +498,7 @@ export interface FileRouteTypes {
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/referral-announce'
     | '/api/cron/verification-recovery-20261031'
+    | '/api/cron/verification-recovery-20261102'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
     | '/api/internal/native-confirmation'
@@ -532,6 +544,7 @@ export interface FileRouteTypes {
     | '/api/cron/manual-verification-20261019'
     | '/api/cron/referral-announce'
     | '/api/cron/verification-recovery-20261031'
+    | '/api/cron/verification-recovery-20261102'
     | '/api/cron/verification-reminder'
     | '/api/cron/verification-reminder-v2'
     | '/api/internal/native-confirmation'
@@ -569,6 +582,7 @@ export interface RootRouteChildren {
   ApiCronManualVerification20261019Route: typeof ApiCronManualVerification20261019Route
   ApiCronReferralAnnounceRoute: typeof ApiCronReferralAnnounceRoute
   ApiCronVerificationRecovery20261031Route: typeof ApiCronVerificationRecovery20261031Route
+  ApiCronVerificationRecovery20261102Route: typeof ApiCronVerificationRecovery20261102Route
   ApiCronVerificationReminderRoute: typeof ApiCronVerificationReminderRoute
   ApiCronVerificationReminderV2Route: typeof ApiCronVerificationReminderV2Route
   ApiInternalNativeConfirmationRoute: typeof ApiInternalNativeConfirmationRoute
@@ -802,6 +816,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronVerificationRecovery20261031RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/verification-recovery-20261102': {
+      id: '/api/cron/verification-recovery-20261102'
+      path: '/api/cron/verification-recovery-20261102'
+      fullPath: '/api/cron/verification-recovery-20261102'
+      preLoaderRoute: typeof ApiCronVerificationRecovery20261102RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/verification-reminder': {
       id: '/api/cron/verification-reminder'
       path: '/api/cron/verification-reminder'
@@ -941,6 +962,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronReferralAnnounceRoute: ApiCronReferralAnnounceRoute,
   ApiCronVerificationRecovery20261031Route:
     ApiCronVerificationRecovery20261031Route,
+  ApiCronVerificationRecovery20261102Route:
+    ApiCronVerificationRecovery20261102Route,
   ApiCronVerificationReminderRoute: ApiCronVerificationReminderRoute,
   ApiCronVerificationReminderV2Route: ApiCronVerificationReminderV2Route,
   ApiInternalNativeConfirmationRoute: ApiInternalNativeConfirmationRoute,
