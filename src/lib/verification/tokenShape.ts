@@ -55,7 +55,7 @@ export function verificationTokenFromFragment(hash: string): string | undefined 
   const nested = raw.lastIndexOf("#");
   if (nested >= 0) raw = raw.slice(nested + 1).replace(MAIL_NOISE, "");
   if (raw.startsWith("token=")) raw = raw.slice("token=".length);
-  if (isVerificationTokenShape(raw)) return raw;
+  if (isVerificationTokenShape(raw as unknown)) return raw;
   const current = raw.match(EMBEDDED_V2);
   if (current && isVerificationTokenShape(current[0])) return current[0];
   const legacy = raw.match(EMBEDDED_LEGACY);
