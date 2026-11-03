@@ -21,6 +21,8 @@ import { FreedivingSurfacePhoto } from './FreedivingSurfacePhoto';
 import { SegmentCostComparison } from './SegmentCostComparison';
 import { subscriptionCopy } from '@/lib/segments/subscription-copy';
 import { heroDisclosureCopy } from '@/lib/segments/hero-disclosure-copy';
+import { mediaCopy } from '@/lib/segments/media-copy';
+import { BenefitShot, HowPhotoRow, LogHandPhoto, SegmentDemos, SegmentGallery, SegmentPress } from './SegmentMedia';
 import sync640 from '@/assets/live/refresh/sync-app-640.webp';
 import sync1000 from '@/assets/live/refresh/sync-app-1000.webp';
 import cameraPoster from '@/assets/live/connected-app-poster.jpg';
@@ -52,6 +54,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   const c = segmentCopy(locale, segment);
   const referralOn = useReferralProgramEnabled();
   const subscription = subscriptionCopy(locale);
+  const media = mediaCopy(locale);
   const benefits = [{ title: subscription.benefitTitle, body: subscription.benefitBody }, ...c.benefits.slice(0, 2)];
   const [priceNoteBefore, priceNoteAfter] = c.priceNote.split(c.priceNoteHighlight);
   const [sticky, setSticky] = useState(false);
@@ -113,7 +116,8 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   }
 
   function signup(position: 'middle' | 'bottom') {
-    return <section id={`signup-${position}`} data-segment-signup="" data-wd-segment={segment} data-wd-placement={position} className={`wd-segment-signup wd-segment-signup-${position}`} aria-labelledby={`signup-title-${position}`}>
+    return {
+      form: <section id={`signup-${position}`} data-segment-signup="" data-wd-segment={segment} data-wd-placement={position} className={`wd-segment-signup wd-segment-signup-${position}`} aria-labelledby={`signup-title-${position}`}>
       <div className="wd-segment-signup-heading">
         <p className="wd-segment-eyebrow">KICKSTARTER · WATCHDIVE</p>
         <h2 id={`signup-title-${position}`} tabIndex={position === 'middle' ? -1 : undefined}>{position === 'middle' ? c.signupTitle : c.finalTitle}</h2>
@@ -129,12 +133,13 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         <EmailForm id={position === 'middle' ? 'hero' : 'offer'} presentation={{ cta: c.signupCta, note: c.signupNote }} />
         <p className="wd-segment-free-note">{c.noPayment}</p>
       </div>
-      {position === 'middle' && <PricePaths locale={locale} referralOn={referralOn} />}
-    </section>;
+      </section>,
+      prices: position === 'middle' && <PricePaths locale={locale} referralOn={referralOn} />,
+    };
   }
 
   return <SocialSignupResultProvider key={`${locale}-${segment}`}>
-    <div className={`wd-segment-page wd-segment-${segment}`} data-landing-phase="segments-mobile-20261025">
+    <div className={`wd-segment-page wd-segment-${segment}`} data-landing-phase="segments-mobile-20261025" data-visual-phase="media-rich-20261103">
       <script dangerouslySetInnerHTML={{ __html: HOLD_EARLY_SUBMIT_JS }} />
       <header className="wd-segment-header">
         <nav className="wd-segment-modes" aria-label="WatchDive">
@@ -163,7 +168,8 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
           <p className="wd-segment-eyebrow">01 / WATCHDIVE</p>
           <h2 id="benefits-title">{c.benefitTitle}</h2>
           <div className="wd-segment-benefit-list">{benefits.map((benefit, i) => <article key={benefit.title}>
-            <span className="wd-segment-number" aria-hidden="true">0{i + 1}</span><div><h3>{benefit.title}</h3><p>{benefit.body}</p></div>
+            <BenefitShot segment={segment} index={i} alt={media.benefitAlt[segment][i]} />
+            <div className="wd-segment-benefit-copy"><span className="wd-segment-number" aria-hidden="true">0{i + 1}</span><div><h3>{benefit.title}</h3><p>{benefit.body}</p></div></div>
           </article>)}</div>
         </section>
 
@@ -174,19 +180,21 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
           <div className="wd-segment-how-copy"><p className="wd-segment-eyebrow">02 / {m.how.kicker}</p><h2 id="how-title"><HowTitle template={c.howTitle} tone={isFree ? 'on-light' : 'on-dark'} /></h2><p>{c.howIntro}</p>
             <ol>{[m.how.step1Title, m.how.step2Title, m.how.step3Title].map((title, i) => <li key={title}><span aria-hidden="true">{i + 1}</span>{title}</li>)}</ol>
           </div>
+          <HowPhotoRow />
           <SegmentHowCompat locale={locale} label={c.compatibility} />
         </section>
 
-        <SegmentCostComparison locale={locale} />
         <AcquisitionTools compatibility={false} />
-
-        <div className="wd-segment-shell">{signup('middle')}</div>
+        <div className="wd-segment-shell">{signup('middle').form}</div>
+        <SegmentPress copy={media} />
+        <SegmentGallery segment={segment} copy={media} />
+        <SegmentDemos segment={segment} copy={media} playLabel={m.media.play} />
 
         <section id="segment-logbook" className="wd-segment-log wd-segment-shell" aria-labelledby="log-title">
           <div className="wd-segment-log-copy"><p className="wd-segment-eyebrow">03 / DIVEROID APP</p><h2 id="log-title">{c.logTitle}</h2><p>{c.logBody}</p></div>
           {isFree ? <figure className="wd-segment-free-logbook">
             <img src={freeLogbook1448} srcSet={`${freeLogbook720} 720w, ${freeLogbook1448} 1448w`} sizes="(min-width:960px) 55vw, 100vw" width="1448" height="965" alt={c.logImageAlt} loading="lazy" decoding="async" />
-          </figure> : <div className="wd-segment-log-images"><img className="wd-segment-sync" src={sync1000} srcSet={`${sync640} 640w, ${sync1000} 1000w`} sizes="(min-width:960px) 45vw, 85vw" width="1000" height="667" alt={m.how.step3Alt} loading="lazy" decoding="async" /><img className="wd-segment-app" src={logbook} width="390" height="844" alt={c.logImageAlt} loading="lazy" decoding="async" /></div>}
+          </figure> : <><div className="wd-segment-log-images"><img className="wd-segment-sync" src={sync1000} srcSet={`${sync640} 640w, ${sync1000} 1000w`} sizes="(min-width:960px) 45vw, 85vw" width="1000" height="667" alt={m.how.step3Alt} loading="lazy" decoding="async" /><img className="wd-segment-app" src={logbook} width="390" height="844" alt={c.logImageAlt} loading="lazy" decoding="async" /></div><LogHandPhoto alt={media.logStillAlt} /></>}
         </section>
 
         {isFree && <FreedivingSurfacePhoto locale={locale} />}
@@ -196,12 +204,15 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
           <div className="wd-segment-video">{videoOpen ? <video controls autoPlay playsInline preload="none" poster={cameraPoster} src={cameraVideo} aria-label={m.cameras.videoAria} /> : <button type="button" onClick={() => setVideoOpen(true)} aria-label={m.media.play}><img src={cameraPoster} alt={m.cameras.videoAria} width="1280" height="720" loading="lazy" decoding="async" /><span>{m.media.play}<span aria-hidden="true"> ↗</span></span></button>}</div>
         </section>
 
+        <SegmentCostComparison locale={locale} />
+        <div className="wd-segment-shell wd-segment-price-slot">{signup('middle').prices}</div>
+
         <section id="segment-faq" className="wd-segment-faq wd-segment-shell" aria-labelledby="faq-title">
           <p className="wd-segment-eyebrow">{m.faq.kicker}</p><h2 id="faq-title">{c.questionTitle}</h2>
           <div>{faq.map((item, i) => <details id={i === 0 ? 'segment-compatibility' : undefined} key={item.q}><summary>{item.q}<span aria-hidden="true">+</span></summary><p>{item.a}</p></details>)}</div>
         </section>
 
-        <div className="wd-segment-shell">{signup('bottom')}</div>
+        <div className="wd-segment-shell">{signup('bottom').form}</div>
         <p className="wd-segment-switch wd-segment-shell">{c.switchPrompt}<a href={`${localizePath(`/${alternate}`, locale)}${campaignQuery}`}>{c.modes[alternate]} <span aria-hidden="true">→</span></a></p>
       </main>
       <footer className="wd-segment-footer wd-segment-shell">
