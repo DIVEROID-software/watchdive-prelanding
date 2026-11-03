@@ -1,5 +1,6 @@
 import { loadReferralPriceClaim } from '../i18n/price-claim-loader';
 import { readLiteMediaHint } from '../liteMedia';
+import { loadSegmentReviewBodies } from './review-bodies';
 import { landingHead } from '../i18n/seo';
 import { localizePath, SUPPORTED_LOCALES, type Locale } from '../i18n/locale';
 import { EN_FROZEN_LANDING_MESSAGES, type FrozenLandingMessages } from '../i18n/frozen-landing-en';
@@ -10,7 +11,11 @@ import freedivingPoster from '@/assets/live/segment-heroes/freediving-1280.webp'
 import scubaPoster from '@/assets/live/segment-heroes/scuba-1280.webp';
 
 export async function loadSegmentLanding(locale: Locale) {
-  return { liteMedia: readLiteMediaHint(), ...await loadReferralPriceClaim(locale) };
+  const [claim, reviewBodies] = await Promise.all([
+    loadReferralPriceClaim(locale),
+    loadSegmentReviewBodies(locale),
+  ]);
+  return { liteMedia: readLiteMediaHint(), ...claim, reviewBodies };
 }
 
 export function segmentHead(locale: Locale, segment: DiveSegment, messages: FrozenLandingMessages = EN_FROZEN_LANDING_MESSAGES) {

@@ -479,7 +479,8 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
 .wd-segment-demos{padding-block:36px 72px}
 .wd-segment-demo-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:22px}
 .wd-segment-demo-list[data-count="1"]{grid-template-columns:minmax(0,720px)}
-.wd-segment-demo{min-width:0}
+.wd-segment-demo{min-width:0;margin:0}
+.wd-segment-demo img{width:100%;height:auto;object-fit:cover;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow);background:#10212e}
 .wd-segment-demo h3{margin-top:12px;font-size:22px;line-height:1.25;overflow-wrap:break-word}
 .wd-segment-demo p{margin-top:8px;color:var(--seg-muted);font-size:16px;line-height:1.55;overflow-wrap:break-word;text-wrap:pretty}
 .wd-segment-price-slot{margin-block:28px 8px}
@@ -488,10 +489,6 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
 .wd-segment-log-hand{grid-column:1 / -1;margin:8px 0 0;max-width:420px}
 .wd-segment-log-stage .wd-segment-log-hand{grid-column:auto;max-width:none;width:100%;margin:0}
 .wd-segment-log-hand img{width:100%;height:auto;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow);background:#10212e}
-.wd-segment-clip{position:relative;aspect-ratio:960/454;min-width:0;background:#10212e;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow)}
-.wd-segment-clip img,.wd-segment-clip video,.wd-segment-clip button{width:100%;height:100%;object-fit:cover}
-.wd-segment-clip button{display:block;position:relative;padding:0;border:0;cursor:pointer;background:#10212e}
-.wd-segment-clip button>span{position:absolute;left:12px;bottom:12px;display:inline-block;max-width:calc(100% - 24px);min-height:44px;padding:8px 12px;background:#f6fafc;color:#201748;border:2px solid #201748;box-shadow:3px 3px 0 #65ceee;font-size:14px;font-weight:750;line-height:1.3;white-space:normal;overflow-wrap:break-word}
 .wd-segment-press{padding-block:8px 56px}
 .wd-segment-press-note{max-width:680px;margin-top:14px;color:var(--seg-muted);font-size:15px}
 .wd-segment-press ul{display:flex;flex-wrap:wrap;gap:14px;margin:18px 0 0;padding:0;list-style:none}
@@ -508,9 +505,6 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
  .wd-segment-demo h3{font-size:20px}
  .wd-segment-press{padding-bottom:36px}
 }
-@media(max-width:359px){
- .wd-segment-clip button>span{left:8px;bottom:8px;max-width:calc(100% - 16px);padding:8px 10px}
-}
 
 .wd-segment-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .wd-segment-bleed{position:relative;width:100%;max-width:100%;margin:0;padding:0;overflow:hidden}
@@ -523,46 +517,58 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
 .wd-segment-end-signup{display:inline-flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box;min-height:52px;padding:12px 18px;background:#65ceee;color:#201748;border:3px solid var(--seg-frame);box-shadow:4px 4px 0 var(--seg-shadow);font-size:15px;font-weight:750;line-height:1.25;text-align:center;text-decoration:none}
 .wd-segment-how-copy,.wd-segment-log-copy,.wd-segment-camera>div{min-width:0}
 /* Full-bleed controls keep the focus ring inside the frame. */
-.wd-segment-page .wd-segment-clip :focus-visible,
 .wd-segment-page .wd-segment-video :focus-visible{outline-offset:-3px}
 /* Press feedback only. Hover stays on a fine pointer. The signup button keeps its existing press translation. */
 .wd-segment-hero-jump,
 .wd-segment-end-signup,
 .wd-segment-sticky>a,
-.wd-segment-clip button,
 .wd-segment-video>button,
 .wd-segment-press a{transition:transform 160ms cubic-bezier(0.23,1,0.32,1)}
 @media (hover:hover) and (pointer:fine){
  .wd-segment-hero-jump:hover,
  .wd-segment-end-signup:hover,
  .wd-segment-sticky>a:hover,
- .wd-segment-clip button:hover,
  .wd-segment-video>button:hover,
  .wd-segment-press a:hover{transform:translate(-1px,-1px)}
 }
 .wd-segment-hero-jump:active,
 .wd-segment-end-signup:active,
 .wd-segment-sticky>a:active,
-.wd-segment-clip button:active,
 .wd-segment-video>button:active,
 .wd-segment-press a:active{transform:translate(2px,2px)}
 .wd-segment-hero-jump:focus-visible:active,
 .wd-segment-end-signup:focus-visible:active,
 .wd-segment-sticky>a:focus-visible:active,
-.wd-segment-clip button:focus-visible:active,
 .wd-segment-video>button:focus-visible:active,
 .wd-segment-press a:focus-visible:active{transform:none}
 @media (prefers-reduced-motion:reduce){
  .wd-segment-hero-jump:hover,
  .wd-segment-end-signup:hover,
  .wd-segment-sticky>a:hover,
- .wd-segment-clip button:hover,
  .wd-segment-video>button:hover,
  .wd-segment-press a:hover,
  .wd-segment-hero-jump:active,
  .wd-segment-end-signup:active,
  .wd-segment-sticky>a:active,
- .wd-segment-clip button:active,
  .wd-segment-video>button:active,
  .wd-segment-press a:active{transform:none}
+}
+
+/* Approved beta notes. Static quotes; the rest open in place. */
+.wd-segment-reviews{padding-block:8px 64px}
+.wd-segment-review-note{max-width:42rem;margin-top:12px;color:var(--seg-muted);font-size:15px;line-height:1.55}
+.wd-segment-review-list{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
+.wd-segment-review-list figure{min-width:0;margin:0;padding:16px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:4px 4px 0 var(--seg-shadow)}
+.wd-segment-review-list blockquote{margin:0;color:var(--seg-ink);font-size:16px;line-height:1.55;overflow-wrap:break-word;text-wrap:pretty}
+.wd-segment-review-list figcaption{display:flex;align-items:center;gap:8px;margin-top:14px;color:var(--seg-ink);font-size:14px;font-weight:700;line-height:1.35}
+.wd-segment-review-list figcaption span{min-width:0;overflow-wrap:anywhere}
+.wd-segment-review-more{margin-top:16px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:4px 4px 0 var(--seg-shadow)}
+.wd-segment-review-more summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;padding:12px 16px;cursor:pointer;list-style:none;font-size:15px;font-weight:750;line-height:1.35;overflow-wrap:anywhere}
+.wd-segment-review-more summary::-webkit-details-marker{display:none}
+.wd-segment-review-more summary>span{flex-shrink:0;font-size:22px;font-weight:500;line-height:1}
+.wd-segment-review-more[open] summary>span{transform:rotate(45deg)}
+.wd-segment-review-more .wd-segment-review-list{margin-top:0;padding:0 16px 16px}
+@media(max-width:959px){
+ .wd-segment-reviews{padding-block:4px 36px}
+ .wd-segment-review-list,.wd-segment-review-more .wd-segment-review-list{grid-template-columns:1fr}
 }

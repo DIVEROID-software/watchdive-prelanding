@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import { useFrozenLandingMessages } from '@/lib/i18n/use-current-locale';
 import type { DiveSegment } from '@/lib/segments/copy';
 import { PRESS_LINKS, type MediaCopy } from '@/lib/segments/media-copy';
@@ -21,13 +20,10 @@ import buoyWide from '@/assets/live/media-refresh-20261103/buoy-2200.webp';
 import scubaOverheadBright from '@/assets/live/media-refresh-20261103/scuba-pool-overhead-bright-2880.png';
 import sealPosterSmall from '@/assets/live/media-refresh-20261103/seal-poster-640.webp';
 import sealPoster from '@/assets/live/media-refresh-20261103/seal-poster-960.webp';
-import sealVideo from '@/assets/live/media-refresh-20261103/seal.mp4';
 import controlsPosterSmall from '@/assets/live/media-refresh-20261103/controls-poster-640.webp';
 import controlsPoster from '@/assets/live/media-refresh-20261103/controls-poster-960.webp';
-import controlsVideo from '@/assets/live/media-refresh-20261103/controls.mp4';
 import logPosterSmall from '@/assets/live/media-refresh-20261103/logbook-poster-640.webp';
 import logPoster from '@/assets/live/media-refresh-20261103/logbook-poster-960.webp';
-import logVideo from '@/assets/live/media-refresh-20261103/logbook.mp4';
 
 type Shot = {
   small: string;
@@ -115,97 +111,25 @@ export function SegmentGallery({ segment, copy }: { segment: DiveSegment; copy: 
   </section>;
 }
 
-/** Move focus only while this player still owns it.
- * A disconnected control is the one we just replaced. A connected field outside the box wins.
- */
-function focusOwned(target: HTMLElement | null, boundary: HTMLElement | null, owned: boolean) {
-  if (!owned || !target) return;
-  const active = document.activeElement;
-  if (active instanceof HTMLElement && active.isConnected && active !== document.body && active !== target && boundary && !boundary.contains(active)) return;
-  target.focus({ preventScroll: true });
-}
-
-/** Poster until an explicit click. Reduced motion lives in segments.css.
- * This playback is requested, so it is not gated, and a denied play() is not a broken file.
- */
-function SegmentClip({ poster, posterSmall, video, alt, playLabel, errorLabel, title, body, width, height }: {
-  poster: string;
-  posterSmall: string;
-  video: string;
-  alt: string;
-  playLabel: string;
-  errorLabel: string;
-  title: string;
-  body: string;
-  width: number;
-  height: number;
-}) {
-  const box = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const retryRef = useRef<HTMLButtonElement>(null);
-  const [open, setOpen] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const owned = useRef(false);
-  useEffect(() => {
-    if (failed) {
-      focusOwned(retryRef.current, box.current, owned.current);
-      return;
-    }
-    if (!open) return;
-    const element = videoRef.current;
-    if (!element) return;
-    // The poster button unmounts on this click. Focus the video only if that
-    // button still owned focus. A field the visitor reached first keeps it.
-    focusOwned(element, box.current, owned.current);
-    const attempt = element.play();
-    if (attempt) {
-      void attempt.catch(() => {
-        // NotAllowedError, AbortError, and other play() rejections are not a
-        // broken file. Native controls stay. Load and decode failures use onError.
-      });
-    }
-    const pauseIfHidden = () => { if (document.hidden) element.pause(); };
-    const onPlay = (event: Event) => { if (event.target !== element) element.pause(); };
-    document.addEventListener('visibilitychange', pauseIfHidden);
-    document.addEventListener('play', onPlay, true);
-    const node = box.current;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) element.pause();
-    }, { threshold: 0.15 });
-    if (node) observer.observe(node);
-    return () => {
-      document.removeEventListener('visibilitychange', pauseIfHidden);
-      document.removeEventListener('play', onPlay, true);
-      observer.disconnect();
-      element.pause();
-    };
-  }, [open, failed]);
-  const label = failed ? errorLabel : playLabel;
-  return <article className="wd-segment-demo">
-    <div ref={box} className="wd-segment-clip" style={{ aspectRatio: `${width} / ${height}` }}>
-      {open && !failed ? <video ref={videoRef} tabIndex={0} controls autoPlay muted playsInline preload="none" poster={poster} src={video} width={width} height={height} aria-label={alt} onError={() => { const active = document.activeElement; const boundary = box.current; owned.current = Boolean(active && boundary && (active === videoRef.current || boundary.contains(active))); setFailed(true); }} /> : <button ref={retryRef} type="button" onClick={event => { owned.current = document.activeElement === event.currentTarget; setFailed(false); setOpen(true); }} aria-label={`${label}. ${title}`}>
-        <img src={poster} srcSet={`${posterSmall} 640w, ${poster} 960w`} sizes="(min-width:960px) 34vw, 92vw" width={width} height={height} alt={alt} loading="lazy" decoding="async" />
-        <span>{label}<span aria-hidden="true"> ▶</span></span>
-      </button>}
-    </div>
-    <h3>{title}</h3>
-    <p>{body}</p>
-    {failed && <p role="status">{errorLabel}</p>}
-  </article>;
-}
-
-export function SegmentDemos({ segment, copy, playLabel }: { segment: DiveSegment; copy: MediaCopy; playLabel: string }) {
-  const clips = [
-    { key: 'seal', poster: sealPoster, posterSmall: sealPosterSmall, video: sealVideo, width: 960, height: 464, ...copy.seal },
+/** Photographs of the seal check, the housing controls, and the scuba log. */
+export function SegmentDemos({ segment, copy }: { segment: DiveSegment; copy: MediaCopy }) {
+  const stills = [
+    { key: 'seal', poster: sealPoster, posterSmall: sealPosterSmall, width: 960, height: 464, ...copy.seal },
     ...(segment === 'scuba' ? [
-      { key: 'controls', poster: controlsPoster, posterSmall: controlsPosterSmall, video: controlsVideo, width: 960, height: 454, ...copy.controls },
-      { key: 'logbook', poster: logPoster, posterSmall: logPosterSmall, video: logVideo, width: 960, height: 454, ...copy.logClip },
+      { key: 'controls', poster: controlsPoster, posterSmall: controlsPosterSmall, width: 960, height: 454, ...copy.controls },
+      { key: 'logbook', poster: logPoster, posterSmall: logPosterSmall, width: 960, height: 454, ...copy.logClip },
     ] : []),
   ];
   return <section id="segment-demos" className="wd-segment-demos wd-segment-shell" aria-labelledby="demos-title" data-segment-demos={segment}>
     <h2 id="demos-title">{copy.demoTitle}</h2>
-    <div className="wd-segment-demo-list" data-count={clips.length}>
-      {clips.map(clip => <SegmentClip key={clip.key} poster={clip.poster} posterSmall={clip.posterSmall} video={clip.video} alt={clip.alt} playLabel={playLabel} errorLabel={copy.clipError} title={clip.title} body={clip.body} width={clip.width} height={clip.height} />)}
+    <div className="wd-segment-demo-list" data-count={stills.length}>
+      {stills.map(still => <figure key={still.key} className="wd-segment-demo">
+        <img src={still.poster} srcSet={`${still.posterSmall} 640w, ${still.poster} 960w`} sizes="(min-width:960px) 720px, calc(100vw - 32px)" width={still.width} height={still.height} alt={still.alt} loading="lazy" decoding="async" />
+        <figcaption>
+          <h3>{still.title}</h3>
+          <p>{still.body}</p>
+        </figcaption>
+      </figure>)}
     </div>
   </section>;
 }

@@ -3,9 +3,19 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { test } from "node:test";
+import { BETA_REVIEWS_DE } from "../src/data/beta-reviews.de.ts";
+import { BETA_REVIEWS_ES } from "../src/data/beta-reviews.es.ts";
+import { BETA_REVIEWS_FR } from "../src/data/beta-reviews.fr.ts";
+import { BETA_REVIEWS_JA } from "../src/data/beta-reviews.ja.ts";
+import { BETA_REVIEWS_KO } from "../src/data/beta-reviews.ko.ts";
+import { BETA_REVIEWS_PT_BR } from "../src/data/beta-reviews.pt-BR.ts";
+import { BETA_REVIEWS_ZH_CN } from "../src/data/beta-reviews.zh-CN.ts";
+import { BETA_REVIEWS_ZH_TW } from "../src/data/beta-reviews.zh-TW.ts";
+import { PUBLICATION_APPROVED_REVIEW_IDS, PUBLISHABLE_REVIEWS } from "../src/data/beta-reviews.ts";
 import { SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
 import { SEGMENT_COPY } from "../src/lib/segments/copy.ts";
 import { MEDIA_COPY, PRESS_LINKS, mediaCopy } from "../src/lib/segments/media-copy.ts";
+import { loadSegmentReviewBodies } from "../src/lib/segments/review-bodies.ts";
 
 const DARK_TITLES: Record<Locale, string> = {
   en: "Be the first in line",
@@ -67,11 +77,14 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   const gallery = page.indexOf("<SegmentGallery ");
   const bottom = page.indexOf("signup('bottom').form");
   const demos = page.indexOf("<SegmentDemos ");
+  const camera = page.indexOf('id="segment-camera"');
+  const reviews = page.indexOf("<SegmentBetaReviews />");
   const cost = page.indexOf("<SegmentCostComparison");
   const prices = page.indexOf("signup('middle').prices");
   const faq = page.indexOf('id="segment-faq"');
   const end = page.indexOf("wd-segment-end-signup");
-  assert.ok(hero < middle && middle < benefits && benefits < how && how < gallery && gallery < bottom && bottom < demos && demos < cost && cost < prices && prices < faq && faq < end);
+  assert.ok(hero < middle && middle < benefits && benefits < how && how < gallery && gallery < bottom && bottom < demos && demos < camera && camera < reviews && reviews < cost && cost < prices && prices < faq && faq < end);
+  assert.equal(page.slice(gallery, bottom).includes("SegmentBetaReviews"), false);
   assert.ok(end < page.indexOf("wd-segment-switch"));
   assert.equal((page.match(/<EmailForm /g) ?? []).length, 1);
   assert.match(page, /position === 'middle' && <PricePaths locale=\{locale\} referralOn=\{referralOn\} \/>/);
@@ -79,13 +92,17 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   assert.ok(page.indexOf("<SegmentHowInsert ") < page.indexOf('id="how-title"'));
   const media = read("src/components/segments/SegmentMedia.tsx");
   assert.match(media, /segment === 'scuba'/);
-  assert.match(media, /preload="none"/);
   assert.match(media, /loading="lazy"/);
+  assert.equal(media.includes("<video"), false);
+  assert.equal(media.includes("<button"), false);
+  assert.equal(media.includes("autoPlay"), false);
+  assert.equal(media.includes("element.play("), false);
+  assert.equal(/\.mp4/.test(media), false);
+  assert.match(page, /preload="none"/);
+  assert.match(page, /element\.play\(\)/);
+  assert.match(page, /onError/);
+  assert.match(page, /connected-app\.mp4/);
   assert.match(read("src/components/segments/segments.css"), /prefers-reduced-motion/);
-  assert.equal(media.includes("autoPlay"), true);
-  assert.equal(media.includes("autoPlay={!reduced}"), false);
-  assert.match(media, /element\.play\(\)/);
-  assert.match(media, /onError/);
   assert.equal(media.includes("watchdive-functions"), false);
   assert.equal(/samsung|nvidia|aws/i.test(media + page), false);
 });
@@ -111,11 +128,51 @@ test("new media stays small and names its source", () => {
     assert.equal(item.source_sha256.length, 64);
   }
   const page = read("src/components/segments/SegmentMedia.tsx");
-  for (const name of ["seal.mp4", "controls.mp4", "logbook.mp4", "buoy-1400.webp", "buoy-2200.webp", bright]) {
+  for (const name of ["seal-poster-960.webp", "controls-poster-960.webp", "logbook-poster-960.webp", "buoy-1400.webp", "buoy-2200.webp", bright]) {
     assert.equal(page.includes(name), true, name);
+  }
+  for (const name of ["seal.mp4", "controls.mp4", "logbook.mp4"]) {
+    assert.equal(page.includes(name), false, name);
   }
   assert.equal(page.includes("overhead-1800.webp"), false);
   assert.equal(page.includes("overhead-960.webp"), false);
+});
+
+const LOCALIZED_BODIES = {
+  ko: BETA_REVIEWS_KO,
+  "zh-CN": BETA_REVIEWS_ZH_CN,
+  "zh-TW": BETA_REVIEWS_ZH_TW,
+  ja: BETA_REVIEWS_JA,
+  es: BETA_REVIEWS_ES,
+  fr: BETA_REVIEWS_FR,
+  de: BETA_REVIEWS_DE,
+  "pt-BR": BETA_REVIEWS_PT_BR,
+} as const;
+
+test("segment routes load the approved review language and keep the allowlist", async () => {
+  assert.deepEqual(PUBLISHABLE_REVIEWS.map(({ id }) => id), [...PUBLICATION_APPROVED_REVIEW_IDS]);
+  assert.equal(await loadSegmentReviewBodies("en"), undefined);
+  assert.equal(await loadSegmentReviewBodies("nl"), undefined);
+  for (const [locale, bodies] of Object.entries(LOCALIZED_BODIES)) {
+    assert.strictEqual(await loadSegmentReviewBodies(locale as keyof typeof LOCALIZED_BODIES), bodies, locale);
+  }
+  const reviews = read("src/components/segments/SegmentBetaReviews.tsx");
+  assert.match(reviews, /const VISIBLE_REVIEW_COUNT = 4;/);
+  assert.match(reviews, /PUBLISHABLE_REVIEWS\.slice\(0, VISIBLE_REVIEW_COUNT\)/);
+  assert.match(reviews, /PUBLISHABLE_REVIEWS\.slice\(VISIBLE_REVIEW_COUNT\)/);
+  assert.match(reviews, /betaReviewBody\(review, bodies\)/);
+  assert.equal(reviews.includes("INCLUDE_UNVERIFIED_CLAIMS"), false);
+  assert.equal(/marquee|autoPlay|<video|animate-/.test(reviews), false);
+  assert.deepEqual(PUBLISHABLE_REVIEWS.slice(0, 4).map(({ id }) => id), [7, 35, 45, 63]);
+  assert.deepEqual(PUBLISHABLE_REVIEWS.slice(4).map(({ id }) => id), [72, 88, 100, 120]);
+  const route = read("src/lib/segments/route.ts");
+  assert.match(route, /loadSegmentReviewBodies\(locale\)/);
+  assert.match(route, /reviewBodies/);
+  for (const file of ["src/routes/scuba.tsx", "src/routes/freediving.tsx", "src/routes/$locale.scuba.tsx", "src/routes/$locale.freediving.tsx"]) {
+    const source = read(file);
+    assert.match(source, /LocalizedBetaReviewBodiesProvider reviewBodies=\{reviewBodies\}/);
+    assert.match(source, /Route\.useLoaderData\(\)/);
+  }
 });
 
 const LAUNCH_BODIES: Record<Locale, string> = {
