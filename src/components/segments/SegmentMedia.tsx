@@ -11,17 +11,15 @@ import syncLarge from '@/assets/live/responsive/watchdive-sync-1200.webp';
 import gearSmall from '@/assets/live/media-refresh-20261103/gear-720.webp';
 import gearLarge from '@/assets/live/media-refresh-20261103/gear-1200.webp';
 import underwater from '@/assets/live/refresh/underwater-1600.webp';
-import poolSmall from '@/assets/live/refresh/poolside-640.webp';
-import poolMid from '@/assets/live/refresh/poolside-1000.webp';
-import poolLarge from '@/assets/live/refresh/poolside-1600.webp';
 import logHandSmall from '@/assets/live/media-refresh-20261103/loghand-900.webp';
 import logHandLarge from '@/assets/live/media-refresh-20261103/loghand-1400.webp';
 import freeLogSmall from '@/assets/live/segment-heroes/freediving-app-logbook-720.webp';
 import freeLogLarge from '@/assets/live/segment-heroes/freediving-app-logbook-1448.webp';
 import buoySmall from '@/assets/live/media-refresh-20261103/buoy-800.webp';
 import buoyLarge from '@/assets/live/media-refresh-20261103/buoy-1400.webp';
-import diversSmall from '@/assets/live/media-refresh-20261103/divers-800.webp';
-import diversLarge from '@/assets/live/media-refresh-20261103/divers-1400.webp';
+import buoyWide from '@/assets/live/media-refresh-20261103/buoy-2200.webp';
+import overheadSmall from '@/assets/live/media-refresh-20261103/overhead-960.webp';
+import overheadLarge from '@/assets/live/media-refresh-20261103/overhead-1800.webp';
 import sealPosterSmall from '@/assets/live/media-refresh-20261103/seal-poster-640.webp';
 import sealPoster from '@/assets/live/media-refresh-20261103/seal-poster-960.webp';
 import sealVideo from '@/assets/live/media-refresh-20261103/seal.mp4';
@@ -43,7 +41,6 @@ type Shot = {
 
 const gearSrcSet = `${gearSmall} 720w, ${gearLarge} 1200w`;
 const headingSrcSet = `${step2Small} 800w, ${step2Large} 1200w`;
-const poolSrcSet = `${poolSmall} 640w, ${poolMid} 1000w, ${poolLarge} 1600w`;
 const buoySrcSet = `${buoySmall} 800w, ${buoyLarge} 1400w`;
 const freeLogSrcSet = `${freeLogSmall} 720w, ${freeLogLarge} 1448w`;
 
@@ -91,27 +88,32 @@ export function HowPhotoRow() {
   </ul>;
 }
 
-const galleryShots: Record<DiveSegment, Shot[]> = {
-  scuba: [
-    { small: diversSmall, large: diversLarge, width: 1400, height: 934, sizes: '(min-width:960px) 70vw, 92vw' },
-  ],
-  freediving: [
-    { small: poolSmall, large: poolLarge, width: 1600, height: 1067, sizes: '(min-width:960px) 70vw, 92vw', srcSet: poolSrcSet },
-  ],
+const wideShots: Record<DiveSegment, Shot> = {
+  scuba: {
+    small: overheadSmall,
+    large: overheadLarge,
+    width: 1800,
+    height: 1200,
+    sizes: '100vw',
+    srcSet: `${overheadSmall} 960w, ${overheadLarge} 1800w`,
+  },
+  freediving: {
+    small: buoyLarge,
+    large: buoyWide,
+    width: 2200,
+    height: 1466,
+    sizes: '100vw',
+    srcSet: `${buoySmall} 800w, ${buoyLarge} 1400w, ${buoyWide} 2200w`,
+  },
 };
 
+/** One real photograph, edge to edge. No card frame, so the picture can stay wide. */
 export function SegmentGallery({ segment, copy }: { segment: DiveSegment; copy: MediaCopy }) {
-  const shots = galleryShots[segment];
-  const alts = copy.galleryAlt[segment];
-  return <section id="segment-gallery" className="wd-segment-gallery wd-segment-shell" aria-labelledby="gallery-title">
-    <p className="wd-segment-eyebrow">05 / WATCHDIVE</p>
-    <h2 id="gallery-title">{copy.galleryTitle[segment]}</h2>
-    <div className="wd-segment-gallery-grid" data-count={shots.length}>
-      {shots.map((shot, index) => <figure key={alts[index]}>
-        <img src={shot.large} srcSet={shot.srcSet ?? `${shot.small} 800w, ${shot.large} 1400w`} sizes={shot.sizes} width={shot.width} height={shot.height} alt={alts[index]} loading="lazy" decoding="async" />
-        <figcaption>{alts[index]}</figcaption>
-      </figure>)}
-    </div>
+  const shot = wideShots[segment];
+  const alt = copy.galleryAlt[segment][0];
+  return <section id="segment-gallery" className="wd-segment-bleed" aria-labelledby="gallery-title">
+    <h2 id="gallery-title" className="wd-segment-sr">{copy.galleryTitle[segment]}</h2>
+    <img src={shot.large} srcSet={shot.srcSet} sizes={shot.sizes} width={shot.width} height={shot.height} alt={alt} loading="lazy" decoding="async" />
   </section>;
 }
 
@@ -127,13 +129,14 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
-/** Poster until the visitor asks. Nothing here autoplays, and only one clip plays at a time. */
-function SegmentClip({ poster, posterSmall, video, alt, playLabel, title, body, width, height }: {
+/** Poster until an explicit click. Reduced motion blocks unsolicited autoplay, not this playback. */
+function SegmentClip({ poster, posterSmall, video, alt, playLabel, errorLabel, title, body, width, height }: {
   poster: string;
   posterSmall: string;
   video: string;
   alt: string;
   playLabel: string;
+  errorLabel: string;
   title: string;
   body: string;
   width: number;
@@ -142,34 +145,45 @@ function SegmentClip({ poster, posterSmall, video, alt, playLabel, title, body, 
   const box = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [open, setOpen] = useState(false);
+  const [failed, setFailed] = useState(false);
   const reduced = useReducedMotion();
   useEffect(() => {
-    if (!open) return;
+    if (!open || failed) return;
     const element = videoRef.current;
-    const pauseIfHidden = () => { if (document.hidden) element?.pause(); };
-    const onPlay = (event: Event) => { if (event.target !== element) element?.pause(); };
+    if (!element) return;
+    const attempt = element.play();
+    if (attempt) {
+      void attempt.catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        setFailed(true);
+      });
+    }
+    const pauseIfHidden = () => { if (document.hidden) element.pause(); };
+    const onPlay = (event: Event) => { if (event.target !== element) element.pause(); };
     document.addEventListener('visibilitychange', pauseIfHidden);
     document.addEventListener('play', onPlay, true);
     const node = box.current;
     const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) element?.pause();
+      if (!entry.isIntersecting) element.pause();
     }, { threshold: 0.15 });
     if (node) observer.observe(node);
     return () => {
       document.removeEventListener('visibilitychange', pauseIfHidden);
       document.removeEventListener('play', onPlay, true);
       observer.disconnect();
+      element.pause();
     };
-  }, [open]);
-  return <article className="wd-segment-demo">
+  }, [open, failed]);
+  return <article className="wd-segment-demo" data-motion={reduced ? 'reduce' : 'no-preference'}>
     <div ref={box} className="wd-segment-clip" style={{ aspectRatio: `${width} / ${height}` }}>
-      {open ? <video ref={videoRef} controls autoPlay={!reduced} muted playsInline preload="none" poster={poster} src={video} width={width} height={height} aria-label={alt} /> : <button type="button" onClick={() => setOpen(true)} aria-label={`${playLabel}. ${title}`}>
+      {open && !failed ? <video ref={videoRef} controls autoPlay muted playsInline preload="none" poster={poster} src={video} width={width} height={height} aria-label={alt} onError={() => setFailed(true)} /> : <button type="button" onClick={() => { setFailed(false); setOpen(true); }} aria-label={`${playLabel}. ${title}`}>
         <img src={poster} srcSet={`${posterSmall} 640w, ${poster} 960w`} sizes="(min-width:960px) 34vw, 92vw" width={width} height={height} alt={alt} loading="lazy" decoding="async" />
-        <span>{playLabel}<span aria-hidden="true"> ▶</span></span>
+        <span>{failed ? errorLabel : playLabel}<span aria-hidden="true"> ▶</span></span>
       </button>}
     </div>
     <h3>{title}</h3>
     <p>{body}</p>
+    {failed && <p role="status">{errorLabel}</p>}
   </article>;
 }
 
@@ -182,10 +196,10 @@ export function SegmentDemos({ segment, copy, playLabel }: { segment: DiveSegmen
     ] : []),
   ];
   return <section id="segment-demos" className="wd-segment-demos wd-segment-shell" aria-labelledby="demos-title" data-segment-demos={segment}>
-    <p className="wd-segment-eyebrow">06 / {copy.demoKicker}</p>
+    <p className="wd-segment-eyebrow">03 / {copy.demoKicker}</p>
     <h2 id="demos-title">{copy.demoTitle}</h2>
     <div className="wd-segment-demo-list" data-count={clips.length}>
-      {clips.map(clip => <SegmentClip key={clip.key} poster={clip.poster} posterSmall={clip.posterSmall} video={clip.video} alt={clip.alt} playLabel={playLabel} title={clip.title} body={clip.body} width={clip.width} height={clip.height} />)}
+      {clips.map(clip => <SegmentClip key={clip.key} poster={clip.poster} posterSmall={clip.posterSmall} video={clip.video} alt={clip.alt} playLabel={playLabel} errorLabel={copy.clipError} title={clip.title} body={clip.body} width={clip.width} height={clip.height} />)}
     </div>
   </section>;
 }
@@ -196,7 +210,6 @@ export function SegmentPress({ copy }: { copy: MediaCopy }) {
   return <section id="segment-press" className="wd-segment-press wd-segment-shell" aria-labelledby="press-title">
     <p className="wd-segment-eyebrow">{copy.pressKicker}</p>
     <h2 id="press-title">{copy.pressTitle}</h2>
-    <p className="wd-segment-press-note">{copy.pressNote}</p>
     <ul>
       {PRESS_LINKS.map((link, index) => <li key={link.href}>
         <a href={link.href} target="_blank" rel="noopener noreferrer">{link.publisher}<span>{dates[index]}</span></a>

@@ -496,7 +496,9 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
 .wd-segment-demo p{margin-top:6px;color:var(--seg-muted);font-size:14px;line-height:1.5}
 .wd-segment-price-slot{margin-block:28px 8px}
 .wd-segment-page:has(.wd-segment-signup-middle .wd-onsite-offer) .wd-segment-price-slot{display:none}
+.wd-segment-log-stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(128px,220px);gap:16px;align-items:end;min-width:0}
 .wd-segment-log-hand{grid-column:1 / -1;margin:8px 0 0;max-width:420px}
+.wd-segment-log-stage .wd-segment-log-hand{grid-column:auto;max-width:none;width:100%;margin:0}
 .wd-segment-log-hand img{width:100%;height:auto;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow);background:#10212e}
 .wd-segment-clip{position:relative;aspect-ratio:960/454;overflow:hidden;background:#10212e;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow)}
 .wd-segment-clip img,.wd-segment-clip video,.wd-segment-clip button{width:100%;height:100%;object-fit:cover}
@@ -508,8 +510,9 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
 .wd-segment-press a{display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:min(100%,220px);min-height:72px;padding:12px 14px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:4px 4px 0 var(--seg-shadow);font-weight:750;line-height:1.3}
 .wd-segment-press a span{font-size:12px;font-weight:650;color:var(--seg-muted)}
 @media(max-width:959px){
- .wd-segment-how-photos{gap:8px}
- .wd-segment-how-photos figcaption{font-size:11px;line-height:1.3}
+ .wd-segment-how-photos{grid-template-columns:1fr;gap:16px}
+ .wd-segment-how-photos figcaption{font-size:15px;line-height:1.4}
+ .wd-segment-log-stage{grid-template-columns:minmax(0,1fr) minmax(108px,34vw)}
  .wd-segment-gallery-grid,.wd-segment-demo-list,.wd-segment-demo-list[data-count="1"],.wd-segment-gallery-grid[data-count="1"]{grid-template-columns:1fr}
  .wd-segment-gallery{padding-top:28px}
  .wd-segment-demos{padding-block:24px 40px}
@@ -517,6 +520,17 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
  .wd-segment-press{padding-bottom:36px}
 }
 @media(max-width:359px){
- .wd-segment-how-photos figcaption{font-size:10px}
+ .wd-segment-how-photos figcaption{font-size:14px}
  .wd-segment-clip button>span{left:8px;bottom:8px;padding:8px 10px}
 }
+
+.wd-segment-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.wd-segment-bleed{position:relative;width:100%;max-width:100%;margin:0;padding:0;overflow:hidden}
+.wd-segment-bleed img{display:block;width:100%;max-width:100%;height:auto;border:0;box-shadow:none;background:#10212e}
+.wd-segment-signup-line,.wd-segment-signup-line:has(.wd-onsite-offer){display:flex;flex-direction:column;align-items:center;width:100%;max-width:none;margin:0;padding:64px 24px 72px;border:0;box-shadow:none;background:#121212;color:#f6fafc;text-align:center}
+.wd-segment-signup-line .wd-segment-eyebrow{display:none}
+.wd-segment-signup-line .wd-segment-signup-heading,.wd-segment-signup-line .wd-segment-form{width:min(440px,100%);max-width:440px;margin-inline:auto}
+.wd-segment-signup-line .wd-segment-signup-heading>p:not(.wd-segment-eyebrow){color:#d7d7d7}
+.wd-segment-signup-line .wd-segment-form{margin-top:22px}
+.wd-segment-end{display:flex;justify-content:center;padding:8px 0 36px}
+.wd-segment-end-signup{display:inline-flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box;min-height:52px;padding:12px 18px;background:#65ceee;color:#201748;border:3px solid var(--seg-frame);box-shadow:4px 4px 0 var(--seg-shadow);font-size:15px;font-weight:750;line-height:1.25;text-align:center;text-decoration:none}

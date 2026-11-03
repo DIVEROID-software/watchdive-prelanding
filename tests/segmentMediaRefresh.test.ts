@@ -24,7 +24,7 @@ test("every locale has distinct scuba and freediving captions and the two press 
       ...copy.benefitAlt.freediving,
       ...copy.galleryAlt.scuba,
       ...copy.galleryAlt.freediving,
-      copy.seal.title, copy.seal.body, copy.controls.body, copy.pressNote, copy.pressTitle,
+      copy.seal.title, copy.seal.body, copy.controls.body, copy.clipError, copy.pressTitle,
     ]) {
       assert.equal(value.trim().length > 8, true, `${locale} empty caption`);
     }
@@ -45,16 +45,20 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   assert.equal((page.match(/data-landing-phase=/g) ?? []).length, 1);
   assert.match(page, /id=\{position === 'middle' \? 'hero' : 'offer'\}/);
   assert.equal((page.match(/<EmailForm /g) ?? []).length, 1);
-  const how = page.indexOf('id="segment-how"');
+  const hero = page.indexOf('id="segment-hero"');
   const middle = page.indexOf("signup('middle').form");
-  const press = page.indexOf("<SegmentPress ");
+  const benefits = page.indexOf('id="segment-benefits"');
+  const how = page.indexOf('id="segment-how"');
   const gallery = page.indexOf("<SegmentGallery ");
+  const bottom = page.indexOf("signup('bottom').form");
   const demos = page.indexOf("<SegmentDemos ");
   const cost = page.indexOf("<SegmentCostComparison");
   const prices = page.indexOf("signup('middle').prices");
   const faq = page.indexOf('id="segment-faq"');
-  const bottom = page.indexOf("signup('bottom').form");
-  assert.ok(how < middle && middle < press && press < gallery && gallery < demos && demos < cost && cost < prices && prices < faq && faq < bottom);
+  const end = page.indexOf("wd-segment-end-signup");
+  assert.ok(hero < middle && middle < benefits && benefits < how && how < gallery && gallery < bottom && bottom < demos && demos < cost && cost < prices && prices < faq && faq < end);
+  assert.ok(end < page.indexOf("wd-segment-switch"));
+  assert.equal((page.match(/<EmailForm /g) ?? []).length, 1);
   assert.match(page, /position === 'middle' && <PricePaths locale=\{locale\} referralOn=\{referralOn\} \/>/);
   assert.ok(page.indexOf("<HowPhotoRow />") < page.indexOf("<SegmentHowCompat "));
   assert.ok(page.indexOf("<SegmentHowInsert ") < page.indexOf('id="how-title"'));
@@ -64,7 +68,9 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   assert.match(media, /loading="lazy"/);
   assert.match(media, /prefers-reduced-motion/);
   assert.equal(media.includes("autoPlay"), true);
-  assert.match(media, /autoPlay=\{!reduced\}/);
+  assert.equal(media.includes("autoPlay={!reduced}"), false);
+  assert.match(media, /element\.play\(\)/);
+  assert.match(media, /onError/);
   assert.equal(media.includes("watchdive-functions"), false);
   assert.equal(/samsung|nvidia|aws/i.test(media + page), false);
 });
@@ -82,7 +88,7 @@ test("new media stays small and names its source", () => {
     assert.equal(item.source_sha256.length, 64);
   }
   const page = read("src/components/segments/SegmentMedia.tsx");
-  for (const name of ["seal.mp4", "controls.mp4", "logbook.mp4", "buoy-1400.webp", "divers-1400.webp"]) {
+  for (const name of ["seal.mp4", "controls.mp4", "logbook.mp4", "buoy-1400.webp", "buoy-2200.webp", "overhead-1800.webp"]) {
     assert.equal(page.includes(name), true, name);
   }
 });

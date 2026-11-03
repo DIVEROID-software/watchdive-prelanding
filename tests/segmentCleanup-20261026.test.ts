@@ -36,7 +36,8 @@ test("both segments share the new intro and a logo token in the how title", () =
 
 test("the segment page matches the cleanup structure", () => {
   const page = read("src/components/segments/SegmentLanding.tsx");
-  const hero = page.slice(page.indexOf('id="segment-hero"'), page.indexOf('id="segment-benefits"'));
+  const heroStart = page.indexOf('id="segment-hero"');
+  const hero = page.slice(heroStart, page.indexOf("</section>", heroStart));
   assert.equal(hero.includes("wd-segment-next-price"), false);
   assert.equal(hero.includes("wd-segment-explore"), false);
   assert.equal(hero.includes("WATCHDIVE /"), false);
