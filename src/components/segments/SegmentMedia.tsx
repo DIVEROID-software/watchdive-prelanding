@@ -82,7 +82,7 @@ export function HowPhotoRow() {
   ];
   return <ul className="wd-segment-how-photos">
     {photos.map(photo => <li key={photo.caption}><figure>
-      <img src={photo.large} srcSet={`${photo.small} 800w, ${photo.large} 1200w`} sizes="(min-width:960px) 30vw, 32vw" width={photo.width} height={photo.height} alt={photo.alt} loading="lazy" decoding="async" />
+      <img src={photo.large} srcSet={`${photo.small} 800w, ${photo.large} 1200w`} sizes="(min-width:960px) calc((min(1120px, 100vw - 96px) - 28px) / 3), (max-width:359px) calc(100vw - 32px), min(650px, calc(100vw - 48px))" width={photo.width} height={photo.height} alt={photo.alt} loading="lazy" decoding="async" />
       <figcaption>{photo.caption}</figcaption>
     </figure></li>)}
   </ul>;
@@ -117,19 +117,9 @@ export function SegmentGallery({ segment, copy }: { segment: DiveSegment; copy: 
   </section>;
 }
 
-function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const update = () => setReduced(query.matches);
-    update();
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  }, []);
-  return reduced;
-}
-
-/** Poster until an explicit click. Reduced motion blocks unsolicited autoplay, not this playback. */
+/** Poster until an explicit click. Reduced motion lives in segments.css.
+ * This playback is requested, so it is not gated, and a denied play() is not a broken file.
+ */
 function SegmentClip({ poster, posterSmall, video, alt, playLabel, errorLabel, title, body, width, height }: {
   poster: string;
   posterSmall: string;
@@ -144,18 +134,25 @@ function SegmentClip({ poster, posterSmall, video, alt, playLabel, errorLabel, t
 }) {
   const box = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const retryRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
-  const reduced = useReducedMotion();
   useEffect(() => {
-    if (!open || failed) return;
+    if (failed) {
+      retryRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    if (!open) return;
     const element = videoRef.current;
     if (!element) return;
+    // The poster button unmounts on this click. Focus the video so the keyboard
+    // lands on the element that owns the native controls.
+    element.focus({ preventScroll: true });
     const attempt = element.play();
     if (attempt) {
-      void attempt.catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === 'AbortError') return;
-        setFailed(true);
+      void attempt.catch(() => {
+        // NotAllowedError, AbortError, and other play() rejections are not a
+        // broken file. Native controls stay. Load and decode failures use onError.
       });
     }
     const pauseIfHidden = () => { if (document.hidden) element.pause(); };
@@ -174,11 +171,12 @@ function SegmentClip({ poster, posterSmall, video, alt, playLabel, errorLabel, t
       element.pause();
     };
   }, [open, failed]);
-  return <article className="wd-segment-demo" data-motion={reduced ? 'reduce' : 'no-preference'}>
+  const label = failed ? errorLabel : playLabel;
+  return <article className="wd-segment-demo">
     <div ref={box} className="wd-segment-clip" style={{ aspectRatio: `${width} / ${height}` }}>
-      {open && !failed ? <video ref={videoRef} controls autoPlay muted playsInline preload="none" poster={poster} src={video} width={width} height={height} aria-label={alt} onError={() => setFailed(true)} /> : <button type="button" onClick={() => { setFailed(false); setOpen(true); }} aria-label={`${playLabel}. ${title}`}>
+      {open && !failed ? <video ref={videoRef} tabIndex={0} controls autoPlay muted playsInline preload="none" poster={poster} src={video} width={width} height={height} aria-label={alt} onError={() => setFailed(true)} /> : <button ref={retryRef} type="button" onClick={() => { setFailed(false); setOpen(true); }} aria-label={`${label}. ${title}`}>
         <img src={poster} srcSet={`${posterSmall} 640w, ${poster} 960w`} sizes="(min-width:960px) 34vw, 92vw" width={width} height={height} alt={alt} loading="lazy" decoding="async" />
-        <span>{failed ? errorLabel : playLabel}<span aria-hidden="true"> ▶</span></span>
+        <span>{label}<span aria-hidden="true"> ▶</span></span>
       </button>}
     </div>
     <h3>{title}</h3>
@@ -196,7 +194,6 @@ export function SegmentDemos({ segment, copy, playLabel }: { segment: DiveSegmen
     ] : []),
   ];
   return <section id="segment-demos" className="wd-segment-demos wd-segment-shell" aria-labelledby="demos-title" data-segment-demos={segment}>
-    <p className="wd-segment-eyebrow">03 / {copy.demoKicker}</p>
     <h2 id="demos-title">{copy.demoTitle}</h2>
     <div className="wd-segment-demo-list" data-count={clips.length}>
       {clips.map(clip => <SegmentClip key={clip.key} poster={clip.poster} posterSmall={clip.posterSmall} video={clip.video} alt={clip.alt} playLabel={playLabel} errorLabel={copy.clipError} title={clip.title} body={clip.body} width={clip.width} height={clip.height} />)}
@@ -208,7 +205,6 @@ export function SegmentDemos({ segment, copy, playLabel }: { segment: DiveSegmen
 export function SegmentPress({ copy }: { copy: MediaCopy }) {
   const dates = [copy.pressScubaDate, copy.pressXrayDate];
   return <section id="segment-press" className="wd-segment-press wd-segment-shell" aria-labelledby="press-title">
-    <p className="wd-segment-eyebrow">{copy.pressKicker}</p>
     <h2 id="press-title">{copy.pressTitle}</h2>
     <ul>
       {PRESS_LINKS.map((link, index) => <li key={link.href}>

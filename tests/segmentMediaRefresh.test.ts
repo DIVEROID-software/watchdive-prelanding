@@ -77,14 +77,32 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   assert.ok(page.indexOf("<HowPhotoRow />") < page.indexOf("<SegmentHowCompat "));
   assert.ok(page.indexOf("<SegmentHowInsert ") < page.indexOf('id="how-title"'));
   const media = read("src/components/segments/SegmentMedia.tsx");
+  const css = read("src/components/segments/segments.css");
   assert.match(media, /segment === 'scuba'/);
   assert.match(media, /preload="none"/);
+  assert.match(media, /playsInline/);
   assert.match(media, /loading="lazy"/);
-  assert.match(media, /prefers-reduced-motion/);
+  // No DOM harness. These source contracts lock the playback decision and the
+  // removed index labels. Reduced motion stays in the page CSS, not this clip.
+  assert.equal(media.includes("useReducedMotion"), false);
+  assert.equal(media.includes("prefers-reduced-motion"), false);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.equal(page.includes("wd-segment-eyebrow"), false);
+  assert.equal(page.includes("wd-segment-number"), false);
+  assert.equal(media.includes("wd-segment-eyebrow"), false);
+  assert.match(page, /<ol>\{[\s\S]*\{i \+ 1\}/);
+  assert.equal(css.includes("wd-segment-marker-pulse"), false);
+  assert.match(css, /\.wd-segment-page \.wd-segment-eyebrow\{display:none\}/);
+  assert.match(media, /sizes="\(min-width:960px\) calc\(\(min\(1120px, 100vw - 96px\) - 28px\) \/ 3\), \(max-width:359px\) calc\(100vw - 32px\), min\(650px, calc\(100vw - 48px\)\)"/);
+  assert.equal(media.includes("32vw"), false);
+  const playback = media.slice(media.indexOf("const attempt = element.play()"), media.indexOf("const pauseIfHidden"));
+  assert.equal(playback.includes("setFailed"), false);
+  assert.match(media, /element\.focus\(\{ preventScroll: true \}\)/);
+  assert.match(media, /retryRef\.current\?\.focus\(\{ preventScroll: true \}\)/);
+  assert.match(media, /onError=\{\(\) => setFailed\(true\)\}/);
   assert.equal(media.includes("autoPlay"), true);
   assert.equal(media.includes("autoPlay={!reduced}"), false);
   assert.match(media, /element\.play\(\)/);
-  assert.match(media, /onError/);
   assert.equal(media.includes("watchdive-functions"), false);
   assert.equal(/samsung|nvidia|aws/i.test(media + page), false);
 });
