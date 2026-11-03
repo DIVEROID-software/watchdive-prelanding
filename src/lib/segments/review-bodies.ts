@@ -1,7 +1,7 @@
 import { loadLocalizedBetaReviewBodies, type LocalizedBetaReviewBodies } from '../../data/beta-reviews.loader.ts';
 import type { Locale } from '../i18n/locale.ts';
 
-/** The route language only. English and Dutch stay on the English impressions. */
+/** The route language only. English stays on the source impressions. */
 export async function loadSegmentReviewBodies(locale: Locale): Promise<LocalizedBetaReviewBodies | undefined> {
   try {
     return await loadLocalizedBetaReviewBodies(locale);

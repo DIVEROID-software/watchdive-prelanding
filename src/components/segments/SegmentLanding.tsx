@@ -201,6 +201,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         </section>
 
         <div className="wd-segment-shell">{signup('middle').form}</div>
+        <SegmentPress copy={media} />
 
         <section id="segment-benefits" className="wd-segment-benefits wd-segment-shell" aria-labelledby="benefits-title">
           <h2 id="benefits-title">{c.benefitTitle}</h2>
@@ -249,7 +250,6 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
           <div>{faq.map((item, i) => <details id={i === 0 ? 'segment-compatibility' : undefined} key={item.q}><summary>{item.q}<span aria-hidden="true">+</span></summary><p>{item.a}</p></details>)}</div>
         </section>
 
-        <SegmentPress copy={media} />
         <p className="wd-segment-end wd-segment-shell"><a className="wd-segment-end-signup" href="#signup-bottom">{c.signupCta}<span aria-hidden="true"> ↑</span></a></p>
         <p className="wd-segment-switch wd-segment-shell">{c.switchPrompt}<a href={`${localizePath(`/${alternate}`, locale)}${campaignQuery}`}>{c.modes[alternate]} <span aria-hidden="true">→</span></a></p>
       </main>

@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { test } from "node:test";
 import { BETA_REVIEWS_DE } from "../src/data/beta-reviews.de.ts";
+import { BETA_REVIEWS_NL } from "../src/data/beta-reviews.nl.ts";
 import { BETA_REVIEWS_ES } from "../src/data/beta-reviews.es.ts";
 import { BETA_REVIEWS_FR } from "../src/data/beta-reviews.fr.ts";
 import { BETA_REVIEWS_JA } from "../src/data/beta-reviews.ja.ts";
@@ -14,7 +15,9 @@ import { BETA_REVIEWS_ZH_TW } from "../src/data/beta-reviews.zh-TW.ts";
 import { PUBLICATION_APPROVED_REVIEW_IDS, PUBLISHABLE_REVIEWS } from "../src/data/beta-reviews.ts";
 import { SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
 import { SEGMENT_COPY } from "../src/lib/segments/copy.ts";
-import { MEDIA_COPY, PRESS_LINKS, mediaCopy } from "../src/lib/segments/media-copy.ts";
+import { SEGMENT_BETA_COPY } from "../src/lib/segments/beta-review-copy.ts";
+import { MEDIA_COPY, mediaCopy } from "../src/lib/segments/media-copy.ts";
+import { PRESS_LOGO_META } from "../src/lib/segments/press-logo-meta.ts";
 import { loadSegmentReviewBodies } from "../src/lib/segments/review-bodies.ts";
 
 const DARK_TITLES: Record<Locale, string> = {
@@ -33,7 +36,7 @@ const DARK_TITLES: Record<Locale, string> = {
 const root = new URL("../", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
 
-test("every locale has distinct scuba and freediving captions and the two press links", () => {
+test("every locale has distinct scuba and freediving captions and eight publisher logos", () => {
   assert.equal(Object.keys(MEDIA_COPY).length, SUPPORTED_LOCALES.length);
   for (const locale of SUPPORTED_LOCALES) {
     const copy = mediaCopy(locale);
@@ -56,11 +59,38 @@ test("every locale has distinct scuba and freediving captions and the two press 
     const packed = JSON.stringify(copy);
     assert.equal(/samsung|nvidia|aws|perfect diving|500 dives|guaranteed safety/i.test(packed), false, locale);
   }
-  assert.deepEqual(PRESS_LINKS.map(link => link.href), [
+  assert.deepEqual(PRESS_LOGO_META.map(logo => logo.href), [
+    "https://gearjunkie.com/emerging-gear/emerging-gear-10-30-2026",
     "https://www.thescubanews.com/2026/11/01/diveroid-watchdive-smartwatch-dive-computer-2026/",
     "https://xray-mag.com/content/watchdive-puts-dive-data-smartwatches",
+    "https://www.tuttoandroid.net/news/2026/10/26/watchdive-diveroid-computer-subacqueo-smartwatch-kickstarter-1179439/",
+    "https://techadvisor.com.br/watchdive-caixa-estanque-transforma-apple-watch-e-galaxy-watch-em-computador-de-mergulho",
+    "https://www.teknotalk.com/watchdive-akilli-saat-dalis-bilgisayari-212212/",
+    "https://www.estamosenlinea.co/2026/11/01/convierta-el-reloj-inteligente-que-ya-usa-en-una-computadora-de-buceo/",
+    "https://www.scubatimes.co.kr/articles/diveroid-watchdive-aims-to-turn-everyday-smartwatches-into-mvxpzv11-2ow4dd",
   ]);
+  assert.equal(PRESS_LOGO_META.find(logo => logo.id === "tech-advisor-brasil")?.name, "Tech Advisor Brasil");
+  assert.equal(PRESS_LOGO_META.find(logo => logo.id === "scubatimes")?.coverageType, "licensed_translation");
+  assert.equal(PRESS_LOGO_META.find(logo => logo.id === "scubatimes")?.syndicatedFrom, "The Scuba News");
+  assert.deepEqual(PRESS_LOGO_META.filter(logo => logo.ground === "dark").map(logo => logo.id), ["gearjunkie"]);
+  const provenance = JSON.parse(read("src/assets/press/watchdive-20261104/PROVENANCE.json"));
+  assert.equal(provenance.assets.length, 8);
+  assert.deepEqual(PRESS_LOGO_META.map(logo => logo.file), provenance.assets.map((asset: { file: string }) => asset.file));
+  for (const asset of provenance.assets) {
+    const bytes = readFileSync(new URL(`src/assets/press/watchdive-20261104/${asset.file}`, root));
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), asset.sha256, asset.file);
+  }
+  const gear = read("src/assets/press/watchdive-20261104/gearjunkie.svg");
+  assert.equal(/<image|xlink:href|href="http|<use/i.test(gear), false);
+  assert.equal(mediaCopy("en").pressTitle, "As featured on");
+  assert.equal(mediaCopy("ko").pressTitle, "미디어에 소개된 WatchDive");
   assert.equal(mediaCopy("ko").benefitAlt.freediving[2], "DIVEROID 앱의 프리다이빙 프로필");
+  for (const locale of SUPPORTED_LOCALES) {
+    const beta = SEGMENT_BETA_COPY[locale];
+    assert.equal(/\b122\b|\b50\b/.test(`${beta.title} ${beta.context} ${beta.more}`), false, locale);
+  }
+  assert.equal(SEGMENT_BETA_COPY.en.title, "From our beta testers");
+  assert.equal(SEGMENT_BETA_COPY.ko.title, "베타테스터의 이야기");
 });
 
 test("the page keeps the old phase, adds a visual phase, and puts the first form before the long media", () => {
@@ -72,6 +102,7 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   assert.equal((page.match(/<EmailForm /g) ?? []).length, 1);
   const hero = page.indexOf('id="segment-hero"');
   const middle = page.indexOf("signup('middle').form");
+  const press = page.indexOf("<SegmentPress ");
   const benefits = page.indexOf('id="segment-benefits"');
   const how = page.indexOf('id="segment-how"');
   const gallery = page.indexOf("<SegmentGallery ");
@@ -83,7 +114,8 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   const prices = page.indexOf("signup('middle').prices");
   const faq = page.indexOf('id="segment-faq"');
   const end = page.indexOf("wd-segment-end-signup");
-  assert.ok(hero < middle && middle < benefits && benefits < how && how < gallery && gallery < bottom && bottom < demos && demos < camera && camera < reviews && reviews < cost && cost < prices && prices < faq && faq < end);
+  assert.equal((page.match(/<SegmentPress /g) ?? []).length, 1);
+  assert.ok(hero < middle && middle < press && press < benefits && benefits < how && how < gallery && gallery < bottom && bottom < demos && demos < camera && camera < reviews && reviews < cost && cost < prices && prices < faq && faq < end);
   assert.equal(page.slice(gallery, bottom).includes("SegmentBetaReviews"), false);
   assert.ok(end < page.indexOf("wd-segment-switch"));
   assert.equal((page.match(/<EmailForm /g) ?? []).length, 1);
@@ -147,12 +179,12 @@ const LOCALIZED_BODIES = {
   fr: BETA_REVIEWS_FR,
   de: BETA_REVIEWS_DE,
   "pt-BR": BETA_REVIEWS_PT_BR,
+  nl: BETA_REVIEWS_NL,
 } as const;
 
 test("segment routes load the approved review language and keep the allowlist", async () => {
   assert.deepEqual(PUBLISHABLE_REVIEWS.map(({ id }) => id), [...PUBLICATION_APPROVED_REVIEW_IDS]);
   assert.equal(await loadSegmentReviewBodies("en"), undefined);
-  assert.equal(await loadSegmentReviewBodies("nl"), undefined);
   for (const [locale, bodies] of Object.entries(LOCALIZED_BODIES)) {
     assert.strictEqual(await loadSegmentReviewBodies(locale as keyof typeof LOCALIZED_BODIES), bodies, locale);
   }
@@ -162,6 +194,8 @@ test("segment routes load the approved review language and keep the allowlist", 
   assert.match(reviews, /PUBLISHABLE_REVIEWS\.slice\(VISIBLE_REVIEW_COUNT\)/);
   assert.match(reviews, /betaReviewBody\(review, bodies\)/);
   assert.equal(reviews.includes("INCLUDE_UNVERIFIED_CLAIMS"), false);
+  assert.equal(reviews.includes("BETA_TESTER_COUNT"), false);
+  assert.equal(/\bBETA_REVIEWS\b/.test(reviews), false);
   assert.equal(/marquee|autoPlay|<video|animate-/.test(reviews), false);
   assert.deepEqual(PUBLISHABLE_REVIEWS.slice(0, 4).map(({ id }) => id), [7, 35, 45, 63]);
   assert.deepEqual(PUBLISHABLE_REVIEWS.slice(4).map(({ id }) => id), [72, 88, 100, 120]);

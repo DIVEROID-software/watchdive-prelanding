@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { BETA_REVIEWS_DE } from "../src/data/beta-reviews.de.ts";
+import { BETA_REVIEWS_NL } from "../src/data/beta-reviews.nl.ts";
 import { BETA_REVIEWS_ES } from "../src/data/beta-reviews.es.ts";
 import { BETA_REVIEWS_FR } from "../src/data/beta-reviews.fr.ts";
 import { BETA_REVIEWS_JA } from "../src/data/beta-reviews.ja.ts";
@@ -32,7 +33,8 @@ const localizedBodies = {
   fr: BETA_REVIEWS_FR,
   de: BETA_REVIEWS_DE,
   "pt-BR": BETA_REVIEWS_PT_BR,
-} as const satisfies Record<Exclude<Locale, "en" | "nl">, LocalizedBetaReviewBodies>;
+  nl: BETA_REVIEWS_NL,
+} as const satisfies Record<Exclude<Locale, "en">, LocalizedBetaReviewBodies>;
 
 const expectedIds = PUBLISHABLE_REVIEWS.map(({ id }) => id).sort((left, right) => left - right);
 
@@ -64,7 +66,7 @@ test("every localized review module joins exactly once to every immutable review
 });
 
 test("review 100 stays explicitly framed as the reviewer's opinion", () => {
-  const opinionMarkers: Record<Exclude<Locale, "en" | "nl">, RegExp> = {
+  const opinionMarkers: Record<Exclude<Locale, "en">, RegExp> = {
     ko: /제 생각에는/,
     "zh-CN": /我觉得/,
     "zh-TW": /我認為/,
@@ -73,10 +75,11 @@ test("review 100 stays explicitly framed as the reviewer's opinion", () => {
     fr: /je pense/i,
     de: /ich denke/i,
     "pt-BR": /acho que/i,
+    nl: /ik denk/i,
   };
   for (const [locale, pattern] of Object.entries(opinionMarkers)) {
     assert.match(
-      localizedBodies[locale as Exclude<Locale, "en" | "nl">][100] ?? "",
+      localizedBodies[locale as Exclude<Locale, "en">][100] ?? "",
       pattern,
       `${locale}: an opinion was strengthened into a factual market claim`,
     );
@@ -85,7 +88,6 @@ test("review 100 stays explicitly framed as the reviewer's opinion", () => {
 
 test("the route loader returns only the requested review language", async () => {
   assert.equal(await loadLocalizedBetaReviewBodies("en"), undefined);
-  assert.equal(await loadLocalizedBetaReviewBodies("nl"), undefined);
   for (const [locale, expected] of Object.entries(localizedBodies)) {
     assert.strictEqual(
       await loadLocalizedBetaReviewBodies(locale as Exclude<Locale, "en">),

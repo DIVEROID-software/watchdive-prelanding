@@ -489,12 +489,18 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
 .wd-segment-log-hand{grid-column:1 / -1;margin:8px 0 0;max-width:420px}
 .wd-segment-log-stage .wd-segment-log-hand{grid-column:auto;max-width:none;width:100%;margin:0}
 .wd-segment-log-hand img{width:100%;height:auto;border:3px solid var(--seg-frame);box-shadow:6px 6px 0 var(--seg-shadow);background:#10212e}
-.wd-segment-press{padding-block:8px 56px}
-.wd-segment-press-note{max-width:680px;margin-top:14px;color:var(--seg-muted);font-size:15px}
-.wd-segment-press ul{display:flex;flex-wrap:wrap;gap:14px;margin:18px 0 0;padding:0;list-style:none}
-.wd-segment-press li{min-width:0;flex:1 1 220px;max-width:100%}
-.wd-segment-press a{display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0;max-width:100%;min-height:72px;padding:12px 14px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:4px 4px 0 var(--seg-shadow);font-weight:750;line-height:1.35;overflow-wrap:break-word}
-.wd-segment-press a span{font-size:13px;font-weight:650;color:var(--seg-muted);overflow-wrap:break-word}
+.wd-segment-press{padding-block:36px 28px}
+.wd-press-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0 0;padding:0;list-style:none}
+.wd-press-row li{min-width:0;display:flex}
+.wd-press-row a{display:flex;align-items:center;justify-content:center;width:100%;min-height:76px;padding:12px 10px;border:3px solid var(--seg-frame);background:#e7eef2;box-shadow:4px 4px 0 var(--seg-shadow)}
+.wd-press-row a[data-ground="dark"]{background:#1c2430}
+.wd-press-row li[data-wide="true"]{grid-column:1 / -1}
+.wd-press-row img{width:auto;max-width:100%;height:auto;max-height:48px;object-fit:contain}
+@media(min-width:960px){
+ .wd-press-row{grid-template-columns:var(--press-cols);gap:14px 16px}
+ .wd-press-row li[data-wide="true"]{grid-column:auto}
+ .wd-press-row img{width:100%;max-width:none;max-height:none}
+}
 @media(max-width:959px){
  .wd-segment-how-photos{grid-template-columns:1fr;gap:16px}
  .wd-segment-how-photos figcaption{font-size:16px;line-height:1.4}
@@ -503,7 +509,7 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
  .wd-segment-gallery{padding-top:28px}
  .wd-segment-demos{padding-block:24px 40px}
  .wd-segment-demo h3{font-size:20px}
- .wd-segment-press{padding-bottom:36px}
+ .wd-segment-press{padding-block:28px 20px}
 }
 
 .wd-segment-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}

@@ -1,6 +1,8 @@
+import type { CSSProperties } from 'react';
 import { useFrozenLandingMessages } from '@/lib/i18n/use-current-locale';
 import type { DiveSegment } from '@/lib/segments/copy';
-import { PRESS_LINKS, type MediaCopy } from '@/lib/segments/media-copy';
+import type { MediaCopy } from '@/lib/segments/media-copy';
+import { PRESS_LOGOS } from '@/lib/segments/press-logos';
 import step1Small from '@/assets/live/responsive/watchdive-step1-800.webp';
 import step1Large from '@/assets/live/responsive/watchdive-step1-1200.webp';
 import step2Small from '@/assets/live/responsive/watchdive-step2-800.webp';
@@ -120,11 +122,15 @@ export function SegmentDemos({ segment, copy }: { segment: DiveSegment; copy: Me
       { key: 'logbook', poster: logPoster, posterSmall: logPosterSmall, width: 960, height: 454, ...copy.logClip },
     ] : []),
   ];
+  // Three columns share the 1120 shell and two 18px gaps. One freediving still stops at 720.
+  const sizes = stills.length === 1
+    ? '(min-width:960px) 720px, (max-width:359px) calc(100vw - 32px), min(650px, calc(100vw - 48px))'
+    : '(min-width:960px) calc((min(1120px, 100vw - 96px) - 36px) / 3), (max-width:359px) calc(100vw - 32px), min(650px, calc(100vw - 48px))';
   return <section id="segment-demos" className="wd-segment-demos wd-segment-shell" aria-labelledby="demos-title" data-segment-demos={segment}>
     <h2 id="demos-title">{copy.demoTitle}</h2>
     <div className="wd-segment-demo-list" data-count={stills.length}>
       {stills.map(still => <figure key={still.key} className="wd-segment-demo">
-        <img src={still.poster} srcSet={`${still.posterSmall} 640w, ${still.poster} 960w`} sizes="(min-width:960px) 720px, calc(100vw - 32px)" width={still.width} height={still.height} alt={still.alt} loading="lazy" decoding="async" />
+        <img src={still.poster} srcSet={`${still.posterSmall} 640w, ${still.poster} 960w`} sizes={sizes} width={still.width} height={still.height} alt={still.alt} loading="lazy" decoding="async" />
         <figcaption>
           <h3>{still.title}</h3>
           <p>{still.body}</p>
@@ -134,15 +140,17 @@ export function SegmentDemos({ segment, copy }: { segment: DiveSegment; copy: Me
   </section>;
 }
 
-/** Factual coverage only. The two URLs were opened by root on 2026-11-03. */
+/** Publisher mastheads for current WatchDive coverage. Not a review count. */
 export function SegmentPress({ copy }: { copy: MediaCopy }) {
-  const dates = [copy.pressScubaDate, copy.pressXrayDate];
+  const rows = [PRESS_LOGOS.slice(0, 4), PRESS_LOGOS.slice(4)];
   return <section id="segment-press" className="wd-segment-press wd-segment-shell" aria-labelledby="press-title">
     <h2 id="press-title">{copy.pressTitle}</h2>
-    <ul>
-      {PRESS_LINKS.map((link, index) => <li key={link.href}>
-        <a href={link.href} target="_blank" rel="noopener noreferrer">{link.publisher}<span>{dates[index]}</span></a>
+    {rows.map(row => <ul key={row[0].id} className="wd-press-row" style={{ '--press-cols': row.map(logo => `${logo.width / logo.height}fr`).join(' ') } as CSSProperties}>
+      {row.map(logo => <li key={logo.id} data-wide={logo.wide ? 'true' : undefined}>
+        <a href={logo.href} target="_blank" rel="noopener noreferrer" data-ground={logo.ground}>
+          <img src={logo.src} alt={logo.name} width={logo.width} height={logo.height} decoding="async" />
+        </a>
       </li>)}
-    </ul>
+    </ul>)}
   </section>;
 }

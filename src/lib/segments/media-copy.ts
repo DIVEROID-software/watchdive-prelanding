@@ -19,17 +19,7 @@ export type MediaCopy = {
   clipError: string;
   pressKicker: string;
   pressTitle: string;
-  pressScubaDate: string;
-  pressXrayDate: string;
 };
-
-const PRESS_SCUBA = "https://www.thescubanews.com/2026/11/01/diveroid-watchdive-smartwatch-dive-computer-2026/";
-const PRESS_XRAY = "https://xray-mag.com/content/watchdive-puts-dive-data-smartwatches";
-
-export const PRESS_LINKS = [
-  { publisher: "The Scuba News", href: PRESS_SCUBA, published: "2026-11-01" },
-  { publisher: "X-Ray Mag", href: PRESS_XRAY, published: "2026-10-19" },
-] as const;
 
 export const MEDIA_COPY = {
   en: {
@@ -70,9 +60,7 @@ export const MEDIA_COPY = {
     },
     clipError: "This clip did not load. Press play to try again.",
     pressKicker: "In the press",
-    pressTitle: "WatchDive in the press",
-    pressScubaDate: "1 Nov 2026",
-    pressXrayDate: "19 Oct 2026",
+    pressTitle: "As featured on",
   },
   ko: {
     benefitAlt: {
@@ -112,9 +100,7 @@ export const MEDIA_COPY = {
     },
     clipError: "영상을 불러오지 못했습니다. 다시 눌러 주세요.",
     pressKicker: "보도",
-    pressTitle: "미디어 속 WatchDive",
-    pressScubaDate: "2026년 11월 1일",
-    pressXrayDate: "2026년 10월 19일",
+    pressTitle: "미디어에 소개된 WatchDive",
   },
   "zh-CN": {
     benefitAlt: {
@@ -154,9 +140,7 @@ export const MEDIA_COPY = {
     },
     clipError: "这段视频没有载入。请再按一次播放。",
     pressKicker: "报道",
-    pressTitle: "媒体上的 WatchDive",
-    pressScubaDate: "2026年11月1日",
-    pressXrayDate: "2026年10月19日",
+    pressTitle: "媒体报道中的 WatchDive",
   },
   "zh-TW": {
     benefitAlt: {
@@ -196,9 +180,7 @@ export const MEDIA_COPY = {
     },
     clipError: "這段影片沒有載入。請再按一次播放。",
     pressKicker: "報導",
-    pressTitle: "媒體上的 WatchDive",
-    pressScubaDate: "2026年11月1日",
-    pressXrayDate: "2026年10月19日",
+    pressTitle: "媒體報導中的 WatchDive",
   },
   ja: {
     benefitAlt: {
@@ -238,9 +220,7 @@ export const MEDIA_COPY = {
     },
     clipError: "動画を読み込めませんでした。もう一度再生を押してください。",
     pressKicker: "掲載",
-    pressTitle: "メディアの中のWatchDive",
-    pressScubaDate: "2026年11月1日",
-    pressXrayDate: "2026年10月19日",
+    pressTitle: "メディアで紹介されたWatchDive",
   },
   es: {
     benefitAlt: {
@@ -280,9 +260,7 @@ export const MEDIA_COPY = {
     },
     clipError: "Este vídeo no se ha cargado. Pulsa reproducir para intentarlo de nuevo.",
     pressKicker: "En la prensa",
-    pressTitle: "WatchDive en la prensa",
-    pressScubaDate: "1 nov 2026",
-    pressXrayDate: "19 oct 2026",
+    pressTitle: "WatchDive en los medios",
   },
   fr: {
     benefitAlt: {
@@ -322,9 +300,7 @@ export const MEDIA_COPY = {
     },
     clipError: "Cette vidéo ne s’est pas chargée. Appuyez sur lecture pour réessayer.",
     pressKicker: "Dans la presse",
-    pressTitle: "WatchDive dans la presse",
-    pressScubaDate: "1 nov. 2026",
-    pressXrayDate: "19 oct. 2026",
+    pressTitle: "WatchDive dans les médias",
   },
   de: {
     benefitAlt: {
@@ -364,9 +340,7 @@ export const MEDIA_COPY = {
     },
     clipError: "Dieser Clip wurde nicht geladen. Tippen Sie auf Wiedergabe und versuchen Sie es erneut.",
     pressKicker: "In der Presse",
-    pressTitle: "WatchDive in der Presse",
-    pressScubaDate: "1. Nov. 2026",
-    pressXrayDate: "19. Okt. 2026",
+    pressTitle: "Bekannt aus",
   },
   "pt-BR": {
     benefitAlt: {
@@ -406,9 +380,7 @@ export const MEDIA_COPY = {
     },
     clipError: "Este clipe não carregou. Toque em reproduzir para tentar de novo.",
     pressKicker: "Na imprensa",
-    pressTitle: "WatchDive na imprensa",
-    pressScubaDate: "1 nov 2026",
-    pressXrayDate: "19 out 2026",
+    pressTitle: "Como visto na imprensa",
   },
   nl: {
     benefitAlt: {
@@ -448,9 +420,7 @@ export const MEDIA_COPY = {
     },
     clipError: "Deze clip is niet geladen. Tik op afspelen om het opnieuw te proberen.",
     pressKicker: "In de pers",
-    pressTitle: "WatchDive in de pers",
-    pressScubaDate: "1 nov 2026",
-    pressXrayDate: "19 okt 2026",
+    pressTitle: "WatchDive in de media",
   },
 } satisfies Record<Locale, MediaCopy>;
 
