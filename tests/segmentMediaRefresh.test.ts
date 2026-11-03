@@ -72,10 +72,12 @@ test("every locale has distinct scuba and freediving captions and eight publishe
   assert.equal(PRESS_LOGO_META.find(logo => logo.id === "tech-advisor-brasil")?.name, "Tech Advisor Brasil");
   assert.equal(PRESS_LOGO_META.find(logo => logo.id === "scubatimes")?.coverageType, "licensed_translation");
   assert.equal(PRESS_LOGO_META.find(logo => logo.id === "scubatimes")?.syndicatedFrom, "The Scuba News");
-  assert.deepEqual(PRESS_LOGO_META.filter(logo => logo.ground === "dark").map(logo => logo.id), ["gearjunkie"]);
+  assert.deepEqual(PRESS_LOGO_META.filter(logo => logo.ground === "dark").map(logo => logo.id), ["gearjunkie", "x-ray-mag"]);
+  assert.equal(PRESS_LOGO_META.find(logo => logo.id === "the-scuba-news")?.wide, true);
   const provenance = JSON.parse(read("src/assets/press/watchdive-20261104/PROVENANCE.json"));
   assert.equal(provenance.assets.length, 8);
   assert.deepEqual(PRESS_LOGO_META.map(logo => logo.file), provenance.assets.map((asset: { file: string }) => asset.file));
+  assert.deepEqual(PRESS_LOGO_META.map(logo => logo.ground), provenance.assets.map((asset: { ground: string }) => asset.ground));
   for (const asset of provenance.assets) {
     const bytes = readFileSync(new URL(`src/assets/press/watchdive-20261104/${asset.file}`, root));
     assert.equal(createHash("sha256").update(bytes).digest("hex"), asset.sha256, asset.file);

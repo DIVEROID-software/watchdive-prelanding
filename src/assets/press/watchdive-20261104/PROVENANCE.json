@@ -59,8 +59,8 @@
       "bytes": 32461,
       "source_url": "https://xray-mag.com/sites/default/files/public/X-RayMasthead_AquaScope.png",
       "source_location": "img.site-branding__logo on the article page. Filename contains AquaScope; the pixels are the X-Ray Mag masthead.",
-      "ground": "light",
-      "note": "Masthead includes stingray and turtle artwork on a dark built-in background. Do not invert. Site alt is Home; use X-Ray Mag as the accessible name."
+      "ground": "dark",
+      "note": "Transparent masthead with white lettering. On a light chip the letters disappear. Place it on the same dark neutral chip as GearJunkie. Do not recolor, invert, or crop the file. Site alt is Home; use X-Ray Mag as the accessible name."
     },
     {
       "id": "tuttoandroid",

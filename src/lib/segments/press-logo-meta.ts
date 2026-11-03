@@ -45,7 +45,9 @@ export const PRESS_LOGO_META = [
     width: 300,
     height: 90,
     ground: "light",
-    wide: false,
+    // The next two marks also span a phone row, so a half cell would sit alone.
+    // At 960px and up the stylesheet puts this item back in its proportional column.
+    wide: true,
     coverageType: "original_editorial",
     syndicatedFrom: null,
   },
@@ -56,7 +58,7 @@ export const PRESS_LOGO_META = [
     file: "xray-mag.png",
     width: 416,
     height: 75,
-    ground: "light",
+    ground: "dark",
     wide: true,
     coverageType: "original_editorial",
     syndicatedFrom: null,

@@ -129,7 +129,7 @@ test("every language displays an explicit translation notice", () => {
     fr: /ton ou certaines nuances/i,
     de: /Ton und Nuancen/,
     "pt-BR": /tom ou algumas nuances/i,
-    nl: /toon of nuance/i,
+    nl: /toon en kleine nuances/i,
   };
   const heroMarkers: Record<Locale, RegExp> = {
     en: /translated/i,
