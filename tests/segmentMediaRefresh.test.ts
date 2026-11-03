@@ -2,8 +2,22 @@
 import assert from "node:assert/strict";
 import { readFileSync, statSync } from "node:fs";
 import { test } from "node:test";
-import { SUPPORTED_LOCALES } from "../src/lib/i18n/locale.ts";
+import { SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
+import { SEGMENT_COPY } from "../src/lib/segments/copy.ts";
 import { MEDIA_COPY, PRESS_LINKS, mediaCopy } from "../src/lib/segments/media-copy.ts";
+
+const DARK_TITLES: Record<Locale, string> = {
+  en: "Be the first in line",
+  ko: "가장 먼저 만나보세요",
+  ja: "いち早く最新情報を。",
+  "zh-CN": "抢先获取最新消息",
+  "zh-TW": "搶先掌握最新消息",
+  es: "Sé de los primeros.",
+  fr: "Soyez parmi les premiers.",
+  de: "Sei von Anfang an dabei.",
+  "pt-BR": "Seja um dos primeiros.",
+  nl: "Wees er als eerste bij.",
+};
 
 const root = new URL("../", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
@@ -91,4 +105,43 @@ test("new media stays small and names its source", () => {
   for (const name of ["seal.mp4", "controls.mp4", "logbook.mp4", "buoy-1400.webp", "buoy-2200.webp", "overhead-1800.webp"]) {
     assert.equal(page.includes(name), true, name);
   }
+});
+
+const LAUNCH_BODIES: Record<Locale, string> = {
+  en: "We'll email you the WatchDive Kickstarter launch link.",
+  ko: "WatchDive Kickstarter 출시 링크를 이메일로 보내드립니다.",
+  "zh-CN": "我们会把 WatchDive 的 Kickstarter 上线链接发到你的邮箱。",
+  "zh-TW": "我們會把 WatchDive 的 Kickstarter 上線連結寄到你的信箱。",
+  ja: "WatchDiveのKickstarter公開リンクをメールでお送りします。",
+  es: "Te enviamos por correo el enlace de lanzamiento de WatchDive en Kickstarter.",
+  fr: "Nous vous envoyons par e-mail le lien de lancement WatchDive sur Kickstarter.",
+  de: "Wir senden dir den WatchDive-Link für den Kickstarter-Start per E-Mail.",
+  "pt-BR": "Enviamos por e-mail o link de lançamento do WatchDive no Kickstarter.",
+  nl: "Je krijgt de WatchDive-lanceringslink op Kickstarter per e-mail.",
+};
+
+const SEAL_BODIES: Record<Locale, string> = {
+  en: "Before the dive, the housing runs a pressure check and shows the result on the watch.",
+  ko: "입수 전에 하우징이 압력을 확인하고, 그 결과를 워치 화면에 보여 줍니다.",
+  "zh-CN": "下水前，外壳会做一次压力检查，并把结果显示在手表上。",
+  "zh-TW": "下水前，外殼會做一次壓力檢查，並把結果顯示在手錶上。",
+  ja: "入水前にハウジングが圧力を確認し、その結果をウォッチに表示します。",
+  es: "Antes de bucear, la carcasa hace una comprobación de presión y muestra el resultado en el reloj.",
+  fr: "Avant la plongée, le boîtier lance un contrôle de pression et affiche le résultat sur la montre.",
+  de: "Vor dem Tauchgang prüft das Gehäuse den Druck und zeigt das Ergebnis auf der Uhr.",
+  "pt-BR": "Antes do mergulho, a caixa faz uma checagem de pressão e mostra o resultado no relógio.",
+  nl: "Voor de duik doet de behuizing een drukcheck en toont het resultaat op het horloge.",
+};
+
+test("dark signup titles follow the root review and the launch bodies stay", () => {
+  for (const locale of SUPPORTED_LOCALES) {
+    for (const segment of ["scuba", "freediving"] as const) {
+      const copy = SEGMENT_COPY[locale][segment];
+      assert.equal(copy.finalTitle, DARK_TITLES[locale], `${locale} ${segment}`);
+      assert.equal(copy.finalBody, LAUNCH_BODIES[locale], `${locale} ${segment}`);
+    }
+    assert.equal(mediaCopy(locale).seal.body, SEAL_BODIES[locale], locale);
+  }
+  assert.match(SEGMENT_COPY.ja.scuba.finalBody, /WatchDive/);
+  assert.match(SEGMENT_COPY.ja.freediving.finalBody, /WatchDive/);
 });
