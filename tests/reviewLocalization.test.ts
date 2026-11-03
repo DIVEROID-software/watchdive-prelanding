@@ -141,7 +141,7 @@ test("every language displays an explicit translation notice", () => {
     fr: /traduits/i,
     de: /übersetzt/i,
     "pt-BR": /traduzidas/i,
-    nl: /Engels/i,
+    nl: /vertaald/i,
   };
 
   for (const [locale, pattern] of Object.entries(noticePatterns)) {

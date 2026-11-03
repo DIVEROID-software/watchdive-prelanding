@@ -101,7 +101,7 @@ export const NL_FROZEN_LANDING_MESSAGES: FrozenLandingMessages = {
     queued: "Nog aan het laden. Je aanmelding gaat zo vanzelf weg.",
   },
   heroProof: {
-    readAll: "Lees alle {count} bèta-indrukken, getoond in het Engels ↓",
+    readAll: "Lees alle {count} bèta-indrukken · deels vertaald ↓",
   },
   usp: {
     label: "Waarom WatchDive",
