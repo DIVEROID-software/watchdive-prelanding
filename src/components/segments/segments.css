@@ -531,8 +531,7 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
 .wd-segment-sticky>a,
 .wd-segment-clip button,
 .wd-segment-video>button,
-.wd-segment-press a,
-html:root .wd-segment-form .wd-submit{transition:transform 160ms cubic-bezier(0.23,1,0.32,1)}
+.wd-segment-press a{transition:transform 160ms cubic-bezier(0.23,1,0.32,1)}
 @media (hover:hover) and (pointer:fine){
  .wd-segment-hero-jump:hover,
  .wd-segment-end-signup:hover,
@@ -541,17 +540,29 @@ html:root .wd-segment-form .wd-submit{transition:transform 160ms cubic-bezier(0.
  .wd-segment-video>button:hover,
  .wd-segment-press a:hover{transform:translate(-1px,-1px)}
 }
-@media (prefers-reduced-motion:reduce){
- .wd-segment-hero-jump:hover,
- .wd-segment-end-signup:hover,
- .wd-segment-sticky>a:hover,
- .wd-segment-clip button:hover,
- .wd-segment-video>button:hover,
- .wd-segment-press a:hover{transform:none}
-}
 .wd-segment-hero-jump:active,
 .wd-segment-end-signup:active,
 .wd-segment-sticky>a:active,
 .wd-segment-clip button:active,
 .wd-segment-video>button:active,
 .wd-segment-press a:active{transform:translate(2px,2px)}
+.wd-segment-hero-jump:focus-visible:active,
+.wd-segment-end-signup:focus-visible:active,
+.wd-segment-sticky>a:focus-visible:active,
+.wd-segment-clip button:focus-visible:active,
+.wd-segment-video>button:focus-visible:active,
+.wd-segment-press a:focus-visible:active{transform:none}
+@media (prefers-reduced-motion:reduce){
+ .wd-segment-hero-jump:hover,
+ .wd-segment-end-signup:hover,
+ .wd-segment-sticky>a:hover,
+ .wd-segment-clip button:hover,
+ .wd-segment-video>button:hover,
+ .wd-segment-press a:hover,
+ .wd-segment-hero-jump:active,
+ .wd-segment-end-signup:active,
+ .wd-segment-sticky>a:active,
+ .wd-segment-clip button:active,
+ .wd-segment-video>button:active,
+ .wd-segment-press a:active{transform:none}
+}

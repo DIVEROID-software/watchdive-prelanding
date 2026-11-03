@@ -283,6 +283,21 @@
       "source_sha256": "64e78f2451056b08ab325902cf6ea3bcb9f46d8d6b1dc81f302d7ef3f3be8847",
       "source_bytes": 13531222,
       "op": "same top 72px crop, cwebp q72"
+    },
+    {
+      "kind": "photo",
+      "key": "overhead-bright",
+      "file": "scuba-pool-overhead-bright-2880.png",
+      "width": 2880,
+      "height": 1608,
+      "bytes": 1543532,
+      "sha256": "1c68b6f5017e6b3f5bf210eaf6b5626924a9468c98403f1022236b9ede8a101f",
+      "source_url": "https://d38ci6i1zrd77t.cloudfront.net/public/marketplace-builder/381f95f4d97de6cd311af2daa313381d/image/c30586f9-8e39-4049-9fbf-dd0409bfe00a.png",
+      "source_sha256": "1c68b6f5017e6b3f5bf210eaf6b5626924a9468c98403f1022236b9ede8a101f",
+      "source_bytes": 1543532,
+      "fetched": "2026-11-04",
+      "placement": "Prelaunch full-width image immediately before Be The First In Line",
+      "op": "Byte-for-byte copy of the owner-selected bright master. No grade, crop, resize, or reencoding. Lazy, not preloaded. Historical overhead-960.webp and overhead-1800.webp stay as the darker derivatives and are not selected."
     }
   ]
 }

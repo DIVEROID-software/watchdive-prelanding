@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { LanguageSwitcher } from '../language-switcher';
 import { CookieSettingsLink } from '../cookie-choice-bar';
@@ -32,6 +32,40 @@ import freeLogbook720 from '@/assets/live/segment-heroes/freediving-app-logbook-
 import freeLogbook1448 from '@/assets/live/segment-heroes/freediving-app-logbook-1448.webp';
 import './segments.css';
 
+function focusOwned(target: HTMLElement | null, boundary: HTMLElement | null, owned: boolean) {
+  if (!owned || !target) return;
+  const active = document.activeElement;
+  if (active instanceof HTMLElement && active.isConnected && active !== document.body && active !== target && boundary && !boundary.contains(active)) return;
+  target.focus({ preventScroll: true });
+}
+
+function CameraClip({ poster, video, playLabel, errorLabel, label }: { poster: string; video: string; playLabel: string; errorLabel: string; label: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const owned = useRef(false);
+  useEffect(() => {
+    if (failed) {
+      focusOwned(buttonRef.current, box.current, owned.current);
+      return;
+    }
+    if (!open) return;
+    const element = videoRef.current;
+    if (!element) return;
+    focusOwned(element, box.current, owned.current);
+    const attempt = element.play();
+    if (attempt) {
+      void attempt.catch(() => {
+        // A denied play() leaves the native controls. A broken file uses onError.
+      });
+    }
+  }, [open, failed]);
+  const text = failed ? errorLabel : playLabel;
+  return <div ref={box} className="wd-segment-video">{open && !failed ? <video ref={videoRef} tabIndex={0} controls autoPlay playsInline preload="none" poster={poster} src={video} aria-label={label} onError={() => { const active = document.activeElement; const boundary = box.current; owned.current = Boolean(active && boundary && (active === videoRef.current || boundary.contains(active))); setFailed(true); }} /> : <button ref={buttonRef} type="button" onClick={event => { owned.current = document.activeElement === event.currentTarget; setFailed(false); setOpen(true); }} aria-label={text}><img src={poster} alt={label} width="1280" height="720" loading="lazy" decoding="async" /><span>{text}<span aria-hidden="true"> ↗</span></span></button>}</div>;
+}
+
 function HowTitle({ template, tone }: { template: string; tone: 'on-dark' | 'on-light' }) {
   const parts = template.split('{logo}');
   if (parts.length < 2) return template;
@@ -58,7 +92,6 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   const benefits = [{ title: subscription.benefitTitle, body: subscription.benefitBody }, ...c.benefits.slice(0, 2)];
   const [priceNoteBefore, priceNoteAfter] = c.priceNote.split(c.priceNoteHighlight);
   const [sticky, setSticky] = useState(false);
-  const [videoOpen, setVideoOpen] = useState(false);
   const [campaignQuery, setCampaignQuery] = useState('');
   const isFree = segment === 'freediving';
   const alternate: DiveSegment = isFree ? 'scuba' : 'freediving';
@@ -203,7 +236,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
 
         <section id="segment-camera" className="wd-segment-camera wd-segment-shell" aria-labelledby="camera-title">
           <div><h2 id="camera-title">{c.cameraTitle}</h2><p>{c.cameraBody}</p></div>
-          <div className="wd-segment-video">{videoOpen ? <video controls autoPlay playsInline preload="none" poster={cameraPoster} src={cameraVideo} aria-label={m.cameras.videoAria} /> : <button type="button" onClick={() => setVideoOpen(true)} aria-label={m.media.play}><img src={cameraPoster} alt={m.cameras.videoAria} width="1280" height="720" loading="lazy" decoding="async" /><span>{m.media.play}<span aria-hidden="true"> ↗</span></span></button>}</div>
+          <CameraClip poster={cameraPoster} video={cameraVideo} playLabel={m.media.play} errorLabel={media.clipError} label={m.cameras.videoAria} />
         </section>
 
         <SegmentCostComparison locale={locale} />

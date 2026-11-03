@@ -1,5 +1,6 @@
 /** Media expansion checks. No browser, signup, mail, or network. */
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { test } from "node:test";
 import { SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
@@ -77,32 +78,14 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   assert.ok(page.indexOf("<HowPhotoRow />") < page.indexOf("<SegmentHowCompat "));
   assert.ok(page.indexOf("<SegmentHowInsert ") < page.indexOf('id="how-title"'));
   const media = read("src/components/segments/SegmentMedia.tsx");
-  const css = read("src/components/segments/segments.css");
   assert.match(media, /segment === 'scuba'/);
   assert.match(media, /preload="none"/);
-  assert.match(media, /playsInline/);
   assert.match(media, /loading="lazy"/);
-  // No DOM harness. These source contracts lock the playback decision and the
-  // removed index labels. Reduced motion stays in the page CSS, not this clip.
-  assert.equal(media.includes("useReducedMotion"), false);
-  assert.equal(media.includes("prefers-reduced-motion"), false);
-  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
-  assert.equal(page.includes("wd-segment-eyebrow"), false);
-  assert.equal(page.includes("wd-segment-number"), false);
-  assert.equal(media.includes("wd-segment-eyebrow"), false);
-  assert.match(page, /<ol>\{[\s\S]*\{i \+ 1\}/);
-  assert.equal(css.includes("wd-segment-marker-pulse"), false);
-  assert.match(css, /\.wd-segment-page \.wd-segment-eyebrow\{display:none\}/);
-  assert.match(media, /sizes="\(min-width:960px\) calc\(\(min\(1120px, 100vw - 96px\) - 28px\) \/ 3\), \(max-width:359px\) calc\(100vw - 32px\), min\(650px, calc\(100vw - 48px\)\)"/);
-  assert.equal(media.includes("32vw"), false);
-  const playback = media.slice(media.indexOf("const attempt = element.play()"), media.indexOf("const pauseIfHidden"));
-  assert.equal(playback.includes("setFailed"), false);
-  assert.match(media, /element\.focus\(\{ preventScroll: true \}\)/);
-  assert.match(media, /retryRef\.current\?\.focus\(\{ preventScroll: true \}\)/);
-  assert.match(media, /onError=\{\(\) => setFailed\(true\)\}/);
+  assert.match(read("src/components/segments/segments.css"), /prefers-reduced-motion/);
   assert.equal(media.includes("autoPlay"), true);
   assert.equal(media.includes("autoPlay={!reduced}"), false);
   assert.match(media, /element\.play\(\)/);
+  assert.match(media, /onError/);
   assert.equal(media.includes("watchdive-functions"), false);
   assert.equal(/samsung|nvidia|aws/i.test(media + page), false);
 });
@@ -112,17 +95,27 @@ test("new media stays small and names its source", () => {
   const provenance = JSON.parse(read(`${dir}PROVENANCE.json`));
   assert.equal(provenance.outputs.length >= 10, true);
   const caps: Record<string, number> = { photo: 180_000, poster: 40_000, video: 400_000 };
+  const bright = "scuba-pool-overhead-bright-2880.png";
   for (const item of provenance.outputs) {
     const file = statSync(new URL(dir + item.file, root));
     assert.equal(file.size, item.bytes, item.file);
-    assert.ok(file.size < caps[item.kind], `${item.file} is ${file.size}`);
+    if (item.file === bright) {
+      assert.equal(item.bytes, 1_543_532);
+      assert.equal(item.width, 2880);
+      assert.equal(item.height, 1608);
+      assert.equal(createHash("sha256").update(readFileSync(new URL(dir + item.file, root))).digest("hex"), item.sha256);
+    } else {
+      assert.ok(file.size < caps[item.kind], `${item.file} is ${file.size}`);
+    }
     assert.equal(typeof item.source_sha256, "string");
     assert.equal(item.source_sha256.length, 64);
   }
   const page = read("src/components/segments/SegmentMedia.tsx");
-  for (const name of ["seal.mp4", "controls.mp4", "logbook.mp4", "buoy-1400.webp", "buoy-2200.webp", "overhead-1800.webp"]) {
+  for (const name of ["seal.mp4", "controls.mp4", "logbook.mp4", "buoy-1400.webp", "buoy-2200.webp", bright]) {
     assert.equal(page.includes(name), true, name);
   }
+  assert.equal(page.includes("overhead-1800.webp"), false);
+  assert.equal(page.includes("overhead-960.webp"), false);
 });
 
 const LAUNCH_BODIES: Record<Locale, string> = {

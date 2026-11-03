@@ -18,8 +18,7 @@ import freeLogLarge from '@/assets/live/segment-heroes/freediving-app-logbook-14
 import buoySmall from '@/assets/live/media-refresh-20261103/buoy-800.webp';
 import buoyLarge from '@/assets/live/media-refresh-20261103/buoy-1400.webp';
 import buoyWide from '@/assets/live/media-refresh-20261103/buoy-2200.webp';
-import overheadSmall from '@/assets/live/media-refresh-20261103/overhead-960.webp';
-import overheadLarge from '@/assets/live/media-refresh-20261103/overhead-1800.webp';
+import scubaOverheadBright from '@/assets/live/media-refresh-20261103/scuba-pool-overhead-bright-2880.png';
 import sealPosterSmall from '@/assets/live/media-refresh-20261103/seal-poster-640.webp';
 import sealPoster from '@/assets/live/media-refresh-20261103/seal-poster-960.webp';
 import sealVideo from '@/assets/live/media-refresh-20261103/seal.mp4';
@@ -90,12 +89,11 @@ export function HowPhotoRow() {
 
 const wideShots: Record<DiveSegment, Shot> = {
   scuba: {
-    small: overheadSmall,
-    large: overheadLarge,
-    width: 1800,
-    height: 1200,
+    small: scubaOverheadBright,
+    large: scubaOverheadBright,
+    width: 2880,
+    height: 1608,
     sizes: '100vw',
-    srcSet: `${overheadSmall} 960w, ${overheadLarge} 1800w`,
   },
   freediving: {
     small: buoyLarge,
@@ -115,6 +113,16 @@ export function SegmentGallery({ segment, copy }: { segment: DiveSegment; copy: 
     <h2 id="gallery-title" className="wd-segment-sr">{copy.galleryTitle[segment]}</h2>
     <img src={shot.large} srcSet={shot.srcSet} sizes={shot.sizes} width={shot.width} height={shot.height} alt={alt} loading="lazy" decoding="async" />
   </section>;
+}
+
+/** Move focus only while this player still owns it.
+ * A disconnected control is the one we just replaced. A connected field outside the box wins.
+ */
+function focusOwned(target: HTMLElement | null, boundary: HTMLElement | null, owned: boolean) {
+  if (!owned || !target) return;
+  const active = document.activeElement;
+  if (active instanceof HTMLElement && active.isConnected && active !== document.body && active !== target && boundary && !boundary.contains(active)) return;
+  target.focus({ preventScroll: true });
 }
 
 /** Poster until an explicit click. Reduced motion lives in segments.css.
@@ -137,17 +145,18 @@ function SegmentClip({ poster, posterSmall, video, alt, playLabel, errorLabel, t
   const retryRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
+  const owned = useRef(false);
   useEffect(() => {
     if (failed) {
-      retryRef.current?.focus({ preventScroll: true });
+      focusOwned(retryRef.current, box.current, owned.current);
       return;
     }
     if (!open) return;
     const element = videoRef.current;
     if (!element) return;
-    // The poster button unmounts on this click. Focus the video so the keyboard
-    // lands on the element that owns the native controls.
-    element.focus({ preventScroll: true });
+    // The poster button unmounts on this click. Focus the video only if that
+    // button still owned focus. A field the visitor reached first keeps it.
+    focusOwned(element, box.current, owned.current);
     const attempt = element.play();
     if (attempt) {
       void attempt.catch(() => {
@@ -174,7 +183,7 @@ function SegmentClip({ poster, posterSmall, video, alt, playLabel, errorLabel, t
   const label = failed ? errorLabel : playLabel;
   return <article className="wd-segment-demo">
     <div ref={box} className="wd-segment-clip" style={{ aspectRatio: `${width} / ${height}` }}>
-      {open && !failed ? <video ref={videoRef} tabIndex={0} controls autoPlay muted playsInline preload="none" poster={poster} src={video} width={width} height={height} aria-label={alt} onError={() => setFailed(true)} /> : <button ref={retryRef} type="button" onClick={() => { setFailed(false); setOpen(true); }} aria-label={`${label}. ${title}`}>
+      {open && !failed ? <video ref={videoRef} tabIndex={0} controls autoPlay muted playsInline preload="none" poster={poster} src={video} width={width} height={height} aria-label={alt} onError={() => { const active = document.activeElement; const boundary = box.current; owned.current = Boolean(active && boundary && (active === videoRef.current || boundary.contains(active))); setFailed(true); }} /> : <button ref={retryRef} type="button" onClick={event => { owned.current = document.activeElement === event.currentTarget; setFailed(false); setOpen(true); }} aria-label={`${label}. ${title}`}>
         <img src={poster} srcSet={`${posterSmall} 640w, ${poster} 960w`} sizes="(min-width:960px) 34vw, 92vw" width={width} height={height} alt={alt} loading="lazy" decoding="async" />
         <span>{label}<span aria-hidden="true"> ▶</span></span>
       </button>}
