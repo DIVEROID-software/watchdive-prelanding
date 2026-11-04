@@ -117,7 +117,7 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   const faq = page.indexOf('id="segment-faq"');
   const end = page.indexOf("wd-segment-end-signup");
   assert.equal((page.match(/<SegmentPress /g) ?? []).length, 1);
-  assert.ok(hero < middle && middle < press && press < benefits && benefits < how && how < gallery && gallery < bottom && bottom < demos && demos < camera && camera < reviews && reviews < cost && cost < prices && prices < faq && faq < end);
+  assert.ok(hero < middle && middle < benefits && benefits < how && how < gallery && gallery < bottom && bottom < demos && demos < camera && camera < reviews && reviews < press && press < cost && cost < prices && prices < faq && faq < end);
   assert.equal(page.slice(gallery, bottom).includes("SegmentBetaReviews"), false);
   assert.ok(end < page.indexOf("wd-segment-switch"));
   assert.equal((page.match(/<EmailForm /g) ?? []).length, 1);

@@ -201,7 +201,6 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         </section>
 
         <div className="wd-segment-shell">{signup('middle').form}</div>
-        <SegmentPress copy={media} />
 
         <section id="segment-benefits" className="wd-segment-benefits wd-segment-shell" aria-labelledby="benefits-title">
           <h2 id="benefits-title">{c.benefitTitle}</h2>
@@ -242,6 +241,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         </section>
 
         <SegmentBetaReviews />
+        <SegmentPress copy={media} />
         <SegmentCostComparison locale={locale} />
         <div className="wd-segment-shell wd-segment-price-slot">{signup('middle').prices}</div>
 
