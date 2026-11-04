@@ -23,6 +23,7 @@ import { subscriptionCopy } from '@/lib/segments/subscription-copy';
 import { heroDisclosureCopy } from '@/lib/segments/hero-disclosure-copy';
 import { mediaCopy } from '@/lib/segments/media-copy';
 import { BenefitShot, HowPhotoRow, LogHandPhoto, SegmentDemos, SegmentGallery, SegmentPress } from './SegmentMedia';
+import { SegmentFeatureCarousel } from './SegmentFeatureCarousel';
 import { SegmentBetaReviews } from './SegmentBetaReviews';
 import sync640 from '@/assets/live/refresh/sync-app-640.webp';
 import sync1000 from '@/assets/live/refresh/sync-app-1000.webp';
@@ -222,8 +223,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         </section>
 
         <AcquisitionTools compatibility={false} />
-        <SegmentGallery segment={segment} copy={media} />
-        {signup('bottom').form}
+        <SegmentFeatureCarousel segment={segment} />
         <SegmentDemos segment={segment} copy={media} />
 
         <section id="segment-logbook" className="wd-segment-log wd-segment-shell" aria-labelledby="log-title">
@@ -240,6 +240,8 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
           <CameraClip poster={cameraPoster} video={cameraVideo} playLabel={m.media.play} errorLabel={media.clipError} label={m.cameras.videoAria} />
         </section>
 
+        <SegmentGallery segment={segment} copy={media} />
+        {signup('bottom').form}
         <SegmentBetaReviews />
         <SegmentPress copy={media} />
         <SegmentCostComparison locale={locale} />

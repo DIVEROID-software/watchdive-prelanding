@@ -107,9 +107,11 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   const press = page.indexOf("<SegmentPress ");
   const benefits = page.indexOf('id="segment-benefits"');
   const how = page.indexOf('id="segment-how"');
+  const features = page.indexOf("<SegmentFeatureCarousel ");
   const gallery = page.indexOf("<SegmentGallery ");
   const bottom = page.indexOf("signup('bottom').form");
   const demos = page.indexOf("<SegmentDemos ");
+  const log = page.indexOf('id="segment-logbook"');
   const camera = page.indexOf('id="segment-camera"');
   const reviews = page.indexOf("<SegmentBetaReviews />");
   const cost = page.indexOf("<SegmentCostComparison");
@@ -117,7 +119,11 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   const faq = page.indexOf('id="segment-faq"');
   const end = page.indexOf("wd-segment-end-signup");
   assert.equal((page.match(/<SegmentPress /g) ?? []).length, 1);
-  assert.ok(hero < middle && middle < benefits && benefits < how && how < gallery && gallery < bottom && bottom < demos && demos < camera && camera < reviews && reviews < press && press < cost && cost < prices && prices < faq && faq < end);
+  assert.equal((page.match(/<SegmentFeatureCarousel /g) ?? []).length, 1);
+  assert.ok(hero < middle && middle < benefits && benefits < how && how < features && features < demos && demos < log && log < camera && camera < gallery && gallery < bottom && bottom < reviews && reviews < press && press < cost && cost < prices && prices < faq && faq < end);
+  const surface = page.indexOf("<FreedivingSurfacePhoto ");
+  assert.ok(surface > log && surface < camera);
+  assert.ok(page.indexOf("<AcquisitionTools ") < features);
   assert.equal(page.slice(gallery, bottom).includes("SegmentBetaReviews"), false);
   assert.ok(end < page.indexOf("wd-segment-switch"));
   assert.equal((page.match(/<EmailForm /g) ?? []).length, 1);
