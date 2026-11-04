@@ -298,6 +298,36 @@
       "fetched": "2026-11-04",
       "placement": "Prelaunch full-width image immediately before Be The First In Line",
       "op": "Byte-for-byte copy of the owner-selected bright master. No grade, crop, resize, or reencoding. Lazy, not preloaded. Historical overhead-960.webp and overhead-1800.webp stay as the darker derivatives and are not selected."
+    },
+    {
+      "kind": "photo",
+      "key": "modes-bcd",
+      "file": "modes-bcd-1376.webp",
+      "width": 1376,
+      "height": 673,
+      "bytes": 58506,
+      "sha256": "2f0a57faca99cee9d0e21965a028c6b6e32e8a0822969380d7079ce4d1190ae5",
+      "source_url": "https://d38ci6i1zrd77t.cloudfront.net/public/project-media/37fca05f63109a0aebf6438055034da89476b9d8d73b47fec754391686a26027/bbff17ea-6d29-4aa1-ac0e-778fb7dced08/1920.webp",
+      "source_sha256": "2f0a57faca99cee9d0e21965a028c6b6e32e8a0822969380d7079ce4d1190ae5",
+      "source_bytes": 58506,
+      "fetched": "2026-11-04",
+      "placement": "Feature carousel Modes slide. Owner Prelaunch feature-slider card 4. The URL ends in 1920.webp; the bytes are 1376×673. Not found in the nine edited stills under 001_images/002_Edited.",
+      "op": "Byte-for-byte copy of the public owner project-media file. No crop, grade, or reencoding."
+    },
+    {
+      "kind": "photo",
+      "key": "modes-bcd",
+      "file": "modes-bcd-800.webp",
+      "width": 800,
+      "height": 392,
+      "bytes": 17304,
+      "sha256": "1ca29fdb3b25f7d3d01872bb3839aa9f98875dbbd1717c1b6743a51f57138347",
+      "source_url": "https://d38ci6i1zrd77t.cloudfront.net/public/project-media/37fca05f63109a0aebf6438055034da89476b9d8d73b47fec754391686a26027/bbff17ea-6d29-4aa1-ac0e-778fb7dced08/1920.webp",
+      "source_sha256": "2f0a57faca99cee9d0e21965a028c6b6e32e8a0822969380d7079ce4d1190ae5",
+      "source_bytes": 58506,
+      "fetched": "2026-11-04",
+      "placement": "Narrow srcset variant of the Modes slide.",
+      "op": "ffmpeg scale 800 lanczos from modes-bcd-1376.webp, cwebp q74, no crop."
     }
   ]
 }

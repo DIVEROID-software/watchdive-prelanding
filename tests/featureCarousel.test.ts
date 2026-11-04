@@ -1,198 +1,346 @@
-/** Feature carousel state, endpoints, locales, and segment claims. No browser. */
+/** Feature carousel content, loop, and autoplay gates. No browser. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
-import { mediaCopy } from "../src/lib/segments/media-copy.ts";
-import { FEATURE_CAROUSEL_COPY, featureCarouselCopy, formatFeaturePosition } from "../src/lib/segments/feature-carousel-copy.ts";
+import { FEATURE_CAROUSEL_COPY, featureCarouselCopy, featureLineText, formatFeaturePosition } from "../src/lib/segments/feature-carousel-copy.ts";
 import {
+  FEATURE_DWELL_MS,
+  FEATURE_EASE,
+  FEATURE_LINE_PLAN,
+  FEATURE_MOVE_MS,
   FEATURE_SLIDE_FRAMES,
   applyCarousel,
+  autoplayEligible,
   boundScrollTarget,
   carouselClickVia,
   carouselScrollBehavior,
+  cloneScrollTarget,
+  cloneSettled,
   endpointState,
+  featureCopyStructure,
+  featureEase,
   featureSlideAlt,
   featureSlidePlan,
+  holdAfterFocus,
+  idleScheduler,
   indexFromScroll,
+  initialFeatureHold,
+  loopIndex,
   measureStride,
+  planCarouselMove,
   reduceCarousel,
+  reduceFeatureHold,
   resizeAlignment,
   scrollEventIndex,
   scrollTarget,
+  syncDwell,
+  takeDwell,
+  tweenScrollLeft,
+  type AutoplayGate,
+  type DwellScheduler,
 } from "../src/lib/segments/feature-carousel.ts";
 
-const FREE_FORBIDDEN = /ndl|no-deco|no-decompress|decompress|dekompress|descompress|d[ée]compress|\bdeco\b|ascent alert|safety stop|deep stop|무감압|감압|상승|안전정지|安全停留|免减压|免減壓|减压|減壓|安全停止|無減圧|浮上|parada de seguran[çc]a|palier de s[ée]curit|sicherheitsstopp|aufstiegswarn|nullzeit|veiligheidsstop|stijgwaarschuwing|no-decompressietijd|indicaciones de descompresi|avisos de ascenso|alertes de remont[ée]e|alertas de subida/i;
-const DEEP_STOP = /deep stop|deepstop|딥\s*스톱|ディープストップ|深停/i;
+const ENGLISH_LINES = [
+  "Live depth tracking",
+  "Water temperature monitoring",
+  "Decompression stop guidance",
+  "NDL",
+  "Safety stop alerts",
+  "Ascent rate alerts",
+  "Deep stop alerts",
+  "Digital compass",
+  "Nitrox (EANx) support",
+  "Compass heading marker",
+  "Scuba mode",
+  "Freedive mode",
+  "Low-battery warning",
+] as const;
 
-const SCUBA_REQUIRED: Record<Locale, readonly string[]> = {
-  en: ["Compass", "Depth", "Dive time", "Water temperature", "No-decompression time", "Deco guidance", "Ascent alerts", "Safety stop"],
-  ko: ["나침반", "수심", "다이빙 시간", "수온", "무감압 시간", "감압 안내", "상승 알림", "안전정지"],
-  "zh-CN": ["指南针", "水深", "潜水时间", "水温", "免减压时间", "减压指引", "上升提醒", "安全停留"],
-  "zh-TW": ["指南針", "深度", "潛水時間", "水溫", "免減壓時間", "減壓指引", "上升提醒", "安全停留"],
-  ja: ["コンパス", "深度", "潜水時間", "水温", "無減圧潜水時間", "減圧ガイダンス", "浮上アラート", "安全停止"],
-  es: ["Brújula", "Profundidad", "Tiempo de inmersión", "Temperatura del agua", "Tiempo sin descompresión", "Indicaciones de descompresión", "Avisos de ascenso", "Parada de seguridad"],
-  fr: ["Compas", "Profondeur", "Durée de plongée", "Température de l’eau", "Temps sans palier", "Indications de décompression", "Alertes de remontée", "Palier de sécurité"],
-  de: ["Kompass", "Tiefe", "Tauchzeit", "Wassertemperatur", "Nullzeit", "Dekompressionshinweise", "Aufstiegswarnung", "Sicherheitsstopp"],
-  "pt-BR": ["Bússola", "Profundidade", "Tempo de mergulho", "Temperatura da água", "Tempo sem descompressão", "Orientações de descompressão", "Alertas de subida", "Parada de segurança"],
-  nl: ["Kompas", "Diepte", "Duiktijd", "Watertemperatuur", "No-decompressietijd", "Stijgwaarschuwing", "Veiligheidsstop"],
+const ALT_TOKENS: Record<Locale, { safety: RegExp; modes: RegExp; wrist: RegExp }> = {
+  en: { safety: /buoy/i, modes: /hose/i, wrist: /wrist/i },
+  ko: { safety: /부표/, modes: /호스/, wrist: /손목/ },
+  "zh-CN": { safety: /浮标/, modes: /软管/, wrist: /腕/ },
+  "zh-TW": { safety: /浮標/, modes: /軟管/, wrist: /腕/ },
+  ja: { safety: /ブイ/, modes: /ホース/, wrist: /手首/ },
+  es: { safety: /boya/i, modes: /latiguillo/i, wrist: /muñeca/i },
+  fr: { safety: /bouée/i, modes: /flexible/i, wrist: /poignet/i },
+  de: { safety: /Boje/, modes: /Schlauch/, wrist: /Handgelenk/ },
+  "pt-BR": { safety: /boia/i, modes: /mangueira/i, wrist: /pulso/i },
+  nl: { safety: /boei/i, modes: /slang/i, wrist: /pols/i },
 };
 
-const FREE_REQUIRED: Record<Locale, readonly string[]> = {
-  en: ["Depth", "Dive time", "Water temperature", "Freediving profiles", "seal check"],
-  ko: ["수심", "다이빙 시간", "수온", "프리다이빙 프로필", "실링 확인"],
-  "zh-CN": ["水深", "潜水时间", "水温", "自由潜水曲线", "密封检查"],
-  "zh-TW": ["深度", "潛水時間", "水溫", "自由潛水曲線", "密封檢查"],
-  ja: ["深度", "潜水時間", "水温", "フリーダイビングの記録", "圧力を確認"],
-  es: ["Profundidad", "Tiempo de inmersión", "Temperatura del agua", "Perfiles de apnea", "antes de bucear"],
-  fr: ["Profondeur", "Durée", "Température de l’eau", "Profils d’apnée", "avant la plongée"],
-  de: ["Tiefe", "Zeit", "Wassertemperatur", "Apnoe-Profile", "Druckprüfung"],
-  "pt-BR": ["Profundidade", "Tempo de mergulho", "Temperatura da água", "mergulho livre", "antes do mergulho"],
-  nl: ["Diepte", "Duiktijd", "Watertemperatuur", "Freediveprofielen", "Drukcheck"],
-};
+function openGate(overrides: Partial<AutoplayGate> = {}): AutoplayGate {
+  return {
+    hold: "none",
+    visible: true,
+    documentHidden: false,
+    reducedMotion: false,
+    fineHover: false,
+    dragging: false,
+    blockingFocus: false,
+    ...overrides,
+  };
+}
 
-test("rapid steps use the latest index and stop at the ends", () => {
-  assert.equal(applyCarousel(3, [{ type: "step", delta: 1 }, { type: "step", delta: 1 }, { type: "step", delta: 1 }]), 2);
-  assert.equal(applyCarousel(3, Array.from({ length: 20 }, () => ({ type: "step" as const, delta: 1 }))), 2);
-  assert.equal(applyCarousel(3, [{ type: "step", delta: 1 }, { type: "step", delta: 1 }, { type: "step", delta: -1 }]), 1);
-  assert.equal(applyCarousel(3, [{ type: "step", delta: -1 }, { type: "step", delta: -1 }]), 0);
-  const closedOverStart = [1, 1, 1].map(() => 0 + 1);
-  assert.deepEqual(closedOverStart, [1, 1, 1]);
-  assert.equal(applyCarousel(3, closedOverStart.map(() => ({ type: "step" as const, delta: 1 }))), 2);
-  assert.deepEqual(endpointState(0, 3), { prevDisabled: true, nextDisabled: false });
-  assert.deepEqual(endpointState(1, 3), { prevDisabled: false, nextDisabled: false });
-  assert.deepEqual(endpointState(2, 3), { prevDisabled: false, nextDisabled: true });
+test("forward steps loop one card at a time and the ends stay available", () => {
+  const steps = Array.from({ length: 20 }, () => ({ type: "step" as const, delta: 1 }));
+  assert.equal(applyCarousel(4, steps), 0);
+  assert.equal(applyCarousel(4, [...steps, { type: "step", delta: 1 }]), 1);
+  assert.equal(applyCarousel(4, [{ type: "step", delta: -1 }]), 3);
+  assert.equal(applyCarousel(4, [{ type: "step", delta: 1 }, { type: "step", delta: -1 }]), 0);
+  assert.equal(loopIndex(3, 4, 1), 0);
+  assert.deepEqual(endpointState(0, 4), { prevDisabled: false, nextDisabled: false });
+  assert.deepEqual(endpointState(3, 4), { prevDisabled: false, nextDisabled: false });
   assert.deepEqual(endpointState(0, 1), { prevDisabled: true, nextDisabled: true });
-  assert.deepEqual(endpointState(5, 3), { prevDisabled: false, nextDisabled: true });
 });
 
-test("keyboard moves one slide and leaves unrelated keys alone", () => {
-  assert.deepEqual(reduceCarousel(0, 3, { type: "key", key: "ArrowRight" }), { index: 1, handled: true });
-  assert.deepEqual(reduceCarousel(1, 3, { type: "key", key: "ArrowLeft" }), { index: 0, handled: true });
-  assert.deepEqual(reduceCarousel(1, 3, { type: "key", key: "Home" }), { index: 0, handled: true });
-  assert.deepEqual(reduceCarousel(0, 3, { type: "key", key: "End" }), { index: 2, handled: true });
-  assert.deepEqual(reduceCarousel(2, 3, { type: "key", key: "ArrowRight" }), { index: 2, handled: true });
-  assert.deepEqual(reduceCarousel(0, 3, { type: "key", key: "ArrowLeft" }), { index: 0, handled: true });
+test("keyboard wraps one slide and leaves modified keys alone", () => {
+  assert.deepEqual(reduceCarousel(0, 4, { type: "key", key: "ArrowRight" }), { index: 1, handled: true });
+  assert.deepEqual(reduceCarousel(3, 4, { type: "key", key: "ArrowRight" }), { index: 0, handled: true });
+  assert.deepEqual(reduceCarousel(0, 4, { type: "key", key: "ArrowLeft" }), { index: 3, handled: true });
+  assert.deepEqual(reduceCarousel(2, 4, { type: "key", key: "Home" }), { index: 0, handled: true });
+  assert.deepEqual(reduceCarousel(0, 4, { type: "key", key: "End" }), { index: 3, handled: true });
   for (const key of ["ArrowUp", "ArrowDown", "Tab", "PageDown", " ", "Enter"]) {
-    assert.deepEqual(reduceCarousel(1, 3, { type: "key", key }), { index: 1, handled: false }, key);
+    assert.deepEqual(reduceCarousel(1, 4, { type: "key", key }), { index: 1, handled: false }, key);
   }
-  assert.deepEqual(reduceCarousel(0, 3, { type: "key", key: "ArrowRight", modified: true }), { index: 0, handled: false });
+  assert.deepEqual(reduceCarousel(1, 4, { type: "key", key: "ArrowRight", modified: true }), { index: 1, handled: false });
+  assert.equal(carouselClickVia(0), "keyboard");
+  assert.equal(carouselClickVia(1), "pointer");
 });
 
-test("keyboard and reduced motion are instant, and an in-flight scroll does not rewind", () => {
-  assert.equal(carouselScrollBehavior({ reducedMotion: false, via: "pointer" }), "smooth");
+test("pointer and auto moves ease forward, and the return trip does not animate backward", () => {
+  assert.equal(FEATURE_MOVE_MS >= 300 && FEATURE_MOVE_MS <= 400, true);
+  assert.equal(FEATURE_DWELL_MS, 6000);
+  assert.deepEqual(FEATURE_EASE, { x1: 0.16, y1: 1, x2: 0.3, y2: 1 });
+  assert.equal(carouselScrollBehavior({ reducedMotion: false, via: "pointer" }), "tween");
+  assert.equal(carouselScrollBehavior({ reducedMotion: false, via: "auto" }), "tween");
   assert.equal(carouselScrollBehavior({ reducedMotion: true, via: "pointer" }), "auto");
   assert.equal(carouselScrollBehavior({ reducedMotion: false, via: "keyboard" }), "auto");
+  assert.deepEqual(planCarouselMove({ from: 3, to: 0, count: 4, via: "pointer", reducedMotion: false }), { kind: "wrap-forward", behavior: "tween", index: 0 });
+  assert.deepEqual(planCarouselMove({ from: 3, to: 0, count: 4, via: "auto", reducedMotion: false }), { kind: "wrap-forward", behavior: "tween", index: 0 });
+  assert.deepEqual(planCarouselMove({ from: 3, to: 0, count: 4, via: "keyboard", reducedMotion: false }), { kind: "direct", behavior: "auto", index: 0 });
+  assert.deepEqual(planCarouselMove({ from: 3, to: 0, count: 4, via: "pointer", reducedMotion: true }), { kind: "direct", behavior: "auto", index: 0 });
+  assert.deepEqual(planCarouselMove({ from: 0, to: 3, count: 4, via: "pointer", reducedMotion: false }), { kind: "direct", behavior: "auto", index: 3 });
+  assert.deepEqual(planCarouselMove({ from: 1, to: 2, count: 4, via: "auto", reducedMotion: false }), { kind: "direct", behavior: "tween", index: 2 });
+  assert.equal(featureEase(0), 0);
+  assert.equal(featureEase(1), 1);
+  assert.equal(featureEase(-0.2), 0);
+  assert.ok(featureEase(0.15) > 0.15);
+  let previous = 0;
+  for (let step = 0; step <= 20; step += 1) {
+    const value = featureEase(step / 20);
+    assert.ok(value >= 0 && value <= 1, String(value));
+    assert.ok(value + 1e-6 >= previous);
+    previous = value;
+  }
+  assert.equal(tweenScrollLeft(10, 310, 0), 10);
+  assert.equal(tweenScrollLeft(10, 310, 1), 310);
+  assert.ok(tweenScrollLeft(0, 300, 0.2) > 60);
+});
+
+test("scroll math keeps the selected card, ignores an in-flight move, and recognizes only a reachable loop copy", () => {
   assert.equal(measureStride(280, 14), 294);
   assert.equal(measureStride(0, 14), 0);
   assert.equal(measureStride(280, Number.NaN), 280);
+  assert.equal(scrollTarget(2, 300, 4), 600);
+  assert.equal(boundScrollTarget(3, 300, 4, 500), 500);
+  assert.equal(cloneScrollTarget(300, 4, 1200), 1200);
+  assert.equal(cloneSettled(1200, 300, 4, 1200), true);
+  assert.equal(cloneSettled(900, 300, 4, 1200), false);
+  assert.equal(cloneSettled(1000, 300, 4, 1000), false);
   const stride = 300;
-  assert.equal(scrollTarget(2, stride, 3), 600);
-  const first = scrollEventIndex({ scrollLeft: 0, stride, count: 3, lock: { target: 600 }, current: 2 });
-  assert.deepEqual(first, { index: 2, lock: { target: 600 } });
-  const midway = scrollEventIndex({ scrollLeft: 300, stride, count: 3, lock: { target: 600 }, current: 2 });
-  assert.equal(midway.index, 2);
-  assert.notEqual(midway.lock, null);
-  const arrived = scrollEventIndex({ scrollLeft: 600, stride, count: 3, lock: { target: 600 }, current: 2 });
-  assert.deepEqual(arrived, { index: 2, lock: null });
-  const manual = scrollEventIndex({ scrollLeft: 300, stride, count: 3, lock: null, current: 2 });
-  assert.deepEqual(manual, { index: 1, lock: null });
-  const resized = indexFromScroll(250, 200, 3);
-  assert.equal(resized, 1);
-  assert.equal(indexFromScroll(250, 100, 3), 2);
-  const realigned = resizeAlignment(300, 1, 480, 3);
-  assert.deepEqual(realigned, { target: 480, needsScroll: true });
-  assert.equal(resizeAlignment(480, 1, 480, 3).needsScroll, false);
-  assert.equal(indexFromScroll(-40, 100, 3), 0);
-  assert.equal(indexFromScroll(20, 0, 3), 0);
-  assert.equal(carouselClickVia(0), "keyboard");
-  assert.equal(carouselClickVia(1), "pointer");
-  assert.equal(carouselScrollBehavior({ reducedMotion: false, via: carouselClickVia(0) }), "auto");
-  assert.equal(carouselScrollBehavior({ reducedMotion: false, via: carouselClickVia(1) }), "smooth");
-  assert.equal(carouselScrollBehavior({ reducedMotion: true, via: carouselClickVia(1) }), "auto");
-  assert.equal(boundScrollTarget(2, 300, 3, 520), 520);
-  assert.equal(boundScrollTarget(2, 300, 3, 900), 600);
-  assert.equal(boundScrollTarget(0, 300, 3, 520), 0);
-  assert.equal(indexFromScroll(520, 300, 3, 520), 2);
-  assert.equal(indexFromScroll(300, 300, 3, 520), 1);
-  assert.equal(indexFromScroll(0, 300, 3, 0), 0);
-  const clamped = scrollEventIndex({ scrollLeft: 520, stride: 300, count: 3, lock: { target: 520 }, current: 2, maxScroll: 520 });
-  assert.deepEqual(clamped, { index: 2, lock: null });
-  const shortOfEnd = scrollEventIndex({ scrollLeft: 80, stride: 300, count: 3, lock: { target: 520 }, current: 2, maxScroll: 520 });
-  assert.deepEqual(shortOfEnd, { index: 2, lock: { target: 520 } });
-  assert.deepEqual(resizeAlignment(520, 2, 300, 3, 520), { target: 520, needsScroll: false });
-  assert.deepEqual(resizeAlignment(0, 2, 300, 3, 520), { target: 520, needsScroll: true });
+  const locked = scrollEventIndex({ scrollLeft: 300, stride, count: 4, lock: { target: 900 }, current: 3, maxScroll: 1200 });
+  assert.equal(locked.index, 3);
+  assert.deepEqual(locked.lock, { target: 900 });
+  assert.equal(locked.atClone, false);
+  const arrived = scrollEventIndex({ scrollLeft: 1200, stride, count: 4, lock: { target: 1200 }, current: 3, maxScroll: 1200 });
+  assert.equal(arrived.atClone, true);
+  assert.equal(arrived.lock, null);
+  const manual = scrollEventIndex({ scrollLeft: 600, stride, count: 4, lock: null, current: 0, maxScroll: 1200 });
+  assert.deepEqual(manual, { index: 2, lock: null, atClone: false });
+  assert.equal(indexFromScroll(1200, stride, 4, 1200), 3);
+  assert.equal(indexFromScroll(520, stride, 3, 520), 2);
+  assert.deepEqual(resizeAlignment(50, 2, stride, 4, 1200), { target: 600, needsScroll: true });
+  assert.equal(resizeAlignment(600, 2, stride, 4, 1200).needsScroll, false);
 });
 
-test("every locale has three segment-safe slides and matching frames", () => {
+test("a dwell advances one card, a stale callback does not, and a hidden gap does not catch up", () => {
+  const idle = idleScheduler();
+  assert.equal(syncDwell(idle, false, 0).scheduler.generation, 0);
+  const armed = syncDwell(idle, true, 1_000);
+  assert.equal(armed.scheduleIn, 6_000);
+  assert.equal(armed.scheduler.dueAt, 7_000);
+  assert.equal(armed.scheduler.armedGeneration, 0);
+  const kept = syncDwell(armed.scheduler, true, 2_000);
+  assert.equal(kept.scheduler.dueAt, 7_000);
+  assert.equal(kept.scheduleIn, 5_000);
+  assert.equal(kept.scheduler.generation, armed.scheduler.generation);
+  const hidden = syncDwell(armed.scheduler, false, 1_500);
+  assert.equal(hidden.scheduleIn, null);
+  assert.equal(hidden.scheduler.dueAt, null);
+  assert.equal(hidden.scheduler.generation, armed.scheduler.generation + 1);
+  const resumed = syncDwell(hidden.scheduler, true, 9_000);
+  assert.equal(resumed.scheduleIn, 6_000);
+  assert.equal(resumed.scheduler.dueAt, 15_000);
+  const first = takeDwell(armed.scheduler, 0, true, 3, 4);
+  assert.equal(first.advanced, true);
+  assert.equal(first.index, 0);
+  assert.equal(first.scheduler.armedGeneration, null);
+  const repeat = takeDwell(first.scheduler, 0, true, first.index, 4);
+  assert.equal(repeat.advanced, false);
+  assert.equal(repeat.index, 0);
+  assert.equal(repeat.scheduler.generation, first.scheduler.generation);
+  const stale = takeDwell(armed.scheduler, 99, true, 1, 4);
+  assert.equal(stale.advanced, false);
+  assert.equal(stale.index, 1);
+  assert.equal(stale.scheduler.generation, armed.scheduler.generation);
+  const blocked = takeDwell(armed.scheduler, 0, false, 1, 4);
+  assert.equal(blocked.advanced, false);
+  assert.equal(blocked.index, 1);
+  assert.equal(blocked.scheduler.generation, armed.scheduler.generation + 1);
+  const again = takeDwell(blocked.scheduler, 0, true, 1, 4);
+  assert.equal(again.advanced, false);
+  assert.equal(again.scheduler.generation, blocked.scheduler.generation);
+});
+
+test("playback stops for each gate, and only Play clears a visitor pause", () => {
+  assert.equal(autoplayEligible(openGate()), true);
+  for (const gate of [
+    openGate({ hold: "user" }),
+    openGate({ hold: "reduced-default" }),
+    openGate({ visible: false }),
+    openGate({ documentHidden: true }),
+    openGate({ reducedMotion: true }),
+    openGate({ fineHover: true }),
+    openGate({ dragging: true }),
+    openGate({ blockingFocus: true }),
+  ]) {
+    assert.equal(autoplayEligible(gate), false);
+  }
+  assert.equal(initialFeatureHold(true), "reduced-default");
+  assert.equal(initialFeatureHold(false), "none");
+  const optedIn = reduceFeatureHold("reduced-default", { type: "play" });
+  assert.equal(optedIn, "none");
+  assert.equal(autoplayEligible(openGate({ hold: optedIn, reducedMotion: true })), false);
+  assert.equal(reduceFeatureHold("user", { type: "reduced-on" }), "user");
+  assert.equal(reduceFeatureHold("none", { type: "reduced-on" }), "reduced-default");
+  assert.equal(reduceFeatureHold("reduced-default", { type: "reduced-off" }), "none");
+  assert.equal(reduceFeatureHold("user", { type: "reduced-off" }), "user");
+  assert.equal(reduceFeatureHold("none", { type: "pause" }), "user");
+  assert.equal(reduceFeatureHold("user", { type: "play" }), "none");
+  assert.equal(holdAfterFocus("none", true), "none");
+  assert.equal(holdAfterFocus("user", true), "user");
+  assert.equal(holdAfterFocus("none", false), "user");
+  const hiddenWhilePlaying = syncDwell(syncDwell(idleScheduler(), true, 0).scheduler, false, 1_000);
+  const stillPaused: DwellScheduler = hiddenWhilePlaying.scheduler;
+  assert.equal(syncDwell(stillPaused, false, 8_000).scheduler.generation, stillPaused.generation);
+});
+
+test("all ten locales show the same four cards, and freediving names scuba procedures", () => {
   assert.deepEqual(Object.keys(FEATURE_CAROUSEL_COPY).sort(), [...SUPPORTED_LOCALES].sort());
+  assert.deepEqual(FEATURE_SLIDE_FRAMES.scuba.map((frame) => frame.id), ["data", "safety", "tech", "modes"]);
+  assert.equal(FEATURE_SLIDE_FRAMES.scuba, FEATURE_SLIDE_FRAMES.freediving);
+  assert.deepEqual(FEATURE_SLIDE_FRAMES.scuba.map((frame) => frame.image), ["underwater", "buoy", "wrist-pool", "modes"]);
+  assert.deepEqual(FEATURE_SLIDE_FRAMES.scuba.map((frame) => frame.side), ["end", "start", "start", "end"]);
+  const packed = JSON.stringify(FEATURE_CAROUSEL_COPY);
+  assert.equal(/beta|\$|149/i.test(packed), false);
   for (const locale of SUPPORTED_LOCALES) {
     const copy = featureCarouselCopy(locale);
-    assert.notEqual(copy.heading.scuba, copy.heading.freediving, locale);
+    assert.equal(copy.slides.scuba, copy.slides.freediving, locale);
+    assert.equal(copy.heading.scuba, copy.heading.freediving, locale);
+    assert.equal(copy.heading.scuba.length >= 8 && copy.heading.scuba.length <= 160, true, locale);
     assert.notEqual(copy.previous, copy.next, locale);
-    assert.equal(copy.position.includes("{current}") && copy.position.includes("{total}"), true, locale);
-    assert.equal(formatFeaturePosition(copy.position, 2, 3).includes("2"), true, locale);
-    assert.equal(formatFeaturePosition(copy.position, 2, 3).includes("3"), true, locale);
-    assert.deepEqual(copy.slides.scuba.map((slide) => slide.id), ["readings", "guidance", "logbook"], locale);
-    assert.deepEqual(copy.slides.freediving.map((slide) => slide.id), ["readings", "logbook", "housing"], locale);
+    assert.notEqual(copy.play, copy.pause, locale);
+    assert.equal(copy.play.length > 2 && copy.pause.length > 2, true, locale);
+    assert.equal(copy.scopeLabel.length > 2, true, locale);
+    assert.equal(formatFeaturePosition(copy.position, 2, 4).includes("2"), true, locale);
+    assert.equal(formatFeaturePosition(copy.position, 2, 4).includes("4"), true, locale);
+    assert.equal(featureCopyStructure(copy.slides.scuba), true, locale);
+    assert.deepEqual(featureSlidePlan(locale === "en" ? "scuba" : "freediving", copy.slides.scuba).map((item) => item.frame.id), ["data", "safety", "tech", "modes"]);
+    const icons = copy.slides.scuba.flatMap((slide) => slide.lines.map((line) => line.icon));
+    assert.deepEqual(icons, FEATURE_LINE_PLAN.flatMap((slide) => slide.lines.map((line) => line.icon)), locale);
+    const stored = copy.slides.scuba.flatMap((slide) => slide.lines.map((line) => line.text)).join("\n");
+    assert.equal(stored.includes("NDL"), true, locale);
+    assert.equal(/EANx/.test(stored), true, locale);
     for (const segment of ["scuba", "freediving"] as const) {
-      assert.equal(copy.heading[segment].length <= 48, true, `${locale} ${segment} heading`);
-      const plan = featureSlidePlan(segment, copy.slides[segment]);
-      assert.equal(plan.length, 3, locale);
-      const packed = copy.slides[segment].flatMap((slide) => [slide.title, ...slide.lines]).join("\n");
-      assert.equal(DEEP_STOP.test(packed), false, `${locale} ${segment}`);
       for (const slide of copy.slides[segment]) {
-        assert.equal(slide.lines.length >= 3 && slide.lines.length <= 4, true, `${locale} ${slide.id}`);
-        for (const line of [slide.title, ...slide.lines]) {
-          assert.equal(line.trim().length >= 2 && line.trim().length <= 64, true, `${locale} ${line}`);
+        assert.equal(slide.title.trim().length >= 2 && slide.title.trim().length <= 80, true, `${locale} ${slide.title}`);
+        for (const line of slide.lines) {
+          const shown = featureLineText(line, segment, copy.scopeLabel);
+          assert.equal(shown.trim().length >= 2 && shown.trim().length <= 120, true, `${locale} ${shown}`);
+          if (segment === "freediving" && line.scope === "scuba") assert.equal(shown.endsWith(` · ${copy.scopeLabel}`), true, shown);
+          else assert.equal(shown, line.text, `${locale} ${segment} ${line.icon}`);
         }
       }
-      if (segment === "freediving") assert.equal(FREE_FORBIDDEN.test(packed), false, `${locale} ${packed}`);
     }
-    const scubaText = copy.slides.scuba.flatMap((slide) => slide.lines).join("\n");
-    for (const phrase of SCUBA_REQUIRED[locale]) assert.equal(scubaText.includes(phrase), true, `${locale} ${phrase}`);
-    const freeText = copy.slides.freediving.flatMap((slide) => [slide.title, ...slide.lines]).join("\n");
-    for (const phrase of FREE_REQUIRED[locale]) assert.equal(freeText.includes(phrase), true, `${locale} ${phrase}`);
-    assert.deepEqual(FEATURE_SLIDE_FRAMES.scuba.map((frame) => frame.image), ["step2", "underwater", "sync"]);
-    assert.deepEqual(FEATURE_SLIDE_FRAMES.freediving.map((frame) => frame.image), ["buoy", "free-log", "gear"]);
-    assert.equal(FEATURE_SLIDE_FRAMES.freediving.find((frame) => frame.id === "housing")?.layout, "stack");
-    assert.equal(FEATURE_SLIDE_FRAMES.freediving.some((frame) => frame.image === "underwater" || frame.image === "sync"), false);
-    if (locale === "en") assert.equal(copy.slides.freediving.find((slide) => slide.id === "housing")?.lines[1], "Keep wearing your watch on land");
-    if (locale === "de") assert.equal(copy.slides.scuba.find((slide) => slide.id === "guidance")?.title, "Hinweise");
-    if (locale === "zh-CN") assert.equal(copy.slideLabel, "幻灯片");
-    if (locale === "zh-TW") assert.equal(copy.slideLabel, "投影片");
-    if (locale === "nl") {
-      const guidance = copy.slides.scuba.find((slide) => slide.id === "guidance");
-      assert.deepEqual(guidance?.lines, ["No-decompressietijd", "Veiligheidsstop", "Stijgwaarschuwing"]);
+    const modesLine = copy.slides.freediving.find((slide) => slide.id === "modes")?.lines[0];
+    assert.equal(modesLine?.scope, "shared");
+    assert.equal(featureLineText(modesLine!, "freediving", copy.scopeLabel), modesLine?.text);
+    for (const id of ["data", "safety", "tech", "modes"] as const) {
+      assert.equal(featureSlideAlt(id, copy.alt).includes("WatchDive"), true, `${locale} ${id}`);
     }
-    const media = mediaCopy(locale);
-    assert.equal(featureSlideAlt("scuba", "guidance", media), media.benefitAlt.scuba[1], locale);
-    assert.equal(featureSlideAlt("scuba", "logbook", { ...media, syncAlt: "poolside sync" }), "poolside sync", locale);
-    assert.notEqual(featureSlideAlt("scuba", "logbook", { ...media, syncAlt: "poolside sync" }), media.logStillAlt, locale);
-    assert.equal(featureSlideAlt("freediving", "housing", media), media.benefitAlt.freediving[0], locale);
-    assert.equal(featureSlideAlt("freediving", "logbook", media).toLowerCase().includes("scuba"), false, locale);
+    assert.match(copy.alt.safety, ALT_TOKENS[locale].safety, locale);
+    assert.match(copy.alt.modes, ALT_TOKENS[locale].modes, locale);
+    assert.match(copy.alt.tech, ALT_TOKENS[locale].wrist, locale);
+    assert.match(copy.alt.data, ALT_TOKENS[locale].wrist, locale);
   }
+  const english = featureCarouselCopy("en");
+  assert.equal(english.heading.scuba, "Everything Your Dive Needs, Right On Your Wrist.");
+  assert.deepEqual(english.slides.scuba.flatMap((slide) => slide.lines.map((line) => line.text)), ENGLISH_LINES);
+  assert.deepEqual(english.slides.scuba.map((slide) => slide.title), ["Data", "Safety", "Dive Tech", "Modes"]);
+  const freedivingData = english.slides.freediving[0].lines.map((line) => featureLineText(line, "freediving", english.scopeLabel));
+  assert.deepEqual(freedivingData, [
+    "Live depth tracking",
+    "Water temperature monitoring",
+    "Decompression stop guidance · Scuba mode",
+    "NDL · Scuba mode",
+  ]);
+  assert.equal(featureLineText(english.slides.scuba[0].lines[2], "scuba", english.scopeLabel), "Decompression stop guidance");
 });
 
-test("the carousel view does not autoplay or mount a video", () => {
+test("the carousel view wires four stills, a rotation control, and one dwell timer", () => {
   const view = readFileSync(new URL("../src/components/segments/SegmentFeatureCarousel.tsx", import.meta.url), "utf8");
-  assert.equal(/autoPlay|autoplay|setInterval|<video|\.mp4|scuba-pool-overhead/.test(view), false);
+  const css = readFileSync(new URL("../src/components/segments/segments.css", import.meta.url), "utf8");
+  assert.equal((view.match(/setTimeout/g) ?? []).length, 1);
+  assert.equal((view.match(/setInterval/g) ?? []).length, 0);
+  assert.match(view, /clearTimeout/);
+  assert.match(view, /cancelAnimationFrame/);
+  assert.match(view, /IntersectionObserver/);
+  assert.match(view, /visibilitychange/);
+  assert.match(view, /prefers-reduced-motion/);
+  assert.match(view, /syncDwell/);
+  assert.match(view, /takeDwell/);
+  assert.match(view, /data-feature-rotation/);
+  assert.match(view, /aria-pressed/);
+  assert.match(view, /aria-live="polite"/);
+  assert.match(view, /inert=\{clone \? true : undefined\}/);
   assert.match(view, /loading="lazy"/);
   assert.match(view, /ArrowLeft ArrowRight Home End/);
-  assert.match(view, /carouselScrollBehavior/);
-  assert.match(view, /scrollEventIndex/);
-  assert.match(view, /aria-live="polite"/);
+  assert.match(view, /featureLineText/);
+  assert.match(view, /FeatureGlyph/);
+  assert.match(view, /modes-bcd-1376\.webp/);
+  assert.match(view, /modes-bcd-800\.webp/);
+  assert.match(view, /underwater-1600\.webp/);
+  assert.match(view, /underwater-1000\.webp/);
+  assert.match(view, /underwater-640\.webp/);
   assert.match(view, /buoy-1400\.webp/);
+  assert.match(view, /wrist-pool-1000\.webp/);
   assert.equal(view.includes("buoy-2200"), false);
+  assert.equal(view.includes("underwater-mobile"), false);
+  assert.equal(view.includes("gear-"), false);
   assert.equal(view.includes("scuba-pool-overhead"), false);
-  const css = readFileSync(new URL("../src/components/segments/segments.css", import.meta.url), "utf8");
+  assert.equal(/<video|\.mp4/.test(view), false);
+  assert.match(css, /\.wd-feature-track\{[^}]*scroll-behavior:auto/);
   assert.match(css, /\.wd-feature-track\{[^}]*scroll-snap-type:x mandatory/);
+  assert.match(css, /--feature-peek:72px/);
+  assert.match(css, /--feature-peek:44px/);
+  assert.match(css, /scroll-snap-stop:always/);
   assert.match(css, /\.wd-feature-nav button\{[^}]*min-width:48px/);
+  assert.match(css, /\.wd-feature-icon\{[^}]*stroke:currentColor/);
+  assert.match(css, /letter-spacing:-\.03em/);
+  assert.match(css, /#1a1438 72%/);
   assert.match(css, /@media\(max-width:389px\)/);
-  assert.match(view, /watchdive-sync-1200\.webp/);
-  assert.match(view, /step3Alt/);
-  assert.match(view, /carouselClickVia\(event\.detail\)/);
-  assert.match(view, /boundScrollTarget/);
-  assert.equal(view.includes("loghand"), false);
   assert.match(css, /flex:1 1 auto;align-self:stretch;justify-content:flex-start/);
+  assert.equal(css.includes(".wd-feature-copy li::before"), false);
 });

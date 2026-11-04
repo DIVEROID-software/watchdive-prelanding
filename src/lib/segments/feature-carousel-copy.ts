@@ -1,239 +1,476 @@
 import type { Locale } from "../i18n/locale";
 import type { DiveSegment } from "./copy";
-import type { FeatureSlideId } from "./feature-carousel";
+import type { FeatureIcon, FeatureScope, FeatureSlideId } from "./feature-carousel";
 
 /**
- * Short carousel labels. Each line restates an approved segment or FAQ fact.
- * Scuba guidance stays on the scuba slides. Freediving does not borrow it.
- * Screen numbers in the photographs are not specifications.
+ * Owner feature slider, 2026-11-04.
+ * The 13 English lines are the supplied product-page copy. They are not an
+ * engineering measurement. Scuba-only procedures stay in the list on the
+ * freediving page and are named as scuba mode there. Screen figures in the
+ * photographs are not specifications.
  */
+export type FeatureLine = {
+  icon: FeatureIcon;
+  text: string;
+  scope: FeatureScope;
+};
+
 export type FeatureSlideCopy = {
   id: FeatureSlideId;
   title: string;
-  lines: readonly string[];
+  lines: readonly FeatureLine[];
 };
 
 export type FeatureCarouselCopy = {
   heading: Record<DiveSegment, string>;
   previous: string;
   next: string;
+  play: string;
+  pause: string;
+  scopeLabel: string;
   trackLabel: string;
   carouselLabel: string;
   slideLabel: string;
   position: string;
+  alt: Record<FeatureSlideId, string>;
   slides: Record<DiveSegment, readonly FeatureSlideCopy[]>;
 };
 
+function line(icon: FeatureIcon, text: string, scope: FeatureScope): FeatureLine {
+  return { icon, text, scope };
+}
+
+function slides(
+  dataTitle: string,
+  depth: string,
+  temperature: string,
+  deco: string,
+  ndl: string,
+  safetyTitle: string,
+  safetyStop: string,
+  ascent: string,
+  deepStop: string,
+  techTitle: string,
+  compass: string,
+  nitrox: string,
+  headingMarker: string,
+  modesTitle: string,
+  scubaMode: string,
+  freediveMode: string,
+  battery: string,
+): Record<DiveSegment, readonly FeatureSlideCopy[]> {
+  const shared: readonly FeatureSlideCopy[] = [
+    {
+      id: "data",
+      title: dataTitle,
+      lines: [
+        line("depth", depth, "shared"),
+        line("temperature", temperature, "shared"),
+        line("deco", deco, "scuba"),
+        line("ndl", ndl, "scuba"),
+      ],
+    },
+    {
+      id: "safety",
+      title: safetyTitle,
+      lines: [
+        line("safety-stop", safetyStop, "scuba"),
+        line("ascent", ascent, "scuba"),
+        line("deep-stop", deepStop, "scuba"),
+      ],
+    },
+    {
+      id: "tech",
+      title: techTitle,
+      lines: [
+        line("compass", compass, "shared"),
+        line("nitrox", nitrox, "scuba"),
+        line("heading", headingMarker, "shared"),
+      ],
+    },
+    {
+      id: "modes",
+      title: modesTitle,
+      lines: [
+        line("scuba", scubaMode, "shared"),
+        line("freedive", freediveMode, "shared"),
+        line("battery", battery, "shared"),
+      ],
+    },
+  ];
+  return { scuba: shared, freediving: shared };
+}
+
 export const FEATURE_CAROUSEL_COPY = {
   en: {
-    heading: { scuba: "The dive, on your wrist.", freediving: "The freedive, on your wrist." },
+    heading: { scuba: "Everything Your Dive Needs, Right On Your Wrist.", freediving: "Everything Your Dive Needs, Right On Your Wrist." },
     previous: "Previous feature",
     next: "Next feature",
+    play: "Play automatic slides",
+    pause: "Pause automatic slides",
+    scopeLabel: "Scuba mode",
     trackLabel: "Feature slides",
     carouselLabel: "carousel",
     slideLabel: "slide",
     position: "{current} of {total}",
-    slides: {
-      scuba: [
-        { id: "readings", title: "Readings", lines: ["Compass", "Depth", "Dive time", "Water temperature"] },
-        { id: "guidance", title: "Guidance", lines: ["No-decompression time", "Deco guidance", "Ascent alerts", "Safety stop"] },
-        { id: "logbook", title: "Logbook", lines: ["Sync at the surface", "Review the dive profile", "Your dives in one place", "Footage with the record"] },
-      ],
-      freediving: [
-        { id: "readings", title: "Readings", lines: ["Depth", "Dive time", "Water temperature"] },
-        { id: "logbook", title: "Logbook", lines: ["Sync after the dive", "Freediving profiles", "Review the record", "Footage with the log"] },
-        { id: "housing", title: "Housing", lines: ["Add the housing to dive", "Keep wearing your watch on land", "Depth and temperature, measured", "A seal check before the dive"] },
-      ],
+    alt: {
+      data: "WatchDive on a wrist underwater, with dive readings on the screen",
+      safety: "A freediver on a yellow buoy, with a white WatchDive on the wrist",
+      tech: "A black WatchDive on an extended wrist above the pool",
+      modes: "WatchDive clipped to a buoyancy compensator, beside a yellow hose and a black corrugated hose",
     },
+    slides: slides(
+      "Data",
+      "Live depth tracking",
+      "Water temperature monitoring",
+      "Decompression stop guidance",
+      "NDL",
+      "Safety",
+      "Safety stop alerts",
+      "Ascent rate alerts",
+      "Deep stop alerts",
+      "Dive Tech",
+      "Digital compass",
+      "Nitrox (EANx) support",
+      "Compass heading marker",
+      "Modes",
+      "Scuba mode",
+      "Freedive mode",
+      "Low-battery warning",
+    ),
   },
   ko: {
-    heading: { scuba: "다이빙 정보, 손목에서.", freediving: "프리다이빙 정보, 손목에서." },
+    heading: { scuba: "다이빙에 필요한 모든 것, 손목 위에.", freediving: "다이빙에 필요한 모든 것, 손목 위에." },
     previous: "이전 기능",
     next: "다음 기능",
+    play: "자동 넘김 재생",
+    pause: "자동 넘김 정지",
+    scopeLabel: "스쿠버 모드",
     trackLabel: "기능 슬라이드",
     carouselLabel: "캐러셀",
     slideLabel: "슬라이드",
     position: "{total}개 중 {current}번째",
-    slides: {
-      scuba: [
-        { id: "readings", title: "측정값", lines: ["나침반", "수심", "다이빙 시간", "수온"] },
-        { id: "guidance", title: "가이드", lines: ["무감압 시간", "감압 안내", "상승 알림", "안전정지"] },
-        { id: "logbook", title: "로그북", lines: ["수면에서 동기화", "다이브 프로필 다시 보기", "지난 다이빙을 한곳에서", "기록과 함께 보는 영상"] },
-      ],
-      freediving: [
-        { id: "readings", title: "측정값", lines: ["수심", "다이빙 시간", "수온"] },
-        { id: "logbook", title: "로그북", lines: ["다이빙 후 동기화", "프리다이빙 프로필", "기록 다시 보기", "기록과 함께 보는 영상"] },
-        { id: "housing", title: "하우징", lines: ["다이빙할 때 하우징", "육지에서는 쓰던 워치", "수심과 수온을 측정", "입수 전 실링 확인"] },
-      ],
+    alt: {
+      data: "수중에서 손목에 찬 WatchDive. 화면에 다이빙 수치가 보입니다",
+      safety: "노란 부표를 잡은 프리다이버. 흰색 WatchDive가 손목에 있습니다",
+      tech: "수영장 위로 뻗은 손목의 검은 WatchDive",
+      modes: "노란색 호스와 검은 주름 호스 옆, 부력조절기에 고정된 WatchDive",
     },
+    slides: slides(
+      "데이터",
+      "실시간 수심",
+      "수온 모니터링",
+      "감압 정지 안내",
+      "NDL",
+      "안전",
+      "안전정지 알림",
+      "상승 속도 알림",
+      "딥스톱 알림",
+      "다이브 테크",
+      "디지털 나침반",
+      "나이트록스(EANx)",
+      "나침반 방위 마커",
+      "모드",
+      "스쿠버 모드",
+      "프리다이빙 모드",
+      "배터리 부족 경고",
+    ),
   },
   "zh-CN": {
-    heading: { scuba: "这一次潜水，在腕上。", freediving: "这一次自由潜水，在腕上。" },
+    heading: { scuba: "潜水需要的，都在腕上。", freediving: "潜水需要的，都在腕上。" },
     previous: "上一项功能",
     next: "下一项功能",
+    play: "播放自动切换",
+    pause: "暂停自动切换",
+    scopeLabel: "水肺模式",
     trackLabel: "功能幻灯片",
     carouselLabel: "轮播",
     slideLabel: "幻灯片",
     position: "第 {current} 项，共 {total} 项",
-    slides: {
-      scuba: [
-        { id: "readings", title: "读数", lines: ["指南针", "水深", "潜水时间", "水温"] },
-        { id: "guidance", title: "指引", lines: ["免减压时间", "减压指引", "上升提醒", "安全停留"] },
-        { id: "logbook", title: "日志", lines: ["回到水面后同步", "回看潜水曲线", "在一处回顾每次潜水", "影像与潜水日志放在一起"] },
-      ],
-      freediving: [
-        { id: "readings", title: "读数", lines: ["水深", "潜水时间", "水温"] },
-        { id: "logbook", title: "日志", lines: ["潜水后同步", "自由潜水曲线", "回看潜水记录", "影像与潜水日志放在一起"] },
-        { id: "housing", title: "外壳", lines: ["潜水时加上外壳", "岸上继续戴这只表", "外壳测量水深和水温", "下水前做密封检查"] },
-      ],
+    alt: {
+      data: "水下腕上的 WatchDive，屏幕显示潜水读数",
+      safety: "自由潜水者靠在黄色浮标上，白色 WatchDive 戴在腕上",
+      tech: "泳池上方伸展的手腕，戴着黑色 WatchDive",
+      modes: "WatchDive 固定在浮力调节器上，旁边是黄色软管和黑色波纹管",
     },
+    slides: slides(
+      "数据",
+      "实时深度",
+      "水温监测",
+      "减压停留指引",
+      "NDL",
+      "安全",
+      "安全停留提醒",
+      "上升速度提醒",
+      "深停提醒",
+      "潜水技术",
+      "数字罗盘",
+      "高氧（EANx）支持",
+      "罗盘航向标记",
+      "模式",
+      "水肺模式",
+      "自由潜水模式",
+      "低电量警告",
+    ),
   },
   "zh-TW": {
-    heading: { scuba: "這次潛水，在手腕上。", freediving: "這次自由潛水，在手腕上。" },
+    heading: { scuba: "潛水需要的，都在腕上。", freediving: "潛水需要的，都在腕上。" },
     previous: "上一項功能",
     next: "下一項功能",
+    play: "播放自動切換",
+    pause: "暫停自動切換",
+    scopeLabel: "水肺模式",
     trackLabel: "功能投影片",
     carouselLabel: "輪播",
     slideLabel: "投影片",
     position: "第 {current} 項，共 {total} 項",
-    slides: {
-      scuba: [
-        { id: "readings", title: "讀數", lines: ["指南針", "深度", "潛水時間", "水溫"] },
-        { id: "guidance", title: "指引", lines: ["免減壓時間", "減壓指引", "上升提醒", "安全停留"] },
-        { id: "logbook", title: "日誌", lines: ["回到水面後同步", "回顧潛水剖面", "在同一處回顧每次潛水", "影像與潛水日誌放在一起"] },
-      ],
-      freediving: [
-        { id: "readings", title: "讀數", lines: ["深度", "潛水時間", "水溫"] },
-        { id: "logbook", title: "日誌", lines: ["潛水後同步", "自由潛水曲線", "回顧潛水紀錄", "影像與潛水日誌放在一起"] },
-        { id: "housing", title: "外殼", lines: ["潛水時加上防水殼", "上岸後繼續日常佩戴", "防水殼測量深度與水溫", "下水前做密封檢查"] },
-      ],
+    alt: {
+      data: "水下腕上的 WatchDive，螢幕顯示潛水讀數",
+      safety: "自由潛水者靠在黃色浮標上，白色 WatchDive 戴在腕上",
+      tech: "泳池上方伸出的手腕，戴著黑色 WatchDive",
+      modes: "WatchDive 固定在浮力調整裝置上，旁邊是黃色軟管和黑色波紋管",
     },
+    slides: slides(
+      "數據",
+      "即時深度",
+      "水溫監測",
+      "減壓停留指引",
+      "NDL",
+      "安全",
+      "安全停留提醒",
+      "上升速度提醒",
+      "深停提醒",
+      "潛水技術",
+      "數位羅盤",
+      "高氧（EANx）支援",
+      "羅盤航向標記",
+      "模式",
+      "水肺模式",
+      "自由潛水模式",
+      "低電量警告",
+    ),
   },
   ja: {
-    heading: { scuba: "潜水の情報を、手首で。", freediving: "フリーダイビングを、手首で。" },
+    heading: { scuba: "潜水に必要なもの、すべて手首に。", freediving: "潜水に必要なもの、すべて手首に。" },
     previous: "前の機能",
     next: "次の機能",
+    play: "自動送りを再生",
+    pause: "自動送りを停止",
+    scopeLabel: "スキューバモード",
     trackLabel: "機能スライド",
     carouselLabel: "カルーセル",
     slideLabel: "スライド",
     position: "{total}枚中{current}枚目",
-    slides: {
-      scuba: [
-        { id: "readings", title: "測定値", lines: ["コンパス", "深度", "潜水時間", "水温"] },
-        { id: "guidance", title: "ガイダンス", lines: ["無減圧潜水時間", "減圧ガイダンス", "浮上アラート", "安全停止"] },
-        { id: "logbook", title: "ログブック", lines: ["水面で同期", "プロファイルを振り返る", "記録をひとつに", "映像をログと一緒に"] },
-      ],
-      freediving: [
-        { id: "readings", title: "測定値", lines: ["深度", "潜水時間", "水温"] },
-        { id: "logbook", title: "ログブック", lines: ["潜ったあと同期", "フリーダイビングの記録", "プロファイルを振り返る", "映像をログと一緒に"] },
-        { id: "housing", title: "ハウジング", lines: ["潜るときはハウジング", "陸上ではいつものウォッチ", "深度と水温を測定", "入水前に圧力を確認"] },
-      ],
+    alt: {
+      data: "水中の手首につけた WatchDive。画面に潜水の数値が表示されています",
+      safety: "黄色いブイにつかまっているフリーダイバー。白い WatchDive が手首にあります",
+      tech: "プールの上に伸ばした手首の、黒い WatchDive",
+      modes: "黄色いホースと黒いジャバラホースのそばで、BCD に留めた WatchDive",
     },
+    slides: slides(
+      "データ",
+      "リアルタイムの深度",
+      "水温のモニタリング",
+      "減圧停止の案内",
+      "NDL",
+      "安全",
+      "安全停止アラート",
+      "浮上速度アラート",
+      "ディープストップアラート",
+      "ダイブテック",
+      "デジタルコンパス",
+      "ナイトロックス（EANx）",
+      "コンパスの方位マーカー",
+      "モード",
+      "スキューバモード",
+      "フリーダイブモード",
+      "バッテリー残量の警告",
+    ),
   },
   es: {
-    heading: { scuba: "Tu inmersión, en la muñeca.", freediving: "Tu apnea, en la muñeca." },
+    heading: { scuba: "Todo lo que tu inmersión necesita, en la muñeca.", freediving: "Todo lo que tu inmersión necesita, en la muñeca." },
     previous: "Función anterior",
     next: "Función siguiente",
+    play: "Reproducir el avance automático",
+    pause: "Pausar el avance automático",
+    scopeLabel: "Modo scuba",
     trackLabel: "Diapositivas de funciones",
     carouselLabel: "carrusel",
     slideLabel: "diapositiva",
     position: "{current} de {total}",
-    slides: {
-      scuba: [
-        { id: "readings", title: "Lecturas", lines: ["Brújula", "Profundidad", "Tiempo de inmersión", "Temperatura del agua"] },
-        { id: "guidance", title: "Guía", lines: ["Tiempo sin descompresión", "Indicaciones de descompresión", "Avisos de ascenso", "Parada de seguridad"] },
-        { id: "logbook", title: "Diario", lines: ["Sincroniza en superficie", "Revisa el perfil", "Tus inmersiones, en un lugar", "Imágenes con el diario"] },
-      ],
-      freediving: [
-        { id: "readings", title: "Lecturas", lines: ["Profundidad", "Tiempo de inmersión", "Temperatura del agua"] },
-        { id: "logbook", title: "Diario", lines: ["Sincroniza después", "Perfiles de apnea", "Revisa el registro", "Imágenes con el diario"] },
-        { id: "housing", title: "Carcasa", lines: ["La carcasa para bucear", "En tierra, tu smartwatch", "Mide profundidad y temperatura", "Una comprobación de estanqueidad antes de bucear"] },
-      ],
+    alt: {
+      data: "WatchDive en una muñeca bajo el agua, con lecturas de inmersión en la pantalla",
+      safety: "Un apneísta en una boya amarilla, con un WatchDive blanco en la muñeca",
+      tech: "Un WatchDive negro en una muñeca extendida sobre la piscina",
+      modes: "WatchDive sujeto a un chaleco compensador, junto a un latiguillo amarillo y un latiguillo corrugado negro",
     },
+    slides: slides(
+      "Datos",
+      "Seguimiento de profundidad en vivo",
+      "Control de la temperatura del agua",
+      "Guía de parada de descompresión",
+      "NDL",
+      "Seguridad",
+      "Avisos de parada de seguridad",
+      "Avisos de velocidad de ascenso",
+      "Avisos de parada profunda",
+      "Tecnología",
+      "Brújula digital",
+      "Soporte de Nitrox (EANx)",
+      "Marcador de rumbo de la brújula",
+      "Modos",
+      "Modo scuba",
+      "Modo apnea",
+      "Aviso de batería baja",
+    ),
   },
   fr: {
-    heading: { scuba: "La plongée, au poignet.", freediving: "L’apnée, au poignet." },
+    heading: { scuba: "Tout ce qu’il faut pour plonger, au poignet.", freediving: "Tout ce qu’il faut pour plonger, au poignet." },
     previous: "Fonction précédente",
     next: "Fonction suivante",
+    play: "Lire le défilement automatique",
+    pause: "Mettre le défilement en pause",
+    scopeLabel: "Mode scuba",
     trackLabel: "Diapositives des fonctions",
     carouselLabel: "carrousel",
     slideLabel: "diapositive",
     position: "{current} sur {total}",
-    slides: {
-      scuba: [
-        { id: "readings", title: "Mesures", lines: ["Compas", "Profondeur", "Durée de plongée", "Température de l’eau"] },
-        { id: "guidance", title: "Guidage", lines: ["Temps sans palier", "Indications de décompression", "Alertes de remontée", "Palier de sécurité"] },
-        { id: "logbook", title: "Carnet", lines: ["Synchronisation en surface", "Revoir le profil", "Vos plongées au même endroit", "Les images avec le carnet"] },
-      ],
-      freediving: [
-        { id: "readings", title: "Mesures", lines: ["Profondeur", "Durée", "Température de l’eau"] },
-        { id: "logbook", title: "Carnet", lines: ["Synchroniser après la plongée", "Profils d’apnée", "Consulter l’enregistrement", "Les images avec le carnet"] },
-        { id: "housing", title: "Caisson", lines: ["Le caisson pour plonger", "À terre, votre montre", "Profondeur et température mesurées", "Un contrôle d’étanchéité avant la plongée"] },
-      ],
+    alt: {
+      data: "WatchDive au poignet sous l’eau, avec les mesures de plongée à l’écran",
+      safety: "Un apnéiste sur une bouée jaune, avec un WatchDive blanc au poignet",
+      tech: "Un WatchDive noir sur un poignet tendu au-dessus du bassin",
+      modes: "WatchDive fixé sur un gilet stabilisateur, à côté d’un flexible jaune et d’un flexible annelé noir",
     },
+    slides: slides(
+      "Données",
+      "Suivi de profondeur en direct",
+      "Suivi de la température de l’eau",
+      "Indication de palier de décompression",
+      "NDL",
+      "Sécurité",
+      "Alertes de palier de sécurité",
+      "Alertes de vitesse de remontée",
+      "Alertes de palier profond",
+      "Technique",
+      "Compas numérique",
+      "Prise en charge du Nitrox (EANx)",
+      "Repère de cap du compas",
+      "Modes",
+      "Mode scuba",
+      "Mode apnée",
+      "Alerte de batterie faible",
+    ),
   },
   de: {
-    heading: { scuba: "Der Tauchgang, am Handgelenk.", freediving: "Der Apnoetauchgang, am Handgelenk." },
+    heading: { scuba: "Alles für deinen Tauchgang, am Handgelenk.", freediving: "Alles für deinen Tauchgang, am Handgelenk." },
     previous: "Vorherige Funktion",
     next: "Nächste Funktion",
+    play: "Automatischen Wechsel starten",
+    pause: "Automatischen Wechsel pausieren",
+    scopeLabel: "Scuba-Modus",
     trackLabel: "Funktionsfolien",
     carouselLabel: "Karussell",
     slideLabel: "Folie",
     position: "{current} von {total}",
-    slides: {
-      scuba: [
-        { id: "readings", title: "Werte", lines: ["Kompass", "Tiefe", "Tauchzeit", "Wassertemperatur"] },
-        { id: "guidance", title: "Hinweise", lines: ["Nullzeit", "Dekompressionshinweise", "Aufstiegswarnung", "Sicherheitsstopp"] },
-        { id: "logbook", title: "Logbuch", lines: ["An der Oberfläche synchronisieren", "Profil ansehen", "Tauchgänge an einem Ort", "Aufnahmen beim Logbuch"] },
-      ],
-      freediving: [
-        { id: "readings", title: "Werte", lines: ["Tiefe", "Zeit", "Wassertemperatur"] },
-        { id: "logbook", title: "Logbuch", lines: ["Nach dem Tauchgang synchronisieren", "Apnoe-Profile", "Eintrag ansehen", "Aufnahmen beim Logbuch"] },
-        { id: "housing", title: "Gehäuse", lines: ["Gehäuse zum Tauchen", "An Land bleibt die Smartwatch", "Tiefe und Temperatur messen", "Druckprüfung vor dem Tauchgang"] },
-      ],
+    alt: {
+      data: "WatchDive am Handgelenk unter Wasser, mit Tauchwerten auf dem Display",
+      safety: "Ein Apnoetaucher an einer gelben Boje, mit weißem WatchDive am Handgelenk",
+      tech: "Ein schwarzes WatchDive an einem ausgestreckten Handgelenk über dem Becken",
+      modes: "WatchDive an einer Tarierweste, neben einem gelben Schlauch und einem schwarzen Faltenschlauch",
     },
+    slides: slides(
+      "Daten",
+      "Live-Tiefenmessung",
+      "Wassertemperatur",
+      "Hinweis zum Dekompressionsstopp",
+      "NDL",
+      "Sicherheit",
+      "Warnung zum Sicherheitsstopp",
+      "Warnung zur Aufstiegsgeschwindigkeit",
+      "Warnung zum Tiefenstopp",
+      "Tauchtechnik",
+      "Digitaler Kompass",
+      "Nitrox (EANx)",
+      "Kompass-Peilmarke",
+      "Modi",
+      "Scuba-Modus",
+      "Apnoe-Modus",
+      "Warnung bei niedrigem Akku",
+    ),
   },
   "pt-BR": {
-    heading: { scuba: "O mergulho, no pulso.", freediving: "A apneia, no pulso." },
+    heading: { scuba: "Tudo o que o seu mergulho precisa, no pulso.", freediving: "Tudo o que o seu mergulho precisa, no pulso." },
     previous: "Função anterior",
     next: "Próxima função",
+    play: "Reproduzir a troca automática",
+    pause: "Pausar a troca automática",
+    scopeLabel: "Modo scuba",
     trackLabel: "Slides de funções",
     carouselLabel: "carrossel",
     slideLabel: "slide",
     position: "{current} de {total}",
-    slides: {
-      scuba: [
-        { id: "readings", title: "Leituras", lines: ["Bússola", "Profundidade", "Tempo de mergulho", "Temperatura da água"] },
-        { id: "guidance", title: "Orientação", lines: ["Tempo sem descompressão", "Orientações de descompressão", "Alertas de subida", "Parada de segurança"] },
-        { id: "logbook", title: "Diário", lines: ["Sincronize na superfície", "Reveja o perfil", "Mergulhos em um só lugar", "Imagens com o diário"] },
-      ],
-      freediving: [
-        { id: "readings", title: "Leituras", lines: ["Profundidade", "Tempo de mergulho", "Temperatura da água"] },
-        { id: "logbook", title: "Diário", lines: ["Sincronize depois do mergulho", "Perfis de mergulho livre", "Reveja o registro", "Imagens com o diário"] },
-        { id: "housing", title: "Caixa", lines: ["A caixa para mergulhar", "Em terra, o smartwatch", "Mede profundidade e temperatura", "Uma checagem de vedação antes do mergulho"] },
-      ],
+    alt: {
+      data: "WatchDive no pulso debaixo d’água, com leituras de mergulho na tela",
+      safety: "Um mergulhador em apneia numa boia amarela, com um WatchDive branco no pulso",
+      tech: "Um WatchDive preto num pulso estendido sobre a piscina",
+      modes: "WatchDive preso a um colete equilibrador, ao lado de uma mangueira amarela e de uma mangueira corrugada preta",
     },
+    slides: slides(
+      "Dados",
+      "Profundidade ao vivo",
+      "Monitoramento da temperatura da água",
+      "Orientação de parada de descompressão",
+      "NDL",
+      "Segurança",
+      "Alertas de parada de segurança",
+      "Alertas de velocidade de subida",
+      "Alertas de parada profunda",
+      "Tecnologia",
+      "Bússola digital",
+      "Suporte a Nitrox (EANx)",
+      "Marcador de rumo da bússola",
+      "Modos",
+      "Modo scuba",
+      "Modo apneia",
+      "Aviso de bateria baixa",
+    ),
   },
   nl: {
-    heading: { scuba: "De duik, om je pols.", freediving: "De freedive, om je pols." },
+    heading: { scuba: "Alles wat je duik nodig heeft, om je pols.", freediving: "Alles wat je duik nodig heeft, om je pols." },
     previous: "Vorige functie",
     next: "Volgende functie",
+    play: "Automatisch doorschuiven afspelen",
+    pause: "Automatisch doorschuiven pauzeren",
+    scopeLabel: "Scubamodus",
     trackLabel: "Functiedia’s",
     carouselLabel: "carrousel",
     slideLabel: "dia",
     position: "{current} van {total}",
-    slides: {
-      scuba: [
-        { id: "readings", title: "Metingen", lines: ["Kompas", "Diepte", "Duiktijd", "Watertemperatuur"] },
-        { id: "guidance", title: "Begeleiding", lines: ["No-decompressietijd", "Veiligheidsstop", "Stijgwaarschuwing"] },
-        { id: "logbook", title: "Logboek", lines: ["Synchroniseer aan de oppervlakte", "Bekijk het duikprofiel", "Duiken op één plek", "Beelden bij het logboek"] },
-      ],
-      freediving: [
-        { id: "readings", title: "Metingen", lines: ["Diepte", "Duiktijd", "Watertemperatuur"] },
-        { id: "logbook", title: "Logboek", lines: ["Synchroniseer na de duik", "Freediveprofielen", "Bekijk je registratie", "Beelden bij het logboek"] },
-        { id: "housing", title: "Behuizing", lines: ["Behuizing om te duiken", "Aan land blijft je horloge", "Diepte en temperatuur meten", "Drukcheck voor de duik"] },
-      ],
+    alt: {
+      data: "WatchDive om een pols onder water, met duikwaarden op het scherm",
+      safety: "Een freediver aan een gele boei, met een witte WatchDive om de pols",
+      tech: "Een zwarte WatchDive om een uitgestoken pols boven het bad",
+      modes: "WatchDive vastgemaakt aan een trimvest, naast een gele slang en een zwarte geribbelde slang",
     },
+    slides: slides(
+      "Data",
+      "Live diepte",
+      "Watertemperatuur",
+      "Advies voor de decompressiestop",
+      "NDL",
+      "Veiligheid",
+      "Waarschuwing voor de veiligheidsstop",
+      "Waarschuwing voor de stijgsnelheid",
+      "Waarschuwing voor de dieptestop",
+      "Duiktechniek",
+      "Digitaal kompas",
+      "Nitrox (EANx)",
+      "Kompaskoersmarkering",
+      "Modi",
+      "Scubamodus",
+      "Freedivemodus",
+      "Waarschuwing bij lage batterij",
+    ),
   },
 } satisfies Record<Locale, FeatureCarouselCopy>;
 
@@ -243,4 +480,10 @@ export function featureCarouselCopy(locale: Locale): FeatureCarouselCopy {
 
 export function formatFeaturePosition(template: string, current: number, total: number): string {
   return template.replaceAll("{current}", String(current)).replaceAll("{total}", String(total));
+}
+
+/** Freediving names scuba-only procedures as scuba mode. The product page shows the owner line. */
+export function featureLineText(lineItem: FeatureLine, segment: DiveSegment, scopeLabel: string): string {
+  if (segment === "freediving" && lineItem.scope === "scuba") return `${lineItem.text} · ${scopeLabel}`;
+  return lineItem.text;
 }
