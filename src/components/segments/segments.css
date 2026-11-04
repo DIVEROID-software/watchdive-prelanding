@@ -558,22 +558,28 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
 }
 
 /* Approved beta notes. Static quotes; the rest open in place. */
-.wd-segment-reviews{padding-block:8px 64px}
-.wd-segment-review-note{max-width:42rem;margin-top:12px;color:var(--seg-muted);font-size:15px;line-height:1.55}
-.wd-segment-review-list{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
-.wd-segment-review-list figure{min-width:0;margin:0;padding:16px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:4px 4px 0 var(--seg-shadow)}
+.wd-segment-reviews{padding-block:96px 80px}
+.wd-segment-review-note{max-width:42rem;margin-top:16px;color:var(--seg-muted);font-size:15px;line-height:1.55}
+.wd-segment-review-note+.wd-segment-review-note{margin-top:12px}
+.wd-segment-review-list{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:36px}
+.wd-segment-review-list figure{min-width:0;margin:0;padding:28px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:4px 4px 0 var(--seg-shadow)}
 .wd-segment-review-list blockquote{margin:0;color:var(--seg-ink);font-size:16px;line-height:1.55;overflow-wrap:break-word;text-wrap:pretty}
-.wd-segment-review-list figcaption{display:flex;align-items:center;gap:8px;margin-top:14px;color:var(--seg-ink);font-size:14px;font-weight:700;line-height:1.35}
+.wd-segment-review-list figcaption{display:flex;align-items:center;gap:12px;margin-top:24px;color:var(--seg-ink);font-size:14px;font-weight:700;line-height:1.35}
 .wd-segment-review-list figcaption span{min-width:0;overflow-wrap:anywhere}
-.wd-segment-review-more{margin-top:16px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:4px 4px 0 var(--seg-shadow)}
-.wd-segment-review-more summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;padding:12px 16px;cursor:pointer;list-style:none;font-size:15px;font-weight:750;line-height:1.35;overflow-wrap:anywhere}
+.wd-segment-review-more{margin-top:32px;border:3px solid var(--seg-frame);background:var(--seg-card);box-shadow:4px 4px 0 var(--seg-shadow)}
+.wd-segment-review-more summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px;padding:16px 24px;cursor:pointer;list-style:none;font-size:15px;font-weight:750;line-height:1.35;overflow-wrap:anywhere}
 .wd-segment-review-more summary::-webkit-details-marker{display:none}
 .wd-segment-review-more summary>span{flex-shrink:0;font-size:22px;font-weight:500;line-height:1}
 .wd-segment-review-more[open] summary>span{transform:rotate(45deg)}
-.wd-segment-review-more .wd-segment-review-list{margin-top:0;padding:0 16px 16px}
+.wd-segment-review-more .wd-segment-review-list{margin-top:0;padding:8px 24px 24px}
 @media(max-width:959px){
- .wd-segment-reviews{padding-block:4px 36px}
- .wd-segment-review-list,.wd-segment-review-more .wd-segment-review-list{grid-template-columns:1fr}
+ .wd-segment-reviews{padding-block:64px}
+ .wd-segment-review-list,.wd-segment-review-more .wd-segment-review-list{grid-template-columns:1fr;gap:24px}
+ .wd-segment-review-list{margin-top:28px}
+ .wd-segment-review-list figure{padding:20px}
+ .wd-segment-review-more{margin-top:24px}
+ .wd-segment-review-more summary{padding-inline:20px}
+ .wd-segment-review-more .wd-segment-review-list{padding:8px 16px 20px}
 }
 
 /* Image-led feature slides. The track scrolls natively. The end spacer lets the loop copy reach its snap. */
