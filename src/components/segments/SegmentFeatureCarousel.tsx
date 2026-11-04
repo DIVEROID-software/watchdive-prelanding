@@ -1,27 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent, WheelEvent } from 'react';
+import type { KeyboardEvent, MouseEvent, WheelEvent } from 'react';
 import step2Small from '@/assets/live/responsive/watchdive-step2-800.webp';
 import step2Large from '@/assets/live/responsive/watchdive-step2-1200.webp';
 import underwater from '@/assets/live/refresh/underwater-1600.webp';
-import logHandSmall from '@/assets/live/media-refresh-20261103/loghand-900.webp';
-import logHandLarge from '@/assets/live/media-refresh-20261103/loghand-1400.webp';
+import syncSmall from '@/assets/live/responsive/watchdive-sync-800.webp';
+import syncLarge from '@/assets/live/responsive/watchdive-sync-1200.webp';
 import buoySmall from '@/assets/live/media-refresh-20261103/buoy-800.webp';
 import buoyLarge from '@/assets/live/media-refresh-20261103/buoy-1400.webp';
 import freeLogSmall from '@/assets/live/segment-heroes/freediving-app-logbook-720.webp';
 import freeLogLarge from '@/assets/live/segment-heroes/freediving-app-logbook-1448.webp';
 import gearSmall from '@/assets/live/media-refresh-20261103/gear-720.webp';
 import gearLarge from '@/assets/live/media-refresh-20261103/gear-1200.webp';
-import { useCurrentLocale } from '@/lib/i18n/use-current-locale';
+import { useCurrentLocale, useFrozenLandingMessages } from '@/lib/i18n/use-current-locale';
 import type { DiveSegment } from '@/lib/segments/copy';
 import { featureCarouselCopy, formatFeaturePosition } from '@/lib/segments/feature-carousel-copy';
 import {
+  boundScrollTarget,
+  carouselClickVia,
   carouselScrollBehavior,
   featureSlideAlt,
   featureSlidePlan,
   measureStride,
   reduceCarousel,
   scrollEventIndex,
-  scrollTarget,
   resizeAlignment,
   endpointState,
   type FeatureScrollLock,
@@ -34,11 +35,15 @@ const SIZES = '(min-width:960px) 1000px, calc(100vw - 48px)';
 const PHOTOS: Record<FeatureSlideFrame['image'], { src: string; srcSet?: string; width: number; height: number }> = {
   step2: { src: step2Large, srcSet: `${step2Small} 800w, ${step2Large} 1200w`, width: 1200, height: 807 },
   underwater: { src: underwater, width: 1600, height: 1067 },
-  loghand: { src: logHandLarge, srcSet: `${logHandSmall} 900w, ${logHandLarge} 1400w`, width: 1400, height: 2100 },
+  sync: { src: syncLarge, srcSet: `${syncSmall} 800w, ${syncLarge} 1200w`, width: 1200, height: 900 },
   buoy: { src: buoyLarge, srcSet: `${buoySmall} 800w, ${buoyLarge} 1400w`, width: 1400, height: 934 },
   'free-log': { src: freeLogLarge, srcSet: `${freeLogSmall} 720w, ${freeLogLarge} 1448w`, width: 1448, height: 966 },
   gear: { src: gearLarge, srcSet: `${gearSmall} 720w, ${gearLarge} 1200w`, width: 1200, height: 800 },
 };
+
+function readMaxScroll(el: HTMLElement): number {
+  return Math.max(0, el.scrollWidth - el.clientWidth);
+}
 
 function readStride(el: HTMLElement): number {
   const slide = el.querySelector<HTMLElement>('[data-feature-slide]');
@@ -52,11 +57,12 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
   const locale = useCurrentLocale();
   const copy = featureCarouselCopy(locale);
   const media = mediaCopy(locale);
+  const messages = useFrozenLandingMessages();
   const slides = featureSlidePlan(segment, copy.slides[segment]).map(({ frame, slide }) => ({
     ...frame,
     title: slide.title,
     lines: slide.lines,
-    alt: featureSlideAlt(segment, frame.id, media),
+    alt: featureSlideAlt(segment, frame.id, { ...media, syncAlt: messages.how.step3Alt }),
     photo: PHOTOS[frame.image],
   }));
   const scroller = useRef<HTMLDivElement>(null);
@@ -77,7 +83,7 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
     if (!el) return;
     const stride = readStride(el);
     if (!(stride > 0)) return;
-    const target = scrollTarget(moved.index, stride, count);
+    const target = boundScrollTarget(moved.index, stride, count, readMaxScroll(el));
     lockRef.current = { target };
     el.scrollTo({ left: target, behavior: carouselScrollBehavior({ reducedMotion: reducedRef.current, via }) });
   }
@@ -123,6 +129,7 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
         count,
         lock: lockRef.current,
         current: indexRef.current,
+        maxScroll: readMaxScroll(el),
       });
       lockRef.current = synced.lock;
       if (synced.index === indexRef.current) return;
@@ -135,7 +142,7 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
     };
     // Keep the selected slide after a resize. Manual scrolling updates the index first.
     const onResize = () => {
-      const aligned = resizeAlignment(el.scrollLeft, indexRef.current, readStride(el), count);
+      const aligned = resizeAlignment(el.scrollLeft, indexRef.current, readStride(el), count, readMaxScroll(el));
       if (!aligned.needsScroll) {
         lockRef.current = null;
         return;
@@ -183,10 +190,10 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
     </div>
     <div className="wd-feature-nav">
       <p className="wd-feature-count" aria-hidden="true">{position}</p>
-      <button type="button" disabled={ends.prevDisabled} aria-controls="segment-feature-track" aria-label={copy.previous} onClick={() => publish(reduceCarousel(indexRef.current, count, { type: 'step', delta: -1 }).index, 'pointer')}>
+      <button type="button" disabled={ends.prevDisabled} aria-controls="segment-feature-track" aria-label={copy.previous} onClick={(event: MouseEvent<HTMLButtonElement>) => publish(reduceCarousel(indexRef.current, count, { type: 'step', delta: -1 }).index, carouselClickVia(event.detail))}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" strokeWidth="2.4" /></svg>
       </button>
-      <button type="button" disabled={ends.nextDisabled} aria-controls="segment-feature-track" aria-label={copy.next} onClick={() => publish(reduceCarousel(indexRef.current, count, { type: 'step', delta: 1 }).index, 'pointer')}>
+      <button type="button" disabled={ends.nextDisabled} aria-controls="segment-feature-track" aria-label={copy.next} onClick={(event: MouseEvent<HTMLButtonElement>) => publish(reduceCarousel(indexRef.current, count, { type: 'step', delta: 1 }).index, carouselClickVia(event.detail))}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.4" /></svg>
       </button>
     </div>

@@ -8,6 +8,8 @@ import { FEATURE_CAROUSEL_COPY, featureCarouselCopy, formatFeaturePosition } fro
 import {
   FEATURE_SLIDE_FRAMES,
   applyCarousel,
+  boundScrollTarget,
+  carouselClickVia,
   carouselScrollBehavior,
   endpointState,
   featureSlideAlt,
@@ -42,10 +44,10 @@ const FREE_REQUIRED: Record<Locale, readonly string[]> = {
   "zh-CN": ["水深", "潜水时间", "水温", "自由潜水曲线", "密封检查"],
   "zh-TW": ["深度", "潛水時間", "水溫", "自由潛水曲線", "密封檢查"],
   ja: ["深度", "潜水時間", "水温", "フリーダイビングの記録", "圧力を確認"],
-  es: ["Profundidad", "Tiempo de inmersión", "Temperatura del agua", "Perfiles de apnea", "presión"],
-  fr: ["Profondeur", "Durée", "Température de l’eau", "Profils d’apnée", "pression"],
+  es: ["Profundidad", "Tiempo de inmersión", "Temperatura del agua", "Perfiles de apnea", "antes de bucear"],
+  fr: ["Profondeur", "Durée", "Température de l’eau", "Profils d’apnée", "avant la plongée"],
   de: ["Tiefe", "Zeit", "Wassertemperatur", "Apnoe-Profile", "Druckprüfung"],
-  "pt-BR": ["Profundidade", "Tempo de mergulho", "Temperatura da água", "mergulho livre", "pressão"],
+  "pt-BR": ["Profundidade", "Tempo de mergulho", "Temperatura da água", "mergulho livre", "antes do mergulho"],
   nl: ["Diepte", "Duiktijd", "Watertemperatuur", "Freediveprofielen", "Drukcheck"],
 };
 
@@ -103,6 +105,23 @@ test("keyboard and reduced motion are instant, and an in-flight scroll does not 
   assert.equal(resizeAlignment(480, 1, 480, 3).needsScroll, false);
   assert.equal(indexFromScroll(-40, 100, 3), 0);
   assert.equal(indexFromScroll(20, 0, 3), 0);
+  assert.equal(carouselClickVia(0), "keyboard");
+  assert.equal(carouselClickVia(1), "pointer");
+  assert.equal(carouselScrollBehavior({ reducedMotion: false, via: carouselClickVia(0) }), "auto");
+  assert.equal(carouselScrollBehavior({ reducedMotion: false, via: carouselClickVia(1) }), "smooth");
+  assert.equal(carouselScrollBehavior({ reducedMotion: true, via: carouselClickVia(1) }), "auto");
+  assert.equal(boundScrollTarget(2, 300, 3, 520), 520);
+  assert.equal(boundScrollTarget(2, 300, 3, 900), 600);
+  assert.equal(boundScrollTarget(0, 300, 3, 520), 0);
+  assert.equal(indexFromScroll(520, 300, 3, 520), 2);
+  assert.equal(indexFromScroll(300, 300, 3, 520), 1);
+  assert.equal(indexFromScroll(0, 300, 3, 0), 0);
+  const clamped = scrollEventIndex({ scrollLeft: 520, stride: 300, count: 3, lock: { target: 520 }, current: 2, maxScroll: 520 });
+  assert.deepEqual(clamped, { index: 2, lock: null });
+  const shortOfEnd = scrollEventIndex({ scrollLeft: 80, stride: 300, count: 3, lock: { target: 520 }, current: 2, maxScroll: 520 });
+  assert.deepEqual(shortOfEnd, { index: 2, lock: { target: 520 } });
+  assert.deepEqual(resizeAlignment(520, 2, 300, 3, 520), { target: 520, needsScroll: false });
+  assert.deepEqual(resizeAlignment(0, 2, 300, 3, 520), { target: 520, needsScroll: true });
 });
 
 test("every locale has three segment-safe slides and matching frames", () => {
@@ -134,16 +153,22 @@ test("every locale has three segment-safe slides and matching frames", () => {
     for (const phrase of SCUBA_REQUIRED[locale]) assert.equal(scubaText.includes(phrase), true, `${locale} ${phrase}`);
     const freeText = copy.slides.freediving.flatMap((slide) => [slide.title, ...slide.lines]).join("\n");
     for (const phrase of FREE_REQUIRED[locale]) assert.equal(freeText.includes(phrase), true, `${locale} ${phrase}`);
-    assert.deepEqual(FEATURE_SLIDE_FRAMES.scuba.map((frame) => frame.image), ["step2", "underwater", "loghand"]);
+    assert.deepEqual(FEATURE_SLIDE_FRAMES.scuba.map((frame) => frame.image), ["step2", "underwater", "sync"]);
     assert.deepEqual(FEATURE_SLIDE_FRAMES.freediving.map((frame) => frame.image), ["buoy", "free-log", "gear"]);
     assert.equal(FEATURE_SLIDE_FRAMES.freediving.find((frame) => frame.id === "housing")?.layout, "stack");
-    assert.equal(FEATURE_SLIDE_FRAMES.freediving.some((frame) => frame.image === "underwater" || frame.image === "loghand"), false);
+    assert.equal(FEATURE_SLIDE_FRAMES.freediving.some((frame) => frame.image === "underwater" || frame.image === "sync"), false);
+    if (locale === "en") assert.equal(copy.slides.freediving.find((slide) => slide.id === "housing")?.lines[1], "Keep wearing your watch on land");
+    if (locale === "de") assert.equal(copy.slides.scuba.find((slide) => slide.id === "guidance")?.title, "Hinweise");
+    if (locale === "zh-CN") assert.equal(copy.slideLabel, "幻灯片");
+    if (locale === "zh-TW") assert.equal(copy.slideLabel, "投影片");
     if (locale === "nl") {
       const guidance = copy.slides.scuba.find((slide) => slide.id === "guidance");
       assert.deepEqual(guidance?.lines, ["No-decompressietijd", "Veiligheidsstop", "Stijgwaarschuwing"]);
     }
     const media = mediaCopy(locale);
     assert.equal(featureSlideAlt("scuba", "guidance", media), media.benefitAlt.scuba[1], locale);
+    assert.equal(featureSlideAlt("scuba", "logbook", { ...media, syncAlt: "poolside sync" }), "poolside sync", locale);
+    assert.notEqual(featureSlideAlt("scuba", "logbook", { ...media, syncAlt: "poolside sync" }), media.logStillAlt, locale);
     assert.equal(featureSlideAlt("freediving", "housing", media), media.benefitAlt.freediving[0], locale);
     assert.equal(featureSlideAlt("freediving", "logbook", media).toLowerCase().includes("scuba"), false, locale);
   }
@@ -164,6 +189,10 @@ test("the carousel view does not autoplay or mount a video", () => {
   assert.match(css, /\.wd-feature-track\{[^}]*scroll-snap-type:x mandatory/);
   assert.match(css, /\.wd-feature-nav button\{[^}]*min-width:48px/);
   assert.match(css, /@media\(max-width:389px\)/);
-  assert.match(view, /data-feature-image=/);
-  assert.match(css, /data-feature-image="loghand"[^}]*aspect-ratio:2\/3/);
+  assert.match(view, /watchdive-sync-1200\.webp/);
+  assert.match(view, /step3Alt/);
+  assert.match(view, /carouselClickVia\(event\.detail\)/);
+  assert.match(view, /boundScrollTarget/);
+  assert.equal(view.includes("loghand"), false);
+  assert.match(css, /flex:1 1 auto;align-self:stretch;justify-content:flex-start/);
 });

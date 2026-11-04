@@ -12,7 +12,7 @@ export type FeatureScrollLock = { target: number } | null;
 
 export type FeatureSlideFrame = {
   id: FeatureSlideId;
-  image: "step2" | "underwater" | "loghand" | "buoy" | "free-log" | "gear";
+  image: "step2" | "underwater" | "sync" | "buoy" | "free-log" | "gear";
   focus: string;
   side: FeatureCopySide;
   /** Gear is a busy flat lay. Type sits under the photo at every width. */
@@ -23,7 +23,7 @@ export const FEATURE_SLIDE_FRAMES: Record<DiveSegment, readonly FeatureSlideFram
   scuba: [
     { id: "readings", image: "step2", focus: "18% 42%", side: "end", layout: "overlay" },
     { id: "guidance", image: "underwater", focus: "22% 48%", side: "end", layout: "overlay" },
-    { id: "logbook", image: "loghand", focus: "50% 50%", side: "start", layout: "overlay" },
+    { id: "logbook", image: "sync", focus: "62% 78%", side: "start", layout: "overlay" },
   ],
   freediving: [
     { id: "readings", image: "buoy", focus: "62% 42%", side: "start", layout: "overlay" },
@@ -79,14 +79,21 @@ export function carouselScrollBehavior(input: { reducedMotion: boolean; via: "ke
   return "smooth";
 }
 
+/** A button click with detail 0 is Enter or Space. Pointer clicks report a positive detail. */
+export function carouselClickVia(detail: number): "keyboard" | "pointer" {
+  return detail === 0 ? "keyboard" : "pointer";
+}
+
 export function measureStride(slideWidth: number, gap: number): number {
   if (!(slideWidth > 0)) return 0;
   const safeGap = Number.isFinite(gap) && gap > 0 ? gap : 0;
   return slideWidth + safeGap;
 }
 
-export function indexFromScroll(scrollLeft: number, stride: number, count: number): number {
+export function indexFromScroll(scrollLeft: number, stride: number, count: number, maxScroll?: number): number {
   if (count <= 1 || !(stride > 0) || !Number.isFinite(scrollLeft)) return 0;
+  // The last snap can stop short of index * stride because the next card peeks.
+  if (maxScroll !== undefined && maxScroll > 2 && scrollLeft >= maxScroll - 2) return clampIndex(count - 1, count);
   return clampIndex(Math.round(Math.max(0, scrollLeft) / stride), count);
 }
 
@@ -95,9 +102,22 @@ export function scrollTarget(index: number, stride: number, count: number): numb
   return clampIndex(index, count) * stride;
 }
 
+/** The browser will not scroll past the padding edge, even when the raw target is further. */
+export function boundScrollTarget(index: number, stride: number, count: number, maxScroll: number): number {
+  const raw = scrollTarget(index, stride, count);
+  if (!Number.isFinite(maxScroll)) return raw;
+  return Math.min(raw, Math.max(0, maxScroll));
+}
+
 /** After a resize, keep the selected slide instead of trusting the old scroll offset. */
-export function resizeAlignment(scrollLeft: number, index: number, stride: number, count: number): { target: number; needsScroll: boolean } {
-  const target = scrollTarget(index, stride, count);
+export function resizeAlignment(
+  scrollLeft: number,
+  index: number,
+  stride: number,
+  count: number,
+  maxScroll = Number.POSITIVE_INFINITY,
+): { target: number; needsScroll: boolean } {
+  const target = boundScrollTarget(index, stride, count, maxScroll);
   return { target, needsScroll: stride > 0 && Math.abs(scrollLeft - target) > 2 };
 }
 
@@ -111,6 +131,7 @@ export function scrollEventIndex(input: {
   count: number;
   lock: FeatureScrollLock;
   current: number;
+  maxScroll?: number;
 }): { index: number; lock: FeatureScrollLock } {
   const current = clampIndex(input.current, input.count);
   if (!(input.stride > 0)) return { index: current, lock: input.lock };
@@ -118,7 +139,7 @@ export function scrollEventIndex(input: {
     const near = Math.abs(input.scrollLeft - input.lock.target) <= Math.max(2, input.stride * 0.08);
     if (!near) return { index: current, lock: input.lock };
   }
-  return { index: indexFromScroll(input.scrollLeft, input.stride, input.count), lock: null };
+  return { index: indexFromScroll(input.scrollLeft, input.stride, input.count, input.maxScroll), lock: null };
 }
 
 export function featureSlidePlan<T extends { id: FeatureSlideId }>(segment: DiveSegment, slides: readonly T[]) {
@@ -132,12 +153,12 @@ export function featureSlidePlan<T extends { id: FeatureSlideId }>(segment: Dive
 export function featureSlideAlt(
   segment: DiveSegment,
   id: FeatureSlideId,
-  media: { benefitAlt: Record<DiveSegment, readonly string[]>; logStillAlt: string },
+  media: { benefitAlt: Record<DiveSegment, readonly string[]>; logStillAlt: string; syncAlt?: string },
 ): string {
   if (segment === "scuba") {
     if (id === "readings") return media.benefitAlt.scuba[2] ?? "";
     if (id === "guidance") return media.benefitAlt.scuba[1] ?? "";
-    return media.logStillAlt;
+    return media.syncAlt ?? "";
   }
   if (id === "logbook") return media.benefitAlt.freediving[2] ?? "";
   if (id === "housing") return media.benefitAlt.freediving[0] ?? "";

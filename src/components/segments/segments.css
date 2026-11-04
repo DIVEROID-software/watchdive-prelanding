@@ -614,7 +614,7 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
  .wd-feature-track{gap:12px}
  .wd-feature-slide{flex-basis:calc(100% - 44px);display:flex;flex-direction:column;height:auto;min-height:0}
  .wd-feature-slide img{position:relative;inset:auto;height:230px;flex:0 0 230px}
- .wd-feature-copy,.wd-feature-slide[data-copy-side="end"] .wd-feature-copy{width:auto;height:auto;margin:0;padding:16px 16px 18px;background:#1a1438}
+ .wd-feature-copy,.wd-feature-slide[data-copy-side="end"] .wd-feature-copy{flex:1 1 auto;align-self:stretch;justify-content:flex-start;width:auto;height:auto;margin:0;padding:16px 16px 18px;background:#1a1438}
  .wd-feature-copy h3{font-size:28px}
 }
 @media(max-width:389px){
@@ -622,13 +622,4 @@ button.wd-segment-text-link{cursor:pointer;font:inherit;color:inherit;text-align
  .wd-feature-copy,.wd-feature-slide[data-copy-side="end"] .wd-feature-copy{padding:14px}
  .wd-feature-copy h3{font-size:26px}
  .wd-feature-copy li{font-size:15px}
-}
-/* loghand is 2:3. A short full-bleed cover crop hides the phone or the watch. */
-@media(min-width:960px){
- .wd-feature-slide[data-feature-image="loghand"]{display:flex;flex-direction:row-reverse;align-items:stretch;height:clamp(520px,58vw,640px)}
- .wd-feature-slide[data-feature-image="loghand"] img{position:relative;inset:auto;width:auto;height:100%;max-width:48%;aspect-ratio:2/3;flex:0 0 auto;margin-left:auto;object-fit:cover;object-position:center center}
- .wd-feature-slide[data-feature-image="loghand"] .wd-feature-copy{flex:1 1 auto;width:auto;height:auto;margin:0;background:#1a1438}
-}
-@media(max-width:959px){
- .wd-feature-slide[data-feature-image="loghand"] img{width:min(100%,420px);height:auto;flex:0 0 auto;aspect-ratio:2/3;margin-inline:auto;object-fit:cover;object-position:center center}
 }

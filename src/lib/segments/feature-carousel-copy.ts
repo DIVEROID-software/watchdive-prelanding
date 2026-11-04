@@ -42,7 +42,7 @@ export const FEATURE_CAROUSEL_COPY = {
       freediving: [
         { id: "readings", title: "Readings", lines: ["Depth", "Dive time", "Water temperature"] },
         { id: "logbook", title: "Logbook", lines: ["Sync after the dive", "Freediving profiles", "Review the record", "Footage with the log"] },
-        { id: "housing", title: "Housing", lines: ["Add the housing to dive", "Your watch stays for land", "Depth and temperature, measured", "A seal check before the dive"] },
+        { id: "housing", title: "Housing", lines: ["Add the housing to dive", "Keep wearing your watch on land", "Depth and temperature, measured", "A seal check before the dive"] },
       ],
     },
   },
@@ -71,9 +71,9 @@ export const FEATURE_CAROUSEL_COPY = {
     heading: { scuba: "这一次潜水，在腕上。", freediving: "这一次自由潜水，在腕上。" },
     previous: "上一项功能",
     next: "下一项功能",
-    trackLabel: "功能滑片",
+    trackLabel: "功能幻灯片",
     carouselLabel: "轮播",
-    slideLabel: "滑片",
+    slideLabel: "幻灯片",
     position: "第 {current} 项，共 {total} 项",
     slides: {
       scuba: [
@@ -92,9 +92,9 @@ export const FEATURE_CAROUSEL_COPY = {
     heading: { scuba: "這次潛水，在手腕上。", freediving: "這次自由潛水，在手腕上。" },
     previous: "上一項功能",
     next: "下一項功能",
-    trackLabel: "功能滑片",
+    trackLabel: "功能投影片",
     carouselLabel: "輪播",
-    slideLabel: "滑片",
+    slideLabel: "投影片",
     position: "第 {current} 項，共 {total} 項",
     slides: {
       scuba: [
@@ -147,7 +147,7 @@ export const FEATURE_CAROUSEL_COPY = {
       freediving: [
         { id: "readings", title: "Lecturas", lines: ["Profundidad", "Tiempo de inmersión", "Temperatura del agua"] },
         { id: "logbook", title: "Diario", lines: ["Sincroniza después", "Perfiles de apnea", "Revisa el registro", "Imágenes con el diario"] },
-        { id: "housing", title: "Carcasa", lines: ["La carcasa para bucear", "En tierra, tu smartwatch", "Mide profundidad y temperatura", "Comprobación de presión antes"] },
+        { id: "housing", title: "Carcasa", lines: ["La carcasa para bucear", "En tierra, tu smartwatch", "Mide profundidad y temperatura", "Una comprobación de estanqueidad antes de bucear"] },
       ],
     },
   },
@@ -168,7 +168,7 @@ export const FEATURE_CAROUSEL_COPY = {
       freediving: [
         { id: "readings", title: "Mesures", lines: ["Profondeur", "Durée", "Température de l’eau"] },
         { id: "logbook", title: "Carnet", lines: ["Synchroniser après la plongée", "Profils d’apnée", "Consulter l’enregistrement", "Les images avec le carnet"] },
-        { id: "housing", title: "Caisson", lines: ["Le caisson pour plonger", "À terre, votre montre", "Profondeur et température mesurées", "Contrôle de pression avant"] },
+        { id: "housing", title: "Caisson", lines: ["Le caisson pour plonger", "À terre, votre montre", "Profondeur et température mesurées", "Un contrôle d’étanchéité avant la plongée"] },
       ],
     },
   },
@@ -183,7 +183,7 @@ export const FEATURE_CAROUSEL_COPY = {
     slides: {
       scuba: [
         { id: "readings", title: "Werte", lines: ["Kompass", "Tiefe", "Tauchzeit", "Wassertemperatur"] },
-        { id: "guidance", title: "Führung", lines: ["Nullzeit", "Dekompressionshinweise", "Aufstiegswarnung", "Sicherheitsstopp"] },
+        { id: "guidance", title: "Hinweise", lines: ["Nullzeit", "Dekompressionshinweise", "Aufstiegswarnung", "Sicherheitsstopp"] },
         { id: "logbook", title: "Logbuch", lines: ["An der Oberfläche synchronisieren", "Profil ansehen", "Tauchgänge an einem Ort", "Aufnahmen beim Logbuch"] },
       ],
       freediving: [
@@ -210,7 +210,7 @@ export const FEATURE_CAROUSEL_COPY = {
       freediving: [
         { id: "readings", title: "Leituras", lines: ["Profundidade", "Tempo de mergulho", "Temperatura da água"] },
         { id: "logbook", title: "Diário", lines: ["Sincronize depois do mergulho", "Perfis de mergulho livre", "Reveja o registro", "Imagens com o diário"] },
-        { id: "housing", title: "Caixa", lines: ["A caixa para mergulhar", "Em terra, o smartwatch", "Mede profundidade e temperatura", "Checagem de pressão antes"] },
+        { id: "housing", title: "Caixa", lines: ["A caixa para mergulhar", "Em terra, o smartwatch", "Mede profundidade e temperatura", "Uma checagem de vedação antes do mergulho"] },
       ],
     },
   },
