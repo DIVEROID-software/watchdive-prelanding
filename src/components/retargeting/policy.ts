@@ -39,15 +39,16 @@ export function videoBlocksCapture(video: {
     (!video.muted && video.volume > 0) || (video.visible && (video.controls || video.userPlaying))
   );
 }
-export function hasCaptureInterruption(document: Document): boolean {
+export function hasCaptureInterruption(document: Document, ownPanel?: Element | null): boolean {
   const active = document.activeElement;
+  const blockers = 'dialog[open],[role="dialog"][aria-modal="true"], [data-wd-capture-block]';
   return Boolean(
     document.fullscreenElement ||
     document.hidden ||
-    active?.closest('form,input,textarea,select,[contenteditable="true"],[role="textbox"]') ||
-    document.querySelector(
-      'dialog[open],[role="dialog"][aria-modal="true"], [data-wd-capture-block]',
-    ) ||
+    (!ownPanel?.contains(active) && active?.closest('form,input,textarea,select,[contenteditable="true"],[role="textbox"]')) ||
+    (ownPanel
+      ? [...document.querySelectorAll(blockers)].some(node => node !== ownPanel)
+      : document.querySelector(blockers)) ||
     [...document.querySelectorAll("video")].some((video) => {
       if (video.paused || video.ended) return false;
       const rect = video.getBoundingClientRect();

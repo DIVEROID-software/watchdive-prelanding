@@ -181,6 +181,12 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // 2026-10-31 verification repair: the off-screen honeypot name becomes
   // wd_hp and receives browser/password-manager autofill opt-outs. This is
   // the only JSX structure change; visible forms and section order stay fixed.
+  // 2026-11-04: reviewed owner-authorized signup clarity pass adds a visible
+  // email label and localized native validation handlers. Presentation-pending
+  // replaces its reservation/phone panels with one transparent optional-fee
+  // paragraph; compact and legacy pending and all verified credentials stay.
+  // The exact bounded index.tsx diff was reviewed before repinning; original
+  // section order, media, consent, telemetry and honeypot remain unchanged.
   const legacySource = source
     .replace(/    if \(presentation\) return <>[^\n]+<\/>;\n/, "")
     .replace(/\{!presentation && (<SignupReservationOffer[^\n]+autoFocus \/>)\}/, "$1")
@@ -189,7 +195,7 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
     .replace('message={presentation ? "" : pending}', 'message={pending}')
     .replace('className={presentation ? "wd-segment-confirm-note" : "wd-control-copy text-sm leading-relaxed text-white/90"}', 'className="wd-control-copy text-sm leading-relaxed text-white/90"');
   const digest = sha256(jsxStructure(legacySource));
-  assert.equal(digest, "71cfe2acf7f9cf7675e9593ad011370623e196c497d07ceedf72395458f1e625");
+  assert.equal(digest, "1125bb20c2340246c2c0dd54e1709abbd5cc1947e7e1692757f39ebe01370dc1");
 
   const expectedOrder = [
     "<StickyLaunchBanner />",

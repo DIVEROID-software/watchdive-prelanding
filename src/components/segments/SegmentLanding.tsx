@@ -9,9 +9,9 @@ import { localizePath, privacyPath, termsPath } from '@/lib/i18n/locale';
 import { getAttribution } from '@/lib/attribution';
 import { segmentCopy, type DiveSegment } from '@/lib/segments/copy';
 import { legacyHomeAnchor } from '@/lib/segments/canonical-entry';
-import { ONSITE_OFFER_COPY } from '../reservation/onsite-copy';
+import { conversionCopy } from '@/lib/conversionCopy';
 import { useReferralProgramEnabled } from '../referral/LeaderboardSection';
-import { PricePaths } from './PricePaths';
+import { PricePaths, pricePathHeadings } from './PricePaths';
 import { SegmentHeroMedia } from './SegmentHeroMedia';
 import { SegmentHeroJump, commitMiddleSignup, focusMiddleSignup } from './SegmentHeroJump';
 import { SegmentHowInsert } from './SegmentHowInsert';
@@ -91,8 +91,10 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   const referralOn = useReferralProgramEnabled();
   const subscription = subscriptionCopy(locale);
   const media = mediaCopy(locale);
-  const benefits = [{ title: subscription.benefitTitle, body: subscription.benefitBody }, ...c.benefits.slice(0, 2)];
-  const [priceNoteBefore, priceNoteAfter] = c.priceNote.split(c.priceNoteHighlight);
+  const benefits = segment === 'freediving'
+    ? [c.benefits[2], c.benefits[0], c.benefits[1]]
+    : [{ title: subscription.benefitTitle, body: subscription.benefitBody }, ...c.benefits.slice(0, 2)];
+  const priceHeadings = pricePathHeadings(locale);
   const [sticky, setSticky] = useState(false);
   const [campaignQuery, setCampaignQuery] = useState('');
   const isFree = segment === 'freediving';
@@ -158,20 +160,22 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         <h2 id={`signup-title-${position}`} tabIndex={lead ? -1 : undefined}>{lead ? c.signupTitle : c.finalTitle}</h2>
         <p>{lead ? c.signupBody : c.finalBody}</p>
         {lead && <>
-          <div className="wd-segment-price"><strong>$149</strong><s>$299</s><span className="wd-segment-discount"><b>50%</b>{' '}<span>{c.discountLabel}</span></span></div>
-          <p className="wd-segment-price-note">{priceNoteBefore}<strong className="wd-segment-first100">{c.priceNoteHighlight}</strong>{priceNoteAfter}</p>
-          <p className="wd-segment-next-price">{ONSITE_OFFER_COPY[locale].nextPrice}</p>
-          <p className="wd-segment-subscription-note">{subscription.uspShort}</p>
           <p className="wd-segment-small">{c.includeNote}</p>
+          <p className="wd-segment-subscription-note">{subscription.uspShort}</p>
+          <div className="wd-segment-launch-offer">
+            <p className="wd-segment-launch-price"><strong>$149</strong><span>{c.priceNote}</span></p>
+            <p className="wd-segment-price-terms">{conversionCopy[locale].terms}</p>
+            <a className="wd-segment-price-link" href="#segment-price-paths">{priceHeadings.title}</a>
+          </div>
         </>}
       </div>
       <div className="wd-segment-form">
         <SocialAuthResult locale={locale} />
-        <EmailForm id={position === 'middle' ? 'hero' : 'offer'} presentation={{ cta: c.signupCta, note: c.signupNote }} />
         <p className="wd-segment-free-note">{c.noPayment}</p>
+        <EmailForm id={position === 'middle' ? 'hero' : 'offer'} presentation={{ cta: c.signupCta, note: c.signupNote }} />
       </div>
       </section>,
-      prices: position === 'middle' && <PricePaths locale={locale} referralOn={referralOn} />,
+      prices: position === 'middle' && <PricePaths locale={locale} referralOn={referralOn} offerLead={m.offer.lead} />,
     };
   }
 
@@ -189,8 +193,10 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
           <div className="wd-segment-hero-copy">
             <h1 id="segment-title">{c.title.split('\n').map((line, i) => <span key={line} className={i ? 'wd-segment-title-accent' : ''}>{line}</span>)}</h1>
             <p className="wd-segment-intro">{c.intro}</p>
-            <div className="wd-segment-hero-offer"><strong>$149</strong><span>{c.priceNote}</span></div>
+            <p className="wd-segment-hero-includes">{c.includeNote}</p>
+            <p className="wd-segment-hero-free">{c.noPayment}</p>
             <a className="wd-segment-hero-jump" href="#signup-middle" onClick={jumpToMiddleSignup}>{c.signupCta}<span aria-hidden="true">↓</span></a>
+            <div className="wd-segment-hero-offer"><strong>$149</strong><span>{c.priceNote}</span></div>
           </div>
           <div className="wd-segment-hero-visual">
             <SegmentHeroMedia key={segment} segment={segment} caption={c.heroCaption} />
@@ -260,7 +266,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         <nav><a href={termsPath(locale)}>{m.footer.terms}</a><a href={privacyPath(locale)}>{m.footer.privacy}</a><CookieSettingsLink /></nav>
         <small>{m.footer.legal.replace('{year}', String(new Date().getFullYear()))}</small>
       </footer>
-      {sticky && <aside className="wd-segment-sticky"><div><strong>WatchDive</strong><span>$149 · Kickstarter</span></div><a href="#signup-middle" onClick={jumpToMiddleSignup}>{c.signupCta}<span aria-hidden="true">↗</span></a></aside>}
+      {sticky && <aside className="wd-segment-sticky"><div><strong>WatchDive</strong><span>{priceHeadings.public}</span></div><a href="#signup-middle" onClick={jumpToMiddleSignup}>{c.signupCta}<span aria-hidden="true">↗</span></a></aside>}
     </div>
   </SocialSignupResultProvider>;
 }

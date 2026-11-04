@@ -41,8 +41,14 @@ test("the segment page matches the cleanup structure", () => {
   assert.equal(hero.includes("wd-segment-next-price"), false);
   assert.equal(hero.includes("wd-segment-explore"), false);
   assert.equal(hero.includes("WATCHDIVE /"), false);
-  assert.ok(hero.indexOf("wd-segment-intro") < hero.indexOf("wd-segment-hero-offer"));
-  assert.ok(hero.indexOf("wd-segment-hero-offer") < hero.indexOf("wd-segment-hero-jump"));
+  // The free signup action now precedes the retained, secondary first-100 price.
+  const heroCopyOrder = ["wd-segment-intro", "wd-segment-hero-includes", "wd-segment-hero-free", "wd-segment-hero-jump", "wd-segment-hero-offer"];
+  let previous = -1;
+  for (const className of heroCopyOrder) {
+    const position = hero.indexOf(className);
+    assert.ok(position > previous, `${className} remains in the approved signup-first order`);
+    previous = position;
+  }
   assert.ok(hero.indexOf("SegmentHeroMedia") < hero.indexOf("wd-segment-hero-usp"));
   assert.equal(page.includes("wordmark"), false);
   assert.match(page, /<LanguageSwitcher variant="code" \/>/);
@@ -51,7 +57,8 @@ test("the segment page matches the cleanup structure", () => {
   assert.match(page, /<SegmentHowInsert alt=\{m\.how\.step1Alt\} \/>/);
   assert.match(page, /<SegmentHowCompat /);
   assert.match(page, /<WatchDiveLogo tone=\{isFree \? 'on-light' : 'on-dark'\} \/>/);
-  assert.equal((page.match(/wd-segment-next-price/g) ?? []).length, 1);
+  assert.equal((page.match(/wd-segment-next-price/g) ?? []).length, 0);
+  assert.match(read("src/components/segments/PricePaths.tsx"), /earlyBirdRace\(locale, formatOfferPrice\(locale\)\)/);
   const how = page.slice(page.indexOf('id="segment-how"'), page.indexOf("<SegmentCostComparison"));
   assert.ok(how.indexOf("SegmentHowInsert") < how.indexOf('id="how-title"'));
   assert.ok(how.indexOf('id="how-title"') < how.indexOf("SegmentHowCompat"));

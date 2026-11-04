@@ -127,7 +127,7 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   assert.equal(page.slice(gallery, bottom).includes("SegmentBetaReviews"), false);
   assert.ok(end < page.indexOf("wd-segment-switch"));
   assert.equal((page.match(/<EmailForm /g) ?? []).length, 1);
-  assert.match(page, /position === 'middle' && <PricePaths locale=\{locale\} referralOn=\{referralOn\} \/>/);
+  assert.match(page, /position === 'middle' && <PricePaths locale=\{locale\} referralOn=\{referralOn\} offerLead=\{m.offer.lead\} \/>/);
   assert.ok(page.indexOf("<HowPhotoRow />") < page.indexOf("<SegmentHowCompat "));
   assert.ok(page.indexOf("<SegmentHowInsert ") < page.indexOf('id="how-title"'));
   const media = read("src/components/segments/SegmentMedia.tsx");

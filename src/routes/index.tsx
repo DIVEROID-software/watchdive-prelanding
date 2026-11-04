@@ -8,6 +8,8 @@ import { ENTRY_COPY } from "@/components/retargeting/entry-copy";
 import type { CompatibilityRequest } from "@/lib/compatibility/context";
 import type { PushPublicConfig } from "@/lib/push/config";
 import { SignupReservationOffer } from "@/components/reservation/SignupReservationOffer";
+import { ONSITE_OFFER_COPY } from "@/components/reservation/onsite-copy";
+import { SIGNUP_CLARITY_COPY } from "@/lib/signupClarityCopy";
 import { socialAuthResultCopy } from "@/lib/socialAuthResultCopy";
 import { alreadyVerifiedCopy } from "@/lib/i18n/already-verified";
 import { PhoneOptInCard } from "@/components/phone-optin-card";
@@ -883,6 +885,7 @@ function CheckInboxCard({
   onDeclineMeasurement?: () => boolean | void | Promise<boolean | void>;
 }) {
   const m = useFrozenLandingMessages();
+  const clarityCopy = SIGNUP_CLARITY_COPY[useCurrentLocale()];
   const cardRef = useRef<HTMLDivElement>(null);
   const [remaining, setRemaining] = useState(60);
   // Restart after every resend, not only the first submission. Use wall time
@@ -950,7 +953,7 @@ function CheckInboxCard({
         </a>
       )}
       {phoneOptIn}
-      <p className="mt-4 text-sm leading-relaxed text-white/85">{m.inbox.help}</p>
+      <p className="mt-4 text-sm leading-relaxed text-white/85">{m.inbox.help} {clarityCopy.sender}</p>
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
         <button
           type="button"
@@ -1484,8 +1487,11 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
           requestAnimationFrame(() => document.getElementById(`${inputId}-email`)?.focus());
         }}
       />
-      {!compact && presentation && <SignupReservationOffer locale={locale} inboxId={`${inputId}-verify-inbox`} />}
-      {!compact && presentation && phoneCard("pending")}
+      {!compact && presentation && (
+        <p className="wd-signup-pending-note">
+          {SIGNUP_CLARITY_COPY[locale].pendingReservation} {ONSITE_OFFER_COPY[locale].separate}
+        </p>
+      )}
     </>);
   }
 
@@ -1585,6 +1591,7 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
       >
         {presentation?.note ?? m.form.confirmRequired}
       </p>
+      <label htmlFor={`${inputId}-email`} className="wd-email-label">{m.form.step1}</label>
       <div className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <input
           id={`${inputId}-email`}
@@ -1598,6 +1605,8 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          onInvalid={(e) => e.currentTarget.setCustomValidity(SIGNUP_CLARITY_COPY[locale].invalidEmail)}
+          onInput={(e) => e.currentTarget.setCustomValidity("")}
           onFocus={() => {
             if (popupMeasurement) markPopupMilestone("focused");
             else if (recordFunnel) markConversionMilestone("formFocused", id);
