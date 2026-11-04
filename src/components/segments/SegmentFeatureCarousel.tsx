@@ -3,8 +3,8 @@ import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, WheelEvent } 
 import underwater640 from '@/assets/live/refresh/underwater-640.webp';
 import underwater1000 from '@/assets/live/refresh/underwater-1000.webp';
 import underwater1600 from '@/assets/live/refresh/underwater-1600.webp';
-import buoy800 from '@/assets/live/media-refresh-20261103/buoy-800.webp';
-import buoy1400 from '@/assets/live/media-refresh-20261103/buoy-1400.webp';
+import safety800 from '@/assets/live/media-refresh-20261103/safety-buoy-800.webp';
+import safety1600 from '@/assets/live/media-refresh-20261103/safety-buoy-1600.webp';
 import wrist640 from '@/assets/live/refresh/wrist-pool-640.webp';
 import wrist1000 from '@/assets/live/refresh/wrist-pool-1000.webp';
 import modes800 from '@/assets/live/media-refresh-20261103/modes-bcd-800.webp';
@@ -18,10 +18,12 @@ import {
   autoplayEligible,
   boundScrollTarget,
   carouselClickVia,
+  classifyFeatureScroll,
   cloneScrollTarget,
   featureSlideAlt,
   endpointState,
   featureSlidePlan,
+  finishAutomaticWrap,
   holdAfterFocus,
   idleScheduler,
   initialFeatureHold,
@@ -31,8 +33,8 @@ import {
   reduceFeatureHold,
   resizeAlignment,
   scrollEventIndex,
+  settleDwellTimer,
   syncDwell,
-  takeDwell,
   tweenScrollLeft,
   type FeatureHold,
   type FeatureMoveVia,
@@ -50,7 +52,7 @@ const PHOTOS: Record<FeatureSlideFrame['image'], { src: string; srcSet: string; 
     width: 1600,
     height: 1067,
   },
-  buoy: { src: buoy1400, srcSet: `${buoy800} 800w, ${buoy1400} 1400w`, width: 1400, height: 934 },
+  'safety-buoy': { src: safety1600, srcSet: `${safety800} 800w, ${safety1600} 1600w`, width: 1600, height: 1066 },
   'wrist-pool': { src: wrist1000, srcSet: `${wrist640} 640w, ${wrist1000} 1000w`, width: 1000, height: 667 },
   modes: { src: modes1376, srcSet: `${modes800} 800w, ${modes1376} 1376w`, width: 1376, height: 673 },
 };
@@ -104,6 +106,7 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
   const quietRef = useRef(0);
   const tweeningRef = useRef(false);
   const wrapLockRef = useRef(false);
+  const automaticWrapRef = useRef(false);
   const moveGen = useRef(0);
   const tweenRef = useRef(0);
   const timerRef = useRef(0);
@@ -173,17 +176,26 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
     clearTimer();
     if (synced.scheduleIn === null || synced.scheduler.armedGeneration === null) return;
     const generation = synced.scheduler.armedGeneration;
-    timerRef.current = window.setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
+      const action = settleDwellTimer({
+        scheduler: schedulerRef.current,
+        callbackTimer: timeoutId,
+        activeTimer: timerRef.current,
+        generation,
+        eligible: autoplayEligible(gate()),
+        index: indexRef.current,
+        count: slidesRef.current.length,
+      });
+      if (action.ignored || !mountedRef.current) return;
       timerRef.current = 0;
-      if (!mountedRef.current) return;
-      const taken = takeDwell(schedulerRef.current, generation, autoplayEligible(gate()), indexRef.current, slidesRef.current.length);
-      schedulerRef.current = taken.scheduler;
-      if (!taken.advanced) {
+      schedulerRef.current = action.scheduler;
+      if (!action.advanced) {
         arm();
         return;
       }
-      moveTo(taken.index, 'auto', false);
+      moveTo(action.index, 'auto', false);
     }, synced.scheduleIn);
+    timerRef.current = timeoutId;
   }
 
   function snapTo(next: number) {
@@ -198,18 +210,21 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
 
   function stopMotion(snap: boolean) {
     moveGen.current += 1;
-    tweeningRef.current = false;
     window.cancelAnimationFrame(tweenRef.current);
     tweenRef.current = 0;
-    clearMotionStyles(scroller.current);
-    lockRef.current = null;
+    const el = scroller.current;
     if (snap) snapTo(indexRef.current);
+    tweeningRef.current = false;
+    clearMotionStyles(el);
+    lockRef.current = null;
+    automaticWrapRef.current = false;
     arm();
   }
 
   function commitWrap(announce: boolean) {
     if (wrapLockRef.current) return;
     wrapLockRef.current = true;
+    automaticWrapRef.current = false;
     moveGen.current += 1;
     tweeningRef.current = false;
     window.cancelAnimationFrame(tweenRef.current);
@@ -241,6 +256,7 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
       via,
       reducedMotion: reducedRef.current,
     });
+    automaticWrapRef.current = !manual && via === 'auto' && plan.kind === 'wrap-forward';
     const generation = ++moveGen.current;
     tweeningRef.current = false;
     window.cancelAnimationFrame(tweenRef.current);
@@ -268,13 +284,17 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
     const target = plan.kind === 'wrap-forward' ? cloneScrollTarget(stride, total, maxScroll) : boundScrollTarget(plan.index, stride, total, maxScroll);
     const finish = () => {
       if (generation !== moveGen.current || !mountedRef.current) return;
+      if (plan.kind === 'wrap-forward') {
+        quietRef.current += 1;
+        finishAutomaticWrap(el.style, (left) => {
+          el.scrollLeft = left;
+        });
+        quietRef.current -= 1;
+      }
       tweeningRef.current = false;
       lockRef.current = null;
-      if (plan.kind === 'wrap-forward') {
-        el.style.scrollSnapType = 'none';
-        quietScroll(el, 0);
-      }
-      clearMotionStyles(el);
+      if (plan.kind !== 'wrap-forward') clearMotionStyles(el);
+      automaticWrapRef.current = false;
       arm();
     };
     if (plan.behavior === 'auto' || Math.abs(el.scrollLeft - target) <= 2) {
@@ -308,17 +328,26 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
   }
 
   function onScroll() {
-    if (quietRef.current > 0 || tweeningRef.current || wrapLockRef.current) return;
     const el = scroller.current;
     if (!el) return;
     const synced = readPosition(el, lockRef.current);
+    const disposition = classifyFeatureScroll({
+      quiet: quietRef.current > 0,
+      tweening: tweeningRef.current,
+      wrapLocked: wrapLockRef.current,
+      atClone: synced.atClone,
+      nextIndex: synced.index,
+      currentIndex: indexRef.current,
+      automaticWrap: automaticWrapRef.current,
+    });
+    if (disposition === 'ignore') return;
     lockRef.current = synced.lock;
     if (synced.lock) return;
-    if (synced.atClone) {
-      commitWrap(true);
+    if (disposition === 'silent-wrap' || disposition === 'manual-wrap') {
+      commitWrap(disposition === 'manual-wrap');
       return;
     }
-    if (synced.index === indexRef.current) return;
+    if (disposition !== 'manual-move') return;
     indexRef.current = synced.index;
     setIndex(synced.index);
     setHoldBoth(reduceFeatureHold(holdRef.current, { type: 'manual' }));
@@ -365,6 +394,7 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
         setIndex(synced.index);
       }
     }
+    automaticWrapRef.current = false;
     draggingRef.current = true;
     arm();
   }
@@ -431,6 +461,7 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
     tweenRef.current = 0;
     clearMotionStyles(scroller.current);
     lockRef.current = null;
+    automaticWrapRef.current = false;
     arm();
   }
 
@@ -486,6 +517,7 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
         const aligned = resizeAlignment(track.scrollLeft, indexRef.current, readStride(track), slidesRef.current.length, readMaxScroll(track));
         if (aligned.needsScroll) quietScroll(track, aligned.target);
       }
+      automaticWrapRef.current = false;
       arm();
     };
     const endDrag = () => {

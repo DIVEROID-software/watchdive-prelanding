@@ -5,6 +5,8 @@ import type { DiveSegment } from "./copy";
  * Pointer and automatic moves travel forward. The loop uses one extra visual
  * copy of the first card, then resets without animating backward.
  * Keyboard and reduced motion change the card in place.
+ * Reduced motion starts paused. Play opts into the same six-second steps
+ * with no spatial tween, and turning reduced motion back on pauses again.
  * A visitor's pause stays until they press Play. Hover, hiding, and
  * off-screen time only hold the clock; they do not skip cards.
  */
@@ -45,7 +47,7 @@ export type FeatureHoldEvent =
 
 export type FeatureSlideFrame = {
   id: FeatureSlideId;
-  image: "underwater" | "buoy" | "wrist-pool" | "modes";
+  image: "underwater" | "safety-buoy" | "wrist-pool" | "modes";
   focus: string;
   side: FeatureCopySide;
 };
@@ -91,7 +93,7 @@ export const FEATURE_LINE_PLAN: readonly {
 
 const FEATURE_FRAMES: readonly FeatureSlideFrame[] = [
   { id: "data", image: "underwater", focus: "18% 55%", side: "end" },
-  { id: "safety", image: "buoy", focus: "70% 42%", side: "start" },
+  { id: "safety", image: "safety-buoy", focus: "50% 50%", side: "start" },
   { id: "tech", image: "wrist-pool", focus: "68% 32%", side: "start" },
   { id: "modes", image: "modes", focus: "40% 58%", side: "end" },
 ];
@@ -319,10 +321,15 @@ export function holdAfterFocus(hold: FeatureHold, onRotationControl: boolean): F
   return reduceFeatureHold(hold, { type: "blocking-focus" });
 }
 
+/**
+ * Reduced motion is not an eligibility veto. The default hold pauses it,
+ * and Play clears that hold. The move planner still refuses a spatial tween
+ * while `reducedMotion` is true, so an opted-in sequence only changes cards.
+ */
 export function autoplayEligible(gate: AutoplayGate): boolean {
   if (gate.hold !== "none") return false;
-  if (gate.reducedMotion || gate.documentHidden || gate.fineHover || gate.dragging || gate.blockingFocus) return false;
-  return gate.visible;
+  if (!gate.visible || gate.documentHidden || gate.fineHover || gate.dragging || gate.blockingFocus) return false;
+  return true;
 }
 
 export function idleScheduler(): DwellScheduler {
@@ -357,7 +364,10 @@ export function syncDwell(
   };
 }
 
-/** One callback advances one card, and only if that arm is still the current one. */
+/**
+ * One callback advances one card, and only if that arm is still the current one.
+ * A stale generation leaves the live deadline untouched.
+ */
 export function takeDwell(
   scheduler: DwellScheduler,
   generation: number,
@@ -365,14 +375,62 @@ export function takeDwell(
   index: number,
   count: number,
 ): { scheduler: DwellScheduler; index: number; advanced: boolean } {
-  const current = scheduler.armedGeneration === generation;
-  const next: DwellScheduler = {
-    generation: current ? scheduler.generation + 1 : scheduler.generation,
-    armedGeneration: null,
-    dueAt: null,
-  };
-  if (!current || !eligible || count <= 0) return { scheduler: next, index, advanced: false };
+  if (scheduler.armedGeneration !== generation) return { scheduler, index, advanced: false };
+  const next: DwellScheduler = { generation: scheduler.generation + 1, armedGeneration: null, dueAt: null };
+  if (!eligible || count <= 0) return { scheduler: next, index, advanced: false };
   return { scheduler: next, index: loopIndex(index, count, 1), advanced: true };
+}
+
+/**
+ * A timeout that no longer owns `activeTimer` must not clear a newer arm
+ * or ask the caller to start another timer.
+ */
+export function settleDwellTimer(input: {
+  scheduler: DwellScheduler;
+  callbackTimer: number;
+  activeTimer: number;
+  generation: number;
+  eligible: boolean;
+  index: number;
+  count: number;
+}): { ignored: boolean; scheduler: DwellScheduler; index: number; advanced: boolean } {
+  if (input.callbackTimer === 0 || input.callbackTimer !== input.activeTimer) {
+    return { ignored: true, scheduler: input.scheduler, index: input.index, advanced: false };
+  }
+  const taken = takeDwell(input.scheduler, input.generation, input.eligible, input.index, input.count);
+  return { ignored: false, scheduler: taken.scheduler, index: taken.index, advanced: taken.advanced };
+}
+
+export type FeatureScrollDisposition = "ignore" | "silent-wrap" | "manual-wrap" | "manual-move" | "stay";
+
+/**
+ * Scroll events during a quiet write, a tween, or an automatic 4→1 reset
+ * do not become a visitor pause. A drag onto the loop copy still does.
+ */
+export function classifyFeatureScroll(input: {
+  quiet: boolean;
+  tweening: boolean;
+  wrapLocked: boolean;
+  atClone: boolean;
+  nextIndex: number;
+  currentIndex: number;
+  automaticWrap: boolean;
+}): FeatureScrollDisposition {
+  if (input.quiet || input.tweening || input.wrapLocked) return "ignore";
+  if (input.atClone) return input.automaticWrap ? "silent-wrap" : "manual-wrap";
+  if (input.nextIndex !== input.currentIndex) return "manual-move";
+  return "stay";
+}
+
+/** Put the loop copy back on card 1. Call `writeScrollLeft` while scroll events are ignored. */
+export function finishAutomaticWrap(
+  track: { scrollSnapType: string; willChange: string },
+  writeScrollLeft: (left: number) => void,
+): void {
+  track.scrollSnapType = "none";
+  writeScrollLeft(0);
+  track.scrollSnapType = "";
+  track.willChange = "";
 }
 
 export function featureSlidePlan<T extends { id: FeatureSlideId }>(segment: DiveSegment, slides: readonly T[]) {

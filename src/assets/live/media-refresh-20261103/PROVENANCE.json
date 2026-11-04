@@ -328,6 +328,36 @@
       "fetched": "2026-11-04",
       "placement": "Narrow srcset variant of the Modes slide.",
       "op": "ffmpeg scale 800 lanczos from modes-bcd-1376.webp, cwebp q74, no crop."
+    },
+    {
+      "kind": "photo",
+      "key": "safety-buoy",
+      "file": "safety-buoy-1600.webp",
+      "width": 1600,
+      "height": 1066,
+      "bytes": 43264,
+      "sha256": "9030a3ae7d9001eb0c47e1195e6aacefc725fbe1dab48b723013ed5bbc162025",
+      "source_name": "DSC05333.JPG",
+      "source_sha256": "a273dd99e2614c46aa22fcf24b201c59d42625a18a3f7ebfb6bbb7fbeb10922f",
+      "source_bytes": 11534336,
+      "fetched": "2026-11-04",
+      "placement": "Feature carousel Safety slide only. Full frame of 001_RAW Photos/03_Freediving Computer/DSC05333.JPG. Existing buoy-800.webp, buoy-1400.webp, and buoy-2200.webp stay on the gallery and other frames.",
+      "op": "ffmpeg scale 1600 lanczos rgb24 from the full 6000x4000 frame, cwebp q74, no crop. The slide uses CSS object-position 50% 50%."
+    },
+    {
+      "kind": "photo",
+      "key": "safety-buoy",
+      "file": "safety-buoy-800.webp",
+      "width": 800,
+      "height": 534,
+      "bytes": 17932,
+      "sha256": "6f6150618b6af4399d88b72264a0bc61a8dc89a02006a1ac8178b5c5dd8d708a",
+      "source_name": "DSC05333.JPG",
+      "source_sha256": "a273dd99e2614c46aa22fcf24b201c59d42625a18a3f7ebfb6bbb7fbeb10922f",
+      "source_bytes": 11534336,
+      "fetched": "2026-11-04",
+      "placement": "Narrow srcset variant of the carousel Safety slide.",
+      "op": "ffmpeg scale 800 lanczos rgb24 from the full 6000x4000 frame, cwebp q74, no crop."
     }
   ]
 }

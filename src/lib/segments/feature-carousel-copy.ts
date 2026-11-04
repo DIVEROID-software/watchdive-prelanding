@@ -115,9 +115,9 @@ export const FEATURE_CAROUSEL_COPY = {
     position: "{current} of {total}",
     alt: {
       data: "WatchDive on a wrist underwater, with dive readings on the screen",
-      safety: "A freediver on a yellow buoy, with a white WatchDive on the wrist",
+      safety: "A freediver’s hands on a yellow buoy, with a white WatchDive on the wrist",
       tech: "A black WatchDive on an extended wrist above the pool",
-      modes: "WatchDive clipped to a buoyancy compensator, beside a yellow hose and a black corrugated hose",
+      modes: "WatchDive clipped to a dive vest, beside a yellow hose and a black corrugated hose",
     },
     slides: slides(
       "Data",
@@ -152,9 +152,9 @@ export const FEATURE_CAROUSEL_COPY = {
     position: "{total}개 중 {current}번째",
     alt: {
       data: "수중에서 손목에 찬 WatchDive. 화면에 다이빙 수치가 보입니다",
-      safety: "노란 부표를 잡은 프리다이버. 흰색 WatchDive가 손목에 있습니다",
+      safety: "노란 부표 위에 올린 프리다이버의 손. 흰색 WatchDive가 손목에 있습니다",
       tech: "수영장 위로 뻗은 손목의 검은 WatchDive",
-      modes: "노란색 호스와 검은 주름 호스 옆, 부력조절기에 고정된 WatchDive",
+      modes: "노란색 호스와 검은 주름 호스 옆, 다이브 베스트에 고정된 WatchDive",
     },
     slides: slides(
       "데이터",
@@ -168,7 +168,7 @@ export const FEATURE_CAROUSEL_COPY = {
       "딥스톱 알림",
       "다이브 테크",
       "디지털 나침반",
-      "나이트록스(EANx)",
+      "나이트록스(EANx) 지원",
       "나침반 방위 마커",
       "모드",
       "스쿠버 모드",
@@ -189,9 +189,9 @@ export const FEATURE_CAROUSEL_COPY = {
     position: "第 {current} 项，共 {total} 项",
     alt: {
       data: "水下腕上的 WatchDive，屏幕显示潜水读数",
-      safety: "自由潜水者靠在黄色浮标上，白色 WatchDive 戴在腕上",
+      safety: "自由潜水者的双手放在黄色浮标上，白色 WatchDive 戴在腕上",
       tech: "泳池上方伸展的手腕，戴着黑色 WatchDive",
-      modes: "WatchDive 固定在浮力调节器上，旁边是黄色软管和黑色波纹管",
+      modes: "WatchDive 固定在潜水背心上，旁边是黄色软管和黑色波纹管",
     },
     slides: slides(
       "数据",
@@ -226,9 +226,9 @@ export const FEATURE_CAROUSEL_COPY = {
     position: "第 {current} 項，共 {total} 項",
     alt: {
       data: "水下腕上的 WatchDive，螢幕顯示潛水讀數",
-      safety: "自由潛水者靠在黃色浮標上，白色 WatchDive 戴在腕上",
+      safety: "自由潛水者的雙手放在黃色浮標上，白色 WatchDive 戴在腕上",
       tech: "泳池上方伸出的手腕，戴著黑色 WatchDive",
-      modes: "WatchDive 固定在浮力調整裝置上，旁邊是黃色軟管和黑色波紋管",
+      modes: "WatchDive 固定在潛水背心上，旁邊是黃色軟管和黑色波紋管",
     },
     slides: slides(
       "數據",
@@ -263,9 +263,9 @@ export const FEATURE_CAROUSEL_COPY = {
     position: "{total}枚中{current}枚目",
     alt: {
       data: "水中の手首につけた WatchDive。画面に潜水の数値が表示されています",
-      safety: "黄色いブイにつかまっているフリーダイバー。白い WatchDive が手首にあります",
+      safety: "黄色いブイに両手を乗せたフリーダイバー。白い WatchDive が手首にあります",
       tech: "プールの上に伸ばした手首の、黒い WatchDive",
-      modes: "黄色いホースと黒いジャバラホースのそばで、BCD に留めた WatchDive",
+      modes: "黄色いホースと黒いジャバラホースのそばで、ダイブベストに留めた WatchDive",
     },
     slides: slides(
       "データ",
@@ -279,7 +279,7 @@ export const FEATURE_CAROUSEL_COPY = {
       "ディープストップアラート",
       "ダイブテック",
       "デジタルコンパス",
-      "ナイトロックス（EANx）",
+      "ナイトロックス（EANx）対応",
       "コンパスの方位マーカー",
       "モード",
       "スキューバモード",
@@ -300,9 +300,9 @@ export const FEATURE_CAROUSEL_COPY = {
     position: "{current} de {total}",
     alt: {
       data: "WatchDive en una muñeca bajo el agua, con lecturas de inmersión en la pantalla",
-      safety: "Un apneísta en una boya amarilla, con un WatchDive blanco en la muñeca",
+      safety: "Las manos de un apneísta sobre una boya amarilla, con un WatchDive blanco en la muñeca",
       tech: "Un WatchDive negro en una muñeca extendida sobre la piscina",
-      modes: "WatchDive sujeto a un chaleco compensador, junto a un latiguillo amarillo y un latiguillo corrugado negro",
+      modes: "WatchDive sujeto a un chaleco de buceo, junto a un latiguillo amarillo y un latiguillo corrugado negro",
     },
     slides: slides(
       "Datos",
@@ -337,9 +337,9 @@ export const FEATURE_CAROUSEL_COPY = {
     position: "{current} sur {total}",
     alt: {
       data: "WatchDive au poignet sous l’eau, avec les mesures de plongée à l’écran",
-      safety: "Un apnéiste sur une bouée jaune, avec un WatchDive blanc au poignet",
+      safety: "Les mains d’un apnéiste sur une bouée jaune, avec un WatchDive blanc au poignet",
       tech: "Un WatchDive noir sur un poignet tendu au-dessus du bassin",
-      modes: "WatchDive fixé sur un gilet stabilisateur, à côté d’un flexible jaune et d’un flexible annelé noir",
+      modes: "WatchDive fixé sur un gilet de plongée, à côté d’un flexible jaune et d’un flexible annelé noir",
     },
     slides: slides(
       "Données",
@@ -374,9 +374,9 @@ export const FEATURE_CAROUSEL_COPY = {
     position: "{current} von {total}",
     alt: {
       data: "WatchDive am Handgelenk unter Wasser, mit Tauchwerten auf dem Display",
-      safety: "Ein Apnoetaucher an einer gelben Boje, mit weißem WatchDive am Handgelenk",
+      safety: "Die Hände eines Apnoetauchers auf einer gelben Boje, mit weißem WatchDive am Handgelenk",
       tech: "Ein schwarzes WatchDive an einem ausgestreckten Handgelenk über dem Becken",
-      modes: "WatchDive an einer Tarierweste, neben einem gelben Schlauch und einem schwarzen Faltenschlauch",
+      modes: "WatchDive an einer Tauchweste, neben einem gelben Schlauch und einem schwarzen Faltenschlauch",
     },
     slides: slides(
       "Daten",
@@ -390,7 +390,7 @@ export const FEATURE_CAROUSEL_COPY = {
       "Warnung zum Tiefenstopp",
       "Tauchtechnik",
       "Digitaler Kompass",
-      "Nitrox (EANx)",
+      "Unterstützung für Nitrox (EANx)",
       "Kompass-Peilmarke",
       "Modi",
       "Scuba-Modus",
@@ -411,9 +411,9 @@ export const FEATURE_CAROUSEL_COPY = {
     position: "{current} de {total}",
     alt: {
       data: "WatchDive no pulso debaixo d’água, com leituras de mergulho na tela",
-      safety: "Um mergulhador em apneia numa boia amarela, com um WatchDive branco no pulso",
+      safety: "As mãos de um mergulhador em apneia numa boia amarela, com um WatchDive branco no pulso",
       tech: "Um WatchDive preto num pulso estendido sobre a piscina",
-      modes: "WatchDive preso a um colete equilibrador, ao lado de uma mangueira amarela e de uma mangueira corrugada preta",
+      modes: "WatchDive preso a um colete de mergulho, ao lado de uma mangueira amarela e de uma mangueira corrugada preta",
     },
     slides: slides(
       "Dados",
@@ -448,9 +448,9 @@ export const FEATURE_CAROUSEL_COPY = {
     position: "{current} van {total}",
     alt: {
       data: "WatchDive om een pols onder water, met duikwaarden op het scherm",
-      safety: "Een freediver aan een gele boei, met een witte WatchDive om de pols",
+      safety: "De handen van een freediver op een gele boei, met een witte WatchDive om de pols",
       tech: "Een zwarte WatchDive om een uitgestoken pols boven het bad",
-      modes: "WatchDive vastgemaakt aan een trimvest, naast een gele slang en een zwarte geribbelde slang",
+      modes: "WatchDive vastgemaakt aan een duikvest, naast een gele slang en een zwarte geribbelde slang",
     },
     slides: slides(
       "Data",
@@ -464,7 +464,7 @@ export const FEATURE_CAROUSEL_COPY = {
       "Waarschuwing voor de dieptestop",
       "Duiktechniek",
       "Digitaal kompas",
-      "Nitrox (EANx)",
+      "Ondersteuning voor Nitrox (EANx)",
       "Kompaskoersmarkering",
       "Modi",
       "Scubamodus",
