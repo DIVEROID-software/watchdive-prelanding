@@ -164,4 +164,6 @@ test("the carousel view does not autoplay or mount a video", () => {
   assert.match(css, /\.wd-feature-track\{[^}]*scroll-snap-type:x mandatory/);
   assert.match(css, /\.wd-feature-nav button\{[^}]*min-width:48px/);
   assert.match(css, /@media\(max-width:389px\)/);
+  assert.match(view, /data-feature-image=/);
+  assert.match(css, /data-feature-image="loghand"[^}]*aspect-ratio:2\/3/);
 });

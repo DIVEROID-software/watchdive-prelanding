@@ -23,7 +23,7 @@ export const FEATURE_SLIDE_FRAMES: Record<DiveSegment, readonly FeatureSlideFram
   scuba: [
     { id: "readings", image: "step2", focus: "18% 42%", side: "end", layout: "overlay" },
     { id: "guidance", image: "underwater", focus: "22% 48%", side: "end", layout: "overlay" },
-    { id: "logbook", image: "loghand", focus: "50% 30%", side: "start", layout: "overlay" },
+    { id: "logbook", image: "loghand", focus: "50% 50%", side: "start", layout: "overlay" },
   ],
   freediving: [
     { id: "readings", image: "buoy", focus: "62% 42%", side: "start", layout: "overlay" },

@@ -171,7 +171,7 @@ export function SegmentFeatureCarousel({ segment }: { segment: DiveSegment }) {
       onPointerDown={() => { lockRef.current = null; }}
       onWheel={onWheel}
     >
-      {slides.map((slide, slideIndex) => <article key={slide.id} className="wd-feature-slide" data-feature-slide="" data-copy-side={slide.side} data-copy-layout={slide.layout} aria-roledescription={copy.slideLabel} aria-label={`${slide.title}. ${formatFeaturePosition(copy.position, slideIndex + 1, count)}`} aria-current={slideIndex === index ? 'true' : undefined}>
+      {slides.map((slide, slideIndex) => <article key={slide.id} className="wd-feature-slide" data-feature-slide="" data-feature-image={slide.image} data-copy-side={slide.side} data-copy-layout={slide.layout} aria-roledescription={copy.slideLabel} aria-label={`${slide.title}. ${formatFeaturePosition(copy.position, slideIndex + 1, count)}`} aria-current={slideIndex === index ? 'true' : undefined}>
         <img src={slide.photo.src} srcSet={slide.photo.srcSet} sizes={SIZES} width={slide.photo.width} height={slide.photo.height} alt={slide.alt} loading="lazy" decoding="async" style={{ objectPosition: slide.focus }} />
         <div className="wd-feature-copy">
           <h3>{slide.title}</h3>
