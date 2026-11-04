@@ -101,7 +101,7 @@ export const NL_FROZEN_LANDING_MESSAGES: FrozenLandingMessages = {
     queued: "Nog aan het laden. Je aanmelding gaat zo vanzelf weg.",
   },
   heroProof: {
-    readAll: "Lees alle {count} bèta-indrukken, getoond in het Engels ↓",
+    readAll: "Lees alle {count} bèta-indrukken · deels vertaald ↓",
   },
   usp: {
     label: "Waarom WatchDive",
@@ -221,7 +221,7 @@ export const NL_FROZEN_LANDING_MESSAGES: FrozenLandingMessages = {
   reviews: {
     kicker: "Bèta",
     h2: "{count} bètatesters schreven iets.",
-    sub: "Vertaalnotitie: deze indrukken worden in het Engels getoond, dus toon of nuance kan afwijken van een Nederlandse weergave.",
+    sub: "Vertaalnotitie: sommige ervaringen zijn vertaald om ze makkelijker leesbaar te maken. Toon en kleine nuances kunnen afwijken van het origineel.",
     disclosure:
       "Je ziet {published} van {total}. De rest noemt productdetails die we nog niet klaar hebben met controleren, dus die houden we achter tot het zover is.",
     countryUS: "Verenigde Staten",

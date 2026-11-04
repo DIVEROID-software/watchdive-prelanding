@@ -12,6 +12,9 @@ import { ONSITE_OFFER_COPY } from "../src/components/reservation/onsite-copy.ts"
 import { TOTAL_BEFORE_SHIPPING_TAX_USD } from "../src/components/reservation/pricing.ts";
 import { conversionCopy } from "../src/lib/conversionCopy.ts";
 import { localizePath, SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
+import { FROZEN_LANDING_MESSAGES } from "../src/lib/i18n/frozen-landing-messages.ts";
+import { applyPriceClaim } from "../src/lib/i18n/price-claim.ts";
+import { referralPriceClaim } from "../src/lib/i18n/referral-price-claim-copy.ts";
 import { fill, referralCopy } from "../src/lib/referral/copy.ts";
 import { REFERRAL_TIERS } from "../src/lib/referral/program.ts";
 import { copyValues } from "../src/lib/referral/values.ts";
@@ -52,8 +55,13 @@ function escapeText(value: string): string {
 }
 
 type PathsModule = {
-  PricePaths: (props: { locale: Locale; referralOn: boolean }) => ReactElement;
+  PricePaths: (props: { locale: Locale; referralOn: boolean; offerLead: string }) => ReactElement;
 };
+
+function priceProps(locale: Locale, referralOn: boolean) {
+  const messages = applyPriceClaim(FROZEN_LANDING_MESSAGES[locale], referralOn ? referralPriceClaim(locale) : undefined);
+  return { locale, referralOn, offerLead: messages.offer.lead };
+}
 type GoalModule = {
   PriceGoal: (props: {
     locale: Locale;
@@ -83,12 +91,12 @@ const SECTION_TITLES: Record<Locale, string> = {
 test("signup price paths state the published gates and omit the buddy reward while the program is off", async () => {
   const { PricePaths } = await load<PathsModule>("src/components/segments/PricePaths.tsx");
   const { teamLimitParagraph } = await load<GoalModule>("src/components/referral/PriceGoal.tsx");
-  const english = renderToStaticMarkup(createElement(PricePaths, { locale: "en", referralOn: true }));
+  const english = renderToStaticMarkup(createElement(PricePaths, priceProps("en", true)));
   for (const locale of SUPPORTED_LOCALES) {
     const limit = escapeText(fill(teamLimitParagraph(referralCopy(locale)), copyValues(locale)));
     const offer = ONSITE_OFFER_COPY[locale];
     for (const referralOn of [false, true]) {
-      const html = renderToStaticMarkup(createElement(PricePaths, { locale, referralOn }));
+      const html = renderToStaticMarkup(createElement(PricePaths, priceProps(locale, referralOn)));
       const reservationHtml = html.slice(html.indexOf('data-price-path="reservation"'));
       const reservationVisible = reservationHtml.slice(0, reservationHtml.indexOf("<details"));
       const publicAt = html.indexOf('data-price-path="public"');
@@ -97,6 +105,9 @@ test("signup price paths state the published gates and omit the buddy reward whi
       assert.match(html, new RegExp(`data-referral-program="${referralOn ? "on" : "off"}"`), locale);
       assert.ok(html.includes(`<h3>${escapeText(SECTION_TITLES[locale])}</h3>`), `${locale} price explanation heading`);
       assert.ok(html.includes(escapeText(conversionCopy[locale].terms)), `${locale} free email is not a price guarantee`);
+      assert.ok(html.includes(escapeText(priceProps(locale, referralOn).offerLead)), `${locale} preserves the resolved public-price and referral-exception lead`);
+      assert.match(html, /id="segment-price-paths"/, locale);
+      assert.ok(html.includes("299"), `${locale} preserves the public retail price`);
       assert.ok(html.includes("200"), `${locale} shows the next public price`);
       assert.ok(reservationVisible.includes(escapeText(offer.body)), `${locale} says what the $3 buys`);
       assert.ok(reservationVisible.includes(TOTAL_BEFORE_SHIPPING_TAX_USD), `${locale} states the $3 plus $149 total`);
@@ -129,16 +140,16 @@ test("signup price paths state the published gates and omit the buddy reward whi
       }
     }
     if (locale === "ja" || locale === "zh-TW" || locale === "ko") {
-      const html = renderToStaticMarkup(createElement(PricePaths, { locale, referralOn: true }));
+      const html = renderToStaticMarkup(createElement(PricePaths, priceProps(locale, true)));
       const heading = html.match(/<h3>(.*?)<\/h3>/)?.[1];
       const englishHeading = english.match(/<h3>(.*?)<\/h3>/)?.[1];
       assert.ok(heading && heading !== englishHeading, `${locale} heading fell back to English`);
     }
   }
-  const traditional = renderToStaticMarkup(createElement(PricePaths, { locale: "zh-TW", referralOn: true }));
+  const traditional = renderToStaticMarkup(createElement(PricePaths, priceProps("zh-TW", true)));
   assert.match(traditional, /可選的 \$3 預約/);
   assert.doesNotMatch(traditional, /選填|免费上线通知|可选 \$3/);
-  const japanese = renderToStaticMarkup(createElement(PricePaths, { locale: "ja", referralOn: true }));
+  const japanese = renderToStaticMarkup(createElement(PricePaths, priceProps("ja", true)));
   assert.match(english, /The \$149 launch price/);
   assert.match(japanese, /<h3>149ドルの発売価格<\/h3>/);
   assert.match(japanese, /<h4>無料の公開通知<\/h4>/);
@@ -216,7 +227,12 @@ test("the inline share uses the canonical /r path and the verify phone card stay
   );
   assert.match(index, /if \(presentation\) return <>\{message\}\{offer\}\{phone\}<\/>;/);
   assert.match(index, /phoneOptIn=\{compact \|\| presentation \? undefined : phoneCard\("pending"\)\}/);
-  assert.match(index, /\{!compact && presentation && phoneCard\("pending"\)\}/);
+  assert.doesNotMatch(index, /\{!compact && presentation && phoneCard\("pending"\)\}/);
+  assert.match(index, /\{!compact && presentation && \(\s*<p className="wd-signup-pending-note">\s*\{SIGNUP_CLARITY_COPY\[locale\].pendingReservation\} \{ONSITE_OFFER_COPY\[locale\].separate\}/);
+  const pendingStart = index.indexOf('if (pending)');
+  const pendingReturn = index.slice(pendingStart, index.indexOf('return (\n    <form', pendingStart));
+  assert.match(pendingReturn, /\{!compact && !presentation && <SignupReservationOffer/);
+  assert.equal((pendingReturn.match(/<SignupReservationOffer/g) ?? []).length, 1, "only the legacy pending branch retains the full offer");
   const compactVerified = verifiedReturn.slice(verifiedReturn.indexOf("if (compact)"), verifiedReturn.indexOf("if (presentation)"));
   assert.equal(compactVerified.includes("SignupReservationOffer"), false);
 
@@ -228,11 +244,12 @@ test("the inline share uses the canonical /r path and the verify phone card stay
 
   const landing = readFileSync(join(root, "src/components/segments/SegmentLanding.tsx"), "utf8");
   assert.equal((landing.match(/<PricePaths\b/g) ?? []).length, 1);
-  assert.match(landing, /position === 'middle' && <PricePaths locale=\{locale\} referralOn=\{referralOn\} \/>/);
-  assert.match(landing, /<b>50%<\/b>/);
+  assert.match(landing, /position === 'middle' && <PricePaths locale=\{locale\} referralOn=\{referralOn\} offerLead=\{m.offer.lead\} \/>/);
+  assert.doesNotMatch(landing, /<b>50%<\/b>|<s>\$299<\/s>/);
+  assert.match(landing, /className="wd-segment-launch-price"><strong>\$149<\/strong><span>\{c.priceNote\}<\/span>/);
   const css = readFileSync(join(root, "src/components/segments/segments.css"), "utf8");
   assert.equal(css.includes("wd-segment-discount-pulse"), false);
-  assert.match(css, /\.wd-segment-discount\{[^}]*pointer-events:none\}/);
+  assert.equal(css.includes(".wd-segment-discount{"), false);
   assert.match(css, /\.wd-segment-signup>\.wd-price-paths\{[^}]*grid-column:1 \/ -1;grid-row:2/);
   assert.match(css, /@media\(min-width:960px\)\{\s*\.wd-price-paths ol\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/);
   assert.match(css, /\[data-referral-program="off"\] ol\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);

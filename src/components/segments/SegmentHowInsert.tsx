@@ -68,7 +68,7 @@ export function SegmentHowInsert({ alt }: { alt: string }) {
   }, [play]);
 
   return <div ref={box} className="wd-segment-how-media">
-    {visibleVideo ? <video ref={video} muted loop playsInline autoPlay={!paused} preload="metadata" poster={poster} aria-label={alt} src={clip} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} /> : <img src={poster} alt={alt} width={960} height={540} />}
+    {visibleVideo ? <video ref={video} muted loop playsInline autoPlay={!paused} preload="metadata" poster={poster} aria-label={alt} src={clip} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} /> : <img src={poster} alt={alt} width={960} height={540} loading="lazy" decoding="async" />}
     {visibleVideo && <button type="button" className="wd-segment-motion-toggle" onClick={() => { if (playing) { setPaused(true); video.current?.pause(); } else { setPaused(false); video.current?.play().catch(() => undefined); } }} aria-label={playing ? pauseLabels[locale] : m.media.play} title={playing ? pauseLabels[locale] : m.media.play}><span aria-hidden="true">{playing ? 'Ⅱ' : '▶'}</span></button>}
   </div>;
 }

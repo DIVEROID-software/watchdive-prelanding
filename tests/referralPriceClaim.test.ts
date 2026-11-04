@@ -84,6 +84,9 @@ test("off: rendered copy stays frozen with owner-approved hero, brand and footer
   // number alone is not consent.
   // 2026-11-02: add missing-token verification copy in all ten locales.
   // Product, price, referral and marketing copy remain unchanged.
+  // 2026-11-04: Dutch approved beta quotes are now translated. Update only
+  // reviews.sub and heroProof.readAll to remove the stale English-only claim.
+  // Restoring those two strings reproduces the prior catalog hash 9c157b24….
   const race = SUPPORTED_LOCALES.map((l) =>
     earlyBirdRace(l, FROZEN_LANDING_MESSAGES[l].hero.nowPrice),
   );
@@ -104,7 +107,7 @@ test("off: rendered copy stays frozen with owner-approved hero, brand and footer
   );
   assert.equal(
     sha256(FROZEN_LANDING_MESSAGES),
-    "9c157b24e3c4eb35bbab22a37635040524d9cd00f3945d16d40d47007d95b5fe",
+    "7defd8d51e2508d41fd13951696a40a0567f2763773c1306642fc8af8c688332",
   );
   assert.equal(
     sha256(conversionCopy),

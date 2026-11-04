@@ -121,8 +121,10 @@ for (const segment of ["freediving", "scuba"] as const) {
       for (const legal of ["privacy","terms"]) assert.ok(tags(html,"a").some(a=>a.href===localizePath(`/${legal}`,locale)));
       const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
       for (const id of ["segment-hero","signup-middle","signup-bottom","hero-email","offer-email"]) assert.equal(ids.filter(value=>value===id).length,1);
-      assert.ok(html.indexOf('id="segment-how"') < html.indexOf('id="signup-middle"'));
-      assert.ok(html.indexOf('id="segment-faq"') < html.indexOf('id="signup-bottom"'));
+      assert.ok(html.indexOf('id="segment-hero"') < html.indexOf('id="signup-middle"'));
+      assert.ok(html.indexOf('id="signup-middle"') < html.indexOf('id="segment-benefits"'));
+      assert.ok(html.indexOf('id="segment-gallery"') < html.indexOf('id="signup-bottom"'));
+      assert.ok(html.indexOf('id="signup-bottom"') < html.indexOf('id="segment-faq"'));
     });
   }
 }

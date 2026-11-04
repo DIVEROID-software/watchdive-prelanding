@@ -90,13 +90,20 @@ export function reservationChoiceTitle(locale: Locale): string {
   return HEADINGS[locale].reservation;
 }
 
+/** Existing localized labels for the price link and the free-alert sticky bar. */
+export function pricePathHeadings(locale: Locale): Readonly<Pick<(typeof HEADINGS)[Locale], "title" | "public">> {
+  const { title, public: freeAlert } = HEADINGS[locale];
+  return { title, public: freeAlert };
+}
+
 function teamGoal(): number {
   const team = REFERRAL_TIERS.find((tier) => tier.id === "team");
   if (!team) throw new Error("Dive Team tier is missing");
   return team.minFriends;
 }
 
-export function PricePaths({ locale, referralOn }: { locale: Locale; referralOn: boolean }) {
+/** offerLead comes from useFrozenLandingMessages so referral exceptions stay intact. */
+export function PricePaths({ locale, referralOn, offerLead }: { locale: Locale; referralOn: boolean; offerLead: string }) {
   const headings = HEADINGS[locale];
   const offer = ONSITE_OFFER_COPY[locale];
   const reservation = reservationCopy(locale);
@@ -107,6 +114,7 @@ export function PricePaths({ locale, referralOn }: { locale: Locale; referralOn:
   const feeDetails = reservation.terms.filter((line) => line !== totalNote);
   return (
     <section
+      id="segment-price-paths"
       className="wd-price-paths"
       data-price-paths=""
       data-analytics-hook="price_paths"
@@ -117,7 +125,9 @@ export function PricePaths({ locale, referralOn }: { locale: Locale; referralOn:
       <ol>
         <li data-price-path="public" data-analytics-hook="price_path">
           <h4>{headings.public}</h4>
+          <p className="wd-price-path-amounts"><s>$299</s>{" "}<strong>$149</strong></p>
           <p>{earlyBirdRace(locale, formatOfferPrice(locale))}</p>
+          <p>{offerLead}</p>
           <p>{conversionCopy[locale].terms}</p>
         </li>
         {referralOn && (

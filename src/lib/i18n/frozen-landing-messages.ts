@@ -66,8 +66,8 @@
  * - The 122 beta-review bodies and reviewer names/cities in
  *   src/data/beta-reviews.ts. The user approved localized renderings on
  *   2026-08-01; each translated locale lives in its own beta-reviews.<locale>.ts
- *   module and is joined by immutable review id. Dutch shows the English
- *   impressions and does not add fabricated quotes or cities. The original rendering, attribution
+ *   module and is joined by immutable review id. Dutch has its own module for
+ *   the eight approved impressions, translated from the English source, and does not add quotes or cities. The original rendering, attribution
  *   and rating remain unchanged; the Product Truth publication allowlist is
  *   authoritative. A visible translation notice explains that minor
  *   differences in nuance may remain.
