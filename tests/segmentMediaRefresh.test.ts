@@ -168,14 +168,36 @@ test("new media stays small and names its source", () => {
     assert.equal(item.source_sha256.length, 64);
   }
   const page = read("src/components/segments/SegmentMedia.tsx");
-  for (const name of ["seal-poster-960.webp", "controls-poster-960.webp", "logbook-poster-960.webp", "buoy-1400.webp", "buoy-2200.webp", bright]) {
+  for (const name of ["seal-poster-960.webp", "controls-poster-960.webp", "logbook-poster-960.webp", "buoy-1400.webp", "buoy-2200.webp"]) {
     assert.equal(page.includes(name), true, name);
   }
+  const brightDelivery = [
+    "scuba-pool-overhead-bright-800.webp",
+    "scuba-pool-overhead-bright-1400.webp",
+    "scuba-pool-overhead-bright-1800.webp",
+    "scuba-pool-overhead-bright-2400.webp",
+  ];
+  for (const name of brightDelivery) assert.equal(page.includes(name), true, name);
+  // The 2880 PNG stays the byte-for-byte master. It is not a gallery request.
+  assert.equal(page.includes(bright), false);
+  assert.match(page, /sizes: '100vw'/);
+  assert.match(page, /800w, .*1400w, .*1800w, .*2400w/);
+  const phoneCandidate = brightDelivery.map((name) => Number(name.match(/-(\d+)\.webp$/)?.[1])).sort((a, b) => a - b).find((width) => width >= 390 * 3);
+  assert.equal(phoneCandidate, 1400);
+  const phoneFile = provenance.outputs.find((item: { file: string }) => item.file === "scuba-pool-overhead-bright-1400.webp");
+  assert.ok(phoneFile);
+  assert.ok(phoneFile.bytes < 150_000, `390px at 3x would fetch ${phoneFile.bytes} bytes`);
+  assert.equal(phoneFile.width, 1400);
+  assert.equal(phoneFile.height, 782);
+  assert.equal(phoneFile.source_sha256, provenance.outputs.find((item: { file: string }) => item.file === bright).sha256);
   for (const name of ["seal.mp4", "controls.mp4", "logbook.mp4"]) {
     assert.equal(page.includes(name), false, name);
   }
   assert.equal(page.includes("overhead-1800.webp"), false);
   assert.equal(page.includes("overhead-960.webp"), false);
+  assert.match(page, /loading="lazy" decoding="async"/);
+  const how = read("src/components/segments/SegmentHowInsert.tsx");
+  assert.match(how, /<img src=\{poster\} alt=\{alt\} width=\{960\} height=\{540\} loading="lazy" decoding="async" \/>/);
 });
 
 const LOCALIZED_BODIES = {

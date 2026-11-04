@@ -19,7 +19,10 @@ import freeLogLarge from '@/assets/live/segment-heroes/freediving-app-logbook-14
 import buoySmall from '@/assets/live/media-refresh-20261103/buoy-800.webp';
 import buoyLarge from '@/assets/live/media-refresh-20261103/buoy-1400.webp';
 import buoyWide from '@/assets/live/media-refresh-20261103/buoy-2200.webp';
-import scubaOverheadBright from '@/assets/live/media-refresh-20261103/scuba-pool-overhead-bright-2880.png';
+import brightPool800 from '@/assets/live/media-refresh-20261103/scuba-pool-overhead-bright-800.webp';
+import brightPool1400 from '@/assets/live/media-refresh-20261103/scuba-pool-overhead-bright-1400.webp';
+import brightPool1800 from '@/assets/live/media-refresh-20261103/scuba-pool-overhead-bright-1800.webp';
+import brightPool2400 from '@/assets/live/media-refresh-20261103/scuba-pool-overhead-bright-2400.webp';
 import sealPosterSmall from '@/assets/live/media-refresh-20261103/seal-poster-640.webp';
 import sealPoster from '@/assets/live/media-refresh-20261103/seal-poster-960.webp';
 import controlsPosterSmall from '@/assets/live/media-refresh-20261103/controls-poster-640.webp';
@@ -85,13 +88,16 @@ export function HowPhotoRow() {
   </ul>;
 }
 
+const brightPoolSrcSet = `${brightPool800} 800w, ${brightPool1400} 1400w, ${brightPool1800} 1800w, ${brightPool2400} 2400w`;
+
 const wideShots: Record<DiveSegment, Shot> = {
   scuba: {
-    small: scubaOverheadBright,
-    large: scubaOverheadBright,
-    width: 2880,
-    height: 1608,
+    small: brightPool800,
+    large: brightPool2400,
+    width: 2400,
+    height: 1340,
     sizes: '100vw',
+    srcSet: brightPoolSrcSet,
   },
   freediving: {
     small: buoyLarge,
@@ -148,7 +154,7 @@ export function SegmentPress({ copy }: { copy: MediaCopy }) {
     {rows.map(row => <ul key={row[0].id} className="wd-press-row" style={{ '--press-cols': row.map(logo => `${logo.width / logo.height}fr`).join(' ') } as CSSProperties}>
       {row.map(logo => <li key={logo.id} data-wide={logo.wide ? 'true' : undefined}>
         <a href={logo.href} target="_blank" rel="noopener noreferrer" data-ground={logo.ground}>
-          <img src={logo.src} alt={logo.name} width={logo.width} height={logo.height} decoding="async" />
+          <img src={logo.src} alt={logo.name} width={logo.width} height={logo.height} loading="lazy" decoding="async" />
         </a>
       </li>)}
     </ul>)}

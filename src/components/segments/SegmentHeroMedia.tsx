@@ -3,6 +3,7 @@ import { useLiteMedia } from '@/lib/liteMedia';
 import { useCurrentLocale, useFrozenLandingMessages } from '@/lib/i18n/use-current-locale';
 import type { Locale } from '@/lib/i18n/locale';
 import type { DiveSegment } from '@/lib/segments/copy';
+import { HERO_AUTOPLAY_MEDIA, heroVideoAllowed, heroVideoShouldPlay } from './heroVideoPolicy';
 import freeSmall from '@/assets/live/segment-heroes/freediving-640.webp';
 import freePoster from '@/assets/live/segment-heroes/freediving-1280.webp';
 import freeLoop from '@/assets/live/segment-heroes/freediving-underwater.mp4';
@@ -17,8 +18,11 @@ const pauseLabels: Record<Locale, string> = {
 };
 
 /** Real footage, silent and short. The poster renders first without waiting for JS.
- * No video request before hydration or on constrained connections/reduced motion.
- * Explicit play remains available. Pausing, scrolling away and hiding the tab stop motion.
+ * The file mounts for automatic play only at 960px and up, and only when the
+ * connection is unconstrained and motion is allowed. Narrow screens keep the
+ * poster until the play control. Explicit play works at every width, including
+ * constrained connections and reduced motion. Pausing, leaving the viewport,
+ * hiding the tab, or narrowing the window without an explicit play stops it.
  */
 export function SegmentHeroMedia({ segment, caption }: { segment: DiveSegment; caption: string }) {
   const locale = useCurrentLocale();
@@ -26,18 +30,25 @@ export function SegmentHeroMedia({ segment, caption }: { segment: DiveSegment; c
   const lite = useLiteMedia();
   const figure = useRef<HTMLElement>(null);
   const video = useRef<HTMLVideoElement>(null);
+  const playOnAttach = useRef(false);
   const attachVideo = useCallback((element: HTMLVideoElement | null) => {
     video.current = element;
-    if (element) {
-      // Set the DOM defaults before native autoplay is evaluated, including WebKit.
-      element.defaultMuted = true;
-      element.muted = true;
-      element.setAttribute('muted', '');
-      element.setAttribute('webkit-playsinline', '');
+    if (!element) return;
+    // Set the DOM defaults before native autoplay is evaluated, including WebKit.
+    element.defaultMuted = true;
+    element.muted = true;
+    element.setAttribute('muted', '');
+    element.setAttribute('webkit-playsinline', '');
+    // The play control can mount this element. Call play during that commit so
+    // the visitor's gesture still covers browsers that require one.
+    if (playOnAttach.current) {
+      playOnAttach.current = false;
+      element.play().catch(() => { if (element.paused) setPlaying(false); });
     }
   }, []);
   const [ready, setReady] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(true);
+  const [wide, setWide] = useState(false);
   const [inView, setInView] = useState(true);
   const [tabVisible, setTabVisible] = useState(true);
   const [requested, setRequested] = useState(false);
@@ -48,20 +59,26 @@ export function SegmentHeroMedia({ segment, caption }: { segment: DiveSegment; c
   const isFree = segment === 'freediving';
   const poster = isFree ? freePoster : scubaPoster;
   const small = isFree ? freeSmall : scubaSmall;
-  const allowed = ready && !failed && ((!lite && !reducedMotion) || requested);
+  const gate = { ready, failed, lite, reducedMotion, wide, requested };
+  const allowed = heroVideoAllowed(gate);
+  const shouldPlay = heroVideoShouldPlay({ ...gate, inView, tabVisible, paused });
 
   useEffect(() => {
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const wideQuery = window.matchMedia(HERO_AUTOPLAY_MEDIA);
     const updateMotion = () => { setReducedMotion(motion.matches); setRequested(false); };
+    const updateWide = () => setWide(wideQuery.matches);
     const updateVisibility = () => setTabVisible(!document.hidden);
-    updateMotion(); updateVisibility(); setReady(true);
+    updateMotion(); updateWide(); updateVisibility(); setReady(true);
     motion.addEventListener('change', updateMotion);
+    wideQuery.addEventListener('change', updateWide);
     document.addEventListener('visibilitychange', updateVisibility);
     const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.05 });
     if (figure.current) observer.observe(figure.current);
     return () => {
       observer.disconnect();
       motion.removeEventListener('change', updateMotion);
+      wideQuery.removeEventListener('change', updateWide);
       document.removeEventListener('visibilitychange', updateVisibility);
     };
   }, []);
@@ -70,26 +87,27 @@ export function SegmentHeroMedia({ segment, caption }: { segment: DiveSegment; c
     const element = video.current;
     if (!allowed) { setPlaying(false); setHasFrame(false); return; }
     if (!element) return;
-    if (inView && tabVisible && !paused) {
+    if (shouldPlay) {
       element.play().catch(() => { if (element.paused) setPlaying(false); });
     } else element.pause();
-  }, [allowed, inView, tabVisible, paused]);
+  }, [allowed, shouldPlay]);
 
   function toggle() {
     if (playing) { setPaused(true); video.current?.pause(); }
     else {
       setRequested(true); setPaused(false);
-      // Keep an explicit play in the gesture for browsers that require it.
+      playOnAttach.current = !video.current;
+      // Keep an explicit play in the gesture when the element is already mounted.
       video.current?.play().catch(() => setPlaying(false));
     }
   }
 
   return <figure ref={figure} className="wd-segment-hero-media">
     <img src={lite ? small : poster} srcSet={lite ? undefined : `${small} 640w, ${poster} 1280w`} sizes="(min-width: 960px) 50vw, 100vw" width="1280" height="960" alt={caption} fetchPriority="high" loading="eager" />
-    {allowed && <video ref={attachVideo} className={hasFrame ? 'has-frame' : ''} muted loop playsInline autoPlay={inView && tabVisible && !paused} preload="none" poster={poster} src={isFree ? freeLoop : scubaLoop} aria-hidden="true" tabIndex={-1}
+    {allowed && <video ref={attachVideo} className={hasFrame ? 'has-frame' : ''} muted loop playsInline autoPlay={shouldPlay} preload="none" poster={poster} src={isFree ? freeLoop : scubaLoop} aria-hidden="true" tabIndex={-1}
       onCanPlay={() => {
         const element = video.current;
-        if (element && inView && tabVisible && !paused) element.play().catch(() => { if (element.paused) setPlaying(false); });
+        if (element && shouldPlay) element.play().catch(() => { if (element.paused) setPlaying(false); });
       }} onPlaying={() => { setPlaying(true); setHasFrame(true); }} onPause={() => setPlaying(false)} onError={() => { setFailed(true); setPlaying(false); }} />}
     <figcaption>{caption}</figcaption>
     {!failed && <button className="wd-segment-motion-toggle" type="button" onClick={toggle} aria-label={playing ? pauseLabels[locale] : m.media.play} title={playing ? pauseLabels[locale] : m.media.play}>
