@@ -15,10 +15,10 @@ The preview assumes automatic entry and exit signup popups are disabled; the own
 ## Content and conversion constraints
 
 - Use the official WatchDive logo and existing approved product photos, eight approved beta-test quotes and eight sourced press logos. Do not invent endorsement, ratings or demand.
-- Preserve the $149 first-100-Kickstarter-backers terms and signup-does-not-reserve distinction in the price section. Email signup is free, with no payment required.
+- Preserve the $149 first-100-Kickstarter-backers terms and signup-does-not-reserve distinction in the price section and beside any signup benefit that mentions $149. Email signup is free, with no payment required.
 - Preserve locale routing, raw campaign queries, signup source IDs, consent, verification, OAuth, optional phone, reservation and attribution behavior.
 - No live advertisement, budget, CRM, customer email or payment changes are authorized by this preview task.
 
 ## Evaluation
 
-Judge the preview on product clarity, readable mobile layout, discoverable signup, accessible controls and intact existing conversion contracts. A non-randomized one-day pre/post snapshot cannot establish that a design caused a conversion change. Any future release needs its own timestamp and mature signup-to-verification cohorts.
+Judge the preview on product clarity, readable mobile layout, discoverable signup, accessible controls and intact existing conversion contracts. The marketing follow-up puts the first form immediately after product usage and features, keeps the two proof sections together after it, makes the launch alert the hero's primary action, and uses existing localized benefit/qualification/verification copy. A non-randomized one-day pre/post snapshot cannot establish that a design caused a conversion change. Any future release needs its own timestamp and mature signup-to-verification cohorts.

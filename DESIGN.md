@@ -39,9 +39,9 @@ Keep the repository's installed brand/localized fonts. Display size scales from 
 
 ## Layout
 
-Maximum content width is 1240px, with 1440px hero/navigation framing. Horizontal gutters scale from 20px to 64px. Use 72–124px between major sections, tighter spacing within related content. The hero statement leads into a large product visual. Three how-to photos replace repeated video/list explanations; the existing feature carousel retains four cards. Two quotes open initially, with all eight accessible through the disclosure, followed by press and the first form.
+Maximum content width is 1240px, with 1440px hero/navigation framing. Horizontal gutters scale from 20px to 64px. Use 72–124px between major sections, tighter spacing within related content. The hero statement leads into a large product visual. Three how-to photos replace repeated video/list explanations; the existing feature carousel retains four cards. The first form follows those explanations, before two open quotes (all eight accessible through the disclosure) and the press section. This shortens the initial photo-led preview's nearly five-screen mobile path without putting a large form in the hero.
 
-The form is one column at up to 580px. Email comes first, confirmation guidance next, OAuth alternatives below. Direct signup links preserve campaign query strings and focus the form. A bottom sticky CTA appears only after visitors pass the first form and while neither form nor keyboard is visible.
+The form is one column at up to 580px. Email comes first, confirmation guidance next, OAuth alternatives below. The first form explains the $149 launch-alert benefit with its full first-100/backer and no-reservation terms in adjacent plain text. The price is not a giant display or purchase button. The hero's primary action is the free launch alert, with product exploration as its secondary link. Direct signup links preserve campaign query strings and focus the form. A bottom sticky CTA appears only after visitors pass the first form and while neither form nor keyboard is visible.
 
 ## Elevation & Depth
 

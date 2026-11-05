@@ -41,8 +41,8 @@ test("the segment page matches the cleanup structure", () => {
   assert.equal(hero.includes("wd-segment-next-price"), false);
   assert.equal(hero.includes("wd-segment-explore"), false);
   assert.equal(hero.includes("WATCHDIVE /"), false);
-  // The owner-approved airy hero explains the product before its quiet signup link.
-  const heroCopyOrder = ["wd-segment-intro", "wd-segment-hero-includes", "wd-segment-hero-actions", "wd-segment-hero-jump", "wd-segment-quiet-signup"];
+  // The owner-approved airy hero explains the product before its primary signup link.
+  const heroCopyOrder = ["wd-segment-intro", "wd-segment-hero-includes", "wd-segment-hero-actions", "wd-segment-hero-jump", "wd-segment-secondary-link", "wd-segment-hero-free"];
   let previous = -1;
   for (const className of heroCopyOrder) {
     const position = hero.indexOf(className);

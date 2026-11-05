@@ -95,10 +95,11 @@ test("every locale has distinct scuba and freediving captions and eight publishe
   assert.equal(SEGMENT_BETA_COPY.ko.title, "베타테스터의 이야기");
 });
 
-test("the airy page retains the measurement phase and puts product and proof before signup", () => {
+test("the airy page retains measurement and puts signup after the product features", () => {
   const page = read("src/components/segments/SegmentLanding.tsx");
   assert.match(page, /data-landing-phase="segments-mobile-20261025"/);
   assert.match(page, /data-visual-phase="airy-20261105"/);
+  assert.match(page, /data-conversion-revision="intent-first-20261105"/);
   assert.equal((page.match(/data-landing-phase=/g) ?? []).length, 1);
   assert.match(page, /id=\{position === 'middle' \? 'hero' : 'offer'\}/);
   assert.equal((page.match(/<EmailForm /g) ?? []).length, 1);
@@ -120,8 +121,8 @@ test("the airy page retains the measurement phase and puts product and proof bef
   const end = page.indexOf("wd-segment-end-signup");
   assert.equal((page.match(/<SegmentPress /g) ?? []).length, 1);
   assert.equal((page.match(/<SegmentFeatureCarousel /g) ?? []).length, 1);
-  const order = [hero, how, features, reviews, press, middle, benefits, demos, log, camera, gallery, cost, prices, faq, bottom, end];
-  assert.ok(order.every((position, i) => position >= 0 && (i === 0 || position > order[i - 1])), "approved product → proof → signup → detail sequence");
+  const order = [hero, how, features, middle, reviews, press, benefits, demos, log, camera, gallery, cost, prices, faq, bottom, end];
+  assert.ok(order.every((position, i) => position >= 0 && (i === 0 || position > order[i - 1])), "approved product → signup → proof → detail sequence");
   const surface = page.indexOf("<FreedivingSurfacePhoto ");
   assert.ok(surface > log && surface < camera);
   assert.ok(page.indexOf("<AcquisitionTools ") > how && page.indexOf("<AcquisitionTools ") < features);

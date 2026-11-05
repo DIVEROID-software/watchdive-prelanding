@@ -9,6 +9,7 @@ import { localizePath, privacyPath, termsPath } from '@/lib/i18n/locale';
 import { getAttribution } from '@/lib/attribution';
 import { segmentCopy, type DiveSegment } from '@/lib/segments/copy';
 import { legacyHomeAnchor } from '@/lib/segments/canonical-entry';
+import { conversionCopy } from '@/lib/conversionCopy';
 import { useReferralProgramEnabled } from '../referral/LeaderboardSection';
 import { PricePaths, pricePathHeadings } from './PricePaths';
 import { SegmentHeroMedia } from './SegmentHeroMedia';
@@ -87,6 +88,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   const locale = useCurrentLocale();
   const m = useFrozenLandingMessages();
   const c = segmentCopy(locale, segment);
+  const conversion = conversionCopy[locale];
   const referralOn = useReferralProgramEnabled();
   const subscription = subscriptionCopy(locale);
   const media = mediaCopy(locale);
@@ -157,12 +159,13 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
       form: <section id={`signup-${position}`} data-segment-signup="" data-wd-segment={segment} data-wd-placement={position} className={`wd-segment-signup wd-segment-signup-${position}${lead ? '' : ' wd-segment-signup-line'}`} aria-labelledby={`signup-title-${position}`}>
       <div className="wd-segment-signup-heading">
         <h2 id={`signup-title-${position}`} tabIndex={lead ? -1 : undefined}>{c.finalTitle}</h2>
-        <p>{c.finalBody}</p>
+        <p>{lead ? conversion.benefit : c.finalBody}</p>
+        {lead && <p className="wd-segment-signup-terms">{conversion.terms}</p>}
       </div>
       <div className="wd-segment-form">
         <SocialAuthResult locale={locale} />
         <p className="wd-segment-free-note">{c.noPayment}</p>
-        <EmailForm id={position === 'middle' ? 'hero' : 'offer'} presentation={{ cta: c.signupCta, note: c.signupNote, socialAfterEmail: true }} />
+        <EmailForm id={position === 'middle' ? 'hero' : 'offer'} presentation={{ cta: c.signupCta, note: conversion.confirmation, socialAfterEmail: true }} />
       </div>
       </section>,
       prices: position === 'middle' && <PricePaths locale={locale} referralOn={referralOn} offerLead={m.offer.lead} />,
@@ -170,7 +173,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   }
 
   return <SocialSignupResultProvider key={`${locale}-${segment}`}>
-    <div className={`wd-segment-page wd-segment-${segment} wd-segment-airy`} data-landing-phase="segments-mobile-20261025" data-visual-phase="airy-20261105">
+    <div className={`wd-segment-page wd-segment-${segment} wd-segment-airy`} data-landing-phase="segments-mobile-20261025" data-visual-phase="airy-20261105" data-conversion-revision="intent-first-20261105">
       <script dangerouslySetInnerHTML={{ __html: HOLD_EARLY_SUBMIT_JS }} />
       <header className="wd-segment-header">
         <a className="wd-segment-brand" href="#segment-hero" aria-label="WatchDive"><WatchDiveLogo tone="on-light" /></a>
@@ -185,7 +188,8 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
             <h1 id="segment-title">{c.title.split('\n').map((line, i) => <span key={line} className={i ? 'wd-segment-title-accent' : ''}>{line}</span>)}</h1>
             <p className="wd-segment-intro">{c.intro}</p>
             <p className="wd-segment-hero-includes">{c.includeNote}</p>
-            <div className="wd-segment-hero-actions"><a className="wd-segment-hero-jump" href="#segment-how">{c.discover}</a><a className="wd-segment-quiet-signup" href="#signup-middle" onClick={jumpToMiddleSignup}>{c.signupCta}</a></div>
+            <div className="wd-segment-hero-actions"><a className="wd-segment-hero-jump" href="#signup-middle" onClick={jumpToMiddleSignup}>{c.signupCta}</a><a className="wd-segment-secondary-link" href="#segment-how">{c.discover}</a></div>
+            <p className="wd-segment-hero-free">{c.noPayment}</p>
           </div>
           <div className="wd-segment-hero-visual">
             <SegmentHeroMedia key={segment} segment={segment} caption={c.heroCaption} />
@@ -205,9 +209,9 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
 
         <AcquisitionTools compatibility={false} capture="none" />
         <SegmentFeatureCarousel segment={segment} />
+        <div className="wd-segment-shell wd-segment-signup-slot">{signup('middle').form}</div>
         <SegmentBetaReviews initialCount={2} />
         <SegmentPress copy={media} />
-        <div className="wd-segment-shell wd-segment-signup-slot">{signup('middle').form}</div>
 
         <section id="segment-benefits" className="wd-segment-benefits wd-segment-shell" aria-labelledby="benefits-title">
           <h2 id="benefits-title">{c.benefitTitle}</h2>

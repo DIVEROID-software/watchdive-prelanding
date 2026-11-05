@@ -45,7 +45,8 @@ before(async () => {
       export function EmailForm({ id, presentation }) {
         return createElement('form', { 'data-test-email-form': id, 'data-social-after-email': presentation.socialAfterEmail },
           createElement('input', { type: 'email', id: id + '-email' }),
-          createElement('button', { type: 'submit' }, presentation.cta));
+          createElement('button', { type: 'submit' }, presentation.cta),
+          createElement('p', { 'data-test-confirmation': '' }, presentation.note));
       }
     `,
     "language-switcher": "export const LanguageSwitcher = () => null;",
@@ -114,20 +115,31 @@ for (const locale of SUPPORTED_LOCALES) {
         const bottom = section(html, "signup-bottom");
         const prices = section(html, "segment-price-paths");
         const includes = hero.indexOf(escaped(c.includeNote));
-        const discover = hero.indexOf('class="wd-segment-hero-jump"');
-        const signup = hero.indexOf('class="wd-segment-quiet-signup"');
-        assert.ok(includes >= 0 && includes < discover && discover < signup, "product scope and discovery precede the quiet signup link");
+        const signup = hero.indexOf('class="wd-segment-hero-jump"');
+        const discover = hero.indexOf('class="wd-segment-secondary-link"');
+        assert.ok(includes >= 0 && includes < signup && signup < discover, "product scope precedes primary signup and secondary discovery");
         assert.ok(hero.includes(escaped(c.intro)));
-        assert.match(hero, /href="#segment-how"/);
-        assert.match(hero, /href="#signup-middle"/);
+        assert.ok(hero.includes(`<a class="wd-segment-hero-jump" href="#signup-middle">${escaped(c.signupCta)}</a>`));
+        assert.ok(hero.includes(`<a class="wd-segment-secondary-link" href="#segment-how">${escaped(c.discover)}</a>`));
+        assert.equal(occurrences(hero, c.noPayment), 1);
         assert.doesNotMatch(hero, /data-test-email-form|wd-segment-hero-offer|\$149|\$200|\$299/);
         for (const [markup, source] of [[middle, "hero"], [bottom, "offer"]]) {
-          assert.ok(markup.includes(escaped(c.finalTitle)) && markup.includes(escaped(c.finalBody)));
+          assert.ok(markup.includes(escaped(c.finalTitle)));
+          const body = source === "hero" ? conversionCopy[locale].benefit : c.finalBody;
+          assert.equal(occurrences(markup, body), 1);
+          assert.equal(occurrences(markup, conversionCopy[locale].confirmation), 1);
           assert.equal(occurrences(markup, c.noPayment), 1, "one free note per form");
           assert.ok(markup.indexOf(escaped(c.noPayment)) < markup.indexOf(`data-test-email-form="${source}"`), "free note above the email field");
           assert.match(markup, /data-social-after-email="true"/, "both segment forms request email before alternatives");
-          assert.doesNotMatch(markup, /<s>|50%|\$149|\$299|\$200|wd-segment-discount/);
+          assert.doesNotMatch(markup, /<s>|50%|\$299|\$200|wd-segment-discount|wd-segment-launch-price/);
+          if (source === "offer") assert.doesNotMatch(markup, /(?:\$\s*149|149\s*\$)|wd-segment-signup-terms/);
         }
+        const priceAndTerms = `<p>${escaped(conversionCopy[locale].benefit)}</p><p class="wd-segment-signup-terms">${escaped(conversionCopy[locale].terms)}</p>`;
+        assert.ok(middle.includes(priceAndTerms), "price and first-100/non-reservation terms remain adjacent ordinary paragraphs");
+        assert.equal(occurrences(middle, conversionCopy[locale].terms), 1);
+        const firstHeading = middle.slice(0, middle.indexOf('class="wd-segment-form"'));
+        assert.doesNotMatch(firstHeading, /<details|<summary|\bhidden(?:=|\s|>)|aria-hidden="true"|display:\s*none|visibility:\s*hidden|sr-only/);
+        assert.ok(middle.indexOf(priceAndTerms) < middle.indexOf('data-test-email-form="hero"'));
         const how = section(html, "segment-how");
         assert.equal((how.match(/<figure\b/g) ?? []).length, 3, "three product photos remain");
         assert.equal((how.match(/<figcaption\b/g) ?? []).length, 3, "each product step retains its caption");

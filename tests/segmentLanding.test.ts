@@ -12,6 +12,8 @@ import { sitemapXml } from "../src/lib/i18n/crawl.ts";
 import { SUPPORTED_LOCALES, localizePath } from "../src/lib/i18n/locale.ts";
 import { newSocialState, readSocialState, signSocialState } from "../src/lib/socialAuth/state.ts";
 import { handleGoogleCallback } from "../src/lib/socialAuth/http.ts";
+import { conversionCopy } from "../src/lib/conversionCopy.ts";
+import { segmentCopy } from "../src/lib/segments/copy.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const publicOrigin = "https://watchdive.diveroid.com";
@@ -22,6 +24,9 @@ function attributes(tag: string): Record<string, string> {
 }
 function tags(html: string, name: string) {
   return [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))].map(m => attributes(m[0]));
+}
+function escaped(text: string) {
+  return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#x27;");
 }
 function section(html: string, id: string): string {
   const match = html.match(new RegExp(`<section\\b[^>]*\\bid="${id}"[^>]*>([\\s\\S]*?)</section>`));
@@ -107,7 +112,25 @@ for (const segment of ["freediving", "scuba"] as const) {
       const page = graphs.flatMap(graph=>graph["@graph"] ?? []).find(node=>node["@type"]==="WebPage");
       assert.equal(page?.url, canonical);
       assert.equal(page?.inLanguage, locale);
-      assert.doesNotMatch(section(html,"segment-hero"), /<form\b|<input\b|data-wd-signup/);
+      const hero = section(html, "segment-hero");
+      const header = html.match(/<header\b[^>]*>([\s\S]*?)<\/header>/)?.[1] ?? "";
+      const copy = segmentCopy(locale, segment);
+      assert.ok(header, "header remains mounted");
+      assert.doesNotMatch(hero, /<form\b|<input\b|data-wd-signup/);
+      assert.doesNotMatch(header + hero, /(?:\$\s*(?:149|200|299)|(?:149|200|299)\s*\$)/);
+      assert.equal(tags(hero,"a").find(a=>a.class==="wd-segment-hero-jump")?.href, "#signup-middle");
+      assert.equal(tags(hero,"a").find(a=>a.class==="wd-segment-secondary-link")?.href, "#segment-how");
+      assert.ok(hero.includes(escaped(copy.noPayment)));
+      const middle = section(html,"signup-middle");
+      const adjacentPriceTerms = `<p>${escaped(conversionCopy[locale].benefit)}</p><p class="wd-segment-signup-terms">${escaped(conversionCopy[locale].terms)}</p>`;
+      assert.ok(middle.includes(adjacentPriceTerms), "localized $149/first-100/non-reservation conditions stay adjacent in the fresh SSR form");
+      assert.equal(middle.split(escaped(conversionCopy[locale].terms)).length - 1, 1);
+      const heading = middle.slice(0, middle.indexOf('class="wd-segment-form"'));
+      assert.doesNotMatch(heading, /<details|<summary|\bhidden(?:=|\s|>)|aria-hidden="true"|display:\s*none|visibility:\s*hidden|sr-only/);
+      assert.ok(middle.indexOf(adjacentPriceTerms) < middle.indexOf('id="hero-email"'));
+      const bottom = section(html,"signup-bottom");
+      assert.ok(bottom.includes(escaped(copy.finalBody)));
+      assert.doesNotMatch(bottom, /(?:\$\s*(?:149|200|299)|(?:149|200|299)\s*\$)|wd-segment-signup-terms/);
       assert.equal(tags(html,"form").filter(form=>"data-wd-signup" in form).length, 2);
       for (const [placement, source] of [["middle","hero"],["bottom","offer"]]) {
         const content = section(html,`signup-${placement}`);
@@ -117,6 +140,7 @@ for (const segment of ["freediving", "scuba"] as const) {
         assert.equal(email?.["aria-describedby"], `${source}-confirm-note`);
         assert.equal(tags(content,"input").some(input=>input.type==="tel" && "required" in input), false);
         assert.equal(tags(content,"input").some(input=>input.autocomplete?.startsWith("cc-")), false);
+        assert.ok(content.includes(`<p id="${source}-confirm-note" class="wd-segment-confirm-note">${escaped(conversionCopy[locale].confirmation)}</p>`));
       }
       for (const legal of ["privacy","terms"]) assert.ok(tags(html,"a").some(a=>a.href===localizePath(`/${legal}`,locale)));
       const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
@@ -126,6 +150,9 @@ for (const segment of ["freediving", "scuba"] as const) {
       assert.ok(html.indexOf('id="segment-gallery"') < html.indexOf('id="signup-bottom"'));
       assert.ok(html.indexOf('id="segment-faq"') < html.indexOf('id="signup-bottom"'));
       assert.match(html, /data-visual-phase="airy-20261105"/);
+      assert.match(html, /data-conversion-revision="intent-first-20261105"/);
+      const sequence = ["segment-features", "signup-middle", "beta-reviews", "segment-press", "segment-benefits"].map(id=>html.indexOf(`id="${id}"`));
+      assert.ok(sequence.every((position,i)=>position >= 0 && (i===0 || position > sequence[i-1])), "first signup follows features and precedes reviews/press");
     });
   }
 }

@@ -1,6 +1,7 @@
 /** First-click signup jump. Executes the helper against the router's commit order.
  * No dev server, signup, mail, or ads calls. The 390x664 geometry is the
- * production first-click measurement: panel at the top leaves the button offscreen.
+ * earlier first-click measurement: panel at the top leaves the button offscreen.
+ * Compact-offer geometry also verifies that the benefit/terms can stay with the controls.
  */
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -35,6 +36,8 @@ class HTMLElement {
   pageTop = 0;
   height = 0;
   form: HTMLElement | null = null;
+  submit: HTMLElement | null = null;
+  scrollMarginTop = 0;
   focus(options?: { preventScroll?: boolean }) {
     state.focusCalls.push({ id: this.id, preventScroll: options?.preventScroll === true });
     state.active = this;
@@ -42,11 +45,13 @@ class HTMLElement {
   scrollIntoView(options?: ScrollIntoViewOptions | boolean) {
     const block = typeof options === "object" && options?.block ? options.block : "start";
     state.scrolls.push({ id: this.id, block, committed: state.committed });
-    if (block === "center") state.scrollY = this.pageTop + this.height / 2 - viewHeight / 2;
-    else state.scrollY = this.pageTop;
+    if (block === "center") state.scrollY = this.pageTop + this.height / 2 - state.viewHeight / 2;
+    else state.scrollY = this.pageTop - this.scrollMarginTop;
   }
   querySelector(selector: string) {
-    return selector === "form[data-wd-signup]" ? this.form : null;
+    if (selector === "form[data-wd-signup]") return this.form;
+    if (selector === 'button[type="submit"]') return this.submit;
+    return null;
   }
   getBoundingClientRect() {
     return {
@@ -64,6 +69,7 @@ class HTMLElement {
 
 const nodes = new Map<string, HTMLElement>();
 const state = {
+  viewHeight,
   scrollY: 0,
   active: null as HTMLElement | null,
   focusCalls: [] as Array<{ id: string; preventScroll: boolean }>,
@@ -88,7 +94,7 @@ function box(id: string): Box {
 
 function inside(id: string) {
   const rect = box(id);
-  assert.ok(rect.top >= 0 && rect.bottom <= viewHeight, `${id} ${rect.top}..${rect.bottom} outside ${viewHeight}`);
+  assert.ok(rect.top >= 0 && rect.bottom <= state.viewHeight, `${id} ${rect.top}..${rect.bottom} outside ${state.viewHeight}`);
   return rect;
 }
 
@@ -131,13 +137,17 @@ before(async () => {
   const landing = readFileSync(new URL("../src/components/segments/SegmentLanding.tsx", import.meta.url), "utf8");
   assert.match(landing, /useRouter\(\)/);
   assert.match(landing, /commitMiddleSignup\(router, options\)/);
+  assert.match(landing, /className="wd-segment-hero-jump" href="#signup-middle" onClick=\{jumpToMiddleSignup\}/);
   assert.equal(landing.includes("router.navigate"), false);
   assert.equal(landing.includes("history.pushState"), false);
   assert.equal(landing.includes("onClick={focusMiddleSignup}"), false);
+  const airy = readFileSync(new URL("../src/components/segments/airy.css", import.meta.url), "utf8");
+  assert.match(airy, /#signup-title-middle\s*\{\s*scroll-margin-top:\s*48px;/);
 });
 
-function installDocument() {
+function installDocument({ height = viewHeight, compactOffer = false }: { height?: number; compactOffer?: boolean } = {}) {
   nodes.clear();
+  state.viewHeight = height;
   state.scrollY = 1400;
   state.active = null;
   state.focusCalls = [];
@@ -145,16 +155,22 @@ function installDocument() {
   state.committed = false;
   state.pushStateCalls = 0;
   const panel = place("signup-middle", panelTop, 900);
-  place("signup-title-middle", panelTop, 48);
-  const form = place("middle-form", formTop, formHeight);
-  place("hero-email", inputTop, inputHeight);
-  place("middle-submit", buttonTop, buttonHeight);
+  const heading = place("signup-title-middle", panelTop, 48);
+  // Model the explicit airy CSS scroll-margin so the heading-start result is
+  // checked with its actual 48px clearance, rather than an idealized top of 0.
+  heading.scrollMarginTop = 48;
+  place("signup-benefit", panelTop + 76, 54);
+  place("signup-terms", panelTop + 150, 80);
+  const form = place("middle-form", compactOffer ? panelTop + 300 : formTop, compactOffer ? 420 : formHeight);
+  place("hero-email", compactOffer ? panelTop + 330 : inputTop, inputHeight);
+  form.submit = place("middle-submit", compactOffer ? panelTop + 398 : buttonTop, buttonHeight);
   panel.form = form;
   const documentMock = {
     getElementById(id: string) { return nodes.get(id) ?? null; },
     get activeElement() { return state.active; },
   };
   const windowMock = {
+    innerHeight: height,
     location: { pathname, search, hash: "" },
     history: { pushState() { state.pushStateCalls += 1; } },
   };
@@ -211,6 +227,40 @@ test("a second click on the same hash still centers after the router commit", as
   inside("middle-submit");
   assert.equal(state.scrolls.at(-1)?.block, "center");
   assert.equal(state.scrolls.at(-1)?.committed, true);
+});
+
+test("a compact offer reveals heading, benefit, first-100 terms and submit together after commit", async () => {
+  installDocument({ compactOffer: true });
+  let prevented = false;
+  await focusMiddleSignup({ preventDefault() { prevented = true; } }, async (options) => {
+    assert.deepEqual(options, { href: `${pathname}${search}#signup-middle`, resetScroll: false, hashScrollIntoView: false });
+    commitLikeInstalledRouter(options);
+    assert.equal(state.scrolls.length, 0, "no early reveal before the navigation commits");
+    state.committed = true;
+  });
+  assert.equal(prevented, true);
+  assert.deepEqual(state.scrolls, [{ id: "signup-title-middle", block: "start", committed: true }]);
+  assert.equal(inside("signup-title-middle").top, 48);
+  for (const id of ["signup-benefit", "signup-terms", "hero-email", "middle-submit"]) inside(id);
+  assert.equal(state.active?.id, "signup-title-middle", "focus avoids opening the email keyboard");
+  assert.deepEqual(state.focusCalls, [{ id: "signup-title-middle", preventScroll: true }]);
+  assert.equal(state.pushStateCalls, 0);
+});
+
+test("short screens and long offers keep the controls-first center fallback", async () => {
+  for (const geometry of [{ height: 480, compactOffer: true }, { height: 664, compactOffer: false }]) {
+    installDocument(geometry);
+    await focusMiddleSignup({ preventDefault() {} }, async (options) => {
+      assert.equal(options.href, `${pathname}${search}#signup-middle`);
+      commitLikeInstalledRouter(options);
+      state.committed = true;
+    });
+    assert.deepEqual(state.scrolls, [{ id: "middle-form", block: "center", committed: true }]);
+    inside("hero-email");
+    inside("middle-submit");
+    assert.equal(state.active?.id, "signup-title-middle");
+    assert.equal(state.focusCalls[0]?.preventScroll, true);
+  }
 });
 
 test("modifier and non-primary clicks stay native links", async () => {
