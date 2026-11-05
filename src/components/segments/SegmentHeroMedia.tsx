@@ -3,7 +3,7 @@ import { useLiteMedia } from '@/lib/liteMedia';
 import { useCurrentLocale, useFrozenLandingMessages } from '@/lib/i18n/use-current-locale';
 import type { Locale } from '@/lib/i18n/locale';
 import type { DiveSegment } from '@/lib/segments/copy';
-import { HERO_AUTOPLAY_MEDIA, heroVideoAllowed, heroVideoShouldPlay } from './heroVideoPolicy';
+import { heroVideoAllowed, heroVideoShouldPlay } from './heroVideoPolicy';
 import freeSmall from '@/assets/live/segment-heroes/freediving-640.webp';
 import freePoster from '@/assets/live/segment-heroes/freediving-1280.webp';
 import freeLoop from '@/assets/live/segment-heroes/freediving-underwater.mp4';
@@ -18,11 +18,10 @@ const pauseLabels: Record<Locale, string> = {
 };
 
 /** Real footage, silent and short. The poster renders first without waiting for JS.
- * The file mounts for automatic play only at 960px and up, and only when the
- * connection is unconstrained and motion is allowed. Narrow screens keep the
- * poster until the play control. Explicit play works at every width, including
- * constrained connections and reduced motion. Pausing, leaving the viewport,
- * hiding the tab, or narrowing the window without an explicit play stops it.
+ * Automatic play works at every width when the connection is unconstrained
+ * and motion is allowed. Explicit play also works on constrained connections
+ * and with reduced motion. Pausing, leaving the viewport, or hiding the tab
+ * stops playback; a narrow screen alone does not.
  */
 export function SegmentHeroMedia({ segment, caption }: { segment: DiveSegment; caption: string }) {
   const locale = useCurrentLocale();
@@ -48,8 +47,7 @@ export function SegmentHeroMedia({ segment, caption }: { segment: DiveSegment; c
   }, []);
   const [ready, setReady] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(true);
-  const [wide, setWide] = useState(false);
-  const [inView, setInView] = useState(true);
+  const [inView, setInView] = useState(false);
   const [tabVisible, setTabVisible] = useState(true);
   const [requested, setRequested] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -59,26 +57,22 @@ export function SegmentHeroMedia({ segment, caption }: { segment: DiveSegment; c
   const isFree = segment === 'freediving';
   const poster = isFree ? freePoster : scubaPoster;
   const small = isFree ? freeSmall : scubaSmall;
-  const gate = { ready, failed, lite, reducedMotion, wide, requested };
+  const gate = { ready, failed, lite, reducedMotion, requested };
   const allowed = heroVideoAllowed(gate);
   const shouldPlay = heroVideoShouldPlay({ ...gate, inView, tabVisible, paused });
 
   useEffect(() => {
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const wideQuery = window.matchMedia(HERO_AUTOPLAY_MEDIA);
     const updateMotion = () => { setReducedMotion(motion.matches); setRequested(false); };
-    const updateWide = () => setWide(wideQuery.matches);
     const updateVisibility = () => setTabVisible(!document.hidden);
-    updateMotion(); updateWide(); updateVisibility(); setReady(true);
+    updateMotion(); updateVisibility(); setReady(true);
     motion.addEventListener('change', updateMotion);
-    wideQuery.addEventListener('change', updateWide);
     document.addEventListener('visibilitychange', updateVisibility);
     const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.05 });
     if (figure.current) observer.observe(figure.current);
     return () => {
       observer.disconnect();
       motion.removeEventListener('change', updateMotion);
-      wideQuery.removeEventListener('change', updateWide);
       document.removeEventListener('visibilitychange', updateVisibility);
     };
   }, []);

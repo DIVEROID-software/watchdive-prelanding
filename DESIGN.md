@@ -55,6 +55,8 @@ Photos use 16–24px corners; controls use 8px. These overrides remain inside th
 
 The existing carousel remains the principal motion: six-second dwell, pause controls, keyboard interaction, viewport/visibility/focus guards and reduced-motion support. Ordinary controls use brief color/transform feedback; do not add entrance animations merely to reach a motion quota. All primary content is visible without waiting for an animation.
 
+Hero footage plays silently inline when visible on both mobile and desktop. Screen width alone does not disable it. Retain the poster until a playable frame, respect reduced motion and data-saving connections, pause offscreen or in a hidden tab, and preserve a visitor's explicit pause. The play control remains available when automatic playback is unavailable.
+
 Retain the shared EmailForm implementation and its pending, verification, optional-phone and error states. The preview's explicit `capture="none"` disables both entry and exit automatic capture; do not substitute the old entry flag because its false branch enables exit capture. Default behavior outside this variant is unchanged.
 
 ## Do's and Don'ts
