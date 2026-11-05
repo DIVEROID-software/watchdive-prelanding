@@ -43,7 +43,7 @@ before(async () => {
       export const HOLD_EARLY_SUBMIT_JS = '';
       export const AcquisitionTools = () => null;
       export function EmailForm({ id, presentation }) {
-        return createElement('form', { 'data-test-email-form': id },
+        return createElement('form', { 'data-test-email-form': id, 'data-social-after-email': presentation.socialAfterEmail },
           createElement('input', { type: 'email', id: id + '-email' }),
           createElement('button', { type: 'submit' }, presentation.cta));
       }
@@ -53,7 +53,6 @@ before(async () => {
     "social-auth-entry": "export const SocialSignupResultProvider = ({ children }) => children; export const SocialAuthResult = () => null;",
     "LeaderboardSection": `import { useRouterState } from '@tanstack/react-router'; export const useReferralProgramEnabled = () => useRouterState({ select: s => s.referralOn });`,
     "SegmentHowCompat": "export const SegmentHowCompat = () => null;",
-    "SegmentBetaReviews": "export const SegmentBetaReviews = () => null;",
     "liteMedia": "export const useLiteMedia = () => false;",
   };
   const outfile = join(out, "page.mjs");
@@ -115,23 +114,28 @@ for (const locale of SUPPORTED_LOCALES) {
         const bottom = section(html, "signup-bottom");
         const prices = section(html, "segment-price-paths");
         const includes = hero.indexOf(escaped(c.includeNote));
-        const free = hero.indexOf(escaped(c.noPayment));
-        const cta = hero.indexOf('class="wd-segment-hero-jump"');
-        const offer = hero.indexOf('class="wd-segment-hero-offer"');
-        assert.ok(includes >= 0 && includes < free && free < cta && cta < offer, "product scope and free action precede secondary price");
-        assert.ok(hero.includes(escaped(c.intro)) && hero.includes(escaped(c.priceNote)));
-        assert.match(hero, /<strong>\$149<\/strong>/);
-        assert.ok(middle.includes(escaped(c.signupTitle)) && middle.includes(escaped(c.signupBody)));
-        assert.ok(bottom.includes(escaped(c.finalTitle)) && bottom.includes(escaped(c.finalBody)));
+        const discover = hero.indexOf('class="wd-segment-hero-jump"');
+        const signup = hero.indexOf('class="wd-segment-quiet-signup"');
+        assert.ok(includes >= 0 && includes < discover && discover < signup, "product scope and discovery precede the quiet signup link");
+        assert.ok(hero.includes(escaped(c.intro)));
+        assert.match(hero, /href="#segment-how"/);
+        assert.match(hero, /href="#signup-middle"/);
+        assert.doesNotMatch(hero, /data-test-email-form|wd-segment-hero-offer|\$149|\$200|\$299/);
         for (const [markup, source] of [[middle, "hero"], [bottom, "offer"]]) {
+          assert.ok(markup.includes(escaped(c.finalTitle)) && markup.includes(escaped(c.finalBody)));
           assert.equal(occurrences(markup, c.noPayment), 1, "one free note per form");
           assert.ok(markup.indexOf(escaped(c.noPayment)) < markup.indexOf(`data-test-email-form="${source}"`), "free note above the email field");
-          assert.doesNotMatch(markup, /<s>|50%|\$299|\$200|wd-segment-discount/);
+          assert.match(markup, /data-social-after-email="true"/, "both segment forms request email before alternatives");
+          assert.doesNotMatch(markup, /<s>|50%|\$149|\$299|\$200|wd-segment-discount/);
         }
-        assert.equal(occurrences(middle, c.priceNote), 1);
-        assert.equal(occurrences(middle, conversionCopy[locale].terms), 1, "complete unsplit terms, once beside middle price");
-        assert.match(middle, /class="wd-segment-launch-price"><strong>\$149<\/strong>/);
-        assert.ok(middle.includes(`href="#segment-price-paths">${escaped(page.pricePathHeadings(locale).title)}</a>`));
+        const how = section(html, "segment-how");
+        assert.equal((how.match(/<figure\b/g) ?? []).length, 3, "three product photos remain");
+        assert.equal((how.match(/<figcaption\b/g) ?? []).length, 3, "each product step retains its caption");
+        const reviews = section(html, "beta-reviews");
+        const beforeDisclosure = reviews.split('<details')[0];
+        assert.deepEqual([...beforeDisclosure.matchAll(/data-review-id="(\d+)"/g)].map(match => Number(match[1])), [7, 35]);
+        assert.deepEqual([...reviews.matchAll(/data-review-id="(\d+)"/g)].map(match => Number(match[1])), [7, 35, 45, 63, 72, 88, 100, 120], "all approved reviews remain accessible");
+        assert.match(reviews, /<details class="wd-segment-review-more">/);
         assert.ok(prices.includes(escaped(applyPriceClaim(messages, claim).offer.lead)), "real frozen hook supplies referral-aware lead");
         assert.equal(occurrences(prices, conversionCopy[locale].terms), 1);
         assert.match(prices, /299/);

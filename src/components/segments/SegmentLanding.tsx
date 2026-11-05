@@ -9,12 +9,10 @@ import { localizePath, privacyPath, termsPath } from '@/lib/i18n/locale';
 import { getAttribution } from '@/lib/attribution';
 import { segmentCopy, type DiveSegment } from '@/lib/segments/copy';
 import { legacyHomeAnchor } from '@/lib/segments/canonical-entry';
-import { conversionCopy } from '@/lib/conversionCopy';
 import { useReferralProgramEnabled } from '../referral/LeaderboardSection';
 import { PricePaths, pricePathHeadings } from './PricePaths';
 import { SegmentHeroMedia } from './SegmentHeroMedia';
 import { SegmentHeroJump, commitMiddleSignup, focusMiddleSignup } from './SegmentHeroJump';
-import { SegmentHowInsert } from './SegmentHowInsert';
 import { SegmentHowCompat } from './SegmentHowCompat';
 import { WatchDiveLogo } from './WatchDiveLogo';
 import { FreedivingSurfacePhoto } from './FreedivingSurfacePhoto';
@@ -33,6 +31,7 @@ import logbook from '@/assets/live/app3/app3-1.jpg';
 import freeLogbook720 from '@/assets/live/segment-heroes/freediving-app-logbook-720.webp';
 import freeLogbook1448 from '@/assets/live/segment-heroes/freediving-app-logbook-1448.webp';
 import './segments.css';
+import './airy.css';
 
 function focusOwned(target: HTMLElement | null, boundary: HTMLElement | null, owned: boolean) {
   if (!owned || !target) return;
@@ -113,7 +112,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   useEffect(() => {
     document.documentElement.dataset.wdSegment = segment;
     const update = () => {
-      const hero = document.getElementById('segment-hero');
+      const firstSignup = document.getElementById('signup-middle');
       const forms = [...document.querySelectorAll<HTMLElement>('[data-segment-signup]')];
       const height = window.visualViewport?.height ?? window.innerHeight;
       const active = document.activeElement;
@@ -122,7 +121,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         const r = form.getBoundingClientRect();
         return r.top < height - 65 && r.bottom > 60;
       });
-      setSticky(Boolean(hero && hero.getBoundingClientRect().bottom < 0 && !visible && !keyboard));
+      setSticky(Boolean(firstSignup && firstSignup.getBoundingClientRect().bottom < 0 && !visible && !keyboard));
     };
     update();
     window.addEventListener('scroll', update, { passive: true });
@@ -157,22 +156,13 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
     return {
       form: <section id={`signup-${position}`} data-segment-signup="" data-wd-segment={segment} data-wd-placement={position} className={`wd-segment-signup wd-segment-signup-${position}${lead ? '' : ' wd-segment-signup-line'}`} aria-labelledby={`signup-title-${position}`}>
       <div className="wd-segment-signup-heading">
-        <h2 id={`signup-title-${position}`} tabIndex={lead ? -1 : undefined}>{lead ? c.signupTitle : c.finalTitle}</h2>
-        <p>{lead ? c.signupBody : c.finalBody}</p>
-        {lead && <>
-          <p className="wd-segment-small">{c.includeNote}</p>
-          <p className="wd-segment-subscription-note">{subscription.uspShort}</p>
-          <div className="wd-segment-launch-offer">
-            <p className="wd-segment-launch-price"><strong>$149</strong><span>{c.priceNote}</span></p>
-            <p className="wd-segment-price-terms">{conversionCopy[locale].terms}</p>
-            <a className="wd-segment-price-link" href="#segment-price-paths">{priceHeadings.title}</a>
-          </div>
-        </>}
+        <h2 id={`signup-title-${position}`} tabIndex={lead ? -1 : undefined}>{c.finalTitle}</h2>
+        <p>{c.finalBody}</p>
       </div>
       <div className="wd-segment-form">
         <SocialAuthResult locale={locale} />
         <p className="wd-segment-free-note">{c.noPayment}</p>
-        <EmailForm id={position === 'middle' ? 'hero' : 'offer'} presentation={{ cta: c.signupCta, note: c.signupNote }} />
+        <EmailForm id={position === 'middle' ? 'hero' : 'offer'} presentation={{ cta: c.signupCta, note: c.signupNote, socialAfterEmail: true }} />
       </div>
       </section>,
       prices: position === 'middle' && <PricePaths locale={locale} referralOn={referralOn} offerLead={m.offer.lead} />,
@@ -180,13 +170,14 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
   }
 
   return <SocialSignupResultProvider key={`${locale}-${segment}`}>
-    <div className={`wd-segment-page wd-segment-${segment}`} data-landing-phase="segments-mobile-20261025" data-visual-phase="media-rich-20261103">
+    <div className={`wd-segment-page wd-segment-${segment} wd-segment-airy`} data-landing-phase="segments-mobile-20261025" data-visual-phase="airy-20261105">
       <script dangerouslySetInnerHTML={{ __html: HOLD_EARLY_SUBMIT_JS }} />
       <header className="wd-segment-header">
+        <a className="wd-segment-brand" href="#segment-hero" aria-label="WatchDive"><WatchDiveLogo tone="on-light" /></a>
         <nav className="wd-segment-modes" aria-label="WatchDive">
           {(['freediving', 'scuba'] as const).map(mode => <a key={mode} href={`${localizePath(`/${mode}`, locale)}${campaignQuery}`} aria-current={segment === mode ? 'page' : undefined}>{c.modes[mode]}</a>)}
         </nav>
-        <LanguageSwitcher variant="code" />
+        <div className="wd-segment-header-actions"><a className="wd-segment-header-signup" href="#signup-middle" onClick={jumpToMiddleSignup}>{c.signupCta}</a><LanguageSwitcher variant="code" /></div>
       </header>
       <main>
         <section id="segment-hero" className="wd-segment-hero" aria-labelledby="segment-title">
@@ -194,9 +185,7 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
             <h1 id="segment-title">{c.title.split('\n').map((line, i) => <span key={line} className={i ? 'wd-segment-title-accent' : ''}>{line}</span>)}</h1>
             <p className="wd-segment-intro">{c.intro}</p>
             <p className="wd-segment-hero-includes">{c.includeNote}</p>
-            <p className="wd-segment-hero-free">{c.noPayment}</p>
-            <a className="wd-segment-hero-jump" href="#signup-middle" onClick={jumpToMiddleSignup}>{c.signupCta}<span aria-hidden="true">↓</span></a>
-            <div className="wd-segment-hero-offer"><strong>$149</strong><span>{c.priceNote}</span></div>
+            <div className="wd-segment-hero-actions"><a className="wd-segment-hero-jump" href="#segment-how">{c.discover}</a><a className="wd-segment-quiet-signup" href="#signup-middle" onClick={jumpToMiddleSignup}>{c.signupCta}</a></div>
           </div>
           <div className="wd-segment-hero-visual">
             <SegmentHeroMedia key={segment} segment={segment} caption={c.heroCaption} />
@@ -207,7 +196,18 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
           </div>
         </section>
 
-        <div className="wd-segment-shell">{signup('middle').form}</div>
+        <section id="segment-how" className="wd-segment-how wd-segment-shell" aria-labelledby="how-title">
+          <div className="wd-segment-how-copy"><h2 id="how-title"><HowTitle template={c.howTitle} tone="on-light" /></h2><p>{c.howIntro}</p>
+          </div>
+          <HowPhotoRow />
+          <SegmentHowCompat locale={locale} label={c.compatibility} />
+        </section>
+
+        <AcquisitionTools compatibility={false} capture="none" />
+        <SegmentFeatureCarousel segment={segment} />
+        <SegmentBetaReviews initialCount={2} />
+        <SegmentPress copy={media} />
+        <div className="wd-segment-shell wd-segment-signup-slot">{signup('middle').form}</div>
 
         <section id="segment-benefits" className="wd-segment-benefits wd-segment-shell" aria-labelledby="benefits-title">
           <h2 id="benefits-title">{c.benefitTitle}</h2>
@@ -216,20 +216,6 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
             <div className="wd-segment-benefit-copy"><h3>{benefit.title}</h3><p>{benefit.body}</p></div>
           </article>)}</div>
         </section>
-
-        <section id="segment-how" className="wd-segment-how wd-segment-shell" aria-labelledby="how-title">
-          <div className="wd-segment-how-image">
-            <SegmentHowInsert alt={m.how.step1Alt} />
-          </div>
-          <div className="wd-segment-how-copy"><h2 id="how-title"><HowTitle template={c.howTitle} tone={isFree ? 'on-light' : 'on-dark'} /></h2><p>{c.howIntro}</p>
-            <ol>{[m.how.step1Title, m.how.step2Title, m.how.step3Title].map((title, i) => <li key={title}><span aria-hidden="true">{i + 1}</span>{title}</li>)}</ol>
-          </div>
-          <HowPhotoRow />
-          <SegmentHowCompat locale={locale} label={c.compatibility} />
-        </section>
-
-        <AcquisitionTools compatibility={false} />
-        <SegmentFeatureCarousel segment={segment} />
         <SegmentDemos segment={segment} copy={media} />
 
         <section id="segment-logbook" className="wd-segment-log wd-segment-shell" aria-labelledby="log-title">
@@ -247,9 +233,6 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
         </section>
 
         <SegmentGallery segment={segment} copy={media} />
-        {signup('bottom').form}
-        <SegmentBetaReviews />
-        <SegmentPress copy={media} />
         <SegmentCostComparison locale={locale} />
         <div className="wd-segment-shell wd-segment-price-slot">{signup('middle').prices}</div>
 
@@ -258,11 +241,12 @@ export function SegmentLanding({ segment }: { segment: DiveSegment }) {
           <div>{faq.map((item, i) => <details id={i === 0 ? 'segment-compatibility' : undefined} key={item.q}><summary>{item.q}<span aria-hidden="true">+</span></summary><p>{item.a}</p></details>)}</div>
         </section>
 
+        {signup('bottom').form}
         <p className="wd-segment-end wd-segment-shell"><a className="wd-segment-end-signup" href="#signup-bottom">{c.signupCta}<span aria-hidden="true"> ↑</span></a></p>
         <p className="wd-segment-switch wd-segment-shell">{c.switchPrompt}<a href={`${localizePath(`/${alternate}`, locale)}${campaignQuery}`}>{c.modes[alternate]} <span aria-hidden="true">→</span></a></p>
       </main>
       <footer className="wd-segment-footer wd-segment-shell">
-        <WatchDiveLogo tone={isFree ? 'on-light' : 'on-dark'} /><p>{m.safety.disclaimer}</p>
+        <WatchDiveLogo tone="on-light" /><p>{m.safety.disclaimer}</p>
         <nav><a href={termsPath(locale)}>{m.footer.terms}</a><a href={privacyPath(locale)}>{m.footer.privacy}</a><CookieSettingsLink /></nav>
         <small>{m.footer.legal.replace('{year}', String(new Date().getFullYear()))}</small>
       </footer>

@@ -259,11 +259,12 @@ test("shared placements are mounted, compact source hooks and unique DOM IDs rem
     "utf8",
   );
   assert.ok(index.includes("<AcquisitionTools />"));
-  assert.ok(segment.includes("<AcquisitionTools compatibility={false} />"));
+  assert.ok(segment.includes('<AcquisitionTools compatibility={false} capture="none" />'));
   for (const id of ['domId="compatibility-checker"', 'domId="exit-capture"'])
     assert.ok(index.includes(id));
   assert.ok(index.includes("trackGoogleFormStart(id)"));
   assert.ok(index.includes('trackClarity("sign_up", id)'));
-  assert.ok(index.includes("!compact && <SocialAuthEntry"));
+  assert.ok(index.includes("!compact && !presentation?.socialAfterEmail && <SocialAuthEntry"));
+  assert.ok(index.includes('!compact && presentation?.socialAfterEmail && <div className="wd-form-alternatives"><SocialAuthEntry'));
   assert.ok(index.includes('phoneOptIn={compact || presentation ? undefined : phoneCard("pending")}'));
 });

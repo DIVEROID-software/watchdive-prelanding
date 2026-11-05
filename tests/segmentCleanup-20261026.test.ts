@@ -41,26 +41,27 @@ test("the segment page matches the cleanup structure", () => {
   assert.equal(hero.includes("wd-segment-next-price"), false);
   assert.equal(hero.includes("wd-segment-explore"), false);
   assert.equal(hero.includes("WATCHDIVE /"), false);
-  // The free signup action now precedes the retained, secondary first-100 price.
-  const heroCopyOrder = ["wd-segment-intro", "wd-segment-hero-includes", "wd-segment-hero-free", "wd-segment-hero-jump", "wd-segment-hero-offer"];
+  // The owner-approved airy hero explains the product before its quiet signup link.
+  const heroCopyOrder = ["wd-segment-intro", "wd-segment-hero-includes", "wd-segment-hero-actions", "wd-segment-hero-jump", "wd-segment-quiet-signup"];
   let previous = -1;
   for (const className of heroCopyOrder) {
     const position = hero.indexOf(className);
-    assert.ok(position > previous, `${className} remains in the approved signup-first order`);
+    assert.ok(position > previous, `${className} remains in the approved product-first order`);
     previous = position;
   }
   assert.ok(hero.indexOf("SegmentHeroMedia") < hero.indexOf("wd-segment-hero-usp"));
   assert.equal(page.includes("wordmark"), false);
   assert.match(page, /<LanguageSwitcher variant="code" \/>/);
   assert.ok(page.indexOf("wd-segment-modes") < page.indexOf('LanguageSwitcher variant="code"'));
-  assert.match(page, /<AcquisitionTools compatibility=\{false\} \/>/);
-  assert.match(page, /<SegmentHowInsert alt=\{m\.how\.step1Alt\} \/>/);
+  assert.match(page, /<AcquisitionTools compatibility=\{false\} capture="none" \/>/);
+  assert.match(page, /<HowPhotoRow \/>/);
   assert.match(page, /<SegmentHowCompat /);
-  assert.match(page, /<WatchDiveLogo tone=\{isFree \? 'on-light' : 'on-dark'\} \/>/);
+  assert.match(page, /<WatchDiveLogo tone="on-light" \/>/);
   assert.equal((page.match(/wd-segment-next-price/g) ?? []).length, 0);
   assert.match(read("src/components/segments/PricePaths.tsx"), /earlyBirdRace\(locale, formatOfferPrice\(locale\)\)/);
   const how = page.slice(page.indexOf('id="segment-how"'), page.indexOf("<SegmentCostComparison"));
-  assert.ok(how.indexOf("SegmentHowInsert") < how.indexOf('id="how-title"'));
+  assert.ok(how.indexOf('id="how-title"') < how.indexOf("HowPhotoRow"));
+  assert.ok(how.indexOf("HowPhotoRow") < how.indexOf("SegmentHowCompat"));
   assert.ok(how.indexOf('id="how-title"') < how.indexOf("SegmentHowCompat"));
 });
 

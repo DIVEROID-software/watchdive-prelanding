@@ -124,7 +124,8 @@ for (const segment of ["freediving", "scuba"] as const) {
       assert.ok(html.indexOf('id="segment-hero"') < html.indexOf('id="signup-middle"'));
       assert.ok(html.indexOf('id="signup-middle"') < html.indexOf('id="segment-benefits"'));
       assert.ok(html.indexOf('id="segment-gallery"') < html.indexOf('id="signup-bottom"'));
-      assert.ok(html.indexOf('id="signup-bottom"') < html.indexOf('id="segment-faq"'));
+      assert.ok(html.indexOf('id="segment-faq"') < html.indexOf('id="signup-bottom"'));
+      assert.match(html, /data-visual-phase="airy-20261105"/);
     });
   }
 }
