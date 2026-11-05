@@ -1,4 +1,4 @@
-import { isLandingSegment, segmentPath, type LandingSegment } from "../segments/navigation.ts";
+import { isLandingSegment, isLandingVariant, segmentPath, type LandingSegment, type LandingVariant } from "../segments/navigation.ts";
 import { validGoogleClientId } from "../analytics/contract.ts";
 import { socialAckCookie } from "../socialAuthAcknowledgement.ts";
 // HTTP entry points for Google and Apple signup.
@@ -78,8 +78,9 @@ function finishUrl(
   auth: SocialFinish | "open-browser",
   segment?: LandingSegment,
   source?: SocialState["source"],
+  landingVariant?: LandingVariant,
 ): string {
-  const url = new URL(segment ? segmentPath(segment, locale) : homePath(locale), origin);
+  const url = new URL(segment ? segmentPath(segment, locale, landingVariant) : homePath(locale), origin);
   url.search = "";
   url.hash = segment && source ? (source === "hero" ? "signup-middle" : "signup-bottom") : "";
   url.searchParams.set("auth", auth);
@@ -98,11 +99,12 @@ function redirectFinish(
   auth: SocialFinish | "open-browser",
   segment?: LandingSegment,
   source?: SocialState["source"],
+  landingVariant?: LandingVariant,
   continuation?: string,
   receipt?: string,
 ): Response {
   const headers = noStore(new Headers());
-  headers.set("Location", finishUrl(origin, locale, auth, segment, source));
+  headers.set("Location", finishUrl(origin, locale, auth, segment, source, landingVariant));
   headers.append("Set-Cookie", clearSocialStateCookie());
   headers.append("Set-Cookie", socialAckCookie(auth === "confirmed"));
   // A confirmed presentation without a bound verified lead clears any older grant.
@@ -172,6 +174,7 @@ export async function handleSocialStart(
   if (!provider || !source || !isLocale(body.locale)) return json({ error: "body" }, 400);
   // Reject malformed context; never accept a free-form return URL.
   if (body.segment !== undefined && !isLandingSegment(body.segment)) return json({ error: "body" }, 400);
+  if (body.landingVariant !== undefined && (!isLandingVariant(body.landingVariant) || !isLandingSegment(body.segment))) return json({ error: "body" }, 400);
   if (!providerConfigured(env, provider)) return json({ error: "disabled" }, 404);
 
   const userAgent = request.headers.get("user-agent");
@@ -211,6 +214,7 @@ export async function handleSocialStart(
       source,
       locale: body.locale,
       ...(isLandingSegment(body.segment) ? { segment: body.segment } : {}),
+      ...(isLandingVariant(body.landingVariant) ? { landingVariant: body.landingVariant } : {}),
       origin,
       attribution: {
         ...toLeadAttribution(sanitized),
@@ -289,23 +293,23 @@ async function finishCallback(
   const now = (dependencies.now ?? (() => new Date()))();
   const bound = readBound(request, env, provider, now.getTime());
   if (!bound || !oauth || bound.state !== oauth) {
-    return bound ? redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source) : plainReject();
+    return bound ? redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source, bound.landingVariant) : plainReject();
   }
   if (!consumeJti(bound.jti, bound.exp * 1000, now.getTime())) {
-    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
+    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source, bound.landingVariant);
   }
   if (providerError === "disallowed_useragent" || (provider === "google" && isInAppBrowser(request.headers.get("user-agent")))) {
-    return redirectFinish(bound.origin, bound.locale, "open-browser", bound.segment, bound.source);
+    return redirectFinish(bound.origin, bound.locale, "open-browser", bound.segment, bound.source, bound.landingVariant);
   }
   if (providerError || !code || !providerConfigured(env, provider) || isHeadlessUA(request.headers.get("user-agent"))) {
-    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
+    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source, bound.landingVariant);
   }
   const secret = socialAuthSecret(env);
   const gate = dependencies.networkGate ?? moduleGate;
   if (!secret || gate.record(networkKey(firstIp(request.headers.get("x-forwarded-for")), secret)).blocked) {
-    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
+    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source, bound.landingVariant);
   }
-  if (!dependencies.serviceDependencies) return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
+  if (!dependencies.serviceDependencies) return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source, bound.landingVariant);
 
   let claims;
   try {
@@ -323,10 +327,10 @@ async function finishCallback(
   } catch (error) {
     if (error instanceof SocialTokenRejected) dependencies.log?.("social_token_rejected");
     else dependencies.log?.("social_token_rejected");
-    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
+    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source, bound.landingVariant);
   }
   if (formIdToken && unverifiedSub(formIdToken) !== claims.sub) {
-    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source);
+    return redirectFinish(bound.origin, bound.locale, "error", bound.segment, bound.source, bound.landingVariant);
   }
   const gpc = request.headers.get("sec-gpc") === "1" || dependencies.serviceDependencies.gpc === true;
   const grant: SocialContinuationSink = {};
@@ -347,7 +351,7 @@ async function finishCallback(
   const receipt = grant.measurement?.length
     ? retargetingReceiptSetCookie(grant.measurement) ?? undefined
     : undefined;
-  return redirectFinish(bound.origin, bound.locale, finish, bound.segment, bound.source, continuation, receipt);
+  return redirectFinish(bound.origin, bound.locale, finish, bound.segment, bound.source, bound.landingVariant, continuation, receipt);
 }
 
 function unverifiedSub(jwt: string): string | undefined {

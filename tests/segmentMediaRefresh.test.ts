@@ -95,10 +95,11 @@ test("every locale has distinct scuba and freediving captions and eight publishe
   assert.equal(SEGMENT_BETA_COPY.ko.title, "베타테스터의 이야기");
 });
 
-test("the page keeps the old phase, adds a visual phase, and puts the first form before the long media", () => {
-  const page = read("src/components/segments/SegmentLanding.tsx");
+test("the airy page retains measurement and puts signup after the product features", () => {
+  const page = read("src/components/segments/AirySegmentLanding.tsx");
   assert.match(page, /data-landing-phase="segments-mobile-20261025"/);
-  assert.match(page, /data-visual-phase="media-rich-20261103"/);
+  assert.match(page, /data-visual-phase="airy-20261105"/);
+  assert.match(page, /data-conversion-revision="intent-first-20261105"/);
   assert.equal((page.match(/data-landing-phase=/g) ?? []).length, 1);
   assert.match(page, /id=\{position === 'middle' \? 'hero' : 'offer'\}/);
   assert.equal((page.match(/<EmailForm /g) ?? []).length, 1);
@@ -113,23 +114,26 @@ test("the page keeps the old phase, adds a visual phase, and puts the first form
   const demos = page.indexOf("<SegmentDemos ");
   const log = page.indexOf('id="segment-logbook"');
   const camera = page.indexOf('id="segment-camera"');
-  const reviews = page.indexOf("<SegmentBetaReviews />");
+  const reviews = page.indexOf("<SegmentBetaReviews initialCount={2} />");
   const cost = page.indexOf("<SegmentCostComparison");
   const prices = page.indexOf("signup('middle').prices");
   const faq = page.indexOf('id="segment-faq"');
   const end = page.indexOf("wd-segment-end-signup");
   assert.equal((page.match(/<SegmentPress /g) ?? []).length, 1);
   assert.equal((page.match(/<SegmentFeatureCarousel /g) ?? []).length, 1);
-  assert.ok(hero < middle && middle < benefits && benefits < how && how < features && features < demos && demos < log && log < camera && camera < gallery && gallery < bottom && bottom < reviews && reviews < press && press < cost && cost < prices && prices < faq && faq < end);
+  const order = [hero, how, features, middle, reviews, press, benefits, demos, log, camera, gallery, cost, prices, faq, bottom, end];
+  assert.ok(order.every((position, i) => position >= 0 && (i === 0 || position > order[i - 1])), "approved product → signup → proof → detail sequence");
   const surface = page.indexOf("<FreedivingSurfacePhoto ");
   assert.ok(surface > log && surface < camera);
-  assert.ok(page.indexOf("<AcquisitionTools ") < features);
+  assert.ok(page.indexOf("<AcquisitionTools ") > how && page.indexOf("<AcquisitionTools ") < features);
+  assert.match(page, /<AcquisitionTools compatibility=\{false\} capture="none" \/>/);
   assert.equal(page.slice(gallery, bottom).includes("SegmentBetaReviews"), false);
   assert.ok(end < page.indexOf("wd-segment-switch"));
   assert.equal((page.match(/<EmailForm /g) ?? []).length, 1);
   assert.match(page, /position === 'middle' && <PricePaths locale=\{locale\} referralOn=\{referralOn\} offerLead=\{m.offer.lead\} \/>/);
   assert.ok(page.indexOf("<HowPhotoRow />") < page.indexOf("<SegmentHowCompat "));
-  assert.ok(page.indexOf("<SegmentHowInsert ") < page.indexOf('id="how-title"'));
+  assert.ok(page.indexOf('id="how-title"') < page.indexOf("<HowPhotoRow />"));
+  assert.equal(page.includes("<SegmentHowInsert "), false, "the three captioned photos replace the duplicate insertion intro");
   const media = read("src/components/segments/SegmentMedia.tsx");
   assert.match(media, /segment === 'scuba'/);
   assert.match(media, /loading="lazy"/);
@@ -220,8 +224,8 @@ test("segment routes load the approved review language and keep the allowlist", 
   }
   const reviews = read("src/components/segments/SegmentBetaReviews.tsx");
   assert.match(reviews, /const VISIBLE_REVIEW_COUNT = 4;/);
-  assert.match(reviews, /PUBLISHABLE_REVIEWS\.slice\(0, VISIBLE_REVIEW_COUNT\)/);
-  assert.match(reviews, /PUBLISHABLE_REVIEWS\.slice\(VISIBLE_REVIEW_COUNT\)/);
+  assert.match(reviews, /PUBLISHABLE_REVIEWS\.slice\(0, count\)/);
+  assert.match(reviews, /PUBLISHABLE_REVIEWS\.slice\(count\)/);
   assert.match(reviews, /betaReviewBody\(review, bodies\)/);
   assert.equal(reviews.includes("INCLUDE_UNVERIFIED_CLAIMS"), false);
   assert.equal(reviews.includes("BETA_TESTER_COUNT"), false);

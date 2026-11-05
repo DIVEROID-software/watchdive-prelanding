@@ -242,11 +242,13 @@ test("the inline share uses the canonical /r path and the verify phone card stay
   assert.match(card, /recordReferralCopy\("verify_card", locale\)/);
   assert.match(card, /data-analytics-hook="referral_share"/);
 
-  const landing = readFileSync(join(root, "src/components/segments/SegmentLanding.tsx"), "utf8");
+  const landing = readFileSync(join(root, "src/components/segments/AirySegmentLanding.tsx"), "utf8");
   assert.equal((landing.match(/<PricePaths\b/g) ?? []).length, 1);
   assert.match(landing, /position === 'middle' && <PricePaths locale=\{locale\} referralOn=\{referralOn\} offerLead=\{m.offer.lead\} \/>/);
   assert.doesNotMatch(landing, /<b>50%<\/b>|<s>\$299<\/s>/);
-  assert.match(landing, /className="wd-segment-launch-price"><strong>\$149<\/strong><span>\{c.priceNote\}<\/span>/);
+  // Price facts now live in PricePaths; its real rendered prices and conditions
+  // remain checked above and in all 40 signupLandingClarity route cases.
+  assert.match(landing, /wd-segment-price-slot/);
   const css = readFileSync(join(root, "src/components/segments/segments.css"), "utf8");
   assert.equal(css.includes("wd-segment-discount-pulse"), false);
   assert.equal(css.includes(".wd-segment-discount{"), false);

@@ -43,9 +43,10 @@ before(async () => {
       export const HOLD_EARLY_SUBMIT_JS = '';
       export const AcquisitionTools = () => null;
       export function EmailForm({ id, presentation }) {
-        return createElement('form', { 'data-test-email-form': id },
+        return createElement('form', { 'data-test-email-form': id, 'data-social-after-email': presentation.socialAfterEmail },
           createElement('input', { type: 'email', id: id + '-email' }),
-          createElement('button', { type: 'submit' }, presentation.cta));
+          createElement('button', { type: 'submit' }, presentation.cta),
+          createElement('p', { 'data-test-confirmation': '' }, presentation.note));
       }
     `,
     "language-switcher": "export const LanguageSwitcher = () => null;",
@@ -53,13 +54,12 @@ before(async () => {
     "social-auth-entry": "export const SocialSignupResultProvider = ({ children }) => children; export const SocialAuthResult = () => null;",
     "LeaderboardSection": `import { useRouterState } from '@tanstack/react-router'; export const useReferralProgramEnabled = () => useRouterState({ select: s => s.referralOn });`,
     "SegmentHowCompat": "export const SegmentHowCompat = () => null;",
-    "SegmentBetaReviews": "export const SegmentBetaReviews = () => null;",
     "liteMedia": "export const useLiteMedia = () => false;",
   };
   const outfile = join(out, "page.mjs");
   await build({
     stdin: {
-      contents: `export { SegmentLanding } from './src/components/segments/SegmentLanding'; export { pricePathHeadings } from './src/components/segments/PricePaths'; export { setRoute } from '@tanstack/react-router';`,
+      contents: `export { AirySegmentLanding as SegmentLanding } from './src/components/segments/AirySegmentLanding'; export { pricePathHeadings } from './src/components/segments/PricePaths'; export { setRoute } from '@tanstack/react-router';`,
       resolveDir: root,
     },
     outfile,
@@ -115,23 +115,39 @@ for (const locale of SUPPORTED_LOCALES) {
         const bottom = section(html, "signup-bottom");
         const prices = section(html, "segment-price-paths");
         const includes = hero.indexOf(escaped(c.includeNote));
-        const free = hero.indexOf(escaped(c.noPayment));
-        const cta = hero.indexOf('class="wd-segment-hero-jump"');
-        const offer = hero.indexOf('class="wd-segment-hero-offer"');
-        assert.ok(includes >= 0 && includes < free && free < cta && cta < offer, "product scope and free action precede secondary price");
-        assert.ok(hero.includes(escaped(c.intro)) && hero.includes(escaped(c.priceNote)));
-        assert.match(hero, /<strong>\$149<\/strong>/);
-        assert.ok(middle.includes(escaped(c.signupTitle)) && middle.includes(escaped(c.signupBody)));
-        assert.ok(bottom.includes(escaped(c.finalTitle)) && bottom.includes(escaped(c.finalBody)));
+        const signup = hero.indexOf('class="wd-segment-hero-jump"');
+        const discover = hero.indexOf('class="wd-segment-secondary-link"');
+        assert.ok(includes >= 0 && includes < signup && signup < discover, "product scope precedes primary signup and secondary discovery");
+        assert.ok(hero.includes(escaped(c.intro)));
+        assert.ok(hero.includes(`<a class="wd-segment-hero-jump" href="#signup-middle">${escaped(c.signupCta)}</a>`));
+        assert.ok(hero.includes(`<a class="wd-segment-secondary-link" href="#segment-how">${escaped(c.discover)}</a>`));
+        assert.equal(occurrences(hero, c.noPayment), 1);
+        assert.doesNotMatch(hero, /data-test-email-form|wd-segment-hero-offer|\$149|\$200|\$299/);
         for (const [markup, source] of [[middle, "hero"], [bottom, "offer"]]) {
+          assert.ok(markup.includes(escaped(c.finalTitle)));
+          const body = source === "hero" ? conversionCopy[locale].benefit : c.finalBody;
+          assert.equal(occurrences(markup, body), 1);
+          assert.equal(occurrences(markup, conversionCopy[locale].confirmation), 1);
           assert.equal(occurrences(markup, c.noPayment), 1, "one free note per form");
           assert.ok(markup.indexOf(escaped(c.noPayment)) < markup.indexOf(`data-test-email-form="${source}"`), "free note above the email field");
-          assert.doesNotMatch(markup, /<s>|50%|\$299|\$200|wd-segment-discount/);
+          assert.match(markup, /data-social-after-email="true"/, "both segment forms request email before alternatives");
+          assert.doesNotMatch(markup, /<s>|50%|\$299|\$200|wd-segment-discount|wd-segment-launch-price/);
+          if (source === "offer") assert.doesNotMatch(markup, /(?:\$\s*149|149\s*\$)|wd-segment-signup-terms/);
         }
-        assert.equal(occurrences(middle, c.priceNote), 1);
-        assert.equal(occurrences(middle, conversionCopy[locale].terms), 1, "complete unsplit terms, once beside middle price");
-        assert.match(middle, /class="wd-segment-launch-price"><strong>\$149<\/strong>/);
-        assert.ok(middle.includes(`href="#segment-price-paths">${escaped(page.pricePathHeadings(locale).title)}</a>`));
+        const priceAndTerms = `<p>${escaped(conversionCopy[locale].benefit)}</p><p class="wd-segment-signup-terms">${escaped(conversionCopy[locale].terms)}</p>`;
+        assert.ok(middle.includes(priceAndTerms), "price and first-100/non-reservation terms remain adjacent ordinary paragraphs");
+        assert.equal(occurrences(middle, conversionCopy[locale].terms), 1);
+        const firstHeading = middle.slice(0, middle.indexOf('class="wd-segment-form"'));
+        assert.doesNotMatch(firstHeading, /<details|<summary|\bhidden(?:=|\s|>)|aria-hidden="true"|display:\s*none|visibility:\s*hidden|sr-only/);
+        assert.ok(middle.indexOf(priceAndTerms) < middle.indexOf('data-test-email-form="hero"'));
+        const how = section(html, "segment-how");
+        assert.equal((how.match(/<figure\b/g) ?? []).length, 3, "three product photos remain");
+        assert.equal((how.match(/<figcaption\b/g) ?? []).length, 3, "each product step retains its caption");
+        const reviews = section(html, "beta-reviews");
+        const beforeDisclosure = reviews.split('<details')[0];
+        assert.deepEqual([...beforeDisclosure.matchAll(/data-review-id="(\d+)"/g)].map(match => Number(match[1])), [7, 35]);
+        assert.deepEqual([...reviews.matchAll(/data-review-id="(\d+)"/g)].map(match => Number(match[1])), [7, 35, 45, 63, 72, 88, 100, 120], "all approved reviews remain accessible");
+        assert.match(reviews, /<details class="wd-segment-review-more">/);
         assert.ok(prices.includes(escaped(applyPriceClaim(messages, claim).offer.lead)), "real frozen hook supplies referral-aware lead");
         assert.equal(occurrences(prices, conversionCopy[locale].terms), 1);
         assert.match(prices, /299/);
@@ -154,7 +170,7 @@ for (const locale of SUPPORTED_LOCALES) {
 test("sticky labels reuse localized price-path free-alert headings", () => {
   const labels = ["Free launch alert", "무료 출시 알림", "免费上线通知", "免費上線通知", "無料の公開通知", "Aviso de lanzamiento gratis", "Alerte de lancement gratuite", "Kostenlose Startbenachrichtigung", "Aviso de lançamento grátis", "Gratis lanceringsalert"];
   for (const locale of SUPPORTED_LOCALES) assert.ok(labels.includes(page.pricePathHeadings(locale).public), locale);
-  const source = readFileSync(join(root, "src/components/segments/SegmentLanding.tsx"), "utf8");
+  const source = readFileSync(join(root, "src/components/segments/AirySegmentLanding.tsx"), "utf8");
   assert.match(source, /className="wd-segment-sticky"[\s\S]*?<span>\{priceHeadings.public\}<\/span>/);
   assert.equal(source.includes("$149 · Kickstarter"), false);
 });

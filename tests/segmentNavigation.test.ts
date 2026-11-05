@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { SUPPORTED_LOCALES, LOCALE_PATH_SEGMENTS } from "../src/lib/i18n/locale.ts";
 import { allowsThirdPartyScripts } from "../src/lib/thirdPartyScripts.ts";
-import { isLandingSegment, segmentFromPathname, segmentPath, languageSwitchPath } from "../src/lib/segments/navigation.ts";
+import { isLandingSegment, segmentFromPathname, segmentPath, languageSwitchPath, landingVariantFromPathname, isLandingVariant } from "../src/lib/segments/navigation.ts";
 
 for (const segment of ["freediving", "scuba"] as const) {
   test(`${segment} recognizes exact routes across every locale and English alias`, () => {
@@ -41,4 +41,21 @@ test("language switch leaves token fragments on the same isolated route, never i
   for (const pathname of ["https://evil.example/scuba", "//evil.example/scuba"]) {
     assert.throws(() => languageSwitchPath({ pathname, search: "", hash: "" }, "ko"));
   }
+});
+
+
+test("launch routes preserve variant, segment and language without accepting arbitrary paths", () => {
+  for (const locale of SUPPORTED_LOCALES) for (const segment of ["scuba", "freediving"] as const) {
+    const path = segmentPath(segment, locale, "launch");
+    assert.equal(segmentFromPathname(path), segment);
+    assert.equal(landingVariantFromPathname(path), "launch");
+    assert.equal(landingVariantFromPathname(segmentPath(segment, locale)), "control");
+    const search = "?utm_campaign=120251732986720215&utm_term=dive%20watch&fbclid=fixture";
+    assert.equal(languageSwitchPath({pathname:path,search,hash:"#signup-middle"},"ko"), `/ko/launch/${segment}${search}#signup-middle`);
+  }
+  for (const path of ["/launch", "/launch/scuba/extra", "/launch/ko/scuba", "/bad/launch/scuba", "/ko/launch//scuba", "/launch/scuba?variant=launch", "/launch/scuba#signup-middle", "/launch/scuba\n", "//launch/scuba", "https://evil.example/launch/scuba"]) {
+    assert.equal(segmentFromPathname(path), undefined, path);
+    assert.equal(landingVariantFromPathname(path), undefined, path);
+  }
+  for (const value of ["/launch/scuba", "new", "https://evil.example", null, {}]) assert.equal(isLandingVariant(value), false);
 });

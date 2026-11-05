@@ -31,7 +31,7 @@ const source = ts.createSourceFile(
   ts.ScriptKind.TSX,
 );
 const functionNames = new Set([
-  "formatMessage", "webmailFor", "isInAppBrowser", "CheckInboxCard", "EmailForm",
+  "formatMessage", "webmailFor", "isInAppBrowser", "CheckInboxCard", "EmailForm", "AcquisitionTools",
 ]);
 const constantNames = new Set(["WEBMAIL", "ENTRY_POPUP_DOM_ID"]);
 const selected = source.statements.filter((node) =>
@@ -76,10 +76,13 @@ await build({
       import { spamFolderHintFor } from "./src/lib/spamFolderHint.ts";
       import { phoneRetryDraft } from "./src/components/initial-phone-consent.ts";
       import { socialAuthResultCopy } from "./src/lib/socialAuthResultCopy.ts";
-      let fixture = {}, currentLocale = "en";
+      import { RETARGETING_COPY } from "./src/components/retargeting/copy.ts";
+      import { ENTRY_COPY } from "./src/components/retargeting/entry-copy.ts";
+      let fixture = {}, currentLocale = "en", entryCaptureFlag;
       export let calls = [], writes = [];
       export function configure(locale, state = {}) {
         currentLocale = locale; fixture = state; calls = []; writes = [];
+        entryCaptureFlag = state.entryCaptureFlag;
       }
       function fixtureUseState(key, initial) {
         return [Object.hasOwn(fixture, key) ? fixture[key] : initial,
@@ -104,6 +107,10 @@ await build({
       const ReferralSuccess = marker("referral");
       const SocialAuthEntry = marker("social");
       const EarlyBirdRace = marker("early-bird");
+      const CompatibilityChecker = marker("compatibility");
+      const EntryCapture = marker("entry");
+      const ExitIntentCapture = marker("exit");
+      const WebPushOptIn = marker("push");
       ${declarations}
     `,
     resolveDir: root,
@@ -114,6 +121,7 @@ await build({
   format: "esm",
   platform: "node",
   jsx: "automatic",
+  define: { "import.meta.env.VITE_WATCHDIVE_ENTRY_CAPTURE": "entryCaptureFlag" },
   external: ["react", "react/jsx-runtime", "react-dom"],
   alias: { "@": join(root, "src") },
   logLevel: "silent",
@@ -262,4 +270,66 @@ test("visible locale labels sit outside the action grid and native handlers pres
       assert.deepEqual(ui.writes, [], "validation handlers must not clear React email state");
     }
   }
+});
+
+test("email-first presentation moves one social entry after email without changing compact, locale or source contracts", () => {
+  for (const locale of SUPPORTED_LOCALES) {
+    for (const id of ["hero", "offer"]) {
+      for (const compact of [false, true]) {
+        for (const selectedPresentation of [undefined, presentation, { ...presentation, socialAfterEmail: true }]) {
+          const html = render(locale, { id, compact, presentation: selectedPresentation });
+          const social = ui.calls.filter((call: { name: string }) => call.name === "social");
+          assert.equal(social.length, compact ? 0 : 1, `${locale} ${id} compact=${compact}`);
+          assert.equal((html.match(/type="email"/g) ?? []).length, 1);
+          assert.equal((html.match(/type="submit"/g) ?? []).length, 1);
+          if (compact) {
+            assert.doesNotMatch(html, /wd-form-alternatives|data-test-panel="social"/);
+            continue;
+          }
+          assert.equal(social[0].props.locale, locale);
+          assert.equal(social[0].props.source, id);
+          assert.equal(social[0].props.disabled, false);
+          const socialPosition = html.indexOf('data-test-panel="social"');
+          const inputPosition = html.indexOf('type="email"');
+          const submitPosition = html.indexOf('type="submit"');
+          if (selectedPresentation?.socialAfterEmail) {
+            assert.ok(socialPosition > inputPosition && socialPosition > submitPosition, "email action leads both alternatives");
+            assert.match(html, /wd-form-alternatives/);
+          } else {
+            assert.ok(socialPosition < inputPosition, "legacy social-first default remains");
+            assert.doesNotMatch(html, /wd-form-alternatives/);
+          }
+        }
+      }
+    }
+    render(locale, { presentation: { ...presentation, socialAfterEmail: true } }, { "EmailForm.loading": true });
+    assert.equal(ui.calls.find((call: { name: string }) => call.name === "social").props.disabled, true);
+  }
+});
+
+test("capture none removes both entry and exit while default capture, compatibility and push remain independent", () => {
+  for (const entryCaptureFlag of [undefined, "true", "false"]) {
+    for (const capture of [undefined, "configured", "none"]) {
+      for (const compatibility of [true, false]) {
+        for (const available of [true, false]) {
+          const ready = { compatibility: available, push: { enabled: true, publicKey: "fixture-public-key" } };
+          ui.configure("ko", { entryCaptureFlag, "AcquisitionTools.ready": ready });
+          const html = renderToStaticMarkup(createElement(ui.AcquisitionTools, { capture, compatibility }));
+          const expectedCapture = capture === "none" ? [] : [entryCaptureFlag === "false" ? "exit" : "entry"];
+          assert.deepEqual(panelNames(), [
+            ...(compatibility && available ? ["compatibility"] : []), ...expectedCapture, "push",
+          ]);
+          for (const name of ["entry", "exit"]) {
+            assert.equal(html.includes(`data-test-panel="${name}"`), expectedCapture.includes(name));
+          }
+          const push = ui.calls.find((call: { name: string }) => call.name === "push");
+          assert.deepEqual(push.props.config, ready.push);
+          for (const panel of ui.calls) assert.equal(panel.props.locale, "ko");
+        }
+      }
+    }
+  }
+  ui.configure("en", { "AcquisitionTools.ready": { compatibility: true, push: { enabled: false } } });
+  renderToStaticMarkup(createElement(ui.AcquisitionTools));
+  assert.deepEqual(panelNames(), ["compatibility", "entry", "push"], "no-prop legacy invocation keeps configured capture");
 });

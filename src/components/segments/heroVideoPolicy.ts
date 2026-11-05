@@ -1,24 +1,21 @@
 /** When the hero file may exist in the DOM, and when it may actually play.
- * Automatic play is a wide, unconstrained screen. An explicit play mounts the
- * file at any width, including a constrained connection or reduced motion.
+ * Automatic play works at every width on an unconstrained connection when
+ * motion is allowed. Explicit play also permits constrained/reduced-motion use.
  * Offscreen, a hidden tab, and the pause control stop playback either way.
  */
-
-export const HERO_AUTOPLAY_MEDIA = "(min-width: 960px)";
 
 export type HeroVideoGate = {
   ready: boolean;
   failed: boolean;
   lite: boolean;
   reducedMotion: boolean;
-  wide: boolean;
   requested: boolean;
 };
 
 export function heroVideoAllowed(input: HeroVideoGate): boolean {
   if (!input.ready || input.failed) return false;
   if (input.requested) return true;
-  return input.wide && !input.lite && !input.reducedMotion;
+  return !input.lite && !input.reducedMotion;
 }
 
 export function heroVideoShouldPlay(input: HeroVideoGate & {

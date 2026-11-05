@@ -38,7 +38,12 @@ export const REFERRAL_MEASUREMENT_SURFACES = [
 
 export type ReferralMeasurementSurface = (typeof REFERRAL_MEASUREMENT_SURFACES)[number];
 
-export const REFERRAL_MEASUREMENT_PHASES = ["pre_signup", "post_signup", "post_verify", "status"] as const;
+export const REFERRAL_MEASUREMENT_PHASES = [
+  "pre_signup",
+  "post_signup",
+  "post_verify",
+  "status",
+] as const;
 
 export type ReferralMeasurementPhase = (typeof REFERRAL_MEASUREMENT_PHASES)[number];
 
@@ -71,11 +76,16 @@ export type ReferralMeasurementDelivery = {
 const ACTION_SET = new Set<string>(REFERRAL_MEASUREMENT_ACTIONS);
 const SURFACE_SET = new Set<string>(REFERRAL_MEASUREMENT_SURFACES);
 const PHASE_SET = new Set<string>(REFERRAL_MEASUREMENT_PHASES);
-const VIEW_ACTIONS = new Set<ReferralMeasurementAction>(["wd_referral_offer_view", "wd_price_path_view"]);
+const VIEW_ACTIONS = new Set<ReferralMeasurementAction>([
+  "wd_referral_offer_view",
+  "wd_price_path_view",
+]);
 const PUBLIC_PATHS = new Set([
   "/",
   "/scuba",
   "/freediving",
+  "/launch/scuba",
+  "/launch/freediving",
   "/verify",
   "/reservation",
   "/buddy",
@@ -143,7 +153,9 @@ export function referralMeasurementPermitted(
   return read() === true;
 }
 
-export function gaMeasurementId(config: { gaId?: string } = readGoogleTagConfig()): string | undefined {
+export function gaMeasurementId(
+  config: { gaId?: string } = readGoogleTagConfig(),
+): string | undefined {
   const id = config.gaId;
   return id && GA_ID_PATTERN.test(id) ? id : undefined;
 }
@@ -230,7 +242,9 @@ export function vercelPageIsPublic(location: MeasurementLocation): boolean {
   return PUBLIC_PATHS.has(clean);
 }
 
-function isMeasurementInput(value: ReferralMeasurementInput | null): value is ReferralMeasurementInput {
+function isMeasurementInput(
+  value: ReferralMeasurementInput | null,
+): value is ReferralMeasurementInput {
   return value !== null;
 }
 
@@ -310,7 +324,12 @@ export function resolveVisibleMeasurement(
   const hook = element.getAttribute("data-analytics-hook");
   const locale = localeFromPublicPath(pathname);
   if (hook === "price_paths") {
-    return { action: "wd_price_path_view", surface: "price_paths", locale, phase: phaseForLanding(pathname) };
+    return {
+      action: "wd_price_path_view",
+      surface: "price_paths",
+      locale,
+      phase: phaseForLanding(pathname),
+    };
   }
   if (hook === "price_path") {
     const surface = priceSurface(element.getAttribute("data-price-path"));
@@ -327,10 +346,20 @@ export function resolveVisibleMeasurement(
   if (hook === "verify_choice") {
     const choice = element.getAttribute("data-verify-choice");
     if (choice === "buddy") {
-      return { action: "wd_referral_offer_view", surface: "verify_card", locale, phase: "post_verify" };
+      return {
+        action: "wd_referral_offer_view",
+        surface: "verify_card",
+        locale,
+        phase: "post_verify",
+      };
     }
     if (choice === "reservation") {
-      return { action: "wd_price_path_view", surface: "price_reservation", locale, phase: "post_verify" };
+      return {
+        action: "wd_price_path_view",
+        surface: "price_reservation",
+        locale,
+        phase: "post_verify",
+      };
     }
     return null;
   }
@@ -343,7 +372,9 @@ export function resolveClickMeasurement(
   pathname: string,
 ): ReferralMeasurementInput | null {
   if (!target) return null;
-  const hookElement = closest(target, (element) => KNOWN_HOOKS.has(element.getAttribute("data-analytics-hook") ?? ""));
+  const hookElement = closest(target, (element) =>
+    KNOWN_HOOKS.has(element.getAttribute("data-analytics-hook") ?? ""),
+  );
   if (hookElement?.getAttribute("data-analytics-hook") === "referral_share") {
     const surface = placementSurface(hookElement.getAttribute("data-share-placement"));
     if (!surface) return null;
@@ -354,7 +385,10 @@ export function resolveClickMeasurement(
       phase: "post_verify",
     };
   }
-  const button = closest(target, (element) => element.getAttribute("data-reservation-action") !== null);
+  const button = closest(
+    target,
+    (element) => element.getAttribute("data-reservation-action") !== null,
+  );
   if (!button) return null;
   const action = button.getAttribute("data-reservation-action");
   if (action !== "verified" && action !== "pending") return null;
@@ -362,7 +396,15 @@ export function resolveClickMeasurement(
   const onVerify = choice?.getAttribute("data-verify-choice") === "reservation";
   const path = stripLocalePrefix(pathname).replace(/\/+$/, "") || "/";
   if (choice && !onVerify) return null;
-  if (!onVerify && path !== "/" && path !== "/scuba" && path !== "/freediving") return null;
+  if (
+    !onVerify &&
+    path !== "/" &&
+    path !== "/scuba" &&
+    path !== "/freediving" &&
+    path !== "/launch/scuba" &&
+    path !== "/launch/freediving"
+  )
+    return null;
   return {
     action: "wd_reservation_click",
     surface: onVerify ? "reservation_choice" : "signup_reservation",
@@ -424,11 +466,17 @@ function alignPage(store: ExposureStore, pathname: string) {
   store.clicks.clear();
 }
 
-function closedProps(input: ReferralMeasurementInput): Pick<ReferralMeasurementInput, "surface" | "locale" | "phase"> {
+function closedProps(
+  input: ReferralMeasurementInput,
+): Pick<ReferralMeasurementInput, "surface" | "locale" | "phase"> {
   return { surface: input.surface, locale: input.locale, phase: input.phase };
 }
 
-function buildGaParams(input: ReferralMeasurementInput, location: MeasurementLocation, gaId: string): ReferralGaParams | null {
+function buildGaParams(
+  input: ReferralMeasurementInput,
+  location: MeasurementLocation,
+  gaId: string,
+): ReferralGaParams | null {
   const pageLocation = safePageLocation(location);
   if (!pageLocation) return null;
   const origin = safeOrigin(location.origin);
@@ -451,7 +499,14 @@ async function sendMeasurement(
 ): Promise<ReferralMeasurementDelivery> {
   const props = closedProps(input);
   if (!sinks.permitted()) {
-    return { sent: false, reason: "denied", ga: false, vercel: false, eventName: input.action, props };
+    return {
+      sent: false,
+      reason: "denied",
+      ga: false,
+      vercel: false,
+      eventName: input.action,
+      props,
+    };
   }
   const location = sinks.location();
   const gaId = sinks.gaId();
@@ -460,7 +515,14 @@ async function sendMeasurement(
   if (gaId && gtag) {
     const params = buildGaParams(input, location, gaId);
     if (!sinks.permitted()) {
-      return { sent: false, reason: "withdrawn", ga: false, vercel: false, eventName: input.action, props };
+      return {
+        sent: false,
+        reason: "withdrawn",
+        ga: false,
+        vercel: false,
+        eventName: input.action,
+        props,
+      };
     }
     if (params) {
       try {
@@ -494,16 +556,37 @@ async function sendMeasurement(
       vercel = false;
     }
   }
-  if (!ga && !vercel && allowRetry && gaId && !gtag && !sinks.store.retried.has(exposureKey(sinks.store, input))) {
+  if (
+    !ga &&
+    !vercel &&
+    allowRetry &&
+    gaId &&
+    !gtag &&
+    !sinks.store.retried.has(exposureKey(sinks.store, input))
+  ) {
     const key = exposureKey(sinks.store, input);
     sinks.store.retried.add(key);
     sinks.schedule(() => {
       void trackReferralMeasurement(input, sinks);
     });
-    return { sent: false, reason: "unconfigured", ga: false, vercel: false, eventName: input.action, props };
+    return {
+      sent: false,
+      reason: "unconfigured",
+      ga: false,
+      vercel: false,
+      eventName: input.action,
+      props,
+    };
   }
   if (!ga && !vercel) {
-    return { sent: false, reason: "unconfigured", ga: false, vercel: false, eventName: input.action, props };
+    return {
+      sent: false,
+      reason: "unconfigured",
+      ga: false,
+      vercel: false,
+      eventName: input.action,
+      props,
+    };
   }
   return { sent: true, reason: "sent", ga, vercel, eventName: input.action, props };
 }
@@ -534,7 +617,14 @@ export async function trackReferralMeasurement(
   if (VIEW_ACTIONS.has(input.action)) {
     const key = exposureKey(sinks.store, input);
     if (sinks.store.exposures.has(key) || sinks.store.inflight.has(key)) {
-      return { sent: false, reason: "duplicate", ga: false, vercel: false, eventName: input.action, props: closedProps(input) };
+      return {
+        sent: false,
+        reason: "duplicate",
+        ga: false,
+        vercel: false,
+        eventName: input.action,
+        props: closedProps(input),
+      };
     }
     sinks.store.inflight.add(key);
     try {
@@ -549,7 +639,14 @@ export async function trackReferralMeasurement(
   const now = sinks.now();
   const previous = sinks.store.clicks.get(clickKey);
   if (previous !== undefined && now - previous < CLICK_DEDUPE_MS) {
-    return { sent: false, reason: "duplicate", ga: false, vercel: false, eventName: input.action, props: closedProps(input) };
+    return {
+      sent: false,
+      reason: "duplicate",
+      ga: false,
+      vercel: false,
+      eventName: input.action,
+      props: closedProps(input),
+    };
   }
   sinks.store.clicks.set(clickKey, now);
   return sendMeasurement(input, sinks, false);
@@ -560,7 +657,13 @@ let browserSinksSingleton: ReferralMeasurementSinks | null = null;
 
 function browserLocation(): MeasurementLocation {
   if (typeof window === "undefined") {
-    return { origin: "https://watchdive.diveroid.com", pathname: "/", search: "", hash: "", referrer: "" };
+    return {
+      origin: "https://watchdive.diveroid.com",
+      pathname: "/",
+      search: "",
+      hash: "",
+      referrer: "",
+    };
   }
   return {
     origin: window.location.origin,
@@ -606,7 +709,9 @@ export type MeasurementDomEvent = {
 };
 
 export type IntersectionObserverLike = new (
-  callback: (entries: ReadonlyArray<{ target: MeasurementElement; intersectionRatio: number }>) => void,
+  callback: (
+    entries: ReadonlyArray<{ target: MeasurementElement; intersectionRatio: number }>,
+  ) => void,
 ) => {
   observe: (element: MeasurementElement) => void;
   unobserve: (element: MeasurementElement) => void;
@@ -628,8 +733,16 @@ export type MutationObserverLike = new (
 export type MeasurementHost = {
   root: MeasurementElement;
   location: () => MeasurementLocation;
-  addEventListener: (type: string, listener: (event: MeasurementDomEvent) => void, capture?: boolean) => void;
-  removeEventListener: (type: string, listener: (event: MeasurementDomEvent) => void, capture?: boolean) => void;
+  addEventListener: (
+    type: string,
+    listener: (event: MeasurementDomEvent) => void,
+    capture?: boolean,
+  ) => void;
+  removeEventListener: (
+    type: string,
+    listener: (event: MeasurementDomEvent) => void,
+    capture?: boolean,
+  ) => void;
   IntersectionObserver: IntersectionObserverLike;
   MutationObserver: MutationObserverLike;
 };
@@ -696,7 +809,8 @@ function startMeasurement(host: MeasurementHost, sinks: ReferralMeasurementSinks
     intersection.unobserve(element);
   };
   const scan = (element: MeasurementElement) => {
-    if (element.nodeType === 1 && element.getAttribute("data-analytics-hook")) observeElement(element);
+    if (element.nodeType === 1 && element.getAttribute("data-analytics-hook"))
+      observeElement(element);
     const listed = element.querySelectorAll?.("[data-analytics-hook]");
     if (!listed) return;
     for (const child of Array.from(listed)) observeElement(child);
@@ -768,7 +882,8 @@ function startMeasurement(host: MeasurementHost, sinks: ReferralMeasurementSinks
 }
 
 function elementFromEventTarget(target: EventTarget | null): MeasurementElement | null {
-  if (typeof Element !== "undefined" && target instanceof Element) return target as MeasurementElement;
+  if (typeof Element !== "undefined" && target instanceof Element)
+    return target as MeasurementElement;
   if (typeof Node !== "undefined" && target instanceof Node) {
     return (target.parentElement as MeasurementElement | null) ?? null;
   }
@@ -807,7 +922,8 @@ function createBrowserHost(): MeasurementHost | null {
   const removeEventListener: MeasurementHost["removeEventListener"] = (type, listener, capture) => {
     const useCapture = capture === true;
     const index = records.findIndex(
-      (record) => record.type === type && record.listener === listener && record.capture === useCapture,
+      (record) =>
+        record.type === type && record.listener === listener && record.capture === useCapture,
     );
     if (index < 0) return;
     const [record] = records.splice(index, 1);
@@ -821,7 +937,9 @@ function createBrowserHost(): MeasurementHost | null {
     IntersectionObserver: class {
       private readonly observer: IntersectionObserver;
       constructor(
-        callback: (entries: ReadonlyArray<{ target: MeasurementElement; intersectionRatio: number }>) => void,
+        callback: (
+          entries: ReadonlyArray<{ target: MeasurementElement; intersectionRatio: number }>,
+        ) => void,
       ) {
         this.observer = new IntersectionObserver(
           (entries) => {

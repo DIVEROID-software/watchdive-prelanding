@@ -67,7 +67,7 @@ export const SHARED_DOCUMENT_VARY = "Save-Data";
 const PUBLIC_SEGMENT_PATHS = new Set<string>(
   SUPPORTED_LOCALES.flatMap((locale) => {
     const prefix = locale === "en" ? "" : `/${LOCALE_PATH_SEGMENTS[locale]}`;
-    return [`${prefix}/scuba`, `${prefix}/freediving`];
+    return [`${prefix}/scuba`, `${prefix}/freediving`, `${prefix}/launch/scuba`, `${prefix}/launch/freediving`];
   }),
 );
 

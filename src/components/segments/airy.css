@@ -1,0 +1,511 @@
+/* WatchDive photo-led iteration. Opt-in scope keeps checkout, email and the
+   existing landing variants untouched. Important declarations below win over
+   styles-brutal.css; they are deliberately limited to this page variant. */
+html:root .wd-segment-page.wd-segment-airy {
+  --seg-bg: #fff;
+  --seg-ink: #102d39;
+  --seg-muted: #49616c;
+  --seg-accent: #087d80;
+  --seg-line: #d7e3e5;
+  --seg-frame: transparent;
+  --seg-card: #f2f7f7;
+  --seg-shadow: transparent;
+  --seg-marker: transparent;
+  --airy-soft: #f2f7f7;
+  --airy-gutter: clamp(20px, 4.4vw, 64px);
+  --airy-section-space: clamp(72px, 8vw, 124px);
+  --airy-ease: cubic-bezier(.22, 1, .36, 1);
+  background: var(--seg-bg);
+  color: var(--seg-ink);
+  color-scheme: light;
+  overflow: clip;
+  accent-color: var(--seg-accent);
+}
+
+html:root .wd-segment-page.wd-segment-airy ::selection { background: #bde7e5; color: #102d39; }
+html:root .wd-segment-page.wd-segment-airy :focus-visible { outline: 3px solid #087d80 !important; outline-offset: 4px !important; }
+html:root .wd-segment-page.wd-segment-airy :is(button, a, summary, input, select) { -webkit-tap-highlight-color: #087d801a; }
+html:root .wd-segment-page.wd-segment-airy :is(button, input, select) { caret-color: #087d80; }
+html:root .wd-segment-page.wd-segment-airy :is(p, li, blockquote) { line-height: 1.65 !important; }
+html:root .wd-segment-page.wd-segment-airy :is(h1, h2, h3, h4) { letter-spacing: -.025em !important; overflow-wrap: break-word; text-wrap: balance; }
+html:root .wd-segment-page.wd-segment-airy h1 { font-size: clamp(38px, 4.6vw, 64px) !important; line-height: 1.08 !important; font-weight: 650 !important; }
+html:root .wd-segment-page.wd-segment-airy h2 { font-size: clamp(30px, 3.3vw, 46px) !important; line-height: 1.16 !important; font-weight: 650 !important; }
+html:root .wd-segment-page.wd-segment-airy h3 { font-size: clamp(24px, 2.2vw, 30px); line-height: 1.25 !important; font-weight: 650 !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-shell { width: min(1240px, calc(100% - var(--airy-gutter) * 2)); max-width: 1240px; }
+html:root .wd-segment-page.wd-segment-airy section[id] { scroll-margin-top: 32px; }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-eyebrow, .wd-capture-eyebrow) { display: none; }
+
+/* Quiet navigation, with native select semantics and generous touch targets. */
+html:root .wd-segment-page.wd-segment-airy .wd-segment-header {
+  width: min(1440px, 100%);
+  margin-inline: auto;
+  padding: 18px var(--airy-gutter);
+  gap: 16px 24px;
+  background: #fff;
+  color: var(--seg-ink);
+  border: 0;
+}
+html:root .wd-segment-page.wd-segment-airy .wd-segment-header > a { flex: 0 1 160px; min-width: 100px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-header .wd-watchdive-logo { width: 160px; height: auto; max-width: 100%; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 20px; min-width: 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-header-signup { display: inline-flex; align-items: center; min-height: 44px; max-width: 240px; color: #076c70; font-size: 14px; font-weight: 650; line-height: 1.35; text-align: center; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-header .wd-segment-modes { justify-content: center; gap: 8px 20px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-modes a {
+  padding: 9px 4px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--seg-muted);
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+html:root .wd-segment-page.wd-segment-airy .wd-segment-modes a[aria-current=page] { background: transparent; color: var(--seg-ink); border-color: var(--seg-accent); box-shadow: none; font-weight: 650; }
+html:root .wd-segment-page.wd-segment-airy .wd-locale-code { border: 1px solid var(--seg-line); border-radius: 8px !important; box-shadow: none; background: #fff; color: var(--seg-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-locale-code:focus-within { outline-color: #087d80; }
+html:root .wd-segment-page.wd-segment-airy .wd-locale-code select { border: 0; box-shadow: none; }
+
+/* One centred statement, followed by the actual product in use. */
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero { display: flex; flex-direction: column; min-height: 0; max-width: 1440px; padding: 36px 0 0; border: 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-copy { width: min(960px, 100%); margin-inline: auto; padding: 0 var(--airy-gutter) 40px; align-items: center; text-align: center; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-copy h1 { max-width: 900px; margin: 0 0 24px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-title-accent { color: var(--seg-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-intro { max-width: 660px; margin: 0; font-size: clamp(17px, 1.6vw, 20px); color: var(--seg-muted); }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-hero-includes, .wd-segment-hero-free) { max-width: 640px; margin: 12px 0 0; font-size: 14px; color: var(--seg-muted); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-free { font-weight: 500; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-offer { justify-content: center; max-width: 620px; margin-top: 16px; gap: 5px 10px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-offer > strong { font-size: 20px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-offer > span { flex: 0 1 auto; font-size: 13px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-visual { width: 100%; padding: 0 var(--airy-gutter); gap: 18px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-media { width: 100%; margin: 0; aspect-ratio: 16 / 9; border: 0; border-radius: 24px !important; box-shadow: none; background: #e5eff0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-media > :is(img, video) { border-radius: inherit !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-media > video { transition: opacity 220ms ease-out !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-media figcaption { left: 28px; bottom: 24px; padding: 4px 8px; border-radius: 4px !important; background: #102d39e6; font-size: 13px; text-shadow: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-motion-toggle { border: 1px solid #ffffff80; border-radius: 50% !important; background: #102d39; color: #fff; box-shadow: none; backdrop-filter: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-motion-toggle:focus-visible { outline-color: #fff !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-usp { align-self: center; justify-content: center; padding: 0; margin: 0; max-width: 760px; background: transparent; color: var(--seg-muted); border: 0; box-shadow: none; font-size: 14px; font-weight: 500; text-align: center; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-usp svg { color: var(--seg-accent); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-compat-slot { width: min(800px, 100%); padding: 24px var(--airy-gutter) 0; margin-inline: auto; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-compat { width: 100%; margin: 0; border: 1px solid var(--seg-line); border-radius: 12px !important; box-shadow: none; background: #fff; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-compat summary { padding: 16px 40px 16px 18px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-compat-later strong { border: 0; background: #e2f1ef; color: #146366; border-radius: 4px !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-compat-panel { padding: 12px 18px; border-top: 1px solid var(--seg-line); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-compat-panel :is(p, li) { font-size: 13px; }
+
+/* Buttons share one accent. The photographed subject supplies the drama. */
+html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-hero-jump, .wd-segment-end-signup, .wd-segment-sticky > a, .wd-submit, .wd-phone-save, .wd-open-mail) {
+  min-height: 52px;
+  padding: 14px 24px;
+  border: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  background: #087d80 !important;
+  color: #fff !important;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 650 !important;
+  font-size: 16px;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: break-word;
+  filter: none;
+  transform: none;
+  transition: transform 160ms var(--airy-ease), background-color 160ms ease-out !important;
+}
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-copy .wd-segment-hero-jump { align-self: center; margin: 24px 0 0; max-width: 100%; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-actions { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px 28px; width: 100%; margin-top: 28px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-actions .wd-segment-hero-jump { margin: 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-secondary-link { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; max-width: 100%; padding-block: 10px; color: #076c70; font-size: 15px; font-weight: 500; line-height: 1.4; text-decoration: underline; text-underline-offset: 5px; text-decoration-color: #87b6b7; }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-text-link, .wd-segment-explore) { padding: 8px 0; border: 0; border-bottom: 1px solid #87b6b7; background: transparent; color: #076c70; box-shadow: none; font-size: 15px; font-weight: 650; }
+
+/* Editorial rhythm: large images alternate with a short product explanation. */
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefits { padding-block: var(--airy-section-space) 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefits > h2 { max-width: 780px; margin: 0 auto; text-align: center; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(48px, 6vw, 88px); margin-top: 48px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-list article { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 5.5vw, 80px); padding: 0; border: 0; background: transparent; box-shadow: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-list article:nth-child(even) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-list article:nth-child(even) .wd-segment-benefit-shot { grid-column: 2; grid-row: 1; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-list article:nth-child(even) .wd-segment-benefit-copy { grid-column: 1; grid-row: 1; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-shot { aspect-ratio: 4 / 3; border: 0; border-radius: 20px !important; background: #e5eff0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-shot img { border-radius: inherit !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-copy { max-width: 460px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-copy h3 { margin-bottom: 14px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-copy p { margin: 0; font-size: 18px; }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-how, .wd-segment-log, .wd-segment-camera) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 88px); padding-block: var(--airy-section-space) 0; }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-log-copy, .wd-segment-camera > div:first-child) { max-width: 540px; }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-how-copy, .wd-segment-log-copy, .wd-segment-camera > div:first-child) > p { font-size: 18px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-how { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-how .wd-segment-how-copy { width: min(640px, 100%); max-width: 640px; margin-inline: auto; text-align: center; }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-how-image, .wd-segment-video, .wd-segment-free-logbook > img, .wd-segment-sync, .wd-segment-app, .wd-segment-log-hand img, .wd-segment-surface-photo img) { border: 0; border-radius: 20px !important; box-shadow: none; overflow: hidden; background-color: #e5eff0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-how-image { aspect-ratio: 4 / 3; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-how-image :is(img, video) { border-radius: inherit !important; }
+html:root .wd-segment-page.wd-segment-airy h2 .wd-watchdive-logo { width: auto; height: .72em; max-width: 6.6em; margin: 0 .12em; vertical-align: -.02em; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-how li { border-top: 1px solid var(--seg-line); font-weight: 500; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-how li > span { border: 0; border-radius: 50% !important; background: #e2f1ef; color: #146366; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-how-photos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 4px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-how-photos li { display: block; padding: 0; border: 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-how-photos img { border: 0; border-radius: 16px !important; box-shadow: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-how-photos figcaption { margin-top: 14px; font-size: 16px; font-weight: 500; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-how-compat { align-items: center; gap: 24px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-log-images { padding-bottom: 36px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-app { border: 4px solid #fff; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-surface-photo { margin-top: 64px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-video > button { background: #e5eff0; transform: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-video > button > span { border-radius: 8px !important; background: #fff; color: var(--seg-ink); padding: 12px 18px; }
+
+/* Native-swipe carousel remains the single substantial authored motion. */
+html:root .wd-segment-page.wd-segment-airy .wd-feature { padding-block: var(--airy-section-space) 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-feature > h2 { max-width: 760px; margin-inline: auto; text-align: center; }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-track { --feature-peek: 80px; gap: 24px; margin-top: 40px; padding-bottom: 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-slide { height: clamp(460px, 43vw, 600px); border: 0; border-radius: 24px !important; box-shadow: none; background: #102d39; }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-slide img { color: #fff; }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-copy { width: min(460px, 47%); gap: 26px; padding: 40px; background: linear-gradient(90deg, #102d39 0%, #102d39f5 56%, #102d39d9 80%, #102d3900 100%); }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-slide[data-copy-side=end] .wd-feature-copy { background: linear-gradient(270deg, #102d39 0%, #102d39f5 56%, #102d39d9 80%, #102d3900 100%); }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-copy h3 { color: #fff; font-size: clamp(30px, 3vw, 42px); }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-copy ul { gap: 20px; }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-copy li { color: #fff; font-size: 16px; font-weight: 500; }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-icon { color: #bde7e5; }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-nav { margin-top: 24px; gap: 12px; }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-count { margin-right: 12px; color: var(--seg-muted); font-weight: 500; }
+html:root .wd-segment-page.wd-segment-airy .wd-feature-nav button { border: 1px solid var(--seg-line); border-radius: 50% !important; background: #fff; color: var(--seg-ink); box-shadow: none; transform: none; transition: transform 160ms var(--airy-ease), background-color 160ms ease-out !important; }
+
+html:root .wd-segment-page.wd-segment-airy .wd-segment-demos { padding-block: var(--airy-section-space) 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-demo-list { grid-template-columns: 1fr; gap: 48px; margin-top: 40px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-demo-list[data-count="1"] { grid-template-columns: 1fr; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-demo { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; gap: clamp(28px, 5vw, 72px); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-demo img { border: 0; border-radius: 20px !important; box-shadow: none; background: #e5eff0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-demo h3 { margin-top: 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-demo p { margin-top: 14px; font-size: 17px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-bleed { margin-top: var(--airy-section-space); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-bleed img { aspect-ratio: 16 / 9; object-fit: cover; background: #e5eff0; }
+
+/* A calm, single-column signup. State changes inherit the same readable palette. */
+html:root .wd-segment-page.wd-segment-airy .wd-segment-signup {
+  --airy-form-ink: #102d39;
+  --airy-form-muted: #49616c;
+  --airy-form-line: #c8dadd;
+  --airy-form-panel: #e7f0ef;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  margin-top: var(--airy-section-space);
+  padding: clamp(48px, 6vw, 80px) var(--airy-gutter);
+  border: 0;
+  border-radius: 24px !important;
+  background: #f2f7f7;
+  color: var(--airy-form-ink);
+  box-shadow: none;
+  text-align: center;
+}
+html:root .wd-segment-page.wd-segment-airy .wd-segment-signup::before { content: none; display: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-signup-line {
+  --airy-form-ink: #fff;
+  --airy-form-muted: #c6dadf;
+  --airy-form-line: #42616d;
+  --airy-form-panel: #1b3c48;
+  margin-top: 0;
+  border-radius: 0 !important;
+  background: #102d39;
+  color-scheme: dark;
+}
+html:root .wd-segment-page.wd-segment-airy .wd-segment-signup :is(.wd-segment-signup-heading, .wd-segment-form) { grid-column: auto; grid-row: auto; width: min(580px, 100%); max-width: 580px; margin: 0 auto; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-signup h2 { font-size: clamp(30px, 3vw, 42px) !important; line-height: 1.18 !important; color: var(--airy-form-ink); }
+html:root .wd-segment-page.wd-segment-airy #signup-title-middle { scroll-margin-top: 48px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-signup-heading > p:not(.wd-segment-eyebrow) { color: var(--airy-form-muted); font-size: 17px; margin-top: 16px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-signup .wd-segment-signup-heading > .wd-segment-signup-terms { max-width: 520px; margin: 12px auto 0; font-size: 14px; color: var(--airy-form-muted); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-signup-heading > p.wd-segment-small { font-size: 14px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-signup-heading > p.wd-segment-subscription-note { padding: 0; border: 0; color: var(--airy-form-muted); font-size: 14px; font-weight: 500; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-launch-offer { padding-top: 18px; border-top: 1px solid var(--airy-form-line); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-launch-price { justify-content: center; color: var(--airy-form-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-launch-price span { flex: 0 1 auto; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-price-terms { color: var(--airy-form-muted); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-price-link { color: var(--airy-form-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form { text-align: start; color: var(--airy-form-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form form { gap: 14px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form form > div.grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-free-note { text-align: center; color: var(--airy-form-muted); font-size: 14px; font-weight: 500; margin-bottom: 20px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form .wd-email-label { color: var(--airy-form-ink); font-size: 14px; font-weight: 500; }
+html:root .wd-segment-page.wd-segment-airy :is(input[type=email], input[type=tel], input[type=text]:not([name=wd_hp])) { border: 1px solid #6c858a !important; border-radius: 8px !important; background: #fff !important; background-image: none !important; box-shadow: none !important; color: #102d39; font-size: 16px; font-weight: 400; min-width: 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form input[type=email] { height: 56px; padding-inline: 16px; }
+html:root .wd-segment-page.wd-segment-airy input::placeholder { color: #536b75; opacity: 1; }
+html:root .wd-segment-page.wd-segment-airy input:user-invalid { border-color: #b54031 !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form :is(.wd-segment-confirm-note, .wd-signup-pending-note) { color: var(--airy-form-muted); font-size: 13px; text-align: center; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form [class*="text-white"] { color: var(--airy-form-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form :is(.wd-social-separator, .wd-social-note, .wd-social-disclosure, .wd-social-label-note) { color: var(--airy-form-muted); }
+html:root .wd-segment-page.wd-segment-airy .wd-social-button { min-height: 52px; border: 1px solid var(--airy-form-line); border-radius: 8px !important; box-shadow: none !important; transform: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-social-google-tile { border: 0 !important; box-shadow: none !important; border-radius: 4px !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-social-spinner { border-radius: 50% !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-form-alternatives { order: 5; margin-top: 6px; padding-top: 24px; border-top: 1px solid var(--airy-form-line); }
+/* Shared success components use utility classes rather than segment classes.
+   Reset their surface here, including the legacy program-off share input whose
+   implicit text type is absent from the ordinary input[type=text] selector. */
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form > .rounded-2xl {
+  min-width: 0;
+  padding: 24px;
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: var(--airy-form-panel);
+  color: var(--airy-form-ink);
+  box-shadow: none !important;
+  backdrop-filter: none;
+}
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form > .rounded-2xl > p { color: var(--airy-form-muted); font-size: 15px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form > .rounded-2xl > .rounded-xl {
+  padding: 20px 0 0;
+  margin-top: 20px;
+  min-width: 0;
+  border: 0 !important;
+  border-top: 1px solid var(--airy-form-line) !important;
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form > .rounded-2xl :is([class*="cyan-glow"], [class*="text-white"]) { color: var(--airy-form-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form > .rounded-2xl :is(.text-xs, .text-sm) { font-size: 14px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form > .rounded-2xl > .rounded-xl > p { color: var(--airy-form-muted); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form > .rounded-2xl:has([data-share-placement]) div:has(> input[readonly]) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form > .rounded-2xl input[readonly] {
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  min-height: 48px;
+  flex-shrink: 0;
+  padding: 12px;
+  border: 1px solid #6c858a !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  color: #102d39;
+  box-shadow: none !important;
+  font-size: 16px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+}
+html:root .wd-segment-page.wd-segment-airy .wd-segment-form > .rounded-2xl:has([data-share-placement]) button {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: #087d80;
+  color: #fff;
+  box-shadow: none !important;
+  font-size: 15px;
+  line-height: 1.4;
+  white-space: normal;
+  filter: none;
+}
+html:root .wd-segment-page.wd-segment-airy :is(button:disabled, button[aria-disabled=true]) { cursor: not-allowed; opacity: .55; transform: none !important; }
+html:root .wd-segment-page.wd-segment-airy button[data-wd-social-loading=true] { cursor: wait; }
+html:root .wd-segment-page.wd-segment-airy .wd-inbox-card { padding: 0; color: var(--airy-form-ink); border: 0 !important; box-shadow: none !important; background: transparent; }
+html:root .wd-segment-page.wd-segment-airy .wd-inbox-step { color: var(--airy-form-muted); }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-inbox-address, .wd-inapp-hint, .wd-provider-hint) { border: 0; border-radius: 8px !important; background: var(--airy-form-panel); color: var(--airy-form-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-inbox-actions p { color: var(--airy-form-muted); }
+html:root .wd-segment-page.wd-segment-airy .wd-inbox-actions li > span { background: var(--airy-form-panel); color: var(--airy-form-ink); border-radius: 50% !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-resend { color: var(--airy-form-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-phone-card { border: 0; border-radius: 16px !important; background: var(--airy-form-panel); color: var(--airy-form-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-phone-eyebrow { display: none; }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-phone-body, .wd-phone-consent, .wd-phone-terms, .wd-phone-fields label) { color: var(--airy-form-muted); }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-phone-terms, .wd-phone-fields label) { font-size: 13px; }
+html:root .wd-segment-page.wd-segment-airy .wd-phone-error { color: #a02d24; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-signup-line .wd-phone-error { color: #ffbbb0; }
+html:root .wd-segment-page.wd-segment-airy .wd-country-trigger { border: 1px solid #6c858a; border-radius: 8px !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-country-menu { border-radius: 12px !important; box-shadow: 0 12px 30px #102d3926; }
+html:root .wd-segment-page.wd-segment-airy .wd-phone-success { border: 0; border-radius: 12px !important; color: #165b4c; background: #def1e9; }
+html:root .wd-segment-page.wd-segment-airy .wd-onsite-offer { border: 0 !important; border-radius: 16px !important; box-shadow: none !important; overflow: hidden; }
+html:root .wd-segment-page.wd-segment-airy .wd-onsite-content h2 { color: #102d39; font-size: 28px !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-onsite-eyebrow { display: none; }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-onsite-next, .wd-onsite-auth) { color: #49616c; }
+html:root .wd-segment-page.wd-segment-airy .wd-onsite-price { border: 0; border-radius: 12px !important; background: #e2f1ef; }
+html:root .wd-segment-page.wd-segment-airy .wd-onsite-price :is(strong, p, svg) { color: #102d39; }
+html:root .wd-segment-page.wd-segment-airy .wd-onsite-cta { width: 100%; border: 0; border-radius: 8px !important; background: #087d80; color: #fff; box-shadow: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-onsite-terms p { font-size: 13px; }
+html:root .wd-segment-page.wd-segment-airy .wd-capture-card { border: 1px solid var(--seg-line); border-radius: 16px !important; background: #f2f7f7; color: var(--seg-ink); box-shadow: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-capture-card select { border-radius: 8px !important; }
+
+/* Testimony reads like quotes, not a wall of outlined boxes. */
+html:root .wd-segment-page.wd-segment-airy .wd-segment-reviews { padding-block: var(--airy-section-space) 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-reviews > h2 { max-width: 760px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-review-note { margin-top: 16px; max-width: 740px; font-size: 15px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-review-list { gap: 40px 56px; margin-top: 40px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-review-list figure { display: flex; flex-direction: column; padding: 28px 0 0; border: 0; border-top: 1px solid var(--seg-line); background: transparent; box-shadow: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-review-list blockquote { font-size: 18px; font-weight: 400; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-review-list figcaption { margin-top: auto; padding-top: 28px; gap: 14px; color: var(--seg-muted); font-weight: 500; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-review-list figcaption [class*="rounded-full"] { border: 0 !important; border-radius: 50% !important; font-size: 13px !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-review-more { margin-top: 40px; border: 0; border-block: 1px solid var(--seg-line); background: transparent; box-shadow: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-review-more summary { padding: 20px 0; font-weight: 500; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-review-more .wd-segment-review-list { padding: 0 0 32px; gap: 32px 56px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-press { padding-block: 72px 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-press > h2 { text-align: center; font-size: 24px !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-press-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px 32px; align-items: center; margin-top: 32px; }
+html:root .wd-segment-page.wd-segment-airy .wd-press-row li[data-wide=true] { grid-column: auto; }
+html:root .wd-segment-page.wd-segment-airy .wd-press-row a { min-height: 84px; padding: 14px 20px; border: 0; border-radius: 8px !important; box-shadow: none; background: #f2f7f7; transform: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-press-row a[data-ground=dark] { background: #102d39; }
+html:root .wd-segment-page.wd-segment-airy .wd-press-row img { width: auto; max-width: 100%; height: auto; max-height: 48px; object-fit: contain; }
+
+/* Price facts remain available after the product story, with quiet disclosure. */
+html:root .wd-segment-page.wd-segment-airy .wd-subscription-comparison { padding-block: var(--airy-section-space) 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-subscription-panels { gap: 24px; margin-top: 36px; }
+html:root .wd-segment-page.wd-segment-airy .wd-subscription-card { padding: 32px; border: 0; border-radius: 16px !important; box-shadow: none; background: #f2f7f7; color: var(--seg-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-subscription-watch { background: #e2f1ef; }
+html:root .wd-segment-page.wd-segment-airy .wd-subscription-vs { display: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-subscription-card h3 { min-height: 0; font-size: 25px; }
+html:root .wd-segment-page.wd-segment-airy .wd-subscription-card h3 > span { font-size: 13px; }
+html:root .wd-segment-page.wd-segment-airy .wd-subscription-amount strong { font-size: clamp(32px, 4vw, 50px); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+html:root .wd-segment-page.wd-segment-airy .wd-subscription-amount > span { font-size: 13px; }
+html:root .wd-segment-page.wd-segment-airy :is(.wd-subscription-term, .wd-subscription-caveat, .wd-subscription-offer, .wd-subscription-basis, .wd-subscription-basis p) { font-size: 13px; }
+html:root .wd-segment-page.wd-segment-airy .wd-subscription-basis { margin-top: 24px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-price-slot { margin-block: 56px 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-price-paths { border: 0; border-radius: 16px !important; background: #f2f7f7; color: var(--seg-ink); padding: 32px; }
+html:root .wd-segment-page.wd-segment-airy .wd-price-paths h3 { font-size: 25px !important; color: var(--seg-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-price-paths :is(h4, .wd-price-path-amounts strong) { color: var(--seg-ink); }
+html:root .wd-segment-page.wd-segment-airy .wd-price-paths :is(p, li > a) { color: var(--seg-muted); }
+html:root .wd-segment-page.wd-segment-airy .wd-price-paths :is(a, details summary) { color: #076c70; }
+html:root .wd-segment-page.wd-segment-airy .wd-price-paths ol { gap: 28px; margin-top: 24px; }
+html:root .wd-segment-page.wd-segment-airy .wd-price-paths li { border-color: var(--seg-line); padding-top: 20px; }
+html:root .wd-segment-page.wd-segment-airy .wd-price-paths li[data-price-path=buddy] { padding: 20px 0 0; border: 0; border-top: 1px solid var(--seg-line); background: transparent; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-faq { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 64px; padding-block: var(--airy-section-space) 0; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-faq details { margin: 0; padding: 0; border: 0; border-top: 1px solid var(--seg-line); background: transparent; box-shadow: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-faq details:last-child { border-bottom: 1px solid var(--seg-line); }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-faq summary { min-height: 76px; gap: 24px; padding-block: 24px; font-size: 17px; font-weight: 500; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-faq details > p { margin: 0; padding: 0 32px 24px 0; font-size: 16px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-end { padding-block: 56px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-switch { border-bottom: 1px solid var(--seg-line); padding-block: 24px; font-size: 13px !important; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-footer { padding-block: 48px 120px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-footer .wd-watchdive-logo { margin: 0; width: 180px; max-width: 100%; height: auto; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-footer > p { max-width: 760px; font-size: 13px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-footer :is(nav a, nav button, small) { font-size: 13px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-sticky { border-top: 1px solid var(--seg-line); padding-inline: max(20px, calc((100vw - 1240px) / 2)); background: #fff; color: var(--seg-ink); box-shadow: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-sticky > div span { color: var(--seg-muted); font-size: 13px; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-sticky > a { min-height: 48px; font-size: 14px; padding: 12px 20px; }
+
+@media (hover: hover) and (pointer: fine) {
+  html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-hero-jump, .wd-segment-end-signup, .wd-segment-sticky > a, .wd-submit, .wd-phone-save, .wd-open-mail):hover:not(:disabled) { background: #066a6d !important; transform: none; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-nav button:hover:not(:disabled) { background: #e2f1ef; transform: none; }
+  html:root .wd-segment-page.wd-segment-airy .wd-press-row a:hover { transform: none; background: #e7f0ef; }
+  html:root .wd-segment-page.wd-segment-airy .wd-press-row a[data-ground=dark]:hover { background: #1b3c48; }
+}
+html:root .wd-segment-page.wd-segment-airy :is(button, .wd-segment-hero-jump, .wd-segment-end-signup, .wd-segment-sticky > a):active:not(:disabled) { transform: scale(.98); box-shadow: none !important; }
+html:root .wd-segment-page.wd-segment-airy :is(button, .wd-segment-hero-jump, .wd-segment-end-signup, .wd-segment-sticky > a):focus-visible:active { transform: none; }
+html:root .wd-segment-page.wd-segment-airy .wd-segment-video > button:active { transform: none; }
+
+@media (max-width: 959px) {
+  html:root .wd-segment-page.wd-segment-airy { --airy-section-space: 80px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-header { padding-block: 12px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-hero { padding-top: 32px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-copy { padding-bottom: 32px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-compat-slot { padding-top: 24px; }
+  html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-how, .wd-segment-log, .wd-segment-camera, .wd-segment-faq) { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-how-copy, .wd-segment-log-copy, .wd-segment-camera > div:first-child) { max-width: 680px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-how-image { aspect-ratio: 16 / 9; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-how-photos { gap: 16px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-how-photos figcaption { font-size: 14px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-list article { gap: 28px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-copy p { font-size: 16px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-track { --feature-peek: 48px; gap: 16px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-slide { height: auto; display: flex; flex-direction: column; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-slide img { position: relative; height: auto; aspect-ratio: 16 / 10; flex: 0 0 auto; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-copy,
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-slide[data-copy-side=end] .wd-feature-copy { width: 100%; height: auto; min-height: 0; padding: 28px; gap: 20px; background: #102d39; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-copy ul { gap: 14px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-review-list { gap: 32px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-review-more .wd-segment-review-list { gap: 32px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-press-row { gap: 16px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-press-row a { min-height: 72px; padding: 12px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-subscription-card { padding: 24px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-subscription-card h3 { min-height: 0; font-size: 22px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-subscription-term { min-height: 0; }
+  html:root .wd-segment-page.wd-segment-airy .wd-subscription-amount { gap: 8px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-subscription-amount > span { font-size: 13px; }
+  html:root .wd-segment-page.wd-segment-airy :is(.wd-subscription-calculation, .wd-subscription-included, .wd-subscription-offer) { font-size: 14px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-faq h2 { margin: 0; }
+}
+
+@media (max-width: 639px) {
+  html:root .wd-segment-page.wd-segment-airy { --airy-gutter: 20px; --airy-section-space: 64px; }
+  html:root .wd-segment-page.wd-segment-airy h1 { font-size: clamp(36px, 9.7vw, 48px) !important; line-height: 1.1 !important; }
+  html:root .wd-segment-page.wd-segment-airy h2 { font-size: 30px !important; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-header { gap: 8px 12px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-header > a { flex-basis: 126px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-header-actions { margin-left: auto; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-header-signup { display: none; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-header .wd-segment-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); order: 3; flex: 1 0 100%; gap: 16px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-header .wd-segment-modes a { justify-content: center; min-width: 0; text-align: center; white-space: normal; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-header .wd-locale-code { margin-left: auto; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-hero { padding-top: 24px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-copy h1 { margin-bottom: 20px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-actions { flex-direction: column; gap: 8px; margin-top: 24px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-visual { gap: 16px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-media { aspect-ratio: 4 / 3; border-radius: 16px !important; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-media figcaption { left: 14px; bottom: 14px; max-width: calc(100% - 82px); font-size: 13px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-motion-toggle { right: 14px; bottom: 14px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-hero-usp { font-size: 13px; align-items: flex-start; text-align: start; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-list { gap: 44px; margin-top: 32px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-list article,
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-list article:nth-child(even) { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-list article:nth-child(even) :is(.wd-segment-benefit-shot, .wd-segment-benefit-copy) { grid-column: auto; grid-row: auto; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-shot { aspect-ratio: 4 / 3; border-radius: 16px !important; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-benefit-copy p { font-size: 17px; }
+  html:root .wd-segment-page.wd-segment-airy :is(.wd-segment-how-copy, .wd-segment-log-copy, .wd-segment-camera > div:first-child) > p { font-size: 17px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-how-photos { grid-template-columns: 1fr; gap: 28px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-how-photos img { aspect-ratio: 16 / 10; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-how-photos figcaption { font-size: 16px; margin-top: 12px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-track { --feature-peek: 28px; gap: 12px; margin-top: 28px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-slide { border-radius: 16px !important; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-copy,
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-slide[data-copy-side=end] .wd-feature-copy { padding: 24px 20px; gap: 20px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-copy h3 { font-size: 28px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-copy li { font-size: 15px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-nav { margin-top: 20px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-demo-list { gap: 36px; margin-top: 28px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-demo { grid-template-columns: 1fr; gap: 22px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-bleed img { aspect-ratio: 4 / 3; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-signup { padding: 40px 20px; gap: 24px; border-radius: 16px !important; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-signup-line { padding-inline: var(--airy-gutter); border-radius: 0 !important; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-signup h2 { font-size: 30px !important; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-form > .rounded-2xl { padding: 20px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-signup-heading > p:not(.wd-segment-eyebrow) { font-size: 16px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-social-group { grid-template-columns: minmax(0, 1fr); }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-review-list,
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-review-more .wd-segment-review-list { grid-template-columns: 1fr; gap: 32px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-review-list blockquote { font-size: 17px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-review-list figcaption { padding-top: 22px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-press { padding-top: 48px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-press-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-press-row a { min-height: 72px; padding: 12px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-subscription-panels { grid-template-columns: 1fr; gap: 20px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-subscription-card { display: block; padding: 26px 24px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-subscription-card h3 { font-size: 23px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-subscription-amount { flex-direction: row; align-items: baseline; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-price-slot { margin-top: 40px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-price-paths { padding: 24px 20px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-faq { gap: 28px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-faq summary { min-height: 68px; padding-block: 20px; gap: 20px; font-size: 16px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-switch { align-items: flex-start; gap: 12px; flex-direction: column; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-sticky { gap: 12px; padding-inline: 16px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-sticky > a { max-width: 74%; font-size: 13px; padding-inline: 16px; gap: 10px; }
+}
+
+@media (max-width: 359px) {
+  html:root .wd-segment-page.wd-segment-airy { --airy-gutter: 16px; }
+  html:root .wd-segment-page.wd-segment-airy h1 { font-size: 34px !important; }
+  html:root .wd-segment-page.wd-segment-airy h2 { font-size: 28px !important; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-signup { padding-inline: 16px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-copy,
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-slide[data-copy-side=end] .wd-feature-copy { padding-inline: 18px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-feature-copy li { gap: 8px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-press-row a { padding-inline: 10px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-sticky > div { font-size: 13px; }
+  html:root .wd-segment-page.wd-segment-airy .wd-segment-sticky > div span { font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:root .wd-segment-page.wd-segment-airy *,
+  html:root .wd-segment-page.wd-segment-airy *::before,
+  html:root .wd-segment-page.wd-segment-airy *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+  html:root .wd-segment-page.wd-segment-airy :is(button, a):is(:hover, :active) { transform: none !important; }
+}

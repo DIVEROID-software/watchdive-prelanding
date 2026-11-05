@@ -187,7 +187,10 @@ test("production landing DOM and Tailwind skeleton remain frozen", () => {
   // paragraph; compact and legacy pending and all verified credentials stay.
   // The exact bounded index.tsx diff was reviewed before repinning; original
   // section order, media, consent, telemetry and honeypot remain unchanged.
+  // 2026-11-05: airy forms opt in to social controls after email. Normalize
+  // that additive presentation-only branch away, keeping the legacy pin exact.
   const legacySource = source
+    .replace(/\{!compact && presentation\?\.socialAfterEmail && <div className="wd-form-alternatives"><SocialAuthEntry[^\n]+\/><\/div>\}/, "")
     .replace(/    if \(presentation\) return <>[^\n]+<\/>;\n/, "")
     .replace(/\{!presentation && (<SignupReservationOffer[^\n]+autoFocus \/>)\}/, "$1")
     .replace(/\{presentation && <SignupReservationOffer[^\n]+\/>\}/, "")

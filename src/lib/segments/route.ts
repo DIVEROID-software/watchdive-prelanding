@@ -41,3 +41,16 @@ export function segmentHead(locale: Locale, segment: DiveSegment, messages: Froz
     scripts: [structuredDataScript(landingStructuredData(locale, adapted, canonical, socialImage))],
   };
 }
+
+
+/** Paid destination variant. Publicly reachable, but organic canonical ownership
+ * stays with the unchanged control page; it is deliberately absent from sitemap. */
+export function launchSegmentHead(locale: Locale, segment: DiveSegment, messages: FrozenLandingMessages = EN_FROZEN_LANDING_MESSAGES) {
+  const head = segmentHead(locale, segment, messages);
+  return {
+    ...head,
+    meta: head.meta.map(meta => 'name' in meta && meta.name === 'robots'
+      ? { ...meta, content: 'noindex, follow' }
+      : meta),
+  };
+}

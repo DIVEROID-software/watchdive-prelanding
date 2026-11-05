@@ -51,7 +51,7 @@ function decide(
 function segmentPaths(): string[] {
   return SUPPORTED_LOCALES.flatMap((locale) => {
     const prefix = locale === "en" ? "" : `/${LOCALE_PATH_SEGMENTS[locale]}`;
-    return [`${prefix}/scuba`, `${prefix}/freediving`];
+    return [`${prefix}/scuba`, `${prefix}/freediving`, `${prefix}/launch/scuba`, `${prefix}/launch/freediving`];
   });
 }
 
@@ -80,7 +80,7 @@ test("shared cache is 300s on the CDN, with a bounded stale window and browser r
 
 test("every locale scuba and freediving document is cacheable for GET and HEAD", () => {
   const paths = segmentPaths();
-  assert.equal(paths.length, SUPPORTED_LOCALES.length * 2);
+  assert.equal(paths.length, SUPPORTED_LOCALES.length * 4);
   assert.equal(new Set(paths).size, paths.length);
   for (const path of paths) {
     for (const method of ["GET", "HEAD"] as const) {
@@ -304,4 +304,12 @@ test("the server wires the decision, skips the geo cookie on a shared document, 
   assert.deepEqual(vercel.regions, ["icn1"]);
   assert.equal(vercel.headers, undefined);
   assert.equal(vercel.routes, undefined);
+});
+
+
+test("launch variants use the same CDN policy without admitting arbitrary or authenticated paths", () => {
+  const query = "?utm_campaign=120251732986720215&fbclid=fixture";
+  assert.deepEqual(decide(`/launch/scuba${query}`), decide(`/scuba${query}`));
+  for (const path of ["/launch/scuba?auth=confirmed", "/launch/scuba?token=fixture", "/launch/scuba?ref=fixture", "/launch/verify", "/launch/scuba/extra", "/bad/launch/scuba", "/launch/ko/scuba"]) assert.equal(decide(path).shared, false, path);
+  assert.equal(decide("/launch/scuba", {headers:{authorization:"Bearer fixture"}}).shared,false);
 });

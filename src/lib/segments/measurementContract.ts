@@ -3,6 +3,7 @@ import { SUPPORTED_LOCALES } from "../i18n/locale.ts";
 
 export const SEGMENT_MEASUREMENT_ID = "wd-landing-segments-20261025" as const;
 export const SEGMENT_LAYOUT_REVISION = "segments-v1" as const;
+export const SEGMENT_LAYOUT_REVISIONS = [SEGMENT_LAYOUT_REVISION, "airy-v1"] as const;
 export const SEGMENT_MEASUREMENT_STORAGE = "watchdive.segments.session.20261025";
 export const SEGMENT_NAMES = ["freediving", "scuba"] as const;
 export const SEGMENT_PLACEMENTS = ["middle", "bottom"] as const;
@@ -19,7 +20,7 @@ export const segmentContextSchema = z
       .refine((v) => Number.isSafeInteger(v) && v > 0),
     qa: z.boolean(),
     entrySegment: z.enum(SEGMENT_NAMES),
-    layoutRevision: z.literal(SEGMENT_LAYOUT_REVISION),
+    layoutRevision: z.enum(SEGMENT_LAYOUT_REVISIONS),
     locale: z.enum(SUPPORTED_LOCALES),
     device: z.enum(["phone", "tablet", "desktop"]),
     // Exact URL tuple at enrollment, not inferred traffic source or copied first touch.
@@ -40,7 +41,12 @@ const placement = z
   .object({ formVisible: z.boolean(), formFocused: z.boolean(), submitAttempted: z.boolean() })
   .strict();
 export const segmentPlacementSchema = z
-  .object({ middle: placement, bottom: placement, crossedSegment: z.boolean() })
+  .object({
+    middle: placement,
+    bottom: placement,
+    crossedSegment: z.boolean(),
+    crossedLayout: z.boolean().optional(),
+  })
   .strict();
 export type SegmentPlacementFunnel = z.infer<typeof segmentPlacementSchema>;
 export function emptySegmentPlacements(): SegmentPlacementFunnel {
@@ -48,6 +54,7 @@ export function emptySegmentPlacements(): SegmentPlacementFunnel {
     middle: { formVisible: false, formFocused: false, submitAttempted: false },
     bottom: { formVisible: false, formFocused: false, submitAttempted: false },
     crossedSegment: false,
+    crossedLayout: false,
   };
 }
 export function segmentSourceTuple(search: string): SegmentMeasurementContext["attribution"] {

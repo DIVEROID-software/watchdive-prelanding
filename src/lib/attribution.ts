@@ -24,6 +24,17 @@ import {
   resolveCompetitionAttribution,
 } from "./competitionAttribution.ts";
 
+import {
+  landingComparisonRegistry,
+  type LandingComparisonRun,
+} from "./landingComparisonRegistry.ts";
+import {
+  LANDING_COMPARISON_STORAGE_PREFIX,
+  acceptsLandingComparisonSignupAttribution,
+  isLandingComparisonAttempt,
+  resolveLandingComparisonAttribution,
+} from "./landingComparisonAttribution.ts";
+
 const STORAGE_KEY = "wd_attr";
 
 /** Long enough for a real campaign name, short enough to stay a CRM cell. */
@@ -184,7 +195,12 @@ export function clearStoredClickIds(): void {
   try {
     const storage = window.localStorage;
     for (const key of Object.keys(storage)) {
-      if (key !== STORAGE_KEY && !key.startsWith("wd_competition_attr_v1:")) continue;
+      if (
+        key !== STORAGE_KEY &&
+        !key.startsWith("wd_competition_attr_v1:") &&
+        !key.startsWith(LANDING_COMPARISON_STORAGE_PREFIX)
+      )
+        continue;
       try {
         const raw = JSON.parse(storage.getItem(key) ?? "null");
         if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -261,7 +277,14 @@ export function sanitizeSignupAttribution(
   raw: Record<string, unknown> | undefined | null,
   now: number = Date.now(),
   registry: readonly CompetitionRound[] = competitionRegistry,
+  comparisonRegistry: readonly LandingComparisonRun[] = landingComparisonRegistry,
 ): Attribution {
+  if (
+    raw &&
+    isLandingComparisonAttempt(raw, comparisonRegistry) &&
+    !acceptsLandingComparisonSignupAttribution(raw, now, comparisonRegistry)
+  )
+    return sanitizeAttribution({ landingPath: raw.landingPath });
   if (
     raw &&
     isCompetitionAttempt(raw, registry) &&
@@ -271,6 +294,11 @@ export function sanitizeSignupAttribution(
   }
   // Also catch IDs manufactured by the legacy punctuation sanitizer.
   const clean = sanitizeAttribution(raw);
+  if (
+    isLandingComparisonAttempt(clean, comparisonRegistry) &&
+    !acceptsLandingComparisonSignupAttribution(raw ?? {}, now, comparisonRegistry)
+  )
+    return sanitizeAttribution({ landingPath: raw?.landingPath });
   if (
     isCompetitionAttempt(clean, registry) &&
     !acceptsCompetitionCapture(raw ?? {}, now, registry)
@@ -350,6 +378,7 @@ export function toLeadAttribution(attribution: Attribution): LeadAttribution {
  */
 export function getAttribution(
   registry: readonly CompetitionRound[] = competitionRegistry,
+  comparisonRegistry: readonly LandingComparisonRun[] = landingComparisonRegistry,
 ): Attribution {
   if (typeof window === "undefined") return {};
   const now = Date.now();
@@ -372,6 +401,19 @@ export function getAttribution(
   } catch {
     /* Restricted webview. */
   }
+  const comparison = resolveLandingComparisonAttribution({
+    incoming,
+    rawTuple,
+    now,
+    registry: comparisonRegistry,
+    storage,
+  });
+  if (comparison.kind === "comparison")
+    return sanitizeAttribution(
+      allowed ? comparison.attribution : withoutClickIds(comparison.attribution),
+    );
+  if (comparison.kind === "rejected")
+    return sanitizeAttribution({ landingPath: incoming.landingPath });
   const scoped = resolveCompetitionAttribution({ incoming, rawTuple, now, registry, storage });
   if (scoped.kind === "competition")
     return sanitizeAttribution(allowed ? scoped.attribution : withoutClickIds(scoped.attribution));
@@ -391,10 +433,7 @@ export function getAttribution(
     // Never resurrect a competition tuple from the unbounded legacy key.
     const legacyBase = stored && !isCompetitionAttempt(stored, registry) ? stored : undefined;
     const legacy = legacyBase
-      ? rememberUnresolvedPlacement(
-          allowed ? legacyBase : withoutClickIds(legacyBase),
-          rawStored,
-        )
+      ? rememberUnresolvedPlacement(allowed ? legacyBase : withoutClickIds(legacyBase), rawStored)
       : undefined;
     const merged = mergeAttribution(legacy, incoming);
     // The marker stays in localStorage. The object returned to the page does not.

@@ -64,10 +64,13 @@ function revealMiddleSignup() {
   const panel = document.getElementById("signup-middle");
   if (!(heading instanceof HTMLElement) || !(panel instanceof HTMLElement)) return;
   const form = panel.querySelector("form[data-wd-signup]");
-  // The offer above the form can exceed a short mobile viewport. The panel
-  // heading is the hash target, so centering the form comes after the router
-  // commit and the heading is focused without scrolling it back up.
-  if (form instanceof HTMLElement) form.scrollIntoView({ block: "center" });
+  const submit = form?.querySelector('button[type="submit"]');
+  // Keep the benefit and its terms in view with the email controls when they
+  // fit. On shorter screens or longer offers, retain the controls-first fallback.
+  const fitsWithHeading = submit instanceof HTMLElement
+    && submit.getBoundingClientRect().bottom - heading.getBoundingClientRect().top <= window.innerHeight - 96;
+  if (fitsWithHeading) heading.scrollIntoView({ block: "start" });
+  else if (form instanceof HTMLElement) form.scrollIntoView({ block: "center" });
   else panel.scrollIntoView({ block: "start" });
   heading.focus({ preventScroll: true });
 }

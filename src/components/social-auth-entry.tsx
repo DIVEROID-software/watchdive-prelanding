@@ -3,7 +3,7 @@ import { googleClientId } from "@/lib/googleTag";
 import { hasSocialAcknowledgement, socialAckCookie } from "@/lib/socialAuthAcknowledgement";
 
 import { SocialSignupButtons, type SocialProvider } from "@/components/SocialSignupButtons";
-import { segmentFromPathname } from "@/lib/segments/navigation";
+import { segmentFromPathname, landingVariantFromPathname } from "@/lib/segments/navigation";
 import { getAttribution } from "@/lib/attribution";
 import { getPressRef } from "@/lib/pressRef";
 import { getConversionExperiment, closeExperimentEnrollmentOnSubmit, markConversionMilestone } from "@/lib/conversionExperimentClient";
@@ -60,6 +60,7 @@ export function SocialAuthEntry({
     try {
       const attribution = getAttribution();
       const segment = segmentFromPathname(window.location.pathname);
+      const landingVariant = landingVariantFromPathname(window.location.pathname);
       const cookies = hasMetaMeasurementConsent() ? getMetaCookies() : {};
       const response = await fetch("/api/auth/start", {
         method: "POST",
@@ -69,6 +70,7 @@ export function SocialAuthEntry({
           source,
           locale,
           ...(segment ? { segment } : {}),
+          ...(landingVariant === "launch" ? { landingVariant } : {}),
           attribution,
           measurementConsent: measurementPermitted(),
           googleClientId: googleClientId(),

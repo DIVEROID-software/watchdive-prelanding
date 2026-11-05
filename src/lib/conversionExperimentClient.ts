@@ -1,5 +1,6 @@
 import { measurementAllowed } from "./consentRegion.ts";
 import { competitionRegistry } from "./competitionRegistry.ts";
+import { matchLandingComparison } from "./landingComparisonAttribution.ts";
 import type { ExperimentContext, LegacyExperimentContext } from "./conversionExperimentContract.ts";
 
 // Keep in lockstep with POPUP_FUNNEL_VERSION and POPUP_ACQUISITION_PLACEMENT.
@@ -7,7 +8,7 @@ import type { ExperimentContext, LegacyExperimentContext } from "./conversionExp
 const POPUP_FUNNEL_VERSION = 1 as const;
 const POPUP_ACQUISITION_PLACEMENT = "entry-popup" as const;
 
-import { segmentFromPathname } from "./segments/navigation.ts";
+import { segmentFromPathname, landingVariantFromPathname } from "./segments/navigation.ts";
 import { localeFromPathname } from "./i18n/locale.ts";
 import {
   SEGMENT_MEASUREMENT_ID,
@@ -164,9 +165,45 @@ export function currentLandingVariant(): Variant {
 export function initializeConversionExperiment(enabled = EXPERIMENT_ENABLED): void {
   if (!enabled || typeof window === "undefined") return;
   const segment = segmentFromPathname(location.pathname);
+  const layoutRevision =
+    landingVariantFromPathname(location.pathname) === "launch"
+      ? "airy-v1"
+      : SEGMENT_LAYOUT_REVISION;
   if (!segment && !window.__wdLandingVariant) return;
   if (!measurementAllowed()) return;
   if (revoked || enrollmentClosed) return;
+  const tuple = segmentSourceTuple(location.search);
+  const incomingComparison = matchLandingComparison(
+    { utmCampaign: tuple.campaignId, utmTerm: tuple.adsetId, utmContent: tuple.adId },
+    Date.now(),
+  );
+  const savedComparisonPhase = (value: ExperimentContext) =>
+    value.experimentId === SEGMENT_MEASUREMENT_ID
+      ? matchLandingComparison(
+          {
+            utmCampaign: value.attribution.campaignId,
+            utmTerm: value.attribution.adsetId,
+            utmContent: value.attribution.adId,
+          },
+          value.assignedAt,
+        )?.run.phaseId
+      : undefined;
+  // A fresh registered comparison does not inherit a prior unrelated tab cohort.
+  if (
+    context &&
+    incomingComparison &&
+    savedComparisonPhase(context) !== incomingComparison.run.phaseId
+  ) {
+    context = undefined;
+    Object.assign(funnel, {
+      exposed: false,
+      formVisible: false,
+      formFocused: false,
+      submitAttempted: false,
+    });
+    placements = emptySegmentPlacements();
+    popup = undefined;
+  }
   // SPA transitions may switch instruments, but never mix their stored contexts.
   if (context && (context.experimentId === SEGMENT_MEASUREMENT_ID) !== Boolean(segment)) {
     context = undefined;
@@ -186,6 +223,14 @@ export function initializeConversionExperiment(enabled = EXPERIMENT_ENABLED): vo
       !placements.crossedSegment
     ) {
       placements.crossedSegment = true;
+      window.dispatchEvent(new Event(FUNNEL_CHANGED));
+    }
+    if (
+      context.experimentId === SEGMENT_MEASUREMENT_ID &&
+      context.layoutRevision !== layoutRevision &&
+      !placements.crossedLayout
+    ) {
+      placements.crossedLayout = true;
       window.dispatchEvent(new Event(FUNNEL_CHANGED));
     }
     return;
@@ -209,7 +254,7 @@ export function initializeConversionExperiment(enabled = EXPERIMENT_ENABLED): vo
       assignedAt: now,
       qa,
       entrySegment: segment,
-      layoutRevision: SEGMENT_LAYOUT_REVISION,
+      layoutRevision,
       locale: localeFromPathname(location.pathname),
       device: window.innerWidth < 768 ? "phone" : window.innerWidth < 1024 ? "tablet" : "desktop",
       attribution: segmentSourceTuple(location.search),
@@ -225,7 +270,9 @@ export function initializeConversionExperiment(enabled = EXPERIMENT_ENABLED): vo
           !saved.data.qa &&
           sessionStorage.getItem(SEGMENT_BASE_SESSION_KEY) === baseSessionId &&
           saved.data.assignedAt <= now &&
-          saved.data.assignedAt > now - 86400_000
+          saved.data.assignedAt > now - 86400_000 &&
+          (!incomingComparison ||
+            savedComparisonPhase(saved.data) === incomingComparison.run.phaseId)
         )
           context = saved.data;
         sessionStorage.setItem(SEGMENT_MEASUREMENT_STORAGE, JSON.stringify(context));
@@ -235,6 +282,7 @@ export function initializeConversionExperiment(enabled = EXPERIMENT_ENABLED): vo
       }
     }
     placements.crossedSegment = context.entrySegment !== segment;
+    placements.crossedLayout = context.layoutRevision !== layoutRevision;
     funnel.exposed = true;
     window.dispatchEvent(new Event(EXPERIMENT_CHANGED));
     return;
@@ -388,6 +436,7 @@ export function getConversionFunnel() {
             middle: { ...placements.middle },
             bottom: { ...placements.bottom },
             crossedSegment: placements.crossedSegment,
+            crossedLayout: placements.crossedLayout,
           },
         }
       : {}),

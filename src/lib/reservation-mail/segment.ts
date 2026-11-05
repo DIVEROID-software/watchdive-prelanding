@@ -21,7 +21,9 @@ export function isReservationEmailSegment(value: unknown): value is ReservationE
  * A single percent-decoding of the path is allowed; an encoded slash is not
  * a separator. Anything else, including a missing path, is `general`.
  */
-export function resolveReservationEmailSegment(landingPath?: string | null): ReservationEmailSegment {
+export function resolveReservationEmailSegment(
+  landingPath?: string | null,
+): ReservationEmailSegment {
   if (typeof landingPath !== "string") return "general";
   const trimmed = landingPath.trim();
   if (!trimmed || isExternal(trimmed)) return "general";
@@ -42,13 +44,21 @@ export function resolveReservationEmailSegment(landingPath?: string | null): Res
   if (decoded.includes("%") || isExternal(decoded)) return "general";
   if (/[\u0000-\u001f\u007f\\]/.test(decoded) || /\s/.test(decoded)) return "general";
 
-  const normalized = decoded.length > 1 ? decoded.replace(/\/+$/, "").toLowerCase() : decoded.toLowerCase();
+  const normalized =
+    decoded.length > 1 ? decoded.replace(/\/+$/, "").toLowerCase() : decoded.toLowerCase();
   const parts = normalized.split("/");
   if (parts[0] !== "") return "general";
   const segments = parts.slice(1);
-  if (segments.length === 0 || segments.some((part) => part === "" || part === "." || part === "..")) {
+  if (
+    segments.length === 0 ||
+    segments.some((part) => part === "" || part === "." || part === "..")
+  ) {
     return "general";
   }
+  // Launch is a presentation variant; the mail still follows the same product segment.
+  if (segments[0] === "launch" && segments.length === 2) return pageSegment(segments[1]);
+  if (segments.length === 3 && LOCALE_PREFIXES.has(segments[0]) && segments[1] === "launch")
+    return pageSegment(segments[2]);
   if (segments.length === 1) return pageSegment(segments[0]);
   if (segments.length === 2 && LOCALE_PREFIXES.has(segments[0])) return pageSegment(segments[1]);
   return "general";

@@ -989,7 +989,7 @@ function CheckInboxCard({
 type FormPlacement = "hero" | "offer";
 const ENTRY_POPUP_DOM_ID = "entry-capture";
 
-export function EmailForm({ id, includePhone = false, presentation, compact = false, domId, compatibility, beforeSubmit, recordFunnel = true }: { id: FormPlacement; includePhone?: boolean; presentation?: { cta: string; note: string }; compact?: boolean; domId?: string; compatibility?: CompatibilityRequest; beforeSubmit?: () => boolean; recordFunnel?: boolean }) {
+export function EmailForm({ id, includePhone = false, presentation, compact = false, domId, compatibility, beforeSubmit, recordFunnel = true }: { id: FormPlacement; includePhone?: boolean; presentation?: { cta: string; note: string; socialAfterEmail?: boolean }; compact?: boolean; domId?: string; compatibility?: CompatibilityRequest; beforeSubmit?: () => boolean; recordFunnel?: boolean }) {
   const inputId = domId ?? id;
   // The entry panel keeps source "offer" and recordFunnel false. Its own
   // block must not become the bottom placement or the four body flags.
@@ -1584,7 +1584,7 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
       ) : (
         <p className="wd-experiment-copy wd-experiment-benefit">{copy.benefit}</p>
       )}
-      {!compact && <SocialAuthEntry locale={locale} source={id} disabled={loading} referredBy={getRef()} />}
+      {!compact && !presentation?.socialAfterEmail && <SocialAuthEntry locale={locale} source={id} disabled={loading} referredBy={getRef()} />}
       <p
         id={`${inputId}-confirm-note`}
         className={presentation ? "wd-segment-confirm-note" : "wd-control-copy text-sm leading-relaxed text-white/90"}
@@ -1641,6 +1641,8 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
         </button>
       </div>
 
+      {!compact && presentation?.socialAfterEmail && <div className="wd-form-alternatives"><SocialAuthEntry locale={locale} source={id} disabled={loading} referredBy={getRef()} /></div>}
+
       {!compact && programOn && refReady && !linkRef && (
         <details className="text-sm text-white/80">
           <summary className="block cursor-pointer list-none [&::-webkit-details-marker]:hidden">
@@ -1696,7 +1698,7 @@ export function EmailForm({ id, includePhone = false, presentation, compact = fa
 
 /** All acquisition placements share the existing email service and GA4 hooks.
  * Readiness is server-owned; absent schema/config hides only the unavailable feature. */
-export function AcquisitionTools({ compatibility = true }: { compatibility?: boolean } = {}) {
+export function AcquisitionTools({ compatibility = true, capture = 'configured' }: { compatibility?: boolean; capture?: 'configured' | 'none' } = {}) {
   const locale = useCurrentLocale();
   const socialCompleted = useSocialSignupCompleted();
   const socialContinuation = useSocialContinuation();
@@ -1723,11 +1725,11 @@ export function AcquisitionTools({ compatibility = true }: { compatibility?: boo
     {compatibility && ready.compatibility && <CompatibilityChecker locale={locale} renderSignup={(request, presentation) =>
       <EmailForm id="hero" domId="compatibility-checker" compact compatibility={request} presentation={presentation} />
     } />}
-    {entryEnabled ? <EntryCapture locale={locale} getKnownStatus={getKnownStatus}>
+    {capture !== 'none' && (entryEnabled ? <EntryCapture locale={locale} getKnownStatus={getKnownStatus}>
       <EmailForm id="offer" domId="entry-capture" compact recordFunnel={false} presentation={{ cta: entryCopy.cta, note: entryCopy.note }} />
     </EntryCapture> : <ExitIntentCapture locale={locale} getKnownStatus={getKnownStatus}>
       <EmailForm id="offer" domId="exit-capture" compact presentation={{ cta: copy.exitCta, note: copy.exitBody }} />
-    </ExitIntentCapture>}
+    </ExitIntentCapture>)}
     <WebPushOptIn locale={locale} config={ready.push} />
   </>;
 }
