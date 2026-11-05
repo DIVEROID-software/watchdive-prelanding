@@ -255,7 +255,7 @@ test("actual mail transport emits one enriched message with original signed veri
 test("shared placements are mounted, compact source hooks and unique DOM IDs remain explicit", () => {
   const index = readFileSync(new URL("../src/routes/index.tsx", import.meta.url), "utf8");
   const segment = readFileSync(
-    new URL("../src/components/segments/SegmentLanding.tsx", import.meta.url),
+    new URL("../src/components/segments/AirySegmentLanding.tsx", import.meta.url),
     "utf8",
   );
   assert.ok(index.includes("<AcquisitionTools />"));

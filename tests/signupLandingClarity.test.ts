@@ -59,7 +59,7 @@ before(async () => {
   const outfile = join(out, "page.mjs");
   await build({
     stdin: {
-      contents: `export { SegmentLanding } from './src/components/segments/SegmentLanding'; export { pricePathHeadings } from './src/components/segments/PricePaths'; export { setRoute } from '@tanstack/react-router';`,
+      contents: `export { AirySegmentLanding as SegmentLanding } from './src/components/segments/AirySegmentLanding'; export { pricePathHeadings } from './src/components/segments/PricePaths'; export { setRoute } from '@tanstack/react-router';`,
       resolveDir: root,
     },
     outfile,
@@ -170,7 +170,7 @@ for (const locale of SUPPORTED_LOCALES) {
 test("sticky labels reuse localized price-path free-alert headings", () => {
   const labels = ["Free launch alert", "무료 출시 알림", "免费上线通知", "免費上線通知", "無料の公開通知", "Aviso de lanzamiento gratis", "Alerte de lancement gratuite", "Kostenlose Startbenachrichtigung", "Aviso de lançamento grátis", "Gratis lanceringsalert"];
   for (const locale of SUPPORTED_LOCALES) assert.ok(labels.includes(page.pricePathHeadings(locale).public), locale);
-  const source = readFileSync(join(root, "src/components/segments/SegmentLanding.tsx"), "utf8");
+  const source = readFileSync(join(root, "src/components/segments/AirySegmentLanding.tsx"), "utf8");
   assert.match(source, /className="wd-segment-sticky"[\s\S]*?<span>\{priceHeadings.public\}<\/span>/);
   assert.equal(source.includes("$149 · Kickstarter"), false);
 });

@@ -4,7 +4,7 @@
 import { validGoogleClientId } from "../analytics/contract.ts";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-import { isLandingSegment, type LandingSegment } from "../segments/navigation.ts";
+import { isLandingSegment, isLandingVariant, type LandingSegment, type LandingVariant } from "../segments/navigation.ts";
 
 import type { SignupCountryProbe } from "../attribution.ts";
 import type { ExperimentContext } from "../conversionExperimentContract.ts";
@@ -30,6 +30,8 @@ export type SocialState = {
   source: "hero" | "offer";
   /** Optional signed audience return; absent keeps the legacy homepage flow. */
   segment?: LandingSegment;
+  /** Presentation only; signed with the segment, never an arbitrary return URL. */
+  landingVariant?: LandingVariant;
   locale: Locale;
   origin: string;
   attribution: LeadAttribution;
@@ -105,6 +107,7 @@ export function readSocialState(
   if (row.source !== "hero" && row.source !== "offer") return undefined;
   if (!isLocale(row.locale)) return undefined;
   if (row.segment !== undefined && !isLandingSegment(row.segment)) return undefined;
+  if (row.landingVariant !== undefined && (!isLandingVariant(row.landingVariant) || !row.segment)) return undefined;
   if (typeof row.state !== "string" || typeof row.nonce !== "string") return undefined;
   if (typeof row.verifier !== "string" || typeof row.jti !== "string") return undefined;
   if (typeof row.origin !== "string" || !isAllowedSocialOrigin(row.origin, env)) return undefined;

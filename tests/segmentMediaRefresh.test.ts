@@ -96,7 +96,7 @@ test("every locale has distinct scuba and freediving captions and eight publishe
 });
 
 test("the airy page retains measurement and puts signup after the product features", () => {
-  const page = read("src/components/segments/SegmentLanding.tsx");
+  const page = read("src/components/segments/AirySegmentLanding.tsx");
   assert.match(page, /data-landing-phase="segments-mobile-20261025"/);
   assert.match(page, /data-visual-phase="airy-20261105"/);
   assert.match(page, /data-conversion-revision="intent-first-20261105"/);

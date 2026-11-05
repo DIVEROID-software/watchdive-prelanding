@@ -31,8 +31,12 @@ import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
 import { Route as ApiConversionHealthRouteImport } from './routes/api.conversion-health'
 import { Route as ApiExperimentReportRouteImport } from './routes/api.experiment-report'
 import { Route as ApiMayaReportRouteImport } from './routes/api.maya-report'
+import { Route as LaunchFreedivingRouteImport } from './routes/launch.freediving'
+import { Route as LaunchScubaRouteImport } from './routes/launch.scuba'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
+import { Route as LocaleLaunchFreedivingRouteImport } from './routes/$locale.launch.freediving'
+import { Route as LocaleLaunchScubaRouteImport } from './routes/$locale.launch.scuba'
 import { Route as LocaleRCodeRouteImport } from './routes/$locale.r.$code'
 import { Route as ApiAuthContinuationRouteImport } from './routes/api/auth/continuation'
 import { Route as ApiAuthProvidersRouteImport } from './routes/api/auth/providers'
@@ -164,6 +168,16 @@ const ApiMayaReportRoute = ApiMayaReportRouteImport.update({
   path: '/api/maya-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LaunchFreedivingRoute = LaunchFreedivingRouteImport.update({
+  id: '/launch/freediving',
+  path: '/launch/freediving',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LaunchScubaRoute = LaunchScubaRouteImport.update({
+  id: '/launch/scuba',
+  path: '/launch/scuba',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RCodeRoute = RCodeRouteImport.update({
   id: '/r/$code',
   path: '/r/$code',
@@ -173,6 +187,16 @@ const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
   id: '/unsubscribe/$token',
   path: '/unsubscribe/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleLaunchFreedivingRoute = LocaleLaunchFreedivingRouteImport.update({
+  id: '/launch/freediving',
+  path: '/launch/freediving',
+  getParentRoute: () => LocaleRoute,
+} as any)
+const LocaleLaunchScubaRoute = LocaleLaunchScubaRouteImport.update({
+  id: '/launch/scuba',
+  path: '/launch/scuba',
+  getParentRoute: () => LocaleRoute,
 } as any)
 const LocaleRCodeRoute = LocaleRCodeRouteImport.update({
   id: '/r/$code',
@@ -303,9 +327,13 @@ export interface FileRoutesByFullPath {
   '/api/conversion-health': typeof ApiConversionHealthRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
+  '/launch/freediving': typeof LaunchFreedivingRoute
+  '/launch/scuba': typeof LaunchScubaRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/launch/freediving': typeof LocaleLaunchFreedivingRoute
+  '/$locale/launch/scuba': typeof LocaleLaunchScubaRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/continuation': typeof ApiAuthContinuationRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
@@ -348,9 +376,13 @@ export interface FileRoutesByTo {
   '/api/conversion-health': typeof ApiConversionHealthRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
+  '/launch/freediving': typeof LaunchFreedivingRoute
+  '/launch/scuba': typeof LaunchScubaRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale': typeof LocaleIndexRoute
+  '/$locale/launch/freediving': typeof LocaleLaunchFreedivingRoute
+  '/$locale/launch/scuba': typeof LocaleLaunchScubaRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/continuation': typeof ApiAuthContinuationRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
@@ -395,9 +427,13 @@ export interface FileRoutesById {
   '/api/conversion-health': typeof ApiConversionHealthRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
+  '/launch/freediving': typeof LaunchFreedivingRoute
+  '/launch/scuba': typeof LaunchScubaRoute
   '/r/$code': typeof RCodeRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/launch/freediving': typeof LocaleLaunchFreedivingRoute
+  '/$locale/launch/scuba': typeof LocaleLaunchScubaRoute
   '/$locale/r/$code': typeof LocaleRCodeRoute
   '/api/auth/continuation': typeof ApiAuthContinuationRoute
   '/api/auth/providers': typeof ApiAuthProvidersRoute
@@ -443,9 +479,13 @@ export interface FileRouteTypes {
     | '/api/conversion-health'
     | '/api/experiment-report'
     | '/api/maya-report'
+    | '/launch/freediving'
+    | '/launch/scuba'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale/'
+    | '/$locale/launch/freediving'
+    | '/$locale/launch/scuba'
     | '/$locale/r/$code'
     | '/api/auth/continuation'
     | '/api/auth/providers'
@@ -488,9 +528,13 @@ export interface FileRouteTypes {
     | '/api/conversion-health'
     | '/api/experiment-report'
     | '/api/maya-report'
+    | '/launch/freediving'
+    | '/launch/scuba'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale'
+    | '/$locale/launch/freediving'
+    | '/$locale/launch/scuba'
     | '/$locale/r/$code'
     | '/api/auth/continuation'
     | '/api/auth/providers'
@@ -534,9 +578,13 @@ export interface FileRouteTypes {
     | '/api/conversion-health'
     | '/api/experiment-report'
     | '/api/maya-report'
+    | '/launch/freediving'
+    | '/launch/scuba'
     | '/r/$code'
     | '/unsubscribe/$token'
     | '/$locale/'
+    | '/$locale/launch/freediving'
+    | '/$locale/launch/scuba'
     | '/$locale/r/$code'
     | '/api/auth/continuation'
     | '/api/auth/providers'
@@ -574,6 +622,8 @@ export interface RootRouteChildren {
   ApiConversionHealthRoute: typeof ApiConversionHealthRoute
   ApiExperimentReportRoute: typeof ApiExperimentReportRoute
   ApiMayaReportRoute: typeof ApiMayaReportRoute
+  LaunchFreedivingRoute: typeof LaunchFreedivingRoute
+  LaunchScubaRoute: typeof LaunchScubaRoute
   RCodeRoute: typeof RCodeRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ApiAuthContinuationRoute: typeof ApiAuthContinuationRoute
@@ -753,6 +803,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMayaReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/launch/freediving': {
+      id: '/launch/freediving'
+      path: '/launch/freediving'
+      fullPath: '/launch/freediving'
+      preLoaderRoute: typeof LaunchFreedivingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/launch/scuba': {
+      id: '/launch/scuba'
+      path: '/launch/scuba'
+      fullPath: '/launch/scuba'
+      preLoaderRoute: typeof LaunchScubaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/r/$code': {
       id: '/r/$code'
       path: '/r/$code'
@@ -766,6 +830,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/unsubscribe/$token'
       preLoaderRoute: typeof UnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$locale/launch/freediving': {
+      id: '/$locale/launch/freediving'
+      path: '/launch/freediving'
+      fullPath: '/$locale/launch/freediving'
+      preLoaderRoute: typeof LocaleLaunchFreedivingRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/launch/scuba': {
+      id: '/$locale/launch/scuba'
+      path: '/launch/scuba'
+      fullPath: '/$locale/launch/scuba'
+      preLoaderRoute: typeof LocaleLaunchScubaRouteImport
+      parentRoute: typeof LocaleRoute
     }
     '/$locale/r/$code': {
       id: '/$locale/r/$code'
@@ -919,6 +997,8 @@ interface LocaleRouteChildren {
   LocaleTermsRoute: typeof LocaleTermsRoute
   LocaleVerifyRoute: typeof LocaleVerifyRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
+  LocaleLaunchFreedivingRoute: typeof LocaleLaunchFreedivingRoute
+  LocaleLaunchScubaRoute: typeof LocaleLaunchScubaRoute
   LocaleRCodeRoute: typeof LocaleRCodeRoute
 }
 
@@ -931,6 +1011,8 @@ const LocaleRouteChildren: LocaleRouteChildren = {
   LocaleTermsRoute: LocaleTermsRoute,
   LocaleVerifyRoute: LocaleVerifyRoute,
   LocaleIndexRoute: LocaleIndexRoute,
+  LocaleLaunchFreedivingRoute: LocaleLaunchFreedivingRoute,
+  LocaleLaunchScubaRoute: LocaleLaunchScubaRoute,
   LocaleRCodeRoute: LocaleRCodeRoute,
 }
 
@@ -952,6 +1034,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConversionHealthRoute: ApiConversionHealthRoute,
   ApiExperimentReportRoute: ApiExperimentReportRoute,
   ApiMayaReportRoute: ApiMayaReportRoute,
+  LaunchFreedivingRoute: LaunchFreedivingRoute,
+  LaunchScubaRoute: LaunchScubaRoute,
   RCodeRoute: RCodeRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ApiAuthContinuationRoute: ApiAuthContinuationRoute,

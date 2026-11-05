@@ -25,7 +25,7 @@ components:
 
 ## Overview
 
-Preview iteration, scoped to `.wd-segment-airy`. Real WatchDive in the water is the central visual; product understanding precedes the first email form. The owner supplied the Prelaunch photography and spacious layout reference. This is not a new brand identity or an email-theme change.
+The new landing is scoped to `.wd-segment-airy` at `/launch/scuba` and `/launch/freediving`, including localized equivalents. Existing `/scuba` and `/freediving` retain the production control design and behavior. Real WatchDive in the water is the central visual; product understanding precedes the first email form. The owner supplied the Prelaunch photography and spacious layout reference. This is not a new brand identity or an email-theme change.
 
 Taste's selected hero-object direction uses seed 1778557155. Its generated orange palette, and the subsequent pastel redraw, are deliberately superseded by the owner's bright agency reference: white ground, deep ocean ink, teal actions, existing blue diving photography. Existing typography is retained for localization and loading stability. Impeccable uses that pinned direction rather than an unrelated visual-world workshop.
 
@@ -64,4 +64,4 @@ Retain the shared EmailForm implementation and its pending, verification, option
 - Preserve approved facts, source links, locale coverage and measurement identifiers.
 - Review at 320, 390, 768 and 1440px and with reduced motion.
 - Distinguish mock preview form checks from actual email, CRM or conversion-provider delivery.
-- Do not merge/promote the preview as a side effect of design review.
+- Keep both destinations available for the owner-requested Malaysia landing comparison; do not replace the control during the comparison.

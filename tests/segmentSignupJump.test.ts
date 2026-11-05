@@ -134,7 +134,7 @@ before(async () => {
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  const landing = readFileSync(new URL("../src/components/segments/SegmentLanding.tsx", import.meta.url), "utf8");
+  const landing = readFileSync(new URL("../src/components/segments/AirySegmentLanding.tsx", import.meta.url), "utf8");
   assert.match(landing, /useRouter\(\)/);
   assert.match(landing, /commitMiddleSignup\(router, options\)/);
   assert.match(landing, /className="wd-segment-hero-jump" href="#signup-middle" onClick=\{jumpToMiddleSignup\}/);

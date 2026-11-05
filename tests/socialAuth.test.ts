@@ -1261,8 +1261,9 @@ test("apple client secret is a short ES256 JWT and a non-PKCS8 key fails", async
 
 
 // Audience returns use fake stores, mailers, token exchanges and signing keys only.
+for (const variant of ["control", "launch"] as const) {
 for (const provider of ["google", "apple"] as const) {
-  test(`${provider} signed audience context returns to all locale routes and both signup anchors`, async () => {
+  test(`${provider} ${variant} signed audience context returns to all locale routes and both signup anchors`, async () => {
     resetSocialStateForTests();
     for (const segment of ["freediving", "scuba"] as const) {
       for (const locale of SUPPORTED_LOCALES) {
@@ -1270,7 +1271,8 @@ for (const provider of ["google", "apple"] as const) {
           const store = new FakeLeadStore();
           const harness = deps(store);
           const attribution = { landingPath: segmentPath(segment, locale), utmSource: "meta", utmCampaign: "segment-offline-fixture", utmContent: "video" };
-          const started = await begin(harness, { provider, source, locale, segment, attribution, next: "https://evil.example" });
+          const started = await begin(harness, { provider, source, locale, segment, attribution, ...(variant === "launch" ? {landingVariant:variant} : {}), next: "https://evil.example" });
+          assert.equal(started.bound.landingVariant, variant === "launch" ? "launch" : undefined);
           assert.equal(started.bound.segment, segment);
           assert.equal(started.bound.source, source);
           assert.deepEqual(started.bound.attribution, attribution);
@@ -1286,7 +1288,7 @@ for (const provider of ["google", "apple"] as const) {
           assert.equal(response.status, 303);
           const target = new URL(response.headers.get("location")!);
           assert.equal(target.origin, "https://watchdive.diveroid.com");
-          assert.equal(target.pathname, segmentPath(segment, locale));
+          assert.equal(target.pathname, segmentPath(segment, locale, variant));
           assert.equal(target.search, "?auth=confirmed");
           assert.equal(target.hash, source === "hero" ? "#signup-middle" : "#signup-bottom");
           assert.equal([...store.rows.values()][0]?.source, source);
@@ -1310,6 +1312,8 @@ for (const provider of ["google", "apple"] as const) {
       }
     }
   });
+}
+
 }
 
 async function appleCallback(
@@ -1699,4 +1703,26 @@ test("social start keeps a Google client id only with measurement consent", asyn
   });
   assert.equal(malformed.bound.measurementConsent, true);
   assert.equal(malformed.bound.googleClientId, undefined);
+});
+
+
+test("landing variant is a signed enum, rejects arbitrary return paths and survives error callbacks", async () => {
+  resetSocialStateForTests();
+  const store = new FakeLeadStore();
+  const harness = deps(store);
+  const started = await begin(harness, {provider:"google",source:"hero",locale:"en",segment:"scuba",landingVariant:"launch"});
+  for (const landingVariant of [null,"new","/launch/scuba","//evil.example","https://evil.example",{},["launch"],1]) {
+    const response = await handleSocialStart(startRequest({provider:"google",source:"hero",locale:"en",segment:"scuba",landingVariant}),harness);
+    assert.equal(response.status,400);
+    assert.equal(response.headers.get("set-cookie"),null);
+    const signed = signSocialState({...started.bound,landingVariant} as unknown as Parameters<typeof signSocialState>[0],SECRET);
+    assert.equal(readSocialState(signed,SECRET,harness.env,NOW.getTime()),undefined);
+  }
+  const unsegmented = await handleSocialStart(startRequest({provider:"google",source:"hero",locale:"en",landingVariant:"launch"}),harness);
+  assert.equal(unsegmented.status,400);
+  const request = new Request(`https://watchdive.diveroid.com/api/auth/google/callback?state=${started.bound.state}&error=access_denied&landingVariant=control&next=https://evil.example`,{headers:{cookie:started.cookie,"user-agent":UA}});
+  const response = await handleGoogleCallback(request,harness);
+  assert.equal(response.headers.get("location"),"https://watchdive.diveroid.com/launch/scuba?auth=error#signup-middle");
+  assert.equal(store.rows.size,0);
+  assert.equal(harness.mailer.sent.length,0);
 });

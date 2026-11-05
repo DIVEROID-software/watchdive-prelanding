@@ -91,17 +91,18 @@ test("forged signed-segment state cannot turn a failed callback into a redirect 
   assert.equal(networkCalls, 0);
 });
 
+for (const variant of ["control", "launch"] as const) {
 for (const segment of ["freediving", "scuba"] as const) {
   for (const locale of SUPPORTED_LOCALES) {
-    test(`SSR ${locale}/${segment}: locale SEO, middle/bottom forms and privacy`, {skip: !previewOrigin}, async () => {
+    test(`SSR ${variant} ${locale}/${segment}: locale SEO, middle/bottom forms and privacy`, {skip: !previewOrigin}, async () => {
       const origin = new URL(previewOrigin!);
       assert.ok(origin.protocol === "http:" && ["127.0.0.1", "localhost", "[::1]"].includes(origin.hostname));
-      const path = localizePath(`/${segment}`, locale);
+      const path = localizePath(`${variant === "launch" ? "/launch" : ""}/${segment}`, locale);
       const response = await fetch(new URL(`${path}?utm_source=qa2&utm_campaign=123456&utm_content=234567`, origin), {redirect:"manual"});
       assert.equal(response.status, 200);
       assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/);
       const html = await response.text();
-      const canonical = publicOrigin + path;
+      const canonical = publicOrigin + localizePath(`/${segment}`, locale);
       assert.equal(tags(html,"html")[0]?.lang, locale);
       const links = tags(html,"link");
       assert.deepEqual(links.filter(link => link.rel === "canonical").map(link=>link.href), [canonical]);
@@ -117,20 +118,35 @@ for (const segment of ["freediving", "scuba"] as const) {
       const copy = segmentCopy(locale, segment);
       assert.ok(header, "header remains mounted");
       assert.doesNotMatch(hero, /<form\b|<input\b|data-wd-signup/);
-      assert.doesNotMatch(header + hero, /(?:\$\s*(?:149|200|299)|(?:149|200|299)\s*\$)/);
-      assert.equal(tags(hero,"a").find(a=>a.class==="wd-segment-hero-jump")?.href, "#signup-middle");
-      assert.equal(tags(hero,"a").find(a=>a.class==="wd-segment-secondary-link")?.href, "#segment-how");
-      assert.ok(hero.includes(escaped(copy.noPayment)));
-      const middle = section(html,"signup-middle");
-      const adjacentPriceTerms = `<p>${escaped(conversionCopy[locale].benefit)}</p><p class="wd-segment-signup-terms">${escaped(conversionCopy[locale].terms)}</p>`;
-      assert.ok(middle.includes(adjacentPriceTerms), "localized $149/first-100/non-reservation conditions stay adjacent in the fresh SSR form");
-      assert.equal(middle.split(escaped(conversionCopy[locale].terms)).length - 1, 1);
-      const heading = middle.slice(0, middle.indexOf('class="wd-segment-form"'));
-      assert.doesNotMatch(heading, /<details|<summary|\bhidden(?:=|\s|>)|aria-hidden="true"|display:\s*none|visibility:\s*hidden|sr-only/);
-      assert.ok(middle.indexOf(adjacentPriceTerms) < middle.indexOf('id="hero-email"'));
-      const bottom = section(html,"signup-bottom");
-      assert.ok(bottom.includes(escaped(copy.finalBody)));
-      assert.doesNotMatch(bottom, /(?:\$\s*(?:149|200|299)|(?:149|200|299)\s*\$)|wd-segment-signup-terms/);
+      if (variant === "launch") {
+        assert.doesNotMatch(header + hero, /(?:\$\s*(?:149|200|299)|(?:149|200|299)\s*\$)/);
+        assert.equal(tags(hero,"a").find(a=>a.class==="wd-segment-hero-jump")?.href, "#signup-middle");
+        assert.equal(tags(hero,"a").find(a=>a.class==="wd-segment-secondary-link")?.href, "#segment-how");
+        assert.ok(hero.includes(escaped(copy.noPayment)));
+        const middle = section(html,"signup-middle");
+        const adjacentPriceTerms = `<p>${escaped(conversionCopy[locale].benefit)}</p><p class="wd-segment-signup-terms">${escaped(conversionCopy[locale].terms)}</p>`;
+        assert.ok(middle.includes(adjacentPriceTerms), "localized $149/first-100/non-reservation conditions stay adjacent in the fresh SSR form");
+        assert.equal(middle.split(escaped(conversionCopy[locale].terms)).length - 1, 1);
+        const heading = middle.slice(0, middle.indexOf('class="wd-segment-form"'));
+        assert.doesNotMatch(heading, /<details|<summary|\bhidden(?:=|\s|>)|aria-hidden="true"|display:\s*none|visibility:\s*hidden|sr-only/);
+        assert.ok(middle.indexOf(adjacentPriceTerms) < middle.indexOf('id="hero-email"'));
+        const bottom = section(html,"signup-bottom");
+        assert.ok(bottom.includes(escaped(copy.finalBody)));
+        assert.doesNotMatch(bottom, /(?:\$\s*(?:149|200|299)|(?:149|200|299)\s*\$)|wd-segment-signup-terms/);
+        assert.ok(tags(html,"meta").some(meta=>meta.name === "robots" && meta.content === "noindex, follow"));
+        const modeLinks = tags(html,"a").filter(a=>a.href?.includes("/launch/"));
+        assert.ok(modeLinks.some(a=>a.href===localizePath("/launch/scuba",locale)));
+        assert.ok(modeLinks.some(a=>a.href===localizePath("/launch/freediving",locale)));
+      } else {
+        assert.match(html, /data-visual-phase="media-rich-20261103"/);
+        assert.doesNotMatch(html, /data-conversion-revision="intent-first-20261105"|wd-segment-page[^"]*wd-segment-airy/);
+        assert.ok(tags(html,"meta").some(meta=>meta.name === "robots" && meta.content === "index, follow"));
+        const reviews = section(html,"beta-reviews");
+        assert.equal((reviews.split("<details")[0].match(/data-review-id=/g) ?? []).length, 4);
+        assert.equal((reviews.match(/data-review-id=/g) ?? []).length, 8);
+        const sequence = ["segment-hero", "signup-middle", "segment-benefits", "segment-how", "segment-features", "segment-gallery", "signup-bottom", "beta-reviews", "segment-press", "segment-faq"].map(id=>html.indexOf(`id="${id}"`));
+        assert.ok(sequence.every((position,i)=>position >= 0 && (i===0 || position > sequence[i-1])), "control production section order is unchanged");
+      }
       assert.equal(tags(html,"form").filter(form=>"data-wd-signup" in form).length, 2);
       for (const [placement, source] of [["middle","hero"],["bottom","offer"]]) {
         const content = section(html,`signup-${placement}`);
@@ -140,7 +156,7 @@ for (const segment of ["freediving", "scuba"] as const) {
         assert.equal(email?.["aria-describedby"], `${source}-confirm-note`);
         assert.equal(tags(content,"input").some(input=>input.type==="tel" && "required" in input), false);
         assert.equal(tags(content,"input").some(input=>input.autocomplete?.startsWith("cc-")), false);
-        assert.ok(content.includes(`<p id="${source}-confirm-note" class="wd-segment-confirm-note">${escaped(conversionCopy[locale].confirmation)}</p>`));
+        assert.ok(content.includes(`<p id="${source}-confirm-note" class="wd-segment-confirm-note">${escaped(variant === "launch" ? conversionCopy[locale].confirmation : copy.signupNote)}</p>`));
       }
       for (const legal of ["privacy","terms"]) assert.ok(tags(html,"a").some(a=>a.href===localizePath(`/${legal}`,locale)));
       const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
@@ -148,13 +164,16 @@ for (const segment of ["freediving", "scuba"] as const) {
       assert.ok(html.indexOf('id="segment-hero"') < html.indexOf('id="signup-middle"'));
       assert.ok(html.indexOf('id="signup-middle"') < html.indexOf('id="segment-benefits"'));
       assert.ok(html.indexOf('id="segment-gallery"') < html.indexOf('id="signup-bottom"'));
-      assert.ok(html.indexOf('id="segment-faq"') < html.indexOf('id="signup-bottom"'));
-      assert.match(html, /data-visual-phase="airy-20261105"/);
-      assert.match(html, /data-conversion-revision="intent-first-20261105"/);
-      const sequence = ["segment-features", "signup-middle", "beta-reviews", "segment-press", "segment-benefits"].map(id=>html.indexOf(`id="${id}"`));
-      assert.ok(sequence.every((position,i)=>position >= 0 && (i===0 || position > sequence[i-1])), "first signup follows features and precedes reviews/press");
+      assert.equal(html.indexOf('id="segment-faq"') < html.indexOf('id="signup-bottom"'), variant === "launch");
+      if (variant === "launch") {
+        assert.match(html, /data-visual-phase="airy-20261105"/);
+        assert.match(html, /data-conversion-revision="intent-first-20261105"/);
+        const sequence = ["segment-features", "signup-middle", "beta-reviews", "segment-press", "segment-benefits"].map(id=>html.indexOf(`id="${id}"`));
+        assert.ok(sequence.every((position,i)=>position >= 0 && (i===0 || position > sequence[i-1])), "first signup follows features and precedes reviews/press");
+      }
     });
   }
+}
 }
 
 
@@ -166,4 +185,5 @@ test("public sitemap includes every canonical audience destination without query
     assert.ok(locations.includes(publicOrigin + localizePath(`/${segment}`,locale)));
   }
   assert.equal(locations.some(url=>/[?#]/.test(url)),false);
+  assert.equal(locations.some(url=>url.includes("/launch/")),false, "paid variant is noindex and excluded from organic sitemap");
 });

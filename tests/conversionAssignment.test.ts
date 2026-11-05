@@ -15,6 +15,7 @@ import { competitionRegistry } from "../src/lib/competitionRegistry.ts";
 import * as segmentMeasurement from "../src/lib/segments/measurementContract.ts";
 import * as segmentNavigation from "../src/lib/segments/navigation.ts";
 import * as locale from "../src/lib/i18n/locale.ts";
+import * as landingComparisonAttribution from "../src/lib/landingComparisonAttribution.ts";
 
 test("every visitor is assigned form_first after the 2026-10-21 full rollout", () => {
   assert.equal(assignedVariant(), "form_first");
@@ -128,11 +129,13 @@ function visitor(initialPermission: boolean, initiallyVisible = true) {
   vm.runInNewContext(code, {
     exports,
     require: (name: string) => {
-      if (name.includes("consentRegion")) return { measurementAllowed: () => permitted, INLINE_MEASUREMENT_ALLOWED_JS: "true" };
+      if (name.includes("consentRegion"))
+        return { measurementAllowed: () => permitted, INLINE_MEASUREMENT_ALLOWED_JS: "true" };
       if (name.includes("measurementContract")) return segmentMeasurement;
       if (name.includes("segments/navigation")) return segmentNavigation;
       if (name.includes("i18n/locale")) return locale;
       if (name.includes("competitionRegistry")) return { competitionRegistry };
+      if (name.includes("landingComparisonAttribution")) return landingComparisonAttribution;
       throw new Error(`Unmapped browser dependency: ${name}`);
     },
     window: browser,
