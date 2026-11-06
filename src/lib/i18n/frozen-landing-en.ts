@@ -466,7 +466,7 @@ export const EN_FROZEN_LANDING_MESSAGES = {
       "All content on this page — including the WatchDive and DIVEROID names, logos, text, images, and videos — belongs to DIVEROID LTD or its licensors. You may not copy or reuse it without our permission.",
     s5Title: "5. Disclaimer",
     s5Body1:
-      "WatchDive is a dive aid designed to work with a compatible smartwatch. When released, it is intended to support — not replace — proper dive training, certification, and a backup dive computer. Always dive within your training and follow safe diving practices.",
+      "WatchDive is a dive aid designed to work with a compatible smartwatch. When released, it is intended to support — not replace — proper dive training and certification. Always dive within your training and follow safe diving practices.",
     s5Body2:
       'This page is provided "as is" without warranties of any kind. We are not liable for any damages arising from your use of this page. This limit does not apply where applicable law does not allow it, and these terms do not require you to give up a right that applicable law keeps.',
     s6Title: "6. Governing law",

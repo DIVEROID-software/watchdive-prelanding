@@ -595,7 +595,7 @@ const ko: FrozenLandingMessages = {
       "이 페이지의 모든 콘텐츠 — WatchDive와 DIVEROID 명칭, 로고, 텍스트, 이미지, 영상 포함 — 는 DIVEROID LTD 또는 라이선서의 소유입니다. 허락 없이 복제하거나 재사용할 수 없습니다.",
     s5Title: "5. 면책",
     s5Body1:
-      "WatchDive는 호환 스마트워치와 함께 사용하도록 설계된 다이빙 보조 도구입니다. 출시 후에도 정식 다이빙 교육, 자격, 백업 다이브 컴퓨터를 대체하는 것이 아니라 보조하기 위한 것입니다. 항상 교육받은 범위 안에서 다이빙하고 안전 수칙을 따르세요.",
+      "WatchDive는 호환 스마트워치와 함께 사용하도록 설계된 다이빙 보조 도구입니다. 출시 후에도 정식 다이빙 교육과 자격을 대체하는 것이 아니라 보조하기 위한 것입니다. 항상 교육받은 범위 안에서 다이빙하고 안전 수칙을 따르세요.",
     s5Body2:
       '이 페이지는 어떤 종류의 보증도 없이 "있는 그대로" 제공됩니다. 페이지 이용으로 발생하는 손해에 대해 당사는 책임지지 않습니다. 이 제한은 적용 법률이 허용하지 않는 곳에는 미치지 않으며, 본 약관은 적용 법률이 인정하는 권리를 포기하라고 요구하지 않습니다.',
     s6Title: "6. 준거법",
@@ -1047,7 +1047,7 @@ const zhCN: FrozenLandingMessages = {
       "本页面的全部内容 — 包括 WatchDive 与 DIVEROID 名称、标志、文字、图片与视频 — 均属 DIVEROID LTD 或其许可方所有。未经许可不得复制或再利用。",
     s5Title: "5. 免责声明",
     s5Body1:
-      "WatchDive 是为配合兼容智能手表而设计的潜水辅助工具。发布后，它旨在辅助 — 而非替代 — 正规潜水训练、证书与备用潜水电脑。请始终在训练范围内潜水并遵循安全潜水规范。",
+      "WatchDive 是为配合兼容智能手表而设计的潜水辅助工具。发布后，它旨在辅助 — 而非替代 — 正规潜水训练与证书。请始终在训练范围内潜水并遵循安全潜水规范。",
     s5Body2:
       "本页面按“现状”提供，不含任何形式的保证。对因使用本页面产生的任何损害，我们不承担责任。 在适用法律不允许的范围内，该限制不适用。本条款不要求你放弃适用法律为你保留的权利。",
     s6Title: "6. 适用法律",
@@ -1499,7 +1499,7 @@ const zhTW: FrozenLandingMessages = {
       "本頁面的全部內容 — 包括 WatchDive 與 DIVEROID 名稱、標誌、文字、圖片與影片 — 均屬 DIVEROID LTD 或其授權方所有。未經許可不得複製或再利用。",
     s5Title: "5. 免責聲明",
     s5Body1:
-      "WatchDive 是為搭配相容智慧手錶而設計的潛水輔助工具。發售後，它旨在輔助 — 而非取代 — 正規潛水訓練、證照與備用潛水電腦。請始終在訓練範圍內潛水並遵循安全潛水規範。",
+      "WatchDive 是為搭配相容智慧手錶而設計的潛水輔助工具。發售後，它旨在輔助 — 而非取代 — 正規潛水訓練與證照。請始終在訓練範圍內潛水並遵循安全潛水規範。",
     s5Body2:
       "本頁面按「現狀」提供，不附任何形式的保證。對因使用本頁面而生的任何損害，我們不負責任。 在適用法律不允許的範圍內，該限制不適用。本條款不要求你放棄適用法律為你保留的權利。",
     s6Title: "6. 準據法",
@@ -1972,7 +1972,7 @@ const ja: FrozenLandingMessages = {
       "このページのすべてのコンテンツ — WatchDive と DIVEROID の名称、ロゴ、テキスト、画像、動画を含む — は、DIVEROID LTD またはそのライセンサーに帰属します。許可なく複製・再利用することはできません。",
     s5Title: "5. 免責事項",
     s5Body1:
-      "WatchDive は、対応スマートウォッチと組み合わせて使うよう設計されたダイビング補助器具です。発売後も、正式なダイビングトレーニング、資格、バックアップのダイブコンピューターを置き換えるのではなく、補助することを目的としています。常にトレーニングの範囲内で潜り、安全なダイビング慣行に従ってください。",
+      "WatchDive は、対応スマートウォッチと組み合わせて使うよう設計されたダイビング補助器具です。発売後も、正式なダイビングトレーニングと資格を置き換えるのではなく、補助することを目的としています。常にトレーニングの範囲内で潜り、安全なダイビング慣行に従ってください。",
     s5Body2:
       "このページは、いかなる種類の保証もなく「現状のまま」提供されます。当社は、このページの利用から生じるいかなる損害についても責任を負いません。 適用される法律が許さない範囲では、この制限は適用されません。本規約は、適用される法律があなたに残す権利を放棄するよう求めません。",
     s6Title: "6. 準拠法",
@@ -2456,7 +2456,7 @@ const es: FrozenLandingMessages = {
       "Todo el contenido de esta página — incluidos los nombres WatchDive y DIVEROID, logotipos, textos, imágenes y vídeos — pertenece a DIVEROID LTD o a sus licenciantes. No puedes copiarlo ni reutilizarlo sin nuestro permiso.",
     s5Title: "5. Descargo de responsabilidad",
     s5Body1:
-      "WatchDive es una ayuda al buceo diseñada para funcionar con un smartwatch compatible. Cuando se lance, está pensado para apoyar — no reemplazar — la formación de buceo adecuada, la certificación y un ordenador de buceo de respaldo. Bucea siempre dentro de tu formación y sigue prácticas de buceo seguras.",
+      "WatchDive es una ayuda al buceo diseñada para funcionar con un smartwatch compatible. Cuando se lance, está pensado para apoyar — no reemplazar — la formación de buceo adecuada y la certificación. Bucea siempre dentro de tu formación y sigue prácticas de buceo seguras.",
     s5Body2:
       'Esta página se ofrece "tal cual", sin garantías de ningún tipo. No somos responsables de ningún daño derivado de tu uso de esta página. Este límite no se aplica donde la ley aplicable no lo permite, y estos términos no te exigen renunciar a un derecho que la ley aplicable te conserva.',
     s6Title: "6. Ley aplicable",
@@ -2941,7 +2941,7 @@ const fr: FrozenLandingMessages = {
       "Tout le contenu de cette page — y compris les noms WatchDive et DIVEROID, logos, textes, images et vidéos — appartient à DIVEROID LTD ou à ses concédants. Vous ne pouvez pas le copier ni le réutiliser sans notre autorisation.",
     s5Title: "5. Avertissement",
     s5Body1:
-      "WatchDive est une aide à la plongée conçue pour fonctionner avec une montre connectée compatible. À sa sortie, il est destiné à accompagner — et non remplacer — une formation de plongée adéquate, la certification et un ordinateur de plongée de secours. Plongez toujours dans les limites de votre formation et respectez les pratiques de plongée sûres.",
+      "WatchDive est une aide à la plongée conçue pour fonctionner avec une montre connectée compatible. À sa sortie, il est destiné à accompagner — et non remplacer — une formation de plongée adéquate et la certification. Plongez toujours dans les limites de votre formation et respectez les pratiques de plongée sûres.",
     s5Body2:
       "Cette page est fournie « en l’état », sans garantie d’aucune sorte. Nous ne sommes pas responsables des dommages résultant de votre utilisation de cette page. Cette limite ne s’applique pas là où la loi applicable ne le permet pas, et ces conditions ne vous demandent pas de renoncer à un droit que la loi applicable vous conserve.",
     s6Title: "6. Droit applicable",
@@ -3423,7 +3423,7 @@ const de: FrozenLandingMessages = {
       "Alle Inhalte dieser Seite — einschließlich der Namen WatchDive und DIVEROID, Logos, Texte, Bilder und Videos — gehören DIVEROID LTD oder ihren Lizenzgebern. Ohne unsere Erlaubnis darfst du sie nicht kopieren oder weiterverwenden.",
     s5Title: "5. Haftungsausschluss",
     s5Body1:
-      "WatchDive ist eine Tauchhilfe, die für die Nutzung mit einer kompatiblen Smartwatch entwickelt wurde. Nach der Veröffentlichung soll es eine ordentliche Tauchausbildung, Zertifizierung und einen Backup-Tauchcomputer unterstützen — nicht ersetzen. Tauche immer im Rahmen deiner Ausbildung und befolge sichere Tauchpraktiken.",
+      "WatchDive ist eine Tauchhilfe, die für die Nutzung mit einer kompatiblen Smartwatch entwickelt wurde. Nach der Veröffentlichung soll es eine ordentliche Tauchausbildung und Zertifizierung unterstützen — nicht ersetzen. Tauche immer im Rahmen deiner Ausbildung und befolge sichere Tauchpraktiken.",
     s5Body2:
       "Diese Seite wird „wie besehen“ ohne jegliche Gewährleistung bereitgestellt. Für Schäden aus deiner Nutzung dieser Seite haften wir nicht. Diese Grenze gilt nicht, wo anwendbares Recht sie nicht erlaubt, und diese Bedingungen verlangen nicht, dass du auf ein Recht verzichtest, das anwendbares Recht dir erhält.",
     s6Title: "6. Anwendbares Recht",
@@ -3903,7 +3903,7 @@ const ptBR: FrozenLandingMessages = {
       "Todo o conteúdo desta página — incluindo os nomes WatchDive e DIVEROID, logos, textos, imagens e vídeos — pertence à DIVEROID LTD ou a seus licenciadores. Você não pode copiá-lo nem reutilizá-lo sem nossa permissão.",
     s5Title: "5. Isenção de responsabilidade",
     s5Body1:
-      "O WatchDive é um auxílio ao mergulho projetado para funcionar com um smartwatch compatível. Quando lançado, destina-se a apoiar — não substituir — o treinamento adequado de mergulho, a certificação e um computador de mergulho reserva. Mergulhe sempre dentro do seu treinamento e siga práticas seguras de mergulho.",
+      "O WatchDive é um auxílio ao mergulho projetado para funcionar com um smartwatch compatível. Quando lançado, destina-se a apoiar — não substituir — o treinamento adequado de mergulho e a certificação. Mergulhe sempre dentro do seu treinamento e siga práticas seguras de mergulho.",
     s5Body2:
       'Esta página é fornecida "como está", sem garantias de qualquer tipo. Não nos responsabilizamos por danos decorrentes do seu uso desta página. Esse limite não se aplica onde a lei aplicável não o permite, e estes termos não exigem que você abra mão de um direito que a lei aplicável preserva.',
     s6Title: "6. Lei aplicável",

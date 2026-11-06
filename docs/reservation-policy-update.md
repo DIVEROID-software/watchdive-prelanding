@@ -46,7 +46,7 @@ Terms: `metaDescription`, `effectiveDate`, `intro`, `s1Body`, `s2Body`, `s5Body2
 
 This correction rewrote `intro2`, `s2NoPayment`, `s2Usage`, `s6Body`, `s1Body`, and `s2Body` so the guarantee is the ability to buy at USD $149. The other keys in the list were already updated for the optional fee and were left in place when they did not contradict the offer.
 
-Unchanged: `terms.s6Body` (laws of the Republic of Korea, and the existing translation in each locale), merchant identity, email verification, optional SMS, `s3PrivacyLink`, and the training and backup sentence.
+Unchanged: `terms.s6Body` (laws of the Republic of Korea, and the existing translation in each locale), merchant identity, email verification, optional SMS, `s3PrivacyLink`, and the training disclaimer sentence (no backup dive computer wording).
 
 `privacy.s2NoPayment` is still the rendered key. The privacy route was not renamed.
 
