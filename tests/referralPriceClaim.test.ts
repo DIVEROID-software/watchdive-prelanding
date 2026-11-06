@@ -87,6 +87,7 @@ test("off: rendered copy stays frozen with owner-approved hero, brand and footer
   // 2026-11-04: Dutch approved beta quotes are now translated. Update only
   // reviews.sub and heroProof.readAll to remove the stale English-only claim.
   // Restoring those two strings reproduces the prior catalog hash 9c157b24….
+  // 2026-11-06: Terms s5Body1 drops the backup dive computer clause in all locales.
   const race = SUPPORTED_LOCALES.map((l) =>
     earlyBirdRace(l, FROZEN_LANDING_MESSAGES[l].hero.nowPrice),
   );
@@ -107,7 +108,7 @@ test("off: rendered copy stays frozen with owner-approved hero, brand and footer
   );
   assert.equal(
     sha256(FROZEN_LANDING_MESSAGES),
-    "7defd8d51e2508d41fd13951696a40a0567f2763773c1306642fc8af8c688332",
+    "7209cbc4f903352397ee616a95fa1fa248a96469b5a1c09dcab9583d2c3bb85a",
   );
   assert.equal(
     sha256(conversionCopy),

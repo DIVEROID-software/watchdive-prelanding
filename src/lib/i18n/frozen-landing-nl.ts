@@ -467,7 +467,7 @@ export const NL_FROZEN_LANDING_MESSAGES: FrozenLandingMessages = {
       "Alle inhoud op deze pagina — waaronder de namen WatchDive en DIVEROID, logo's, tekst, afbeeldingen en video's — hoort bij DIVEROID LTD of zijn licentiegevers. Je mag die niet kopiëren of hergebruiken zonder onze toestemming.",
     s5Title: "5. Disclaimer",
     s5Body1:
-      "WatchDive is een duikhulpmiddel dat is ontworpen om te werken met een compatibele smartwatch. Na de release is het bedoeld om een goede duikopleiding, een brevet en een back-upduikcomputer te ondersteunen, niet te vervangen. Duik altijd binnen je opleiding en volg veilige duikpraktijken.",
+      "WatchDive is een duikhulpmiddel dat is ontworpen om te werken met een compatibele smartwatch. Na de release is het bedoeld om een goede duikopleiding en een brevet te ondersteunen, niet te vervangen. Duik altijd binnen je opleiding en volg veilige duikpraktijken.",
     s5Body2:
       'Deze pagina wordt aangeboden "zoals ze is", zonder garanties van welke aard ook. We zijn niet aansprakelijk voor schade die voortkomt uit je gebruik van deze pagina. Deze beperking geldt niet waar het toepasselijke recht dat niet toestaat, en deze voorwaarden vragen niet dat je een recht opgeeft dat het toepasselijke recht behoudt.',
     s6Title: "6. Toepasselijk recht",

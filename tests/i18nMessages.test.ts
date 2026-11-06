@@ -827,6 +827,7 @@ const LEGAL_ESSENTIALS = {
     changeable: /may change/i,
     noReservation: /does not reserve/i,
     training: /training/i,
+    // Forbidden: never mention a backup / secondary dive computer in Terms.
     backup: /backup/i,
     email: /email address/i,
     required: /required/i,
@@ -904,7 +905,7 @@ const LEGAL_ESSENTIALS = {
     changeable: /können sich.{0,80}ändern/i,
     noReservation: /reserviert kein|keine Reservierung/i,
     training: /Ausbildung/i,
-    backup: /Reserve|Backup/i,
+    backup: /Backup-Tauch|\bBackup\b/i,
     email: /E-Mail-Adresse/i,
     required: /erforderlich/i,
     phone: /Telefonnummer/i,
@@ -915,7 +916,8 @@ const LEGAL_ESSENTIALS = {
     changeable: /podem mudar/i,
     noReservation: /não reserva/i,
     training: /treinamento/i,
-    backup: /reserva|backup/i,
+    // Narrow: "reserva" alone also means the optional price reservation.
+    backup: /computador de mergulho reserva|\bbackup\b/i,
     email: /e-mail/i,
     required: /obrigatório/i,
     phone: /telefone/i,
@@ -940,9 +942,10 @@ test("every legal translation retains the operating and consent essentials", () 
     const privacy = flattenedText(FROZEN_LANDING_MESSAGES[locale].privacy);
     const expected = LEGAL_ESSENTIALS[locale];
 
-    for (const key of ["changeable", "noReservation", "training", "backup"] as const) {
+    for (const key of ["changeable", "noReservation", "training"] as const) {
       assert.match(terms, expected[key], `${locale}: legal terms lost ${key}`);
     }
+    assert.doesNotMatch(terms, expected.backup, `${locale}: Terms must not mention a backup dive computer`);
     assert.doesNotMatch(terms, expected.store, `${locale}: terms still say this page is not a store`);
     for (const key of ["email", "required", "phone", "optional"] as const) {
       assert.match(privacy, expected[key], `${locale}: privacy copy lost ${key}`);
