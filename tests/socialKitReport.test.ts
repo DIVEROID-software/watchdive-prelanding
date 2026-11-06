@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {aggregateSocialKit,handleSocialKitReport} from '../src/lib/socialKitReport.server.ts';
+import {encodeBehaviorSections} from '../src/lib/conversionExperimentContract.ts';
+import {MEASUREMENT_CONSENT_GRANTED} from '../src/lib/verification/contracts.ts';
+const rich=(value:string)=>({rich_text:[{plain_text:value}]});
+const context={experimentId:'wd-form-first-20261008' as const,variant:'form_first' as const,team:'organic' as const,sessionId:'11111111-1111-4111-8111-111111111111',assignedAt:Date.now(),qa:false};
+const visit={properties:{Name:{title:[{plain_text:context.sessionId}]},Campaign:rich('shop-abcdef123456 / organic_social / wd_social'),Sections:rich(encodeBehaviorSections('',context))}};
+const lead={id:'one',properties:{'Lead ID':rich('lead-one'),'UTM Source':rich('shop-abcdef123456'),'UTM Medium':rich('organic_social'),'UTM Campaign':rich('wd_social'),'Measurement consent':rich(MEASUREMENT_CONSENT_GRANTED),'Conversion experiment':rich(JSON.stringify(context)),'Email verified':{checkbox:true},'Verified at':{date:{start:new Date().toISOString()}},'Signed up':{date:{start:new Date().toISOString()}}}};
+test('deduplicates visits/leads and counts confirmed same-session conversion',()=>{const [r]=aggregateSocialKit([visit,visit],[lead,lead]);assert.equal(r.landingSessions,1);assert.equal(r.signups,1);assert.equal(r.conversionRate,1);assert.doesNotMatch(JSON.stringify(r),/lead-one|11111111/);});
+test('pending, suspect and withdrawn rows do not convert',()=>{for(const override of [{'Email verified':{checkbox:false}},{Suspect:{checkbox:true}},{'Measurement consent':rich('withdrawn')},{'Conversion experiment':rich(JSON.stringify({...context,qa:true}))}]){const [r]=aggregateSocialKit([visit],[{...lead,properties:{...lead.properties,...override}}]);assert.equal(r.signups,0);}});
+test('unmatched confirmed signup is visible but never manufactures a visit or conversion',()=>{const [r]=aggregateSocialKit([],[lead]);assert.equal(r.signups,1);assert.equal(r.landingSessions,0);assert.equal(r.unmatchedSignups,1);assert.equal(r.conversionRate,null);});
+test('read endpoint rejects missing authorization before source reads',async()=>{const r=await handleSocialKitReport(new Request('https://example.test/api/social-kit-report'));assert.equal(r.status,401);});

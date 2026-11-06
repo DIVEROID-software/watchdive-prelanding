@@ -31,6 +31,7 @@ import { Route as AdminBehaviorRouteImport } from './routes/admin.behavior'
 import { Route as ApiConversionHealthRouteImport } from './routes/api.conversion-health'
 import { Route as ApiExperimentReportRouteImport } from './routes/api.experiment-report'
 import { Route as ApiMayaReportRouteImport } from './routes/api.maya-report'
+import { Route as ApiSocialKitReportRouteImport } from './routes/api.social-kit-report'
 import { Route as LaunchFreedivingRouteImport } from './routes/launch.freediving'
 import { Route as LaunchScubaRouteImport } from './routes/launch.scuba'
 import { Route as RCodeRouteImport } from './routes/r.$code'
@@ -166,6 +167,11 @@ const ApiExperimentReportRoute = ApiExperimentReportRouteImport.update({
 const ApiMayaReportRoute = ApiMayaReportRouteImport.update({
   id: '/api/maya-report',
   path: '/api/maya-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSocialKitReportRoute = ApiSocialKitReportRouteImport.update({
+  id: '/api/social-kit-report',
+  path: '/api/social-kit-report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LaunchFreedivingRoute = LaunchFreedivingRouteImport.update({
@@ -327,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/api/conversion-health': typeof ApiConversionHealthRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
+  '/api/social-kit-report': typeof ApiSocialKitReportRoute
   '/launch/freediving': typeof LaunchFreedivingRoute
   '/launch/scuba': typeof LaunchScubaRoute
   '/r/$code': typeof RCodeRoute
@@ -376,6 +383,7 @@ export interface FileRoutesByTo {
   '/api/conversion-health': typeof ApiConversionHealthRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
+  '/api/social-kit-report': typeof ApiSocialKitReportRoute
   '/launch/freediving': typeof LaunchFreedivingRoute
   '/launch/scuba': typeof LaunchScubaRoute
   '/r/$code': typeof RCodeRoute
@@ -427,6 +435,7 @@ export interface FileRoutesById {
   '/api/conversion-health': typeof ApiConversionHealthRoute
   '/api/experiment-report': typeof ApiExperimentReportRoute
   '/api/maya-report': typeof ApiMayaReportRoute
+  '/api/social-kit-report': typeof ApiSocialKitReportRoute
   '/launch/freediving': typeof LaunchFreedivingRoute
   '/launch/scuba': typeof LaunchScubaRoute
   '/r/$code': typeof RCodeRoute
@@ -479,6 +488,7 @@ export interface FileRouteTypes {
     | '/api/conversion-health'
     | '/api/experiment-report'
     | '/api/maya-report'
+    | '/api/social-kit-report'
     | '/launch/freediving'
     | '/launch/scuba'
     | '/r/$code'
@@ -528,6 +538,7 @@ export interface FileRouteTypes {
     | '/api/conversion-health'
     | '/api/experiment-report'
     | '/api/maya-report'
+    | '/api/social-kit-report'
     | '/launch/freediving'
     | '/launch/scuba'
     | '/r/$code'
@@ -578,6 +589,7 @@ export interface FileRouteTypes {
     | '/api/conversion-health'
     | '/api/experiment-report'
     | '/api/maya-report'
+    | '/api/social-kit-report'
     | '/launch/freediving'
     | '/launch/scuba'
     | '/r/$code'
@@ -622,6 +634,7 @@ export interface RootRouteChildren {
   ApiConversionHealthRoute: typeof ApiConversionHealthRoute
   ApiExperimentReportRoute: typeof ApiExperimentReportRoute
   ApiMayaReportRoute: typeof ApiMayaReportRoute
+  ApiSocialKitReportRoute: typeof ApiSocialKitReportRoute
   LaunchFreedivingRoute: typeof LaunchFreedivingRoute
   LaunchScubaRoute: typeof LaunchScubaRoute
   RCodeRoute: typeof RCodeRoute
@@ -801,6 +814,13 @@ declare module '@tanstack/react-router' {
       path: '/api/maya-report'
       fullPath: '/api/maya-report'
       preLoaderRoute: typeof ApiMayaReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/social-kit-report': {
+      id: '/api/social-kit-report'
+      path: '/api/social-kit-report'
+      fullPath: '/api/social-kit-report'
+      preLoaderRoute: typeof ApiSocialKitReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/launch/freediving': {
@@ -1034,6 +1054,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConversionHealthRoute: ApiConversionHealthRoute,
   ApiExperimentReportRoute: ApiExperimentReportRoute,
   ApiMayaReportRoute: ApiMayaReportRoute,
+  ApiSocialKitReportRoute: ApiSocialKitReportRoute,
   LaunchFreedivingRoute: LaunchFreedivingRoute,
   LaunchScubaRoute: LaunchScubaRoute,
   RCodeRoute: RCodeRoute,
