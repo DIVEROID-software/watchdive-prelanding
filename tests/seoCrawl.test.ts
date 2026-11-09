@@ -44,16 +44,23 @@ test("robots.txt allows public pages, blocks only API fetches, and publishes the
   assert.doesNotMatch(body, /Disallow: \/(?:privacy|ko|verify|reservation)/);
 });
 
-test("the sitemap lists five public URLs per locale and repeats the HTML hreflang cluster", () => {
+test("the sitemap lists four final public URLs per locale and repeats the HTML hreflang cluster", () => {
   const xml = sitemapXml();
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-  assert.equal(locs.length, SUPPORTED_LOCALES.length * 5);
+  assert.equal(locs.length, SUPPORTED_LOCALES.length * 4);
   assert.equal(new Set(locs).size, locs.length);
 
-  const expected = [homePath, privacyPath, termsPath, (locale: Locale) => localizePath('/freediving', locale), (locale: Locale) => localizePath('/scuba', locale)].flatMap((pathFor) =>
+  const expected = [privacyPath, termsPath, (locale: Locale) => localizePath('/freediving', locale), (locale: Locale) => localizePath('/scuba', locale)].flatMap((pathFor) =>
     SUPPORTED_LOCALES.map((locale) => new URL(pathFor(locale), ORIGIN).toString()),
   );
   assert.deepEqual(locs, expected);
+
+  const locSet = new Set(locs);
+  for (const locale of SUPPORTED_LOCALES) {
+    const home = new URL(homePath(locale), ORIGIN).toString();
+    assert.equal(locSet.has(home), false, home);
+    assert.equal(xml.includes(`href="${home}"`), false, home);
+  }
 
   for (const block of xml.split("<url>").slice(1)) {
     const loc = block.match(/<loc>([^<]+)<\/loc>/)?.[1];
@@ -61,6 +68,7 @@ test("the sitemap lists five public URLs per locale and repeats the HTML hreflan
     assert.equal(alternates.length, SUPPORTED_LOCALES.length + 1);
     assert.equal(alternates.filter((item) => item[1] === "x-default").length, 1);
     assert.ok(alternates.some((item) => item[2] === loc));
+    for (const alternate of alternates) assert.equal(locSet.has(alternate[2]), true, alternate[2]);
     assert.doesNotMatch(block, /<lastmod>/);
   }
 

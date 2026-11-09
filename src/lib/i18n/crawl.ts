@@ -1,5 +1,5 @@
 import { absoluteWatchDivePath, WATCHDIVE_PUBLIC_ORIGIN } from "./publicOrigin.ts";
-import { SUPPORTED_LOCALES, homePath, privacyPath, termsPath, localizePath, type Locale } from "./locale.ts";
+import { SUPPORTED_LOCALES, privacyPath, termsPath, localizePath, type Locale } from "./locale.ts";
 
 /**
  * Public crawl files for the production origin.
@@ -10,10 +10,13 @@ import { SUPPORTED_LOCALES, homePath, privacyPath, termsPath, localizePath, type
  * not publish one and does not ask crawlers for citations.
  *
  * Omit lastmod until an actual modification date is tracked per public page.
+ *
+ * Legacy locale homes (`/` and `/ko`, `/ja`, and the other locale roots) are
+ * permanent 308s to that locale's scuba page. They stay as redirects for old
+ * links and ad entry, and they are not sitemap or hreflang targets.
  */
 
 const PUBLIC_DOCUMENTS = [
-  { pathFor: homePath },
   { pathFor: privacyPath },
   { pathFor: termsPath },
   { pathFor: (locale: Locale) => localizePath('/freediving', locale) },
