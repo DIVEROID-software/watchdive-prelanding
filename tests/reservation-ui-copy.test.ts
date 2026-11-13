@@ -141,7 +141,7 @@ test("every locale names the lowest launch price and a closed dispute", () => {
   assert.match(reservationCopy("ja").metaDescription, /含まれません/);
 });
 
-test("checkout stays card-free and the return form is the only email field", () => {
+test("checkout stays card-free and anonymous entry collects email only in Stripe", () => {
   const page = read("src/components/reservation/ReservationPage.tsx");
   const route = read("src/routes/reservation.tsx");
   const client = read("src/components/reservation/client.ts");
@@ -149,7 +149,8 @@ test("checkout stays card-free and the return form is the only email field", () 
   assert.doesNotMatch(page, /type=["'](?:email|tel|password|number)["']/);
   assert.doesNotMatch(page, /sms|phone-number|PhoneOptIn|card number|cardNumber/i);
   assert.match(page, /shouldOfferReturnForm/);
-  assert.match(page, /<ReturnLinkForm/);
+  assert.match(page, /<DirectCheckout/);
+  assert.doesNotMatch(read("src/components/reservation/DirectCheckout.tsx"), /type="email"/);
   assert.equal(form.match(/type="email"/g)?.length, 1);
   assert.match(form, /name="wd_hp"/);
   assert.doesNotMatch(form, /type=["'](?:tel|password|number)["']|sms|cardNumber|markConversion|metaPixel/i);

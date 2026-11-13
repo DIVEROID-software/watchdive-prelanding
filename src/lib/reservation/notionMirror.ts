@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { createNotionLeadStore } from "../verification/notionLead.ts";
 // Copies a Stripe reservation snapshot onto the existing signup row.
 // Stripe remains the only paid authority. This module never creates a charge,
 // never reads a success URL, and never treats a Notion cell as permission to
@@ -46,6 +48,7 @@ export type ReservationMirrorSession = {
 };
 
 export type ReservationMirrorInput = {
+  directEntry?: boolean;
   /** Customer email as Stripe returned it. */
   rawEmail: string;
   /** Reservation inbox key. Plus-tags stay distinct outside Gmail. */
@@ -357,9 +360,24 @@ export function createReservationNotionMirror(input: {
       } catch (error) {
         throw deliveryError(error);
       }
-      const targets = pagesToUpdate(pages, mirrorInput.rawEmail, mirrorInput.email).filter(
+      let targets = pagesToUpdate(pages, mirrorInput.rawEmail, mirrorInput.email).filter(
         (page) => typeof page.id === "string" && page.id.length > 0,
       );
+      if (targets.length === 0 && mirrorInput.directEntry && reservationMirrorRequiresLead(mirrorInput.snapshot)) {
+        const store = createNotionLeadStore(input.request, input.databaseId);
+        const digest = createHash("sha256").update(`direct-reservation:${mirrorInput.email}`).digest("hex");
+        const leadId = `${digest.slice(0,8)}-${digest.slice(8,12)}-4${digest.slice(13,16)}-a${digest.slice(17,20)}-${digest.slice(20,32)}`;
+        const existing = await store.findByEmail(mirrorInput.email, mirrorInput.rawEmail);
+        if (!existing) await store.createPending({
+          email: mirrorInput.rawEmail, canonical: mirrorInput.email, source: "stripe-direct-reservation",
+          refCode: digest.slice(0,12), flags: ["reservation-only"], suspect: false,
+          signedUpAt: new Date().toISOString(), leadId, expiresAt: new Date().toISOString(),
+          measurementState: "withheld",
+        });
+        // Re-read after create, including after webhook redelivery. Never mark email verified.
+        pages = await loadPages(input.request, input.databaseId, clauses);
+        targets = pagesToUpdate(pages, mirrorInput.rawEmail, mirrorInput.email).filter(page => typeof page.id === "string" && page.id.length > 0);
+      }
       if (targets.length === 0) {
         if (reservationMirrorRequiresLead(mirrorInput.snapshot)) throw new NotionMirrorError("lead_missing");
         return { skipped: "no_lead" };

@@ -231,9 +231,13 @@ export async function loadReservationState(
   email: string,
   livemode: boolean,
   nowMs: number,
+  knownCustomer?: StripeCustomer,
 ): Promise<{ snapshot: ReservationSnapshot; inspected: InspectedSession[]; customers: StripeCustomer[] }> {
   const emailSha256 = reservationEmailHash(email);
   const customers = await listCustomers(stripe, email);
+  // A newly created Stripe Customer may retain mixed-case email. Always include
+  // the webhook's retrieved customer when it belongs to this canonical inbox.
+  if (knownCustomer && sameInbox(knownCustomer.email, email) && !customers.some(c => c.id === knownCustomer.id)) customers.push(knownCustomer);
   const sessions = await listSessionsFor(stripe, customers);
   const inspected = await inspectSessions(stripe, sessions, livemode, nowMs, emailSha256);
   return { snapshot: aggregateInspections(inspected), inspected, customers };
