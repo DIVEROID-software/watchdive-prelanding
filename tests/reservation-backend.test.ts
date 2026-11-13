@@ -2102,3 +2102,17 @@ test("paid then refunded and a replayed old paid webhook never report a second p
   }
   assert.equal(purchases, 1);
 });
+
+test('Stripe-collected guest email binds paid webhook; replay neither charges nor changes identity', async () => {
+  const fake = new MemoryStripe();
+  const session = fake.seedPaid();
+  delete session.metadata.email_sha256;
+  session.clientReferenceId = null;
+  session.metadata.entry_flow = 'stripe_email_v1';
+  session.metadata.browser_proof = 'a'.repeat(64);
+  const payload = JSON.stringify({id:'evt_guest_direct',type:'checkout.session.completed',livemode:false,data:{object:{id:session.id}}});
+  const request=()=>new Request(`${ORIGIN}/api/reservation/webhook`,{method:'POST',headers:{'stripe-signature':stripeSignature(payload,WEBHOOK_SECRET,Math.floor(NOW/1000))},body:payload});
+  for(let i=0;i<2;i++){const result=await handleReservationWebhook(request(),deps(fake));assert.equal(result.status,200);assert.equal((await bodyOf(result)).paid,true);}
+  assert.equal(fake.creates(),0);
+  assert.equal(session.metadata.email_sha256,undefined);
+});

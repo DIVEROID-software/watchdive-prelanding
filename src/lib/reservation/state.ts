@@ -1,3 +1,4 @@
+import { bindDirectSession, isDirectSession } from "./directIdentity.ts";
 // Paid state is a function of Stripe objects retrieved by the API client.
 // Replaying a webhook cannot add the fee or the refund a second time, because
 // nothing here increments a counter. This module does not read or write Notion.
@@ -337,6 +338,11 @@ export async function inspectSession(
   nowMs: number,
   emailSha256: string,
 ): Promise<InspectedSession> {
+  if (isDirectSession(session)) {
+    const bound = await bindDirectSession(stripe, session);
+    if (!bound) return { kind: "foreign" };
+    session = bound;
+  }
   if (!isOurProduct(session) || meta(session.metadata, META_EMAIL_SHA256) !== emailSha256) {
     return { kind: "foreign" };
   }

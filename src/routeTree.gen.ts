@@ -53,6 +53,7 @@ import { Route as ApiPushConfigRouteImport } from './routes/api/push/config'
 import { Route as ApiPushSubscriptionRouteImport } from './routes/api/push/subscription'
 import { Route as ApiReferralLeaderboardRouteImport } from './routes/api.referral.leaderboard'
 import { Route as ApiReservationCheckoutRouteImport } from './routes/api/reservation/checkout'
+import { Route as ApiReservationDirectRouteImport } from './routes/api/reservation/direct'
 import { Route as ApiReservationReturnRouteImport } from './routes/api/reservation/return'
 import { Route as ApiReservationStatusRouteImport } from './routes/api/reservation/status'
 import { Route as ApiReservationWebhookRouteImport } from './routes/api/reservation/webhook'
@@ -285,6 +286,11 @@ const ApiReservationCheckoutRoute = ApiReservationCheckoutRouteImport.update({
   path: '/api/reservation/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiReservationDirectRoute = ApiReservationDirectRouteImport.update({
+  id: '/api/reservation/direct',
+  path: '/api/reservation/direct',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReservationReturnRoute = ApiReservationReturnRouteImport.update({
   id: '/api/reservation/return',
   path: '/api/reservation/return',
@@ -356,6 +362,7 @@ export interface FileRoutesByFullPath {
   '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/direct': typeof ApiReservationDirectRoute
   '/api/reservation/return': typeof ApiReservationReturnRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
@@ -406,6 +413,7 @@ export interface FileRoutesByTo {
   '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/direct': typeof ApiReservationDirectRoute
   '/api/reservation/return': typeof ApiReservationReturnRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
@@ -458,6 +466,7 @@ export interface FileRoutesById {
   '/api/push/subscription': typeof ApiPushSubscriptionRoute
   '/api/referral/leaderboard': typeof ApiReferralLeaderboardRoute
   '/api/reservation/checkout': typeof ApiReservationCheckoutRoute
+  '/api/reservation/direct': typeof ApiReservationDirectRoute
   '/api/reservation/return': typeof ApiReservationReturnRoute
   '/api/reservation/status': typeof ApiReservationStatusRoute
   '/api/reservation/webhook': typeof ApiReservationWebhookRoute
@@ -511,6 +520,7 @@ export interface FileRouteTypes {
     | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
+    | '/api/reservation/direct'
     | '/api/reservation/return'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
@@ -561,6 +571,7 @@ export interface FileRouteTypes {
     | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
+    | '/api/reservation/direct'
     | '/api/reservation/return'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
@@ -612,6 +623,7 @@ export interface FileRouteTypes {
     | '/api/push/subscription'
     | '/api/referral/leaderboard'
     | '/api/reservation/checkout'
+    | '/api/reservation/direct'
     | '/api/reservation/return'
     | '/api/reservation/status'
     | '/api/reservation/webhook'
@@ -653,6 +665,7 @@ export interface RootRouteChildren {
   ApiPushSubscriptionRoute: typeof ApiPushSubscriptionRoute
   ApiReferralLeaderboardRoute: typeof ApiReferralLeaderboardRoute
   ApiReservationCheckoutRoute: typeof ApiReservationCheckoutRoute
+  ApiReservationDirectRoute: typeof ApiReservationDirectRoute
   ApiReservationReturnRoute: typeof ApiReservationReturnRoute
   ApiReservationStatusRoute: typeof ApiReservationStatusRoute
   ApiReservationWebhookRoute: typeof ApiReservationWebhookRoute
@@ -970,6 +983,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReservationCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/reservation/direct': {
+      id: '/api/reservation/direct'
+      path: '/api/reservation/direct'
+      fullPath: '/api/reservation/direct'
+      preLoaderRoute: typeof ApiReservationDirectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/reservation/return': {
       id: '/api/reservation/return'
       path: '/api/reservation/return'
@@ -1076,6 +1096,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPushSubscriptionRoute: ApiPushSubscriptionRoute,
   ApiReferralLeaderboardRoute: ApiReferralLeaderboardRoute,
   ApiReservationCheckoutRoute: ApiReservationCheckoutRoute,
+  ApiReservationDirectRoute: ApiReservationDirectRoute,
   ApiReservationReturnRoute: ApiReservationReturnRoute,
   ApiReservationStatusRoute: ApiReservationStatusRoute,
   ApiReservationWebhookRoute: ApiReservationWebhookRoute,

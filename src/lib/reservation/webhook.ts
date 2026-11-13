@@ -1,3 +1,4 @@
+import { isDirectSession } from "./directIdentity.ts";
 // Snapshot webhook verification. The signature covers the exact raw body
 // bytes (HMAC-SHA256 of `${timestamp}.${payload}`, hex digest in v1), as
 // documented at https://docs.stripe.com/webhooks.md. JSON is parsed only
@@ -321,7 +322,7 @@ export async function processReservationWebhook(input: {
     return acknowledge(eventId, aggregateInspections([inspected]), [inspected], null, null);
   }
   const email = reservationCanonicalEmail(customer.email);
-  if (sessionHash !== reservationEmailHash(email)) {
+  if (!isDirectSession(session) && sessionHash !== reservationEmailHash(email)) {
     return { httpStatus: 200, body: { received: true, eventId, ignored: "not_bound" } };
   }
 
@@ -330,6 +331,7 @@ export async function processReservationWebhook(input: {
     email,
     input.config.livemode,
     input.nowMs,
+    customer,
   );
   const retired = await retirePastDueOpenSessions(
     input.stripe,
@@ -351,6 +353,7 @@ export async function processReservationWebhook(input: {
     email,
     input.config.livemode,
     input.nowMs,
+    customer,
   );
   return acknowledge(eventId, after.snapshot, after.inspected, customer.email, email);
 
@@ -416,6 +419,7 @@ export async function processReservationWebhook(input: {
 
     const mirrorInput: ReservationMirrorInput = {
       rawEmail,
+      directEntry: isDirectSession(session!),
       email: inbox,
       snapshot,
       session: chosen && "session" in chosen

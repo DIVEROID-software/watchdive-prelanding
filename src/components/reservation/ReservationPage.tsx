@@ -25,7 +25,7 @@ import {
   writeStoredLang,
   type ReservationLocale,
 } from "./query";
-import { ReturnLinkForm } from "./ReturnLinkForm";
+import { DirectCheckout } from "./DirectCheckout";
 import { shouldOfferReturnForm } from "./returnClient";
 import { resumeVerifiedReservation } from "./returnResume";
 import "./reservation.css";
@@ -47,6 +47,7 @@ function follow(event: { preventDefault(): void }, href: string, locale?: Reserv
 
 export function ReservationPage({ search }: { search: string }) {
   const query = parseReservationQuery(search);
+  const directReturn = new URLSearchParams(search).get("direct") === "1";
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [invalidInvite, setInvalidInvite] = useState(false);
   const [termsRead, setTermsRead] = useState(false);
@@ -66,6 +67,7 @@ export function ReservationPage({ search }: { search: string }) {
   const submitLock = useRef(createReservationSubmitLock());
 
   useEffect(() => {
+    if (directReturn) { setEntryResolved(true); setResumeSettled(true); return; }
     const entry = rememberReservationEntry({
       href: window.location.href,
       storage: window.sessionStorage,
@@ -77,10 +79,10 @@ export function ReservationPage({ search }: { search: string }) {
     setInviteToken(entry.inviteToken);
     setInvalidInvite(entry.invalidInvite);
     setEntryResolved(true);
-  }, [search]);
+  }, [search, directReturn]);
 
   useEffect(() => {
-    if (!entryResolved) return;
+    if (!entryResolved || directReturn) return;
     if (inviteToken) {
       setResumeSettled(true);
       return;
@@ -113,7 +115,7 @@ export function ReservationPage({ search }: { search: string }) {
     return () => {
       cancelled = true;
     };
-  }, [entryResolved, inviteToken, query.lang]);
+  }, [entryResolved, inviteToken, query.lang, directReturn]);
 
   useEffect(() => {
     const lookup = { inviteToken, sessionId: query.sessionId };
@@ -270,7 +272,7 @@ export function ReservationPage({ search }: { search: string }) {
             </div>
             <p className="wd-rsv-fee-label">{presentation.feeLabel}</p>
             <p className="wd-rsv-description">{presentation.description}</p>
-            {showStatus ? (
+            {showStatus && !offerReturn ? (
               <div
                 className="wd-rsv-status"
                 id={statusId}
@@ -290,7 +292,7 @@ export function ReservationPage({ search }: { search: string }) {
                 {view.checkoutErrorText}
               </p>
             ) : null}
-            {offerReturn ? <ReturnLinkForm locale={view.locale} /> : null}
+            {offerReturn ? <DirectCheckout locale={view.locale} /> : null}
             {view.showCheckoutForm ? (
               <form onSubmit={onSubmit} noValidate>
                 <div className="wd-rsv-disclosure">

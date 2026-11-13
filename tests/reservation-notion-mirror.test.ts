@@ -1091,3 +1091,21 @@ test("migration dry-run is the default, and apply writes properties only when th
   assert.equal(conflict.report.error, "schema_conflict");
   assert.equal(blocked.calls.some((call) => call.method === "PATCH"), false);
 });
+
+test('direct purchase creates payment-only pending record once; replay preserves unverified status',async()=>{
+  let page: Record<string,unknown>|null=null; let creates=0;
+  const request:NotionRequest=async(method,path,body)=>{
+    if(path.endsWith('/query')) return {results:page?[page]:[],has_more:false};
+    if(method==='POST' && path==='pages') {creates++;page={id:'11111111-1111-4111-8111-111111111111',...(body as object)};return page;}
+    if(method==='PATCH' && path.startsWith('pages/')) {page={...page,properties:{...(page?.properties as object),...((body as {properties:object}).properties)}};return page;}
+    throw new Error('unexpected call');
+  };
+  const mirror=createReservationNotionMirror({request,databaseId:DATABASE_ID});
+  await mirror.apply(paidInput({directEntry:true}));
+  await mirror.apply(paidInput({directEntry:true}));
+  assert.equal(creates,1);
+  const properties=(page as unknown as {properties:Record<string,unknown>}).properties;
+  assert.equal(JSON.stringify(properties).includes('reservation-only'),true);
+  assert.equal(JSON.stringify(properties).includes('"name":"pending"'),true);
+  assert.equal(JSON.stringify(properties).includes('"name":"verified"'),false);
+});
