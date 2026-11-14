@@ -34,9 +34,9 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
   "general": {
     "en": {
       "d0": {
-        "subject": "Reserve for $3. Lock in the $149 launch price.",
+        "subject": "Reserve for $3. Lock in the $149(50% Off!) launch price.",
         "preheader": "The first 100 pay $149. After that, WatchDive is $200.",
-        "headline": "Reserve for $3. Lock in the $149 launch price.",
+        "headline": "Reserve for $3. Lock in the $149(50% Off!) launch price.",
         "sentence1": "Fit a compatible smartwatch into WatchDive and dive with the watch you already own.",
         "sentence2": "The first 100 pay $149. After that, the price is $200.",
         "eyebrow": "$149 launch price",
@@ -458,9 +458,9 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
   "scuba": {
     "en": {
       "d0": {
-        "subject": "Reserve for $3. Lock in the $149 launch price.",
+        "subject": "Reserve for $3. Lock in the $149(50% Off!) launch price.",
         "preheader": "The watch you wear becomes a dive computer. The first 100 pay $149.",
-        "headline": "Reserve for $3. Lock in the $149 launch price.",
+        "headline": "Reserve for $3. Lock in the $149(50% Off!) launch price.",
         "sentence1": "WatchDive turns the smartwatch you already wear into a dive computer for scuba.",
         "sentence2": "The first 100 pay $149. After that, the price is $200.",
         "eyebrow": "For scuba",
@@ -882,9 +882,9 @@ export const PERSONALIZED_COPY: Record<ReservationEmailSegment, ByLocale> = {
   "freediving": {
     "en": {
       "d0": {
-        "subject": "Reserve for $3. Lock in the $149 launch price.",
+        "subject": "Reserve for $3. Lock in the $149(50% Off!) launch price.",
         "preheader": "Freediving readings on your watch. The first 100 pay $149.",
-        "headline": "Reserve for $3. Lock in the $149 launch price.",
+        "headline": "Reserve for $3. Lock in the $149(50% Off!) launch price.",
         "sentence1": "On a freedive, WatchDive shows depth and time on the smartwatch you already wear.",
         "sentence2": "The first 100 pay $149. After that, the price is $200.",
         "eyebrow": "For freediving",
