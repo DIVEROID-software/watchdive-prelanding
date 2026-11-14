@@ -352,7 +352,7 @@ export function VerifyPage() {
   }, []);
 
   return (
-    <main className="wd-verify-page flex min-h-screen items-center justify-center bg-[color:var(--color-deep-2)] px-5 py-14">
+    <main data-verify-state={state} className="wd-verify-page flex min-h-screen items-center justify-center bg-[color:var(--color-deep-2)] px-5 py-14">
       <div className="w-full max-w-xl lg:max-w-6xl">
         <Link
           to={homePath(locale)}

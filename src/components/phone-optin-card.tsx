@@ -77,6 +77,7 @@ export function PhoneOptInCard({
       >
         <PhoneNumberFields
           locale={locale}
+          suggestCountry={!draft?.country && !draft?.phone}
           phone={phone}
           onPhone={setPhone}
           country={country}
