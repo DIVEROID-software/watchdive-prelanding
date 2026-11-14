@@ -132,7 +132,7 @@ async function renderVerify(on = false) {
               router:
                 'import {createElement} from "react"; export const createFileRoute=()=>x=>x; export const Link=({to,children,...p})=>createElement("a",{...p,href:to},children);',
               locale: `import {EN_FROZEN_LANDING_MESSAGES as m} from "${join(root, "src/lib/i18n/frozen-landing-en.ts")}"; export const useCurrentLocale=()=>"en"; export const useFrozenLandingMessages=()=>m; export const useLandingPriceClaim=()=>${on ? "({})" : "undefined"};`,
-              api: "export const withdrawAttemptMeasurement=()=>{}; export const confirmVerification=()=>{}; export const grantConfirmationMeasurement=()=>{}; export const withdrawConfirmationMeasurement=()=>{};",
+              api: "export const withdrawAttemptMeasurement=()=>{}; export const pollVerification = async () => ({ok:true,status:'pending'}); export const confirmVerification=()=>{}; export const grantConfirmationMeasurement=()=>{}; export const withdrawConfirmationMeasurement=()=>{};",
               card: 'import {createElement} from "react"; export const VerifiedBuddyCard=()=>createElement("section",null,"Buddy Invite enabled");',
               phone: 'import {createElement} from "react"; export const PhoneOptInCard=()=>createElement("div",null,"Existing SMS consent card");',
               reservation: 'import {createElement} from "react"; export const SignupReservationOffer=()=>createElement("div",null,"Existing reservation offer");',
@@ -161,10 +161,10 @@ test("OFF confirmation keeps the intro and shows reservation before the optional
   assert.doesNotMatch(html, /data-verify-choice="buddy"|Buddy Invite enabled|private-confirmation-token|private-status-credential/);
 });
 
-test("ON confirmation offers buddy, then reservation, then phone, without serializing credentials", async () => {
+test("ON confirmation offers reservation, then buddy, then phone, without serializing credentials", async () => {
   const html = await renderVerify(true);
-  assert.deepEqual([...html.matchAll(/data-verify-choice="([^"]+)"/g)].map(m => m[1]), ["buddy", "reservation", "phone"]);
-  assert.ok(html.indexOf("Buddy Invite enabled") < html.indexOf("Existing reservation offer"));
+  assert.deepEqual([...html.matchAll(/data-verify-choice="([^"]+)"/g)].map(m => m[1]), ["reservation", "buddy", "phone"]);
+  assert.ok(html.indexOf("Existing reservation offer") < html.indexOf("Buddy Invite enabled"));
   assert.ok(html.indexOf("Existing reservation offer") < html.indexOf("Existing SMS consent card"));
   assert.match(html, /Existing SMS consent card/);
   assert.doesNotMatch(html, /private-status-credential|private-confirmation-token/);

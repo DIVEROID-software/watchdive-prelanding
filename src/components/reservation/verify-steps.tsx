@@ -6,10 +6,13 @@ import "./verify-steps.css";
 export type VerifyChoice = "buddy" | "reservation" | "phone";
 
 /** Choice labels, not a required sequence. Phone stays explicitly optional. */
-export const VERIFY_CHOICE_COPY: Record<Locale, Record<VerifyChoice, { mark: string; title: string }>> = {
+export const VERIFY_CHOICE_COPY: Record<
+  Locale,
+  Record<VerifyChoice, { mark: string; title: string }>
+> = {
   en: {
     buddy: { mark: "Optional", title: "Invite your dive buddies" },
-    reservation: { mark: "Optional", title: reservationChoiceTitle("en") },
+    reservation: { mark: "Optional", title: "$3 reservation" },
     phone: { mark: "Optional", title: "Get a text alert" },
   },
   ko: {
@@ -60,16 +63,35 @@ export const VERIFY_CHOICE_COPY: Record<Locale, Record<VerifyChoice, { mark: str
 };
 
 /** Presentation only: the existing cards retain their consent and payment logic. */
-export function VerifyStep({ locale, choice, children }: {
-  locale: Locale; choice: VerifyChoice; children: ReactNode;
+export function VerifyStep({
+  locale,
+  choice,
+  children,
+}: {
+  locale: Locale;
+  choice: VerifyChoice;
+  children: ReactNode;
 }) {
   const id = useId();
   const copy = VERIFY_CHOICE_COPY[locale][choice];
-  return <section className="wd-verify-step" data-verify-choice={choice} data-analytics-hook="verify_choice" aria-labelledby={id}>
-    <header className="wd-verify-step-heading">
-      <span className="wd-verify-step-mark">{copy.mark}</span>
-      <h2 id={id}>{copy.title}</h2>
-    </header>
-    <div className="wd-verify-step-content">{children}</div>
-  </section>;
+  return (
+    <section
+      className="wd-verify-step"
+      data-verify-choice={choice}
+      data-analytics-hook="verify_choice"
+      aria-labelledby={id}
+    >
+      <header className="wd-verify-step-heading">
+        <span className="wd-verify-step-mark">
+          {choice === "reservation"
+            ? "Promotion 1"
+            : choice === "buddy"
+              ? "Promotion 2"
+              : copy.mark}
+        </span>
+        <h2 id={id}>{copy.title}</h2>
+      </header>
+      <div className="wd-verify-step-content">{children}</div>
+    </section>
+  );
 }

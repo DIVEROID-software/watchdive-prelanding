@@ -542,6 +542,8 @@ export type BrowserRegistration = {
 };
 
 export type ConfirmResponse = {
+  /** Read-only receipt handle for browser measurement after the UI completes. */
+  completionHandle?: string;
   /** Buddy settings credential; ON + successful confirmation only, kept in memory. */
   statusToken?: string;
   ok: true;
@@ -640,10 +642,7 @@ export const FLAG_MEASUREMENT_WITHDRAWN = "measurement-withdrawn";
  */
 export function verificationSendBlocked(flags: string[]): boolean {
   return flags.some(
-    (flag) =>
-      flag !== "ip-repeat" &&
-      flag !== FLAG_MEASUREMENT_WITHDRAWN &&
-      flag !== "honeypot",
+    (flag) => flag !== "ip-repeat" && flag !== FLAG_MEASUREMENT_WITHDRAWN && flag !== "honeypot",
   );
 }
 
