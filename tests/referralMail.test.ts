@@ -19,7 +19,7 @@ import {
 } from "../src/lib/verification/resend.ts";
 import { toLeadRecord } from "../src/lib/verification/notionLead.ts";
 import { toReferralRow } from "../src/lib/referral/store.ts";
-import { confirmVerificationService } from "../src/lib/verification/service.ts";
+import { completeSocialVerification, confirmVerificationService } from "../src/lib/verification/service.ts";
 import { createVerificationToken } from "../src/lib/verification/token.ts";
 import { SUPPORTED_LOCALES, type Locale } from "../src/lib/i18n/locale.ts";
 import type { ReferralNoticeMail } from "../src/lib/referral/contract.ts";
@@ -118,12 +118,12 @@ test("switch on but a link missing: still the legacy welcome", async () => {
   assert.equal(on.calls[0]!.init.body, off.calls[0]!.init.body);
 });
 
-function confirmable(env: Record<string, string>, signupLocale?: Locale) {
+function confirmable(env: Record<string, string>, signupLocale?: Locale, email = "diver@example.com") {
   const confirmedAt = new Date("2026-10-22T03:00:00.000Z");
   const store = new FakeLeadStore();
   store.seed({
-    email: "diver@example.com",
-    canonical: "diver@example.com",
+    email,
+    canonical: email,
     status: "pending",
     refCode: "abc12345",
     leadId: LEAD_ID,
@@ -165,6 +165,39 @@ test("switch on: confirmation schedules the guide 30 minutes out with signed sta
   assert.ok(BUDDY_GUIDE_DELAY_MS > 3 * 60 * 1000);
   assert.match(sent.statusUrl ?? "", new RegExp(`^${TEST_ORIGIN}/ko/buddy#[^/?#=]+$`));
   assert.equal(sent.rulesUrl, `${TEST_ORIGIN}/ko/buddy-rules`);
+});
+
+test("owner verification QA confirms without scheduling legacy or Buddy welcome mail", async () => {
+  for (const enabled of [false, true]) {
+    for (const email of ["jay@diveroid.com", "JAY@diveroid.com", "jay+wdtest-us-20261114@diveroid.com"]) {
+      const env = { ...TEST_ENV, ...(enabled ? { WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" } : {}) };
+      const { mailer, token, deps } = confirmable(env, "en", email);
+      assert.equal((await confirmVerificationService(token, deps)).status, "verified");
+      assert.equal((await confirmVerificationService(token, deps)).status, "already_verified");
+      assert.equal(deps.store.markVerifiedCalls, 1, "first verification is preserved");
+      assert.equal(mailer.welcomes.length, 0, "no delayed promotion for a QA inbox");
+      assert.equal(deps.store.markWelcomeCalls, 0, "do not invent a scheduled-mail record");
+    }
+  }
+});
+
+test("social verification uses the same owner QA welcome exclusion", async () => {
+  const { deps, mailer, confirmedAt } = confirmable(
+    { ...TEST_ENV, WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" }, "en", "jay@diveroid.com",
+  );
+  const record = [...deps.store.rows.values()][0]!;
+  assert.equal(await completeSocialVerification(record, deps, {}, confirmedAt), "verified");
+  assert.equal(deps.store.markVerifiedCalls, 1);
+  assert.equal(mailer.welcomes.length, 0);
+  assert.equal(deps.store.markWelcomeCalls, 0);
+});
+
+test("QA exclusion is narrow: a customer's similarly named inbox still receives the guide", async () => {
+  for (const email of ["jay@example.com", "jay+customer@diveroid.com", "other+wdtest-us-20261114@example.com"]) {
+    const { mailer, token, deps } = confirmable({ ...TEST_ENV, WATCHDIVE_REFERRAL_PROGRAM_ENABLED: "1" }, "en", email);
+    assert.equal((await confirmVerificationService(token, deps)).status, "verified");
+    assert.equal(mailer.welcomes.length, 1);
+  }
 });
 
 // --- Switch on: the guide ----------------------------------------------------
