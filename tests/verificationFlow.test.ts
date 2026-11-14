@@ -764,3 +764,23 @@ test("background confirmation honors a withdrawal recorded before Meta dispatch"
   assert.equal(receipt.browserLead, undefined);
   assert.equal(receipt.registration, undefined);
 });
+
+test("owner QA inbox can request a fresh signed mail after verification without resetting identity", async () => {
+  const email = "jay@diveroid.com";
+  await requestVerificationService(submit({email,canonical:canonicalEmail(email)}), deps());
+  await confirmVerificationService(mailer.sent[0].token, deps());
+  const before = await store.findByEmail(canonicalEmail(email),email);
+  clock = new Date(clock.getTime()+120000);
+  const result = await requestVerificationService(submit({email,canonical:canonicalEmail(email),locale:"en"}), deps());
+  assert.equal(result.status,"pending");
+  assert.equal(mailer.sent.length,2);
+  assert.equal((await pollVerificationService(result.handle,deps())).status,"pending");
+  const after = await store.findByEmail(canonicalEmail(email),email);
+  assert.equal(after?.leadId,before?.leadId);
+  assert.equal(after?.verifiedAt,before?.verifiedAt);
+  assert.equal(after?.emailVerified,true);
+  assert.equal((await confirmVerificationService(mailer.sent[1].token,deps())).status,"already_verified");
+  assert.equal(dispatched.length,0);
+  await requestVerificationService(submit({email,canonical:canonicalEmail(email)}),deps());
+  assert.equal(mailer.sent.length,2,"cooldown still prevents repeated rapid sends");
+});
