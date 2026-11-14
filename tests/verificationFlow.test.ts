@@ -424,7 +424,7 @@ test("a token signed with another secret is refused", async () => {
 // Enumeration safety
 // ---------------------------------------------------------------------------
 
-test("an already-confirmed address gets an explicit notice but no mail or credential", async () => {
+test("a returning verified subscriber receives a fresh mail without resetting their row", async () => {
   store.seed({
     email: EMAIL,
     canonical: CANONICAL,
@@ -435,20 +435,24 @@ test("an already-confirmed address gets an explicit notice but no mail or creden
 
   const res = await requestVerificationService(submit(), deps());
 
-  assert.equal(res.status, "already_verified");
-  assert.equal(res.message, "This email address is already verified.");
+  assert.equal(res.status, "pending");
   assert.ok(res.handle);
-  assert.equal(mailer.sent.length, 0);
+  assert.equal(mailer.sent.length, 1);
+  const row = await store.findByEmail(CANONICAL, EMAIL);
+  assert.equal(row?.verifiedAt, "2026-07-01T00:00:00.000Z");
+  await confirmVerificationService(mailer.sent[0].token, deps());
+  assert.equal(store.reconfirmations.length, 1);
+  assert.deepEqual(dispatched, []);
 });
 
-test("an already-verified notice cannot authenticate polling or disclose referral data", async () => {
+test("a repeat signup cannot authenticate polling or disclose referral data", async () => {
   store.seed({ email: EMAIL, canonical: CANONICAL, status: "verified", emailVerified: true });
   const res = await requestVerificationService(submit(), deps());
-  assert.equal(res.status, "already_verified");
+  assert.equal(res.status, "pending");
   assert.equal((await pollVerificationService(res.handle, deps())).status, "pending");
   assert.equal("refCode" in res, false);
   assert.equal("browserLead" in res, false);
-  assert.equal(mailer.sent.length, 0);
+  assert.equal(mailer.sent.length, 1);
 });
 
 test("abuse suppression retains its generic response even for a verified address", async () => {
@@ -466,12 +470,18 @@ test("an unsubscribed address is not re-solicited and is not revealed", async ()
   assert.equal(mailer.sent.length, 0);
 });
 
-test("a legacy single opt-in row is left alone", async () => {
-  store.seed({ email: EMAIL, canonical: CANONICAL, status: "legacy" });
-
+test("an interest-only legacy row receives verification and is updated in place", async () => {
+  const original = store.seed({ email: EMAIL, canonical: CANONICAL, status: "legacy",
+    emailVerified: false, authVerificationProvenance: "interest_declared_not_auth_verified" });
   const res = await requestVerificationService(submit(), deps());
   assert.equal(res.message, GENERIC_PENDING_MESSAGE);
-  assert.equal(mailer.sent.length, 0);
+  assert.equal(mailer.sent.length, 1);
+  const row = await store.findByEmail(CANONICAL, EMAIL);
+  assert.equal(row?.pageId, original.pageId);
+  assert.equal(row?.status, "pending");
+  const confirmed = await confirmVerificationService(mailer.sent[0].token, deps());
+  assert.equal(confirmed.status, "verified");
+  assert.equal((await store.reread(original.pageId))?.emailVerified, true);
 });
 
 test("every skipped path still returns a well-formed handle that reads pending", async () => {
@@ -783,4 +793,18 @@ test("owner QA inbox can request a fresh signed mail after verification without 
   assert.equal(dispatched.length,0);
   await requestVerificationService(submit({email,canonical:canonicalEmail(email)}),deps());
   assert.equal(mailer.sent.length,2,"cooldown still prevents repeated rapid sends");
+});
+
+
+test("returning subscriber mail is cooled down, but historical send totals do not permanently block it", async () => {
+  const before = store.seed({email:EMAIL,canonical:CANONICAL,status:"verified",emailVerified:true,
+    sends:12,sentAt:new Date(clock.getTime()-2*86400000).toISOString(),verifiedAt:"2026-07-01T00:00:00.000Z"});
+  await requestVerificationService(submit(),deps());
+  assert.equal(mailer.sent.length,1);
+  await requestVerificationService(submit(),deps());
+  assert.equal(mailer.sent.length,1);
+  const after = await store.reread(before.pageId);
+  assert.equal(after?.verifiedAt,before.verifiedAt);
+  assert.equal(after?.emailVerified,true);
+  assert.equal((await confirmVerificationService(mailer.sent[0].token,deps())).status,"already_verified");
 });

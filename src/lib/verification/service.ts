@@ -505,16 +505,25 @@ export async function requestVerificationService(
   const trapReplay = input.flags.includes("honeypot") && !hardBlocked;
   const quiet = hardBlocked || trapReplay;
 
-  // Repeated owner QA sends a fresh signed email without clearing verification,
+  // A returning subscriber receives a fresh signed email without clearing verification,
   // payment, consent, or the identity referenced by existing links.
-  if (ownerTestInbox(input.email) && existing && !quiet &&
+  if (existing && !quiet &&
       existing.status !== "unsubscribed" && (existing.status === "verified" || existing.emailVerified)) {
     if (!attemptCooled(existing, now.getTime()) || !store.noteVerificationSend)
       return floor(pendingResponse(decoyHandle()));
+    // Keep repeat verification bounded without a permanent lifetime lockout.
+    if (!ownerTestInbox(input.email) && existing.sends >= VERIFICATION_MAX_SENDS &&
+        existing.sentAt && now.getTime() - Date.parse(existing.sentAt) < 24 * 60 * 60 * 1000)
+      return floor(pendingResponse(decoyHandle()));
     const mailLocale = input.locale ?? DEFAULT_LOCALE;
-    const token = createVerificationToken(existing.leadId, now.getTime() + VERIFICATION_TTL_MS,
+    const repeatLeadId = isLeadId(existing.leadId) ? existing.leadId : mintLeadId();
+    const token = createVerificationToken(repeatLeadId, now.getTime() + VERIFICATION_TTL_MS,
       false, secret, mailLocale);
-    await store.noteVerificationSend(existing.pageId, { sends: existing.sends + 1, sentAt: now.toISOString() });
+    await store.noteVerificationSend(existing.pageId, { sends: existing.sends + 1, sentAt: now.toISOString(),
+      ...(!isLeadId(existing.leadId) ? {leadId:repeatLeadId} : {}) });
+    const fresh = await store.reread(existing.pageId);
+    if (!fresh || fresh.status === "unsubscribed" || fresh.leadId !== repeatLeadId)
+      return floor(pendingResponse(decoyHandle()));
     await dependencies.mailer.send({ to: existing.email, token, leadId: mintLeadId(), publicOrigin, locale: mailLocale });
     // A decoy poll handle keeps the signup tab pending until the mailbox owner
     // follows the signed link. Publicly typing the address conveys no access.
@@ -529,28 +538,12 @@ export async function requestVerificationService(
     await grantFromSubmit(existing, input, dependencies, secret);
   }
 
-  // Owner-requested status disclosure. This is only a notice, never proof of
-  // inbox ownership. Keep the decoy handle and return no checkout credential.
-  if (
-    existing &&
-    !quiet &&
-    (existing.status === "verified" || existing.emailVerified) &&
-    existing.status !== "unsubscribed"
-  ) {
-    return floor({
-      ...pendingResponse(decoyHandle()),
-      status: "already_verified" as const,
-      message: "This email address is already verified.",
-    });
-  }
-
   if (existing && existing.status !== "pending" && existing.status !== "legacy") {
     return floor(pendingResponse(decoyHandle()));
   }
   if (existing?.emailVerified) return floor(pendingResponse(decoyHandle()));
-  // A legacy single opt-in row is already counted; re-confirming it is not this
-  // flow's job and would only reveal that the address is known.
-  if (existing?.status === "legacy") return floor(pendingResponse(decoyHandle()));
+  // An imported interest declaration is not mailbox verification. Reuse its
+  // row and arm a real signed verification attempt on this explicit submit.
 
   if (
     existing &&
@@ -1053,6 +1046,9 @@ export async function confirmVerificationService(
     // All sinks retain their own persisted consent checks and deterministic IDs.
     // An unavailable integration must not prevent the other independent work.
     const work: Array<() => Promise<unknown>> = [
+      ...(alreadyVerified && dependencies.store.noteReconfirmation
+        ? [() => dependencies.store.noteReconfirmation!(record.pageId, now.toISOString())]
+        : []),
       () => recordStageVerified(record.email, now.toISOString(), "email"),
       () =>
         sendConversions(

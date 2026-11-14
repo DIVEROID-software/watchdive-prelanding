@@ -191,10 +191,15 @@ export class FakeLeadStore implements LeadStore {
     if (row) this.rows.set(pageId, { ...row, duplicate: true });
   }
 
-  async noteVerificationSend(pageId: string, input: { sends: number; sentAt: string }): Promise<void> {
+  reconfirmations: {pageId: string; at: string}[] = [];
+  async noteReconfirmation(pageId: string, at: string): Promise<void> {
+    this.reconfirmations.push({pageId, at});
+  }
+
+  async noteVerificationSend(pageId: string, input: { sends: number; sentAt: string; leadId?: string }): Promise<void> {
     const row = this.rows.get(pageId);
     if (!row) return;
-    this.rows.set(pageId, { ...row, sends: input.sends, sentAt: input.sentAt });
+    this.rows.set(pageId, { ...row, sends: input.sends, sentAt: input.sentAt, ...(input.leadId ? {leadId:input.leadId} : {}) });
   }
 
   measurementFbcs: { pageId: string; metaFbc: string }[] = [];

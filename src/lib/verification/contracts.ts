@@ -492,7 +492,9 @@ export interface LeadStore {
   /** Checkbox only. A missing column must not verify the loser. */
   markDuplicate?(pageId: string): Promise<void>;
   /** Send counter and sent time only. Does not replace Lead ID or Verified at. */
-  noteVerificationSend?(pageId: string, input: { sends: number; sentAt: string }): Promise<void>;
+  noteVerificationSend?(pageId: string, input: { sends: number; sentAt: string; leadId?: string }): Promise<void>;
+  /** Latest signed-link reconfirmation; never overwrites original Verified at. */
+  noteReconfirmation?(pageId: string, at: string): Promise<void>;
 }
 
 export type PendingResponse = {

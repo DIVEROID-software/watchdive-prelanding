@@ -552,3 +552,13 @@ test("a broken error body still honors Retry-After", async () => {
     }
   }
 });
+
+
+test("signed reconfirmation records its own date without rewriting original verification or attribution", async () => {
+  let captured: unknown;
+  const store=createNotionLeadStore(async (method,path,body)=>{
+    assert.equal(method,"PATCH");assert.equal(path,`pages/${PAGE}`);captured=body;return {};
+  },DB);
+  await store.noteReconfirmation!(PAGE,"2026-11-14T09:00:00.000Z");
+  assert.deepEqual(captured,{properties:{"Last reconfirmed":{date:{start:"2026-11-14T09:00:00.000Z"}}}});
+});
