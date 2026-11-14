@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { phoneCountries, searchPhoneCountries, defaultPhoneCountry } from "@/lib/phoneNumbers";
 import { phoneOptInCopy } from "@/lib/phoneOptInCopy";
-import { readGeoCountry } from "@/lib/consentRegion";
+import { resolveGeoCountry } from "@/lib/consentRegion";
 import type { Locale } from "@/lib/i18n/locale";
 
 export function PhoneNumberFields({
@@ -12,6 +12,7 @@ export function PhoneNumberFields({
   onCountry,
   disabled = false,
   invalid = false,
+  suggestCountry = true,
 }: {
   locale: Locale;
   phone: string;
@@ -20,13 +21,16 @@ export function PhoneNumberFields({
   onCountry: (value: string) => void;
   disabled?: boolean;
   invalid?: boolean;
+  suggestCountry?: boolean;
 }) {
   const copy = phoneOptInCopy[locale];
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
   const search = useRef<HTMLInputElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const suggested = useRef(false);
+  const edited = useRef(!suggestCountry || Boolean(phone));
+  const onCountryRef = useRef(onCountry);
+  onCountryRef.current = onCountry;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -34,10 +38,15 @@ export function PhoneNumberFields({
   const options = useMemo(() => searchPhoneCountries(countries, query), [countries, query]);
   const selected = countries.find((item) => item.code === country) || countries[0];
   useEffect(() => {
-    if (suggested.current) return;
-    suggested.current = true;
-    onCountry(defaultPhoneCountry(locale, readGeoCountry()));
-  }, [locale, onCountry]); // Initial suggestion only; never replace a user's selection.
+    let alive = true;
+    if (!suggestCountry || edited.current) return;
+    void resolveGeoCountry().then((geo) => {
+      if (alive && !edited.current && geo) {
+        onCountryRef.current(defaultPhoneCountry(locale, geo));
+      }
+    });
+    return () => { alive = false; };
+  }, [locale, suggestCountry]);
   useEffect(() => {
     if (!open) return;
     search.current?.focus();
@@ -51,6 +60,7 @@ export function PhoneNumberFields({
     if (open) document.getElementById(`${id}-${active}`)?.scrollIntoView({ block: "nearest" });
   }, [active, open, id]);
   const choose = (code: string) => {
+    edited.current = true;
     onCountry(code);
     setOpen(false);
     trigger.current?.focus();
@@ -163,7 +173,7 @@ export function PhoneNumberFields({
           autoComplete="tel-national"
           maxLength={40}
           value={phone}
-          onChange={(e) => onPhone(e.target.value)}
+          onChange={(e) => { edited.current = true; onPhone(e.target.value); }}
           disabled={disabled}
           aria-invalid={invalid || undefined}
           placeholder={locale === "ko" ? "010 1234 5678" : copy.number}

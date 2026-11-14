@@ -86,3 +86,56 @@ html:root .wd-verify-step-heading h2 {
     max-width: 620px;
   }
 }
+
+/* Verification is a task page: readable headings and room for each choice. */
+html:root .wd-verify-page { align-items: flex-start; padding: 40px 24px; }
+html:root .wd-verify-page > div { max-width: 1160px; }
+html:root .wd-verify-page:not([data-verify-state="verified"]) > div { max-width: 680px; }
+html:root .wd-verify-page .wd-verify-card {
+  padding: 32px; border: 1px solid #ffffff26 !important;
+  box-shadow: none !important; background: #ffffff05; backdrop-filter: none;
+}
+html:root .wd-verify-page .wd-verify-card > h1 {
+  max-width: 900px; font-size: clamp(30px, 3.6vw, 48px) !important;
+  line-height: 1.15 !important; text-wrap: balance;
+}
+html:root .wd-verify-page .wd-verify-card > p { max-width: 760px; line-height: 1.65; }
+html:root .wd-verify-page .wd-verify-promotions {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; margin-top: 32px;
+}
+html:root .wd-verify-page .wd-verify-promotions > .wd-verify-step { margin: 0; }
+html:root .wd-verify-page .wd-verify-step { border: 1px solid #65ceee66; box-shadow: none; }
+html:root .wd-verify-page .wd-verify-step-heading {
+  flex-wrap: wrap; gap: 12px; padding: 20px; border-bottom: 1px solid #65ceee44;
+  background: #ffffff06; min-height: 90px;
+}
+html:root .wd-verify-page .wd-verify-step-heading h2 { flex: 1 1 180px; font-size: 22px !important; }
+html:root .wd-verify-page .wd-verify-step-mark { min-height: 32px; border: 0; }
+html:root .wd-verify-page .wd-verify-step-content { padding: 20px; }
+html:root .wd-verify-page .wd-verify-step-content > .wd-buddy-card,
+html:root .wd-verify-page .wd-verify-step-content > .wd-phone-card {
+  margin: 0; padding: 0; border: 0 !important; box-shadow: none !important; background: transparent !important;
+}
+html:root .wd-verify-page .wd-onsite-offer { box-shadow: none !important; border: 0 !important; margin: 0; }
+html:root .wd-verify-page .wd-onsite-content { padding: 24px; }
+html:root .wd-verify-page .wd-verify-step[data-verify-choice="phone"] { max-width: none; margin-top: 32px; }
+html:root .wd-verify-page .wd-country-menu { width: 100%; min-width: 0; z-index: 30; }
+html:root .wd-verify-page .wd-phone-consent { font-size: 14px; }
+html:root .wd-verify-page .wd-phone-terms { font-size: 12px; }
+@media (min-width: 960px) {
+  html:root .wd-verify-page .wd-verify-promotions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html:root .wd-verify-page .wd-phone-card {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); column-gap: 40px;
+  }
+  html:root .wd-verify-page .wd-phone-card > form { grid-column: 2; grid-row: 1 / 5; }
+  html:root .wd-verify-page .wd-phone-card > :not(form) { grid-column: 1; }
+}
+@media (max-width: 639px) {
+  html:root .wd-verify-page { padding: 20px 16px 32px; }
+  html:root .wd-verify-page .wd-verify-card { padding: 20px 0; border: 0 !important; background: transparent; }
+  html:root .wd-verify-page .wd-verify-step-heading { padding: 16px; min-height: 0; align-items: flex-start; }
+  html:root .wd-verify-page .wd-verify-step-heading h2 { flex-basis: 100%; }
+  html:root .wd-verify-page .wd-verify-step-content { padding: 16px; }
+  html:root .wd-verify-page .wd-onsite-content { padding: 20px 16px; }
+  html:root .wd-verify-page .wd-phone-fields { grid-template-columns: minmax(0, 1fr); }
+}
