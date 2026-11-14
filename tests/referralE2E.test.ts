@@ -607,7 +607,7 @@ async function runStory(on: boolean) {
     at: day1 + 3 * 60 * MIN + 2 * MIN,
     ref,
   });
-  assert.equal(alias.status, "already_verified");
+  assert.equal(alias.status, "pending");
   assert.equal(net.notion.pages.size, pagesBefore, "a self-referral alias creates no row");
   assert.equal(net.resend.to("diver+buddy@example.com").length, 0);
   // A mistyped share link: the row keeps the code it came in on, nobody is credited.

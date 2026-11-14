@@ -149,7 +149,8 @@ test("existing verified, legacy, unsubscribed and abusive requests produce no co
       { ...f.input, ...(status === "abusive" ? { flags: ["honeypot"] } : {}) },
       f.deps,
     );
-    assert.equal(f.mailer.sent.length, 0);
+    assert.equal(f.mailer.sent.length, status === "verified" ? 1 : 0);
+    assert.ok(f.mailer.sent.every(mail => !mail.compatibility), "repeat mail grants no model profile overwrite");
     assert.equal(f.store.contexts, 0);
     assert.equal(JSON.stringify(row), before);
   }

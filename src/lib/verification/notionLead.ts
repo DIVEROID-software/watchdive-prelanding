@@ -1117,10 +1117,17 @@ export function createNotionLeadStore(request: NotionRequest, databaseId: string
       }
     },
 
+    async noteReconfirmation(pageId, at) {
+      await request("PATCH", `pages/${pageId}`, {
+        properties: { "Last reconfirmed": { date: { start: at } } },
+      });
+    },
+
     async noteVerificationSend(pageId, input) {
       await request("PATCH", `pages/${pageId}`, {
         properties: {
           [FIELD_VERIFICATION_SENDS]: { number: input.sends },
+          ...(input.leadId ? { [FIELD_LEAD_ID]: textProp(input.leadId) } : {}),
           [FIELD_VERIFICATION_SENT]: { date: { start: input.sentAt } },
         },
       });
