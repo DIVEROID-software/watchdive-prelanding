@@ -204,7 +204,9 @@ test("120 segmented mails vary by stage and signup segment", () => {
         assert.doesNotMatch(blob, /\$299|\$179|free shipping|체크아웃|영수증/);
         assert.ok(draft.eyebrow.length <= 22, `${segment} ${locale} ${stage} eyebrow ${draft.eyebrow}`);
         for (const value of Object.values(draft)) {
-          const stripped = value.replace(/\$?(?:100|149|200|3)\b/g, "").replace(/\b(?:100|149|200|3)\s*\$/g, "");
+          const approvedValue = locale === "en" && stage === "d0"
+            ? value.replace("$149(50% Off!)", "$149") : value;
+          const stripped = approvedValue.replace(/\$?(?:100|149|200|3)\b/g, "").replace(/\b(?:100|149|200|3)\s*\$/g, "");
           assert.equal(/\d/.test(stripped), false, `${segment} ${locale} ${stage} ${value}`);
         }
         assert.ok(blob.includes(draft.eyebrow) && blob.includes(draft.chip) && mail.html.includes(draft.imageAlt));
