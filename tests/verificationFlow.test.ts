@@ -711,3 +711,56 @@ test("email signup preserves every selected language for reminders without measu
     assert.equal(reminderLocale(row), locale);
   }
 });
+
+
+test("confirmation returns after durable verification while conversion delivery is blocked", async () => {
+  await requestVerificationService(submit(), deps());
+  let release!: () => void;
+  const blocked = new Promise<void>((resolve) => { release = resolve; });
+  let held: Promise<unknown> | undefined;
+  let completed = false;
+  const result = await confirmVerificationService(mailer.sent[0].token, deps({
+    scheduleAfterResponse: (task: Promise<unknown>) => { held = task; },
+    dispatchVerifiedLead: async () => { await blocked; completed = true; },
+  }));
+  assert.equal(result.status, "verified");
+  assert.equal((await store.findByEmail(CANONICAL, EMAIL))?.emailVerified, true);
+  assert.ok(result.completionHandle);
+  assert.equal(completed, false);
+  const receipt = await pollVerificationService(result.completionHandle!, deps());
+  assert.equal(receipt.status, "verified");
+  release();
+  await held;
+  assert.equal(completed, true);
+  assert.equal(mailer.welcomes.length, 1);
+});
+
+test("failed verification storage never schedules integrations or reports success", async () => {
+  await requestVerificationService(submit(), deps());
+  store.markVerified = async () => { throw new Error("storage_unavailable"); };
+  let scheduled = false;
+  await assert.rejects(confirmVerificationService(mailer.sent[0].token, deps({
+    scheduleAfterResponse: () => { scheduled = true; },
+  })), /storage_unavailable/);
+  assert.equal(scheduled, false);
+});
+
+test("background confirmation honors a withdrawal recorded before Meta dispatch", async () => {
+  await requestVerificationService(submit(), deps());
+  let release!: () => void;
+  const blocked = new Promise<void>((resolve) => { release = resolve; });
+  let held: Promise<unknown> | undefined;
+  const result = await confirmVerificationService(mailer.sent[0].token, deps({
+    scheduleAfterResponse: (task: Promise<unknown>) => { held = task; },
+    dispatchGoogleVerified: async () => { await blocked; },
+  }));
+  const row = await store.findByEmail(CANONICAL, EMAIL);
+  await store.recordMeasurementWithdrawal(row!.pageId);
+  release();
+  await held;
+  assert.equal(dispatched.length, 0);
+  const receipt = await pollVerificationService(result.completionHandle!, deps());
+  assert.equal(receipt.status, "verified");
+  assert.equal(receipt.browserLead, undefined);
+  assert.equal(receipt.registration, undefined);
+});

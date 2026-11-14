@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 
 import {
   confirmVerification,
+  pollVerification,
   grantConfirmationMeasurement,
   withdrawConfirmationMeasurement,
 } from "@/lib/api/waitlist.functions";
@@ -37,7 +38,11 @@ import type { BrowserLead } from "@/lib/verification/contracts";
 import { verificationTokenFromFragment } from "@/lib/verification/tokenShape";
 import { EN_FROZEN_LANDING_MESSAGES } from "@/lib/i18n/frozen-landing-en";
 import { homePath, privacyPath, referralPath, termsPath } from "@/lib/i18n/locale";
-import { useCurrentLocale, useFrozenLandingMessages, useLandingPriceClaim } from "@/lib/i18n/use-current-locale";
+import {
+  useCurrentLocale,
+  useFrozenLandingMessages,
+  useLandingPriceClaim,
+} from "@/lib/i18n/use-current-locale";
 import { loadReferralPriceClaimOnly } from "@/lib/i18n/price-claim-loader";
 
 // No third-party script starts on load. This route carries the token in its
@@ -245,6 +250,13 @@ export function VerifyPage() {
         setRefCode(result.refCode ?? "");
         setPhoneAdded(result.phoneAdded === true);
         setState("verified");
+        if (result.completionHandle && !refused && measurementPermitted()) {
+          void pollVerification({ data: { handle: result.completionHandle } })
+            .then((receipt) => {
+              if (receipt.status === "verified" && measurementPermitted()) fireConversions(receipt);
+            })
+            .catch(() => {});
+        }
         if (result.refusalHandle) {
           refusalHandle.current = result.refusalHandle;
           rememberSignupHandle(result.refusalHandle);
@@ -341,7 +353,7 @@ export function VerifyPage() {
 
   return (
     <main className="wd-verify-page flex min-h-screen items-center justify-center bg-[color:var(--color-deep-2)] px-5 py-14">
-      <div className="w-full max-w-xl">
+      <div className="w-full max-w-xl lg:max-w-6xl">
         <Link
           to={homePath(locale)}
           className="mb-5 inline-flex min-h-11 items-center text-body text-white/70 underline"
@@ -375,39 +387,64 @@ export function VerifyPage() {
             <h1 className="text-heading">{copy.verifiedTitle}</h1>
             <p className="mt-3 text-body leading-relaxed text-white/75">{copy.verifiedBody}</p>
 
-            {/* Share and the price reservation come before the optional phone.
+            {/* Promotions come before the optional phone.
                 The confirm action and conversion calls above stay in place.
                 Most people confirm on the phone they signed up on, so the tab
                 that was polling is often never seen again. */}
-            {referralEnabled && (buddyToken || refCode) && <VerifyStep locale={locale} choice="buddy">
-            {buddyToken ? (
-              <VerifiedBuddyCard locale={locale} token={buddyToken} refCode={refCode} />
-            ) : refCode && (
-              <div className="rounded-xl border border-white/15 bg-white/[0.06] p-4">
-                <div className="text-lead text-[color:var(--color-cyan-glow)]">
-                  {copy.buddyTitle}
-                </div>
-                <p className="mt-1 text-body leading-relaxed text-white/70">{copy.buddyBody}</p>
-                <input
-                  readOnly
-                  value={shareUrl}
-                  onFocus={(event) => event.currentTarget.select()}
-                  className="mt-3 h-11 w-full rounded-lg bg-white/95 px-3 text-body text-[color:var(--color-deep-2)] outline-none"
-                />
-                <PriceGoal locale={locale} credited={null} countState="unknown" placement="verify_card" />
-              </div>
+            <div className="wd-verify-promotions">
+              {token.current && (
+                <>
+                  <VerifyStep locale={locale} choice="reservation">
+                    <SignupReservationOffer
+                      locale={locale}
+                      verified
+                      credential={{ kind: "confirmation", value: token.current }}
+                    />
+                  </VerifyStep>
+                </>
+              )}
+              {referralEnabled && (buddyToken || refCode) && (
+                <VerifyStep locale={locale} choice="buddy">
+                  {buddyToken ? (
+                    <VerifiedBuddyCard locale={locale} token={buddyToken} refCode={refCode} />
+                  ) : (
+                    refCode && (
+                      <div className="rounded-xl border border-white/15 bg-white/[0.06] p-4">
+                        <div className="text-lead text-[color:var(--color-cyan-glow)]">
+                          {copy.buddyTitle}
+                        </div>
+                        <p className="mt-1 text-body leading-relaxed text-white/70">
+                          {copy.buddyBody}
+                        </p>
+                        <input
+                          readOnly
+                          value={shareUrl}
+                          onFocus={(event) => event.currentTarget.select()}
+                          className="mt-3 h-11 w-full rounded-lg bg-white/95 px-3 text-body text-[color:var(--color-deep-2)] outline-none"
+                        />
+                        <PriceGoal
+                          locale={locale}
+                          credited={null}
+                          countState="unknown"
+                          placement="verify_card"
+                        />
+                      </div>
+                    )
+                  )}
+                </VerifyStep>
+              )}
+            </div>
+            {token.current && (
+              <>
+                <VerifyStep locale={locale} choice="phone">
+                  <PhoneOptInCard
+                    credential={{ kind: "confirmation", value: token.current }}
+                    complete={phoneAdded}
+                    onSaved={() => setPhoneAdded(true)}
+                  />
+                </VerifyStep>
+              </>
             )}
-
-            </VerifyStep>}
-
-            {token.current && <>
-              <VerifyStep locale={locale} choice="reservation">
-                <SignupReservationOffer locale={locale} verified credential={{ kind: "confirmation", value: token.current }} />
-              </VerifyStep>
-              <VerifyStep locale={locale} choice="phone">
-                <PhoneOptInCard credential={{ kind: "confirmation", value: token.current }} complete={phoneAdded} onSaved={() => setPhoneAdded(true)} />
-              </VerifyStep>
-            </>}
 
             {askMeasurement && (
               <MeasurementAsk

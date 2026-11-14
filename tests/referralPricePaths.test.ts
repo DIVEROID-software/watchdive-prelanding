@@ -264,7 +264,7 @@ test("the inline share uses the canonical /r path and the verify phone card stay
     "src/components/segments/PricePaths.tsx",
   );
   for (const locale of SUPPORTED_LOCALES) {
-    assert.equal(VERIFY_CHOICE_COPY[locale].reservation.title, reservationChoiceTitle(locale), locale);
+    assert.equal(VERIFY_CHOICE_COPY[locale].reservation.title, locale === "en" ? "$3 reservation" : reservationChoiceTitle(locale), locale);
     assert.doesNotMatch(VERIFY_CHOICE_COPY[locale].reservation.title, /lowest|Tiefst|최저|最低|最安|más bajo|plus bas|menor preço|laagste/i, locale);
   }
   assert.equal(VERIFY_CHOICE_COPY["zh-TW"].buddy.mark, "可選");
@@ -277,7 +277,7 @@ test("the inline share uses the canonical /r path and the verify phone card stay
   const buddy = verified.indexOf('choice="buddy"');
   const reservation = verified.indexOf('choice="reservation"');
   const phone = verified.indexOf('choice="phone"');
-  assert.ok(buddy > 0 && buddy < reservation && reservation < phone);
+  assert.ok(reservation > 0 && reservation < buddy && buddy < phone);
   assert.match(verified, /<PhoneOptInCard/);
   assert.match(verified, /<SignupReservationOffer/);
   assert.equal(verified.includes("trackMeta"), false);

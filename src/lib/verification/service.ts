@@ -1,4 +1,7 @@
-import { prepareCompatibilityRequest, type CompatibilityRequest } from "../compatibility/context.ts";
+import {
+  prepareCompatibilityRequest,
+  type CompatibilityRequest,
+} from "../compatibility/context.ts";
 // Policy for the transactional double opt-in flow. Every external system is
 // injected, so the whole state machine runs in tests against fakes.
 //
@@ -51,10 +54,7 @@ import {
 } from "./asyncVerificationMail.ts";
 import { observeSignupCountry, type SignupCountryProbe } from "../attribution.ts";
 import { canonicalEmail } from "../api/abuse.ts";
-import {
-  deliverRetargetingLead,
-  deliverRetargetingRegistration,
-} from "../retargeting/capi.ts";
+import { deliverRetargetingLead, deliverRetargetingRegistration } from "../retargeting/capi.ts";
 import { retargetingConsentFromRow, type RetargetingConsent } from "../retargeting/consent.ts";
 import {
   planCompleteRegistration,
@@ -290,8 +290,11 @@ function pressOutboxField(
 }
 
 function pressOwed(stage: PressStage, state: string | undefined): boolean {
-  if (stage === "accepted") return !state || state === PRESS_SYNC_HELD || state === PRESS_SYNC_PENDING;
-  return state !== PRESS_SYNC_CONFIRMED && state !== PRESS_SYNC_IGNORED && state !== PRESS_SYNC_INVALID;
+  if (stage === "accepted")
+    return !state || state === PRESS_SYNC_HELD || state === PRESS_SYNC_PENDING;
+  return (
+    state !== PRESS_SYNC_CONFIRMED && state !== PRESS_SYNC_IGNORED && state !== PRESS_SYNC_INVALID
+  );
 }
 
 /**
@@ -306,7 +309,11 @@ export async function reportPressNow(
 ): Promise<void> {
   if (!row.pressOutbox || !dependencies.reportPress || !pressOwed(stage, row.pressSync)) return;
   const report = dependencies
-    .reportPress(stage, { pageId: row.pageId, pressOutbox: row.pressOutbox, occurredAt: now.toISOString() })
+    .reportPress(stage, {
+      pageId: row.pageId,
+      pressOutbox: row.pressOutbox,
+      occurredAt: now.toISOString(),
+    })
     .catch(() => undefined);
   await Promise.race([report, (dependencies.sleep ?? defaultSleep)(PRESS_REPORT_WAIT_MS)]);
 }
@@ -465,16 +472,25 @@ export async function requestVerificationService(
   const decoyHandle = () =>
     signPollHandle(mintLeadId(), now.getTime(), consentRequested, secret, input.email);
 
-  const compatibility = input.compatibility ? prepareCompatibilityRequest(input.compatibility) : null;
-  if (input.compatibility && (!compatibility || !dependencies.compatibilityEnabled || compatibility.locale !== (input.locale ?? DEFAULT_LOCALE))) {
+  const compatibility = input.compatibility
+    ? prepareCompatibilityRequest(input.compatibility)
+    : null;
+  if (
+    input.compatibility &&
+    (!compatibility ||
+      !dependencies.compatibilityEnabled ||
+      compatibility.locale !== (input.locale ?? DEFAULT_LOCALE))
+  ) {
     throw new Error("Compatibility request unavailable");
   }
   const existing = await store.findByEmail(input.canonical, input.email);
-  const compatibilityProof = compatibility && existing && input.compatibilityCredential
-    ? verifyPollHandle(input.compatibilityCredential, secret, now.getTime(), POLL_HANDLE_TTL_MS)
-    : undefined;
-  const ownCompatibilityAttempt = Boolean(compatibilityProof && compatibilityProof.leadId === existing?.leadId);
-
+  const compatibilityProof =
+    compatibility && existing && input.compatibilityCredential
+      ? verifyPollHandle(input.compatibilityCredential, secret, now.getTime(), POLL_HANDLE_TTL_MS)
+      : undefined;
+  const ownCompatibilityAttempt = Boolean(
+    compatibilityProof && compatibilityProof.leadId === existing?.leadId,
+  );
 
   // Disposable and headless submits still write a review row and send no
   // message. A honeypot alone does not: the hidden field was named like an
@@ -519,7 +535,9 @@ export async function requestVerificationService(
     existing &&
     (!attemptCooled(existing, now.getTime()) || existing.sends >= VERIFICATION_MAX_SENDS)
   ) {
-    return floor(pendingResponse(ownCompatibilityAttempt ? input.compatibilityCredential! : decoyHandle()));
+    return floor(
+      pendingResponse(ownCompatibilityAttempt ? input.compatibilityCredential! : decoyHandle()),
+    );
   }
 
   const leadId = mintLeadId();
@@ -571,8 +589,14 @@ export async function requestVerificationService(
     }
     await store.recordCompatibility(existing.pageId, compatibility);
     const reread = await store.reread(existing.pageId);
-    if (!reread || reread.leadId !== existing.leadId || reread.status !== "pending" || reread.emailVerified ||
-        reread.compatibility?.modelId !== compatibility.modelId || reread.compatibility.locale !== compatibility.locale) {
+    if (
+      !reread ||
+      reread.leadId !== existing.leadId ||
+      reread.status !== "pending" ||
+      reread.emailVerified ||
+      reread.compatibility?.modelId !== compatibility.modelId ||
+      reread.compatibility.locale !== compatibility.locale
+    ) {
       return floor(pendingResponse(decoyHandle()));
     }
   }
@@ -620,7 +644,11 @@ export async function requestVerificationService(
       ...newRowIdentity(input),
       ...pressOutboxField(input, now.toISOString(), input.suspect, env),
     });
-    if (compatibility && (record.compatibility?.modelId !== compatibility.modelId || record.compatibility.locale !== compatibility.locale)) {
+    if (
+      compatibility &&
+      (record.compatibility?.modelId !== compatibility.modelId ||
+        record.compatibility.locale !== compatibility.locale)
+    ) {
       throw new Error("Compatibility context was not persisted");
     }
     await recordStageSignup(
@@ -643,7 +671,10 @@ export async function requestVerificationService(
     }
   }
 
-  const mailLocale = compatibility && isLocale(existing?.signupLocale) ? existing.signupLocale : (input.locale ?? DEFAULT_LOCALE);
+  const mailLocale =
+    compatibility && isLocale(existing?.signupLocale)
+      ? existing.signupLocale
+      : (input.locale ?? DEFAULT_LOCALE);
   if (dependencies.captureGoogleContext) {
     try {
       const fresh = measurementOpen ? await dependencies.store.reread(record.pageId) : undefined;
@@ -970,84 +1001,95 @@ export async function confirmVerificationService(
 
   const metaEventId = deterministicMetaEventId(parsed.leadId, secret);
 
-  if (record.emailVerified || record.status === "verified") {
-    await recordStageVerified(record.email, now.toISOString(), "email");
-    // The second click of one link, and the loser of two concurrent clicks,
-    // both land here. Re-dispatching is the right move rather than a wasteful
-    // one: the first attempt may have been the one that failed, and the event
-    // ids are derived, so a duplicate collapses into the same conversion.
-    const sent = await sendConversions(
-      record,
+  const alreadyVerified = record.emailVerified || record.status === "verified";
+  if (!alreadyVerified) {
+    // Notion is the authority on the attempt window, not the signed expiry.
+    const expiresAt = record.expiresAt ? Date.parse(record.expiresAt) : Number.NaN;
+    if (!Number.isFinite(expiresAt) || expiresAt <= now.getTime()) {
+      // A stored refusal that could not be written is still reported, so the
+      // page does not show it as saved; no refusal handle for a dead link.
+      return {
+        ok: true,
+        status: "expired",
+        ...(refusalUnrecorded ? { refusalRecorded: false as const } : {}),
+      };
+    }
+
+    await dependencies.store.markVerified(record.pageId, {
+      verifiedAt: now.toISOString(),
       metaEventId,
-      parsed.measurementConsent,
-      context,
-      dependencies,
-      secret,
-    );
-    await settleVerificationMail(dependencies.scheduleAfterResponse, () =>
-      scheduleWelcome(record, dependencies, now, parsed.locale));
-    return {
-      ok: true,
-      status: "already_verified",
-      refCode: record.refCode,
-      ...(referralProgramEnabled(env as Record<string, string | undefined>) && record.refCode
-        ? { statusToken: signStatusToken(record.refCode, referralSecret(env)) }
-        : {}),
-      ...(record.phone && !record.suspect ? { phoneAdded: true as const } : {}),
-      ...(sent ? browserLead(record, metaEventId) : {}),
-      ...measurementAsk(record, parsed.measurementConsent, options.localRefusal),
-      ...refusal,
-    };
+    });
   }
-
-  // Notion is the authority on the attempt window, not the signed expiry.
-  const expiresAt = record.expiresAt ? Date.parse(record.expiresAt) : Number.NaN;
-  if (!Number.isFinite(expiresAt) || expiresAt <= now.getTime()) {
-    // A stored refusal that could not be written is still reported, so the
-    // page does not show it as saved; no refusal handle for a dead link.
-    return {
-      ok: true,
-      status: "expired",
-      ...(refusalUnrecorded ? { refusalRecorded: false as const } : {}),
-    };
-  }
-
-  const verifiedAt = now.toISOString();
-  await dependencies.store.markVerified(record.pageId, { verifiedAt, metaEventId });
-  await recordStageVerified(record.email, verifiedAt, "email");
-
-  // Notion has no compare-and-set, so two racing confirmations can both reach
-  // this line. Both emit the identical ids, so Meta collapses them.
-  const sent = await sendConversions(
-    { ...record, emailVerified: true, status: "verified" },
-    metaEventId,
-    parsed.measurementConsent,
-    context,
-    dependencies,
-    secret,
-  );
-  await settleVerificationMail(dependencies.scheduleAfterResponse, () =>
-    scheduleWelcome({ ...record, emailVerified: true, status: "verified" }, dependencies, now, parsed.locale));
-  // First confirmation: the signup is complete and its address verified.
-  await reportPressNow(dependencies, "confirmed", record, now);
-  const registration = await emitEmailRegistration(
-    { ...record, emailVerified: true, status: "verified" },
-    dependencies,
-    secret,
-    context,
-    Math.floor(now.getTime() / 1000),
-  );
-
+  const verified = {
+    ...record,
+    emailVerified: true,
+    status: "verified" as const,
+    ...(alreadyVerified ? {} : { verifiedAt: now.toISOString(), metaEventId }),
+  };
+  let sent = false;
+  let registration: ConfirmResponse["registration"];
+  const mode = await settleVerificationMail(dependencies.scheduleAfterResponse, async () => {
+    // All sinks retain their own persisted consent checks and deterministic IDs.
+    // An unavailable integration must not prevent the other independent work.
+    const work: Array<() => Promise<unknown>> = [
+      () => recordStageVerified(record.email, now.toISOString(), "email"),
+      () =>
+        sendConversions(
+          verified,
+          metaEventId,
+          parsed.measurementConsent,
+          context,
+          dependencies,
+          secret,
+        ).then((value) => {
+          sent = value;
+        }),
+      () => scheduleWelcome(verified, dependencies, now, parsed.locale),
+      ...(!alreadyVerified
+        ? [
+            () => reportPressNow(dependencies, "confirmed", record, now),
+            () =>
+              emitEmailRegistration(
+                verified,
+                dependencies,
+                secret,
+                context,
+                Math.floor(now.getTime() / 1000),
+              ).then((value) => {
+                registration = value;
+              }),
+          ]
+        : []),
+    ];
+    for (const run of work) {
+      try {
+        await run();
+      } catch {
+        console.warn("verification_post_confirmation_incomplete");
+      }
+    }
+  });
   return {
     ok: true,
-    status: "verified",
+    status: alreadyVerified ? "already_verified" : "verified",
     refCode: record.refCode,
     ...(referralProgramEnabled(env as Record<string, string | undefined>) && record.refCode
       ? { statusToken: signStatusToken(record.refCode, referralSecret(env)) }
       : {}),
     ...(record.phone && !record.suspect ? { phoneAdded: true as const } : {}),
-    ...(sent ? browserLead(record, metaEventId) : {}),
-    ...(registration ? { registration } : {}),
+    ...(mode === "scheduled"
+      ? {
+          completionHandle: signPollHandle(
+            parsed.leadId,
+            now.getTime(),
+            parsed.measurementConsent,
+            secret,
+          ),
+        }
+      : {
+          ...(sent ? browserLead(record, metaEventId) : {}),
+          ...(registration ? { registration } : {}),
+        }),
     ...measurementAsk(record, parsed.measurementConsent, options.localRefusal),
     ...refusal,
   };
