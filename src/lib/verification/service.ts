@@ -984,7 +984,8 @@ export async function confirmVerificationService(
       dependencies,
       secret,
     );
-    await scheduleWelcome(record, dependencies, now, parsed.locale);
+    await settleVerificationMail(dependencies.scheduleAfterResponse, () =>
+      scheduleWelcome(record, dependencies, now, parsed.locale));
     return {
       ok: true,
       status: "already_verified",
@@ -1025,7 +1026,8 @@ export async function confirmVerificationService(
     dependencies,
     secret,
   );
-  await scheduleWelcome({ ...record, emailVerified: true, status: "verified" }, dependencies, now, parsed.locale);
+  await settleVerificationMail(dependencies.scheduleAfterResponse, () =>
+    scheduleWelcome({ ...record, emailVerified: true, status: "verified" }, dependencies, now, parsed.locale));
   // First confirmation: the signup is complete and its address verified.
   await reportPressNow(dependencies, "confirmed", record, now);
   const registration = await emitEmailRegistration(
