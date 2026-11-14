@@ -391,6 +391,11 @@ async function withResponseFloor<T>(
  * may already have gone" is the safe direction: the cost is a delayed resend,
  * not a duplicate message.
  */
+/** Owner-authorized repeat QA inbox; never grants authentication by address alone. */
+function ownerTestInbox(email: string): boolean {
+  return email.trim().toLowerCase() === "jay@diveroid.com";
+}
+
 function attemptCooled(record: LeadRecord | undefined, nowMs: number): boolean {
   if (!record) return true;
   const sentAt = record.sentAt ? Date.parse(record.sentAt) : Number.NaN;
@@ -418,7 +423,7 @@ async function recordStageSignup(
   measurementCell: string,
   suppressedRow: boolean,
 ): Promise<void> {
-  if (!stageScoreEnabled()) return;
+  if (!stageScoreEnabled() || ownerTestInbox(input.email)) return;
   await noteStageSignup({
     email: input.email,
     at,
@@ -436,7 +441,7 @@ async function recordStageVerified(
   at: string,
   source: "email" | "oauth",
 ): Promise<void> {
-  if (!stageScoreEnabled()) return;
+  if (!stageScoreEnabled() || ownerTestInbox(email)) return;
   await noteStageVerified({ email, at, source });
 }
 
@@ -465,7 +470,7 @@ export async function requestVerificationService(
   const now = clock();
   const mintLeadId = dependencies.leadId ?? newLeadId;
   const { store } = dependencies;
-  const consentRequested = !dependencies.gpc && input.measurementConsent;
+  const consentRequested = !ownerTestInbox(input.email) && !dependencies.gpc && input.measurementConsent;
 
   // Every early return still hands back a well-formed handle naming an attempt
   // no row carries. The caller cannot tell a skipped send from a real one.
@@ -499,6 +504,22 @@ export async function requestVerificationService(
   const hardBlocked = verificationSendBlocked(input.flags) || input.networkSendBlocked;
   const trapReplay = input.flags.includes("honeypot") && !hardBlocked;
   const quiet = hardBlocked || trapReplay;
+
+  // Repeated owner QA sends a fresh signed email without clearing verification,
+  // payment, consent, or the identity referenced by existing links.
+  if (ownerTestInbox(input.email) && existing && !quiet &&
+      existing.status !== "unsubscribed" && (existing.status === "verified" || existing.emailVerified)) {
+    if (!attemptCooled(existing, now.getTime()) || !store.noteVerificationSend)
+      return floor(pendingResponse(decoyHandle()));
+    const mailLocale = input.locale ?? DEFAULT_LOCALE;
+    const token = createVerificationToken(existing.leadId, now.getTime() + VERIFICATION_TTL_MS,
+      false, secret, mailLocale);
+    await store.noteVerificationSend(existing.pageId, { sends: existing.sends + 1, sentAt: now.toISOString() });
+    await dependencies.mailer.send({ to: existing.email, token, leadId: mintLeadId(), publicOrigin, locale: mailLocale });
+    // A decoy poll handle keeps the signup tab pending until the mailbox owner
+    // follows the signed link. Publicly typing the address conveys no access.
+    return floor(pendingResponse(decoyHandle()));
+  }
 
   // Measurement allowed on this submit for an address that already has a row
   // (in any of the paths below, decoys included): one grant, and at most one
@@ -1154,6 +1175,7 @@ export function measurementWithdrawn(record: LeadRecord): boolean {
  * cell falls back to the attempt's signed consent bit.
  */
 export function measurementAllows(record: LeadRecord, signedConsent: boolean): boolean {
+  if (ownerTestInbox(record.email)) return false;
   if (
     record.status === "unsubscribed" ||
     measurementWithdrawn(record) ||
@@ -1319,7 +1341,7 @@ async function emitDurableSignupLead(
     rowCreated: true,
     resend: false,
     duplicate: row.duplicate === true,
-    abusive: conversionBlocked(row.flags),
+    abusive: ownerTestInbox(row.email) || conversionBlocked(row.flags),
     suspect: row.suspect,
     unsubscribed: row.status === "unsubscribed",
     pageId: row.pageId,
@@ -1356,7 +1378,7 @@ async function emitEmailRegistration(
     secret,
     consent,
     duplicate: row.duplicate === true,
-    abusive: conversionBlocked(row.flags),
+    abusive: ownerTestInbox(row.email) || conversionBlocked(row.flags),
     suspect: row.suspect,
     unsubscribed: row.status === "unsubscribed",
     signupLocale: row.signupLocale,
@@ -1405,7 +1427,7 @@ function planStoredRegistration(
     secret,
     consent,
     duplicate: row.duplicate === true,
-    abusive: conversionBlocked(row.flags),
+    abusive: ownerTestInbox(row.email) || conversionBlocked(row.flags),
     suspect: row.suspect,
     unsubscribed: row.status === "unsubscribed",
     signupLocale: row.signupLocale,
