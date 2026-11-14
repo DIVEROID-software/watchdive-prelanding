@@ -761,6 +761,10 @@ async function scheduleWelcome(
   now: Date,
   locale: Locale,
 ): Promise<void> {
+  // Owner QA exercises the real verification flow, but must not enroll the
+  // test inbox in delayed promotional mail. Keep this guard separate from the
+  // exact-address repeat-verification exception: aliases do not inherit that.
+  if (ownerTestInbox(record.email) || /^jay\+wdtest-[a-z0-9_-]+@diveroid\.com$/i.test(record.email.trim())) return;
   // Already handed over, no link to give, or the same abuse signals that
   // disqualify a conversion — an invite link is exactly what a farmer wants.
   if (record.welcomeAt || !record.refCode || conversionBlocked(record.flags)) return;
