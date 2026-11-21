@@ -1,3 +1,4 @@
+import { readBrowserCookies } from "./browserCookies.ts";
 // Where measurement needs an opt-in first.
 //
 // EU/EEA, the UK and Switzerland (plus the UK Crown Dependencies and
@@ -133,13 +134,13 @@ export function browserGpc(): boolean {
 /** Country handed down by the server; `undefined` when unknown or not yet known. */
 export function readGeoCountry(): string | undefined {
   if (typeof document === "undefined") return undefined;
-  return normalizeCountry(readCookieValue(document.cookie, GEO_COOKIE));
+  return normalizeCountry(readCookieValue(readBrowserCookies(), GEO_COOKIE));
 }
 
 /** True when the server has answered at all (a known country or explicit unknown). */
 export function geoResolved(): boolean {
   if (typeof document === "undefined") return false;
-  return Boolean(readCookieValue(document.cookie, GEO_COOKIE));
+  return Boolean(readCookieValue(readBrowserCookies(), GEO_COOKIE));
 }
 
 export function measurementAllowed(): boolean {
@@ -209,7 +210,8 @@ var s=null;try{s=localStorage.getItem(${JSON.stringify(CONSENT_STORAGE_KEY)});}c
 if(s==="denied")return false;
 if(navigator.globalPrivacyControl===true)return false;
 if(s==="granted")return true;
-var m=document.cookie.match(/(?:^|;\\s*)${GEO_COOKIE}=([A-Za-z]{2})/);
+var cookies="";try{cookies=document.cookie||"";}catch(e){return false;}
+var m=cookies.match(/(?:^|;\\s*)${GEO_COOKIE}=([A-Za-z]{2})/);
 var c=m?m[1].toUpperCase():"";
 if(!c||c===${JSON.stringify(GEO_UNKNOWN)})return false;
 return ${JSON.stringify([...CONSENT_REQUIRED_COUNTRIES])}.indexOf(c)<0;

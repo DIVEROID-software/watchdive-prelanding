@@ -1,3 +1,4 @@
+import { writeBrowserCookie } from "./browserCookies.ts";
 // Google Analytics 4 and Google Ads. Both no-op until their public ids are set.
 //
 // Consent matches the Meta pixel (`consentRegion.ts`): outside EU/EEA/UK/CH
@@ -259,14 +260,15 @@ export function attachVerifiedGoogleClient(
   const clientId = mintGoogleClientId();
   const protocol = locationLike.protocol ?? window.location.protocol;
   const secure = protocol === "https:" ? "; Secure" : "";
-  document.cookie = `_ga=GA1.1.${clientId}; Path=/; Max-Age=63072000; SameSite=Lax${secure}`;
+  if (!writeBrowserCookie(`_ga=GA1.1.${clientId}; Path=/; Max-Age=63072000; SameSite=Lax${secure}`)) return false;
+  if (googleClientId() !== clientId) return false;
   const origin = locationLike.origin ?? window.location.origin;
   initGoogleTag({
     clientId,
     pageLocation: `${origin}${locationLike.pathname ?? ""}`,
     ...(config ? { config } : {}),
   });
-  return googleClientId() === clientId;
+  return true;
 }
 
 function canTrack(config: GoogleTagConfig = readGoogleTagConfig()): boolean {

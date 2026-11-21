@@ -1,3 +1,4 @@
+import { readBrowserCookies } from "./browserCookies.ts";
 // Meta Pixel — browser side. Measurement stays off unless the public production
 // gate is on and the dataset id is valid. Then the regional rule in
 // `consentRegion.ts` decides: outside EU/EEA/UK/CH the pixel loads by default;
@@ -262,8 +263,9 @@ export function trackMetaCustom(name: string, params?: Record<string, unknown>) 
 // Passed to the server so the Conversions API event carries the same identifiers.
 export function getMetaCookies(): { fbp?: string; fbc?: string } {
   if (typeof document === "undefined" || !hasMetaMeasurementConsent()) return {};
+  const cookies = readBrowserCookies();
   const read = (name: string) =>
-    document.cookie
+    cookies
       .split("; ")
       .find((row) => row.startsWith(`${name}=`))
       ?.slice(name.length + 1);
