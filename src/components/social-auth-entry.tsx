@@ -1,3 +1,4 @@
+import { readBrowserCookies, writeBrowserCookie } from "@/lib/browserCookies";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { googleClientId } from "@/lib/googleTag";
 import { hasSocialAcknowledgement, socialAckCookie } from "@/lib/socialAuthAcknowledgement";
@@ -145,10 +146,10 @@ export function SocialSignupResultProvider({ children }: { children: ReactNode }
   useEffect(() => {
     const url = new URL(window.location.href);
     const value = url.searchParams.get("auth");
-    const acknowledged = hasSocialAcknowledgement(value, document.cookie);
+    const acknowledged = hasSocialAcknowledgement(value, readBrowserCookies());
     // Consume even when the query is missing, so an abandoned callback receipt
     // cannot be reused on a later visit. This flag controls presentation only.
-    document.cookie = socialAckCookie(false);
+    writeBrowserCookie(socialAckCookie(false));
     if (value?.toLowerCase() === "confirmed") {
       url.searchParams.delete("auth");
       window.history.replaceState(window.history.state, "", url.toString());

@@ -1,3 +1,4 @@
+import { readBrowserCookies, writeBrowserCookie } from "../browserCookies.ts";
 // Reads the social receipt cookie and fires the events the server put there.
 // A denied browser keeps the cookie so a later Allow can retry the same ids.
 
@@ -39,14 +40,15 @@ export function fireRetargetingReceipt(
 
 export function consumeSocialRetargetingReceipt(): void {
   if (typeof document === "undefined") return;
-  const result = fireRetargetingReceipt(document.cookie);
-  if (!result.waiting && readRetargetingReceipt(document.cookie)) {
-    document.cookie = retargetingReceiptClearCookie();
+  const cookies = readBrowserCookies();
+  const result = fireRetargetingReceipt(cookies);
+  if (!result.waiting && readRetargetingReceipt(cookies)) {
+    writeBrowserCookie(retargetingReceiptClearCookie());
   }
   if (listening || typeof window === "undefined") return;
   listening = true;
   window.addEventListener(MEASUREMENT_CHOICE_EVENT, () => {
-    if (typeof document === "undefined" || !document.cookie.includes(`${RETARGETING_RECEIPT_COOKIE}=`)) return;
+    if (typeof document === "undefined" || !readBrowserCookies().includes(`${RETARGETING_RECEIPT_COOKIE}=`)) return;
     consumeSocialRetargetingReceipt();
   });
 }

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import vm from "node:vm";
+import { readBrowserCookies, writeBrowserCookie } from "../src/lib/browserCookies.ts";
 
 import {
   CONSENT_REQUIRED_COUNTRIES,
@@ -9,6 +10,9 @@ import {
   INLINE_MEASUREMENT_ALLOWED_JS,
   measurementAllowedFor,
   normalizeCountry,
+  resolveGeoCountryWithin,
+  resetGeoLookupForTests,
+  measurementAllowed,
 } from "../src/lib/consentRegion.ts";
 
 test("EU/EEA, UK and Switzerland need an opt-in; the US and the rest do not", () => {
@@ -59,4 +63,26 @@ test("the geo cookie is readable by the page and records unknown as XX", () => {
   assert.equal(geoCookie("US", true), "wd_geo=US; Path=/; Max-Age=86400; SameSite=Lax; Secure");
   assert.equal(geoCookie(undefined, false), "wd_geo=XX; Path=/; Max-Age=86400; SameSite=Lax");
   assert.equal(geoCookie("US", true).includes("HttpOnly"), false);
+});
+
+test("a browser denying cookie access can continue verification with optional tracking off", async (t) => {
+  const blocked = {
+    get cookie(): string { throw new DOMException("Access denied", "SecurityError"); },
+    set cookie(_value: string) { throw new DOMException("Access denied", "SecurityError"); },
+  };
+  const before = Object.getOwnPropertyDescriptor(globalThis, "document");
+  Object.defineProperty(globalThis, "document", { configurable: true, value: blocked });
+  t.after(() => {
+    if (before) Object.defineProperty(globalThis, "document", before);
+    else Reflect.deleteProperty(globalThis, "document");
+    resetGeoLookupForTests();
+  });
+  t.mock.method(globalThis, "fetch", async () => new Response('{"country":null}'));
+  assert.equal(await resolveGeoCountryWithin(100), undefined);
+  assert.equal(measurementAllowed(), false);
+  assert.equal(readBrowserCookies(), "");
+  assert.equal(writeBrowserCookie("qa=1"), false);
+  assert.equal(vm.runInNewContext(INLINE_MEASUREMENT_ALLOWED_JS, {
+    document: blocked, navigator: {}, localStorage: { getItem: () => null },
+  }), false);
 });
